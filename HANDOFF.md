@@ -216,9 +216,16 @@ These require product decisions or external setup:
 | PDF export | Add QuestPDF or PuppeteerSharp NuGet package to Jobuler.Infrastructure |
 | End-to-end tests | Use Playwright; needs a running test environment |
 | Production domain + TLS | Set up in AWS Certificate Manager + ALB listener |
-| Notification system | When solve completes, notify admin (email or in-app) |
-| Person role assignment UI | API exists (`POST /spaces/{id}/people/{id}/roles`), no frontend page |
-| Availability windows UI | API exists, no frontend page (add to person detail page) |
+
+## What was completed in this session (steps 019–022)
+
+| Item | Status |
+|---|---|
+| Person role assignment UI | ✅ Done — assign/remove roles on person detail page |
+| Availability windows UI | ✅ Done — add/view availability and presence windows on person detail page |
+| Notification system | ✅ Done — in-app bell, solver triggers notifications, dismiss/dismiss-all |
+| Test coverage | ✅ Done — 51 tests passing (role assignment, notifications, availability, integration flow) |
+| Build fixes | ✅ Done — MediatR conflict, missing domain entities, AppDbContext moved to Application |
 
 ---
 

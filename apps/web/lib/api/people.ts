@@ -1,5 +1,17 @@
 import { apiClient } from "./client";
 
+export interface RoleDto {
+  id: string;
+  name: string;
+  description: string | null;
+  isActive: boolean;
+}
+
+export interface PersonRoleDto {
+  roleId: string;
+  name: string;
+}
+
 export interface PersonDto {
   id: string;
   spaceId: string;
@@ -22,6 +34,7 @@ export interface RestrictionDto {
 export interface PersonDetailDto extends PersonDto {
   qualifications: string[];
   roleNames: string[];
+  roles: PersonRoleDto[];
   groupNames: string[];
   restrictions: RestrictionDto[];
 }
@@ -61,4 +74,21 @@ export async function addRestriction(
   await apiClient.post(`/spaces/${spaceId}/people/${personId}/restrictions`, {
     restrictionType, effectiveFrom, effectiveUntil, operationalNote, sensitiveReason
   });
+}
+
+export async function getSpaceRoles(spaceId: string): Promise<RoleDto[]> {
+  const { data } = await apiClient.get(`/spaces/${spaceId}/roles`);
+  return data;
+}
+
+export async function assignRole(
+  spaceId: string, personId: string, roleId: string
+): Promise<void> {
+  await apiClient.post(`/spaces/${spaceId}/people/${personId}/roles`, { roleId });
+}
+
+export async function removeRole(
+  spaceId: string, personId: string, roleId: string
+): Promise<void> {
+  await apiClient.delete(`/spaces/${spaceId}/people/${personId}/roles/${roleId}`);
 }

@@ -1,12 +1,18 @@
 using FluentValidation;
 using Jobuler.Api.Middleware;
+using Jobuler.Application.Exports;
+using Jobuler.Application.Notifications;
+using Jobuler.Infrastructure.Exports;
+using Jobuler.Infrastructure.Notifications;
 using Jobuler.Application.AI;
 using Jobuler.Application.Auth.Commands;
 using Jobuler.Application.Common;
 using Jobuler.Application.Scheduling;
 using Jobuler.Infrastructure.AI;
+using Jobuler.Application.Auth;
 using Jobuler.Infrastructure.Auth;
 using Jobuler.Infrastructure.Logging;
+using Jobuler.Infrastructure.Persistence;
 using Jobuler.Infrastructure.Persistence;
 using Jobuler.Infrastructure.Scheduling;
 using MediatR;
@@ -32,6 +38,9 @@ Log.Logger = new LoggerConfiguration()
 builder.Host.UseSerilog();
 
 // ─── Database ────────────────────────────────────────────────────────────────
+// Tell AppDbContext (defined in Application) where to find EF configurations
+AppDbContext.ConfigurationAssembly = typeof(Jobuler.Infrastructure.Persistence.StringExtensions).Assembly;
+
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
@@ -70,6 +79,8 @@ builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IPermissionService, PermissionService>();
 builder.Services.AddScoped<IAuditLogger, AuditLogger>();
 builder.Services.AddScoped<ISystemLogger, SystemLogger>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddScoped<IPdfRenderer, QuestPdfRenderer>();
 
 // ─── Redis ───────────────────────────────────────────────────────────────────
 var redisConn = builder.Configuration["Redis:ConnectionString"] ?? "localhost:6379";

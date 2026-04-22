@@ -1,3 +1,4 @@
+using Jobuler.Application.Notifications;
 using Jobuler.Application.Scheduling;
 using Jobuler.Application.Scheduling.Commands;
 using Jobuler.Domain.Scheduling;
@@ -55,6 +56,7 @@ public class SolverWorkerService : BackgroundService
         var db         = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var mediator   = scope.ServiceProvider.GetRequiredService<IMediator>();
         var sysLog     = scope.ServiceProvider.GetRequiredService<ISystemLogger>();
+        var notifier   = scope.ServiceProvider.GetRequiredService<INotificationService>();
 
         var job = await queue.DequeueAsync(ct);
         if (job is null)
@@ -169,6 +171,17 @@ public class SolverWorkerService : BackgroundService
                 $"Solver run {job.RunId} finished. Feasible={output.Feasible} TimedOut={output.TimedOut} Assignments={assignments.Count}",
                 detailsJson: summaryJson, actorUserId: job.RequestedByUserId, ct: ct);
 
+            // In-app notification
+            var notifTitle = output.Feasible
+                ? (output.TimedOut ? "Schedule ready (timed out)" : "Schedule ready")
+                : "Solver could not find a solution";
+            var notifBody = output.Feasible
+                ? $"Draft version {nextVersion} created with {assignments.Count} assignments. Review and publish when ready."
+                : $"Run {job.RunId} finished without a feasible schedule. Check constraints and try again.";
+            await notifier.NotifySpaceAdminsAsync(
+                job.SpaceId, evt, notifTitle, notifBody,
+                metadataJson: summaryJson, ct: ct);
+
             _logger.LogInformation(
                 "Solver job completed: run_id={RunId} version={Version} feasible={Feasible} assignments={Count}",
                 job.RunId, nextVersion, output.Feasible, assignments.Count);
@@ -184,6 +197,14 @@ public class SolverWorkerService : BackgroundService
             await sysLog2.LogAsync(job.SpaceId, "error", "solver_failed",
                 $"Solver run {job.RunId} failed: {ex.Message}",
                 actorUserId: job.RequestedByUserId, ct: ct);
+
+            // In-app notification — failure
+            var notifier2 = scope.ServiceProvider.GetRequiredService<INotificationService>();
+            await notifier2.NotifySpaceAdminsAsync(
+                job.SpaceId, "solver_failed",
+                "Solver run failed",
+                $"Run {job.RunId} encountered an error: {ex.Message}",
+                ct: ct);
         }
     }
 

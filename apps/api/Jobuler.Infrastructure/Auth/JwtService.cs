@@ -1,3 +1,4 @@
+using Jobuler.Application.Auth;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
@@ -6,14 +7,6 @@ using System.Security.Cryptography;
 using System.Text;
 
 namespace Jobuler.Infrastructure.Auth;
-
-public interface IJwtService
-{
-    string GenerateAccessToken(Guid userId, string email, string displayName);
-    string GenerateRefreshTokenRaw();
-    string HashToken(string rawToken);
-    ClaimsPrincipal? ValidateAccessToken(string token);
-}
 
 public class JwtService : IJwtService
 {

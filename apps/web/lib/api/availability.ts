@@ -27,6 +27,15 @@ export async function getAvailabilityWindows(
   return data;
 }
 
+export async function getPresenceWindows(
+  spaceId: string, personId: string
+): Promise<PresenceWindowDto[]> {
+  const { data } = await apiClient.get(
+    `/spaces/${spaceId}/people/${personId}/presence`
+  );
+  return data;
+}
+
 export async function addAvailabilityWindow(
   spaceId: string, personId: string,
   startsAt: string, endsAt: string, note: string | null

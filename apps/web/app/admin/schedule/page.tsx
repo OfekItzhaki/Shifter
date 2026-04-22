@@ -6,7 +6,7 @@ import ScheduleTable from "@/components/schedule/ScheduleTable";
 import DiffSummaryCard from "@/components/schedule/DiffSummaryCard";
 import {
   getScheduleVersions, getVersionDetail,
-  publishVersion, rollbackVersion, triggerSolve,
+  publishVersion, rollbackVersion, triggerSolve, downloadExport,
   ScheduleVersionDto, ScheduleVersionDetailDto
 } from "@/lib/api/schedule";
 import { useSpaceStore } from "@/lib/store/spaceStore";
@@ -180,6 +180,19 @@ export default function AdminSchedulePage() {
                       Rollback to this version
                     </button>
                   )}
+
+                  <button
+                    onClick={() => currentSpaceId && downloadExport(currentSpaceId, selected.version.id, "csv")}
+                    className="text-xs text-gray-600 border border-gray-300 px-3 py-1.5 rounded-lg hover:bg-gray-50"
+                  >
+                    ↓ CSV
+                  </button>
+                  <button
+                    onClick={() => currentSpaceId && downloadExport(currentSpaceId, selected.version.id, "pdf")}
+                    className="text-xs text-gray-600 border border-gray-300 px-3 py-1.5 rounded-lg hover:bg-gray-50"
+                  >
+                    ↓ PDF
+                  </button>
                 </div>
 
                 {selected.diff && <DiffSummaryCard diff={selected.diff} />}

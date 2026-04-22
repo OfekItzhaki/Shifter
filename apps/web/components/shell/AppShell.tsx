@@ -6,6 +6,7 @@ import { useSpaceStore } from "@/lib/store/spaceStore";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { clsx } from "clsx";
+import NotificationBell from "@/components/shell/NotificationBell";
 
 interface AppShellProps {
   children: React.ReactNode;
@@ -73,6 +74,8 @@ export default function AppShell({ children }: AppShellProps) {
           ) : null}
 
           <span className="hidden md:inline text-gray-500">{displayName}</span>
+
+          <NotificationBell />
 
           {isAdminMode ? (
             <button

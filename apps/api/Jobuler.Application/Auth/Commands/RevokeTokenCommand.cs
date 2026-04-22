@@ -1,4 +1,4 @@
-using Jobuler.Infrastructure.Auth;
+using Jobuler.Application.Auth;
 using Jobuler.Infrastructure.Persistence;
 using MediatR;
 using Microsoft.EntityFrameworkCore;

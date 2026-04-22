@@ -72,3 +72,28 @@ export async function rollbackVersion(spaceId: string, versionId: string): Promi
   const { data } = await apiClient.post(`/spaces/${spaceId}/schedule-versions/${versionId}/rollback`);
   return data;
 }
+
+export function exportCsvUrl(spaceId: string, versionId: string): string {
+  return `/api/proxy/spaces/${spaceId}/exports/${versionId}/csv`;
+}
+
+export function exportPdfUrl(spaceId: string, versionId: string): string {
+  return `/api/proxy/spaces/${spaceId}/exports/${versionId}/pdf`;
+}
+
+export async function downloadExport(
+  spaceId: string, versionId: string, format: "csv" | "pdf"
+): Promise<void> {
+  const { data, headers } = await apiClient.get(
+    `/spaces/${spaceId}/exports/${versionId}/${format}`,
+    { responseType: "blob" }
+  );
+  const mime = format === "pdf" ? "application/pdf" : "text/csv";
+  const ext  = format === "pdf" ? "pdf" : "csv";
+  const cd   = headers["content-disposition"] ?? "";
+  const name = cd.match(/filename="?([^"]+)"?/)?.[1] ?? `schedule.${ext}`;
+  const url  = URL.createObjectURL(new Blob([data], { type: mime }));
+  const a    = document.createElement("a");
+  a.href = url; a.download = name; a.click();
+  URL.revokeObjectURL(url);
+}

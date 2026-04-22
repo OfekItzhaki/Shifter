@@ -2,6 +2,7 @@ using Jobuler.Domain.Constraints;
 using Jobuler.Domain.Groups;
 using Jobuler.Domain.Identity;
 using Jobuler.Domain.Logs;
+using Jobuler.Domain.Notifications;
 using Jobuler.Domain.People;
 using Jobuler.Domain.Scheduling;
 using Jobuler.Domain.Spaces;
@@ -10,6 +11,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Jobuler.Infrastructure.Persistence;
 
+/// <summary>
+/// Moved to Application so handlers can reference it without a circular dependency.
+/// EF configurations are still applied from Infrastructure's assembly via the
+/// Infrastructure project's DI registration.
+/// </summary>
 public class AppDbContext : DbContext
 {
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
@@ -58,9 +64,19 @@ public class AppDbContext : DbContext
     public DbSet<SystemLog> SystemLogs => Set<SystemLog>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 
+    // Notifications
+    public DbSet<Notification> Notifications => Set<Notification>();
+
+    /// <summary>
+    /// Set by Infrastructure at startup so OnModelCreating can apply EF configurations
+    /// from the Infrastructure assembly without a circular project reference.
+    /// </summary>
+    public static System.Reflection.Assembly? ConfigurationAssembly { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
-        modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
+        if (ConfigurationAssembly is not null)
+            modelBuilder.ApplyConfigurationsFromAssembly(ConfigurationAssembly);
     }
 }

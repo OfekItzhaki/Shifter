@@ -42,19 +42,19 @@ public class OpenAiAssistant : IAiAssistant
             ? "אתה עוזר לניהול לוח זמנים. המשתמש מזין הוראה בשפה טבעית. המר אותה לאילוץ מובנה."
             : "You are a scheduling assistant. Convert the user's natural language instruction into a structured constraint.";
 
-        var userPrompt = $"""
+        var userPrompt = $$"""
             Convert this instruction to a scheduling constraint JSON.
-            Instruction: "{naturalLanguageInput}"
+            Instruction: "{{naturalLanguageInput}}"
 
             Respond with JSON only, in this exact shape:
-            {{
+            {
               "parsed": true/false,
               "ruleType": "no_task_type_restriction|min_rest_hours|max_kitchen_per_week|...",
               "scopeType": "person|role|group|task_type|space",
               "scopeHint": "name or description of the target (not an ID)",
-              "rulePayloadJson": "{{...}}",
+              "rulePayloadJson": "{...}",
               "confidenceNote": "brief note about confidence or ambiguity"
-            }}
+            }
 
             Known rule types: no_task_type_restriction, min_rest_hours, max_kitchen_per_week,
             no_consecutive_burden, min_base_headcount.

@@ -1,6 +1,7 @@
 using Jobuler.Application.Common;
 using Jobuler.Application.People.Commands;
 using Jobuler.Application.People.Queries;
+using Jobuler.Application.Spaces.Queries;
 using Jobuler.Domain.Spaces;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -63,6 +64,23 @@ public class PeopleController : ControllerBase
         return NoContent();
     }
 
+    [HttpPost("{personId:guid}/roles")]
+    public async Task<IActionResult> AssignRole(Guid spaceId, Guid personId,
+        [FromBody] AssignRoleRequest req, CancellationToken ct)
+    {
+        await _permissions.RequirePermissionAsync(CurrentUserId, spaceId, Permissions.PeopleManage, ct);
+        await _mediator.Send(new AssignRoleToPersonCommand(spaceId, personId, req.RoleId), ct);
+        return NoContent();
+    }
+
+    [HttpDelete("{personId:guid}/roles/{roleId:guid}")]
+    public async Task<IActionResult> RemoveRole(Guid spaceId, Guid personId, Guid roleId, CancellationToken ct)
+    {
+        await _permissions.RequirePermissionAsync(CurrentUserId, spaceId, Permissions.PeopleManage, ct);
+        await _mediator.Send(new RemoveRoleFromPersonCommand(spaceId, personId, roleId), ct);
+        return NoContent();
+    }
+
     [HttpPost("{personId:guid}/restrictions")]
     public async Task<IActionResult> AddRestriction(Guid spaceId, Guid personId,
         [FromBody] AddRestrictionRequest req, CancellationToken ct)
@@ -89,6 +107,7 @@ public class PeopleController : ControllerBase
 
 public record CreatePersonRequest(string FullName, string? DisplayName, Guid? LinkedUserId);
 public record UpdatePersonRequest(string FullName, string? DisplayName, string? ProfileImageUrl);
+public record AssignRoleRequest(Guid RoleId);
 public record AddRestrictionRequest(
     string RestrictionType, Guid? TaskTypeId,
     DateOnly EffectiveFrom, DateOnly? EffectiveUntil,

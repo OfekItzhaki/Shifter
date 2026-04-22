@@ -8,13 +8,16 @@ public record PersonDto(
     Guid Id, Guid SpaceId, string FullName, string? DisplayName,
     string? ProfileImageUrl, bool IsActive, DateTime CreatedAt);
 
+public record PersonRoleDto(Guid RoleId, string Name);
+
 public record PersonDetailDto(
     Guid Id, Guid SpaceId, string FullName, string? DisplayName,
     string? ProfileImageUrl, bool IsActive, DateTime CreatedAt,
     List<string> Qualifications,
     List<string> RoleNames,
     List<string> GroupNames,
-    List<RestrictionDto> Restrictions);
+    List<RestrictionDto> Restrictions,
+    List<PersonRoleDto> Roles);
 
 public record RestrictionDto(
     Guid Id, string RestrictionType, DateOnly EffectiveFrom,
@@ -27,7 +30,6 @@ public record GetPeopleQuery(Guid SpaceId, bool ActiveOnly = true) : IRequest<Li
 public class GetPeopleQueryHandler : IRequestHandler<GetPeopleQuery, List<PersonDto>>
 {
     private readonly AppDbContext _db;
-
     public GetPeopleQueryHandler(AppDbContext db) => _db = db;
 
     public async Task<List<PersonDto>> Handle(GetPeopleQuery req, CancellationToken ct)
@@ -50,7 +52,6 @@ public record GetPersonDetailQuery(
 public class GetPersonDetailQueryHandler : IRequestHandler<GetPersonDetailQuery, PersonDetailDto?>
 {
     private readonly AppDbContext _db;
-
     public GetPersonDetailQueryHandler(AppDbContext db) => _db = db;
 
     public async Task<PersonDetailDto?> Handle(GetPersonDetailQuery req, CancellationToken ct)
@@ -64,9 +65,10 @@ public class GetPersonDetailQueryHandler : IRequestHandler<GetPersonDetailQuery,
             .Select(q => q.Qualification)
             .ToListAsync(ct);
 
-        var roleNames = await _db.PersonRoleAssignments.AsNoTracking()
-            .Where(r => r.PersonId == req.PersonId)
-            .Join(_db.SpaceRoles, r => r.RoleId, sr => sr.Id, (r, sr) => sr.Name)
+        var roles = await _db.PersonRoleAssignments.AsNoTracking()
+            .Where(r => r.PersonId == req.PersonId && r.SpaceId == req.SpaceId)
+            .Join(_db.SpaceRoles, r => r.RoleId, sr => sr.Id,
+                  (r, sr) => new PersonRoleDto(sr.Id, sr.Name))
             .ToListAsync(ct);
 
         var groupNames = await _db.GroupMemberships.AsNoTracking()
@@ -78,7 +80,6 @@ public class GetPersonDetailQueryHandler : IRequestHandler<GetPersonDetailQuery,
             .Where(r => r.PersonId == req.PersonId)
             .ToListAsync(ct);
 
-        // Load sensitive reasons only if caller has permission
         var sensitiveMap = new Dictionary<Guid, string>();
         if (req.IncludeSensitive)
         {
@@ -90,12 +91,12 @@ public class GetPersonDetailQueryHandler : IRequestHandler<GetPersonDetailQuery,
 
         var restrictionDtos = restrictions.Select(r => new RestrictionDto(
             r.Id, r.RestrictionType, r.EffectiveFrom, r.EffectiveUntil,
-            r.OperationalNote,
-            sensitiveMap.GetValueOrDefault(r.Id))).ToList();
+            r.OperationalNote, sensitiveMap.GetValueOrDefault(r.Id))).ToList();
 
         return new PersonDetailDto(
             person.Id, person.SpaceId, person.FullName, person.DisplayName,
             person.ProfileImageUrl, person.IsActive, person.CreatedAt,
-            qualifications, roleNames, groupNames, restrictionDtos);
+            qualifications, roles.Select(r => r.Name).ToList(),
+            groupNames, restrictionDtos, roles);
     }
 }
