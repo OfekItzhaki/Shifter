@@ -13,7 +13,6 @@ using Jobuler.Application.Auth;
 using Jobuler.Infrastructure.Auth;
 using Jobuler.Infrastructure.Logging;
 using Jobuler.Infrastructure.Persistence;
-using Jobuler.Infrastructure.Persistence;
 using Jobuler.Infrastructure.Scheduling;
 using MediatR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -39,7 +38,7 @@ builder.Host.UseSerilog();
 
 // ─── Database ────────────────────────────────────────────────────────────────
 // Tell AppDbContext (defined in Application) where to find EF configurations
-AppDbContext.ConfigurationAssembly = typeof(Jobuler.Infrastructure.Persistence.StringExtensions).Assembly;
+AppDbContext.ConfigurationAssembly = typeof(Jobuler.Infrastructure.Persistence.Configurations.NotificationConfiguration).Assembly;
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
