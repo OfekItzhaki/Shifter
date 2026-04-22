@@ -1,17 +1,16 @@
 -- Seed: Demo space with realistic data for local development and testing
 -- Password for all demo users: Demo1234!
--- BCrypt hash of "Demo1234!" with work factor 12:
--- $2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj/RK.s5uoHi
+-- BCrypt hash verified with BCrypt.Net-Next v4.0.3
 
 SET client_encoding = 'UTF8';
 
 -- Demo Users
 INSERT INTO users (id, email, display_name, password_hash, preferred_locale) VALUES
-  ('00000000-0000-0000-0000-000000000001', 'admin@demo.local',   'Admin',   '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj/RK.s5uoHi', 'he'),
-  ('00000000-0000-0000-0000-000000000002', 'ofek@demo.local',    'Ofek',    '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj/RK.s5uoHi', 'he'),
-  ('00000000-0000-0000-0000-000000000003', 'yael@demo.local',    'Yael',    '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj/RK.s5uoHi', 'he'),
-  ('00000000-0000-0000-0000-000000000004', 'viewer@demo.local',  'Viewer',  '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj/RK.s5uoHi', 'he')
-ON CONFLICT DO NOTHING;
+  ('00000000-0000-0000-0000-000000000001', 'admin@demo.local',   'Admin',   '$2a$12$WqeSlsFmXzSru4YK23qfeuMYIUd/4ZkHLLwx0NAehm.Vbmq1MYEEa', 'he'),
+  ('00000000-0000-0000-0000-000000000002', 'ofek@demo.local',    'Ofek',    '$2a$12$WqeSlsFmXzSru4YK23qfeuMYIUd/4ZkHLLwx0NAehm.Vbmq1MYEEa', 'he'),
+  ('00000000-0000-0000-0000-000000000003', 'yael@demo.local',    'Yael',    '$2a$12$WqeSlsFmXzSru4YK23qfeuMYIUd/4ZkHLLwx0NAehm.Vbmq1MYEEa', 'he'),
+  ('00000000-0000-0000-0000-000000000004', 'viewer@demo.local',  'Viewer',  '$2a$12$WqeSlsFmXzSru4YK23qfeuMYIUd/4ZkHLLwx0NAehm.Vbmq1MYEEa', 'he')
+ON CONFLICT (id) DO UPDATE SET password_hash = EXCLUDED.password_hash;
 
 -- Demo Space
 INSERT INTO spaces (id, name, description, owner_user_id, locale) VALUES
