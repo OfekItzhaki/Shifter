@@ -43,6 +43,7 @@ public class AppDbContext : DbContext
     public DbSet<GroupType> GroupTypes => Set<GroupType>();
     public DbSet<Group> Groups => Set<Group>();
     public DbSet<GroupMembership> GroupMemberships => Set<GroupMembership>();
+    public DbSet<GroupInvitation> GroupInvitations => Set<GroupInvitation>();
     public DbSet<PersonRoleAssignment> PersonRoleAssignments => Set<PersonRoleAssignment>();
 
     // Tasks

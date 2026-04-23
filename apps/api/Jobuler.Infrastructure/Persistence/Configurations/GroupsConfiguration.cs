@@ -69,3 +69,23 @@ public class PersonRoleAssignmentConfiguration : IEntityTypeConfiguration<Person
         builder.HasIndex(r => new { r.PersonId, r.RoleId }).IsUnique();
     }
 }
+
+public class GroupInvitationConfiguration : IEntityTypeConfiguration<GroupInvitation>
+{
+    public void Configure(EntityTypeBuilder<GroupInvitation> builder)
+    {
+        builder.ToTable("group_invitations");
+        builder.HasKey(i => i.Id);
+        builder.Property(i => i.Id).HasColumnName("id");
+        builder.Property(i => i.SpaceId).HasColumnName("space_id");
+        builder.Property(i => i.GroupId).HasColumnName("group_id");
+        builder.Property(i => i.Email).HasColumnName("email").IsRequired();
+        builder.Property(i => i.PersonId).HasColumnName("person_id").IsRequired(false);
+        builder.Property(i => i.InvitedByUserId).HasColumnName("invited_by_user_id").IsRequired(false);
+        builder.Property(i => i.OptOutToken).HasColumnName("opt_out_token").IsRequired();
+        builder.Property(i => i.Status).HasColumnName("status").HasDefaultValue("active");
+        builder.Property(i => i.CreatedAt).HasColumnName("created_at");
+        builder.Property(i => i.OptedOutAt).HasColumnName("opted_out_at").IsRequired(false);
+        builder.HasIndex(i => i.OptOutToken).IsUnique();
+    }
+}

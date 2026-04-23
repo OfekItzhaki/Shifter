@@ -80,3 +80,45 @@ public class ScheduleVersionsController : ControllerBase
         return Ok(new { newVersionId });
     }
 }
+
+/// <summary>Personal missions controller — returns assignments for the current user.</summary>
+[ApiController]
+[Route("spaces/{spaceId:guid}/my-assignments")]
+[Authorize]
+public class MyAssignmentsController : ControllerBase
+{
+    private readonly IMediator _mediator;
+    private readonly IPermissionService _permissions;
+
+    public MyAssignmentsController(IMediator mediator, IPermissionService permissions)
+    {
+        _mediator = mediator;
+        _permissions = permissions;
+    }
+
+    private Guid CurrentUserId =>
+        Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+
+    /// <summary>
+    /// Get my assignments for a date range.
+    /// range: today | week | month | year
+    /// </summary>
+    [HttpGet]
+    public async Task<IActionResult> Get(
+        Guid spaceId, [FromQuery] string range = "week", CancellationToken ct = default)
+    {
+        await _permissions.RequirePermissionAsync(CurrentUserId, spaceId, Permissions.SpaceView, ct);
+
+        var now = DateTime.UtcNow.Date;
+        var (from, to) = range switch
+        {
+            "today" => (now, now.AddDays(1)),
+            "month" => (now, now.AddMonths(1)),
+            "year"  => (now, now.AddYears(1)),
+            _       => (now, now.AddDays(7)) // week default
+        };
+
+        var result = await _mediator.Send(new GetMyAssignmentsQuery(spaceId, CurrentUserId, from, to), ct);
+        return Ok(result);
+    }
+}
