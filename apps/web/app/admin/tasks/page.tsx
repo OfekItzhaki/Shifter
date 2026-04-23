@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import AppShell from "@/components/shell/AppShell";
 import {
   getTaskTypes, createTaskType, getTaskSlots, createTaskSlot,
@@ -8,23 +9,9 @@ import {
 } from "@/lib/api/tasks";
 import { useSpaceStore } from "@/lib/store/spaceStore";
 import { useAuthStore } from "@/lib/store/authStore";
-import { clsx } from "clsx";
-
-const BURDEN_STYLES: Record<string, string> = {
-  Favorable: "bg-emerald-50 text-emerald-700 border-emerald-200",
-  Neutral:   "bg-slate-100 text-slate-600 border-slate-200",
-  Disliked:  "bg-amber-50 text-amber-700 border-amber-200",
-  Hated:     "bg-red-50 text-red-700 border-red-200",
-};
-
-const BURDEN_DOTS: Record<string, string> = {
-  Favorable: "bg-emerald-500",
-  Neutral:   "bg-slate-400",
-  Disliked:  "bg-amber-500",
-  Hated:     "bg-red-500",
-};
 
 export default function TasksPage() {
+  const t = useTranslations("admin");
   const { currentSpaceId } = useSpaceStore();
   const { isAdminMode } = useAuthStore();
 
@@ -33,6 +20,7 @@ export default function TasksPage() {
   const [tab, setTab] = useState<"types" | "slots">("types");
   const [loading, setLoading] = useState(true);
 
+  // Task type form
   const [showTypeForm, setShowTypeForm] = useState(false);
   const [typeName, setTypeName] = useState("");
   const [typeDesc, setTypeDesc] = useState("");
@@ -41,6 +29,7 @@ export default function TasksPage() {
   const [allowsOverlap, setAllowsOverlap] = useState(false);
   const [savingType, setSavingType] = useState(false);
 
+  // Task slot form
   const [showSlotForm, setShowSlotForm] = useState(false);
   const [slotTypeId, setSlotTypeId] = useState("");
   const [slotStart, setSlotStart] = useState("");
@@ -51,226 +40,195 @@ export default function TasksPage() {
   const [savingSlot, setSavingSlot] = useState(false);
 
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
   useEffect(() => {
     if (!currentSpaceId) { setLoading(false); return; }
-    Promise.all([
-      getTaskTypes(currentSpaceId),
-      getTaskSlots(currentSpaceId),
-    ]).then(([types, s]) => { setTaskTypes(types); setSlots(s); })
+    Promise.all([getTaskTypes(currentSpaceId), getTaskSlots(currentSpaceId)])
+      .then(([types, s]) => { setTaskTypes(types); setSlots(s); })
       .finally(() => setLoading(false));
   }, [currentSpaceId]);
 
   async function handleCreateType(e: React.FormEvent) {
     e.preventDefault();
     if (!currentSpaceId) return;
-    setSavingType(true); setError(null);
+    setSavingType(true); setError(null); setSuccess(null);
     try {
       await createTaskType(currentSpaceId, typeName, typeDesc || null, burden, priority, allowsOverlap);
       const updated = await getTaskTypes(currentSpaceId);
       setTaskTypes(updated);
-      setTypeName(""); setTypeDesc(""); setBurden("Neutral"); setPriority(5);
+      setTypeName(""); setTypeDesc(""); setBurden("Neutral"); setPriority(5); setAllowsOverlap(false);
       setShowTypeForm(false);
-    } catch { setError("Failed to create task type."); }
-    finally { setSavingType(false); }
+      setSuccess("סוג המשימה נוצר בהצלחה");
+    } catch (err: any) {
+      setError(err?.response?.data?.message || "שגיאה ביצירת סוג משימה");
+    } finally { setSavingType(false); }
   }
 
   async function handleCreateSlot(e: React.FormEvent) {
     e.preventDefault();
     if (!currentSpaceId || !slotTypeId) return;
-    setSavingSlot(true); setError(null);
+    setSavingSlot(true); setError(null); setSuccess(null);
     try {
       await createTaskSlot(currentSpaceId, slotTypeId,
-        new Date(slotStart).toISOString(),
-        new Date(slotEnd).toISOString(),
+        new Date(slotStart).toISOString(), new Date(slotEnd).toISOString(),
         headcount, slotPriority, location || null);
       const updated = await getTaskSlots(currentSpaceId);
       setSlots(updated);
-      setSlotStart(""); setSlotEnd(""); setHeadcount(1); setLocation("");
+      setSlotStart(""); setSlotEnd(""); setHeadcount(1); setLocation(""); setSlotTypeId("");
       setShowSlotForm(false);
-    } catch { setError("Failed to create task slot."); }
-    finally { setSavingSlot(false); }
+      setSuccess("חלון המשימה נוצר בהצלחה");
+    } catch (err: any) {
+      setError(err?.response?.data?.message || "שגיאה ביצירת חלון משימה");
+    } finally { setSavingSlot(false); }
   }
 
   if (!isAdminMode) {
-    return (
-      <AppShell>
-        <div className="flex flex-col items-center justify-center py-20 text-center">
-          <svg className="w-12 h-12 text-slate-200 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-          </svg>
-          <p className="text-slate-500 text-sm">Admin mode required.</p>
-        </div>
-      </AppShell>
-    );
+    return <AppShell><p className="text-slate-500 text-sm p-8">{t("adminRequired")}</p></AppShell>;
   }
 
-  const inputClass = "w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow";
+  const inp = "w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent";
+
+  const burdenLabels: Record<string, string> = {
+    Favorable: "נוח", Neutral: "ניטרלי", Disliked: "לא אהוב", Hated: "שנוא"
+  };
+  const burdenColors: Record<string, string> = {
+    Favorable: "bg-emerald-50 text-emerald-700 border-emerald-200",
+    Neutral: "bg-slate-100 text-slate-600 border-slate-200",
+    Disliked: "bg-amber-50 text-amber-700 border-amber-200",
+    Hated: "bg-red-50 text-red-700 border-red-200",
+  };
 
   return (
     <AppShell>
       <div className="max-w-4xl space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900">Tasks</h1>
-            <p className="text-sm text-slate-500 mt-1">Manage task types and scheduled slots</p>
-          </div>
-          <div className="flex gap-2">
-            <button
-              onClick={() => { setTab("types"); setShowTypeForm(true); setShowSlotForm(false); }}
-              className="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-3.5 py-2.5 rounded-xl shadow-sm shadow-blue-500/20 transition-all"
-            >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-              </svg>
-              Task type
-            </button>
-            <button
-              onClick={() => { setTab("slots"); setShowSlotForm(true); setShowTypeForm(false); }}
-              className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-medium px-3.5 py-2.5 rounded-xl shadow-sm shadow-emerald-500/20 transition-all"
-            >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-              </svg>
-              Task slot
-            </button>
-          </div>
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">{t("tasks")}</h1>
+          <p className="text-sm text-slate-500 mt-1">ניהול סוגי משימות וחלונות זמן</p>
         </div>
 
-        {/* Tabs */}
-        <div className="flex gap-1 border-b border-slate-200">
-          {(["types", "slots"] as const).map(t => (
-            <button
-              key={t}
-              onClick={() => setTab(t)}
-              className={clsx(
-                "px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors",
-                tab === t
-                  ? "border-blue-500 text-blue-600"
-                  : "border-transparent text-slate-500 hover:text-slate-700"
-              )}
-            >
-              {t === "types" ? "Task Types" : "Task Slots"}
+        {/* Tabs + context button */}
+        <div className="flex items-center justify-between border-b border-slate-200">
+          <div className="flex gap-1">
+            {(["types", "slots"] as const).map(tabKey => (
+              <button key={tabKey} onClick={() => { setTab(tabKey); setShowTypeForm(false); setShowSlotForm(false); }}
+                className={`px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors ${
+                  tab === tabKey ? "border-blue-500 text-blue-600" : "border-transparent text-slate-500 hover:text-slate-700"
+                }`}>
+                {tabKey === "types" ? t("taskTypes") : t("taskSlots")}
+              </button>
+            ))}
+          </div>
+          {/* Button only for current tab */}
+          {tab === "types" && (
+            <button onClick={() => { setShowTypeForm(true); setShowSlotForm(false); }}
+              className="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-3.5 py-2 rounded-xl mb-1 transition-colors">
+              <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+              </svg>
+              {t("addTaskType")}
             </button>
-          ))}
+          )}
+          {tab === "slots" && (
+            <button onClick={() => { setShowSlotForm(true); setShowTypeForm(false); }}
+              className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-medium px-3.5 py-2 rounded-xl mb-1 transition-colors">
+              <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+              </svg>
+              {t("addTaskSlot")}
+            </button>
+          )}
         </div>
 
-        {error && (
-          <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700">
-            <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            {error}
-          </div>
-        )}
+        {error && <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700">{error}</div>}
+        {success && <div className="bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3 text-sm text-emerald-700">{success}</div>}
 
         {/* Task type form */}
         {tab === "types" && showTypeForm && (
-          <form onSubmit={handleCreateType}
-            className="bg-white border border-slate-200 rounded-2xl p-5 space-y-4 shadow-sm">
-            <h2 className="text-sm font-semibold text-slate-900">New task type</h2>
+          <form onSubmit={handleCreateType} className="bg-white border border-slate-200 rounded-2xl p-5 space-y-4 shadow-sm">
+            <h2 className="text-sm font-semibold text-slate-900">סוג משימה חדש</h2>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1.5">Name *</label>
-                <input value={typeName} onChange={e => setTypeName(e.target.value)} required
-                  className={inputClass} placeholder="e.g. Guard Post 1" />
+                <label className="block text-xs font-medium text-slate-500 mb-1.5">{t("name")} *</label>
+                <input value={typeName} onChange={e => setTypeName(e.target.value)} required className={inp} placeholder="לדוגמה: עמדה 1" />
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1.5">Burden level</label>
-                <select value={burden} onChange={e => setBurden(e.target.value)} className={inputClass}>
+                <label className="block text-xs font-medium text-slate-500 mb-1.5">{t("burdenLevel")}</label>
+                <select value={burden} onChange={e => setBurden(e.target.value)} className={inp}>
                   {["Favorable", "Neutral", "Disliked", "Hated"].map(b => (
-                    <option key={b} value={b}>{b}</option>
+                    <option key={b} value={b}>{burdenLabels[b]}</option>
                   ))}
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1.5">Description</label>
-                <input value={typeDesc} onChange={e => setTypeDesc(e.target.value)}
-                  className={inputClass} placeholder="Optional" />
+                <label className="block text-xs font-medium text-slate-500 mb-1.5">{t("description")}</label>
+                <input value={typeDesc} onChange={e => setTypeDesc(e.target.value)} className={inp} placeholder="אופציונלי" />
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1.5">Default priority (1–10)</label>
-                <input type="number" min={1} max={10} value={priority}
-                  onChange={e => setPriority(Number(e.target.value))} className={inputClass} />
+                <label className="block text-xs font-medium text-slate-500 mb-1.5">{t("priority")} (1–10)</label>
+                <input type="number" min={1} max={10} value={priority} onChange={e => setPriority(Number(e.target.value))} className={inp} />
               </div>
             </div>
             <label className="flex items-center gap-2.5 text-sm text-slate-700 cursor-pointer">
-              <input type="checkbox" checked={allowsOverlap}
-                onChange={e => setAllowsOverlap(e.target.checked)}
-                className="w-4 h-4 rounded border-slate-300 text-blue-500 focus:ring-blue-500" />
-              Allows overlap
+              <input type="checkbox" checked={allowsOverlap} onChange={e => setAllowsOverlap(e.target.checked)} className="w-4 h-4 rounded" />
+              {t("overlap")}
             </label>
             <div className="flex gap-2">
               <button type="submit" disabled={savingType}
                 className="bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl disabled:opacity-50 transition-colors">
-                {savingType ? "Saving..." : "Save"}
+                {savingType ? "שומר..." : t("save")}
               </button>
               <button type="button" onClick={() => setShowTypeForm(false)}
-                className="text-sm text-slate-500 hover:text-slate-700 px-3 transition-colors">Cancel</button>
+                className="text-sm text-slate-500 hover:text-slate-700 px-3">{t("cancel")}</button>
             </div>
           </form>
         )}
 
         {/* Task slot form */}
         {tab === "slots" && showSlotForm && (
-          <form onSubmit={handleCreateSlot}
-            className="bg-white border border-slate-200 rounded-2xl p-5 space-y-4 shadow-sm">
-            <h2 className="text-sm font-semibold text-slate-900">New task slot</h2>
+          <form onSubmit={handleCreateSlot} className="bg-white border border-slate-200 rounded-2xl p-5 space-y-4 shadow-sm">
+            <h2 className="text-sm font-semibold text-slate-900">חלון משימה חדש</h2>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1.5">Task type *</label>
-                <select value={slotTypeId} onChange={e => setSlotTypeId(e.target.value)} required className={inputClass}>
-                  <option value="">Select type...</option>
-                  {taskTypes.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                <label className="block text-xs font-medium text-slate-500 mb-1.5">{t("taskType")} *</label>
+                <select value={slotTypeId} onChange={e => setSlotTypeId(e.target.value)} required className={inp}>
+                  <option value="">בחר סוג...</option>
+                  {taskTypes.map(tt => <option key={tt.id} value={tt.id}>{tt.name}</option>)}
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1.5">Headcount</label>
-                <input type="number" min={1} value={headcount}
-                  onChange={e => setHeadcount(Number(e.target.value))} className={inputClass} />
+                <label className="block text-xs font-medium text-slate-500 mb-1.5">{t("headcount")}</label>
+                <input type="number" min={1} value={headcount} onChange={e => setHeadcount(Number(e.target.value))} className={inp} />
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1.5">Starts at *</label>
-                <input type="datetime-local" value={slotStart}
-                  onChange={e => setSlotStart(e.target.value)} required className={inputClass} />
+                <label className="block text-xs font-medium text-slate-500 mb-1.5">{t("startsAt")} *</label>
+                <input type="datetime-local" value={slotStart} onChange={e => setSlotStart(e.target.value)} required className={inp} />
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1.5">Ends at *</label>
-                <input type="datetime-local" value={slotEnd}
-                  onChange={e => setSlotEnd(e.target.value)} required className={inputClass} />
+                <label className="block text-xs font-medium text-slate-500 mb-1.5">{t("endsAt")} *</label>
+                <input type="datetime-local" value={slotEnd} onChange={e => setSlotEnd(e.target.value)} required className={inp} />
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1.5">Location</label>
-                <input value={location} onChange={e => setLocation(e.target.value)}
-                  className={inputClass} placeholder="Optional" />
+                <label className="block text-xs font-medium text-slate-500 mb-1.5">{t("location")}</label>
+                <input value={location} onChange={e => setLocation(e.target.value)} className={inp} placeholder="אופציונלי" />
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1.5">Priority (1–10)</label>
-                <input type="number" min={1} max={10} value={slotPriority}
-                  onChange={e => setSlotPriority(Number(e.target.value))} className={inputClass} />
+                <label className="block text-xs font-medium text-slate-500 mb-1.5">{t("priority")} (1–10)</label>
+                <input type="number" min={1} max={10} value={slotPriority} onChange={e => setSlotPriority(Number(e.target.value))} className={inp} />
               </div>
             </div>
             <div className="flex gap-2">
               <button type="submit" disabled={savingSlot}
                 className="bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl disabled:opacity-50 transition-colors">
-                {savingSlot ? "Saving..." : "Save"}
+                {savingSlot ? "שומר..." : t("save")}
               </button>
               <button type="button" onClick={() => setShowSlotForm(false)}
-                className="text-sm text-slate-500 hover:text-slate-700 px-3 transition-colors">Cancel</button>
+                className="text-sm text-slate-500 hover:text-slate-700 px-3">{t("cancel")}</button>
             </div>
           </form>
         )}
 
-        {loading && (
-          <div className="flex items-center gap-3 text-slate-400 text-sm py-8">
-            <svg className="animate-spin h-5 w-5 text-blue-400" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-            </svg>
-            Loading...
-          </div>
-        )}
+        {loading && <p className="text-slate-400 text-sm py-8">טוען...</p>}
 
         {/* Task types table */}
         {tab === "types" && !loading && (
@@ -278,42 +236,27 @@ export default function TasksPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-slate-100 bg-slate-50/80">
-                  <th className="px-4 py-3 text-start text-xs font-semibold text-slate-500 uppercase tracking-wider">Name</th>
-                  <th className="px-4 py-3 text-start text-xs font-semibold text-slate-500 uppercase tracking-wider">Burden</th>
-                  <th className="px-4 py-3 text-start text-xs font-semibold text-slate-500 uppercase tracking-wider">Priority</th>
-                  <th className="px-4 py-3 text-start text-xs font-semibold text-slate-500 uppercase tracking-wider">Overlap</th>
+                  <th className="px-4 py-3 text-start text-xs font-semibold text-slate-500 uppercase tracking-wider">{t("name")}</th>
+                  <th className="px-4 py-3 text-start text-xs font-semibold text-slate-500 uppercase tracking-wider">{t("burdenLevel")}</th>
+                  <th className="px-4 py-3 text-start text-xs font-semibold text-slate-500 uppercase tracking-wider">{t("priority")}</th>
+                  <th className="px-4 py-3 text-start text-xs font-semibold text-slate-500 uppercase tracking-wider">{t("overlap")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {taskTypes.map(t => (
-                  <tr key={t.id} className="hover:bg-slate-50/60 transition-colors">
-                    <td className="px-4 py-3.5 font-medium text-slate-900">{t.name}</td>
+                {taskTypes.map(tt => (
+                  <tr key={tt.id} className="hover:bg-slate-50/60">
+                    <td className="px-4 py-3.5 font-medium text-slate-900">{tt.name}</td>
                     <td className="px-4 py-3.5">
-                      <span className={clsx(
-                        "inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium border",
-                        BURDEN_STYLES[t.burdenLevel] ?? "bg-slate-100 text-slate-600 border-slate-200"
-                      )}>
-                        <span className={clsx("w-1.5 h-1.5 rounded-full", BURDEN_DOTS[t.burdenLevel] ?? "bg-slate-400")} />
-                        {t.burdenLevel}
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${burdenColors[tt.burdenLevel] ?? "bg-slate-100 text-slate-600 border-slate-200"}`}>
+                        {burdenLabels[tt.burdenLevel] ?? tt.burdenLevel}
                       </span>
                     </td>
-                    <td className="px-4 py-3.5 text-slate-500">{t.defaultPriority}</td>
-                    <td className="px-4 py-3.5">
-                      <span className={clsx(
-                        "text-xs font-medium",
-                        t.allowsOverlap ? "text-emerald-600" : "text-slate-400"
-                      )}>
-                        {t.allowsOverlap ? "Yes" : "No"}
-                      </span>
-                    </td>
+                    <td className="px-4 py-3.5 text-slate-500">{tt.defaultPriority}</td>
+                    <td className="px-4 py-3.5 text-slate-500">{tt.allowsOverlap ? "כן" : "לא"}</td>
                   </tr>
                 ))}
                 {taskTypes.length === 0 && (
-                  <tr>
-                    <td colSpan={4} className="px-4 py-12 text-center text-slate-400 text-sm">
-                      No task types yet.
-                    </td>
-                  </tr>
+                  <tr><td colSpan={4} className="px-4 py-12 text-center text-slate-400 text-sm">{t("noData")}</td></tr>
                 )}
               </tbody>
             </table>
@@ -326,33 +269,25 @@ export default function TasksPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-slate-100 bg-slate-50/80">
-                  <th className="px-4 py-3 text-start text-xs font-semibold text-slate-500 uppercase tracking-wider">Task type</th>
-                  <th className="px-4 py-3 text-start text-xs font-semibold text-slate-500 uppercase tracking-wider">Starts</th>
-                  <th className="px-4 py-3 text-start text-xs font-semibold text-slate-500 uppercase tracking-wider">Ends</th>
-                  <th className="px-4 py-3 text-start text-xs font-semibold text-slate-500 uppercase tracking-wider">Headcount</th>
-                  <th className="px-4 py-3 text-start text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th>
+                  <th className="px-4 py-3 text-start text-xs font-semibold text-slate-500 uppercase tracking-wider">{t("taskType")}</th>
+                  <th className="px-4 py-3 text-start text-xs font-semibold text-slate-500 uppercase tracking-wider">{t("startsAt")}</th>
+                  <th className="px-4 py-3 text-start text-xs font-semibold text-slate-500 uppercase tracking-wider">{t("endsAt")}</th>
+                  <th className="px-4 py-3 text-start text-xs font-semibold text-slate-500 uppercase tracking-wider">{t("headcount")}</th>
+                  <th className="px-4 py-3 text-start text-xs font-semibold text-slate-500 uppercase tracking-wider">{t("status")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {slots.map(s => (
-                  <tr key={s.id} className="hover:bg-slate-50/60 transition-colors">
+                  <tr key={s.id} className="hover:bg-slate-50/60">
                     <td className="px-4 py-3.5 font-medium text-slate-900">{s.taskTypeName}</td>
-                    <td className="px-4 py-3.5 text-slate-500 tabular-nums text-xs">
-                      {new Date(s.startsAt).toLocaleString()}
-                    </td>
-                    <td className="px-4 py-3.5 text-slate-500 tabular-nums text-xs">
-                      {new Date(s.endsAt).toLocaleString()}
-                    </td>
+                    <td className="px-4 py-3.5 text-slate-500 text-xs">{new Date(s.startsAt).toLocaleString("he-IL")}</td>
+                    <td className="px-4 py-3.5 text-slate-500 text-xs">{new Date(s.endsAt).toLocaleString("he-IL")}</td>
                     <td className="px-4 py-3.5 text-slate-500">{s.requiredHeadcount}</td>
                     <td className="px-4 py-3.5 text-slate-500">{s.status}</td>
                   </tr>
                 ))}
                 {slots.length === 0 && (
-                  <tr>
-                    <td colSpan={5} className="px-4 py-12 text-center text-slate-400 text-sm">
-                      No task slots yet.
-                    </td>
-                  </tr>
+                  <tr><td colSpan={5} className="px-4 py-12 text-center text-slate-400 text-sm">{t("noData")}</td></tr>
                 )}
               </tbody>
             </table>
