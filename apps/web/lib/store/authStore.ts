@@ -7,28 +7,34 @@ interface AuthState {
   displayName: string | null;
   preferredLocale: string;
   isAuthenticated: boolean;
-  isAdminMode: boolean;
+  // Admin mode is scoped to a specific group — null means not in admin mode
+  adminGroupId: string | null;
 
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
-  enterAdminMode: () => void;
+  enterAdminMode: (groupId: string) => void;
   exitAdminMode: () => void;
+  // Convenience: is the user in admin mode for a specific group?
+  isAdminForGroup: (groupId: string) => boolean;
+  // Legacy: global admin mode check (true if admin for ANY group)
+  isAdminMode: boolean;
 }
 
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       userId: null,
       displayName: null,
       preferredLocale: "he",
       isAuthenticated: false,
-      isAdminMode: false,
+      adminGroupId: null,
+
+      get isAdminMode() { return get().adminGroupId !== null; },
 
       login: async (email, password) => {
         const result = await apiLogin(email, password);
         localStorage.setItem("access_token", result.accessToken);
         localStorage.setItem("refresh_token", result.refreshToken);
-        // Set cookies for Next.js middleware route guard and SSR
         document.cookie = `access_token=${result.accessToken}; path=/; max-age=900; SameSite=Strict`;
         document.cookie = `locale=${result.preferredLocale}; path=/; max-age=31536000; SameSite=Strict`;
         set({
@@ -36,7 +42,7 @@ export const useAuthStore = create<AuthState>()(
           displayName: result.displayName,
           preferredLocale: result.preferredLocale,
           isAuthenticated: true,
-          isAdminMode: false,
+          adminGroupId: null,
         });
       },
 
@@ -47,15 +53,14 @@ export const useAuthStore = create<AuthState>()(
         }
         localStorage.removeItem("access_token");
         localStorage.removeItem("refresh_token");
-        // Clear cookies
         document.cookie = "access_token=; path=/; max-age=0";
         document.cookie = "locale=; path=/; max-age=0";
-        set({ userId: null, displayName: null, isAuthenticated: false, isAdminMode: false });
+        set({ userId: null, displayName: null, isAuthenticated: false, adminGroupId: null });
       },
 
-      // Admin mode is a UI state — actual permission is checked by the API
-      enterAdminMode: () => set({ isAdminMode: true }),
-      exitAdminMode: () => set({ isAdminMode: false }),
+      enterAdminMode: (groupId: string) => set({ adminGroupId: groupId }),
+      exitAdminMode: () => set({ adminGroupId: null }),
+      isAdminForGroup: (groupId: string) => get().adminGroupId === groupId,
     }),
     {
       name: "jobuler-auth",
@@ -64,7 +69,7 @@ export const useAuthStore = create<AuthState>()(
         displayName: state.displayName,
         preferredLocale: state.preferredLocale,
         isAuthenticated: state.isAuthenticated,
-        isAdminMode: state.isAdminMode,
+        // Don't persist adminGroupId — always reset on page load
       }),
     }
   )

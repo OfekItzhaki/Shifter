@@ -27,8 +27,7 @@ const S = {
   userInfo: { padding: "8px 12px", marginBottom: 4 },
   logoutBtn: { display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "9px 12px", borderRadius: 8, background: "none", border: "none", cursor: "pointer", color: "#64748b", fontSize: 14, textAlign: "left" as const },
   topbar: (admin: boolean) => ({ height: 56, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 24px", borderBottom: `1px solid ${admin ? "#fde68a" : "#e2e8f0"}`, background: admin ? "#fffbeb" : "white", position: "sticky" as const, top: 0, zIndex: 20 }),
-  adminBadge: { display: "flex", alignItems: "center", gap: 6, padding: "4px 10px", borderRadius: 20, background: "#fef3c7", border: "1px solid #fde68a", fontSize: 11, fontWeight: 600, color: "#92400e", textTransform: "uppercase" as const, letterSpacing: "0.05em" },
-  adminBtn: (exit: boolean) => ({ display: "flex", alignItems: "center", gap: 6, padding: "6px 12px", borderRadius: 8, border: `1px solid ${exit ? "#fde68a" : "#e2e8f0"}`, background: exit ? "#fef3c7" : "#f8fafc", color: exit ? "#92400e" : "#475569", fontSize: 12, fontWeight: 500, cursor: "pointer" }),
+
   main: { marginLeft: 256, display: "flex", flexDirection: "column" as const, minHeight: "100vh" },
   content: { flex: 1, padding: 32, background: "#f8fafc" },
 };
@@ -47,7 +46,7 @@ function NavItem({ href, label, icon, admin }: { href: string; label: string; ic
 
 export default function AppShell({ children }: AppShellProps) {
   const t = useTranslations();
-  const { displayName, isAdminMode, enterAdminMode, exitAdminMode, logout } = useAuthStore();
+  const { displayName, adminGroupId, logout } = useAuthStore();
   const { currentSpaceId, currentSpaceName, setCurrentSpace } = useSpaceStore();
   const router = useRouter();
 
@@ -92,16 +91,8 @@ export default function AppShell({ children }: AppShellProps) {
           <NavItem href="/schedule/tomorrow" label={t("nav.tomorrow")} icon={ic("M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z")} />
           <NavItem href="/schedule/my-missions" label={t("nav.myMissions")} icon={ic("M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01")} />
 
-          {isAdminMode && (
-            <>
-              <div style={{ ...S.sectionLabel, marginTop: 12, color: "rgba(245,158,11,0.6)" }}>Admin</div>
-              <NavItem href="/admin/schedule" label={t("admin.title")} admin icon={ic("M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2")} />
-              <NavItem href="/admin/groups" label={t("admin.groups")} admin icon={ic("M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10")} />
-              <NavItem href="/admin/tasks" label={t("admin.tasks")} admin icon={ic("M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z")} />
-              <NavItem href="/admin/constraints" label={t("admin.constraints")} admin icon={ic("M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z")} />
-              <NavItem href="/admin/logs" label={t("nav.logs")} admin icon={ic("M4 6h16M4 10h16M4 14h16M4 18h16")} />
-            </>
-          )}
+          <div style={{ ...S.sectionLabel, marginTop: 12 }}>קבוצות</div>
+          <NavItem href="/groups" label="קבוצות" icon={ic("M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z")} />
         </nav>
 
         <div style={S.bottom}>
@@ -122,29 +113,10 @@ export default function AppShell({ children }: AppShellProps) {
 
       {/* Main */}
       <div style={S.main}>
-        <header style={S.topbar(isAdminMode)}>
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            {isAdminMode && (
-              <div style={S.adminBadge}>
-                <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                </svg>
-                מצב מנהל
-              </div>
-            )}
-          </div>
+        <header style={S.topbar(adminGroupId !== null)}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }} />
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <NotificationBell />
-            {isAdminMode ? (
-              <button onClick={exitAdminMode} style={S.adminBtn(true)}>{t("admin.exitAdmin")}</button>
-            ) : (
-              <button onClick={enterAdminMode} style={S.adminBtn(false)}>
-                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                </svg>
-                {t("admin.enterAdmin")}
-              </button>
-            )}
           </div>
         </header>
         <main style={S.content}>{children}</main>

@@ -12,7 +12,7 @@ import ScheduleTable from "@/components/schedule/ScheduleTable";
 interface GroupDto { id: string; name: string; memberCount: number; solverHorizonDays: number; }
 interface MemberDto { personId: string; fullName: string; displayName: string | null; }
 interface AssignmentDto {
-  id: string; personId: string; personName: string; taskTypeName: string;
+  id: string; taskSlotId: string; personId: string; personName: string; taskTypeName: string;
   slotStartsAt: string; slotEndsAt: string; source: string;
 }
 
