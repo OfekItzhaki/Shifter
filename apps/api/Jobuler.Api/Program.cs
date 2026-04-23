@@ -83,8 +83,14 @@ builder.Services.AddScoped<IPdfRenderer, QuestPdfRenderer>();
 
 // ─── Redis ───────────────────────────────────────────────────────────────────
 var redisConn = builder.Configuration["Redis:ConnectionString"] ?? "localhost:6379";
-builder.Services.AddSingleton<IConnectionMultiplexer>(
-    ConnectionMultiplexer.Connect(redisConn));
+builder.Services.AddSingleton<IConnectionMultiplexer>(_ =>
+{
+    var config = ConfigurationOptions.Parse(redisConn);
+    config.AbortOnConnectFail = false;   // don't crash if Redis is temporarily down
+    config.ConnectTimeout = 5000;
+    config.ReconnectRetryPolicy = new ExponentialRetry(500);
+    return ConnectionMultiplexer.Connect(config);
+});
 
 // ─── Scheduling services ─────────────────────────────────────────────────────
 builder.Services.AddScoped<ISolverPayloadNormalizer, SolverPayloadNormalizer>();

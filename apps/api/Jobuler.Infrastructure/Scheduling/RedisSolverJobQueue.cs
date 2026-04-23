@@ -20,10 +20,18 @@ public class RedisSolverJobQueue : ISolverJobQueue
 
     public async Task EnqueueAsync(SolverJobMessage job, CancellationToken ct = default)
     {
-        var db = _redis.GetDatabase();
-        var json = JsonSerializer.Serialize(job);
-        await db.ListRightPushAsync(QueueKey, json);
-        _logger.LogInformation("Solver job enqueued: run_id={RunId} space_id={SpaceId}", job.RunId, job.SpaceId);
+        try
+        {
+            var db = _redis.GetDatabase();
+            var json = JsonSerializer.Serialize(job);
+            await db.ListRightPushAsync(QueueKey, json);
+            _logger.LogInformation("Solver job enqueued: run_id={RunId} space_id={SpaceId}", job.RunId, job.SpaceId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to enqueue solver job run_id={RunId}. Is Redis/Memurai running?", job.RunId);
+            throw new InvalidOperationException("שירות התור אינו זמין. ודא ש-Memurai פועל.", ex);
+        }
     }
 
     public async Task<SolverJobMessage?> DequeueAsync(CancellationToken ct = default)
