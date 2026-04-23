@@ -1,7 +1,7 @@
 {
   "app": {
     "name": "Jobuler",
-    "tagline": "Force Scheduling System"
+    "tagline": "Scheduling System"
   },
   "auth": {
     "login": "Login",

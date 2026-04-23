@@ -82,7 +82,7 @@ export default function GroupsPage() {
       await loadMembers(selectedGroup);
       await loadGroups();
       setNewPersonFull(""); setNewPersonDisplay(""); setShowAddPerson(false);
-    } catch { setError("שגיאה בהוספת חייל"); }
+    } catch { setError("שגיאה בהוספת אדם"); }
     finally { setAddingPerson(false); }
   }
 
@@ -97,7 +97,7 @@ export default function GroupsPage() {
       <div className="max-w-5xl space-y-6">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">{t("groups")}</h1>
-          <p className="text-sm text-slate-500 mt-1">ניהול קבוצות וחיילים</p>
+          <p className="text-sm text-slate-500 mt-1">ניהול קבוצות ואנשים</p>
         </div>
 
         {error && (

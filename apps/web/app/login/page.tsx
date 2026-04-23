@@ -114,7 +114,7 @@ export default function LoginPage() {
               disabled={loading}
               style={{ width: "100%", background: loading ? "#93c5fd" : "#3b82f6", color: "white", border: "none", borderRadius: "10px", padding: "0.75rem", fontSize: "0.875rem", fontWeight: 600, cursor: loading ? "not-allowed" : "pointer", marginTop: "0.5rem" }}
             >
-              {loading ? "Signing in..." : t("loginButton")}
+              {loading ? "מתחבר..." : t("loginButton")}
             </button>
           </form>
         </div>

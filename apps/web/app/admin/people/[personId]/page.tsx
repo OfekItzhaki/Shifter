@@ -166,7 +166,7 @@ export default function PersonDetailPage() {
   const availableRoles = allRoles.filter(r => !assignedRoleIds.has(r.id));
 
   if (loading) return <AppShell><p className="text-gray-400 text-sm">טוען...</p></AppShell>;
-  if (!person) return <AppShell><p className="text-gray-500 text-sm">חייל לא נמצא.</p></AppShell>;
+  if (!person) return <AppShell><p className="text-gray-500 text-sm">אדם לא נמצא.</p></AppShell>;
 
   return (
     <AppShell>
@@ -306,8 +306,8 @@ export default function PersonDetailPage() {
                   <select value={presenceState}
                     onChange={e => setPresenceState(e.target.value as "at_home" | "free_in_base")}
                     className="w-full border rounded-lg px-3 py-2 text-sm mt-1">
-                    <option value="at_home">בבית</option>
-                    <option value="free_in_base">פנוי בבסיס</option>
+                    <option value="at_home">לא זמין</option>
+                    <option value="free_in_base">זמין חלקית</option>
                   </select>
                 </div>
                 <div />
@@ -340,7 +340,7 @@ export default function PersonDetailPage() {
             : presence.map(p => (
               <div key={p.id} className="text-sm border-t pt-2">
                 <span className="inline-block bg-purple-50 text-purple-700 text-xs px-2 py-0.5 rounded-full me-2">
-                  {p.state === "at_home" ? "בבית" : "פנוי בבסיס"}
+                  {p.state === "at_home" ? "לא זמין" : "זמין חלקית"}
                 </span>
                 <span className="text-gray-500 text-xs">{fmt(p.startsAt)} → {fmt(p.endsAt)}</span>
                 {p.isDerived && <span className="text-xs text-gray-400 ms-2">(נגזר)</span>}

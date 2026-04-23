@@ -1,7 +1,7 @@
 {
   "app": {
     "name": "ג'ובולר",
-    "tagline": "מערכת תזמון כוחות"
+    "tagline": "מערכת תזמון"
   },
   "auth": {
     "login": "התחברות",
@@ -24,7 +24,7 @@
   "schedule": {
     "title": "לוח זמנים",
     "noAssignments": "אין שיבוצים",
-    "person": "חייל",
+    "person": "אדם",
     "task": "משימה",
     "time": "שעה",
     "selectGroup": "בחר קבוצה לצפייה בלוח הזמנים",
@@ -47,7 +47,7 @@
     "constraints": "אילוצים",
     "groups": "קבוצות",
     "addGroup": "הוסף קבוצה",
-    "addPerson": "הוסף חייל",
+    "addPerson": "הוסף אדם",
     "members": "חברים",
     "publish": "פרסום",
     "rollback": "שחזור",

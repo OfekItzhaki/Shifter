@@ -79,18 +79,18 @@ export default function NotificationBell() {
       {open && (
         <div className="absolute right-0 mt-2 w-80 bg-white border border-gray-200 rounded-xl shadow-lg z-50">
           <div className="flex items-center justify-between px-4 py-3 border-b">
-            <span className="text-sm font-semibold">Notifications</span>
+            <span className="text-sm font-semibold">התראות</span>
             {unreadCount > 0 && (
               <button onClick={handleDismissAll}
                 className="text-xs text-blue-600 hover:underline">
-                Mark all read
+                סמן הכל כנקרא
               </button>
             )}
           </div>
 
           <div className="max-h-80 overflow-y-auto divide-y divide-gray-100">
             {notifications.length === 0 ? (
-              <p className="text-xs text-gray-400 text-center py-6">No notifications</p>
+              <p className="text-xs text-gray-400 text-center py-6">אין התראות</p>
             ) : notifications.map(n => (
               <div key={n.id}
                 className={`px-4 py-3 flex gap-3 ${n.isRead ? "opacity-60" : "bg-blue-50/40"}`}>
