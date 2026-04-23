@@ -29,9 +29,11 @@ public class GroupConfiguration : IEntityTypeConfiguration<Group>
         builder.Property(g => g.Id).HasColumnName("id");
         builder.Property(g => g.SpaceId).HasColumnName("space_id");
         builder.Property(g => g.GroupTypeId).HasColumnName("group_type_id").IsRequired(false);
+        builder.Property(g => g.CreatedByUserId).HasColumnName("created_by_user_id").IsRequired(false);
         builder.Property(g => g.Name).HasColumnName("name").IsRequired();
         builder.Property(g => g.Description).HasColumnName("description");
         builder.Property(g => g.IsActive).HasColumnName("is_active");
+        builder.Property(g => g.SolverHorizonDays).HasColumnName("solver_horizon_days").HasDefaultValue(7);
         builder.Property(g => g.CreatedAt).HasColumnName("created_at");
         builder.Property(g => g.UpdatedAt).HasColumnName("updated_at");
         builder.HasIndex(g => new { g.SpaceId, g.Name }).IsUnique();
