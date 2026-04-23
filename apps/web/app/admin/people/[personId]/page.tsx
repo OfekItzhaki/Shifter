@@ -7,6 +7,7 @@ import {
   getPersonDetail, addRestriction, getSpaceRoles, assignRole, removeRole,
   PersonDetailDto, RoleDto,
 } from "@/lib/api/people";
+import { apiClient } from "@/lib/api/client";
 import {
   getAvailabilityWindows, addAvailabilityWindow,
   getPresenceWindows, addPresenceWindow,
@@ -54,6 +55,11 @@ export default function PersonDetailPage() {
   const [presenceEnd, setPresenceEnd] = useState("");
   const [presenceNote, setPresenceNote] = useState("");
   const [savingPresence, setSavingPresence] = useState(false);
+
+  // Qualifications
+  const [showQualForm, setShowQualForm] = useState(false);
+  const [newQual, setNewQual] = useState("");
+  const [savingQual, setSavingQual] = useState(false);
 
   async function reload() {
     if (!currentSpaceId || !personId) return;
@@ -141,6 +147,21 @@ export default function PersonDetailPage() {
     finally { setSavingPresence(false); }
   }
 
+  async function handleAddQualification(e: React.FormEvent) {
+    e.preventDefault();
+    if (!currentSpaceId || !personId || !newQual.trim()) return;
+    setSavingQual(true);
+    try {
+      await apiClient.post(`/spaces/${currentSpaceId}/people/${personId}/qualifications`, {
+        qualification: newQual.trim(), issuedAt: null, expiresAt: null,
+      });
+      await reload();
+      setNewQual(""); setShowQualForm(false);
+      setMessage("כישור נוסף בהצלחה");
+    } catch { setMessage("שגיאה בהוספת כישור"); }
+    finally { setSavingQual(false); }
+  }
+
   const assignedRoleIds = new Set(person?.roles?.map(r => r.roleId) ?? []);
   const availableRoles = allRoles.filter(r => !assignedRoleIds.has(r.id));
 
@@ -201,10 +222,24 @@ export default function PersonDetailPage() {
         </div>
 
         {/* Qualifications */}
-        <div className="bg-white border border-gray-200 rounded-xl p-4">
-          <h2 className="text-xs font-semibold text-gray-500 uppercase mb-2">Qualifications</h2>
+        <div className="bg-white border border-gray-200 rounded-xl p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xs font-semibold text-gray-500 uppercase">כישורים</h2>
+            <button onClick={() => setShowQualForm(!showQualForm)}
+              className="text-xs text-blue-600 hover:underline">+ הוסף</button>
+          </div>
+          {showQualForm && (
+            <form onSubmit={handleAddQualification} className="flex gap-2 border-t pt-3">
+              <input value={newQual} onChange={e => setNewQual(e.target.value)} required
+                placeholder="לדוגמה: חובש, נהג" className="flex-1 border rounded-lg px-3 py-1.5 text-sm" />
+              <button type="submit" disabled={savingQual}
+                className="bg-green-600 text-white text-xs px-3 py-1.5 rounded-lg hover:bg-green-700 disabled:opacity-50">
+                {savingQual ? "..." : "שמור"}
+              </button>
+            </form>
+          )}
           {person.qualifications.length === 0
-            ? <p className="text-xs text-gray-400">None</p>
+            ? <p className="text-xs text-gray-400">אין כישורים</p>
             : person.qualifications.map(q => (
               <span key={q} className="inline-block bg-green-50 text-green-700 text-xs px-2 py-0.5 rounded-full me-1 mb-1">{q}</span>
             ))}

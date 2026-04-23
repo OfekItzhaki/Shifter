@@ -77,13 +77,23 @@ export default function AdminSchedulePage() {
     setActionLoading(true);
     try {
       const { runId } = await triggerSolve(currentSpaceId);
-      setMessage({ text: `Solver triggered. Run ID: ${runId}`, type: "success" });
+      setMessage({ text: `סולבר הופעל. מזהה: ${runId}`, type: "success" });
       setTimeout(loadVersions, 3000);
     } catch {
-      setMessage({ text: "Failed to trigger solver.", type: "error" });
-    } finally {
-      setActionLoading(false);
-    }
+      setMessage({ text: "שגיאה בהפעלת הסולבר.", type: "error" });
+    } finally { setActionLoading(false); }
+  }
+
+  async function handleEmergencyTrigger() {
+    if (!currentSpaceId) return;
+    setActionLoading(true);
+    try {
+      const { runId } = await triggerSolve(currentSpaceId, "emergency");
+      setMessage({ text: `סולבר חירום הופעל. מזהה: ${runId}`, type: "success" });
+      setTimeout(loadVersions, 3000);
+    } catch {
+      setMessage({ text: "שגיאה בהפעלת סולבר חירום.", type: "error" });
+    } finally { setActionLoading(false); }
   }
 
   async function handlePublish() {

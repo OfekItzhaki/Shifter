@@ -64,9 +64,18 @@ public class PeopleController : ControllerBase
         return NoContent();
     }
 
+    [HttpPost("{personId:guid}/qualifications")]
+    public async Task<IActionResult> AddQualification(Guid spaceId, Guid personId,
+        [FromBody] AddQualificationRequest req, CancellationToken ct)
+    {
+        await _permissions.RequirePermissionAsync(CurrentUserId, spaceId, Permissions.PeopleManage, ct);
+        var id = await _mediator.Send(
+            new AddQualificationCommand(spaceId, personId, req.Qualification, req.IssuedAt, req.ExpiresAt), ct);
+        return Created("", new { id });
+    }
+
     [HttpPost("{personId:guid}/roles")]
-    public async Task<IActionResult> AssignRole(Guid spaceId, Guid personId,
-        [FromBody] AssignRoleRequest req, CancellationToken ct)
+    public async Task<IActionResult> AssignRole(Guid spaceId, Guid personId,        [FromBody] AssignRoleRequest req, CancellationToken ct)
     {
         await _permissions.RequirePermissionAsync(CurrentUserId, spaceId, Permissions.PeopleManage, ct);
         await _mediator.Send(new AssignRoleToPersonCommand(spaceId, personId, req.RoleId), ct);
@@ -108,6 +117,7 @@ public class PeopleController : ControllerBase
 public record CreatePersonRequest(string FullName, string? DisplayName, Guid? LinkedUserId);
 public record UpdatePersonRequest(string FullName, string? DisplayName, string? ProfileImageUrl);
 public record AssignRoleRequest(Guid RoleId);
+public record AddQualificationRequest(string Qualification, DateOnly? IssuedAt, DateOnly? ExpiresAt);
 public record AddRestrictionRequest(
     string RestrictionType, Guid? TaskTypeId,
     DateOnly EffectiveFrom, DateOnly? EffectiveUntil,
