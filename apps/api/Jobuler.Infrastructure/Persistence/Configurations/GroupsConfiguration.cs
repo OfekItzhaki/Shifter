@@ -69,6 +69,7 @@ public class PersonRoleAssignmentConfiguration : IEntityTypeConfiguration<Person
         builder.Property(r => r.PersonId).HasColumnName("person_id");
         builder.Property(r => r.RoleId).HasColumnName("role_id");
         builder.Property(r => r.AssignedAt).HasColumnName("assigned_at");
+        builder.Ignore(r => r.CreatedAt); // table uses assigned_at, no created_at column
         builder.HasIndex(r => new { r.PersonId, r.RoleId }).IsUnique();
     }
 }

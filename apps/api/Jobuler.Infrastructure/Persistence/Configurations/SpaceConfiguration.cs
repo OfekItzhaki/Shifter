@@ -32,6 +32,7 @@ public class SpaceMembershipConfiguration : IEntityTypeConfiguration<SpaceMember
         builder.Property(m => m.UserId).HasColumnName("user_id");
         builder.Property(m => m.JoinedAt).HasColumnName("joined_at");
         builder.Property(m => m.IsActive).HasColumnName("is_active");
+        builder.Ignore(m => m.CreatedAt); // table uses joined_at, no created_at column
         builder.HasIndex(m => new { m.SpaceId, m.UserId }).IsUnique();
     }
 }
@@ -49,6 +50,7 @@ public class SpacePermissionGrantConfiguration : IEntityTypeConfiguration<SpaceP
         builder.Property(g => g.GrantedByUserId).HasColumnName("granted_by_user_id");
         builder.Property(g => g.GrantedAt).HasColumnName("granted_at");
         builder.Property(g => g.RevokedAt).HasColumnName("revoked_at");
+        builder.Ignore(g => g.CreatedAt); // table uses granted_at, no created_at column
         builder.HasIndex(g => new { g.SpaceId, g.UserId, g.PermissionKey }).IsUnique();
     }
 }
@@ -84,5 +86,6 @@ public class OwnershipTransferHistoryConfiguration : IEntityTypeConfiguration<Ow
         builder.Property(o => o.TransferredByUserId).HasColumnName("transferred_by_user_id");
         builder.Property(o => o.Reason).HasColumnName("reason");
         builder.Property(o => o.TransferredAt).HasColumnName("transferred_at");
+        builder.Ignore(o => o.CreatedAt); // table uses transferred_at, no created_at column
     }
 }
