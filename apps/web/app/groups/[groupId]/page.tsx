@@ -14,13 +14,13 @@ import {
   GroupWithMemberCountDto, GroupMemberDto, DeletedGroupDto,
 } from "@/lib/api/groups";
 import { getAvatarColor, getAvatarLetter } from "@/lib/utils/groupAvatar";
-import { getTaskTypes, getTaskSlots, TaskTypeDto, TaskSlotDto } from "@/lib/api/tasks";
-import { getConstraints, ConstraintDto } from "@/lib/api/constraints";
+import { getTaskTypes, getTaskSlots, createTaskType, createTaskSlot, TaskTypeDto, TaskSlotDto } from "@/lib/api/tasks";
+import { getConstraints, createConstraint, ConstraintDto } from "@/lib/api/constraints";
 import { apiClient } from "@/lib/api/client";
 
-type ActiveTab = "schedule" | "members-readonly" | "members-edit" | "tasks" | "constraints" | "settings";
+type ActiveTab = "schedule" | "members" | "tasks" | "constraints" | "settings";
 
-const ADMIN_ONLY_TABS: ActiveTab[] = ["members-edit", "tasks", "constraints", "settings"];
+const ADMIN_ONLY_TABS: ActiveTab[] = ["tasks", "constraints", "settings"];
 
 interface ScheduleAssignment {
   personName: string;
@@ -110,6 +110,33 @@ export default function GroupDetailPage() {
   const [hasPendingTransfer, setHasPendingTransfer] = useState(false);
   const [cancelTransferSaving, setCancelTransferSaving] = useState(false);
 
+  // Task type create form state
+  const [showTaskTypeForm, setShowTaskTypeForm] = useState(false);
+  const [newTaskTypeName, setNewTaskTypeName] = useState("");
+  const [newTaskTypeBurden, setNewTaskTypeBurden] = useState("Neutral");
+  const [newTaskTypePriority, setNewTaskTypePriority] = useState(5);
+  const [newTaskTypeOverlap, setNewTaskTypeOverlap] = useState(false);
+  const [taskTypeSaving, setTaskTypeSaving] = useState(false);
+  const [taskTypeError, setTaskTypeError] = useState<string | null>(null);
+
+  // Task slot create form state
+  const [showSlotForm, setShowSlotForm] = useState(false);
+  const [newSlotTypeId, setNewSlotTypeId] = useState("");
+  const [newSlotStart, setNewSlotStart] = useState("");
+  const [newSlotEnd, setNewSlotEnd] = useState("");
+  const [newSlotHeadcount, setNewSlotHeadcount] = useState(1);
+  const [slotSaving, setSlotSaving] = useState(false);
+  const [slotError, setSlotError] = useState<string | null>(null);
+
+  // Constraint create form state
+  const [showConstraintForm, setShowConstraintForm] = useState(false);
+  const [newConstraintScope, setNewConstraintScope] = useState("group");
+  const [newConstraintSeverity, setNewConstraintSeverity] = useState("hard");
+  const [newConstraintRuleType, setNewConstraintRuleType] = useState("min_rest_hours");
+  const [newConstraintPayload, setNewConstraintPayload] = useState('{"hours": 8}');
+  const [constraintSaving, setConstraintSaving] = useState(false);
+  const [constraintError, setConstraintError] = useState<string | null>(null);
+
   // Fetch group on mount
   useEffect(() => {
     if (!currentSpaceId) { setLoading(false); return; }
@@ -141,7 +168,7 @@ export default function GroupDetailPage() {
 
   // Fetch members when members tab is active
   useEffect(() => {
-    if ((activeTab !== "members-readonly" && activeTab !== "members-edit") || !currentSpaceId) return;
+    if (activeTab !== "members" || !currentSpaceId) return;
     fetchMembers();
   }, [activeTab, currentSpaceId]);
 
@@ -282,14 +309,55 @@ export default function GroupDetailPage() {
     } finally { setCancelTransferSaving(false); }
   }
 
+  async function handleCreateTaskType(e: React.FormEvent) {
+    e.preventDefault();
+    if (!currentSpaceId || !newTaskTypeName.trim()) return;
+    setTaskTypeSaving(true); setTaskTypeError(null);
+    try {
+      await createTaskType(currentSpaceId, newTaskTypeName.trim(), null, newTaskTypeBurden, newTaskTypePriority, newTaskTypeOverlap);
+      const updated = await getTaskTypes(currentSpaceId);
+      setTaskTypes(updated);
+      setNewTaskTypeName(""); setShowTaskTypeForm(false);
+    } catch (err: any) {
+      setTaskTypeError(err?.response?.data?.message ?? "שגיאה");
+    } finally { setTaskTypeSaving(false); }
+  }
+
+  async function handleCreateSlot(e: React.FormEvent) {
+    e.preventDefault();
+    if (!currentSpaceId || !newSlotTypeId || !newSlotStart || !newSlotEnd) return;
+    setSlotSaving(true); setSlotError(null);
+    try {
+      await createTaskSlot(currentSpaceId, newSlotTypeId, new Date(newSlotStart).toISOString(), new Date(newSlotEnd).toISOString(), newSlotHeadcount, 5, null);
+      const updated = await getTaskSlots(currentSpaceId);
+      setTaskSlots(updated);
+      setNewSlotTypeId(""); setNewSlotStart(""); setNewSlotEnd(""); setNewSlotHeadcount(1); setShowSlotForm(false);
+    } catch (err: any) {
+      setSlotError(err?.response?.data?.message ?? "שגיאה");
+    } finally { setSlotSaving(false); }
+  }
+
+  async function handleCreateConstraint(e: React.FormEvent) {
+    e.preventDefault();
+    if (!currentSpaceId) return;
+    setConstraintSaving(true); setConstraintError(null);
+    try {
+      await createConstraint(currentSpaceId, newConstraintScope, null, newConstraintSeverity, newConstraintRuleType, newConstraintPayload, null, null);
+      const updated = await getConstraints(currentSpaceId);
+      setConstraints(updated);
+      setShowConstraintForm(false);
+    } catch (err: any) {
+      setConstraintError(err?.response?.data?.message ?? "שגיאה");
+    } finally { setConstraintSaving(false); }
+  }
+
   const isAdmin = adminGroupId === groupId;
 
   const baseTabs: { value: ActiveTab; label: string }[] = [
     { value: "schedule", label: "סידור" },
-    { value: "members-readonly", label: "חברים" },
+    { value: "members", label: "חברים" },
   ];
   const adminTabs: { value: ActiveTab; label: string }[] = [
-    { value: "members-edit", label: "חברים ✎" },
     { value: "tasks", label: "משימות" },
     { value: "constraints", label: "אילוצים" },
     { value: "settings", label: "הגדרות" },
@@ -300,10 +368,8 @@ export default function GroupDetailPage() {
     switch (activeTab) {
       case "schedule":
         return renderSchedulePanel();
-      case "members-readonly":
-        return renderMembersReadOnly();
-      case "members-edit":
-        return renderMembersEdit();
+      case "members":
+        return isAdmin ? renderMembersEdit() : renderMembersReadOnly();
       case "tasks":
         return renderTasksPanel();
       case "constraints":
@@ -463,19 +529,120 @@ export default function GroupDetailPage() {
         </div>
       );
     }
+
+    const inp = "border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500";
+
     return (
       <div className="space-y-4">
-        {/* Sub-tabs */}
-        <div className="flex gap-1 border-b border-slate-200">
-          {(["types", "slots"] as const).map(t => (
-            <button key={t} onClick={() => setTasksSubTab(t)}
-              className={`px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors ${
-                tasksSubTab === t ? "border-blue-500 text-blue-600" : "border-transparent text-slate-500 hover:text-slate-700"
-              }`}>
-              {t === "types" ? "סוגי משימות" : "חלונות זמן"}
+        {/* Sub-tabs + add button */}
+        <div className="flex items-center justify-between border-b border-slate-200">
+          <div className="flex gap-1">
+            {(["types", "slots"] as const).map(t => (
+              <button key={t} onClick={() => setTasksSubTab(t)}
+                className={`px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors ${
+                  tasksSubTab === t ? "border-blue-500 text-blue-600" : "border-transparent text-slate-500 hover:text-slate-700"
+                }`}>
+                {t === "types" ? "סוגי משימות" : "חלונות זמן"}
+              </button>
+            ))}
+          </div>
+          {isAdmin && tasksSubTab === "types" && (
+            <button onClick={() => { setShowTaskTypeForm(v => !v); setShowSlotForm(false); }}
+              className="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-3.5 py-2 rounded-xl mb-1 transition-colors">
+              <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+              </svg>
+              + סוג משימה
             </button>
-          ))}
+          )}
+          {isAdmin && tasksSubTab === "slots" && (
+            <button onClick={() => { setShowSlotForm(v => !v); setShowTaskTypeForm(false); }}
+              className="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-3.5 py-2 rounded-xl mb-1 transition-colors">
+              <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+              </svg>
+              + חלון זמן
+            </button>
+          )}
         </div>
+
+        {/* Task type create form */}
+        {isAdmin && tasksSubTab === "types" && showTaskTypeForm && (
+          <form onSubmit={handleCreateTaskType} className="bg-white border border-slate-200 rounded-2xl p-5 space-y-4 shadow-sm">
+            <h2 className="text-sm font-semibold text-slate-900">סוג משימה חדש</h2>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-medium text-slate-500 mb-1.5">שם *</label>
+                <input value={newTaskTypeName} onChange={e => setNewTaskTypeName(e.target.value)} required
+                  className={`w-full ${inp}`} placeholder="לדוגמה: עמדה 1" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-500 mb-1.5">עומס</label>
+                <select value={newTaskTypeBurden} onChange={e => setNewTaskTypeBurden(e.target.value)} className={`w-full ${inp}`}>
+                  {["Favorable", "Neutral", "Disliked", "Hated"].map(b => (
+                    <option key={b} value={b}>{burdenLabels[b] ?? b}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-500 mb-1.5">עדיפות (1–10)</label>
+                <input type="number" min={1} max={10} value={newTaskTypePriority}
+                  onChange={e => setNewTaskTypePriority(Number(e.target.value))} className={`w-full ${inp}`} />
+              </div>
+            </div>
+            <label className="flex items-center gap-2.5 text-sm text-slate-700 cursor-pointer">
+              <input type="checkbox" checked={newTaskTypeOverlap} onChange={e => setNewTaskTypeOverlap(e.target.checked)} className="w-4 h-4 rounded" />
+              מאפשר חפיפה
+            </label>
+            {taskTypeError && <p className="text-sm text-red-600">{taskTypeError}</p>}
+            <div className="flex gap-2">
+              <button type="submit" disabled={taskTypeSaving}
+                className="bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl disabled:opacity-50 transition-colors">
+                {taskTypeSaving ? "שומר..." : "שמור"}
+              </button>
+              <button type="button" onClick={() => setShowTaskTypeForm(false)}
+                className="text-sm text-slate-500 hover:text-slate-700 px-3">ביטול</button>
+            </div>
+          </form>
+        )}
+
+        {/* Task slot create form */}
+        {isAdmin && tasksSubTab === "slots" && showSlotForm && (
+          <form onSubmit={handleCreateSlot} className="bg-white border border-slate-200 rounded-2xl p-5 space-y-4 shadow-sm">
+            <h2 className="text-sm font-semibold text-slate-900">חלון זמן חדש</h2>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-medium text-slate-500 mb-1.5">סוג משימה *</label>
+                <select value={newSlotTypeId} onChange={e => setNewSlotTypeId(e.target.value)} required className={`w-full ${inp}`}>
+                  <option value="">בחר סוג...</option>
+                  {taskTypes.map(tt => <option key={tt.id} value={tt.id}>{tt.name}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-500 mb-1.5">כוח אדם נדרש</label>
+                <input type="number" min={1} value={newSlotHeadcount}
+                  onChange={e => setNewSlotHeadcount(Number(e.target.value))} className={`w-full ${inp}`} />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-500 mb-1.5">התחלה *</label>
+                <input type="datetime-local" value={newSlotStart} onChange={e => setNewSlotStart(e.target.value)} required className={`w-full ${inp}`} />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-500 mb-1.5">סיום *</label>
+                <input type="datetime-local" value={newSlotEnd} onChange={e => setNewSlotEnd(e.target.value)} required className={`w-full ${inp}`} />
+              </div>
+            </div>
+            {slotError && <p className="text-sm text-red-600">{slotError}</p>}
+            <div className="flex gap-2">
+              <button type="submit" disabled={slotSaving}
+                className="bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl disabled:opacity-50 transition-colors">
+                {slotSaving ? "שומר..." : "שמור"}
+              </button>
+              <button type="button" onClick={() => setShowSlotForm(false)}
+                className="text-sm text-slate-500 hover:text-slate-700 px-3">ביטול</button>
+            </div>
+          </form>
+        )}
 
         {tasksSubTab === "types" && (
           <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
@@ -554,42 +721,116 @@ export default function GroupDetailPage() {
         </div>
       );
     }
+
+    const inp = "border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500";
+
     return (
-      <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-slate-100 bg-slate-50/80">
-              <th className="px-4 py-3 text-start text-xs font-semibold text-slate-500 uppercase tracking-wider">סוג כלל</th>
-              <th className="px-4 py-3 text-start text-xs font-semibold text-slate-500 uppercase tracking-wider">היקף</th>
-              <th className="px-4 py-3 text-start text-xs font-semibold text-slate-500 uppercase tracking-wider">חומרה</th>
-              <th className="px-4 py-3 text-start text-xs font-semibold text-slate-500 uppercase tracking-wider">Payload</th>
-              <th className="px-4 py-3 text-start text-xs font-semibold text-slate-500 uppercase tracking-wider">פעיל</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
-            {constraints.map(c => (
-              <tr key={c.id} className="hover:bg-slate-50/60">
-                <td className="px-4 py-3.5 font-mono text-xs text-slate-700">{c.ruleType}</td>
-                <td className="px-4 py-3.5 text-slate-500">{c.scopeType}</td>
-                <td className="px-4 py-3.5">
-                  <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium border ${SEVERITY_STYLES[c.severity] ?? "bg-slate-100 text-slate-600 border-slate-200"}`}>
-                    <span className={`w-1.5 h-1.5 rounded-full ${SEVERITY_DOTS[c.severity] ?? "bg-slate-400"}`} />
-                    {c.severity}
-                  </span>
-                </td>
-                <td className="px-4 py-3.5 font-mono text-xs text-slate-500 max-w-xs truncate">{c.rulePayloadJson}</td>
-                <td className="px-4 py-3.5">
-                  <span className={`text-xs font-medium ${c.isActive ? "text-emerald-600" : "text-slate-400"}`}>
-                    {c.isActive ? "כן" : "לא"}
-                  </span>
-                </td>
+      <div className="space-y-4">
+        {isAdmin && (
+          <div className="flex justify-end">
+            <button onClick={() => setShowConstraintForm(v => !v)}
+              className="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-3.5 py-2 rounded-xl transition-colors">
+              <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+              </svg>
+              + אילוץ
+            </button>
+          </div>
+        )}
+
+        {isAdmin && showConstraintForm && (
+          <form onSubmit={handleCreateConstraint} className="bg-white border border-slate-200 rounded-2xl p-5 space-y-4 shadow-sm">
+            <h2 className="text-sm font-semibold text-slate-900">אילוץ חדש</h2>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-medium text-slate-500 mb-1.5">סוג היקף</label>
+                <select value={newConstraintScope} onChange={e => setNewConstraintScope(e.target.value)} className={`w-full ${inp}`}>
+                  {["space", "group", "person", "role", "task_type"].map(s => (
+                    <option key={s} value={s}>{s}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-500 mb-1.5">חומרה</label>
+                <select value={newConstraintSeverity} onChange={e => setNewConstraintSeverity(e.target.value)} className={`w-full ${inp}`}>
+                  <option value="hard">קשיח</option>
+                  <option value="soft">רך</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-500 mb-1.5">סוג כלל</label>
+                <select value={newConstraintRuleType} onChange={e => {
+                  setNewConstraintRuleType(e.target.value);
+                  const defaults: Record<string, string> = {
+                    min_rest_hours: '{"hours": 8}',
+                    max_kitchen_per_week: '{"max": 2, "task_type_name": "kitchen"}',
+                    no_consecutive_burden: '{"burden_level": "disliked"}',
+                    min_base_headcount: '{"min": 3, "window_hours": 24}',
+                    no_task_type_restriction: '{"task_type_id": ""}',
+                  };
+                  setNewConstraintPayload(defaults[e.target.value] ?? "{}");
+                }} className={`w-full ${inp}`}>
+                  <option value="min_rest_hours">min_rest_hours</option>
+                  <option value="max_kitchen_per_week">max_kitchen_per_week</option>
+                  <option value="no_consecutive_burden">no_consecutive_burden</option>
+                  <option value="min_base_headcount">min_base_headcount</option>
+                  <option value="no_task_type_restriction">no_task_type_restriction</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-500 mb-1.5">Payload (JSON)</label>
+                <input value={newConstraintPayload} onChange={e => setNewConstraintPayload(e.target.value)}
+                  className={`w-full font-mono text-xs ${inp}`} />
+              </div>
+            </div>
+            {constraintError && <p className="text-sm text-red-600">{constraintError}</p>}
+            <div className="flex gap-2">
+              <button type="submit" disabled={constraintSaving}
+                className="bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl disabled:opacity-50 transition-colors">
+                {constraintSaving ? "שומר..." : "שמור"}
+              </button>
+              <button type="button" onClick={() => setShowConstraintForm(false)}
+                className="text-sm text-slate-500 hover:text-slate-700 px-3">ביטול</button>
+            </div>
+          </form>
+        )}
+
+        <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-slate-100 bg-slate-50/80">
+                <th className="px-4 py-3 text-start text-xs font-semibold text-slate-500 uppercase tracking-wider">סוג כלל</th>
+                <th className="px-4 py-3 text-start text-xs font-semibold text-slate-500 uppercase tracking-wider">היקף</th>
+                <th className="px-4 py-3 text-start text-xs font-semibold text-slate-500 uppercase tracking-wider">חומרה</th>
+                <th className="px-4 py-3 text-start text-xs font-semibold text-slate-500 uppercase tracking-wider">Payload</th>
+                <th className="px-4 py-3 text-start text-xs font-semibold text-slate-500 uppercase tracking-wider">פעיל</th>
               </tr>
-            ))}
-            {constraints.length === 0 && (
-              <tr><td colSpan={5} className="px-4 py-12 text-center text-slate-400 text-sm">אין אילוצים</td></tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {constraints.map(c => (
+                <tr key={c.id} className="hover:bg-slate-50/60">
+                  <td className="px-4 py-3.5 font-mono text-xs text-slate-700">{c.ruleType}</td>
+                  <td className="px-4 py-3.5 text-slate-500">{c.scopeType}</td>
+                  <td className="px-4 py-3.5">
+                    <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium border ${SEVERITY_STYLES[c.severity] ?? "bg-slate-100 text-slate-600 border-slate-200"}`}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${SEVERITY_DOTS[c.severity] ?? "bg-slate-400"}`} />
+                      {c.severity}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3.5 font-mono text-xs text-slate-500 max-w-xs truncate">{c.rulePayloadJson}</td>
+                  <td className="px-4 py-3.5">
+                    <span className={`text-xs font-medium ${c.isActive ? "text-emerald-600" : "text-slate-400"}`}>
+                      {c.isActive ? "כן" : "לא"}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+              {constraints.length === 0 && (
+                <tr><td colSpan={5} className="px-4 py-12 text-center text-slate-400 text-sm">אין אילוצים</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     );
   }

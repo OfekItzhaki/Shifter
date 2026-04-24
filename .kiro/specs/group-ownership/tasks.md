@@ -242,7 +242,7 @@ Introduces a formal ownership model for groups: creator auto-membership, owner-o
     - **Validates: Requirements 8.2**
   - File: `apps/web/__tests__/transferDropdown.test.tsx`
 
-- [x] 20. Step documentation
+- [ ] 20. Step documentation
   - Create `docs/steps/029-group-ownership.md`
   - Include: title, phase, purpose, files created/modified, key decisions, how it connects, how to verify, what comes next, git commit command
   - _Requirements: all_
