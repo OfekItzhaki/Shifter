@@ -141,7 +141,7 @@ Three coordinated additions: (1) expose phone numbers in `GroupMemberDto`, (2) a
 
   - [x] 7.5 Write property test for delete buttons on own alerts only
     - **Property 11: Delete buttons appear only on own alerts**
-    - **Validates: Requirements 9.1, 9.2**
+    - **Validates: Requirements 9.1, 9.2**\\\
     - Use fast-check; generate random `GroupAlertDto[]` with mixed `createdByPersonId` values; assert delete buttons render only on alerts matching `currentPersonId`
 
 - [x] 8. Checkpoint — Group Alerts

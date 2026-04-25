@@ -4,8 +4,7 @@ using Jobuler.Domain.Identity;
 using Jobuler.Domain.Logs;
 using Jobuler.Domain.Notifications;
 using Jobuler.Domain.People;
-using Jobuler.Domain.Scheduling;
-using Jobuler.Domain.Spaces;
+using Jobuler.Domain.Scheduling;using Jobuler.Domain.Spaces;
 using Jobuler.Domain.Tasks;
 using Microsoft.EntityFrameworkCore;
 
@@ -39,6 +38,7 @@ public class AppDbContext : DbContext
     public DbSet<PresenceWindow> PresenceWindows => Set<PresenceWindow>();
     public DbSet<PersonRestriction> PersonRestrictions => Set<PersonRestriction>();
     public DbSet<SensitiveRestrictionReason> SensitiveRestrictionReasons => Set<SensitiveRestrictionReason>();
+    public DbSet<PendingInvitation> PendingInvitations => Set<PendingInvitation>();
 
     // Groups
     public DbSet<GroupType> GroupTypes => Set<GroupType>();

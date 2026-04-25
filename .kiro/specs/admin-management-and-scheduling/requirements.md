@@ -353,3 +353,77 @@ This feature extends the Jobuler scheduling app with two coordinated parts:
 8. WHEN the admin clicks the edit button, THE UI SHALL open an inline edit field or modal pre-populated with the message's current `Content`.
 9. WHEN the admin submits the edit, THE UI SHALL call `PUT /spaces/{spaceId}/groups/{groupId}/messages/{messageId}` and update the message content in the list on success.
 10. IF the update API call returns an error, THEN THE UI SHALL display the error message in Hebrew below the edit field.
+
+---
+
+### Requirement 19: Search People by Name or Phone
+
+**User Story:** As a space member, I want to search for people in the space by name or phone number, so that I can quickly find someone without scrolling through the full list.
+
+#### Acceptance Criteria
+
+1. THE System SHALL expose a `GET /spaces/{spaceId}/people/search?q={query}` endpoint requiring `[Authorize]` and the `space.view` permission.
+2. WHEN a valid search request is received, THE System SHALL return all `Person` records in the space where `FullName`, `DisplayName`, or `PhoneNumber` contains the query string (case-insensitive), ordered by `FullName` ascending.
+3. THE System SHALL return at most 20 results per query.
+4. IF `q` is empty or fewer than 2 characters, THE System SHALL return HTTP 400.
+5. THE System SHALL include the following fields in each result: `id`, `fullName`, `displayName`, `phoneNumber`, `linkedUserId`.
+6. THE UI SHALL display a search box above the members list in the "חברים" tab.
+7. THE UI SHALL display a search box above the schedule in the "סידור" tab to search for a person's assignments.
+8. WHEN the user types in the search box, THE UI SHALL filter the displayed list in real time (client-side for members already loaded; server-side for the people search endpoint).
+
+---
+
+### Requirement 20: Name-First Person Creation (Pending Invitation)
+
+**User Story:** As a space admin, I want to add a person to the space by name only, so that I can build the roster before everyone has registered, and then invite them later.
+
+#### Acceptance Criteria
+
+1. THE System SHALL expose a `POST /spaces/{spaceId}/people` endpoint that accepts `{ fullName, displayName? }` without requiring a `linkedUserId`, requiring `[Authorize]` and the `people.manage` permission.
+2. WHEN a valid create request is received with no `linkedUserId`, THE System SHALL insert a `Person` record with `InvitationStatus = "pending"` and return HTTP 201 with the new person's `id`.
+3. THE System SHALL validate that `fullName` is between 1 and 100 non-blank characters; IF invalid, THEN THE System SHALL return HTTP 400.
+4. THE System SHALL validate that no active `Person` with the same `fullName` (case-insensitive) already exists in the space; IF duplicate, THEN THE System SHALL return HTTP 409.
+5. THE System SHALL expose a `POST /spaces/{spaceId}/people/{personId}/invite` endpoint requiring `[Authorize]` and the `people.manage` permission, accepting `{ contact, channel }` where `contact` is an email or phone number and `channel` is `"email"` or `"whatsapp"`.
+6. WHEN a valid invite request is received, THE System SHALL store the contact on the `Person` record, create a `PendingInvitation` record with a secure token, and dispatch the invitation via `IInvitationSender`.
+7. THE System SHALL validate that `contact` is a valid email address when `channel = "email"`, or a valid phone number when `channel = "whatsapp"`; IF invalid, THEN THE System SHALL return HTTP 400.
+8. THE System SHALL expose a `POST /invitations/accept?token={token}` endpoint (no auth required) that links the `Person` to the authenticated or newly-registered `User` and sets `InvitationStatus = "accepted"`.
+9. IF the token is expired (older than 7 days) or already used, THE System SHALL return HTTP 400.
+10. WHEN a person is created without a `linkedUserId`, THE UI SHALL display them in the members list with a "ממתין לאישור" (Pending) badge.
+11. WHEN `adminGroupId` equals `groupId`, THE UI SHALL display an "הזמן" (Invite) button next to each pending member.
+12. WHEN the admin clicks "הזמן", THE UI SHALL open a form with a contact input (email or phone) and a channel selector (אימייל / WhatsApp).
+13. WHEN the admin submits the invite form, THE UI SHALL call `POST /spaces/{spaceId}/people/{personId}/invite` and show a success message on completion.
+
+---
+
+### Requirement 21: Invitation Delivery Infrastructure
+
+**User Story:** As a developer, I want a clean abstraction for sending invitations via email and WhatsApp, so that I can swap providers without changing business logic.
+
+#### Acceptance Criteria
+
+1. THE System SHALL define an `IInvitationSender` interface in the Application layer with a `SendInvitationAsync(string contact, string channel, string inviteUrl, string personName, CancellationToken ct)` method.
+2. THE System SHALL implement a `NoOpInvitationSender` in Infrastructure that logs the invitation URL to the console (for local development).
+3. THE System SHALL implement an `EmailInvitationSender` in Infrastructure that sends an HTML invitation email via `IEmailSender`.
+4. THE System SHALL implement a `WhatsAppInvitationSender` in Infrastructure that sends an invitation message via `INotificationSender` (reusing the existing WhatsApp abstraction).
+5. THE System SHALL select the correct sender implementation based on the `channel` field: `"email"` → `EmailInvitationSender`, `"whatsapp"` → `WhatsAppInvitationSender`.
+6. THE System SHALL NOT implement SMS as a channel — WhatsApp is the preferred mobile channel for this application.
+7. THE System SHALL store the invitation token hashed (SHA-256) in the `pending_invitations` table; the raw token is only sent to the recipient and never stored in plaintext.
+8. THE System SHALL introduce migration 015 to add the `pending_invitations` table and the `invitation_status` column to the `people` table.
+
+---
+
+### Requirement 22: Wire Up In-App Notifications
+
+**User Story:** As a user, I want to receive in-app notifications when important events happen (added to a group, schedule published, ownership transfer), so that I stay informed without checking every tab.
+
+#### Acceptance Criteria
+
+1. WHEN a user is added to a group (via `AddPersonByEmailCommand` or `AddPersonByPhoneCommand`), THE System SHALL create a `Notification` for that user with `EventType = "group.member_added"`.
+2. WHEN a schedule version is published (via `PublishVersionCommand`), THE System SHALL create a `Notification` for every active member of the space with `EventType = "schedule.published"`.
+3. WHEN an ownership transfer is confirmed (via `ConfirmOwnershipTransferCommand`), THE System SHALL create a `Notification` for the new owner with `EventType = "group.ownership_transferred"`.
+4. THE System SHALL create notifications in the Application layer handlers, not in controllers.
+5. THE UI SHALL display the notification bell in the sidebar as a compact icon (not in the topbar), showing an unread count badge when there are unread notifications.
+6. THE UI SHALL show a dropdown panel when the bell is clicked, listing the 10 most recent notifications with title, body, and relative time.
+7. THE UI SHALL poll for new notifications every 30 seconds while the user is logged in.
+8. WHEN the user clicks a notification, THE UI SHALL mark it as read and navigate to the relevant page if a link is available in `MetadataJson`.
+9. THE UI SHALL display a "סמן הכל כנקרא" (Mark all as read) button in the notification dropdown.

@@ -1,3 +1,4 @@
+using Jobuler.Domain.Notifications;
 using Jobuler.Infrastructure.Persistence;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -32,6 +33,21 @@ public class ConfirmOwnershipTransferCommandHandler : IRequestHandler<ConfirmOwn
         currentOwnerMembership.SetOwner(false);
         newOwnerMembership.SetOwner(true);
         _db.PendingOwnershipTransfers.Remove(transfer);
+
+        // Notify the new owner
+        var newOwnerPerson = await _db.People.AsNoTracking()
+            .FirstOrDefaultAsync(p => p.Id == transfer.ProposedOwnerPersonId, ct);
+        if (newOwnerPerson?.LinkedUserId is not null)
+        {
+            var group = await _db.Groups.AsNoTracking()
+                .FirstOrDefaultAsync(g => g.Id == transfer.GroupId, ct);
+            _db.Notifications.Add(Notification.Create(
+                transfer.SpaceId, newOwnerPerson.LinkedUserId.Value,
+                "group.ownership_transferred",
+                "הבעלות על הקבוצה הועברה אליך",
+                $"אתה כעת הבעלים של הקבוצה \"{group?.Name ?? "הקבוצה"}\".",
+                System.Text.Json.JsonSerializer.Serialize(new { groupId = transfer.GroupId })));
+        }
 
         await _db.SaveChangesAsync(ct);
     }

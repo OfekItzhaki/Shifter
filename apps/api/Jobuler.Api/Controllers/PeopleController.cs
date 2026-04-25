@@ -7,7 +7,6 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
-
 namespace Jobuler.Api.Controllers;
 
 [ApiController]
@@ -26,6 +25,16 @@ public class PeopleController : ControllerBase
 
     private Guid CurrentUserId =>
         Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+
+    [HttpGet("search")]
+    public async Task<IActionResult> Search(Guid spaceId, [FromQuery] string q, CancellationToken ct)
+    {
+        await _permissions.RequirePermissionAsync(CurrentUserId, spaceId, Permissions.SpaceView, ct);
+        if (string.IsNullOrWhiteSpace(q) || q.Trim().Length < 2)
+            return BadRequest(new { message = "Search query must be at least 2 characters." });
+        var result = await _mediator.Send(new SearchPeopleQuery(spaceId, q), ct);
+        return Ok(result);
+    }
 
     [HttpGet]
     public async Task<IActionResult> List(Guid spaceId, CancellationToken ct)
@@ -112,12 +121,41 @@ public class PeopleController : ControllerBase
 
         return CreatedAtAction(nameof(Get), new { spaceId, personId }, new { id });
     }
+    [HttpPost("{personId:guid}/invite")]
+    public async Task<IActionResult> Invite(Guid spaceId, Guid personId,
+        [FromBody] InvitePersonRequest req, CancellationToken ct)
+    {
+        await _permissions.RequirePermissionAsync(CurrentUserId, spaceId, Permissions.PeopleManage, ct);
+        await _mediator.Send(new InvitePersonCommand(spaceId, personId, req.Contact, req.Channel, CurrentUserId), ct);
+        return NoContent();
+    }
+}
+
+// Accept invitation — no auth required (user may not be logged in yet)
+[ApiController]
+[Route("invitations")]
+public class InvitationsController : ControllerBase
+{
+    private readonly IMediator _mediator;
+    public InvitationsController(IMediator mediator) => _mediator = mediator;
+
+    private Guid CurrentUserId =>
+        Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+
+    [HttpPost("accept")]
+    [Microsoft.AspNetCore.Authorization.Authorize]
+    public async Task<IActionResult> Accept([FromQuery] string token, CancellationToken ct)
+    {
+        var result = await _mediator.Send(new AcceptInvitationCommand(token, CurrentUserId), ct);
+        return Ok(new { personId = result.PersonId, spaceId = result.SpaceId });
+    }
 }
 
 public record CreatePersonRequest(string FullName, string? DisplayName, Guid? LinkedUserId);
 public record UpdatePersonRequest(string FullName, string? DisplayName, string? ProfileImageUrl);
 public record AssignRoleRequest(Guid RoleId);
 public record AddQualificationRequest(string Qualification, DateOnly? IssuedAt, DateOnly? ExpiresAt);
+public record InvitePersonRequest(string Contact, string Channel);
 public record AddRestrictionRequest(
     string RestrictionType, Guid? TaskTypeId,
     DateOnly EffectiveFrom, DateOnly? EffectiveUntil,

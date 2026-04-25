@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useTranslations } from "next-intl";
 import { useAuthStore } from "@/lib/store/authStore";
 import { useSpaceStore } from "@/lib/store/spaceStore";
@@ -44,7 +44,129 @@ function NavItem({ href, label, icon, admin }: { href: string; label: string; ic
   );
 }
 
-export default function AppShell({ children }: AppShellProps) {
+function SidebarNotificationBell() {
+  const { currentSpaceId } = useSpaceStore();
+  const [notifications, setNotifications] = useState<import("@/lib/api/notifications").NotificationDto[]>([]);
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  async function load() {
+    if (!currentSpaceId) return;
+    try {
+      const { getNotifications } = await import("@/lib/api/notifications");
+      const data = await getNotifications(currentSpaceId);
+      setNotifications(data);
+    } catch { /* silent */ }
+  }
+
+  useEffect(() => {
+    load();
+    const interval = setInterval(load, 30_000);
+    return () => clearInterval(interval);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentSpaceId]);
+
+  useEffect(() => {
+    function handler(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const unread = notifications.filter(n => !n.isRead).length;
+
+  async function markAll() {
+    if (!currentSpaceId) return;
+    const { dismissAllNotifications } = await import("@/lib/api/notifications");
+    await dismissAllNotifications(currentSpaceId);
+    setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+  }
+
+  async function markOne(id: string) {
+    if (!currentSpaceId) return;
+    const { dismissNotification } = await import("@/lib/api/notifications");
+    await dismissNotification(currentSpaceId, id);
+    setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
+  }
+
+  return (
+    <div ref={ref} style={{ position: "relative" }}>
+      <button
+        onClick={() => setOpen(!open)}
+        style={{
+          display: "flex", alignItems: "center", gap: 10,
+          padding: "9px 12px", borderRadius: 8, width: "100%",
+          background: "transparent", border: "none", cursor: "pointer",
+          color: "#94a3b8", fontSize: 14, fontWeight: 500,
+          position: "relative",
+        }}
+      >
+        <span style={{ flexShrink: 0, display: "flex", position: "relative" }}>
+          <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+            <path strokeLinecap="round" strokeLinejoin="round"
+              d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 10-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+          </svg>
+          {unread > 0 && (
+            <span style={{
+              position: "absolute", top: -4, right: -4,
+              width: 14, height: 14, borderRadius: "50%",
+              background: "#ef4444", color: "white",
+              fontSize: 9, fontWeight: 700,
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}>
+              {unread > 9 ? "9+" : unread}
+            </span>
+          )}
+        </span>
+        <span>התראות</span>
+      </button>
+
+      {open && (
+        <div style={{
+          position: "absolute", left: "100%", top: 0, marginLeft: 8,
+          width: 300, background: "white", border: "1px solid #e2e8f0",
+          borderRadius: 12, boxShadow: "0 10px 40px rgba(0,0,0,0.15)",
+          zIndex: 100, overflow: "hidden",
+        }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px", borderBottom: "1px solid #f1f5f9" }}>
+            <span style={{ fontSize: 13, fontWeight: 600, color: "#0f172a" }}>התראות</span>
+            {unread > 0 && (
+              <button onClick={markAll} style={{ fontSize: 11, color: "#3b82f6", background: "none", border: "none", cursor: "pointer" }}>
+                סמן הכל כנקרא
+              </button>
+            )}
+          </div>
+          <div style={{ maxHeight: 320, overflowY: "auto" }}>
+            {notifications.length === 0 ? (
+              <p style={{ fontSize: 12, color: "#94a3b8", textAlign: "center", padding: "24px 16px" }}>אין התראות</p>
+            ) : notifications.slice(0, 10).map(n => (
+              <div key={n.id} style={{
+                padding: "10px 16px", borderBottom: "1px solid #f8fafc",
+                background: n.isRead ? "transparent" : "#eff6ff",
+                display: "flex", gap: 10, alignItems: "flex-start",
+              }}>
+                <span style={{ fontSize: 14, marginTop: 1 }}>
+                  {n.eventType.includes("schedule") ? "📅" : n.eventType.includes("group") ? "👥" : "🔔"}
+                </span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{ fontSize: 12, fontWeight: 600, color: "#1e293b", margin: 0 }}>{n.title}</p>
+                  <p style={{ fontSize: 11, color: "#64748b", margin: "2px 0 0", lineHeight: 1.4 }}>{n.body}</p>
+                  <p style={{ fontSize: 10, color: "#94a3b8", margin: "3px 0 0" }}>
+                    {new Date(n.createdAt).toLocaleString("he-IL", { dateStyle: "short", timeStyle: "short" })}
+                  </p>
+                </div>
+                {!n.isRead && (
+                  <button onClick={() => markOne(n.id)} style={{ color: "#cbd5e1", background: "none", border: "none", cursor: "pointer", fontSize: 14, padding: 0 }}>×</button>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}export default function AppShell({ children }: AppShellProps) {
   const t = useTranslations();
   const { displayName, adminGroupId, logout } = useAuthStore();
   const { currentSpaceId, currentSpaceName, setCurrentSpace } = useSpaceStore();
@@ -90,6 +212,8 @@ export default function AppShell({ children }: AppShellProps) {
         <nav style={S.nav}>
           <NavItem href="/schedule/my-missions" label="המשימות שלי" icon={ic("M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01")} />
           <NavItem href="/groups" label="הקבוצות שלי" icon={ic("M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z")} />
+          {/* Notification bell — compact, inline with nav */}
+          <SidebarNotificationBell />
         </nav>
 
         <div style={S.bottom}>
@@ -122,7 +246,6 @@ export default function AppShell({ children }: AppShellProps) {
         <header style={S.topbar(adminGroupId !== null)}>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }} />
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <NotificationBell />
           </div>
         </header>
         <main style={S.content}>{children}</main>

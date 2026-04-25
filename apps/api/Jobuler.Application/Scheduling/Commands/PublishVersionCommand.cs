@@ -1,4 +1,5 @@
 using Jobuler.Application.Common;
+using Jobuler.Domain.Notifications;
 using Jobuler.Domain.Scheduling;
 using Jobuler.Infrastructure.Persistence;
 using MediatR;
@@ -38,6 +39,23 @@ public class PublishVersionCommandHandler : IRequestHandler<PublishVersionComman
 
         // Publish enforces draft-only rule inside the domain entity
         version.Publish(req.RequestingUserId);
+        await _db.SaveChangesAsync(ct);
+
+        // Notify all active space members that the schedule was published
+        var memberUserIds = await _db.SpaceMemberships.AsNoTracking()
+            .Where(m => m.SpaceId == req.SpaceId)
+            .Select(m => m.UserId)
+            .ToListAsync(ct);
+
+        foreach (var userId in memberUserIds)
+        {
+            _db.Notifications.Add(Notification.Create(
+                req.SpaceId, userId,
+                "schedule.published",
+                "סידור חדש פורסם",
+                $"סידור גרסה {version.VersionNumber} פורסם ומוכן לצפייה.",
+                System.Text.Json.JsonSerializer.Serialize(new { versionId = req.VersionId })));
+        }
         await _db.SaveChangesAsync(ct);
 
         // Audit log — required by security rules

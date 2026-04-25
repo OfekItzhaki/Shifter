@@ -10,8 +10,7 @@ using Jobuler.Application.Common;
 using Jobuler.Application.Scheduling;
 using Jobuler.Infrastructure.AI;
 using Jobuler.Infrastructure.Auth;
-using Jobuler.Infrastructure.Email;
-using Jobuler.Application.Auth;
+using Jobuler.Infrastructure.Email;using Jobuler.Application.Auth;
 using Jobuler.Infrastructure.Logging;
 using Jobuler.Infrastructure.Persistence;
 using Jobuler.Infrastructure.Scheduling;
@@ -83,6 +82,12 @@ builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IPdfRenderer, QuestPdfRenderer>();
 builder.Services.AddScoped<IEmailSender, NoOpEmailSender>();
 builder.Services.AddScoped<INotificationSender, NoOpNotificationSender>();
+
+// ─── Invitation senders ───────────────────────────────────────────────────────
+builder.Services.AddScoped<NoOpInvitationSender>();
+builder.Services.AddScoped<EmailInvitationSender>();
+builder.Services.AddScoped<WhatsAppInvitationSender>();
+builder.Services.AddScoped<IInvitationSender, CompositeInvitationSender>();
 
 // ─── Redis ───────────────────────────────────────────────────────────────────
 var redisConn = builder.Configuration["Redis:ConnectionString"] ?? "localhost:6379";

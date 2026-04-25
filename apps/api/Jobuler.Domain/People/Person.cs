@@ -11,10 +11,11 @@ public class Person : AuditableEntity, ITenantScoped
     public string? ProfileImageUrl { get; private set; }
     public bool IsActive { get; private set; } = true;
     public string? PhoneNumber { get; private set; }
+    public string? InvitationStatus { get; private set; } = "accepted"; // "pending" | "accepted"
 
     private Person() { }
 
-    public static Person Create(Guid spaceId, string fullName, string? displayName = null, Guid? linkedUserId = null, string? phoneNumber = null)
+    public static Person Create(Guid spaceId, string fullName, string? displayName = null, Guid? linkedUserId = null, string? phoneNumber = null, string invitationStatus = "accepted")
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(fullName);
         return new Person
@@ -23,9 +24,14 @@ public class Person : AuditableEntity, ITenantScoped
             FullName = fullName.Trim(),
             DisplayName = displayName?.Trim(),
             LinkedUserId = linkedUserId,
-            PhoneNumber = phoneNumber?.Trim()
+            PhoneNumber = phoneNumber?.Trim(),
+            InvitationStatus = invitationStatus
         };
     }
+
+    public void SetInvitationStatus(string status) { InvitationStatus = status; Touch(); }
+    public void LinkUser(Guid userId) { LinkedUserId = userId; InvitationStatus = "accepted"; Touch(); }
+    public void SetPhoneNumber(string phone) { PhoneNumber = phone?.Trim(); Touch(); }
 
     public void Update(string fullName, string? displayName, string? profileImageUrl)
     {

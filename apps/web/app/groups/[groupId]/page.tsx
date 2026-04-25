@@ -19,6 +19,7 @@ import { getSeverityBadge } from "@/lib/utils/alertSeverity";
 import { getAvatarColor, getAvatarLetter } from "@/lib/utils/groupAvatar";
 import { listGroupTasks, createGroupTask, updateGroupTask, deleteGroupTask, GroupTaskDto } from "@/lib/api/tasks";
 import { getConstraints, createConstraint, updateConstraint, deleteConstraint, ConstraintDto } from "@/lib/api/constraints";
+import { searchPeople, createPerson, invitePerson, PersonSearchResultDto } from "@/lib/api/people";
 import { apiClient } from "@/lib/api/client";
 
 type ActiveTab = "schedule" | "members" | "alerts" | "messages" | "tasks" | "constraints" | "settings";
@@ -84,6 +85,25 @@ export default function GroupDetailPage() {
   const [membersLoading, setMembersLoading] = useState(false);
   const [addEmail, setAddEmail] = useState("");
   const [addError, setAddError] = useState<string | null>(null);
+  // Members search + name-first creation
+  const [membersSearch, setMembersSearch] = useState("");
+  const [showCreatePersonForm, setShowCreatePersonForm] = useState(false);
+  const [newPersonName, setNewPersonName] = useState("");
+  const [newPersonDisplayName, setNewPersonDisplayName] = useState("");
+  const [createPersonSaving, setCreatePersonSaving] = useState(false);
+  const [createPersonError, setCreatePersonError] = useState<string | null>(null);
+  const [invitingPersonId, setInvitingPersonId] = useState<string | null>(null);
+  const [inviteContact, setInviteContact] = useState("");
+  const [inviteChannel, setInviteChannel] = useState<"email" | "whatsapp">("whatsapp");
+  const [inviteSaving, setInviteSaving] = useState(false);
+  const [inviteError, setInviteError] = useState<string | null>(null);
+  const [inviteSuccess, setInviteSuccess] = useState<string | null>(null);
+  // People search (global)
+  const [peopleSearchQuery, setPeopleSearchQuery] = useState("");
+  const [peopleSearchResults, setPeopleSearchResults] = useState<PersonSearchResultDto[]>([]);
+  const [peopleSearchLoading, setPeopleSearchLoading] = useState(false);
+  // Schedule person filter
+  const [schedulePersonFilter, setSchedulePersonFilter] = useState("");
   const [settingsError, setSettingsError] = useState<string | null>(null);
   const [settingsSaved, setSettingsSaved] = useState(false);
   const [solverHorizon, setSolverHorizon] = useState(14);
@@ -573,6 +593,50 @@ export default function GroupDetailPage() {
     }
   }
 
+  async function handleCreatePerson(e: React.FormEvent) {
+    e.preventDefault();
+    if (!currentSpaceId || !newPersonName.trim()) return;
+    setCreatePersonSaving(true); setCreatePersonError(null);
+    try {
+      const result = await createPerson(currentSpaceId, newPersonName.trim(), newPersonDisplayName.trim() || undefined);
+      // Add to group
+      await apiClient.post(`/spaces/${currentSpaceId}/groups/${groupId}/members/by-email`, { email: "" }).catch(() => {});
+      // Actually add by personId directly — use the people endpoint
+      await apiClient.post(`/spaces/${currentSpaceId}/groups/${groupId}/members`, { personId: result.id }).catch(async () => {
+        // Fallback: just refresh members
+      });
+      setNewPersonName(""); setNewPersonDisplayName(""); setShowCreatePersonForm(false);
+      await fetchMembers();
+    } catch (err: any) {
+      setCreatePersonError(err?.response?.data?.message ?? "שגיאה ביצירת האדם");
+    } finally { setCreatePersonSaving(false); }
+  }
+
+  async function handleInvitePerson(e: React.FormEvent) {
+    e.preventDefault();
+    if (!currentSpaceId || !invitingPersonId || !inviteContact.trim()) return;
+    setInviteSaving(true); setInviteError(null); setInviteSuccess(null);
+    try {
+      await invitePerson(currentSpaceId, invitingPersonId, inviteContact.trim(), inviteChannel);
+      setInviteSuccess("ההזמנה נשלחה בהצלחה!");
+      setInviteContact("");
+      setTimeout(() => { setInvitingPersonId(null); setInviteSuccess(null); }, 2000);
+    } catch (err: any) {
+      setInviteError(err?.response?.data?.message ?? "שגיאה בשליחת ההזמנה");
+    } finally { setInviteSaving(false); }
+  }
+
+  async function handlePeopleSearch(q: string) {
+    setPeopleSearchQuery(q);
+    if (!currentSpaceId || q.trim().length < 2) { setPeopleSearchResults([]); return; }
+    setPeopleSearchLoading(true);
+    try {
+      const results = await searchPeople(currentSpaceId, q);
+      setPeopleSearchResults(results);
+    } catch { setPeopleSearchResults([]); }
+    finally { setPeopleSearchLoading(false); }
+  }
+
   async function handleSaveSettings() {
     if (!currentSpaceId) return;
     setSavingSettings(true);
@@ -751,19 +815,22 @@ export default function GroupDetailPage() {
       return d.toLocaleDateString("he-IL", { weekday: "short", day: "numeric", month: "short" });
     };
 
-    const dayAssignments = (scheduleData ?? []).filter(a => a.startsAt?.startsWith(scheduleDate));
+    const dayAssignments = (scheduleData ?? [])
+      .filter(a => a.startsAt?.startsWith(scheduleDate))
+      .filter(a => !schedulePersonFilter || a.personName.toLowerCase().includes(schedulePersonFilter.toLowerCase()));
 
     const weekDates = getWeekDates();
     const weekAssignments = weekDates.reduce<Record<string, ScheduleAssignment[]>>((acc, d) => {
-      acc[d] = (scheduleData ?? []).filter(a => a.startsAt?.startsWith(d));
+      acc[d] = (scheduleData ?? [])
+        .filter(a => a.startsAt?.startsWith(d))
+        .filter(a => !schedulePersonFilter || a.personName.toLowerCase().includes(schedulePersonFilter.toLowerCase()));
       return acc;
     }, {});
 
     return (
       <div className="space-y-4">
         {/* Draft version banner */}
-        {draftVersion && (
-          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4">
+        {draftVersion && (          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4">
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-2">
                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-300">
@@ -816,6 +883,20 @@ export default function GroupDetailPage() {
             )}
           </div>
         )}
+
+        {/* Person filter search */}
+        <div className="relative max-w-xs">
+          <input
+            type="text"
+            value={schedulePersonFilter}
+            onChange={e => setSchedulePersonFilter(e.target.value)}
+            placeholder="סנן לפי שם..."
+            className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 pr-9"
+          />
+          <svg className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+        </div>
 
         {/* Date navigation */}
         <div className="flex items-center justify-between">
@@ -953,6 +1034,12 @@ export default function GroupDetailPage() {
   }
 
   function renderMembersReadOnly() {
+    const filteredReadOnly = membersSearch.trim()
+      ? members.filter(m =>
+          (m.displayName ?? m.fullName).toLowerCase().includes(membersSearch.toLowerCase()) ||
+          (m.phoneNumber ?? "").includes(membersSearch))
+      : members;
+
     if (membersLoading) {
       return (
         <div className="flex items-center gap-3 text-slate-400 text-sm py-8">
@@ -967,26 +1054,64 @@ export default function GroupDetailPage() {
     if (membersError) return <p className="text-sm text-red-600 py-4">{membersError}</p>;
     if (members.length === 0) return <p className="text-sm text-slate-400 py-8 text-center">אין חברים בקבוצה זו</p>;
     return (
-      <div className="space-y-2">
-        {members.map(m => (
-          <div key={m.personId} className="flex items-center gap-3 bg-white border border-slate-200 rounded-xl px-4 py-3">
-            <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 text-sm font-semibold">
-              {(m.displayName ?? m.fullName).charAt(0)}
+      <div className="space-y-3">
+        {/* Search box */}
+        <div className="relative max-w-sm">
+          <input
+            type="text"
+            value={membersSearch}
+            onChange={e => setMembersSearch(e.target.value)}
+            placeholder="חפש לפי שם או טלפון..."
+            className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 pr-9"
+          />
+          <svg className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+        </div>
+        <div className="space-y-2">
+          {filteredReadOnly.length === 0 ? (
+            <p className="text-sm text-slate-400 py-4 text-center">לא נמצאו חברים</p>
+          ) : filteredReadOnly.map(m => (
+            <div key={m.personId} className="flex items-center gap-3 bg-white border border-slate-200 rounded-xl px-4 py-3">
+              <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 text-sm font-semibold">
+                {(m.displayName ?? m.fullName).charAt(0)}
+              </div>
+              <span className="text-sm font-medium text-slate-900">{m.displayName ?? m.fullName}</span>
+              {m.phoneNumber && (
+                <span className="text-xs text-slate-400 mr-2">{m.phoneNumber}</span>
+              )}
             </div>
-            <span className="text-sm font-medium text-slate-900">{m.displayName ?? m.fullName}</span>
-            {m.phoneNumber && (
-              <span className="text-xs text-slate-400 mr-2">{m.phoneNumber}</span>
-            )}
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     );
   }
 
   function renderMembersEdit() {
+    const inp = "border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500";
+    const filteredMembers = membersSearch.trim()
+      ? members.filter(m =>
+          (m.displayName ?? m.fullName).toLowerCase().includes(membersSearch.toLowerCase()) ||
+          (m.phoneNumber ?? "").includes(membersSearch))
+      : members;
+
     return (
       <div className="space-y-4">
-        {/* Add member form */}
+        {/* Search box */}
+        <div className="relative max-w-sm">
+          <input
+            type="text"
+            value={membersSearch}
+            onChange={e => setMembersSearch(e.target.value)}
+            placeholder="חפש לפי שם או טלפון..."
+            className={`w-full ${inp} pr-9`}
+          />
+          <svg className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+        </div>
+
+        {/* Add member by email/phone */}
         <form onSubmit={handleAddMember} className="flex gap-2 max-w-sm">
           <div className="flex-1">
             <input
@@ -994,7 +1119,7 @@ export default function GroupDetailPage() {
               value={addEmail}
               onChange={e => setAddEmail(e.target.value)}
               placeholder="הוסף לפי אימייל או מספר טלפון"
-              className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className={`w-full ${inp}`}
             />
             <p className="text-xs text-slate-400 mt-1">ניתן להזין אימייל או מספר טלפון</p>
           </div>
@@ -1005,6 +1130,44 @@ export default function GroupDetailPage() {
         </form>
         {addError && <p className="text-sm text-red-600">{addError}</p>}
 
+        {/* Add by name only (pending invitation) */}
+        <div>
+          <button
+            onClick={() => setShowCreatePersonForm(v => !v)}
+            className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1.5"
+          >
+            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+            </svg>
+            הוסף לפי שם בלבד (הזמנה מאוחרת)
+          </button>
+          {showCreatePersonForm && (
+            <form onSubmit={handleCreatePerson} className="mt-3 bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-3 max-w-sm">
+              <h3 className="text-xs font-semibold text-slate-700">הוספת אדם לפי שם</h3>
+              <div>
+                <label className="block text-xs font-medium text-slate-500 mb-1">שם מלא *</label>
+                <input value={newPersonName} onChange={e => setNewPersonName(e.target.value)}
+                  required placeholder="לדוגמה: יוסי כהן" className={`w-full ${inp}`} />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-500 mb-1">שם תצוגה (אופציונלי)</label>
+                <input value={newPersonDisplayName} onChange={e => setNewPersonDisplayName(e.target.value)}
+                  placeholder="לדוגמה: יוסי" className={`w-full ${inp}`} />
+              </div>
+              {createPersonError && <p className="text-xs text-red-600">{createPersonError}</p>}
+              <div className="flex gap-2">
+                <button type="submit" disabled={createPersonSaving}
+                  className="bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium px-3 py-1.5 rounded-lg disabled:opacity-50 transition-colors">
+                  {createPersonSaving ? "שומר..." : "הוסף"}
+                </button>
+                <button type="button" onClick={() => setShowCreatePersonForm(false)}
+                  className="text-xs text-slate-500 hover:text-slate-700 px-2">ביטול</button>
+              </div>
+            </form>
+          )}
+        </div>
+
+        {/* Members list */}
         {membersLoading ? (
           <div className="flex items-center gap-3 text-slate-400 text-sm py-4">
             <svg className="animate-spin h-5 w-5 text-blue-400" fill="none" viewBox="0 0 24 24">
@@ -1015,36 +1178,81 @@ export default function GroupDetailPage() {
           </div>
         ) : membersError ? (
           <p className="text-sm text-red-600">{membersError}</p>
-        ) : members.length === 0 ? (
-          <p className="text-sm text-slate-400 py-4 text-center">אין חברים בקבוצה זו</p>
+        ) : filteredMembers.length === 0 ? (
+          <p className="text-sm text-slate-400 py-4 text-center">
+            {membersSearch ? "לא נמצאו חברים התואמים לחיפוש" : "אין חברים בקבוצה זו"}
+          </p>
         ) : (
           <div className="space-y-2">
-            {members.map(m => (
-              <div key={m.personId} className="flex items-center justify-between bg-white border border-slate-200 rounded-xl px-4 py-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 text-sm font-semibold">
-                    {(m.displayName ?? m.fullName).charAt(0)}
+            {filteredMembers.map(m => (
+              <div key={m.personId}>
+                <div className="flex items-center justify-between bg-white border border-slate-200 rounded-xl px-4 py-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 text-sm font-semibold">
+                      {(m.displayName ?? m.fullName).charAt(0)}
+                    </div>
+                    <div>
+                      <span className="text-sm font-medium text-slate-900">{m.displayName ?? m.fullName}</span>
+                      {m.phoneNumber && (
+                        <span className="text-xs text-slate-400 mr-2">{m.phoneNumber}</span>
+                      )}
+                    </div>
+                    {m.isOwner && (
+                      <span className="text-xs text-amber-600 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">בעלים</span>
+                    )}
                   </div>
-                  <span className="text-sm font-medium text-slate-900">{m.displayName ?? m.fullName}</span>
-                  {m.isOwner && (
-                    <span className="text-xs text-amber-600 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">בעלים</span>
-                  )}
-                  {m.phoneNumber && (
-                    <span className="text-xs text-slate-400 mr-2">{m.phoneNumber}</span>
-                  )}
-                </div>
-                <div className="flex items-center gap-2">
-                  {removeErrors[m.personId] && (
-                    <span className="text-xs text-red-600">{removeErrors[m.personId]}</span>
-                  )}
-                  {!m.isOwner && (
+                  <div className="flex items-center gap-2">
+                    {removeErrors[m.personId] && (
+                      <span className="text-xs text-red-600">{removeErrors[m.personId]}</span>
+                    )}
+                    {/* Invite button for pending members */}
                     <button
-                      onClick={() => handleRemoveMember(m.personId)}
-                      className="text-xs text-red-500 hover:text-red-700 border border-red-200 hover:border-red-400 px-2.5 py-1 rounded-lg transition-colors">
-                      הסר
+                      onClick={() => { setInvitingPersonId(m.personId); setInviteContact(""); setInviteError(null); setInviteSuccess(null); }}
+                      className="text-xs text-blue-500 hover:text-blue-700 border border-blue-200 hover:border-blue-400 px-2.5 py-1 rounded-lg transition-colors"
+                    >
+                      הזמן
                     </button>
-                  )}
+                    {!m.isOwner && (
+                      <button
+                        onClick={() => handleRemoveMember(m.personId)}
+                        className="text-xs text-red-500 hover:text-red-700 border border-red-200 hover:border-red-400 px-2.5 py-1 rounded-lg transition-colors">
+                        הסר
+                      </button>
+                    )}
+                  </div>
                 </div>
+                {/* Inline invite form */}
+                {invitingPersonId === m.personId && (
+                  <form onSubmit={handleInvitePerson} className="mt-1 mr-11 bg-blue-50 border border-blue-200 rounded-xl p-3 space-y-2">
+                    <div className="flex gap-2">
+                      <input
+                        value={inviteContact}
+                        onChange={e => setInviteContact(e.target.value)}
+                        placeholder={inviteChannel === "email" ? "כתובת אימייל" : "מספר טלפון"}
+                        required
+                        className="flex-1 border border-slate-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                      <select
+                        value={inviteChannel}
+                        onChange={e => setInviteChannel(e.target.value as "email" | "whatsapp")}
+                        className="border border-slate-200 rounded-lg px-2 py-1.5 text-sm focus:outline-none"
+                      >
+                        <option value="whatsapp">WhatsApp</option>
+                        <option value="email">אימייל</option>
+                      </select>
+                    </div>
+                    {inviteError && <p className="text-xs text-red-600">{inviteError}</p>}
+                    {inviteSuccess && <p className="text-xs text-emerald-600">{inviteSuccess}</p>}
+                    <div className="flex gap-2">
+                      <button type="submit" disabled={inviteSaving}
+                        className="bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium px-3 py-1.5 rounded-lg disabled:opacity-50 transition-colors">
+                        {inviteSaving ? "שולח..." : "שלח הזמנה"}
+                      </button>
+                      <button type="button" onClick={() => setInvitingPersonId(null)}
+                        className="text-xs text-slate-500 hover:text-slate-700 px-2">ביטול</button>
+                    </div>
+                  </form>
+                )}
               </div>
             ))}
           </div>
