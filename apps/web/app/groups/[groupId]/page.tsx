@@ -4,6 +4,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import AppShell from "@/components/shell/AppShell";
+import Modal from "@/components/Modal";
 import { useSpaceStore } from "@/lib/store/spaceStore";
 import { useAuthStore } from "@/lib/store/authStore";
 import { useRouter } from "next/navigation";
@@ -86,6 +87,7 @@ export default function GroupDetailPage() {
   const [membersLoading, setMembersLoading] = useState(false);
   const [addEmail, setAddEmail] = useState("");
   const [addError, setAddError] = useState<string | null>(null);
+  const [showAddMemberModal, setShowAddMemberModal] = useState(false);
   // Members search + name-first creation
   const [membersSearch, setMembersSearch] = useState("");
   const [showCreatePersonForm, setShowCreatePersonForm] = useState(false);
@@ -138,6 +140,7 @@ export default function GroupDetailPage() {
   const [alertSubmitting, setAlertSubmitting] = useState(false);
   const [alertSubmitError, setAlertSubmitError] = useState<string | null>(null);
   const [alertDeleteErrors, setAlertDeleteErrors] = useState<Record<string, string>>({});
+  const [showAlertForm, setShowAlertForm] = useState(false);
   // Alert edit state
   const [editingAlertId, setEditingAlertId] = useState<string | null>(null);
   const [editAlertTitle, setEditAlertTitle] = useState("");
@@ -368,6 +371,7 @@ export default function GroupDetailPage() {
       setNewAlertTitle("");
       setNewAlertBody("");
       setNewAlertSeverity("info");
+      setShowAlertForm(false);
       await fetchAlerts();
     } catch (err: any) {
       setAlertSubmitError(err?.response?.data?.message ?? "שגיאה ביצירת ההתראה");
@@ -1141,60 +1145,26 @@ export default function GroupDetailPage() {
           </svg>
         </div>
 
-        {/* Add member by email/phone */}
-        <form onSubmit={handleAddMember} className="flex gap-2 max-w-sm">
-          <div className="flex-1">
-            <input
-              type="text"
-              value={addEmail}
-              onChange={e => setAddEmail(e.target.value)}
-              placeholder="הוסף לפי אימייל או מספר טלפון"
-              className={`w-full ${inp}`}
-            />
-            <p className="text-xs text-slate-400 mt-1">ניתן להזין אימייל או מספר טלפון</p>
-          </div>
-          <button type="submit"
-            className="bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl whitespace-nowrap transition-colors self-start">
-            הוסף
-          </button>
-        </form>
-        {addError && <p className="text-sm text-red-600">{addError}</p>}
-
-        {/* Add by name only (pending invitation) */}
-        <div>
+        {/* Add member buttons */}
+        <div className="flex gap-2">
           <button
-            onClick={() => setShowCreatePersonForm(v => !v)}
-            className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1.5"
+            onClick={() => { setShowAddMemberModal(true); setAddEmail(""); setAddError(null); }}
+            className="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-3.5 py-2 rounded-xl transition-colors"
           >
             <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
             </svg>
-            הוסף לפי שם בלבד (הזמנה מאוחרת)
+            הוסף לפי אימייל/טלפון
           </button>
-          {showCreatePersonForm && (
-            <form onSubmit={handleCreatePerson} className="mt-3 bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-3 max-w-sm">
-              <h3 className="text-xs font-semibold text-slate-700">הוספת אדם לפי שם</h3>
-              <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1">שם מלא *</label>
-                <input value={newPersonName} onChange={e => setNewPersonName(e.target.value)}
-                  required placeholder="לדוגמה: יוסי כהן" className={`w-full ${inp}`} />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1">שם תצוגה (אופציונלי)</label>
-                <input value={newPersonDisplayName} onChange={e => setNewPersonDisplayName(e.target.value)}
-                  placeholder="לדוגמה: יוסי" className={`w-full ${inp}`} />
-              </div>
-              {createPersonError && <p className="text-xs text-red-600">{createPersonError}</p>}
-              <div className="flex gap-2">
-                <button type="submit" disabled={createPersonSaving}
-                  className="bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium px-3 py-1.5 rounded-lg disabled:opacity-50 transition-colors">
-                  {createPersonSaving ? "שומר..." : "הוסף"}
-                </button>
-                <button type="button" onClick={() => setShowCreatePersonForm(false)}
-                  className="text-xs text-slate-500 hover:text-slate-700 px-2">ביטול</button>
-              </div>
-            </form>
-          )}
+          <button
+            onClick={() => { setShowCreatePersonForm(true); setNewPersonName(""); setNewPersonDisplayName(""); setCreatePersonError(null); }}
+            className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 border border-blue-200 hover:border-blue-400 px-3.5 py-2 rounded-xl transition-colors"
+          >
+            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+            </svg>
+            הוסף לפי שם בלבד
+          </button>
         </div>
 
         {/* Members list */}
@@ -1262,38 +1232,7 @@ export default function GroupDetailPage() {
                     )}
                   </div>
                 </div>
-                {/* Inline invite form */}
-                {invitingPersonId === m.personId && (
-                  <form onSubmit={handleInvitePerson} className="mt-1 mr-11 bg-blue-50 border border-blue-200 rounded-xl p-3 space-y-2">
-                    <div className="flex gap-2">
-                      <input
-                        value={inviteContact}
-                        onChange={e => setInviteContact(e.target.value)}
-                        placeholder={inviteChannel === "email" ? "כתובת אימייל" : "מספר טלפון"}
-                        required
-                        className="flex-1 border border-slate-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                      <select
-                        value={inviteChannel}
-                        onChange={e => setInviteChannel(e.target.value as "email" | "whatsapp")}
-                        className="border border-slate-200 rounded-lg px-2 py-1.5 text-sm focus:outline-none"
-                      >
-                        <option value="whatsapp">WhatsApp</option>
-                        <option value="email">אימייל</option>
-                      </select>
-                    </div>
-                    {inviteError && <p className="text-xs text-red-600">{inviteError}</p>}
-                    {inviteSuccess && <p className="text-xs text-emerald-600">{inviteSuccess}</p>}
-                    <div className="flex gap-2">
-                      <button type="submit" disabled={inviteSaving}
-                        className="bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium px-3 py-1.5 rounded-lg disabled:opacity-50 transition-colors">
-                        {inviteSaving ? "שולח..." : "שלח הזמנה"}
-                      </button>
-                      <button type="button" onClick={() => setInvitingPersonId(null)}
-                        className="text-xs text-slate-500 hover:text-slate-700 px-2">ביטול</button>
-                    </div>
-                  </form>
-                )}
+                {/* Inline invite form removed — handled via Modal */}
               </div>
             ))}
           </div>
@@ -1334,7 +1273,7 @@ export default function GroupDetailPage() {
                 const today = new Date().toISOString().split("T")[0];
                 setTaskForm({ name: "", startsAt: `${today}T00:00`, endsAt: `${today}T23:59`, durationHours: 24, requiredHeadcount: 1, burdenLevel: "neutral", allowsDoubleShift: false, allowsOverlap: false });
                 setTaskError(null);
-                setShowTaskForm(v => !v);
+                setShowTaskForm(true);
               }}
               className="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-3.5 py-2 rounded-xl transition-colors"
             >
@@ -1344,74 +1283,6 @@ export default function GroupDetailPage() {
               הוסף משימה
             </button>
           </div>
-        )}
-
-        {isAdmin && showTaskForm && (
-          <form onSubmit={handleTaskFormSubmit} className="bg-white border border-slate-200 rounded-2xl p-5 space-y-4 shadow-sm">
-            <h2 className="text-sm font-semibold text-slate-900">{editingTask ? "עריכת משימה" : "משימה חדשה"}</h2>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="col-span-2">
-                <label className="block text-xs font-medium text-slate-500 mb-1.5">שם *</label>
-                <input value={taskForm.name} onChange={e => setTaskForm(f => ({ ...f, name: e.target.value }))}
-                  required className={`w-full ${inp}`} placeholder="שם המשימה" />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1.5">התחלה *</label>
-                <input type="datetime-local" value={taskForm.startsAt}
-                  onChange={e => setTaskForm(f => ({ ...f, startsAt: e.target.value }))}
-                  required className={`w-full ${inp}`} />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1.5">סיום *</label>
-                <input type="datetime-local" value={taskForm.endsAt}
-                  onChange={e => setTaskForm(f => ({ ...f, endsAt: e.target.value }))}
-                  required className={`w-full ${inp}`} />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1.5">משך (שעות) *</label>
-                <input type="number" min={0.5} step={0.5} value={taskForm.durationHours}
-                  onChange={e => setTaskForm(f => ({ ...f, durationHours: Number(e.target.value) }))}
-                  required className={`w-full ${inp}`} />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1.5">כוח אדם נדרש *</label>
-                <input type="number" min={1} value={taskForm.requiredHeadcount}
-                  onChange={e => setTaskForm(f => ({ ...f, requiredHeadcount: Number(e.target.value) }))}
-                  required className={`w-full ${inp}`} />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1.5">רמת עומס</label>
-                <select value={taskForm.burdenLevel}
-                  onChange={e => setTaskForm(f => ({ ...f, burdenLevel: e.target.value }))}
-                  className={`w-full ${inp}`}>
-                  {burdenOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-                </select>
-              </div>
-            </div>
-            <div className="flex gap-6">
-              <label className="flex items-center gap-2.5 text-sm text-slate-700 cursor-pointer">
-                <input type="checkbox" checked={taskForm.allowsDoubleShift}
-                  onChange={e => setTaskForm(f => ({ ...f, allowsDoubleShift: e.target.checked }))}
-                  className="w-4 h-4 rounded" />
-                מאפשר משמרת כפולה
-              </label>
-              <label className="flex items-center gap-2.5 text-sm text-slate-700 cursor-pointer">
-                <input type="checkbox" checked={taskForm.allowsOverlap}
-                  onChange={e => setTaskForm(f => ({ ...f, allowsOverlap: e.target.checked }))}
-                  className="w-4 h-4 rounded" />
-                מאפשר חפיפה
-              </label>
-            </div>
-            {taskError && <p className="text-sm text-red-600">{taskError}</p>}
-            <div className="flex gap-2">
-              <button type="submit" disabled={taskSaving}
-                className="bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl disabled:opacity-50 transition-colors">
-                {taskSaving ? "שומר..." : "שמור"}
-              </button>
-              <button type="button" onClick={() => { setShowTaskForm(false); setEditingTask(null); setTaskError(null); }}
-                className="text-sm text-slate-500 hover:text-slate-700 px-3">ביטול</button>
-            </div>
-          </form>
         )}
 
         <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
@@ -1505,7 +1376,7 @@ export default function GroupDetailPage() {
       <div className="space-y-4">
         {isAdmin && (
           <div className="flex justify-end">
-            <button onClick={() => setShowConstraintForm(v => !v)}
+            <button onClick={() => setShowConstraintForm(true)}
               className="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-3.5 py-2 rounded-xl transition-colors">
               <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
@@ -1513,129 +1384,6 @@ export default function GroupDetailPage() {
               + אילוץ
             </button>
           </div>
-        )}
-
-        {isAdmin && showConstraintForm && (
-          <form onSubmit={handleCreateConstraint} className="bg-white border border-slate-200 rounded-2xl p-5 space-y-4 shadow-sm">
-            <h2 className="text-sm font-semibold text-slate-900">אילוץ חדש</h2>
-
-            {/* Rule type selector — drives the contextual fields below */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1.5">סוג כלל</label>
-                <select value={newConstraintRuleType} onChange={e => {
-                  const rt = e.target.value;
-                  setNewConstraintRuleType(rt);
-                  const defaults: Record<string, string> = {
-                    min_rest_hours: '{"hours": 8}',
-                    max_kitchen_per_week: '{"max": 2, "task_type_name": "kitchen"}',
-                    no_consecutive_burden: '{"burden_level": "disliked"}',
-                    min_base_headcount: '{"min": 3, "window_hours": 24}',
-                    no_task_type_restriction: '{"task_type_id": ""}',
-                  };
-                  setNewConstraintPayload(defaults[rt] ?? "{}");
-                }} className={`w-full ${inp}`}>
-                  <option value="min_rest_hours">מינימום מנוחה בין משמרות</option>
-                  <option value="max_kitchen_per_week">מקסימום משמרות מטבח בשבוע</option>
-                  <option value="no_consecutive_burden">ללא עומס רצוף</option>
-                  <option value="min_base_headcount">מינימום כוח אדם בסיסי</option>
-                  <option value="no_task_type_restriction">הגבלת סוג משימה לאדם</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1.5">חומרה</label>
-                <select value={newConstraintSeverity} onChange={e => setNewConstraintSeverity(e.target.value)} className={`w-full ${inp}`}>
-                  <option value="hard">קשיח — חייב להתקיים</option>
-                  <option value="soft">רך — עדיפות בלבד</option>
-                </select>
-              </div>
-            </div>
-
-            {/* Contextual fields per rule type */}
-            {newConstraintRuleType === "min_rest_hours" && (
-              <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1.5">שעות מנוחה מינימליות בין משמרות</label>
-                <input type="number" min={1} max={48}
-                  value={(() => { try { return JSON.parse(newConstraintPayload).hours ?? 8; } catch { return 8; } })()}
-                  onChange={e => setNewConstraintPayload(JSON.stringify({ hours: Number(e.target.value) }))}
-                  className={`w-32 ${inp}`} />
-                <p className="text-xs text-slate-400 mt-1">לדוגמה: 8 שעות מנוחה בין סיום משמרת לתחילת הבאה</p>
-              </div>
-            )}
-
-            {newConstraintRuleType === "max_kitchen_per_week" && (
-              <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1.5">מקסימום משמרות מטבח בשבוע</label>
-                <input type="number" min={1} max={7}
-                  value={(() => { try { return JSON.parse(newConstraintPayload).max ?? 2; } catch { return 2; } })()}
-                  onChange={e => setNewConstraintPayload(JSON.stringify({ max: Number(e.target.value), task_type_name: "kitchen" }))}
-                  className={`w-32 ${inp}`} />
-              </div>
-            )}
-
-            {newConstraintRuleType === "no_consecutive_burden" && (
-              <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1.5">רמת עומס שאסור לחזור ברצף</label>
-                <select
-                  value={(() => { try { return JSON.parse(newConstraintPayload).burden_level ?? "disliked"; } catch { return "disliked"; } })()}
-                  onChange={e => setNewConstraintPayload(JSON.stringify({ burden_level: e.target.value }))}
-                  className={`w-full max-w-xs ${inp}`}>
-                  <option value="disliked">לא אהוב (Disliked)</option>
-                  <option value="hated">שנוא (Hated)</option>
-                  <option value="neutral">ניטרלי (Neutral)</option>
-                </select>
-              </div>
-            )}
-
-            {newConstraintRuleType === "min_base_headcount" && (
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-medium text-slate-500 mb-1.5">מינימום אנשים</label>
-                  <input type="number" min={1}
-                    value={(() => { try { return JSON.parse(newConstraintPayload).min ?? 3; } catch { return 3; } })()}
-                    onChange={e => {
-                      const cur = (() => { try { return JSON.parse(newConstraintPayload); } catch { return { min: 3, window_hours: 24 }; } })();
-                      setNewConstraintPayload(JSON.stringify({ ...cur, min: Number(e.target.value) }));
-                    }}
-                    className={`w-full ${inp}`} />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-slate-500 mb-1.5">חלון זמן (שעות)</label>
-                  <input type="number" min={1}
-                    value={(() => { try { return JSON.parse(newConstraintPayload).window_hours ?? 24; } catch { return 24; } })()}
-                    onChange={e => {
-                      const cur = (() => { try { return JSON.parse(newConstraintPayload); } catch { return { min: 3, window_hours: 24 }; } })();
-                      setNewConstraintPayload(JSON.stringify({ ...cur, window_hours: Number(e.target.value) }));
-                    }}
-                    className={`w-full ${inp}`} />
-                </div>
-              </div>
-            )}
-
-            {newConstraintRuleType === "no_task_type_restriction" && (
-              <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1.5">סוג משימה מוגבל</label>
-                <select
-                  value={(() => { try { return JSON.parse(newConstraintPayload).task_type_id ?? ""; } catch { return ""; } })()}
-                  onChange={e => setNewConstraintPayload(JSON.stringify({ task_type_id: e.target.value }))}
-                  className={`w-full ${inp}`}>
-                  <option value="">בחר סוג משימה...</option>
-                  {groupTasks.map(tt => <option key={tt.id} value={tt.id}>{tt.name}</option>)}
-                </select>
-                <p className="text-xs text-slate-400 mt-1">האדם לא יוכל לבצע את סוג המשימה הזה</p>
-              </div>
-            )}
-
-            {constraintError && <p className="text-sm text-red-600">{constraintError}</p>}
-            <div className="flex gap-2">
-              <button type="submit" disabled={constraintSaving}
-                className="bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl disabled:opacity-50 transition-colors">
-                {constraintSaving ? "שומר..." : "שמור"}
-              </button>
-              <button type="button" onClick={() => setShowConstraintForm(false)}
-                className="text-sm text-slate-500 hover:text-slate-700 px-3">ביטול</button>
-            </div>
-          </form>
         )}
 
         <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
@@ -1713,61 +1461,7 @@ export default function GroupDetailPage() {
                         </td>
                       )}
                     </tr>
-                    {/* Inline edit row */}
-                    {isAdmin && editingConstraintId === c.id && (
-                      <tr className="bg-blue-50/40">
-                        <td colSpan={5} className="px-4 py-4">
-                          <div className="space-y-3 max-w-lg">
-                            <h4 className="text-xs font-semibold text-slate-700">עריכת אילוץ</h4>
-                            <div>
-                              <label className="block text-xs font-medium text-slate-500 mb-1">Payload (JSON)</label>
-                              <textarea
-                                value={editConstraintPayload}
-                                onChange={e => setEditConstraintPayload(e.target.value)}
-                                rows={3}
-                                className="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-                              />
-                            </div>
-                            <div className="grid grid-cols-2 gap-3">
-                              <div>
-                                <label className="block text-xs font-medium text-slate-500 mb-1">בתוקף מ</label>
-                                <input
-                                  type="date"
-                                  value={editConstraintFrom}
-                                  onChange={e => setEditConstraintFrom(e.target.value)}
-                                  className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                />
-                              </div>
-                              <div>
-                                <label className="block text-xs font-medium text-slate-500 mb-1">בתוקף עד</label>
-                                <input
-                                  type="date"
-                                  value={editConstraintUntil}
-                                  onChange={e => setEditConstraintUntil(e.target.value)}
-                                  className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                />
-                              </div>
-                            </div>
-                            {editConstraintError && <p className="text-xs text-red-600">{editConstraintError}</p>}
-                            <div className="flex gap-2">
-                              <button
-                                onClick={() => handleUpdateConstraint(c.id)}
-                                disabled={editConstraintSaving}
-                                className="bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium px-3 py-1.5 rounded-lg disabled:opacity-50 transition-colors"
-                              >
-                                {editConstraintSaving ? "שומר..." : "שמור"}
-                              </button>
-                              <button
-                                onClick={() => { setEditingConstraintId(null); setEditConstraintError(null); }}
-                                className="text-xs text-slate-500 hover:text-slate-700 px-2"
-                              >
-                                ביטול
-                              </button>
-                            </div>
-                          </div>
-                        </td>
-                      </tr>
-                    )}
+                    {/* Inline edit row removed — editing handled via Modal */}
                   </React.Fragment>
                 );
               })}
@@ -2084,35 +1778,8 @@ export default function GroupDetailPage() {
                         </div>
                       )}
                     </div>
-                    {/* Inline edit form */}
-                    {isAdmin && editingMessageId === msg.id ? (
-                      <div className="space-y-2 mt-1">
-                        <textarea
-                          value={editMessageContent}
-                          onChange={e => setEditMessageContent(e.target.value)}
-                          rows={3}
-                          className={`w-full ${inp} resize-none`}
-                        />
-                        {editMessageError && <p className="text-xs text-red-600">{editMessageError}</p>}
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => handleUpdateMessage(msg.id)}
-                            disabled={editMessageSaving}
-                            className="bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium px-3 py-1.5 rounded-lg disabled:opacity-50 transition-colors"
-                          >
-                            {editMessageSaving ? "שומר..." : "שמור"}
-                          </button>
-                          <button
-                            onClick={() => { setEditingMessageId(null); setEditMessageError(null); }}
-                            className="text-xs text-slate-500 hover:text-slate-700 px-2"
-                          >
-                            ביטול
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <p className="text-sm text-slate-700 whitespace-pre-wrap">{msg.content}</p>
-                    )}
+                    {/* Inline edit form removed — editing handled via Modal */}
+                    <p className="text-sm text-slate-700 whitespace-pre-wrap">{msg.content}</p>
                     {messagePinErrors[msg.id] && (
                       <p className="text-xs text-red-600 mt-1">{messagePinErrors[msg.id]}</p>
                     )}
@@ -2131,54 +1798,19 @@ export default function GroupDetailPage() {
 
     return (
       <div className="space-y-4">
-        {/* Create alert form — admin only */}
+        {/* Create alert button — admin only */}
         {isAdmin && (
-          <form onSubmit={handleCreateAlert} className="bg-white border border-slate-200 rounded-2xl p-5 space-y-4 shadow-sm">
-            <h2 className="text-sm font-semibold text-slate-900">התראה חדשה</h2>
-            <div>
-              <label className="block text-xs font-medium text-slate-500 mb-1.5">כותרת *</label>
-              <input
-                value={newAlertTitle}
-                onChange={e => setNewAlertTitle(e.target.value)}
-                required
-                maxLength={200}
-                placeholder="כותרת ההתראה"
-                className={`w-full ${inp}`}
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-slate-500 mb-1.5">תוכן *</label>
-              <textarea
-                value={newAlertBody}
-                onChange={e => setNewAlertBody(e.target.value)}
-                required
-                maxLength={2000}
-                rows={3}
-                placeholder="תוכן ההתראה..."
-                className={`w-full ${inp} resize-none`}
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-slate-500 mb-1.5">רמת חומרה</label>
-              <select
-                value={newAlertSeverity}
-                onChange={e => setNewAlertSeverity(e.target.value)}
-                className={`w-full max-w-xs ${inp}`}
-              >
-                <option value="info">מידע</option>
-                <option value="warning">אזהרה</option>
-                <option value="critical">קריטי</option>
-              </select>
-            </div>
-            {alertSubmitError && <p className="text-sm text-red-600">{alertSubmitError}</p>}
+          <div className="flex justify-end">
             <button
-              type="submit"
-              disabled={alertSubmitting}
-              className="bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl disabled:opacity-50 transition-colors"
+              onClick={() => setShowAlertForm(true)}
+              className="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-3.5 py-2 rounded-xl transition-colors"
             >
-              {alertSubmitting ? "שולח..." : "פרסם התראה"}
+              <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+              </svg>
+              התראה חדשה
             </button>
-          </form>
+          </div>
         )}
 
         {/* Alerts list */}
@@ -2218,58 +1850,6 @@ export default function GroupDetailPage() {
                       <p className="text-xs text-slate-400 mt-2">פורסם על ידי: {alert.createdByDisplayName}</p>
                       {alertDeleteErrors[alert.id] && (
                         <p className="text-xs text-red-600 mt-1">{alertDeleteErrors[alert.id]}</p>
-                      )}
-                      {/* Inline edit form */}
-                      {isAdmin && editingAlertId === alert.id && (
-                        <div className="mt-3 space-y-3 border-t border-slate-200 pt-3">
-                          <div>
-                            <label className="block text-xs font-medium text-slate-500 mb-1">כותרת</label>
-                            <input
-                              value={editAlertTitle}
-                              onChange={e => setEditAlertTitle(e.target.value)}
-                              maxLength={200}
-                              className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-medium text-slate-500 mb-1">תוכן</label>
-                            <textarea
-                              value={editAlertBody}
-                              onChange={e => setEditAlertBody(e.target.value)}
-                              maxLength={2000}
-                              rows={3}
-                              className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-medium text-slate-500 mb-1">רמת חומרה</label>
-                            <select
-                              value={editAlertSeverity}
-                              onChange={e => setEditAlertSeverity(e.target.value)}
-                              className="border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            >
-                              <option value="info">מידע</option>
-                              <option value="warning">אזהרה</option>
-                              <option value="critical">קריטי</option>
-                            </select>
-                          </div>
-                          {editAlertError && <p className="text-xs text-red-600">{editAlertError}</p>}
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => handleUpdateAlert(alert.id)}
-                              disabled={editAlertSaving}
-                              className="bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium px-3 py-1.5 rounded-lg disabled:opacity-50 transition-colors"
-                            >
-                              {editAlertSaving ? "שומר..." : "שמור"}
-                            </button>
-                            <button
-                              onClick={() => { setEditingAlertId(null); setEditAlertError(null); }}
-                              className="text-xs text-slate-500 hover:text-slate-700 px-2"
-                            >
-                              ביטול
-                            </button>
-                          </div>
-                        </div>
                       )}
                     </div>
                     {isAdmin && (
@@ -2376,6 +1956,467 @@ export default function GroupDetailPage() {
           <div>{renderTabPanel()}</div>
         </div>
       ) : null}
+
+      {/* ── Task modal ── */}
+      <Modal
+        title={editingTask ? "עריכת משימה" : "משימה חדשה"}
+        open={showTaskForm}
+        onClose={() => { setShowTaskForm(false); setEditingTask(null); setTaskError(null); }}
+      >
+        {(() => {
+          const inp = "border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500";
+          const burdenOptions = [
+            { value: "favorable", label: "נוח" },
+            { value: "neutral", label: "ניטרלי" },
+            { value: "disliked", label: "לא אהוב" },
+            { value: "hated", label: "שנוא" },
+          ];
+          return (
+            <form onSubmit={handleTaskFormSubmit} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="col-span-2">
+                  <label className="block text-xs font-medium text-slate-500 mb-1.5">שם *</label>
+                  <input value={taskForm.name} onChange={e => setTaskForm(f => ({ ...f, name: e.target.value }))}
+                    required className={`w-full ${inp}`} placeholder="שם המשימה" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-500 mb-1.5">התחלה *</label>
+                  <input type="datetime-local" value={taskForm.startsAt}
+                    onChange={e => setTaskForm(f => ({ ...f, startsAt: e.target.value }))}
+                    required className={`w-full ${inp}`} />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-500 mb-1.5">סיום *</label>
+                  <input type="datetime-local" value={taskForm.endsAt}
+                    onChange={e => setTaskForm(f => ({ ...f, endsAt: e.target.value }))}
+                    required className={`w-full ${inp}`} />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-500 mb-1.5">משך (שעות) *</label>
+                  <input type="number" min={0.5} step={0.5} value={taskForm.durationHours}
+                    onChange={e => setTaskForm(f => ({ ...f, durationHours: Number(e.target.value) }))}
+                    required className={`w-full ${inp}`} />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-500 mb-1.5">כוח אדם נדרש *</label>
+                  <input type="number" min={1} value={taskForm.requiredHeadcount}
+                    onChange={e => setTaskForm(f => ({ ...f, requiredHeadcount: Number(e.target.value) }))}
+                    required className={`w-full ${inp}`} />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-500 mb-1.5">רמת עומס</label>
+                  <select value={taskForm.burdenLevel}
+                    onChange={e => setTaskForm(f => ({ ...f, burdenLevel: e.target.value }))}
+                    className={`w-full ${inp}`}>
+                    {burdenOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                  </select>
+                </div>
+              </div>
+              <div className="flex gap-6">
+                <label className="flex items-center gap-2.5 text-sm text-slate-700 cursor-pointer">
+                  <input type="checkbox" checked={taskForm.allowsDoubleShift}
+                    onChange={e => setTaskForm(f => ({ ...f, allowsDoubleShift: e.target.checked }))}
+                    className="w-4 h-4 rounded" />
+                  מאפשר משמרת כפולה
+                </label>
+                <label className="flex items-center gap-2.5 text-sm text-slate-700 cursor-pointer">
+                  <input type="checkbox" checked={taskForm.allowsOverlap}
+                    onChange={e => setTaskForm(f => ({ ...f, allowsOverlap: e.target.checked }))}
+                    className="w-4 h-4 rounded" />
+                  מאפשר חפיפה
+                </label>
+              </div>
+              {taskError && <p className="text-sm text-red-600">{taskError}</p>}
+              <div className="flex gap-2">
+                <button type="submit" disabled={taskSaving}
+                  className="bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl disabled:opacity-50 transition-colors">
+                  {taskSaving ? "שומר..." : "שמור"}
+                </button>
+                <button type="button" onClick={() => { setShowTaskForm(false); setEditingTask(null); setTaskError(null); }}
+                  className="text-sm text-slate-500 hover:text-slate-700 px-3">ביטול</button>
+              </div>
+            </form>
+          );
+        })()}
+      </Modal>
+
+      {/* ── New constraint modal ── */}
+      <Modal
+        title="אילוץ חדש"
+        open={showConstraintForm}
+        onClose={() => { setShowConstraintForm(false); setConstraintError(null); }}
+        maxWidth={560}
+      >
+        {(() => {
+          const inp = "border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500";
+          return (
+            <form onSubmit={handleCreateConstraint} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-slate-500 mb-1.5">סוג כלל</label>
+                  <select value={newConstraintRuleType} onChange={e => {
+                    const rt = e.target.value;
+                    setNewConstraintRuleType(rt);
+                    const defaults: Record<string, string> = {
+                      min_rest_hours: '{"hours": 8}',
+                      max_kitchen_per_week: '{"max": 2, "task_type_name": "kitchen"}',
+                      no_consecutive_burden: '{"burden_level": "disliked"}',
+                      min_base_headcount: '{"min": 3, "window_hours": 24}',
+                      no_task_type_restriction: '{"task_type_id": ""}',
+                    };
+                    setNewConstraintPayload(defaults[rt] ?? "{}");
+                  }} className={`w-full ${inp}`}>
+                    <option value="min_rest_hours">מינימום מנוחה בין משמרות</option>
+                    <option value="max_kitchen_per_week">מקסימום משמרות מטבח בשבוע</option>
+                    <option value="no_consecutive_burden">ללא עומס רצוף</option>
+                    <option value="min_base_headcount">מינימום כוח אדם בסיסי</option>
+                    <option value="no_task_type_restriction">הגבלת סוג משימה לאדם</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-500 mb-1.5">חומרה</label>
+                  <select value={newConstraintSeverity} onChange={e => setNewConstraintSeverity(e.target.value)} className={`w-full ${inp}`}>
+                    <option value="hard">קשיח — חייב להתקיים</option>
+                    <option value="soft">רך — עדיפות בלבד</option>
+                  </select>
+                </div>
+              </div>
+              {newConstraintRuleType === "min_rest_hours" && (
+                <div>
+                  <label className="block text-xs font-medium text-slate-500 mb-1.5">שעות מנוחה מינימליות בין משמרות</label>
+                  <input type="number" min={1} max={48}
+                    value={(() => { try { return JSON.parse(newConstraintPayload).hours ?? 8; } catch { return 8; } })()}
+                    onChange={e => setNewConstraintPayload(JSON.stringify({ hours: Number(e.target.value) }))}
+                    className={`w-32 ${inp}`} />
+                  <p className="text-xs text-slate-400 mt-1">לדוגמה: 8 שעות מנוחה בין סיום משמרת לתחילת הבאה</p>
+                </div>
+              )}
+              {newConstraintRuleType === "max_kitchen_per_week" && (
+                <div>
+                  <label className="block text-xs font-medium text-slate-500 mb-1.5">מקסימום משמרות מטבח בשבוע</label>
+                  <input type="number" min={1} max={7}
+                    value={(() => { try { return JSON.parse(newConstraintPayload).max ?? 2; } catch { return 2; } })()}
+                    onChange={e => setNewConstraintPayload(JSON.stringify({ max: Number(e.target.value), task_type_name: "kitchen" }))}
+                    className={`w-32 ${inp}`} />
+                </div>
+              )}
+              {newConstraintRuleType === "no_consecutive_burden" && (
+                <div>
+                  <label className="block text-xs font-medium text-slate-500 mb-1.5">רמת עומס שאסור לחזור ברצף</label>
+                  <select
+                    value={(() => { try { return JSON.parse(newConstraintPayload).burden_level ?? "disliked"; } catch { return "disliked"; } })()}
+                    onChange={e => setNewConstraintPayload(JSON.stringify({ burden_level: e.target.value }))}
+                    className={`w-full max-w-xs ${inp}`}>
+                    <option value="disliked">לא אהוב (Disliked)</option>
+                    <option value="hated">שנוא (Hated)</option>
+                    <option value="neutral">ניטרלי (Neutral)</option>
+                  </select>
+                </div>
+              )}
+              {newConstraintRuleType === "min_base_headcount" && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-medium text-slate-500 mb-1.5">מינימום אנשים</label>
+                    <input type="number" min={1}
+                      value={(() => { try { return JSON.parse(newConstraintPayload).min ?? 3; } catch { return 3; } })()}
+                      onChange={e => {
+                        const cur = (() => { try { return JSON.parse(newConstraintPayload); } catch { return { min: 3, window_hours: 24 }; } })();
+                        setNewConstraintPayload(JSON.stringify({ ...cur, min: Number(e.target.value) }));
+                      }}
+                      className={`w-full ${inp}`} />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-slate-500 mb-1.5">חלון זמן (שעות)</label>
+                    <input type="number" min={1}
+                      value={(() => { try { return JSON.parse(newConstraintPayload).window_hours ?? 24; } catch { return 24; } })()}
+                      onChange={e => {
+                        const cur = (() => { try { return JSON.parse(newConstraintPayload); } catch { return { min: 3, window_hours: 24 }; } })();
+                        setNewConstraintPayload(JSON.stringify({ ...cur, window_hours: Number(e.target.value) }));
+                      }}
+                      className={`w-full ${inp}`} />
+                  </div>
+                </div>
+              )}
+              {newConstraintRuleType === "no_task_type_restriction" && (
+                <div>
+                  <label className="block text-xs font-medium text-slate-500 mb-1.5">סוג משימה מוגבל</label>
+                  <select
+                    value={(() => { try { return JSON.parse(newConstraintPayload).task_type_id ?? ""; } catch { return ""; } })()}
+                    onChange={e => setNewConstraintPayload(JSON.stringify({ task_type_id: e.target.value }))}
+                    className={`w-full ${inp}`}>
+                    <option value="">בחר סוג משימה...</option>
+                    {groupTasks.map(tt => <option key={tt.id} value={tt.id}>{tt.name}</option>)}
+                  </select>
+                  <p className="text-xs text-slate-400 mt-1">האדם לא יוכל לבצע את סוג המשימה הזה</p>
+                </div>
+              )}
+              {constraintError && <p className="text-sm text-red-600">{constraintError}</p>}
+              <div className="flex gap-2">
+                <button type="submit" disabled={constraintSaving}
+                  className="bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl disabled:opacity-50 transition-colors">
+                  {constraintSaving ? "שומר..." : "שמור"}
+                </button>
+                <button type="button" onClick={() => { setShowConstraintForm(false); setConstraintError(null); }}
+                  className="text-sm text-slate-500 hover:text-slate-700 px-3">ביטול</button>
+              </div>
+            </form>
+          );
+        })()}
+      </Modal>
+
+      {/* ── Edit constraint modal ── */}
+      <Modal
+        title="עריכת אילוץ"
+        open={!!editingConstraintId}
+        onClose={() => { setEditingConstraintId(null); setEditConstraintError(null); }}
+      >
+        <div className="space-y-3">
+          <div>
+            <label className="block text-xs font-medium text-slate-500 mb-1">Payload (JSON)</label>
+            <textarea
+              value={editConstraintPayload}
+              onChange={e => setEditConstraintPayload(e.target.value)}
+              rows={3}
+              className="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-slate-500 mb-1">בתוקף מ</label>
+              <input type="date" value={editConstraintFrom}
+                onChange={e => setEditConstraintFrom(e.target.value)}
+                className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-slate-500 mb-1">בתוקף עד</label>
+              <input type="date" value={editConstraintUntil}
+                onChange={e => setEditConstraintUntil(e.target.value)}
+                className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            </div>
+          </div>
+          {editConstraintError && <p className="text-xs text-red-600">{editConstraintError}</p>}
+          <div className="flex gap-2">
+            <button
+              onClick={() => editingConstraintId && handleUpdateConstraint(editingConstraintId)}
+              disabled={editConstraintSaving}
+              className="bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium px-3 py-1.5 rounded-lg disabled:opacity-50 transition-colors"
+            >
+              {editConstraintSaving ? "שומר..." : "שמור"}
+            </button>
+            <button
+              onClick={() => { setEditingConstraintId(null); setEditConstraintError(null); }}
+              className="text-xs text-slate-500 hover:text-slate-700 px-2"
+            >
+              ביטול
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* ── New alert modal ── */}
+      <Modal
+        title="התראה חדשה"
+        open={showAlertForm}
+        onClose={() => { setShowAlertForm(false); setAlertSubmitError(null); }}
+      >
+        {(() => {
+          const inp = "border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500";
+          return (
+            <form onSubmit={handleCreateAlert} className="space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-slate-500 mb-1.5">כותרת *</label>
+                <input value={newAlertTitle} onChange={e => setNewAlertTitle(e.target.value)}
+                  required maxLength={200} placeholder="כותרת ההתראה" className={`w-full ${inp}`} />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-500 mb-1.5">תוכן *</label>
+                <textarea value={newAlertBody} onChange={e => setNewAlertBody(e.target.value)}
+                  required maxLength={2000} rows={3} placeholder="תוכן ההתראה..."
+                  className={`w-full ${inp} resize-none`} />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-500 mb-1.5">רמת חומרה</label>
+                <select value={newAlertSeverity} onChange={e => setNewAlertSeverity(e.target.value)}
+                  className={`w-full max-w-xs ${inp}`}>
+                  <option value="info">מידע</option>
+                  <option value="warning">אזהרה</option>
+                  <option value="critical">קריטי</option>
+                </select>
+              </div>
+              {alertSubmitError && <p className="text-sm text-red-600">{alertSubmitError}</p>}
+              <button type="submit" disabled={alertSubmitting}
+                className="bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl disabled:opacity-50 transition-colors">
+                {alertSubmitting ? "שולח..." : "פרסם התראה"}
+              </button>
+            </form>
+          );
+        })()}
+      </Modal>
+
+      {/* ── Edit alert modal ── */}
+      <Modal
+        title="עריכת התראה"
+        open={!!editingAlertId}
+        onClose={() => { setEditingAlertId(null); setEditAlertError(null); }}
+      >
+        <div className="space-y-3">
+          <div>
+            <label className="block text-xs font-medium text-slate-500 mb-1">כותרת</label>
+            <input value={editAlertTitle} onChange={e => setEditAlertTitle(e.target.value)}
+              maxLength={200}
+              className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-slate-500 mb-1">תוכן</label>
+            <textarea value={editAlertBody} onChange={e => setEditAlertBody(e.target.value)}
+              maxLength={2000} rows={3}
+              className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-slate-500 mb-1">רמת חומרה</label>
+            <select value={editAlertSeverity} onChange={e => setEditAlertSeverity(e.target.value)}
+              className="border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <option value="info">מידע</option>
+              <option value="warning">אזהרה</option>
+              <option value="critical">קריטי</option>
+            </select>
+          </div>
+          {editAlertError && <p className="text-xs text-red-600">{editAlertError}</p>}
+          <div className="flex gap-2">
+            <button onClick={() => editingAlertId && handleUpdateAlert(editingAlertId)}
+              disabled={editAlertSaving}
+              className="bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium px-3 py-1.5 rounded-lg disabled:opacity-50 transition-colors">
+              {editAlertSaving ? "שומר..." : "שמור"}
+            </button>
+            <button onClick={() => { setEditingAlertId(null); setEditAlertError(null); }}
+              className="text-xs text-slate-500 hover:text-slate-700 px-2">ביטול</button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* ── Edit message modal ── */}
+      <Modal
+        title="עריכת הודעה"
+        open={!!editingMessageId}
+        onClose={() => { setEditingMessageId(null); setEditMessageError(null); }}
+      >
+        <div className="space-y-3">
+          <textarea
+            value={editMessageContent}
+            onChange={e => setEditMessageContent(e.target.value)}
+            rows={4}
+            className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+          />
+          {editMessageError && <p className="text-xs text-red-600">{editMessageError}</p>}
+          <div className="flex gap-2">
+            <button onClick={() => editingMessageId && handleUpdateMessage(editingMessageId)}
+              disabled={editMessageSaving}
+              className="bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium px-3 py-1.5 rounded-lg disabled:opacity-50 transition-colors">
+              {editMessageSaving ? "שומר..." : "שמור"}
+            </button>
+            <button onClick={() => { setEditingMessageId(null); setEditMessageError(null); }}
+              className="text-xs text-slate-500 hover:text-slate-700 px-2">ביטול</button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* ── Add member by email/phone modal ── */}
+      <Modal
+        title="הוספת חבר"
+        open={showAddMemberModal}
+        onClose={() => { setShowAddMemberModal(false); setAddError(null); }}
+      >
+        {(() => {
+          const inp = "border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500";
+          return (
+            <form onSubmit={async (e) => { await handleAddMember(e); if (!addError) setShowAddMemberModal(false); }} className="space-y-3">
+              <div>
+                <label className="block text-xs font-medium text-slate-500 mb-1.5">אימייל או מספר טלפון *</label>
+                <input type="text" value={addEmail} onChange={e => setAddEmail(e.target.value)}
+                  placeholder="הוסף לפי אימייל או מספר טלפון" className={`w-full ${inp}`} />
+                <p className="text-xs text-slate-400 mt-1">ניתן להזין אימייל או מספר טלפון</p>
+              </div>
+              {addError && <p className="text-sm text-red-600">{addError}</p>}
+              <div className="flex gap-2">
+                <button type="submit"
+                  className="bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl transition-colors">
+                  הוסף
+                </button>
+                <button type="button" onClick={() => { setShowAddMemberModal(false); setAddError(null); }}
+                  className="text-sm text-slate-500 hover:text-slate-700 px-3">ביטול</button>
+              </div>
+            </form>
+          );
+        })()}
+      </Modal>
+
+      {/* ── Add person by name modal ── */}
+      <Modal
+        title="הוספת אדם לפי שם"
+        open={showCreatePersonForm}
+        onClose={() => { setShowCreatePersonForm(false); setCreatePersonError(null); }}
+      >
+        {(() => {
+          const inp = "border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500";
+          return (
+            <form onSubmit={handleCreatePerson} className="space-y-3">
+              <div>
+                <label className="block text-xs font-medium text-slate-500 mb-1">שם מלא *</label>
+                <input value={newPersonName} onChange={e => setNewPersonName(e.target.value)}
+                  required placeholder="לדוגמה: יוסי כהן" className={`w-full ${inp}`} />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-500 mb-1">שם תצוגה (אופציונלי)</label>
+                <input value={newPersonDisplayName} onChange={e => setNewPersonDisplayName(e.target.value)}
+                  placeholder="לדוגמה: יוסי" className={`w-full ${inp}`} />
+              </div>
+              {createPersonError && <p className="text-xs text-red-600">{createPersonError}</p>}
+              <div className="flex gap-2">
+                <button type="submit" disabled={createPersonSaving}
+                  className="bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium px-3 py-1.5 rounded-lg disabled:opacity-50 transition-colors">
+                  {createPersonSaving ? "שומר..." : "הוסף"}
+                </button>
+                <button type="button" onClick={() => { setShowCreatePersonForm(false); setCreatePersonError(null); }}
+                  className="text-xs text-slate-500 hover:text-slate-700 px-2">ביטול</button>
+              </div>
+            </form>
+          );
+        })()}
+      </Modal>
+
+      {/* ── Send invitation modal ── */}
+      <Modal
+        title="שליחת הזמנה"
+        open={!!invitingPersonId}
+        onClose={() => { setInvitingPersonId(null); setInviteError(null); setInviteSuccess(null); }}
+      >
+        <form onSubmit={handleInvitePerson} className="space-y-3">
+          <div className="flex gap-2">
+            <input
+              value={inviteContact}
+              onChange={e => setInviteContact(e.target.value)}
+              placeholder={inviteChannel === "email" ? "כתובת אימייל" : "מספר טלפון"}
+              required
+              className="flex-1 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <select value={inviteChannel} onChange={e => setInviteChannel(e.target.value as "email" | "whatsapp")}
+              className="border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none">
+              <option value="whatsapp">WhatsApp</option>
+              <option value="email">אימייל</option>
+            </select>
+          </div>
+          {inviteError && <p className="text-xs text-red-600">{inviteError}</p>}
+          {inviteSuccess && <p className="text-xs text-emerald-600">{inviteSuccess}</p>}
+          <div className="flex gap-2">
+            <button type="submit" disabled={inviteSaving}
+              className="bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium px-3 py-1.5 rounded-lg disabled:opacity-50 transition-colors">
+              {inviteSaving ? "שולח..." : "שלח הזמנה"}
+            </button>
+            <button type="button" onClick={() => { setInvitingPersonId(null); setInviteError(null); setInviteSuccess(null); }}
+              className="text-xs text-slate-500 hover:text-slate-700 px-2">ביטול</button>
+          </div>
+        </form>
+      </Modal>
 
       {/* Member profile modal */}
       {selectedMember && (
