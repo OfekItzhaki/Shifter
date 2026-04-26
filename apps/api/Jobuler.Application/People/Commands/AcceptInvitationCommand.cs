@@ -36,7 +36,7 @@ public class AcceptInvitationCommandHandler : IRequestHandler<AcceptInvitationCo
             throw new InvalidOperationException("This invitation has expired. Please ask the admin to resend it.");
 
         var person = await _db.People
-            .FirstOrDefaultAsync(p => p.Id == invitation.PersonId, ct)
+            .FirstOrDefaultAsync(p => p.Id == invitation.PersonId && p.SpaceId == invitation.SpaceId, ct)
             ?? throw new KeyNotFoundException("Person not found.");
 
         // Link user to person

@@ -24,7 +24,14 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
     {
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
         var horizonStart = today;
-        var horizonEnd = today.AddDays(6); // 7-day window inclusive
+
+        // Use the maximum solver horizon across all groups in this space,
+        // falling back to 7 days if no groups are configured.
+        var maxHorizon = await _db.Groups.AsNoTracking()
+            .Where(g => g.SpaceId == spaceId && g.DeletedAt == null)
+            .MaxAsync(g => (int?)g.SolverHorizonDays, ct) ?? 7;
+
+        var horizonEnd = today.AddDays(maxHorizon - 1); // inclusive
 
         // ── People eligibility ────────────────────────────────────────────────
         var people = await _db.People.AsNoTracking()
@@ -106,6 +113,32 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
                 s.RequiredQualificationIds.Select(id => id.ToString()).ToList(),
                 tt?.AllowsOverlap ?? false);
         }).ToList();
+
+        // ── Group tasks (flat model — merged into solver slots) ───────────────
+        // GroupTask is the newer model used by the UI. The solver treats each
+        // active GroupTask as a TaskSlot. GroupId is used as the TaskTypeId so
+        // the solver can group related slots; the task's own Id is the SlotId.
+        var groupTasks = await _db.GroupTasks.AsNoTracking()
+            .Where(t => t.SpaceId == spaceId
+                && t.IsActive
+                && t.EndsAt >= horizonStartDt
+                && t.StartsAt <= horizonEndDt)
+            .ToListAsync(ct);
+
+        var groupTaskSlots = groupTasks.Select(t => new TaskSlotDto(
+            t.Id.ToString(),
+            t.GroupId.ToString(),   // use GroupId as the "task type" bucket
+            t.Name,
+            t.BurdenLevel.ToString().ToLower(),
+            t.StartsAt.ToString("o"),
+            t.EndsAt.ToString("o"),
+            t.RequiredHeadcount,
+            5,                      // default priority
+            [],                     // no role requirements on group tasks
+            [],
+            t.AllowsOverlap)).ToList();
+
+        slotsDto.AddRange(groupTaskSlots);
 
         // ── Constraints ───────────────────────────────────────────────────────
         var constraints = await _db.ConstraintRules.AsNoTracking()

@@ -4,6 +4,7 @@ using Jobuler.Domain.Spaces;
 using Jobuler.Infrastructure.Persistence;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using System.Text.RegularExpressions;
 
 namespace Jobuler.Application.People.Commands;
@@ -24,15 +25,19 @@ public class InvitePersonCommandHandler : IRequestHandler<InvitePersonCommand>
     private readonly AppDbContext _db;
     private readonly IPermissionService _permissions;
     private readonly IInvitationSender _invitationSender;
+    private readonly string _frontendBaseUrl;
 
     public InvitePersonCommandHandler(
         AppDbContext db,
         IPermissionService permissions,
-        IInvitationSender invitationSender)
+        IInvitationSender invitationSender,
+        IConfiguration configuration)
     {
         _db = db;
         _permissions = permissions;
         _invitationSender = invitationSender;
+        _frontendBaseUrl = configuration["App:FrontendBaseUrl"]?.TrimEnd('/')
+            ?? "https://jobuler.app";
     }
 
     public async Task Handle(InvitePersonCommand req, CancellationToken ct)
@@ -72,8 +77,7 @@ public class InvitePersonCommandHandler : IRequestHandler<InvitePersonCommand>
 
         await _db.SaveChangesAsync(ct);
 
-        // Build invite URL — in production this comes from config
-        var inviteUrl = $"https://jobuler.app/invitations/accept?token={rawToken}";
+        var inviteUrl = $"{_frontendBaseUrl}/invitations/accept?token={rawToken}";
 
         // Send via the appropriate channel
         await _invitationSender.SendInvitationAsync(

@@ -13,7 +13,9 @@ using Jobuler.Infrastructure.Auth;
 using Jobuler.Infrastructure.Email;using Jobuler.Application.Auth;
 using Jobuler.Infrastructure.Logging;
 using Jobuler.Infrastructure.Persistence;
-using Jobuler.Infrastructure.Scheduling;using MediatR;
+using Jobuler.Infrastructure.Scheduling;
+using Jobuler.Infrastructure.Storage;
+using MediatR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
@@ -88,6 +90,10 @@ builder.Services.AddScoped<EmailInvitationSender>();
 builder.Services.AddScoped<WhatsAppInvitationSender>();
 builder.Services.AddScoped<IInvitationSender, CompositeInvitationSender>();
 
+// ─── File storage ─────────────────────────────────────────────────────────────
+// LocalDiskFileStorage for dev — swap for S3FileStorage in prod via config/DI
+builder.Services.AddScoped<IFileStorage, LocalDiskFileStorage>();
+
 // ─── Redis ───────────────────────────────────────────────────────────────────
 var redisConn = builder.Configuration["Redis:ConnectionString"] ?? "localhost:6379";
 builder.Services.AddSingleton<IConnectionMultiplexer>(_ =>
@@ -143,9 +149,6 @@ else
 builder.Services.AddHostedService<SolverWorkerService>();
 
 // Auto-scheduler — triggers solver automatically when schedule coverage is insufficient
-builder.Services.AddHostedService<AutoSchedulerService>();
-
-// Auto-scheduler — triggers solver when schedule coverage is insufficient
 builder.Services.AddHostedService<AutoSchedulerService>();
 
 // ─── API ─────────────────────────────────────────────────────────────────────
@@ -214,6 +217,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseStaticFiles(); // serves wwwroot/uploads/* at /uploads/*
 app.UseCors();
 app.UseRateLimiter();
 app.UseAuthentication();

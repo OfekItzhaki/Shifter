@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import AppShell from "@/components/shell/AppShell";
 import { getMe, updateMe, MeDto } from "@/lib/api/auth";
+import ImageUpload from "@/components/ImageUpload";
 
 function getInitials(name: string): string {
   return name
@@ -189,13 +190,14 @@ export default function ProfilePage() {
               </div>
 
               <div>
-                <label style={labelStyle}>תמונת פרופיל (URL)</label>
-                <input
-                  type="url"
-                  value={form.profileImageUrl}
-                  onChange={e => setForm(f => ({ ...f, profileImageUrl: e.target.value }))}
-                  style={inputStyle}
-                  placeholder="https://example.com/photo.jpg"
+                <label style={labelStyle}>תמונת פרופיל</label>
+                <ImageUpload
+                  value={form.profileImageUrl || null}
+                  onChange={url => setForm(f => ({ ...f, profileImageUrl: url }))}
+                  shape="circle"
+                  size={80}
+                  label="העלה תמונה"
+                  disabled={saving}
                 />
               </div>
 

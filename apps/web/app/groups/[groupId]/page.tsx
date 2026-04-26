@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import AppShell from "@/components/shell/AppShell";
 import Modal from "@/components/Modal";
+import ImageUpload from "@/components/ImageUpload";
 import { useSpaceStore } from "@/lib/store/spaceStore";
 import { useAuthStore } from "@/lib/store/authStore";
 import { useRouter } from "next/navigation";
@@ -2471,7 +2472,6 @@ export default function GroupDetailPage() {
                   { label: "שם מלא", key: "fullName", type: "text" },
                   { label: "שם תצוגה", key: "displayName", type: "text" },
                   { label: "מספר טלפון", key: "phoneNumber", type: "tel" },
-                  { label: "תמונת פרופיל (URL)", key: "profileImageUrl", type: "url" },
                   { label: "תאריך לידה", key: "birthday", type: "date" },
                 ].map(field => (
                   <div key={field.key}>
@@ -2490,6 +2490,20 @@ export default function GroupDetailPage() {
                     />
                   </div>
                 ))}
+
+                <div>
+                  <label style={{ display: "block", fontSize: "0.75rem", fontWeight: 600, color: "#94a3b8", marginBottom: "0.5rem" }}>
+                    תמונת פרופיל
+                  </label>
+                  <ImageUpload
+                    value={editingMemberForm.profileImageUrl || null}
+                    onChange={url => setEditingMemberForm(f => f ? { ...f, profileImageUrl: url } : f)}
+                    shape="circle"
+                    size={72}
+                    label="העלה תמונה"
+                    disabled={memberEditSaving}
+                  />
+                </div>
 
                 {memberEditError && (
                   <p style={{ fontSize: "0.875rem", color: "#dc2626", margin: 0 }}>{memberEditError}</p>
