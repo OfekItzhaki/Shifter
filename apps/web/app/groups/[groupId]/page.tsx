@@ -1500,11 +1500,19 @@ export default function GroupDetailPage() {
           </div>
         )}
 
-        {/* Solver horizon */}
+        {/* Auto-schedule horizon */}
         <div className={isAdmin ? "border-b border-slate-200 pb-5" : ""}>
-          <label className="block text-sm font-medium text-slate-700 mb-2">
-            אופק תכנון הסולבר
-          </label>
+          <div className="flex items-center gap-2 mb-1">
+            <label className="block text-sm font-medium text-slate-700">
+              אופק סידור אוטומטי
+            </label>
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
+              🔄 אוטומטי
+            </span>
+          </div>
+          <p className="text-xs text-slate-400 mb-3">
+            המערכת תחשב סידור חדש אוטומטית כל פעם שהסידור הקיים לא מכסה את מספר הימים הזה קדימה.
+          </p>
           <div className="flex items-center gap-4">
             <input
               type="range"

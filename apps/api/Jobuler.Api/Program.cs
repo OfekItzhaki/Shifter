@@ -142,6 +142,12 @@ else
 // Background worker — dequeues and processes solver jobs
 builder.Services.AddHostedService<SolverWorkerService>();
 
+// Auto-scheduler — triggers solver automatically when schedule coverage is insufficient
+builder.Services.AddHostedService<AutoSchedulerService>();
+
+// Auto-scheduler — triggers solver when schedule coverage is insufficient
+builder.Services.AddHostedService<AutoSchedulerService>();
+
 // ─── API ─────────────────────────────────────────────────────────────────────
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
