@@ -13,8 +13,7 @@ using Jobuler.Infrastructure.Auth;
 using Jobuler.Infrastructure.Email;using Jobuler.Application.Auth;
 using Jobuler.Infrastructure.Logging;
 using Jobuler.Infrastructure.Persistence;
-using Jobuler.Infrastructure.Scheduling;
-using MediatR;
+using Jobuler.Infrastructure.Scheduling;using MediatR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
@@ -102,7 +101,25 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(_ =>
 
 // ─── Scheduling services ─────────────────────────────────────────────────────
 builder.Services.AddScoped<ISolverPayloadNormalizer, SolverPayloadNormalizer>();
-builder.Services.AddScoped<ISolverJobQueue, RedisSolverJobQueue>();
+
+// Use Redis queue if available, fall back to NoOp if Redis is down
+builder.Services.AddScoped<ISolverJobQueue>(sp =>
+{
+    try
+    {
+        var redis = sp.GetRequiredService<IConnectionMultiplexer>();
+        // Try a quick ping to verify Redis is actually reachable
+        var db = redis.GetDatabase();
+        db.Ping();
+        return new RedisSolverJobQueue(redis, sp.GetRequiredService<ILogger<RedisSolverJobQueue>>());
+    }
+    catch
+    {
+        sp.GetRequiredService<ILogger<Program>>()
+            .LogWarning("Redis unavailable — using NoOp solver queue. Solver trigger will be accepted but not processed.");
+        return new NoOpSolverJobQueue(sp.GetRequiredService<ILogger<NoOpSolverJobQueue>>());
+    }
+});
 
 builder.Services.AddHttpClient<ISolverClient, SolverHttpClient>(client =>
 {

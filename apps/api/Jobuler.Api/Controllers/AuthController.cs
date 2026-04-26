@@ -60,6 +60,21 @@ public class AuthController : ControllerBase
         var user = await db.Users.FirstOrDefaultAsync(u => u.Id == CurrentUserId, ct);
         if (user is null) return NotFound();
         user.UpdateProfileFull(req.DisplayName, req.ProfileImageUrl, req.PhoneNumber, req.Birthday);
+
+        // Sync profile image and display name to linked Person records
+        var linkedPeople = await db.People
+            .Where(p => p.LinkedUserId == CurrentUserId)
+            .ToListAsync(ct);
+        foreach (var person in linkedPeople)
+        {
+            person.UpdateFull(
+                string.IsNullOrWhiteSpace(req.DisplayName) ? person.FullName : req.DisplayName,
+                req.DisplayName ?? person.DisplayName,
+                req.ProfileImageUrl ?? person.ProfileImageUrl,
+                req.PhoneNumber ?? person.PhoneNumber,
+                person.Birthday);
+        }
+
         await db.SaveChangesAsync(ct);
         return NoContent();
     }
