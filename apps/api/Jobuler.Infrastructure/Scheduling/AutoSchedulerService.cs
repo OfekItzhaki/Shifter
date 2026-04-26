@@ -1,7 +1,6 @@
 using Jobuler.Application.Scheduling;
 using Jobuler.Application.Scheduling.Commands;
-using Jobuler.Domain.Scheduling;
-using Jobuler.Infrastructure.Persistence;
+using Jobuler.Domain.Scheduling;using Jobuler.Infrastructure.Persistence;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -116,7 +115,7 @@ public class AutoSchedulerService : BackgroundService
 
         // Check if there's already a draft version (admin hasn't reviewed yet)
         var hasDraft = await db.ScheduleVersions.AsNoTracking()
-            .AnyAsync(v => v.SpaceId == spaceId && v.Status == "draft", ct);
+            .AnyAsync(v => v.SpaceId == spaceId && v.Status == ScheduleVersionStatus.Draft, ct);
 
         if (hasDraft)
         {
@@ -126,7 +125,7 @@ public class AutoSchedulerService : BackgroundService
 
         // Get the current published schedule's coverage
         var publishedVersion = await db.ScheduleVersions.AsNoTracking()
-            .Where(v => v.SpaceId == spaceId && v.Status == "published")
+            .Where(v => v.SpaceId == spaceId && v.Status == ScheduleVersionStatus.Published)
             .OrderByDescending(v => v.VersionNumber)
             .FirstOrDefaultAsync(ct);
 
