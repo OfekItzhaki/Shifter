@@ -1,6 +1,5 @@
 using FluentValidation;
 using Jobuler.Application.Auth.Commands;
-using Jobuler.Application.Auth.Queries;
 using Jobuler.Infrastructure.Persistence;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
