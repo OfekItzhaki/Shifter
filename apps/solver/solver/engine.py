@@ -24,7 +24,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-SOLVER_TIMEOUT = int(os.getenv("SOLVER_TIMEOUT_SECONDS", "60"))
+SOLVER_TIMEOUT = int(os.getenv("SOLVER_TIMEOUT_SECONDS", "20"))
 
 
 def solve(input: SolverInput) -> SolverOutput:

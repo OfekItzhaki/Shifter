@@ -90,6 +90,41 @@ public class SolverWorkerService : BackgroundService
             var input = await normalizer.BuildAsync(
                 job.SpaceId, job.RunId, job.TriggerMode, job.BaselineVersionId, ct);
 
+            // ── Pre-flight checks ─────────────────────────────────────────────
+            if (input.TaskSlots.Count == 0)
+            {
+                run.MarkFailed("No future tasks to schedule.");
+                await db.SaveChangesAsync(ct);
+                await notifier.NotifySpaceAdminsAsync(
+                    job.SpaceId, "solver_no_tasks",
+                    "אין משימות לסידור",
+                    "לא נמצאו משימות עתידיות בטווח הזמן הנוכחי. צור משימות עם תאריכים עתידיים ונסה שוב.",
+                    ct: ct);
+                return;
+            }
+
+            if (input.People.Count == 0)
+            {
+                run.MarkFailed("No active members to schedule.");
+                await db.SaveChangesAsync(ct);
+                await notifier.NotifySpaceAdminsAsync(
+                    job.SpaceId, "solver_no_people",
+                    "אין חברים פעילים",
+                    "לא נמצאו חברים פעילים בקבוצה. הוסף חברים ונסה שוב.",
+                    ct: ct);
+                return;
+            }
+
+            // Warn if very few people relative to tasks
+            var totalHeadcountNeeded = input.TaskSlots.Sum(s => s.RequiredHeadcount);
+            if (input.People.Count < totalHeadcountNeeded / (double)input.TaskSlots.Count)
+            {
+                _logger.LogWarning(
+                    "Solver: {People} people for {Slots} slots needing avg {Avg} headcount — may be infeasible.",
+                    input.People.Count, input.TaskSlots.Count,
+                    totalHeadcountNeeded / (double)input.TaskSlots.Count);
+            }
+
             var inputHash = ComputeHash(input);
             run.MarkRunning(inputHash);
             await db.SaveChangesAsync(ct);
@@ -173,11 +208,23 @@ public class SolverWorkerService : BackgroundService
 
             // In-app notification
             var notifTitle = output.Feasible
-                ? (output.TimedOut ? "Schedule ready (timed out)" : "Schedule ready")
-                : "Solver could not find a solution";
-            var notifBody = output.Feasible
-                ? $"Draft version {nextVersion} created with {assignments.Count} assignments. Review and publish when ready."
-                : $"Run {job.RunId} finished without a feasible schedule. Check constraints and try again.";
+                ? (output.TimedOut ? "הסידור הושלם (חלקי)" : "הסידור מוכן לעיון")
+                : "לא נמצא סידור אפשרי";
+
+            string notifBody;
+            if (output.Feasible)
+            {
+                var uncoveredNote = output.UncoveredSlotIds.Count > 0
+                    ? $" {output.UncoveredSlotIds.Count} משימות לא אויישו במלואן."
+                    : " כל המשימות אויישו.";
+                notifBody = output.TimedOut
+                    ? $"הסידור הגיע לגבול הזמן — נוצרה טיוטה עם {assignments.Count} שיבוצים.{uncoveredNote} בדוק ופרסם כשמוכן."
+                    : $"נוצרה טיוטה עם {assignments.Count} שיבוצים.{uncoveredNote} בדוק ופרסם כשמוכן.";
+            }
+            else
+            {
+                notifBody = "לא ניתן היה ליצור סידור עם האילוצים הנוכחיים. בדוק שיש מספיק חברים ומשימות עתידיות, ונסה שוב.";
+            }
             await notifier.NotifySpaceAdminsAsync(
                 job.SpaceId, evt, notifTitle, notifBody,
                 metadataJson: summaryJson, ct: ct);
@@ -200,10 +247,18 @@ public class SolverWorkerService : BackgroundService
 
             // In-app notification — failure
             var notifier2 = scope.ServiceProvider.GetRequiredService<INotificationService>();
+
+            // Translate technical error to user-friendly Hebrew
+            var friendlyError = ex.Message.Contains("422") || ex.Message.Contains("Unprocessable")
+                ? "הסולבר דחה את הנתונים — ייתכן שיש בעיה בפורמט המשימות או האילוצים."
+                : ex.Message.Contains("connect") || ex.Message.Contains("refused")
+                    ? "שירות הסידור אינו זמין כרגע. ודא שהוא פועל ונסה שוב."
+                    : "אירעה שגיאה בעת הרצת הסידור. נסה שוב מאוחר יותר.";
+
             await notifier2.NotifySpaceAdminsAsync(
                 job.SpaceId, "solver_failed",
-                "Solver run failed",
-                $"Run {job.RunId} encountered an error: {ex.Message}",
+                "הרצת הסידור נכשלה",
+                friendlyError,
                 ct: ct);
         }
     }

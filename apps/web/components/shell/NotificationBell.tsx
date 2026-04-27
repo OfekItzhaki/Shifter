@@ -54,7 +54,10 @@ export default function NotificationBell({ variant = "dark" }: { variant?: "ligh
   function eventIcon(eventType: string) {
     if (eventType === "solver_failed") return "❌";
     if (eventType === "solver_infeasible") return "⚠️";
-    return "✅";
+    if (eventType === "solver_no_tasks") return "📋";
+    if (eventType === "solver_no_people") return "👥";
+    if (eventType === "solver_completed") return "✅";
+    return "🔔";
   }
 
   return (
@@ -77,7 +80,15 @@ export default function NotificationBell({ variant = "dark" }: { variant?: "ligh
       </button>
 
       {open && (
-        <div className="absolute left-0 mt-2 w-80 bg-white border border-gray-200 rounded-xl shadow-lg z-50" style={{ top: "100%" }}>
+        <div
+          className="bg-white border border-gray-200 rounded-xl shadow-xl z-[100]"
+          style={{
+            position: "fixed",
+            top: 64,
+            left: 260,
+            width: 320,
+          }}
+        >
           <div className="flex items-center justify-between px-4 py-3 border-b">
             <span className="text-sm font-semibold">התראות</span>
             {unreadCount > 0 && (
@@ -93,18 +104,18 @@ export default function NotificationBell({ variant = "dark" }: { variant?: "ligh
               <p className="text-xs text-gray-400 text-center py-6">אין התראות</p>
             ) : notifications.map(n => (
               <div key={n.id}
-                className={`px-4 py-3 flex gap-3 ${n.isRead ? "opacity-60" : "bg-blue-50/40"}`}>
-                <span className="text-base mt-0.5">{eventIcon(n.eventType)}</span>
+                className={`px-4 py-3 flex gap-3 ${n.isRead ? "opacity-50" : "bg-blue-50/40"}`}>
+                <span className="text-base mt-0.5 flex-shrink-0">{eventIcon(n.eventType)}</span>
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-semibold text-gray-800 truncate">{n.title}</p>
-                  <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">{n.body}</p>
-                  <p className="text-[10px] text-gray-400 mt-1">
-                    {new Date(n.createdAt).toLocaleString([], { dateStyle: "short", timeStyle: "short" })}
+                  <p className="text-xs font-semibold text-gray-800">{n.title}</p>
+                  <p className="text-xs text-gray-600 mt-0.5 leading-relaxed">{n.body}</p>
+                  <p className="text-[10px] text-gray-400 mt-1.5">
+                    {new Date(n.createdAt).toLocaleString("he-IL", { dateStyle: "short", timeStyle: "short" })}
                   </p>
                 </div>
                 {!n.isRead && (
                   <button onClick={() => handleDismiss(n.id)}
-                    className="text-gray-300 hover:text-gray-500 text-xs self-start mt-0.5"
+                    className="text-gray-300 hover:text-gray-500 flex-shrink-0 self-start mt-0.5 text-base leading-none"
                     aria-label="Dismiss">×</button>
                 )}
               </div>
