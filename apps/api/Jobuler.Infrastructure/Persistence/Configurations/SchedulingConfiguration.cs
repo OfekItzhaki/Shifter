@@ -94,6 +94,8 @@ public class AssignmentChangeSummaryConfiguration : IEntityTypeConfiguration<Ass
         builder.Property(s => s.StabilityScore).HasColumnName("stability_score");
         builder.Property(s => s.DiffJson).HasColumnName("diff_json").HasColumnType("jsonb");
         builder.Property(s => s.ComputedAt).HasColumnName("computed_at");
+        // assignment_change_summaries has no created_at column
+        builder.Ignore(s => s.CreatedAt);
     }
 }
 
@@ -117,6 +119,8 @@ public class FairnessCounterConfiguration : IEntityTypeConfiguration<FairnessCou
         builder.Property(f => f.NightMissions7d).HasColumnName("night_missions_7d");
         builder.Property(f => f.ConsecutiveBurdenCount).HasColumnName("consecutive_burden_count");
         builder.Property(f => f.UpdatedAt).HasColumnName("updated_at");
+        // fairness_counters has no created_at column — ignore the base Entity property
+        builder.Ignore(f => f.CreatedAt);
         builder.HasIndex(f => new { f.SpaceId, f.PersonId, f.AsOfDate }).IsUnique();
     }
 }
