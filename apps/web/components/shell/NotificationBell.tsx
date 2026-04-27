@@ -41,14 +41,16 @@ export default function NotificationBell({ variant = "dark" }: { variant?: "ligh
 
   async function handleDismiss(id: string) {
     if (!currentSpaceId) return;
-    await dismissNotification(currentSpaceId, id);
-    setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
+    // Remove immediately from local state — no re-fetch needed
+    setNotifications(prev => prev.filter(n => n.id !== id));
+    // Fire-and-forget to the API
+    dismissNotification(currentSpaceId, id).catch(() => {});
   }
 
   async function handleDismissAll() {
     if (!currentSpaceId) return;
-    await dismissAllNotifications(currentSpaceId);
-    setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+    setNotifications([]);
+    dismissAllNotifications(currentSpaceId).catch(() => {});
   }
 
   function eventIcon(eventType: string) {
@@ -63,7 +65,7 @@ export default function NotificationBell({ variant = "dark" }: { variant?: "ligh
   return (
     <div ref={ref} className="relative">
       <button
-        onClick={(e) => { e.preventDefault(); setOpen(!open); }}
+        onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpen(!open); }}
         className={`relative p-1.5 rounded-lg ${variant === "dark" ? "hover:bg-white/10 text-slate-400 hover:text-white" : "hover:bg-gray-100 text-gray-600"}`}
         aria-label="Notifications"
       >
@@ -84,15 +86,20 @@ export default function NotificationBell({ variant = "dark" }: { variant?: "ligh
           className="bg-white border border-gray-200 rounded-xl shadow-xl z-[100]"
           style={{
             position: "fixed",
-            top: 64,
-            left: 260,
-            width: 320,
+            top: 12,
+            left: 268,
+            width: 340,
+            maxHeight: "80vh",
+            overflowY: "auto",
+            direction: "rtl",
           }}
+          onClick={e => e.stopPropagation()}
         >
           <div className="flex items-center justify-between px-4 py-3 border-b">
             <span className="text-sm font-semibold">התראות</span>
             {unreadCount > 0 && (
-              <button onClick={handleDismissAll}
+              <button
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDismissAll(); }}
                 className="text-xs text-blue-600 hover:underline">
                 סמן הכל כנקרא
               </button>
@@ -114,7 +121,8 @@ export default function NotificationBell({ variant = "dark" }: { variant?: "ligh
                   </p>
                 </div>
                 {!n.isRead && (
-                  <button onClick={() => handleDismiss(n.id)}
+                  <button
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDismiss(n.id); }}
                     className="text-gray-300 hover:text-gray-500 flex-shrink-0 self-start mt-0.5 text-base leading-none"
                     aria-label="Dismiss">×</button>
                 )}

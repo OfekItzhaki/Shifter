@@ -11,10 +11,10 @@ export interface NotificationDto {
 }
 
 export async function getNotifications(
-  spaceId: string, unreadOnly = false
+  spaceId: string
 ): Promise<NotificationDto[]> {
   const { data } = await apiClient.get(
-    `/spaces/${spaceId}/notifications`, { params: { unreadOnly } }
+    `/spaces/${spaceId}/notifications`, { params: { unreadOnly: true } }
   );
   return data;
 }
