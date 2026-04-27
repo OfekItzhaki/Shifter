@@ -78,6 +78,7 @@ export default function GroupDetailPage() {
   const [notFound, setNotFound] = useState(false);
   const [members, setMembers] = useState<GroupMemberDto[]>([]);
   const [activeTab, setActiveTab] = useState<ActiveTab>("schedule");
+  const [loading, setLoading] = useState(true);
   const [membersLoading, setMembersLoading] = useState(false);
   const [addEmail, setAddEmail] = useState("");
   const [addError, setAddError] = useState<string | null>(null);
