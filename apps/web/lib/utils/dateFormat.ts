@@ -15,6 +15,9 @@
 
 /** Map our app locale codes to BCP-47 locale tags */
 function toBcp47(locale: string): string {
+  // If already a full BCP-47 tag (e.g. "he-IL", "en-US"), use directly
+  if (locale.includes("-")) return locale;
+
   const map: Record<string, string> = {
     he: "he-IL",
     en: "en-US",

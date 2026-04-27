@@ -8,6 +8,7 @@ import Modal from "@/components/Modal";
 import ImageUpload from "@/components/ImageUpload";
 import DraftScheduleModal from "@/components/DraftScheduleModal";
 import ScheduleTab from "./tabs/ScheduleTab";
+import ConstraintPayloadEditor from "@/components/ConstraintPayloadEditor";
 import { ActiveTab, ADMIN_ONLY_TABS, ScheduleAssignment, burdenLabels, burdenColors, SEVERITY_STYLES, SEVERITY_DOTS } from "./types";
 import { useSpaceStore } from "@/lib/store/spaceStore";
 import { useAuthStore } from "@/lib/store/authStore";
@@ -549,6 +550,8 @@ export default function GroupDetailPage() {
       await apiClient.post(`/spaces/${currentSpaceId}/schedule-versions/${draftVersion.id}/publish`);
       setDraftVersion(null);
       setScheduleNeedsRefresh(true);
+      // Switch to schedule tab so the user sees the published result
+      setActiveTab("schedule");
     } catch (err: any) {
       setScheduleVersionError(err?.response?.data?.message ?? "שגיאה בפרסום הסידור");
     } finally { setPublishSaving(false); }
@@ -2206,15 +2209,11 @@ export default function GroupDetailPage() {
         onClose={() => { setEditingConstraintId(null); setEditConstraintError(null); }}
       >
         <div className="space-y-3">
-          <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1">Payload (JSON)</label>
-            <textarea
-              value={editConstraintPayload}
-              onChange={e => setEditConstraintPayload(e.target.value)}
-              rows={3}
-              className="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-            />
-          </div>
+          <ConstraintPayloadEditor
+            ruleType={constraints.find(c => c.id === editingConstraintId)?.ruleType ?? ""}
+            value={editConstraintPayload}
+            onChange={setEditConstraintPayload}
+          />
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-medium text-slate-500 mb-1">בתוקף מ</label>

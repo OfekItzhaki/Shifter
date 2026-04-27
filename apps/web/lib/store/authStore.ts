@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { login as apiLogin, logout as apiLogout } from "@/lib/api/auth";
+import { detectBrowserLocale } from "@/lib/utils/detectLocale";
 
 interface AuthState {
   userId: string | null;
@@ -35,14 +36,15 @@ export const useAuthStore = create<AuthState>()(
         const result = await apiLogin(email, password);
         localStorage.setItem("access_token", result.accessToken);
         localStorage.setItem("refresh_token", result.refreshToken);
-        // Clear stale space so AppShell re-resolves for the new user
         localStorage.removeItem("jobuler-space");
         document.cookie = `access_token=${result.accessToken}; path=/; max-age=900; SameSite=Strict`;
-        document.cookie = `locale=${result.preferredLocale}; path=/; max-age=31536000; SameSite=Strict`;
+        // Use server-returned locale, or fall back to browser detection
+        const locale = result.preferredLocale || detectBrowserLocale();
+        document.cookie = `locale=${locale}; path=/; max-age=31536000; SameSite=Strict`;
         set({
           userId: result.userId,
           displayName: result.displayName,
-          preferredLocale: result.preferredLocale,
+          preferredLocale: locale,
           isAuthenticated: true,
           adminGroupId: null,
         });

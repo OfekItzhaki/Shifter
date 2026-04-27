@@ -9,24 +9,25 @@ import {
 } from "@/lib/utils/dateFormat";
 
 /**
- * Returns locale-aware date formatting functions bound to the current user's locale.
- *
- * Usage:
- *   const { fDate, fDateTime, fTime } = useDateFormat();
- *   fDate("2026-04-27")          // "27/04/2026" (Israel) or "04/27/2026" (US)
- *   fDateTime("2026-04-27T07:15") // "27/04/2026, 07:15"
+ * Returns locale-aware date formatting functions.
+ * Priority: stored preferredLocale → browser navigator.language → "he-IL"
  */
 export function useDateFormat() {
   const locale = useAuthStore(s => s.preferredLocale);
 
+  // Use browser locale if available and stored locale is the generic default
+  const effectiveLocale = typeof window !== "undefined" && locale === "he"
+    ? navigator.language || locale
+    : locale;
+
   return {
-    fDate:      (d: string | Date | null | undefined) => formatDate(d, locale),
-    fDateLong:  (d: string | Date | null | undefined) => formatDateLong(d, locale),
-    fDateTime:  (d: string | Date | null | undefined) => formatDateTime(d, locale),
-    fDateShort: (d: string | Date | null | undefined) => formatDateTimeShort(d, locale),
-    fTime:      (d: string | Date | null | undefined) => formatTime(d, locale),
+    fDate:      (d: string | Date | null | undefined) => formatDate(d, effectiveLocale),
+    fDateLong:  (d: string | Date | null | undefined) => formatDateLong(d, effectiveLocale),
+    fDateTime:  (d: string | Date | null | undefined) => formatDateTime(d, effectiveLocale),
+    fDateShort: (d: string | Date | null | undefined) => formatDateTimeShort(d, effectiveLocale),
+    fTime:      (d: string | Date | null | undefined) => formatTime(d, effectiveLocale),
     fRange:     (from: string | Date | null | undefined, to: string | Date | null | undefined) =>
-                  formatDateRange(from, to, locale),
-    locale,
+                  formatDateRange(from, to, effectiveLocale),
+    locale: effectiveLocale,
   };
 }
