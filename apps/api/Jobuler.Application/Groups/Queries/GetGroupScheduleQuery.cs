@@ -16,6 +16,7 @@ public record GroupScheduleAssignmentDto(
 
 /// <summary>
 /// Returns the published schedule assignments for members of a specific group.
+/// Supports both legacy TaskSlots and the newer GroupTasks model.
 /// </summary>
 public record GetGroupScheduleQuery(Guid SpaceId, Guid GroupId) : IRequest<List<GroupScheduleAssignmentDto>>;
 
@@ -42,22 +43,71 @@ public class GetGroupScheduleQueryHandler : IRequestHandler<GetGroupScheduleQuer
 
         if (memberIds.Count == 0) return [];
 
-        // Load assignments for those members
-        var assignments = await _db.Assignments.AsNoTracking()
-            .Where(a => a.ScheduleVersionId == version.Id && a.SpaceId == req.SpaceId
+        // Load raw assignments for those members
+        var rawAssignments = await _db.Assignments.AsNoTracking()
+            .Where(a => a.ScheduleVersionId == version.Id
+                && a.SpaceId == req.SpaceId
                 && memberIds.Contains(a.PersonId))
-            .Join(_db.People, a => a.PersonId, p => p.Id,
-                (a, p) => new { a, PersonName = p.DisplayName ?? p.FullName })
-            .Join(_db.TaskSlots, x => x.a.TaskSlotId, s => s.Id,
-                (x, s) => new { x.a, x.PersonName, Slot = s })
-            .Join(_db.TaskTypes, x => x.Slot.TaskTypeId, t => t.Id,
-                (x, t) => new { x.a, x.PersonName, x.Slot, TaskName = t.Name })
-            .OrderBy(x => x.Slot.StartsAt)
-            .Select(x => new GroupScheduleAssignmentDto(
-                x.a.Id, x.a.PersonId, x.PersonName, x.TaskName,
-                x.Slot.StartsAt, x.Slot.EndsAt, x.a.Source.ToString()))
             .ToListAsync(ct);
 
-        return assignments;
+        if (rawAssignments.Count == 0) return [];
+
+        // Load people names
+        var people = await _db.People.AsNoTracking()
+            .Where(p => memberIds.Contains(p.Id))
+            .ToDictionaryAsync(p => p.Id, p => p.DisplayName ?? p.FullName, ct);
+
+        var slotIds = rawAssignments.Select(a => a.TaskSlotId).ToHashSet();
+
+        // Try legacy TaskSlots first
+        var taskSlots = await _db.TaskSlots.AsNoTracking()
+            .Where(s => slotIds.Contains(s.Id))
+            .ToDictionaryAsync(s => s.Id, ct);
+
+        var taskTypeIds = taskSlots.Values.Select(s => s.TaskTypeId).ToHashSet();
+        var taskTypes = await _db.TaskTypes.AsNoTracking()
+            .Where(t => taskTypeIds.Contains(t.Id))
+            .ToDictionaryAsync(t => t.Id, t => t.Name, ct);
+
+        // Try GroupTasks for any slot IDs not found in task_slots
+        var missingSlotIds = slotIds.Where(id => !taskSlots.ContainsKey(id)).ToHashSet();
+        var groupTasks = missingSlotIds.Count > 0
+            ? await _db.GroupTasks.AsNoTracking()
+                .Where(t => missingSlotIds.Contains(t.Id))
+                .ToDictionaryAsync(t => t.Id, ct)
+            : new();
+
+        var result = new List<GroupScheduleAssignmentDto>();
+
+        foreach (var a in rawAssignments)
+        {
+            string taskName;
+            DateTime startsAt;
+            DateTime endsAt;
+
+            if (taskSlots.TryGetValue(a.TaskSlotId, out var slot))
+            {
+                taskName = taskTypes.TryGetValue(slot.TaskTypeId, out var tn) ? tn : "Unknown";
+                startsAt = slot.StartsAt;
+                endsAt = slot.EndsAt;
+            }
+            else if (groupTasks.TryGetValue(a.TaskSlotId, out var gt))
+            {
+                taskName = gt.Name;
+                startsAt = gt.StartsAt;
+                endsAt = gt.EndsAt;
+            }
+            else
+            {
+                continue; // slot not found in either table — skip
+            }
+
+            var personName = people.TryGetValue(a.PersonId, out var pn) ? pn : "Unknown";
+            result.Add(new GroupScheduleAssignmentDto(
+                a.Id, a.PersonId, personName, taskName,
+                startsAt, endsAt, a.Source.ToString()));
+        }
+
+        return result.OrderBy(r => r.SlotStartsAt).ToList();
     }
 }

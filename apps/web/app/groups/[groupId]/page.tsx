@@ -80,6 +80,15 @@ export default function GroupDetailPage() {
     }
   }, [adminGroupId]);
 
+  // Reset transient state when switching tabs
+  useEffect(() => {
+    setSettingsSaved(false);
+    setSolverStatus(null);
+    setSolverError(null);
+    setSettingsError(null);
+    setRenameError(null);
+  }, [activeTab]);
+
   const [group, setGroup] = useState<GroupWithMemberCountDto | null>(null);
   const [notFound, setNotFound] = useState(false);
   const [members, setMembers] = useState<GroupMemberDto[]>([]);
@@ -183,6 +192,10 @@ export default function GroupDetailPage() {
   const [discardSaving, setDiscardSaving] = useState(false);
   const [scheduleVersionError, setScheduleVersionError] = useState<string | null>(null);
   const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
+  // Draft preview modal
+  const [showDraftModal, setShowDraftModal] = useState(false);
+  const [draftAssignments, setDraftAssignments] = useState<{personName: string; taskTypeName: string; startsAt: string; endsAt: string}[]>([]);
+  const [draftLoading, setDraftLoading] = useState(false);
   // tasksSubTab removed — tasks panel now shows unified group tasks list
   const [removeErrors, setRemoveErrors] = useState<Record<string, string>>({});
   const [newGroupName, setNewGroupName] = useState("");
@@ -330,6 +343,26 @@ export default function GroupDetailPage() {
       setDraftVersion(drafts.length > 0 ? drafts[0] : null);
     } catch {
       setDraftVersion(null);
+    }
+  }
+
+  async function openDraftModal() {
+    if (!currentSpaceId || !draftVersion) return;
+    setShowDraftModal(true);
+    setDraftLoading(true);
+    try {
+      const r = await apiClient.get(`/spaces/${currentSpaceId}/schedule-versions/${draftVersion.id}`);
+      const detail = r.data;
+      setDraftAssignments((detail.assignments ?? []).map((a: any) => ({
+        personName: a.personName,
+        taskTypeName: a.taskTypeName,
+        startsAt: a.slotStartsAt,
+        endsAt: a.slotEndsAt,
+      })));
+    } catch {
+      setDraftAssignments([]);
+    } finally {
+      setDraftLoading(false);
     }
   }
 
@@ -531,6 +564,8 @@ export default function GroupDetailPage() {
             setSolverPolling(false);
             setSolverStatus("Completed");
             setScheduleNeedsRefresh(true);
+            // Fetch the new draft so the banner + modal are ready
+            await fetchDraftVersion();
           } else if (status === "Failed" || status === "TimedOut") {
             clearInterval(solverPollRef.current!);
             setSolverPolling(false);
@@ -872,24 +907,32 @@ export default function GroupDetailPage() {
                 </span>
                 <span className="text-sm text-amber-800">סידור טיוטה מוכן לעיון ופרסום</span>
               </div>
-              {isAdmin && (
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  <button
-                    onClick={handlePublishVersion}
-                    disabled={publishSaving || discardSaving}
-                    className="bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-medium px-3 py-1.5 rounded-lg disabled:opacity-50 transition-colors"
-                  >
-                    {publishSaving ? "מפרסם..." : "פרסם סידור"}
-                  </button>
-                  <button
-                    onClick={() => setShowDiscardConfirm(true)}
-                    disabled={publishSaving || discardSaving}
-                    className="text-xs text-red-600 border border-red-200 hover:bg-red-50 px-3 py-1.5 rounded-lg disabled:opacity-50 transition-colors"
-                  >
-                    בטל טיוטה
-                  </button>
-                </div>
-              )}
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <button
+                  onClick={openDraftModal}
+                  className="text-xs text-amber-800 border border-amber-300 hover:bg-amber-100 px-3 py-1.5 rounded-lg transition-colors font-medium"
+                >
+                  👁 צפה בטיוטה
+                </button>
+                {isAdmin && (
+                  <>
+                    <button
+                      onClick={handlePublishVersion}
+                      disabled={publishSaving || discardSaving}
+                      className="bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-medium px-3 py-1.5 rounded-lg disabled:opacity-50 transition-colors"
+                    >
+                      {publishSaving ? "מפרסם..." : "פרסם סידור"}
+                    </button>
+                    <button
+                      onClick={() => setShowDiscardConfirm(true)}
+                      disabled={publishSaving || discardSaving}
+                      className="text-xs text-red-600 border border-red-200 hover:bg-red-50 px-3 py-1.5 rounded-lg disabled:opacity-50 transition-colors"
+                    >
+                      בטל טיוטה
+                    </button>
+                  </>
+                )}
+              </div>
             </div>
             {scheduleVersionError && (
               <p className="text-xs text-red-600 mt-2">{scheduleVersionError}</p>
@@ -1564,11 +1607,21 @@ export default function GroupDetailPage() {
                 הסידור מחושב...
               </div>
             ) : solverStatus === "Completed" ? (
-              <div className="flex items-center gap-2 text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3 text-sm">
-                <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                </svg>
-                הסידור הושלם! הטיוטה מוכנה לעיון.
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3 text-sm">
+                  <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                  הסידור הושלם! הטיוטה מוכנה.
+                </div>
+                {draftVersion && (
+                  <button
+                    onClick={openDraftModal}
+                    className="bg-amber-500 hover:bg-amber-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl transition-colors"
+                  >
+                    👁 צפה בטיוטה
+                  </button>
+                )}
               </div>
             ) : (
               <>

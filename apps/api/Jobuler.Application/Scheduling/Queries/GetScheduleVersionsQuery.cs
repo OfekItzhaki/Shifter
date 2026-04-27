@@ -96,21 +96,64 @@ public class GetScheduleVersionDetailQueryHandler
         var diff = await _db.AssignmentChangeSummaries.AsNoTracking()
             .FirstOrDefaultAsync(d => d.VersionId == req.VersionId, ct);
 
-        // Load assignments joined with person and task slot names
-        var assignments = await _db.Assignments.AsNoTracking()
+        // Load raw assignments
+        var rawAssignments = await _db.Assignments.AsNoTracking()
             .Where(a => a.ScheduleVersionId == req.VersionId && a.SpaceId == req.SpaceId)
-            .Join(_db.People, a => a.PersonId, p => p.Id,
-                (a, p) => new { a, PersonName = p.DisplayName ?? p.FullName })
-            .Join(_db.TaskSlots, x => x.a.TaskSlotId, s => s.Id,
-                (x, s) => new { x.a, x.PersonName, Slot = s })
-            .Join(_db.TaskTypes, x => x.Slot.TaskTypeId, t => t.Id,
-                (x, t) => new AssignmentDto(
-                    x.a.Id, x.a.TaskSlotId, x.a.PersonId,
-                    x.PersonName, t.Name,
-                    x.Slot.StartsAt, x.Slot.EndsAt,
-                    x.a.Source.ToString()))
-            .OrderBy(a => a.SlotStartsAt)
             .ToListAsync(ct);
+
+        var slotIds = rawAssignments.Select(a => a.TaskSlotId).ToHashSet();
+        var personIds = rawAssignments.Select(a => a.PersonId).ToHashSet();
+
+        var people = await _db.People.AsNoTracking()
+            .Where(p => personIds.Contains(p.Id))
+            .ToDictionaryAsync(p => p.Id, p => p.DisplayName ?? p.FullName, ct);
+
+        // Legacy task slots
+        var taskSlots = await _db.TaskSlots.AsNoTracking()
+            .Where(s => slotIds.Contains(s.Id))
+            .ToDictionaryAsync(s => s.Id, ct);
+
+        var taskTypeIds = taskSlots.Values.Select(s => s.TaskTypeId).ToHashSet();
+        var taskTypes = await _db.TaskTypes.AsNoTracking()
+            .Where(t => taskTypeIds.Contains(t.Id))
+            .ToDictionaryAsync(t => t.Id, t => t.Name, ct);
+
+        // GroupTasks for any IDs not in task_slots
+        var missingIds = slotIds.Where(id => !taskSlots.ContainsKey(id)).ToHashSet();
+        var groupTasks = missingIds.Count > 0
+            ? await _db.GroupTasks.AsNoTracking()
+                .Where(t => missingIds.Contains(t.Id))
+                .ToDictionaryAsync(t => t.Id, ct)
+            : new();
+
+        var assignments = new List<AssignmentDto>();
+        foreach (var a in rawAssignments)
+        {
+            string taskName;
+            DateTime startsAt;
+            DateTime endsAt;
+
+            if (taskSlots.TryGetValue(a.TaskSlotId, out var slot))
+            {
+                taskName = taskTypes.TryGetValue(slot.TaskTypeId, out var tn) ? tn : "Unknown";
+                startsAt = slot.StartsAt;
+                endsAt = slot.EndsAt;
+            }
+            else if (groupTasks.TryGetValue(a.TaskSlotId, out var gt))
+            {
+                taskName = gt.Name;
+                startsAt = gt.StartsAt;
+                endsAt = gt.EndsAt;
+            }
+            else continue;
+
+            var personName = people.TryGetValue(a.PersonId, out var pn) ? pn : "Unknown";
+            assignments.Add(new AssignmentDto(
+                a.Id, a.TaskSlotId, a.PersonId, personName, taskName,
+                startsAt, endsAt, a.Source.ToString()));
+        }
+
+        assignments = assignments.OrderBy(a => a.SlotStartsAt).ToList();
 
         var versionDto = new ScheduleVersionDto(
             version.Id, version.VersionNumber, version.Status.ToString(),
