@@ -40,7 +40,7 @@ public class UserRoleAssignmentFlowTests
             default);
 
         // 3. Create a person in the space
-        var createPersonHandler = new CreatePersonCommandHandler(db);
+        var createPersonHandler = new CreatePersonCommandHandler(db, new NoOpPermissionService());
         var personId = await createPersonHandler.Handle(
             new CreatePersonCommand(spaceId, "Bob Smith", "Bob", null, adminId),
             default);
@@ -93,7 +93,7 @@ public class UserRoleAssignmentFlowTests
         var spaceId = await new CreateSpaceCommandHandler(db).Handle(
             new CreateSpaceCommand("Unit B", null, "en", adminId), default);
 
-        var personId = await new CreatePersonCommandHandler(db).Handle(
+        var personId = await new CreatePersonCommandHandler(db, new NoOpPermissionService()).Handle(
             new CreatePersonCommand(spaceId, "Carol", null, null, adminId), default);
 
         var roleId1 = await new CreateSpaceRoleCommandHandler(db).Handle(
@@ -123,7 +123,7 @@ public class UserRoleAssignmentFlowTests
         var spaceB = await new CreateSpaceCommandHandler(db).Handle(
             new CreateSpaceCommand("Space B", null, "en", adminId), default);
 
-        var personInA = await new CreatePersonCommandHandler(db).Handle(
+        var personInA = await new CreatePersonCommandHandler(db, new NoOpPermissionService()).Handle(
             new CreatePersonCommand(spaceA, "Alice", null, null, adminId), default);
 
         // Query from spaceB — should return null
@@ -132,4 +132,14 @@ public class UserRoleAssignmentFlowTests
 
         detail.Should().BeNull();
     }
+}
+
+// Minimal no-op permission service for tests that don't need permission checks
+file sealed class NoOpPermissionService : Jobuler.Application.Common.IPermissionService
+{
+    public Task RequirePermissionAsync(Guid userId, Guid spaceId, string permission, CancellationToken ct = default)
+        => Task.CompletedTask;
+
+    public Task<bool> HasPermissionAsync(Guid userId, Guid spaceId, string permission, CancellationToken ct = default)
+        => Task.FromResult(true);
 }

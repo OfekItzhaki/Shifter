@@ -92,7 +92,7 @@ public class GroupAlertPropertyTests
     public void Property1_GroupMemberDto_Record_PhoneNumber_MatchesConstructorArg(string? phoneNumber)
     {
         // The DTO record itself must faithfully carry the value
-        var dto = new GroupMemberDto(Guid.NewGuid(), "Full Name", "Display", false, phoneNumber);
+        var dto = new GroupMemberDto(Guid.NewGuid(), "Full Name", "Display", false, phoneNumber, "accepted", null);
         dto.PhoneNumber.Should().Be(phoneNumber);
     }
 
