@@ -1,34 +1,23 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import {
-  getNotifications, dismissNotification, dismissAllNotifications,
-  NotificationDto,
-} from "@/lib/api/notifications";
 import { useSpaceStore } from "@/lib/store/spaceStore";
 import { useDateFormat } from "@/lib/hooks/useDateFormat";
+import {
+  useNotifications,
+  useDismissNotification,
+  useDismissAllNotifications,
+} from "@/lib/query/hooks/useNotifications";
 
 export default function NotificationBell({ variant = "dark" }: { variant?: "light" | "dark" }) {
   const { currentSpaceId } = useSpaceStore();
   const { fDateTime } = useDateFormat();
-  const [notifications, setNotifications] = useState<NotificationDto[]>([]);
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
-  async function load() {
-    if (!currentSpaceId) return;
-    try {
-      const data = await getNotifications(currentSpaceId);
-      setNotifications(data);
-    } catch { /* silent — bell is non-critical */ }
-  }
-
-  useEffect(() => {
-    load();
-    const interval = setInterval(load, 30_000); // poll every 30s
-    return () => clearInterval(interval);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentSpaceId]);
+  const { data: notifications = [] } = useNotifications(currentSpaceId);
+  const dismissOne = useDismissNotification(currentSpaceId);
+  const dismissAll = useDismissAllNotifications(currentSpaceId);
 
   // Close on outside click
   useEffect(() => {
@@ -40,20 +29,6 @@ export default function NotificationBell({ variant = "dark" }: { variant?: "ligh
   }, []);
 
   const unreadCount = notifications.filter(n => !n.isRead).length;
-
-  async function handleDismiss(id: string) {
-    if (!currentSpaceId) return;
-    // Remove immediately from local state — no re-fetch needed
-    setNotifications(prev => prev.filter(n => n.id !== id));
-    // Fire-and-forget to the API
-    dismissNotification(currentSpaceId, id).catch(() => {});
-  }
-
-  async function handleDismissAll() {
-    if (!currentSpaceId) return;
-    setNotifications([]);
-    dismissAllNotifications(currentSpaceId).catch(() => {});
-  }
 
   function eventIcon(eventType: string) {
     if (eventType === "solver_failed") return "❌";
@@ -101,7 +76,7 @@ export default function NotificationBell({ variant = "dark" }: { variant?: "ligh
             <span className="text-sm font-semibold">התראות</span>
             {unreadCount > 0 && (
               <button
-                onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDismissAll(); }}
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); dismissAll.mutate(); }}
                 className="text-xs text-blue-600 hover:underline">
                 סמן הכל כנקרא
               </button>
@@ -124,7 +99,7 @@ export default function NotificationBell({ variant = "dark" }: { variant?: "ligh
                 </div>
                 {!n.isRead && (
                   <button
-                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDismiss(n.id); }}
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); dismissOne.mutate(n.id); }}
                     className="text-gray-300 hover:text-gray-500 flex-shrink-0 self-start mt-0.5 text-base leading-none"
                     aria-label="Dismiss">×</button>
                 )}
