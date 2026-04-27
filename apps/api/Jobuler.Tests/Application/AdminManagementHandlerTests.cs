@@ -234,7 +234,7 @@ public class AdminManagementHandlerTests
             Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(),
             name,
             DateTime.UtcNow, DateTime.UtcNow.AddHours(8),
-            8m, 1, "neutral", false, false);
+            8, 1, "neutral", false, false);
 
         var result = validator.Validate(cmd);
 
@@ -250,7 +250,7 @@ public class AdminManagementHandlerTests
             Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(),
             longName,
             DateTime.UtcNow, DateTime.UtcNow.AddHours(8),
-            8m, 1, "neutral", false, false);
+            8, 1, "neutral", false, false);
 
         var result = validator.Validate(cmd);
 
@@ -271,7 +271,7 @@ public class AdminManagementHandlerTests
             Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(),
             "Valid Name",
             startsAt, endsAt,
-            8m, 1, "neutral", false, false);
+            8, 1, "neutral", false, false);
 
         var result = validator.Validate(cmd);
 
@@ -281,7 +281,7 @@ public class AdminManagementHandlerTests
     [Theory]
     [InlineData(0)]    // duration_hours == 0
     [InlineData(-1)]   // duration_hours < 0
-    public void CreateGroupTaskValidator_RejectsDurationHoursNotPositive(decimal durationHours)
+    public void CreateGroupTaskValidator_RejectsShiftDurationMinutesNotPositive(int ShiftDurationMinutes)
     {
         var validator = new CreateGroupTaskCommandValidator();
         var startsAt = DateTime.UtcNow;
@@ -289,7 +289,7 @@ public class AdminManagementHandlerTests
             Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(),
             "Valid Name",
             startsAt, startsAt.AddHours(8),
-            durationHours, 1, "neutral", false, false);
+            ShiftDurationMinutes, 1, "neutral", false, false);
 
         var result = validator.Validate(cmd);
 
@@ -307,7 +307,7 @@ public class AdminManagementHandlerTests
             Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(),
             "Valid Name",
             startsAt, startsAt.AddHours(8),
-            8m, headcount, "neutral", false, false);
+            8, headcount, "neutral", false, false);
 
         var result = validator.Validate(cmd);
 
@@ -328,7 +328,7 @@ public class AdminManagementHandlerTests
             Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(),
             "Valid Name",
             startsAt, startsAt.AddHours(8),
-            8m, 1, burdenLevel, false, false);
+            8, 1, burdenLevel, false, false);
 
         var result = validator.Validate(cmd);
 
@@ -348,7 +348,7 @@ public class AdminManagementHandlerTests
             Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(),
             "Valid Name",
             startsAt, startsAt.AddHours(8),
-            8m, 1, burdenLevel, false, false);
+            8, 1, burdenLevel, false, false);
 
         var result = validator.Validate(cmd);
 

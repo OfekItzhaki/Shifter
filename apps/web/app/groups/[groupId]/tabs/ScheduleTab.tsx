@@ -44,6 +44,16 @@ function getWeekDates(fromDate: string): string[] {
   return dates;
 }
 
+/** An assignment is visible on a date if the task window overlaps that day */
+function overlapsDate(a: ScheduleAssignment, dateStr: string): boolean {
+  const dayStart = new Date(dateStr + "T00:00:00").getTime();
+  const dayEnd   = new Date(dateStr + "T23:59:59").getTime();
+  const slotStart = new Date(a.slotStartsAt).getTime();
+  const slotEnd   = new Date(a.slotEndsAt).getTime();
+  if (isNaN(slotStart) || isNaN(slotEnd)) return false;
+  return slotStart <= dayEnd && slotEnd >= dayStart;
+}
+
 export default function ScheduleTab({
   solverHorizonDays, scheduleData, scheduleLoading, scheduleError,
   draftVersion, isAdmin, publishSaving, discardSaving, scheduleVersionError,
@@ -78,10 +88,10 @@ export default function ScheduleTab({
     !personFilter || a.personName.toLowerCase().includes(personFilter.toLowerCase())
   );
 
-  const dayAssignments = filtered.filter(a => a.startsAt?.startsWith(scheduleDate));
+  const dayAssignments = filtered.filter(a => overlapsDate(a, scheduleDate));
   const weekDates = getWeekDates(scheduleDate);
   const weekAssignments = weekDates.reduce<Record<string, ScheduleAssignment[]>>((acc, d) => {
-    acc[d] = filtered.filter(a => a.startsAt?.startsWith(d));
+    acc[d] = filtered.filter(a => overlapsDate(a, d));
     return acc;
   }, {});
 
@@ -173,7 +183,7 @@ export default function ScheduleTab({
               <thead>
                 <tr className="border-b border-slate-100 bg-slate-50/80">
                   <th className="px-4 py-3 text-start text-xs font-semibold text-slate-500 uppercase tracking-wider">שם</th>
-                  <th className="px-4 py-3 text-start text-xs font-semibold text-slate-500 uppercase tracking-wider">סוג משימה</th>
+                  <th className="px-4 py-3 text-start text-xs font-semibold text-slate-500 uppercase tracking-wider">משימה</th>
                   <th className="px-4 py-3 text-start text-xs font-semibold text-slate-500 uppercase tracking-wider">שעות</th>
                 </tr>
               </thead>
@@ -183,7 +193,7 @@ export default function ScheduleTab({
                     <td className="px-4 py-3.5 font-medium text-slate-900">{a.personName}</td>
                     <td className="px-4 py-3.5 text-slate-600">{a.taskTypeName}</td>
                     <td className="px-4 py-3.5 text-slate-500 text-xs tabular-nums">
-                      {fTime(a.startsAt)}<span className="mx-1 text-slate-300">–</span>{fTime(a.endsAt)}
+                      {fTime(a.slotStartsAt)}<span className="mx-1 text-slate-300">–</span>{fTime(a.slotEndsAt)}
                     </td>
                   </tr>
                 ))}
@@ -211,7 +221,7 @@ export default function ScheduleTab({
                     {items.map((a, i) => (
                       <div key={i} className="flex items-center gap-3 bg-white border border-slate-200 rounded-xl px-4 py-2.5">
                         <div className="text-xs tabular-nums text-slate-500 w-20 shrink-0">
-                          {fTime(a.startsAt)}<span className="mx-1 text-slate-300">–</span>{fTime(a.endsAt)}
+                          {fTime(a.slotStartsAt)}<span className="mx-1 text-slate-300">–</span>{fTime(a.slotEndsAt)}
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-slate-900 truncate">{a.personName}</p>

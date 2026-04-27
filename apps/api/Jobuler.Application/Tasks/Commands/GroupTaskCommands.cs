@@ -15,7 +15,7 @@ public record GroupTaskDto(
     string Name,
     DateTime StartsAt,
     DateTime EndsAt,
-    decimal DurationHours,
+    int ShiftDurationMinutes,
     int RequiredHeadcount,
     string BurdenLevel,
     bool AllowsDoubleShift,
@@ -32,7 +32,7 @@ public record CreateGroupTaskCommand(
     string Name,
     DateTime StartsAt,
     DateTime EndsAt,
-    decimal DurationHours,
+    int ShiftDurationMinutes,
     int RequiredHeadcount,
     string BurdenLevel,
     bool AllowsDoubleShift,
@@ -44,28 +44,11 @@ public class CreateGroupTaskCommandValidator : AbstractValidator<CreateGroupTask
 
     public CreateGroupTaskCommandValidator()
     {
-        RuleFor(x => x.Name)
-            .NotEmpty()
-            .MaximumLength(200)
-            .Must(n => !string.IsNullOrWhiteSpace(n))
-            .WithMessage("Name must be between 1 and 200 non-blank characters.");
-
-        RuleFor(x => x.EndsAt)
-            .GreaterThan(x => x.StartsAt)
-            .WithMessage("ends_at must be strictly after starts_at.");
-
-        RuleFor(x => x.DurationHours)
-            .GreaterThan(0)
-            .WithMessage("duration_hours must be greater than 0.");
-
-        RuleFor(x => x.RequiredHeadcount)
-            .GreaterThanOrEqualTo(1)
-            .WithMessage("required_headcount must be at least 1.");
-
-        RuleFor(x => x.BurdenLevel)
-            .NotEmpty()
-            .Must(b => ValidBurdenLevels.Contains(b.ToLowerInvariant()))
-            .WithMessage("burden_level must be one of: favorable, neutral, disliked, hated.");
+        RuleFor(x => x.Name).NotEmpty().MaximumLength(200).WithMessage("Name must be between 1 and 200 non-blank characters.");
+        RuleFor(x => x.EndsAt).GreaterThan(x => x.StartsAt).WithMessage("ends_at must be strictly after starts_at.");
+        RuleFor(x => x.ShiftDurationMinutes).GreaterThanOrEqualTo(1).WithMessage("shift_duration_minutes must be at least 1 minute.");
+        RuleFor(x => x.RequiredHeadcount).GreaterThanOrEqualTo(1).WithMessage("required_headcount must be at least 1.");
+        RuleFor(x => x.BurdenLevel).NotEmpty().Must(b => ValidBurdenLevels.Contains(b.ToLowerInvariant())).WithMessage("burden_level must be one of: favorable, neutral, disliked, hated.");
     }
 }
 
@@ -92,7 +75,7 @@ public class CreateGroupTaskCommandHandler : IRequestHandler<CreateGroupTaskComm
 
         var task = GroupTask.Create(
             req.SpaceId, req.GroupId, req.Name,
-            req.StartsAt, req.EndsAt, req.DurationHours,
+            req.StartsAt, req.EndsAt, req.ShiftDurationMinutes,
             req.RequiredHeadcount,
             Enum.Parse<TaskBurdenLevel>(req.BurdenLevel, true),
             req.AllowsDoubleShift, req.AllowsOverlap,
@@ -114,7 +97,7 @@ public record UpdateGroupTaskCommand(
     string Name,
     DateTime StartsAt,
     DateTime EndsAt,
-    decimal DurationHours,
+    int ShiftDurationMinutes,
     int RequiredHeadcount,
     string BurdenLevel,
     bool AllowsDoubleShift,
@@ -126,28 +109,11 @@ public class UpdateGroupTaskCommandValidator : AbstractValidator<UpdateGroupTask
 
     public UpdateGroupTaskCommandValidator()
     {
-        RuleFor(x => x.Name)
-            .NotEmpty()
-            .MaximumLength(200)
-            .Must(n => !string.IsNullOrWhiteSpace(n))
-            .WithMessage("Name must be between 1 and 200 non-blank characters.");
-
-        RuleFor(x => x.EndsAt)
-            .GreaterThan(x => x.StartsAt)
-            .WithMessage("ends_at must be strictly after starts_at.");
-
-        RuleFor(x => x.DurationHours)
-            .GreaterThan(0)
-            .WithMessage("duration_hours must be greater than 0.");
-
-        RuleFor(x => x.RequiredHeadcount)
-            .GreaterThanOrEqualTo(1)
-            .WithMessage("required_headcount must be at least 1.");
-
-        RuleFor(x => x.BurdenLevel)
-            .NotEmpty()
-            .Must(b => ValidBurdenLevels.Contains(b.ToLowerInvariant()))
-            .WithMessage("burden_level must be one of: favorable, neutral, disliked, hated.");
+        RuleFor(x => x.Name).NotEmpty().MaximumLength(200).WithMessage("Name must be between 1 and 200 non-blank characters.");
+        RuleFor(x => x.EndsAt).GreaterThan(x => x.StartsAt).WithMessage("ends_at must be strictly after starts_at.");
+        RuleFor(x => x.ShiftDurationMinutes).GreaterThanOrEqualTo(1).WithMessage("shift_duration_minutes must be at least 1 minute.");
+        RuleFor(x => x.RequiredHeadcount).GreaterThanOrEqualTo(1).WithMessage("required_headcount must be at least 1.");
+        RuleFor(x => x.BurdenLevel).NotEmpty().Must(b => ValidBurdenLevels.Contains(b.ToLowerInvariant())).WithMessage("burden_level must be one of: favorable, neutral, disliked, hated.");
     }
 }
 
@@ -175,7 +141,7 @@ public class UpdateGroupTaskCommandHandler : IRequestHandler<UpdateGroupTaskComm
 
         task.Update(
             req.Name, req.StartsAt, req.EndsAt,
-            req.DurationHours, req.RequiredHeadcount,
+            req.ShiftDurationMinutes, req.RequiredHeadcount,
             Enum.Parse<TaskBurdenLevel>(req.BurdenLevel, true),
             req.AllowsDoubleShift, req.AllowsOverlap,
             req.RequestingUserId);

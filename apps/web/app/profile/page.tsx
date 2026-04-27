@@ -48,12 +48,15 @@ const labelStyle: React.CSSProperties = {
   textTransform: "uppercase",
   letterSpacing: "0.05em",
   marginBottom: "0.25rem",
+  cursor: "default",
+  userSelect: "none",
 };
 
 const valueStyle: React.CSSProperties = {
   fontSize: "0.9375rem",
   color: "#0f172a",
   fontWeight: 500,
+  cursor: "default",
 };
 
 const inputStyle: React.CSSProperties = {
@@ -184,7 +187,7 @@ export default function ProfilePage() {
                   type="tel"
                   value={form.phoneNumber}
                   onChange={e => setForm(f => ({ ...f, phoneNumber: e.target.value }))}
-                  style={inputStyle}
+                  style={{ ...inputStyle, direction: "ltr", textAlign: "left" }}
                   placeholder="050-0000000"
                 />
               </div>
@@ -276,7 +279,7 @@ export default function ProfilePage() {
                   <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="#94a3b8" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                   </svg>
-                  <p style={valueStyle}>{me.phoneNumber ?? "—"}</p>
+                  <p style={{ ...valueStyle, direction: "ltr", textAlign: "left" }}>{me.phoneNumber ?? "—"}</p>
                 </div>
               </div>
               <div>

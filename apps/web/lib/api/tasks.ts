@@ -76,7 +76,7 @@ export interface GroupTaskDto {
   name: string;
   startsAt: string;
   endsAt: string;
-  durationHours: number;
+  shiftDurationMinutes: number;
   requiredHeadcount: number;
   burdenLevel: string;
   allowsDoubleShift: boolean;
@@ -89,7 +89,7 @@ export interface GroupTaskPayload {
   name: string;
   startsAt: string;
   endsAt: string;
-  durationHours: number;
+  shiftDurationMinutes: number;
   requiredHeadcount: number;
   burdenLevel: string;
   allowsDoubleShift: boolean;

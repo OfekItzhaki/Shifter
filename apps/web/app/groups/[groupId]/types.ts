@@ -9,8 +9,8 @@ export const ADMIN_ONLY_TABS: ActiveTab[] = ["tasks", "constraints", "settings"]
 export interface ScheduleAssignment {
   personName: string;
   taskTypeName: string;
-  startsAt: string;
-  endsAt: string;
+  slotStartsAt: string;
+  slotEndsAt: string;
 }
 
 export const burdenLabels: Record<string, string> = {

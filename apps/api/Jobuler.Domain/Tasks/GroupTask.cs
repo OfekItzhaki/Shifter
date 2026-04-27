@@ -3,12 +3,13 @@ using Jobuler.Domain.Common;
 namespace Jobuler.Domain.Tasks;
 
 /// <summary>
-/// Flat, group-scoped task entity. Replaces the two-level TaskType + TaskSlot model
-/// for new functionality. Legacy tables are retained for backward compatibility.
+/// Flat, group-scoped task entity.
 ///
-/// allows_double_shift: the same person can be assigned to this task twice in a row.
-/// allows_overlap: a person assigned to this task can also be assigned to another
-///                 task at the same time (e.g. "כוננות חירום" + "סיור").
+/// A task defines a recurring need (e.g. "Kitchen") with a window (StartsAt → EndsAt).
+/// The solver fills that window with shifts of ShiftDurationMinutes length.
+/// RequiredHeadcount = how many people per shift.
+/// AllowsDoubleShift = a person can do two consecutive shifts.
+/// AllowsOverlap = a person can be assigned to this task while assigned to another.
 /// </summary>
 public class GroupTask : AuditableEntity, ITenantScoped
 {
@@ -17,7 +18,8 @@ public class GroupTask : AuditableEntity, ITenantScoped
     public string Name { get; private set; } = default!;
     public DateTime StartsAt { get; private set; }
     public DateTime EndsAt { get; private set; }
-    public decimal DurationHours { get; private set; }
+    /// <summary>Duration of each shift in minutes (e.g. 240 = 4h, 30 = 30min).</summary>
+    public int ShiftDurationMinutes { get; private set; } = 240;
     public int RequiredHeadcount { get; private set; } = 1;
     public TaskBurdenLevel BurdenLevel { get; private set; } = TaskBurdenLevel.Neutral;
     public bool AllowsDoubleShift { get; private set; } = false;
@@ -34,7 +36,7 @@ public class GroupTask : AuditableEntity, ITenantScoped
         string name,
         DateTime startsAt,
         DateTime endsAt,
-        decimal durationHours,
+        int shiftDurationMinutes,
         int requiredHeadcount,
         TaskBurdenLevel burdenLevel,
         bool allowsDoubleShift,
@@ -47,7 +49,7 @@ public class GroupTask : AuditableEntity, ITenantScoped
             Name = name.Trim(),
             StartsAt = startsAt,
             EndsAt = endsAt,
-            DurationHours = durationHours,
+            ShiftDurationMinutes = shiftDurationMinutes,
             RequiredHeadcount = requiredHeadcount,
             BurdenLevel = burdenLevel,
             AllowsDoubleShift = allowsDoubleShift,
@@ -59,7 +61,7 @@ public class GroupTask : AuditableEntity, ITenantScoped
         string name,
         DateTime startsAt,
         DateTime endsAt,
-        decimal durationHours,
+        int shiftDurationMinutes,
         int requiredHeadcount,
         TaskBurdenLevel burdenLevel,
         bool allowsDoubleShift,
@@ -69,7 +71,7 @@ public class GroupTask : AuditableEntity, ITenantScoped
         Name = name.Trim();
         StartsAt = startsAt;
         EndsAt = endsAt;
-        DurationHours = durationHours;
+        ShiftDurationMinutes = shiftDurationMinutes;
         RequiredHeadcount = requiredHeadcount;
         BurdenLevel = burdenLevel;
         AllowsDoubleShift = allowsDoubleShift;

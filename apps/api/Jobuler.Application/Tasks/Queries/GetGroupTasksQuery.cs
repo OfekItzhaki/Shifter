@@ -43,7 +43,7 @@ public class GetGroupTasksQueryHandler : IRequestHandler<GetGroupTasksQuery, Lis
             t.Name,
             t.StartsAt,
             t.EndsAt,
-            t.DurationHours,
+            t.ShiftDurationMinutes,
             t.RequiredHeadcount,
             t.BurdenLevel.ToString().ToLowerInvariant(),
             t.AllowsDoubleShift,

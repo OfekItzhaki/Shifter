@@ -119,10 +119,9 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
                 tt?.AllowsOverlap ?? false);
         }).ToList();
 
-        // ── Group tasks (flat model — merged into solver slots) ───────────────
-        // GroupTask is the newer model used by the UI. The solver treats each
-        // active GroupTask as a TaskSlot. GroupId is used as the TaskTypeId so
-        // the solver can group related slots; the task's own Id is the SlotId.
+        // ── Group tasks → shift slots ─────────────────────────────────────────
+        // Each GroupTask defines a window + shift duration. Expand into individual
+        // shift slots so the solver assigns people to specific time windows.
         var groupTasks = await _db.GroupTasks.AsNoTracking()
             .Where(t => t.SpaceId == spaceId
                 && t.IsActive
@@ -130,20 +129,41 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
                 && t.StartsAt <= horizonEndDt)
             .ToListAsync(ct);
 
-        var groupTaskSlots = groupTasks.Select(t => new TaskSlotDto(
-            t.Id.ToString(),
-            t.GroupId.ToString(),   // use GroupId as the "task type" bucket
-            t.Name,
-            t.BurdenLevel.ToString().ToLower(),
-            t.StartsAt.ToString("o"),
-            t.EndsAt.ToString("o"),
-            t.RequiredHeadcount,
-            5,                      // default priority
-            [],                     // no role requirements on group tasks
-            [],
-            t.AllowsOverlap)).ToList();
+        foreach (var task in groupTasks)
+        {
+            var shiftDuration = TimeSpan.FromMinutes(task.ShiftDurationMinutes);
+            if (shiftDuration.TotalMinutes < 1) continue;
 
-        slotsDto.AddRange(groupTaskSlots);
+            // Clamp to horizon
+            var windowStart = task.StartsAt < horizonStartDt ? horizonStartDt : task.StartsAt;
+            var windowEnd   = task.EndsAt   > horizonEndDt   ? horizonEndDt   : task.EndsAt;
+
+            // Generate one slot per shift within the window
+            var shiftStart = windowStart;
+            var shiftIndex = 0;
+            while (shiftStart + shiftDuration <= windowEnd)
+            {
+                var shiftEnd = shiftStart + shiftDuration;
+                // Use a deterministic ID: task.Id + shift index so assignments can be traced back
+                var slotId = $"{task.Id}:shift:{shiftIndex}";
+
+                slotsDto.Add(new TaskSlotDto(
+                    slotId,
+                    task.GroupId.ToString(),
+                    task.Name,
+                    task.BurdenLevel.ToString().ToLower(),
+                    shiftStart.ToString("o"),
+                    shiftEnd.ToString("o"),
+                    task.RequiredHeadcount,
+                    5,
+                    [],
+                    [],
+                    task.AllowsOverlap));
+
+                shiftStart = shiftEnd;
+                shiftIndex++;
+            }
+        }
 
         // ── Constraints ───────────────────────────────────────────────────────
         var constraints = await _db.ConstraintRules.AsNoTracking()

@@ -84,7 +84,7 @@ public class AdminManagementIntegrationTests
         var task = GroupTask.Create(
             spaceId, groupId, "Test Task",
             DateTime.UtcNow, DateTime.UtcNow.AddHours(8),
-            8m, 1, TaskBurdenLevel.Neutral, false, false, Guid.NewGuid());
+            8, 1, TaskBurdenLevel.Neutral, false, false, Guid.NewGuid());
 
         db.GroupTasks.Add(task);
         await db.SaveChangesAsync();
@@ -120,12 +120,12 @@ public class AdminManagementIntegrationTests
         var task1 = GroupTask.Create(
             spaceId, groupId, "Duplicate Name",
             DateTime.UtcNow, DateTime.UtcNow.AddHours(8),
-            8m, 1, TaskBurdenLevel.Neutral, false, false, Guid.NewGuid());
+            8, 1, TaskBurdenLevel.Neutral, false, false, Guid.NewGuid());
 
         var task2 = GroupTask.Create(
             spaceId, groupId, "Duplicate Name",
             DateTime.UtcNow.AddDays(1), DateTime.UtcNow.AddDays(1).AddHours(8),
-            8m, 1, TaskBurdenLevel.Neutral, false, false, Guid.NewGuid());
+            8, 1, TaskBurdenLevel.Neutral, false, false, Guid.NewGuid());
 
         db.GroupTasks.AddRange(task1, task2);
 
@@ -157,7 +157,7 @@ public class AdminManagementIntegrationTests
         var cmd = new CreateGroupTaskCommand(
             Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(),
             "Valid Task", startsAt, startsAt.AddHours(8),
-            8m, 1, burdenLevel, false, false);
+            8, 1, burdenLevel, false, false);
 
         var result = validator.Validate(cmd);
 
@@ -177,7 +177,7 @@ public class AdminManagementIntegrationTests
         var cmd = new CreateGroupTaskCommand(
             Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(),
             "Valid Task", startsAt, startsAt.AddHours(8),
-            8m, 1, burdenLevel, false, false);
+            8, 1, burdenLevel, false, false);
 
         var result = validator.Validate(cmd);
 

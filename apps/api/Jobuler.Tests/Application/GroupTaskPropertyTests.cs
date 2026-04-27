@@ -58,19 +58,19 @@ public class GroupTaskPropertyTests
     // Feature: admin-management-and-scheduling, Property 1: task create round-trip
 
     [Theory]
-    [InlineData("Morning Shift",   "2025-06-01T06:00:00", "2025-06-01T14:00:00", 8.0,  2, "neutral",   false, false)]
-    [InlineData("Night Watch",     "2025-06-01T22:00:00", "2025-06-02T06:00:00", 8.0,  1, "disliked",  false, false)]
-    [InlineData("Emergency Duty",  "2025-07-15T00:00:00", "2025-07-15T12:00:00", 12.0, 3, "hated",     true,  false)]
-    [InlineData("Kitchen Duty",    "2025-08-01T08:00:00", "2025-08-01T12:00:00", 4.0,  1, "favorable", false, true)]
-    [InlineData("Patrol",          "2025-09-10T10:00:00", "2025-09-10T18:00:00", 8.0,  2, "neutral",   true,  true)]
-    [InlineData("Guard Post",      "2025-10-01T06:00:00", "2025-10-01T18:00:00", 12.0, 4, "disliked",  false, false)]
-    [InlineData("Logistics",       "2025-11-05T07:00:00", "2025-11-05T15:00:00", 8.0,  2, "favorable", false, false)]
-    [InlineData("Medical Standby", "2025-12-01T00:00:00", "2025-12-01T08:00:00", 8.0,  1, "neutral",   false, true)]
-    [InlineData("Training",        "2026-01-10T09:00:00", "2026-01-10T17:00:00", 8.0,  5, "favorable", false, false)]
-    [InlineData("Cleanup",         "2026-02-14T14:00:00", "2026-02-14T18:00:00", 4.0,  2, "hated",     false, false)]
+    [InlineData("Morning Shift",   "2025-06-01T06:00:00", "2025-06-01T14:00:00", 480,  2, "neutral",   false, false)]
+    [InlineData("Night Watch",     "2025-06-01T22:00:00", "2025-06-02T06:00:00", 480,  1, "disliked",  false, false)]
+    [InlineData("Emergency Duty",  "2025-07-15T00:00:00", "2025-07-15T12:00:00", 720, 3, "hated",     true,  false)]
+    [InlineData("Kitchen Duty",    "2025-08-01T08:00:00", "2025-08-01T12:00:00", 240,  1, "favorable", false, true)]
+    [InlineData("Patrol",          "2025-09-10T10:00:00", "2025-09-10T18:00:00", 480,  2, "neutral",   true,  true)]
+    [InlineData("Guard Post",      "2025-10-01T06:00:00", "2025-10-01T18:00:00", 720, 4, "disliked",  false, false)]
+    [InlineData("Logistics",       "2025-11-05T07:00:00", "2025-11-05T15:00:00", 480,  2, "favorable", false, false)]
+    [InlineData("Medical Standby", "2025-12-01T00:00:00", "2025-12-01T08:00:00", 480,  1, "neutral",   false, true)]
+    [InlineData("Training",        "2026-01-10T09:00:00", "2026-01-10T17:00:00", 480,  5, "favorable", false, false)]
+    [InlineData("Cleanup",         "2026-02-14T14:00:00", "2026-02-14T18:00:00", 240,  2, "hated",     false, false)]
     public async Task Property1_CreateTask_RoundTrip_FieldsMatch(
         string name, string startsAtStr, string endsAtStr,
-        double durationHours, int headcount, string burdenLevel,
+        int ShiftDurationMinutes, int headcount, string burdenLevel,
         bool allowsDoubleShift, bool allowsOverlap)
     {
         // Arrange
@@ -86,7 +86,7 @@ public class GroupTaskPropertyTests
         var cmd = new CreateGroupTaskCommand(
             spaceId, groupId, userId,
             name, startsAt, endsAt,
-            (decimal)durationHours, headcount, burdenLevel,
+            ShiftDurationMinutes, headcount, burdenLevel,
             allowsDoubleShift, allowsOverlap);
 
         // Act
@@ -100,7 +100,7 @@ public class GroupTaskPropertyTests
         t.Name.Should().Be(name.Trim());
         t.StartsAt.Should().Be(startsAt);
         t.EndsAt.Should().Be(endsAt);
-        t.DurationHours.Should().Be((decimal)durationHours);
+        t.ShiftDurationMinutes.Should().Be(ShiftDurationMinutes);
         t.RequiredHeadcount.Should().Be(headcount);
         t.BurdenLevel.Should().Be(burdenLevel.ToLowerInvariant());
         t.AllowsDoubleShift.Should().Be(allowsDoubleShift);
@@ -127,7 +127,7 @@ public class GroupTaskPropertyTests
         var cmd = new CreateGroupTaskCommand(
             Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(),
             "Valid Name", startsAt, endsAt,
-            8m, 1, "neutral", false, false);
+            8, 1, "neutral", false, false);
 
         // Act
         var result = validator.Validate(cmd);
@@ -161,7 +161,7 @@ public class GroupTaskPropertyTests
         var cmd = new CreateGroupTaskCommand(
             Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(),
             "Valid Name", startsAt, startsAt.AddHours(8),
-            8m, 1, burdenLevel, false, false);
+            8, 1, burdenLevel, false, false);
 
         // Act
         var result = validator.Validate(cmd);
@@ -189,7 +189,7 @@ public class GroupTaskPropertyTests
         var cmd = new CreateGroupTaskCommand(
             Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(),
             "Valid Name", startsAt, startsAt.AddHours(8),
-            8m, 1, burdenLevel, false, false);
+            8, 1, burdenLevel, false, false);
 
         var result = validator.Validate(cmd);
 
@@ -221,7 +221,7 @@ public class GroupTaskPropertyTests
         // Act — create
         var taskId = await createHandler.Handle(
             new CreateGroupTaskCommand(spaceId, groupId, userId, taskName,
-                startsAt, startsAt.AddHours(8), 8m, 1, "neutral", false, false),
+                startsAt, startsAt.AddHours(8), 8, 1, "neutral", false, false),
             CancellationToken.None);
 
         // Act — delete
@@ -269,7 +269,7 @@ public class GroupTaskPropertyTests
             await createHandler.Handle(
                 new CreateGroupTaskCommand(spaceId, groupId, userId,
                     $"Task {i}", startsAt, startsAt.AddHours(8),
-                    8m, 1, "neutral", false, false),
+                    8, 1, "neutral", false, false),
                 CancellationToken.None);
         }
 

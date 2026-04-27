@@ -86,7 +86,7 @@ public class TasksController : ControllerBase
         var id = await _mediator.Send(new CreateGroupTaskCommand(
             spaceId, groupId, CurrentUserId,
             req.Name, req.StartsAt, req.EndsAt,
-            req.DurationHours, req.RequiredHeadcount,
+            req.ShiftDurationMinutes, req.RequiredHeadcount,
             req.BurdenLevel, req.AllowsDoubleShift, req.AllowsOverlap), ct);
         return Created($"/spaces/{spaceId}/groups/{groupId}/tasks/{id}", new { id });
     }
@@ -98,7 +98,7 @@ public class TasksController : ControllerBase
         await _mediator.Send(new UpdateGroupTaskCommand(
             spaceId, groupId, taskId, CurrentUserId,
             req.Name, req.StartsAt, req.EndsAt,
-            req.DurationHours, req.RequiredHeadcount,
+            req.ShiftDurationMinutes, req.RequiredHeadcount,
             req.BurdenLevel, req.AllowsDoubleShift, req.AllowsOverlap), ct);
         return NoContent();
     }
@@ -126,7 +126,7 @@ public record CreateGroupTaskRequest(
     string Name,
     DateTime StartsAt,
     DateTime EndsAt,
-    decimal DurationHours,
+    int ShiftDurationMinutes,
     int RequiredHeadcount,
     string BurdenLevel,
     bool AllowsDoubleShift,
@@ -136,7 +136,7 @@ public record UpdateGroupTaskRequest(
     string Name,
     DateTime StartsAt,
     DateTime EndsAt,
-    decimal DurationHours,
+    int ShiftDurationMinutes,
     int RequiredHeadcount,
     string BurdenLevel,
     bool AllowsDoubleShift,

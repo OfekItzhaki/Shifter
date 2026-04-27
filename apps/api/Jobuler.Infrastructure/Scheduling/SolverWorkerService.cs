@@ -157,11 +157,19 @@ public class SolverWorkerService : BackgroundService
             await db.SaveChangesAsync(ct); // get version.Id
 
             // Persist assignments
-            var assignments = output.Assignments.Select(a => Assignment.Create(
-                job.SpaceId, version.Id,
-                Guid.Parse(a.SlotId), Guid.Parse(a.PersonId),
-                a.Source == "override" ? AssignmentSource.Override : AssignmentSource.Solver))
-                .ToList();
+            // Slot IDs from GroupTask shifts are composite: "<taskId>:shift:<n>"
+            // Store the base task ID as the task_slot_id for traceability
+            var assignments = output.Assignments.Select(a =>
+            {
+                var rawSlotId = a.SlotId;
+                var baseSlotId = rawSlotId.Contains(":shift:")
+                    ? rawSlotId.Split(":shift:")[0]
+                    : rawSlotId;
+                return Assignment.Create(
+                    job.SpaceId, version.Id,
+                    Guid.Parse(baseSlotId), Guid.Parse(a.PersonId),
+                    a.Source == "override" ? AssignmentSource.Override : AssignmentSource.Solver);
+            }).ToList();
 
             db.Assignments.AddRange(assignments);
 

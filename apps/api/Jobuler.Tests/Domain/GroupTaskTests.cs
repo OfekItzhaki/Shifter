@@ -22,7 +22,7 @@ public class GroupTaskTests
 
         var task = GroupTask.Create(
             spaceId, groupId, "  שמירת לילה  ",
-            startsAt, endsAt, 8m, 2,
+            startsAt, endsAt, 8, 2,
             TaskBurdenLevel.Disliked, false, true, userId);
 
         task.SpaceId.Should().Be(spaceId);
@@ -30,7 +30,7 @@ public class GroupTaskTests
         task.Name.Should().Be("שמירת לילה"); // trimmed
         task.StartsAt.Should().Be(startsAt);
         task.EndsAt.Should().Be(endsAt);
-        task.DurationHours.Should().Be(8m);
+        task.ShiftDurationMinutes.Should().Be(8);
         task.RequiredHeadcount.Should().Be(2);
         task.BurdenLevel.Should().Be(TaskBurdenLevel.Disliked);
         task.AllowsDoubleShift.Should().BeFalse();
@@ -52,7 +52,7 @@ public class GroupTaskTests
         var task = GroupTask.Create(
             Guid.NewGuid(), Guid.NewGuid(), "Task",
             DateTime.UtcNow, DateTime.UtcNow.AddHours(1),
-            1m, 1, level, false, false, Guid.NewGuid());
+            1, 1, level, false, false, Guid.NewGuid());
 
         task.BurdenLevel.Should().Be(level);
     }
@@ -65,7 +65,7 @@ public class GroupTaskTests
         var task = GroupTask.Create(
             Guid.NewGuid(), Guid.NewGuid(), "Task",
             DateTime.UtcNow, DateTime.UtcNow.AddHours(1),
-            1m, 1, TaskBurdenLevel.Neutral, false, false, Guid.NewGuid());
+            1, 1, TaskBurdenLevel.Neutral, false, false, Guid.NewGuid());
 
         var updaterId = Guid.NewGuid();
         task.Deactivate(updaterId);
@@ -80,7 +80,7 @@ public class GroupTaskTests
         var task = GroupTask.Create(
             Guid.NewGuid(), Guid.NewGuid(), "Task",
             DateTime.UtcNow, DateTime.UtcNow.AddHours(1),
-            1m, 1, TaskBurdenLevel.Neutral, false, false, Guid.NewGuid());
+            1, 1, TaskBurdenLevel.Neutral, false, false, Guid.NewGuid());
 
         var updaterId = Guid.NewGuid();
         task.Deactivate(updaterId);

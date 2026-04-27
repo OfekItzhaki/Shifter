@@ -85,7 +85,7 @@ export default function GroupDetailPage() {
   const [showTaskForm, setShowTaskForm] = useState(false);
   const [editingTask, setEditingTask] = useState<GroupTaskDto | null>(null);
   const [taskForm, setTaskForm] = useState({
-    name: "", startsAt: "", endsAt: "", durationHours: 1,
+    name: "", startsAt: "", endsAt: "", shiftDurationMinutes: 240,
     requiredHeadcount: 1, burdenLevel: "neutral",
     allowsDoubleShift: false, allowsOverlap: false,
   });
@@ -436,7 +436,7 @@ export default function GroupDetailPage() {
       name: taskForm.name.trim(),
       startsAt: new Date(taskForm.startsAt).toISOString(),
       endsAt: new Date(taskForm.endsAt).toISOString(),
-      durationHours: taskForm.durationHours,
+      shiftDurationMinutes: taskForm.shiftDurationMinutes,
       requiredHeadcount: taskForm.requiredHeadcount,
       burdenLevel: taskForm.burdenLevel,
       allowsDoubleShift: taskForm.allowsDoubleShift,
@@ -450,7 +450,7 @@ export default function GroupDetailPage() {
       }
       setShowTaskForm(false);
       setEditingTask(null);
-      setTaskForm({ name: "", startsAt: "", endsAt: "", durationHours: 1, requiredHeadcount: 1, burdenLevel: "neutral", allowsDoubleShift: false, allowsOverlap: false });
+      setTaskForm({ name: "", startsAt: "", endsAt: "", shiftDurationMinutes: 240, requiredHeadcount: 1, burdenLevel: "neutral", allowsDoubleShift: false, allowsOverlap: false });
       await fetchGroupTasks();
     } catch (err: any) {
       setTaskError(err?.response?.data?.message ?? "שגיאה בשמירת המשימה");
@@ -1291,7 +1291,7 @@ export default function GroupDetailPage() {
               onClick={() => {
                 setEditingTask(null);
                 const today = new Date().toISOString().split("T")[0];
-                setTaskForm({ name: "", startsAt: `${today}T00:00`, endsAt: `${today}T23:59`, durationHours: 24, requiredHeadcount: 1, burdenLevel: "neutral", allowsDoubleShift: false, allowsOverlap: false });
+                setTaskForm({ name: "", startsAt: `${today}T00:00`, endsAt: `${today}T23:59`, shiftDurationMinutes: 240, requiredHeadcount: 1, burdenLevel: "neutral", allowsDoubleShift: false, allowsOverlap: false });
                 setTaskError(null);
                 setShowTaskForm(true);
               }}
@@ -1326,7 +1326,11 @@ export default function GroupDetailPage() {
                     <span className="mx-1 text-slate-300">–</span>
                     {new Date(t.endsAt).toLocaleString("he-IL", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
                   </td>
-                  <td className="px-4 py-3.5 text-slate-500">{t.durationHours}ש'</td>
+                  <td className="px-4 py-3.5 text-slate-500 text-xs">
+                    {t.shiftDurationMinutes >= 60
+                      ? `${Math.floor(t.shiftDurationMinutes / 60)}ש'${t.shiftDurationMinutes % 60 > 0 ? ` ${t.shiftDurationMinutes % 60}ד'` : ""}`
+                      : `${t.shiftDurationMinutes}ד'`}
+                  </td>
                   <td className="px-4 py-3.5 text-slate-500">{t.requiredHeadcount}</td>
                   <td className="px-4 py-3.5">
                     <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${burdenColors[t.burdenLevel] ?? "bg-slate-100 text-slate-600 border-slate-200"}`}>
@@ -1343,7 +1347,7 @@ export default function GroupDetailPage() {
                               name: t.name,
                               startsAt: t.startsAt.slice(0, 16),
                               endsAt: t.endsAt.slice(0, 16),
-                              durationHours: t.durationHours,
+                              shiftDurationMinutes: t.shiftDurationMinutes,
                               requiredHeadcount: t.requiredHeadcount,
                               burdenLevel: t.burdenLevel,
                               allowsDoubleShift: t.allowsDoubleShift,
@@ -2030,10 +2034,16 @@ export default function GroupDetailPage() {
                     required className={`w-full ${inp}`} />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-slate-500 mb-1.5">משך (שעות) *</label>
-                  <input type="number" min={0.5} step={0.5} value={taskForm.durationHours}
-                    onChange={e => setTaskForm(f => ({ ...f, durationHours: Number(e.target.value) }))}
-                    required className={`w-full ${inp}`} />
+                  <label className="block text-xs font-medium text-slate-500 mb-1.5">משך משמרת *</label>
+                  <div className="flex items-center gap-2">
+                    <input type="number" min={15} step={15} value={taskForm.shiftDurationMinutes}
+                      onChange={e => setTaskForm(f => ({ ...f, shiftDurationMinutes: Number(e.target.value) }))}
+                      required className={`w-24 ${inp}`} />
+                    <span className="text-xs text-slate-500">דקות</span>
+                    <span className="text-xs text-slate-400">
+                      ({Math.floor(taskForm.shiftDurationMinutes / 60) > 0 ? `${Math.floor(taskForm.shiftDurationMinutes / 60)}ש' ` : ""}{taskForm.shiftDurationMinutes % 60 > 0 ? `${taskForm.shiftDurationMinutes % 60}ד'` : ""})
+                    </span>
+                  </div>
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-slate-500 mb-1.5">כוח אדם נדרש *</label>
