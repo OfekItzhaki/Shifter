@@ -27,10 +27,17 @@ public class SolverHttpClient : ISolverClient
 
     public async Task<SolverOutputDto> SolveAsync(SolverInputDto input, CancellationToken ct = default)
     {
-        _logger.LogInformation("Calling solver: run_id={RunId} space_id={SpaceId}", input.RunId, input.SpaceId);
+        _logger.LogInformation("Calling solver: run_id={RunId} space_id={SpaceId} slots={Slots} people={People}",
+            input.RunId, input.SpaceId, input.TaskSlots.Count, input.People.Count);
 
         var response = await _http.PostAsJsonAsync("/solve", input, JsonOptions, ct);
-        response.EnsureSuccessStatusCode();
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var body = await response.Content.ReadAsStringAsync(ct);
+            _logger.LogError("Solver returned {StatusCode}. Body: {Body}", (int)response.StatusCode, body);
+            response.EnsureSuccessStatusCode();
+        }
 
         var result = await response.Content.ReadFromJsonAsync<SolverOutputDto>(JsonOptions, ct)
             ?? throw new InvalidOperationException("Solver returned empty response.");
