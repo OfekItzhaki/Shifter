@@ -7,6 +7,8 @@ import AppShell from "@/components/shell/AppShell";
 import Modal from "@/components/Modal";
 import ImageUpload from "@/components/ImageUpload";
 import DraftScheduleModal from "@/components/DraftScheduleModal";
+import ScheduleTab from "./tabs/ScheduleTab";
+import { ActiveTab, ADMIN_ONLY_TABS, ScheduleAssignment, burdenLabels, burdenColors } from "./types";
 import { useSpaceStore } from "@/lib/store/spaceStore";
 import { useAuthStore } from "@/lib/store/authStore";
 import { useRouter } from "next/navigation";
@@ -25,41 +27,6 @@ import { listGroupTasks, createGroupTask, updateGroupTask, deleteGroupTask, Grou
 import { getConstraints, createConstraint, updateConstraint, deleteConstraint, ConstraintDto } from "@/lib/api/constraints";
 import { searchPeople, createPerson, invitePerson, PersonSearchResultDto } from "@/lib/api/people";
 import { apiClient } from "@/lib/api/client";
-
-type ActiveTab = "schedule" | "members" | "alerts" | "messages" | "tasks" | "constraints" | "settings";
-
-const ADMIN_ONLY_TABS: ActiveTab[] = ["tasks", "constraints", "settings"];
-
-interface ScheduleAssignment {
-  personName: string;
-  taskTypeName: string;
-  startsAt: string;
-  endsAt: string;
-}
-
-const burdenLabels: Record<string, string> = {
-  Favorable: "נוח", Neutral: "ניטרלי", Disliked: "לא אהוב", Hated: "שנוא",
-  favorable: "נוח", neutral: "ניטרלי", disliked: "לא אהוב", hated: "שנוא",
-};
-const burdenColors: Record<string, string> = {
-  Favorable: "bg-emerald-50 text-emerald-700 border-emerald-200",
-  Neutral: "bg-slate-100 text-slate-600 border-slate-200",
-  Disliked: "bg-amber-50 text-amber-700 border-amber-200",
-  Hated: "bg-red-50 text-red-700 border-red-200",
-  favorable: "bg-emerald-50 text-emerald-700 border-emerald-200",
-  neutral: "bg-slate-100 text-slate-600 border-slate-200",
-  disliked: "bg-amber-50 text-amber-700 border-amber-200",
-  hated: "bg-red-50 text-red-700 border-red-200",
-};
-
-const SEVERITY_STYLES: Record<string, string> = {
-  hard: "bg-red-50 text-red-700 border-red-200",
-  soft: "bg-blue-50 text-blue-700 border-blue-200",
-};
-const SEVERITY_DOTS: Record<string, string> = {
-  hard: "bg-red-500",
-  soft: "bg-blue-500",
-};
 
 export default function GroupDetailPage() {
   const params = useParams();
@@ -810,7 +777,23 @@ export default function GroupDetailPage() {
   function renderTabPanel() {
     switch (activeTab) {
       case "schedule":
-        return renderSchedulePanel();
+        return (
+          <ScheduleTab
+            groupId={groupId}
+            solverHorizonDays={group?.solverHorizonDays ?? 7}
+            scheduleData={scheduleData}
+            scheduleLoading={scheduleLoading}
+            scheduleError={scheduleError}
+            draftVersion={draftVersion}
+            isAdmin={isAdmin}
+            publishSaving={publishSaving}
+            discardSaving={discardSaving}
+            scheduleVersionError={scheduleVersionError}
+            onOpenDraftModal={openDraftModal}
+            onPublish={handlePublishVersion}
+            onDiscard={handleDiscardVersion}
+          />
+        );
       case "members":
         return isAdmin ? renderMembersEdit() : renderMembersReadOnly();
       case "alerts":
