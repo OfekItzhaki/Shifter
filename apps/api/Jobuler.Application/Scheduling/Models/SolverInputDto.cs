@@ -1,5 +1,7 @@
 namespace Jobuler.Application.Scheduling.Models;
 
+using System.Text.Json.Serialization;
+
 /// <summary>
 /// Mirrors the Python solver's SolverInput Pydantic model (solver_input.py).
 /// Serialized to JSON and sent via HTTP POST /solve.
@@ -21,9 +23,9 @@ public record SolverInputDto(
     List<FairnessCountersDto> FairnessCounters);
 
 public record StabilityWeightsDto(
-    double TodayTomorrow,
-    double Days3To4,
-    double Days5To7);
+    [property: JsonPropertyName("today_tomorrow")] double TodayTomorrow,
+    [property: JsonPropertyName("days_3_4")]       double Days3To4,
+    [property: JsonPropertyName("days_5_7")]       double Days5To7);
 
 public record PersonEligibilityDto(
     string PersonId,

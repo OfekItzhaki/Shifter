@@ -8,8 +8,8 @@ namespace Jobuler.Application.Scheduling.Commands;
 
 public record TriggerSolverCommand(
     Guid SpaceId,
-    string TriggerMode,       // standard | emergency
-    Guid RequestedByUserId) : IRequest<Guid>;  // returns RunId
+    string TriggerMode,        // standard | emergency
+    Guid? RequestedByUserId) : IRequest<Guid>;  // null = system/auto-triggered
 
 public class TriggerSolverCommandHandler : IRequestHandler<TriggerSolverCommand, Guid>
 {
@@ -27,7 +27,8 @@ public class TriggerSolverCommandHandler : IRequestHandler<TriggerSolverCommand,
         // Set PostgreSQL session variable so RLS policies allow queries on this space
         await _db.Database.ExecuteSqlRawAsync(
             "SELECT set_config('app.current_space_id', {0}, TRUE), set_config('app.current_user_id', {1}, TRUE)",
-            request.SpaceId.ToString(), request.RequestedByUserId.ToString());
+            request.SpaceId.ToString(),
+            request.RequestedByUserId?.ToString() ?? "");
 
         // Find the current published version to use as baseline
         var baseline = await _db.ScheduleVersions

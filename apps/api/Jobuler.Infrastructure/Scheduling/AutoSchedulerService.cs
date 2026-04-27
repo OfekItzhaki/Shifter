@@ -28,8 +28,8 @@ public class AutoSchedulerService : BackgroundService
     // How often to check (default: every 6 hours)
     private static readonly TimeSpan CheckInterval = TimeSpan.FromHours(6);
 
-    // System user ID used for auto-triggered runs
-    private static readonly Guid SystemUserId = Guid.Empty;
+    // System user ID used for auto-triggered runs — null means system/automated
+    private static readonly Guid? SystemUserId = null;
 
     public AutoSchedulerService(IServiceScopeFactory scopeFactory, ILogger<AutoSchedulerService> logger)
     {
