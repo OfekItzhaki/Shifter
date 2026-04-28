@@ -97,3 +97,66 @@ export async function downloadExport(
   a.href = url; a.download = name; a.click();
   URL.revokeObjectURL(url);
 }
+
+// ── Statistics / Burden ───────────────────────────────────────────────────────
+
+export interface PersonBurdenStats {
+  personId: string;
+  displayName: string;
+  profileImageUrl: string | null;
+  // Rolling counters
+  totalAssignments7d: number;
+  totalAssignments14d: number;
+  totalAssignments30d: number;
+  hatedTasks7d: number;
+  hatedTasks14d: number;
+  dislikedHatedScore7d: number;
+  kitchenCount7d: number;
+  nightMissions7d: number;
+  consecutiveBurdenCount: number;
+  // All-time
+  totalAssignmentsAllTime: number;
+  hatedTasksAllTime: number;
+  dislikedTasksAllTime: number;
+  favorableTasksAllTime: number;
+  burdenScoreAllTime: number;
+  // Extended
+  groupsCount: number;
+  lastAssignmentDate: string | null;
+  averageAssignmentsPerWeek: number;
+  burdenBalance: number;
+}
+
+export interface LeaderboardEntry {
+  personId: string;
+  displayName: string;
+  profileImageUrl: string | null;
+  value: number;
+  label: string;
+}
+
+export interface BurdenStats {
+  people: PersonBurdenStats[];
+  mostAssignments: LeaderboardEntry[];
+  mostHatedTasks: LeaderboardEntry[];
+  highestBurdenScore: LeaderboardEntry[];
+  mostKitchenDuty: LeaderboardEntry[];
+  mostNightMissions: LeaderboardEntry[];
+  mostFavorableTasks: LeaderboardEntry[];
+  bestBurdenBalance: LeaderboardEntry[];
+  worstBurdenBalance: LeaderboardEntry[];
+  mostConsecutiveBurden: LeaderboardEntry[];
+  totalPublishedAssignments: number;
+  totalPeople: number;
+  totalGroups: number;
+  totalPublishedVersions: number;
+  averageAssignmentsPerPerson: number;
+  mostBurdenedPersonId: string | null;
+  leastBurdenedPersonId: string | null;
+  lastUpdated: string | null;
+}
+
+export async function getBurdenStats(spaceId: string): Promise<BurdenStats> {
+  const { data } = await apiClient.get(`/spaces/${spaceId}/stats/burden`);
+  return data;
+}
