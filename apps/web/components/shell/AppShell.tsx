@@ -145,21 +145,22 @@ export default function AppShell({ children }: AppShellProps) {
           {/* Language switcher */}
           <LanguageSwitcher />
 
-          {displayName && (
-            <div style={{ ...S.userInfo, display: "flex", alignItems: "center", gap: 10 }}>
-              <div style={{
-                width: 32, height: 32, borderRadius: "50%", background: "#3b82f6",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                color: "white", fontSize: 13, fontWeight: 700, flexShrink: 0
-              }}>
-                {displayName.charAt(0).toUpperCase()}
-              </div>
-              <div>
-                <div style={{ color: "#94a3b8", fontSize: 10, marginBottom: 1 }}>{t("auth.loggedInAs")}</div>
-                <div style={{ color: "white", fontSize: 13, fontWeight: 600 }}>{displayName}</div>
+          {/* User info — always shown */}
+          <div style={{ ...S.userInfo, display: "flex", alignItems: "center", gap: 10 }}>
+            <div style={{
+              width: 32, height: 32, borderRadius: "50%", background: "#3b82f6",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              color: "white", fontSize: 13, fontWeight: 700, flexShrink: 0
+            }}>
+              {displayName ? displayName.charAt(0).toUpperCase() : "?"}
+            </div>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ color: "#94a3b8", fontSize: 10, marginBottom: 1 }}>{t("auth.loggedInAs")}</div>
+              <div style={{ color: "white", fontSize: 13, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {displayName ?? "—"}
               </div>
             </div>
-          )}
+          </div>
           <button onClick={handleLogout} style={S.logoutBtn} aria-label={t("auth.logout")} data-testid="logout-btn">
             <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />

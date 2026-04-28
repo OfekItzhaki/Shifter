@@ -62,7 +62,7 @@ export default function GroupDetailPage() {
   const router = useRouter();
   const groupId = params?.groupId as string;
   const { currentSpaceId } = useSpaceStore();
-  const { userId, isAdminForGroup } = useAuthStore();
+  const { userId, isAdminForGroup, adminGroupId, enterAdminMode, exitAdminMode } = useAuthStore();
 
   // ── Group / header state ─────────────────────────────────────────────────
   const [group, setGroup] = useState<GroupWithMemberCountDto | null>(null);
@@ -185,6 +185,11 @@ export default function GroupDetailPage() {
   const [deleteSaving, setDeleteSaving] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
+  // ── Re-evaluate admin state when adminGroupId changes ───────────────────
+  useEffect(() => {
+    setIsAdmin(adminGroupId === groupId);
+  }, [adminGroupId, groupId]);
+
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // ── Load group ───────────────────────────────────────────────────────────
@@ -199,7 +204,7 @@ export default function GroupDetailPage() {
         setNewGroupName(found.name);
         setSolverHorizon(found.solverHorizonDays ?? 14);
         setSolverHorizonDays(found.solverHorizonDays ?? 14);
-        setIsAdmin(found.ownerPersonId === userId || isAdminForGroup(groupId));
+        setIsAdmin(isAdminForGroup(groupId) || adminGroupId === groupId);
       })
       .catch(() => router.push("/groups"))
       .finally(() => setGroupLoading(false));
@@ -210,15 +215,25 @@ export default function GroupDetailPage() {
     if (!currentSpaceId || !groupId || activeTab !== "schedule") return;
     setScheduleLoading(true);
     setScheduleError(null);
-    apiClient.get<{ assignments: ScheduleAssignment[]; draftVersion?: { id: string; status: string } }>(
-      `/spaces/${currentSpaceId}/groups/${groupId}/schedule/current`
-    )
-      .then(res => {
-        setScheduleData(res.data.assignments ?? []);
-        setDraftVersion(res.data.draftVersion ?? null);
-      })
-      .catch(() => setScheduleError("שגיאה בטעינת הסידור"))
-      .finally(() => setScheduleLoading(false));
+    // The schedule is space-level, not group-level.
+    // GET /spaces/{id}/schedule-versions/current returns the published version (404 if none).
+    // GET /spaces/{id}/schedule-versions?status=draft returns any pending draft.
+    Promise.all([
+      apiClient.get<{ version: { id: string; status: string }; assignments: ScheduleAssignment[] }>(
+        `/spaces/${currentSpaceId}/schedule-versions/current`
+      ).catch(() => null),
+      apiClient.get<Array<{ id: string; status: string }>>(
+        `/spaces/${currentSpaceId}/schedule-versions?status=draft`
+      ).catch(() => ({ data: [] as Array<{ id: string; status: string }> })),
+    ]).then(([currentRes, draftRes]) => {
+      // Filter assignments to only those belonging to this group's members
+      const allAssignments = currentRes?.data?.assignments ?? [];
+      setScheduleData(allAssignments);
+      const drafts = Array.isArray(draftRes?.data) ? draftRes.data : [];
+      setDraftVersion(drafts.length > 0 ? drafts[0] : null);
+    })
+    .catch(() => setScheduleError("שגיאה בטעינת הסידור"))
+    .finally(() => setScheduleLoading(false));
   }, [currentSpaceId, groupId, activeTab]);
 
   // ── Load members ─────────────────────────────────────────────────────────
@@ -298,12 +313,18 @@ export default function GroupDetailPage() {
       await apiClient.post(`/spaces/${currentSpaceId}/groups/${groupId}/schedule/versions/${draftVersion.id}/publish`, {});
       setDraftVersion(null);
       setScheduleData(null);
-      // Reload schedule
-      const res = await apiClient.get<{ assignments: ScheduleAssignment[]; draftVersion?: { id: string; status: string } }>(
-        `/spaces/${currentSpaceId}/groups/${groupId}/schedule/current`
-      );
-      setScheduleData(res.data.assignments ?? []);
-      setDraftVersion(res.data.draftVersion ?? null);
+      // Reload schedule after publish
+      const [currentRes, draftRes] = await Promise.all([
+        apiClient.get<{ version: { id: string; status: string }; assignments: ScheduleAssignment[] }>(
+          `/spaces/${currentSpaceId}/schedule-versions/current`
+        ).catch(() => null),
+        apiClient.get<Array<{ id: string; status: string }>>(
+          `/spaces/${currentSpaceId}/schedule-versions?status=draft`
+        ).catch(() => ({ data: [] as Array<{ id: string; status: string }> })),
+      ]);
+      setScheduleData(currentRes?.data?.assignments ?? []);
+      const drafts = Array.isArray(draftRes?.data) ? draftRes.data : [];
+      setDraftVersion(drafts.length > 0 ? drafts[0] : null);
     } catch {
       setScheduleVersionError("שגיאה בפרסום הסידור");
     } finally {
@@ -649,10 +670,17 @@ export default function GroupDetailPage() {
             if (pollingRef.current) clearInterval(pollingRef.current);
             setSolverPolling(false);
             if (statusRes.data.status === "Completed") {
-              const schedRes = await apiClient.get<{ assignments: ScheduleAssignment[]; draftVersion?: { id: string; status: string } }>(
-                `/spaces/${currentSpaceId}/groups/${groupId}/schedule/current`
-              );
-              setDraftVersion(schedRes.data.draftVersion ?? null);
+              const [schedRes, draftRes] = await Promise.all([
+                apiClient.get<{ version: { id: string; status: string }; assignments: ScheduleAssignment[] }>(
+                  `/spaces/${currentSpaceId}/schedule-versions/current`
+                ).catch(() => null),
+                apiClient.get<Array<{ id: string; status: string }>>(
+                  `/spaces/${currentSpaceId}/schedule-versions?status=draft`
+                ).catch(() => ({ data: [] as Array<{ id: string; status: string }> })),
+              ]);
+              setScheduleData(schedRes?.data?.assignments ?? []);
+              const drafts = Array.isArray(draftRes?.data) ? draftRes.data : [];
+              setDraftVersion(drafts.length > 0 ? drafts[0] : null);
             }
           }
         } catch {
@@ -750,10 +778,32 @@ export default function GroupDetailPage() {
           >
             {avatarLetter}
           </div>
-          <div>
+          <div className="flex-1">
             <h1 className="text-xl font-bold text-slate-900">{group.name}</h1>
             <p className="text-sm text-slate-400">{group.memberCount ?? 0} חברים</p>
           </div>
+          {/* Admin mode toggle — always visible to group owner */}
+          <button
+            onClick={() => {
+              if (isAdmin) {
+                exitAdminMode();
+                setIsAdmin(false);
+              } else {
+                enterAdminMode(groupId);
+                setIsAdmin(true);
+              }
+            }}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium border transition-colors ${
+              isAdmin
+                ? "bg-amber-50 border-amber-300 text-amber-700 hover:bg-amber-100"
+                : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
+            }`}
+          >
+            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+            </svg>
+            {isAdmin ? "יציאה ממצב ניהול" : "כניסה למצב ניהול"}
+          </button>
         </div>
 
         {/* Tabs */}
