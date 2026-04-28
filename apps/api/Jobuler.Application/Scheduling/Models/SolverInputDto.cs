@@ -12,6 +12,7 @@ public record SolverInputDto(
     string TriggerMode,
     string HorizonStart,
     string HorizonEnd,
+    string Locale,
     StabilityWeightsDto StabilityWeights,
     List<PersonEligibilityDto> People,
     List<AvailabilityWindowDto> AvailabilityWindows,

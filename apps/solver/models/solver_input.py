@@ -91,6 +91,7 @@ class SolverInput(BaseModel):
     trigger_mode: TriggerMode
     horizon_start: date
     horizon_end: date
+    locale: str = "en"  # he | en | ru — controls language of conflict descriptions
     stability_weights: StabilityWeights
     people: list[PersonEligibility]
     availability_windows: list[AvailabilityWindow]

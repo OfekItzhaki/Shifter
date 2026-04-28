@@ -19,6 +19,7 @@ from solver.constraints import (
     add_availability_constraints,
 )
 from solver.objectives import build_objective
+from solver.i18n import t
 import os
 import logging
 
@@ -94,7 +95,6 @@ def solve(input: SolverInput) -> SolverOutput:
 
     fragments = _build_explanation(feasible, timed_out, uncovered, input)
     hard_conflicts = [] if feasible else _build_hard_conflicts(input, people, slots)
-
     return SolverOutput(
         run_id=input.run_id,
         feasible=feasible,
@@ -203,29 +203,27 @@ def _compute_fairness(solver, assign, input: SolverInput, feasible) -> list[Fair
 
 
 def _build_explanation(feasible, timed_out, uncovered, input: SolverInput) -> list[str]:
+    locale = getattr(input, "locale", "en")
     fragments = []
     if timed_out:
-        fragments.append("Solver reached time limit — returning best known result.")
+        fragments.append(t(locale, "solver_timeout"))
     if not feasible and not timed_out:
-        fragments.append("No feasible solution found under current hard constraints.")
+        fragments.append(t(locale, "no_feasible"))
     if uncovered:
-        fragments.append(f"{len(uncovered)} slot(s) could not be fully staffed.")
+        fragments.append(t(locale, "uncovered_slots", n=len(uncovered)))
     if feasible and not uncovered:
-        fragments.append("All slots fully staffed.")
+        fragments.append(t(locale, "all_staffed"))
     return fragments
 
 
 def _build_hard_conflicts(input: SolverInput, people, slots) -> list[HardConflict]:
     """
-    Analyse the input to produce human-readable conflict explanations when
-    the solver returns INFEASIBLE.  We check the most common root causes:
-      1. Not enough people to cover required headcount
-      2. Qualification / role restrictions leave a slot with zero eligible people
-      3. Availability / at-home windows block everyone from a slot
-      4. Hard constraint restrictions (no_task_type_restriction) over-constrain a slot
+    Analyse the input to produce locale-aware conflict explanations when
+    the solver returns INFEASIBLE.
     """
     from solver.constraints import _to_timestamp
 
+    locale = getattr(input, "locale", "en")
     conflicts: list[HardConflict] = []
 
     # ── 1. Global headcount check ─────────────────────────────────────────────
@@ -234,16 +232,13 @@ def _build_hard_conflicts(input: SolverInput, people, slots) -> list[HardConflic
         conflicts.append(HardConflict(
             constraint_id="headcount_global",
             rule_type="min_headcount",
-            description=(
-                f"אין מספיק חברים: נדרשים {total_required} שיבוצים סה\"כ "
-                f"אך יש רק {len(people)} חברים."
-            ),
+            description=t(locale, "headcount_global",
+                          required=total_required, available=len(people)),
             affected_slot_ids=[s.slot_id for s in slots],
             affected_person_ids=[p.person_id for p in people],
         ))
 
     # ── 2. Per-slot eligibility check ─────────────────────────────────────────
-    # Build at-home and availability maps
     at_home: dict[str, list[tuple[int, int]]] = {}
     for pw in input.presence_windows:
         if pw.state == "at_home":
@@ -257,7 +252,7 @@ def _build_hard_conflicts(input: SolverInput, people, slots) -> list[HardConflic
             (_to_timestamp(aw.starts_at), _to_timestamp(aw.ends_at))
         )
 
-    restriction_map: dict[str, set[str]] = {}  # person_id -> set of blocked task_type_ids
+    restriction_map: dict[str, set[str]] = {}
     for c in input.hard_constraints:
         if c.rule_type == "no_task_type_restriction":
             pid = c.payload.get("person_id") or c.scope_id
@@ -273,7 +268,6 @@ def _build_hard_conflicts(input: SolverInput, people, slots) -> list[HardConflic
         for person in people:
             pid = person.person_id
 
-            # Blocked by at-home
             blocked_home = any(
                 slot_start < he and slot_end > hs
                 for hs, he in at_home.get(pid, [])
@@ -281,7 +275,6 @@ def _build_hard_conflicts(input: SolverInput, people, slots) -> list[HardConflic
             if blocked_home:
                 continue
 
-            # Blocked by availability windows (has windows but none cover slot)
             if pid in avail_map:
                 covered = any(
                     a_start <= slot_start and a_end >= slot_end
@@ -290,19 +283,14 @@ def _build_hard_conflicts(input: SolverInput, people, slots) -> list[HardConflic
                 if not covered:
                     continue
 
-            # Blocked by qualification
             if slot.required_qualification_ids:
-                required = set(slot.required_qualification_ids)
-                if not required.issubset(set(person.qualification_ids)):
+                if not set(slot.required_qualification_ids).issubset(set(person.qualification_ids)):
                     continue
 
-            # Blocked by role
             if slot.required_role_ids:
-                required_roles = set(slot.required_role_ids)
-                if not required_roles.intersection(set(person.role_ids)):
+                if not set(slot.required_role_ids).intersection(set(person.role_ids)):
                     continue
 
-            # Blocked by restriction
             if slot.task_type_id in restriction_map.get(pid, set()):
                 continue
 
@@ -311,21 +299,25 @@ def _build_hard_conflicts(input: SolverInput, people, slots) -> list[HardConflic
         if len(eligible) < slot.required_headcount:
             reason_parts = []
             if slot.required_qualification_ids:
-                reason_parts.append("דרישות כישורים")
+                reason_parts.append(t(locale, "reason_qualification"))
             if slot.required_role_ids:
-                reason_parts.append("דרישות תפקיד")
+                reason_parts.append(t(locale, "reason_role"))
             if at_home or avail_map:
-                reason_parts.append("חלונות זמינות / נוכחות")
-            reason_str = ", ".join(reason_parts) if reason_parts else "אילוצים שונים"
+                reason_parts.append(t(locale, "reason_availability"))
+            reason_str = ", ".join(reason_parts) if reason_parts else t(locale, "reason_other")
+
+            # Format starts_at as a readable date/time string
+            starts_str = str(slot.starts_at)[:16].replace("T", " ")
 
             conflicts.append(HardConflict(
                 constraint_id=f"slot_{slot.slot_id}_eligibility",
                 rule_type="slot_eligibility",
-                description=(
-                    f"משמרת '{slot.task_type_name}' ({slot.starts_at}) "
-                    f"דורשת {slot.required_headcount} אנשים אך רק {len(eligible)} כשירים "
-                    f"({reason_str})."
-                ),
+                description=t(locale, "slot_eligibility",
+                               task=slot.task_type_name,
+                               starts_at=starts_str,
+                               required=slot.required_headcount,
+                               eligible=len(eligible),
+                               reasons=reason_str),
                 affected_slot_ids=[slot.slot_id],
                 affected_person_ids=[p.person_id for p in people if p.person_id not in eligible],
             ))

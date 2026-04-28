@@ -210,10 +210,18 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
             f.DislikedHatedScore7d, f.KitchenCount7d,
             f.NightMissions7d, f.ConsecutiveBurdenCount)).ToList();
 
+        // ── Space locale ──────────────────────────────────────────────────────
+        var space = await _db.Spaces.AsNoTracking()
+            .Where(s => s.Id == spaceId)
+            .Select(s => new { s.Locale })
+            .FirstOrDefaultAsync(ct);
+        var locale = space?.Locale ?? "en";
+
         return new SolverInputDto(
             spaceId.ToString(), runId.ToString(), triggerMode,
             horizonStart.ToString("yyyy-MM-dd"),
             horizonEnd.ToString("yyyy-MM-dd"),
+            locale,
             DefaultWeights,
             peopleDto, availabilityDto, presenceDto, slotsDto,
             hardConstraints, softConstraints,
