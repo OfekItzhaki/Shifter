@@ -7,6 +7,28 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* ── Global cursor fix ───────────────────────────────────────────────────────
+   Non-interactive elements should never show a text cursor.
+   Inputs, buttons, links, and textareas keep their natural cursors.
+   Everything else defaults to the arrow cursor.
+*/
+*:not(input):not(textarea):not(button):not(a):not([role="button"]):not([contenteditable]) {
+  cursor: default;
+}
+
+input, textarea {
+  cursor: text;
+}
+
+button, a, [role="button"], label[for], summary {
+  cursor: pointer;
+}
+
+/* Disabled elements */
+button:disabled, input:disabled, textarea:disabled, select:disabled {
+  cursor: not-allowed;
+}
+
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }

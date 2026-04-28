@@ -93,6 +93,7 @@ def solve(input: SolverInput) -> SolverOutput:
     fairness  = _compute_fairness(solver, assign, input, feasible)
 
     fragments = _build_explanation(feasible, timed_out, uncovered, input)
+    hard_conflicts = [] if feasible else _build_hard_conflicts(input, people, slots)
 
     return SolverOutput(
         run_id=input.run_id,
@@ -100,7 +101,7 @@ def solve(input: SolverInput) -> SolverOutput:
         timed_out=timed_out,
         assignments=assignments,
         uncovered_slot_ids=uncovered,
-        hard_conflicts=[],  # Phase 3 extension: conflict explanation
+        hard_conflicts=hard_conflicts,
         soft_penalty_total=solver.objective_value if feasible else 0.0,
         stability_metrics=stability,
         fairness_metrics=fairness,
@@ -212,3 +213,121 @@ def _build_explanation(feasible, timed_out, uncovered, input: SolverInput) -> li
     if feasible and not uncovered:
         fragments.append("All slots fully staffed.")
     return fragments
+
+
+def _build_hard_conflicts(input: SolverInput, people, slots) -> list[HardConflict]:
+    """
+    Analyse the input to produce human-readable conflict explanations when
+    the solver returns INFEASIBLE.  We check the most common root causes:
+      1. Not enough people to cover required headcount
+      2. Qualification / role restrictions leave a slot with zero eligible people
+      3. Availability / at-home windows block everyone from a slot
+      4. Hard constraint restrictions (no_task_type_restriction) over-constrain a slot
+    """
+    from solver.constraints import _to_timestamp
+
+    conflicts: list[HardConflict] = []
+
+    # ── 1. Global headcount check ─────────────────────────────────────────────
+    total_required = sum(s.required_headcount for s in slots)
+    if len(people) < total_required:
+        conflicts.append(HardConflict(
+            constraint_id="headcount_global",
+            rule_type="min_headcount",
+            description=(
+                f"אין מספיק חברים: נדרשים {total_required} שיבוצים סה\"כ "
+                f"אך יש רק {len(people)} חברים."
+            ),
+            affected_slot_ids=[s.slot_id for s in slots],
+            affected_person_ids=[p.person_id for p in people],
+        ))
+
+    # ── 2. Per-slot eligibility check ─────────────────────────────────────────
+    # Build at-home and availability maps
+    at_home: dict[str, list[tuple[int, int]]] = {}
+    for pw in input.presence_windows:
+        if pw.state == "at_home":
+            at_home.setdefault(pw.person_id, []).append(
+                (_to_timestamp(pw.starts_at), _to_timestamp(pw.ends_at))
+            )
+
+    avail_map: dict[str, list[tuple[int, int]]] = {}
+    for aw in input.availability_windows:
+        avail_map.setdefault(aw.person_id, []).append(
+            (_to_timestamp(aw.starts_at), _to_timestamp(aw.ends_at))
+        )
+
+    restriction_map: dict[str, set[str]] = {}  # person_id -> set of blocked task_type_ids
+    for c in input.hard_constraints:
+        if c.rule_type == "no_task_type_restriction":
+            pid = c.payload.get("person_id") or c.scope_id
+            tid = str(c.payload.get("task_type_id", ""))
+            if pid and tid:
+                restriction_map.setdefault(pid, set()).add(tid)
+
+    for slot in slots:
+        slot_start = _to_timestamp(slot.starts_at)
+        slot_end = _to_timestamp(slot.ends_at)
+        eligible: list[str] = []
+
+        for person in people:
+            pid = person.person_id
+
+            # Blocked by at-home
+            blocked_home = any(
+                slot_start < he and slot_end > hs
+                for hs, he in at_home.get(pid, [])
+            )
+            if blocked_home:
+                continue
+
+            # Blocked by availability windows (has windows but none cover slot)
+            if pid in avail_map:
+                covered = any(
+                    a_start <= slot_start and a_end >= slot_end
+                    for a_start, a_end in avail_map[pid]
+                )
+                if not covered:
+                    continue
+
+            # Blocked by qualification
+            if slot.required_qualification_ids:
+                required = set(slot.required_qualification_ids)
+                if not required.issubset(set(person.qualification_ids)):
+                    continue
+
+            # Blocked by role
+            if slot.required_role_ids:
+                required_roles = set(slot.required_role_ids)
+                if not required_roles.intersection(set(person.role_ids)):
+                    continue
+
+            # Blocked by restriction
+            if slot.task_type_id in restriction_map.get(pid, set()):
+                continue
+
+            eligible.append(pid)
+
+        if len(eligible) < slot.required_headcount:
+            reason_parts = []
+            if slot.required_qualification_ids:
+                reason_parts.append("דרישות כישורים")
+            if slot.required_role_ids:
+                reason_parts.append("דרישות תפקיד")
+            if at_home or avail_map:
+                reason_parts.append("חלונות זמינות / נוכחות")
+            reason_str = ", ".join(reason_parts) if reason_parts else "אילוצים שונים"
+
+            conflicts.append(HardConflict(
+                constraint_id=f"slot_{slot.slot_id}_eligibility",
+                rule_type="slot_eligibility",
+                description=(
+                    f"משמרת '{slot.task_type_name}' ({slot.starts_at}) "
+                    f"דורשת {slot.required_headcount} אנשים אך רק {len(eligible)} כשירים "
+                    f"({reason_str})."
+                ),
+                affected_slot_ids=[slot.slot_id],
+                affected_person_ids=[p.person_id for p in people if p.person_id not in eligible],
+            ))
+
+    return conflicts

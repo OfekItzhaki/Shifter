@@ -1,6 +1,9 @@
 "use client";
 
-import type { GroupMemberDto, DeletedGroupDto } from "../types";
+import type { GroupMemberDto } from "@/lib/api/groups";
+import type { DeletedGroupDto } from "@/lib/api/groups";
+
+interface DraftVersion { id: string; status: string; }
 
 interface Props {
   isAdmin: boolean;
@@ -15,7 +18,7 @@ interface Props {
   solverPolling: boolean;
   solverStatus: string | null;
   solverError: string | null;
-  draftVersion: { id: string; status: string } | null;
+  draftVersion: DraftVersion | null;
   deletedGroups: DeletedGroupDto[];
   deletedGroupsLoading: boolean;
   members: GroupMemberDto[];
@@ -41,20 +44,8 @@ interface Props {
   onDeleteGroup: () => void;
 }
 
-function LoadingSpinner() {
-  return (
-    <div className="flex items-center gap-3 text-slate-400 text-sm py-8">
-      <svg className="animate-spin h-5 w-5 text-blue-400" fill="none" viewBox="0 0 24 24">
-        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-      </svg>
-      טוען...
-    </div>
-  );
-}
-
 export default function SettingsTab({
-  isAdmin, groupId, newGroupName, renameSaving, renameError,
+  isAdmin, newGroupName, renameSaving, renameError,
   solverHorizon, savingSettings, settingsError, settingsSaved,
   solverPolling, solverStatus, solverError, draftVersion,
   deletedGroups, deletedGroupsLoading, members,
@@ -65,224 +56,155 @@ export default function SettingsTab({
   onTransferPersonChange, onInitiateTransfer, onCancelTransfer,
   onShowDeleteConfirm, onDeleteGroup,
 }: Props) {
-  const nonOwnerMembers = members.filter(m => !m.isOwner);
+  if (!isAdmin) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 text-center bg-white rounded-xl border border-slate-200">
+        <p className="text-slate-400 text-sm">הגדרות זמינות למנהלים בלבד</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="max-w-lg space-y-5">
-      {/* Rename section */}
-      {isAdmin && (
-        <div className="border-b border-slate-200 pb-5">
-          <h3 className="text-sm font-semibold text-slate-700 mb-3">שינוי שם קבוצה</h3>
-          <div className="flex gap-2 max-w-sm">
-            <input
-              value={newGroupName}
-              onChange={e => onGroupNameChange(e.target.value)}
-              className="flex-1 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-            <button
-              onClick={onRenameGroup}
-              disabled={renameSaving}
-              className="bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl disabled:opacity-50"
-            >
-              {renameSaving ? "שומר..." : "שמור"}
-            </button>
-          </div>
-          {renameError && <p className="text-sm text-red-600 mt-2">{renameError}</p>}
+    <div className="space-y-6">
+      {/* Rename */}
+      <Section title="שם הקבוצה">
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={newGroupName}
+            onChange={e => onGroupNameChange(e.target.value)}
+            className="flex-1 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <button onClick={onRenameGroup} disabled={renameSaving} className="bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl disabled:opacity-50 transition-colors">
+            {renameSaving ? "שומר..." : "שמור"}
+          </button>
         </div>
-      )}
+        {renameError && <p className="text-sm text-red-600 mt-2">{renameError}</p>}
+      </Section>
 
-      {/* Auto-schedule horizon */}
-      <div className={isAdmin ? "border-b border-slate-200 pb-5" : ""}>
-        <div className="flex items-center gap-2 mb-1">
-          <label className="block text-sm font-medium text-slate-700">אופק סידור אוטומטי</label>
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
-            🔄 אוטומטי
-          </span>
-        </div>
-        <p className="text-xs text-slate-400 mb-3">
-          המערכת תחשב סידור חדש אוטומטית כל פעם שהסידור הקיים לא מכסה את מספר הימים הזה קדימה.
-        </p>
-        <div className="flex items-center gap-4">
+      {/* Solver horizon */}
+      <Section title="אופק תכנון">
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-slate-600">ימים קדימה: <strong>{solverHorizon}</strong></span>
+          </div>
           <input
             type="range"
-            min={1}
-            max={90}
+            min={3}
+            max={30}
             value={solverHorizon}
             onChange={e => onSolverHorizonChange(Number(e.target.value))}
-            className="flex-1"
+            className="w-full accent-blue-500"
           />
-          <span className="text-sm font-semibold text-slate-900 w-20 text-center">{solverHorizon} ימים</span>
-        </div>
-        {solverHorizon > 30 && (
-          <p className="mt-2 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
-            ⚠️ אופק זמן ארוך מגדיל משמעותית את זמן החישוב. מעל 14 ימים — מומלץ להשתמש בזהירות.
-          </p>
-        )}
-        <div className="flex items-center gap-3 mt-3">
-          <button
-            onClick={onSaveSettings}
-            disabled={savingSettings}
-            className="bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl disabled:opacity-50 transition-colors"
-          >
-            {savingSettings ? "שומר..." : "שמור"}
+          <button onClick={onSaveSettings} disabled={savingSettings} className="bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl disabled:opacity-50 transition-colors">
+            {savingSettings ? "שומר..." : "שמור הגדרות"}
           </button>
-          {settingsSaved && <span className="text-sm text-emerald-600 font-medium">נשמר בהצלחה</span>}
+          {settingsError && <p className="text-sm text-red-600">{settingsError}</p>}
+          {settingsSaved && <p className="text-sm text-emerald-600">ההגדרות נשמרו ✓</p>}
         </div>
-        {settingsError && <p className="text-sm text-red-600">{settingsError}</p>}
-      </div>
+      </Section>
 
-      {/* Solver trigger section */}
-      {isAdmin && (
-        <div className="border-b border-slate-200 pb-5">
-          <h3 className="text-sm font-semibold text-slate-700 mb-1">הפעל סידור</h3>
-          <p className="text-xs text-slate-400 mb-3">הפעלת הסולבר תחשב סידור חדש ותיצור טיוטה לעיון.</p>
-          {solverPolling ? (
-            <div className="flex items-center gap-3 text-slate-600 text-sm">
-              <svg className="animate-spin h-5 w-5 text-blue-400 flex-shrink-0" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-              </svg>
-              הסידור מחושב...
+      {/* Trigger solver */}
+      <Section title="הפעלת סידור">
+        <div className="space-y-3">
+          {draftVersion && (
+            <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+              <span className="text-sm text-amber-800">יש טיוטה ממתינה לפרסום</span>
+              <button onClick={onOpenDraftModal} className="text-xs text-amber-700 border border-amber-300 hover:bg-amber-100 px-3 py-1.5 rounded-lg transition-colors font-medium">צפה בטיוטה</button>
             </div>
-          ) : solverStatus === "Completed" ? (
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2 text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3 text-sm">
-                <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                </svg>
-                הסידור הושלם! הטיוטה מוכנה.
-              </div>
-              {draftVersion && (
-                <button
-                  onClick={onOpenDraftModal}
-                  className="bg-amber-500 hover:bg-amber-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl transition-colors"
-                >
-                  👁 צפה בטיוטה
-                </button>
-              )}
-            </div>
-          ) : (
-            <>
-              <button
-                onClick={onTriggerSolver}
-                disabled={solverPolling}
-                className="bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl disabled:opacity-50 transition-colors"
-              >
-                הפעל סידור
-              </button>
-              {solverError && <p className="text-sm text-red-600 mt-2">{solverError}</p>}
-            </>
           )}
+          <button
+            onClick={onTriggerSolver}
+            disabled={solverPolling}
+            className="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl disabled:opacity-50 transition-colors"
+          >
+            {solverPolling ? (
+              <>
+                <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
+                מחשב סידור...
+              </>
+            ) : "הפעל סידור"}
+          </button>
+          {solverStatus && <p className="text-sm text-slate-600">סטטוס: {solverStatus}</p>}
+          {solverError && <p className="text-sm text-red-600">{solverError}</p>}
         </div>
-      )}
+      </Section>
 
-      {/* Deleted groups section */}
-      {isAdmin && (
-        <div className="border-t border-slate-200 pt-5">
-          <h3 className="text-sm font-semibold text-slate-700 mb-3">קבוצות מחוקות</h3>
+      {/* Ownership transfer */}
+      <Section title="העברת בעלות">
+        {hasPendingTransfer ? (
+          <div className="space-y-2">
+            <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">יש בקשת העברה ממתינה</p>
+            <button onClick={onCancelTransfer} disabled={cancelTransferSaving} className="text-sm text-red-600 border border-red-200 hover:bg-red-50 px-4 py-2 rounded-xl disabled:opacity-50 transition-colors">
+              {cancelTransferSaving ? "מבטל..." : "בטל העברה"}
+            </button>
+          </div>
+        ) : (
+          <div className="flex gap-2">
+            <select
+              value={transferPersonId}
+              onChange={e => onTransferPersonChange(e.target.value)}
+              className="flex-1 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">בחר חבר...</option>
+              {members.map(m => (
+                <option key={m.personId} value={m.personId}>{m.displayName ?? m.fullName}</option>
+              ))}
+            </select>
+            <button onClick={onInitiateTransfer} disabled={transferSaving || !transferPersonId} className="bg-amber-500 hover:bg-amber-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl disabled:opacity-50 transition-colors">
+              {transferSaving ? "שולח..." : "העבר"}
+            </button>
+          </div>
+        )}
+        {transferError && <p className="text-sm text-red-600 mt-2">{transferError}</p>}
+      </Section>
+
+      {/* Restore deleted groups */}
+      {deletedGroups.length > 0 && (
+        <Section title="קבוצות מחוקות">
           {deletedGroupsLoading ? (
             <p className="text-sm text-slate-400">טוען...</p>
-          ) : deletedGroups.length === 0 ? (
-            <p className="text-sm text-slate-400">אין קבוצות מחוקות</p>
           ) : (
             <div className="space-y-2">
-              {deletedGroups.map(dg => (
-                <div key={dg.id} className="flex items-center justify-between bg-white border border-slate-200 rounded-xl px-4 py-3">
-                  <div>
-                    <span className="text-sm font-medium text-slate-900">{dg.name}</span>
-                    <p className="text-xs text-slate-400 mt-0.5">{new Date(dg.deletedAt).toLocaleDateString("he-IL")}</p>
-                  </div>
-                  <button
-                    onClick={() => onRestoreGroup(dg.id)}
-                    className="text-xs text-emerald-600 border border-emerald-200 hover:bg-emerald-50 px-3 py-1.5 rounded-lg transition-colors"
-                  >
-                    שחזר
-                  </button>
+              {deletedGroups.map(g => (
+                <div key={g.id} className="flex items-center justify-between bg-white border border-slate-200 rounded-xl px-4 py-3">
+                  <span className="text-sm text-slate-700">{g.name}</span>
+                  <button onClick={() => onRestoreGroup(g.id)} className="text-xs text-blue-600 border border-blue-200 hover:bg-blue-50 px-3 py-1.5 rounded-lg transition-colors">שחזר</button>
                 </div>
               ))}
             </div>
           )}
-        </div>
+        </Section>
       )}
 
-      {/* Ownership transfer section */}
-      {isAdmin && (
-        <div className="border-t border-slate-200 pt-5">
-          <h3 className="text-sm font-semibold text-slate-700 mb-3">העברת בעלות</h3>
-          {hasPendingTransfer ? (
-            <div className="flex items-center gap-3">
-              <span className="text-sm text-amber-700 bg-amber-50 border border-amber-200 px-3 py-2 rounded-xl">ממתין לאישור</span>
-              <button
-                onClick={onCancelTransfer}
-                disabled={cancelTransferSaving}
-                className="text-sm text-slate-500 hover:text-slate-700 border border-slate-200 hover:border-slate-400 px-3 py-2 rounded-xl transition-colors disabled:opacity-50"
-              >
-                {cancelTransferSaving ? "מבטל..." : "בטל העברה"}
+      {/* Delete group */}
+      <Section title="מחיקת קבוצה">
+        {showDeleteConfirm ? (
+          <div className="bg-red-50 border border-red-200 rounded-xl p-4 space-y-3">
+            <p className="text-sm text-red-700">האם אתה בטוח? הקבוצה תועבר לארכיון ותוכל לשחזרה מאוחר יותר.</p>
+            <div className="flex gap-2">
+              <button onClick={onDeleteGroup} disabled={deleteSaving} className="bg-red-500 hover:bg-red-600 text-white text-sm font-medium px-4 py-2 rounded-xl disabled:opacity-50 transition-colors">
+                {deleteSaving ? "מוחק..." : "כן, מחק"}
               </button>
+              <button onClick={() => onShowDeleteConfirm(false)} className="text-sm text-slate-500 border border-slate-200 px-4 py-2 rounded-xl hover:bg-slate-50 transition-colors">ביטול</button>
             </div>
-          ) : (
-            <div className="space-y-3">
-              <div className="flex gap-2 max-w-sm">
-                <select
-                  value={transferPersonId}
-                  onChange={e => onTransferPersonChange(e.target.value)}
-                  className="flex-1 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">בחר חבר</option>
-                  {nonOwnerMembers.map(m => (
-                    <option key={m.personId} value={m.personId}>
-                      {m.displayName ?? m.fullName}
-                    </option>
-                  ))}
-                </select>
-                <button
-                  onClick={onInitiateTransfer}
-                  disabled={transferSaving || !transferPersonId}
-                  className="bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl disabled:opacity-50"
-                >
-                  {transferSaving ? "שולח..." : "העבר"}
-                </button>
-              </div>
-              {transferError && <p className="text-sm text-red-600">{transferError}</p>}
-            </div>
-          )}
-        </div>
-      )}
+            {deleteError && <p className="text-sm text-red-600">{deleteError}</p>}
+          </div>
+        ) : (
+          <button onClick={() => onShowDeleteConfirm(true)} className="text-sm text-red-600 border border-red-200 hover:bg-red-50 px-4 py-2.5 rounded-xl transition-colors">
+            מחק קבוצה
+          </button>
+        )}
+      </Section>
+    </div>
+  );
+}
 
-      {/* Delete group section */}
-      {isAdmin && (
-        <div className="border-t border-slate-200 pt-5">
-          <h3 className="text-sm font-semibold text-red-600 mb-3">מחיקת קבוצה</h3>
-          {!showDeleteConfirm ? (
-            <button
-              onClick={() => onShowDeleteConfirm(true)}
-              className="text-sm text-red-600 border border-red-200 hover:bg-red-50 px-4 py-2.5 rounded-xl transition-colors"
-            >
-              מחק קבוצה
-            </button>
-          ) : (
-            <div className="bg-red-50 border border-red-200 rounded-xl p-4 space-y-3">
-              <p className="text-sm text-red-700">האם אתה בטוח? ניתן לשחזר תוך 30 יום</p>
-              <div className="flex gap-2">
-                <button
-                  onClick={onDeleteGroup}
-                  disabled={deleteSaving}
-                  className="bg-red-500 hover:bg-red-600 text-white text-sm font-medium px-4 py-2 rounded-xl disabled:opacity-50"
-                >
-                  {deleteSaving ? "מוחק..." : "כן, מחק"}
-                </button>
-                <button
-                  onClick={() => onShowDeleteConfirm(false)}
-                  className="text-sm text-slate-500 hover:text-slate-700 px-3"
-                >
-                  ביטול
-                </button>
-              </div>
-              {deleteError && <p className="text-sm text-red-600">{deleteError}</p>}
-            </div>
-          )}
-        </div>
-      )}
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="bg-white border border-slate-200 rounded-2xl p-5 space-y-3">
+      <h3 className="text-sm font-semibold text-slate-700">{title}</h3>
+      {children}
     </div>
   );
 }

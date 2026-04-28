@@ -1,0 +1,1 @@
+// useGroupPage hook — all state and handlers for GroupDetailPage

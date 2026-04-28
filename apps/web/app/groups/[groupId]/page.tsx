@@ -895,7 +895,6 @@ export default function GroupDetailPage() {
               constraints={constraints}
               constraintsLoading={constraintsLoading}
               constraintDeleteErrors={constraintDeleteErrors}
-              groupTasks={groupTasks}
               showConstraintForm={showConstraintForm}
               newConstraintRuleType={newConstraintRuleType}
               newConstraintSeverity={newConstraintSeverity}

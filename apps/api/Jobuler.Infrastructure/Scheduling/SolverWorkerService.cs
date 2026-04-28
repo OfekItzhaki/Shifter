@@ -146,7 +146,13 @@ public class SolverWorkerService : BackgroundService
                 stability = output.StabilityMetrics,
                 explanation = output.ExplanationFragments,
                 uncovered_slots = output.UncoveredSlotIds.Count,
-                hard_conflicts = output.HardConflicts.Count
+                hard_conflicts = output.HardConflicts.Count,
+                conflict_details = output.HardConflicts.Select(c => new
+                {
+                    rule_type = c.RuleType,
+                    description = c.Description,
+                    affected_slots = c.AffectedSlotIds.Count
+                }).ToList()
             });
 
             var version = ScheduleVersion.CreateDraft(
@@ -231,7 +237,10 @@ public class SolverWorkerService : BackgroundService
             }
             else
             {
-                notifBody = "לא ניתן היה ליצור סידור עם האילוצים הנוכחיים. בדוק שיש מספיק חברים ומשימות עתידיות, ונסה שוב.";
+                var conflictDetails = output.HardConflicts.Count > 0
+                    ? "\n\nפרטי האילוצים:\n" + string.Join("\n", output.HardConflicts.Select(c => $"• {c.Description}"))
+                    : "";
+                notifBody = $"לא ניתן היה ליצור סידור עם האילוצים הנוכחיים.{conflictDetails}\n\nבדוק שיש מספיק חברים ומשימות עתידיות, ונסה שוב.";
             }
             await notifier.NotifySpaceAdminsAsync(
                 job.SpaceId, evt, notifTitle, notifBody,

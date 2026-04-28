@@ -13,16 +13,19 @@ import { useSpaceStore } from "@/lib/store/spaceStore";
 import { useAuthStore } from "@/lib/store/authStore";
 import { clsx } from "clsx";
 
+// ── StatusBadge ──────────────────────────────────────────────────────────────
 function StatusBadge({ status }: { status: string }) {
   const styles: Record<string, string> = {
     Published: "bg-emerald-50 text-emerald-700 border-emerald-200",
     Draft: "bg-amber-50 text-amber-700 border-amber-200",
     Archived: "bg-slate-100 text-slate-500 border-slate-200",
+    Failed: "bg-red-50 text-red-700 border-red-200",
   };
   const dots: Record<string, string> = {
     Published: "bg-emerald-500",
     Draft: "bg-amber-500",
     Archived: "bg-slate-400",
+    Failed: "bg-red-500",
   };
   return (
     <span className={clsx(
@@ -35,6 +38,182 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
+// ── VersionListSidebar ───────────────────────────────────────────────────────
+interface VersionListSidebarProps {
+  versions: ScheduleVersionDto[];
+  selectedId: string | undefined;
+  loading: boolean;
+  onSelect: (v: ScheduleVersionDto) => void;
+}
+
+function VersionListSidebar({ versions, selectedId, loading, onSelect }: VersionListSidebarProps) {
+  return (
+    <div className="space-y-3">
+      <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wider">גרסאות</h2>
+      {loading && (
+        <div className="flex items-center gap-2 text-slate-400 text-sm py-4">
+          <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+          </svg>
+          טוען...
+        </div>
+      )}
+      <div className="space-y-1.5">
+        {versions.map(v => (
+          <button
+            key={v.id}
+            onClick={() => onSelect(v)}
+            className={clsx(
+              "w-full text-start px-3.5 py-3 rounded-xl border text-sm transition-all",
+              selectedId === v.id
+                ? "border-blue-300 bg-blue-50 shadow-sm"
+                : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50"
+            )}
+          >
+            <div className="font-semibold text-slate-900">v{v.versionNumber}</div>
+            <div className="mt-1.5">
+              <StatusBadge status={v.status} />
+            </div>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── InfeasibilityBanner ──────────────────────────────────────────────────────
+interface InfeasibilityBannerProps {
+  summaryJson: string | null | undefined;
+}
+
+function InfeasibilityBanner({ summaryJson }: InfeasibilityBannerProps) {
+  if (!summaryJson) return null;
+  let summary: {
+    feasible?: boolean;
+    explanation?: string[];
+    hard_conflicts?: number;
+    uncovered_slots?: number;
+    conflict_details?: { rule_type: string; description: string; affected_slots: number }[];
+  } = {};
+  try { summary = JSON.parse(summaryJson); } catch { return null; }
+  if (summary.feasible !== false) return null;
+
+  const reasons = summary.explanation ?? [];
+  const conflicts = summary.hard_conflicts ?? 0;
+  const uncovered = summary.uncovered_slots ?? 0;
+  const details = summary.conflict_details ?? [];
+
+  return (
+    <div className="flex flex-col gap-2 px-4 py-3 rounded-xl border bg-red-50 border-red-200 text-red-800 text-sm">
+      <div className="flex items-center gap-2 font-semibold">
+        <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+        </svg>
+        הסידור לא ניתן לביצוע
+      </div>
+      {reasons.length > 0 && (
+        <ul className="list-disc list-inside space-y-0.5 text-red-700">
+          {reasons.map((r, i) => <li key={i}>{r}</li>)}
+        </ul>
+      )}
+      {details.length > 0 && (
+        <ul className="list-disc list-inside space-y-0.5 text-red-700 text-xs">
+          {details.map((d, i) => <li key={i}>{d.description}</li>)}
+        </ul>
+      )}
+      {(conflicts > 0 || uncovered > 0) && (
+        <p className="text-red-600 text-xs">
+          {conflicts > 0 && `${conflicts} אילוצים קשים לא ניתנים לסיפוק. `}
+          {uncovered > 0 && `${uncovered} משמרות ללא כיסוי מספיק.`}
+        </p>
+      )}
+      <p className="text-red-600 text-xs mt-1">
+        ניתן לפתור על ידי: הוספת חברים נוספים, הרחבת אופק הזמן, או הקלת אילוצים.
+      </p>
+    </div>
+  );
+}
+
+// ── VersionDetailPanel ───────────────────────────────────────────────────────
+interface VersionDetailPanelProps {
+  selected: ScheduleVersionDetailDto;
+  actionLoading: boolean;
+  spaceId: string | null;
+  onPublish: () => void;
+  onRollback: (id: string) => void;
+}
+
+function VersionDetailPanel({ selected, actionLoading, spaceId, onPublish, onRollback }: VersionDetailPanelProps) {
+  return (
+    <div className="col-span-2 space-y-4">
+      {/* Action bar */}
+      <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center gap-2 me-2">
+          <span className="text-sm font-medium text-slate-700">
+            גרסה {selected.version.versionNumber}
+          </span>
+          <StatusBadge status={selected.version.status} />
+        </div>
+
+        {selected.version.status === "Draft" && (
+          <button
+            onClick={onPublish}
+            disabled={actionLoading}
+            className="flex items-center gap-1.5 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-medium px-3 py-1.5 rounded-lg disabled:opacity-50 transition-colors"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+            פרסם
+          </button>
+        )}
+
+        {selected.version.status === "Published" && (
+          <button
+            onClick={() => onRollback(selected.version.id)}
+            disabled={actionLoading}
+            className="flex items-center gap-1.5 bg-amber-500 hover:bg-amber-600 text-white text-xs font-medium px-3 py-1.5 rounded-lg disabled:opacity-50 transition-colors"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+            </svg>
+            שחזר
+          </button>
+        )}
+
+        <div className="flex items-center gap-1.5 ms-auto">
+          <button
+            onClick={() => spaceId && downloadExport(spaceId, selected.version.id, "csv")}
+            className="flex items-center gap-1.5 text-xs text-slate-600 border border-slate-200 bg-white px-3 py-1.5 rounded-lg hover:bg-slate-50 transition-colors"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+            CSV
+          </button>
+          <button
+            onClick={() => spaceId && downloadExport(spaceId, selected.version.id, "pdf")}
+            className="flex items-center gap-1.5 text-xs text-slate-600 border border-slate-200 bg-white px-3 py-1.5 rounded-lg hover:bg-slate-50 transition-colors"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+            PDF
+          </button>
+        </div>
+      </div>
+
+      {/* Infeasibility banner */}
+      <InfeasibilityBanner summaryJson={selected.version.summaryJson} />
+
+      {selected.diff && <DiffSummaryCard diff={selected.diff} />}
+      <ScheduleTable assignments={selected.assignments} />
+    </div>
+  );
+}
+
+// ── AdminSchedulePage ────────────────────────────────────────────────────────
 export default function AdminSchedulePage() {
   const { currentSpaceId } = useSpaceStore();
   const { isAdminMode } = useAuthStore();
@@ -105,9 +284,7 @@ export default function AdminSchedulePage() {
       await loadVersions();
     } catch {
       setMessage({ text: "Failed to publish.", type: "error" });
-    } finally {
-      setActionLoading(false);
-    }
+    } finally { setActionLoading(false); }
   }
 
   async function handleRollback(versionId: string) {
@@ -119,9 +296,7 @@ export default function AdminSchedulePage() {
       await loadVersions();
     } catch {
       setMessage({ text: "Failed to rollback.", type: "error" });
-    } finally {
-      setActionLoading(false);
-    }
+    } finally { setActionLoading(false); }
   }
 
   if (!isAdminMode) {
@@ -196,113 +371,29 @@ export default function AdminSchedulePage() {
         )}
 
         <div className="grid grid-cols-3 gap-6">
-          {/* Version list */}
-          <div className="space-y-3">
-            <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wider">גרסאות</h2>
-            {loading && (
-              <div className="flex items-center gap-2 text-slate-400 text-sm py-4">
-                <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                </svg>
-                טוען...
-              </div>
-            )}
-            <div className="space-y-1.5">
-              {versions.map(v => (
-                <button
-                  key={v.id}
-                  onClick={() => handleSelect(v)}
-                  className={clsx(
-                    "w-full text-start px-3.5 py-3 rounded-xl border text-sm transition-all",
-                    selected?.version.id === v.id
-                      ? "border-blue-300 bg-blue-50 shadow-sm"
-                      : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50"
-                  )}
-                >
-                  <div className="font-semibold text-slate-900">v{v.versionNumber}</div>
-                  <div className="mt-1.5">
-                    <StatusBadge status={v.status} />
-                  </div>
-                </button>
-              ))}
+          <VersionListSidebar
+            versions={versions}
+            selectedId={selected?.version.id}
+            loading={loading}
+            onSelect={handleSelect}
+          />
+
+          {selected ? (
+            <VersionDetailPanel
+              selected={selected}
+              actionLoading={actionLoading}
+              spaceId={currentSpaceId}
+              onPublish={handlePublish}
+              onRollback={handleRollback}
+            />
+          ) : (
+            <div className="col-span-2 flex flex-col items-center justify-center py-16 text-center bg-white rounded-xl border border-slate-200">
+              <svg className="w-10 h-10 text-slate-200 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+              </svg>
+              <p className="text-slate-400 text-sm">בחר גרסה לצפייה בפרטים.</p>
             </div>
-          </div>
-
-          {/* Version detail */}
-          <div className="col-span-2 space-y-4">
-            {selected ? (
-              <>
-                {/* Action bar */}
-                <div className="flex items-center gap-2 flex-wrap">
-                  <div className="flex items-center gap-2 me-2">
-                    <span className="text-sm font-medium text-slate-700">
-                      גרסה {selected.version.versionNumber}
-                    </span>
-                    <StatusBadge status={selected.version.status} />
-                  </div>
-
-                  {selected.version.status === "Draft" && (
-                    <button
-                      onClick={handlePublish}
-                      disabled={actionLoading}
-                      className="flex items-center gap-1.5 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-medium px-3 py-1.5 rounded-lg disabled:opacity-50 transition-colors"
-                    >
-                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                      </svg>
-                      פרסם
-                    </button>
-                  )}
-
-                  {selected.version.status === "Published" && (
-                    <button
-                      onClick={() => handleRollback(selected.version.id)}
-                      disabled={actionLoading}
-                      className="flex items-center gap-1.5 bg-amber-500 hover:bg-amber-600 text-white text-xs font-medium px-3 py-1.5 rounded-lg disabled:opacity-50 transition-colors"
-                    >
-                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
-                      </svg>
-                      שחזר
-                    </button>
-                  )}
-
-                  <div className="flex items-center gap-1.5 ms-auto">
-                    <button
-                      onClick={() => currentSpaceId && downloadExport(currentSpaceId, selected.version.id, "csv")}
-                      className="flex items-center gap-1.5 text-xs text-slate-600 border border-slate-200 bg-white px-3 py-1.5 rounded-lg hover:bg-slate-50 transition-colors"
-                    >
-                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                      </svg>
-                      CSV
-                    </button>
-                    <button
-                      onClick={() => currentSpaceId && downloadExport(currentSpaceId, selected.version.id, "pdf")}
-                      className="flex items-center gap-1.5 text-xs text-slate-600 border border-slate-200 bg-white px-3 py-1.5 rounded-lg hover:bg-slate-50 transition-colors"
-                    >
-                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                      </svg>
-                      PDF
-                    </button>
-                  </div>
-                </div>
-
-                {selected.diff && <DiffSummaryCard diff={selected.diff} />}
-
-                <ScheduleTable assignments={selected.assignments} />
-              </>
-            ) : (
-              <div className="flex flex-col items-center justify-center py-16 text-center bg-white rounded-xl border border-slate-200">
-                <svg className="w-10 h-10 text-slate-200 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                </svg>
-                <p className="text-slate-400 text-sm">בחר גרסה לצפייה בפרטים.</p>
-              </div>
-            )}
-          </div>
+          )}
         </div>
       </div>
     </AppShell>

@@ -1,14 +1,6 @@
 "use client";
 
-import Modal from "@/components/Modal";
-
-interface Message {
-  id: string;
-  content: string;
-  authorName: string;
-  createdAt: string;
-  isPinned: boolean;
-}
+interface Message { id: string; content: string; authorName: string; createdAt: string; isPinned: boolean; }
 
 interface Props {
   isAdmin: boolean;
@@ -33,128 +25,90 @@ interface Props {
   onDeleteMessage: (id: string) => void;
 }
 
-const INP = "border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500";
-
-function LoadingSpinner() {
-  return (
-    <div className="flex items-center gap-3 text-slate-400 text-sm py-8">
-      <svg className="animate-spin h-5 w-5 text-blue-400" fill="none" viewBox="0 0 24 24">
-        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-      </svg>
-      טוען...
-    </div>
-  );
-}
-
 export default function MessagesTab({
   isAdmin, messages, messagesLoading, messagesError,
   newMessageContent, messageSending, messageError, messagePinErrors,
   editingMessageId, editMessageContent, editMessageSaving, editMessageError,
   onNewMessageChange, onSendMessage, onPinMessage,
-  onStartEditMessage, onCloseEditMessage, onEditMessageContentChange,
-  onUpdateMessage, onDeleteMessage,
+  onStartEditMessage, onCloseEditMessage, onEditMessageContentChange, onUpdateMessage, onDeleteMessage,
 }: Props) {
+  const pinned = messages.filter(m => m.isPinned);
+  const regular = messages.filter(m => !m.isPinned);
+
   return (
     <div className="space-y-4">
+      {/* Compose */}
       <form onSubmit={onSendMessage} className="flex gap-2">
         <input
+          type="text"
           value={newMessageContent}
           onChange={e => onNewMessageChange(e.target.value)}
-          placeholder="כתוב הודעה לקבוצה..."
-          className={`flex-1 ${INP}`}
+          placeholder="כתוב הודעה..."
+          className="flex-1 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
-        <button
-          type="submit"
-          disabled={messageSending || !newMessageContent.trim()}
-          className="bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl disabled:opacity-50 transition-colors whitespace-nowrap"
-        >
+        <button type="submit" disabled={messageSending || !newMessageContent.trim()} className="bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl disabled:opacity-50 transition-colors">
           {messageSending ? "שולח..." : "שלח"}
         </button>
       </form>
       {messageError && <p className="text-sm text-red-600">{messageError}</p>}
 
-      {messagesLoading ? (
-        <LoadingSpinner />
-      ) : messagesError ? (
-        <p className="text-sm text-red-600 py-4">{messagesError}</p>
-      ) : messages.length === 0 ? (
-        <p className="text-sm text-slate-400 py-8 text-center">אין הודעות עדיין. היה הראשון לכתוב!</p>
-      ) : (
-        <div className="space-y-3">
-          {[...messages].reverse().map(msg => (
-            <div key={msg.id} className={`rounded-2xl border p-4 ${msg.isPinned ? "bg-amber-50 border-amber-200 shadow-sm" : "bg-white border-slate-200"}`}>
-              <div className="flex items-start gap-3">
-                <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 text-sm font-semibold flex-shrink-0">
-                  {msg.authorName?.charAt(0)?.toUpperCase() ?? "?"}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between gap-2 mb-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-semibold text-slate-900">{msg.authorName}</span>
-                      {msg.isPinned && (
-                        <span className="text-xs text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded-full">📌 נעוץ</span>
-                      )}
-                      <span className="text-xs text-slate-400">
-                        {new Date(msg.createdAt).toLocaleString("he-IL", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
-                      </span>
-                    </div>
-                    {isAdmin && (
-                      <div className="flex items-center gap-1.5 flex-shrink-0">
-                        <button
-                          onClick={() => onPinMessage(msg.id, !msg.isPinned)}
-                          className={`text-xs border px-2 py-1 rounded-lg transition-colors ${msg.isPinned ? "text-amber-600 border-amber-200 hover:bg-amber-50" : "text-slate-500 border-slate-200 hover:bg-slate-50"}`}
-                        >
-                          {msg.isPinned ? "📌 בטל" : "📌 נעץ"}
-                        </button>
-                        <button
-                          onClick={() => onStartEditMessage(msg.id, msg.content)}
-                          className="text-xs text-blue-500 hover:text-blue-700 border border-blue-200 hover:border-blue-400 px-2 py-1 rounded-lg transition-colors"
-                        >
-                          ערוך
-                        </button>
-                        <button
-                          onClick={() => { if (confirm("האם אתה בטוח שברצונך למחוק הודעה זו?")) onDeleteMessage(msg.id); }}
-                          className="text-xs text-red-500 hover:text-red-700 border border-red-200 hover:border-red-400 px-2 py-1 rounded-lg transition-colors"
-                        >
-                          מחק
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                  <p className="text-sm text-slate-700 whitespace-pre-wrap">{msg.content}</p>
-                  {messagePinErrors[msg.id] && (
-                    <p className="text-xs text-red-600 mt-1">{messagePinErrors[msg.id]}</p>
-                  )}
-                </div>
-              </div>
-            </div>
-          ))}
+      {messagesLoading && <p className="text-sm text-slate-400 py-8">טוען הודעות...</p>}
+      {messagesError && <p className="text-sm text-red-600">{messagesError}</p>}
+
+      {/* Pinned */}
+      {pinned.length > 0 && (
+        <div className="space-y-2">
+          <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider">📌 נעוצות</h3>
+          {pinned.map(m => <MessageCard key={m.id} message={m} isAdmin={isAdmin} editingId={editingMessageId} editContent={editMessageContent} editSaving={editMessageSaving} editError={editMessageError} pinErrors={messagePinErrors} onPin={onPinMessage} onStartEdit={onStartEditMessage} onCloseEdit={onCloseEditMessage} onEditChange={onEditMessageContentChange} onUpdate={onUpdateMessage} onDelete={onDeleteMessage} />)}
         </div>
       )}
 
-      {/* Edit message modal */}
-      <Modal title="עריכת הודעה" open={!!editingMessageId} onClose={onCloseEditMessage}>
-        <div className="space-y-3">
-          <textarea
-            value={editMessageContent}
-            onChange={e => onEditMessageContentChange(e.target.value)}
-            rows={4}
-            className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-          />
-          {editMessageError && <p className="text-xs text-red-600">{editMessageError}</p>}
+      {/* Regular */}
+      {regular.length === 0 && !messagesLoading && pinned.length === 0 && (
+        <div className="flex flex-col items-center justify-center py-16 text-center bg-white rounded-xl border border-slate-200">
+          <p className="text-slate-400 text-sm">אין הודעות עדיין</p>
+        </div>
+      )}
+      <div className="space-y-2">
+        {regular.map(m => <MessageCard key={m.id} message={m} isAdmin={isAdmin} editingId={editingMessageId} editContent={editMessageContent} editSaving={editMessageSaving} editError={editMessageError} pinErrors={messagePinErrors} onPin={onPinMessage} onStartEdit={onStartEditMessage} onCloseEdit={onCloseEditMessage} onEditChange={onEditMessageContentChange} onUpdate={onUpdateMessage} onDelete={onDeleteMessage} />)}
+      </div>
+    </div>
+  );
+}
+
+function MessageCard({ message: m, isAdmin, editingId, editContent, editSaving, editError, pinErrors, onPin, onStartEdit, onCloseEdit, onEditChange, onUpdate, onDelete }: {
+  message: Message; isAdmin: boolean; editingId: string | null; editContent: string; editSaving: boolean; editError: string | null; pinErrors: Record<string, string>;
+  onPin: (id: string, v: boolean) => void; onStartEdit: (id: string, c: string) => void; onCloseEdit: () => void; onEditChange: (v: string) => void; onUpdate: (id: string) => void; onDelete: (id: string) => void;
+}) {
+  return (
+    <div className={`bg-white border rounded-2xl p-4 space-y-2 ${m.isPinned ? "border-amber-200 bg-amber-50/30" : "border-slate-200"}`}>
+      {editingId === m.id ? (
+        <div className="space-y-2">
+          <textarea value={editContent} onChange={e => onEditChange(e.target.value)} rows={3} className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" />
+          {editError && <p className="text-xs text-red-600">{editError}</p>}
           <div className="flex gap-2">
-            <button
-              onClick={() => editingMessageId && onUpdateMessage(editingMessageId)}
-              disabled={editMessageSaving}
-              className="bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium px-3 py-1.5 rounded-lg disabled:opacity-50 transition-colors"
-            >
-              {editMessageSaving ? "שומר..." : "שמור"}
-            </button>
-            <button onClick={onCloseEditMessage} className="text-xs text-slate-500 hover:text-slate-700 px-2">ביטול</button>
+            <button onClick={() => onUpdate(m.id)} disabled={editSaving} className="bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium px-3 py-1.5 rounded-lg disabled:opacity-50 transition-colors">{editSaving ? "שומר..." : "שמור"}</button>
+            <button onClick={onCloseEdit} className="text-xs text-slate-500 border border-slate-200 px-3 py-1.5 rounded-lg hover:bg-slate-50 transition-colors">ביטול</button>
           </div>
         </div>
-      </Modal>
+      ) : (
+        <>
+          <div className="flex items-start justify-between gap-2">
+            <div>
+              <span className="text-xs font-semibold text-slate-500">{m.authorName}</span>
+              <p className="text-sm text-slate-800 mt-0.5">{m.content}</p>
+            </div>
+            {isAdmin && (
+              <div className="flex gap-1.5 flex-shrink-0">
+                <button onClick={() => onPin(m.id, !m.isPinned)} className="text-xs text-slate-500 hover:text-amber-600 border border-slate-200 px-2 py-1 rounded-lg hover:bg-amber-50 transition-colors">{m.isPinned ? "בטל נעיצה" : "נעץ"}</button>
+                <button onClick={() => onStartEdit(m.id, m.content)} className="text-xs text-slate-500 hover:text-slate-700 border border-slate-200 px-2 py-1 rounded-lg hover:bg-slate-50 transition-colors">ערוך</button>
+                <button onClick={() => onDelete(m.id)} className="text-xs text-red-500 hover:text-red-700 border border-red-100 px-2 py-1 rounded-lg hover:bg-red-50 transition-colors">מחק</button>
+              </div>
+            )}
+          </div>
+          {pinErrors[m.id] && <p className="text-xs text-red-600">{pinErrors[m.id]}</p>}
+        </>
+      )}
     </div>
   );
 }
