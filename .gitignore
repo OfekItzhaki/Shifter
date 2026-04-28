@@ -4,6 +4,13 @@ node_modules/
 out/
 dist/
 
+# Playwright test artifacts
+apps/web/playwright-report/
+apps/web/test-results/
+apps/web/tsc_output.txt
+apps/web/playwright-output.txt
+apps/web/playwright-final.txt
+
 # NSwag generated client (regenerate with: npm run generate:api)
 apps/web/lib/api/generated/client.ts
 .env

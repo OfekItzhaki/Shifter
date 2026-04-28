@@ -1,18 +1,21 @@
 "use client";
 
 import React, { useEffect, useState, useRef } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import AppShell from "@/components/shell/AppShell";
 import Modal from "@/components/Modal";
-import ImageUpload from "@/components/ImageUpload";
 import DraftScheduleModal from "@/components/DraftScheduleModal";
 import ScheduleTab from "./tabs/ScheduleTab";
-import ConstraintPayloadEditor from "@/components/ConstraintPayloadEditor";
-import { ActiveTab, ADMIN_ONLY_TABS, ScheduleAssignment, burdenLabels, burdenColors, SEVERITY_STYLES, SEVERITY_DOTS } from "./types";
+import MembersTab, { MemberProfileModal } from "./tabs/MembersTab";
+import AlertsTab from "./tabs/AlertsTab";
+import MessagesTab from "./tabs/MessagesTab";
+import TasksTab from "./tabs/TasksTab";
+import ConstraintsTab from "./tabs/ConstraintsTab";
+import SettingsTab from "./tabs/SettingsTab";
+import { ActiveTab, ADMIN_ONLY_TABS, ScheduleAssignment } from "./types";
 import { useSpaceStore } from "@/lib/store/spaceStore";
 import { useAuthStore } from "@/lib/store/authStore";
-import { useRouter } from "next/navigation";
 import {
   getGroups, getGroupMembers, addGroupMemberByEmail, removeGroupMember,
   updateGroupSettings, renameGroup, softDeleteGroup, restoreGroup,
@@ -22,141 +25,155 @@ import {
   updateGroupMessage, deleteGroupMessage, pinGroupMessage,
   updatePersonInfo,
 } from "@/lib/api/groups";
-import { getSeverityBadge } from "@/lib/utils/alertSeverity";
 import { getAvatarColor, getAvatarLetter } from "@/lib/utils/groupAvatar";
 import { listGroupTasks, createGroupTask, updateGroupTask, deleteGroupTask, GroupTaskDto } from "@/lib/api/tasks";
 import { getConstraints, createConstraint, updateConstraint, deleteConstraint, ConstraintDto } from "@/lib/api/constraints";
-import { searchPeople, createPerson, invitePerson, PersonSearchResultDto } from "@/lib/api/people";
+import { createPerson, invitePerson } from "@/lib/api/people";
 import { apiClient } from "@/lib/api/client";
 
+// ── Task form default ────────────────────────────────────────────────────────
+const DEFAULT_TASK_FORM = {
+  name: "",
+  startsAt: "",
+  endsAt: "",
+  shiftDurationMinutes: 60,
+  requiredHeadcount: 1,
+  burdenLevel: "neutral",
+  allowsDoubleShift: false,
+  allowsOverlap: false,
+};
+
+// ── Tab labels ───────────────────────────────────────────────────────────────
+const TAB_LABELS: Record<ActiveTab, string> = {
+  schedule: "סידור",
+  members: "חברים",
+  alerts: "התראות",
+  messages: "הודעות",
+  tasks: "משימות",
+  constraints: "אילוצים",
+  settings: "הגדרות",
+};
+
+const ALL_TABS: ActiveTab[] = ["schedule", "members", "alerts", "messages", "tasks", "constraints", "settings"];
+
+// ── Main component ───────────────────────────────────────────────────────────
 export default function GroupDetailPage() {
   const params = useParams();
-  const groupId = params.groupId as string;
-
-  const { currentSpaceId } = useSpaceStore();
-  const { adminGroupId, enterAdminMode, exitAdminMode } = useAuthStore();
   const router = useRouter();
+  const groupId = params?.groupId as string;
+  const { currentSpaceId } = useSpaceStore();
+  const { userId, isAdminForGroup } = useAuthStore();
 
-  // Cleanup admin mode on unmount
-  useEffect(() => {
-    return () => { exitAdminMode(); };
-  }, []);
-
+  // ── Group / header state ─────────────────────────────────────────────────
   const [group, setGroup] = useState<GroupWithMemberCountDto | null>(null);
-  const [notFound, setNotFound] = useState(false);
-  const [members, setMembers] = useState<GroupMemberDto[]>([]);
+  const [groupLoading, setGroupLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<ActiveTab>("schedule");
-  const [loading, setLoading] = useState(true);
-  const [membersLoading, setMembersLoading] = useState(false);
-  const [addEmail, setAddEmail] = useState("");
-  const [addError, setAddError] = useState<string | null>(null);
-  const [showAddMemberModal, setShowAddMemberModal] = useState(false);
-  // Members search + name-first creation
-  const [membersSearch, setMembersSearch] = useState("");
-  const [showCreatePersonForm, setShowCreatePersonForm] = useState(false);
-  const [newPersonName, setNewPersonName] = useState("");
-  const [newPersonDisplayName, setNewPersonDisplayName] = useState("");
-  const [createPersonSaving, setCreatePersonSaving] = useState(false);
-  const [createPersonError, setCreatePersonError] = useState<string | null>(null);
-  const [invitingPersonId, setInvitingPersonId] = useState<string | null>(null);
-  const [inviteContact, setInviteContact] = useState("");
-  const [inviteChannel, setInviteChannel] = useState<"email" | "whatsapp">("whatsapp");
-  const [inviteSaving, setInviteSaving] = useState(false);
-  const [inviteError, setInviteError] = useState<string | null>(null);
-  const [inviteSuccess, setInviteSuccess] = useState<string | null>(null);
-  // People search (global)
-  const [peopleSearchQuery, setPeopleSearchQuery] = useState("");
-  const [peopleSearchResults, setPeopleSearchResults] = useState<PersonSearchResultDto[]>([]);
-  const [peopleSearchLoading, setPeopleSearchLoading] = useState(false);
-  // Schedule person filter
-  const [schedulePersonFilter, setSchedulePersonFilter] = useState("");
-  const [settingsError, setSettingsError] = useState<string | null>(null);
-  const [settingsSaved, setSettingsSaved] = useState(false);
-  const [solverHorizon, setSolverHorizon] = useState(14);
-  const [savingSettings, setSavingSettings] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  // ── Schedule state ───────────────────────────────────────────────────────
   const [scheduleData, setScheduleData] = useState<ScheduleAssignment[] | null>(null);
   const [scheduleLoading, setScheduleLoading] = useState(false);
   const [scheduleError, setScheduleError] = useState<string | null>(null);
-  const [scheduleDate, setScheduleDate] = useState<string>(new Date().toISOString().split("T")[0]);
-  const [scheduleView, setScheduleView] = useState<"day" | "week">("day");
+  const [draftVersion, setDraftVersion] = useState<{ id: string; status: string } | null>(null);
+  const [showDraftModal, setShowDraftModal] = useState(false);
+  const [publishSaving, setPublishSaving] = useState(false);
+  const [discardSaving, setDiscardSaving] = useState(false);
+  const [scheduleVersionError, setScheduleVersionError] = useState<string | null>(null);
+  const [solverHorizonDays, setSolverHorizonDays] = useState(14);
+
+  // ── Members state ────────────────────────────────────────────────────────
+  const [members, setMembers] = useState<GroupMemberDto[]>([]);
+  const [membersLoading, setMembersLoading] = useState(false);
   const [membersError, setMembersError] = useState<string | null>(null);
-  const [groupTasks, setGroupTasks] = useState<GroupTaskDto[]>([]);
-  const [groupTasksLoading, setGroupTasksLoading] = useState(false);
-  const [showTaskForm, setShowTaskForm] = useState(false);
-  const [editingTask, setEditingTask] = useState<GroupTaskDto | null>(null);
-  const [taskForm, setTaskForm] = useState({
-    name: "", startsAt: "", endsAt: "", shiftDurationMinutes: 240,
-    requiredHeadcount: 1, burdenLevel: "neutral",
-    allowsDoubleShift: false, allowsOverlap: false,
-  });
-  const [taskSaving, setTaskSaving] = useState(false);
-  const [taskError, setTaskError] = useState<string | null>(null);
-  const [tasksLoading, setTasksLoading] = useState(false);
-  const [constraintsLoading, setConstraintsLoading] = useState(false);
-  const [constraints, setConstraints] = useState<ConstraintDto[]>([]);
+  const [membersSearch, setMembersSearch] = useState("");
+  const [removeErrors, setRemoveErrors] = useState<Record<string, string>>({});
+  const [selectedMember, setSelectedMember] = useState<GroupMemberDto | null>(null);
+  const [memberEditForm, setMemberEditForm] = useState<{
+    fullName: string; displayName: string; phoneNumber: string; profileImageUrl: string; birthday: string;
+  } | null>(null);
+  const [memberEditSaving, setMemberEditSaving] = useState(false);
+  const [memberEditError, setMemberEditError] = useState<string | null>(null);
+
+  // ── Add member modals ────────────────────────────────────────────────────
+  const [showAddByEmail, setShowAddByEmail] = useState(false);
+  const [addEmailInput, setAddEmailInput] = useState("");
+  const [addEmailSaving, setAddEmailSaving] = useState(false);
+  const [addEmailError, setAddEmailError] = useState<string | null>(null);
+  const [showCreatePerson, setShowCreatePerson] = useState(false);
+  const [createPersonName, setCreatePersonName] = useState("");
+  const [createPersonPhone, setCreatePersonPhone] = useState("");
+  const [createPersonSaving, setCreatePersonSaving] = useState(false);
+  const [createPersonError, setCreatePersonError] = useState<string | null>(null);
+  const [inviteError, setInviteError] = useState<string | null>(null);
+
+  // ── Alerts state ─────────────────────────────────────────────────────────
   const [alerts, setAlerts] = useState<GroupAlertDto[]>([]);
   const [alertsLoading, setAlertsLoading] = useState(false);
   const [alertsError, setAlertsError] = useState<string | null>(null);
+  const [alertDeleteErrors, setAlertDeleteErrors] = useState<Record<string, string>>({});
+  const [showAlertForm, setShowAlertForm] = useState(false);
   const [newAlertTitle, setNewAlertTitle] = useState("");
   const [newAlertBody, setNewAlertBody] = useState("");
   const [newAlertSeverity, setNewAlertSeverity] = useState("info");
   const [alertSubmitting, setAlertSubmitting] = useState(false);
   const [alertSubmitError, setAlertSubmitError] = useState<string | null>(null);
-  const [alertDeleteErrors, setAlertDeleteErrors] = useState<Record<string, string>>({});
-  const [showAlertForm, setShowAlertForm] = useState(false);
-  // Alert edit state
   const [editingAlertId, setEditingAlertId] = useState<string | null>(null);
   const [editAlertTitle, setEditAlertTitle] = useState("");
   const [editAlertBody, setEditAlertBody] = useState("");
   const [editAlertSeverity, setEditAlertSeverity] = useState("info");
   const [editAlertSaving, setEditAlertSaving] = useState(false);
   const [editAlertError, setEditAlertError] = useState<string | null>(null);
-  // Messages state
-  const [messages, setMessages] = useState<{id: string; content: string; authorName: string; createdAt: string; isPinned: boolean}[]>([]);
+
+  // ── Messages state ───────────────────────────────────────────────────────
+  const [messages, setMessages] = useState<{ id: string; content: string; authorName: string; createdAt: string; isPinned: boolean }[]>([]);
   const [messagesLoading, setMessagesLoading] = useState(false);
   const [messagesError, setMessagesError] = useState<string | null>(null);
   const [newMessageContent, setNewMessageContent] = useState("");
   const [messageSending, setMessageSending] = useState(false);
   const [messageError, setMessageError] = useState<string | null>(null);
-  // Message edit/pin state
+  const [messagePinErrors, setMessagePinErrors] = useState<Record<string, string>>({});
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   const [editMessageContent, setEditMessageContent] = useState("");
   const [editMessageSaving, setEditMessageSaving] = useState(false);
   const [editMessageError, setEditMessageError] = useState<string | null>(null);
-  const [messagePinErrors, setMessagePinErrors] = useState<Record<string, string>>({});
-  // Constraint edit state
+
+  // ── Tasks state ──────────────────────────────────────────────────────────
+  const [groupTasks, setGroupTasks] = useState<GroupTaskDto[]>([]);
+  const [groupTasksLoading, setGroupTasksLoading] = useState(false);
+  const [showTaskForm, setShowTaskForm] = useState(false);
+  const [editingTask, setEditingTask] = useState<GroupTaskDto | null>(null);
+  const [taskForm, setTaskForm] = useState(DEFAULT_TASK_FORM);
+  const [taskSaving, setTaskSaving] = useState(false);
+  const [taskError, setTaskError] = useState<string | null>(null);
+
+  // ── Constraints state ────────────────────────────────────────────────────
+  const [constraints, setConstraints] = useState<ConstraintDto[]>([]);
+  const [constraintsLoading, setConstraintsLoading] = useState(false);
+  const [constraintDeleteErrors, setConstraintDeleteErrors] = useState<Record<string, string>>({});
+  const [showConstraintForm, setShowConstraintForm] = useState(false);
+  const [newConstraintRuleType, setNewConstraintRuleType] = useState("min_rest_hours");
+  const [newConstraintSeverity, setNewConstraintSeverity] = useState("hard");
+  const [newConstraintPayload, setNewConstraintPayload] = useState('{"hours": 8}');
+  const [constraintSaving, setConstraintSaving] = useState(false);
+  const [constraintError, setConstraintError] = useState<string | null>(null);
   const [editingConstraintId, setEditingConstraintId] = useState<string | null>(null);
   const [editConstraintPayload, setEditConstraintPayload] = useState("");
   const [editConstraintFrom, setEditConstraintFrom] = useState("");
   const [editConstraintUntil, setEditConstraintUntil] = useState("");
   const [editConstraintSaving, setEditConstraintSaving] = useState(false);
   const [editConstraintError, setEditConstraintError] = useState<string | null>(null);
-  const [constraintDeleteErrors, setConstraintDeleteErrors] = useState<Record<string, string>>({});
-  // Solver / schedule state
-  const [solverRunId, setSolverRunId] = useState<string | null>(null);
-  const [solverPolling, setSolverPolling] = useState(false);
-  const [solverStatus, setSolverStatus] = useState<string | null>(null);
-  const [solverError, setSolverError] = useState<string | null>(null);
-  const [scheduleNeedsRefresh, setScheduleNeedsRefresh] = useState(false);
-  const solverPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  // Draft version state
-  const [draftVersion, setDraftVersion] = useState<{ id: string; status: string } | null>(null);
-  const [publishSaving, setPublishSaving] = useState(false);
-  const [discardSaving, setDiscardSaving] = useState(false);
-  const [scheduleVersionError, setScheduleVersionError] = useState<string | null>(null);
-  const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
-  // Draft preview modal
-  const [showDraftModal, setShowDraftModal] = useState(false);
-  const [draftAssignments, setDraftAssignments] = useState<{personName: string; taskTypeName: string; startsAt: string; endsAt: string}[]>([]);
-  const [draftLoading, setDraftLoading] = useState(false);
-  // tasksSubTab removed — tasks panel now shows unified group tasks list
-  const [removeErrors, setRemoveErrors] = useState<Record<string, string>>({});
+
+  // ── Settings state ───────────────────────────────────────────────────────
   const [newGroupName, setNewGroupName] = useState("");
   const [renameSaving, setRenameSaving] = useState(false);
   const [renameError, setRenameError] = useState<string | null>(null);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [deleteSaving, setDeleteSaving] = useState(false);
-  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [solverHorizon, setSolverHorizon] = useState(14);
+  const [savingSettings, setSavingSettings] = useState(false);
+  const [settingsError, setSettingsError] = useState<string | null>(null);
+  const [settingsSaved, setSettingsSaved] = useState(false);
+  const [solverPolling, setSolverPolling] = useState(false);
+  const [solverStatus, setSolverStatus] = useState<string | null>(null);
+  const [solverError, setSolverError] = useState<string | null>(null);
   const [deletedGroups, setDeletedGroups] = useState<DeletedGroupDto[]>([]);
   const [deletedGroupsLoading, setDeletedGroupsLoading] = useState(false);
   const [transferPersonId, setTransferPersonId] = useState("");
@@ -164,502 +181,435 @@ export default function GroupDetailPage() {
   const [transferError, setTransferError] = useState<string | null>(null);
   const [hasPendingTransfer, setHasPendingTransfer] = useState(false);
   const [cancelTransferSaving, setCancelTransferSaving] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteSaving, setDeleteSaving] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
-  // Constraint create form state
-  const [showConstraintForm, setShowConstraintForm] = useState(false);
-  const [newConstraintScope, setNewConstraintScope] = useState("group");
-  const [newConstraintSeverity, setNewConstraintSeverity] = useState("hard");
+  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Member profile modal state
-  const [selectedMember, setSelectedMember] = useState<GroupMemberDto | null>(null);
-  const [editingMemberForm, setEditingMemberForm] = useState<{fullName: string; displayName: string; phoneNumber: string; profileImageUrl: string; birthday: string} | null>(null);
-  const [memberEditSaving, setMemberEditSaving] = useState(false);
-  const [memberEditError, setMemberEditError] = useState<string | null>(null);
-  const [newConstraintRuleType, setNewConstraintRuleType] = useState("min_rest_hours");
-  const [newConstraintPayload, setNewConstraintPayload] = useState('{"hours": 8}');
-  const [constraintSaving, setConstraintSaving] = useState(false);
-  const [constraintError, setConstraintError] = useState<string | null>(null);
-
-  // Reset to schedule tab when admin mode exits and we're on an admin-only tab
+  // ── Load group ───────────────────────────────────────────────────────────
   useEffect(() => {
-    if (adminGroupId !== groupId && ADMIN_ONLY_TABS.includes(activeTab)) {
-      setActiveTab("schedule");
-    }
-  }, [adminGroupId]);
-
-  // Reset transient state when switching tabs
-  useEffect(() => {
-    setSettingsSaved(false);
-    setSolverStatus(null);
-    setSolverError(null);
-    setSettingsError(null);
-    setRenameError(null);
-  }, [activeTab]);
-
-  // Fetch group on mount
-  useEffect(() => {
-    if (!currentSpaceId) { setLoading(false); return; }
+    if (!currentSpaceId || !groupId) return;
+    setGroupLoading(true);
     getGroups(currentSpaceId)
-      .then((groups) => {
-        const found = groups.find((g) => g.id === groupId) ?? null;
-        if (found) {
-          setGroup(found);
-          setSolverHorizon(found.solverHorizonDays);
-          setNewGroupName(found.name);
-        } else {
-          setNotFound(true);
-        }
+      .then(groups => {
+        const found = groups.find(g => g.id === groupId);
+        if (!found) { router.push("/groups"); return; }
+        setGroup(found);
+        setNewGroupName(found.name);
+        setSolverHorizon(found.solverHorizonDays ?? 14);
+        setSolverHorizonDays(found.solverHorizonDays ?? 14);
+        setIsAdmin(found.ownerPersonId === userId || isAdminForGroup(groupId));
       })
-      .catch(() => setNotFound(true))
-      .finally(() => setLoading(false));
-  }, [currentSpaceId]);
+      .catch(() => router.push("/groups"))
+      .finally(() => setGroupLoading(false));
+  }, [currentSpaceId, groupId, userId, isAdminForGroup, router]);
 
-  // Fetch schedule when schedule tab is active
+  // ── Load schedule ────────────────────────────────────────────────────────
   useEffect(() => {
-    if (activeTab !== "schedule" || !currentSpaceId) return;
+    if (!currentSpaceId || !groupId || activeTab !== "schedule") return;
     setScheduleLoading(true);
     setScheduleError(null);
-    apiClient.get(`/spaces/${currentSpaceId}/groups/${groupId}/schedule`)
-      .then(r => setScheduleData(r.data))
+    apiClient.get<{ assignments: ScheduleAssignment[]; draftVersion?: { id: string; status: string } }>(
+      `/spaces/${currentSpaceId}/groups/${groupId}/schedule/current`
+    )
+      .then(res => {
+        setScheduleData(res.data.assignments ?? []);
+        setDraftVersion(res.data.draftVersion ?? null);
+      })
       .catch(() => setScheduleError("שגיאה בטעינת הסידור"))
       .finally(() => setScheduleLoading(false));
-    // Also fetch draft version
-    fetchDraftVersion();
-  }, [activeTab, currentSpaceId]);
+  }, [currentSpaceId, groupId, activeTab]);
 
-  // Re-fetch draft when scheduleNeedsRefresh is set
+  // ── Load members ─────────────────────────────────────────────────────────
   useEffect(() => {
-    if (!scheduleNeedsRefresh || !currentSpaceId) return;
-    setScheduleNeedsRefresh(false);
-    fetchDraftVersion();
-    setScheduleLoading(true);
-    setScheduleError(null);
-    apiClient.get(`/spaces/${currentSpaceId}/groups/${groupId}/schedule`)
-      .then(r => setScheduleData(r.data))
-      .catch(() => setScheduleError("שגיאה בטעינת הסידור"))
-      .finally(() => setScheduleLoading(false));
-  }, [scheduleNeedsRefresh, currentSpaceId]);
+    if (!currentSpaceId || !groupId || activeTab !== "members") return;
+    setMembersLoading(true);
+    setMembersError(null);
+    getGroupMembers(currentSpaceId, groupId)
+      .then(setMembers)
+      .catch(() => setMembersError("שגיאה בטעינת חברים"))
+      .finally(() => setMembersLoading(false));
+  }, [currentSpaceId, groupId, activeTab]);
 
-  // Fetch members when members tab is active
+  // ── Load alerts ──────────────────────────────────────────────────────────
   useEffect(() => {
-    if (activeTab !== "members" || !currentSpaceId) return;
-    fetchMembers();
-  }, [activeTab, currentSpaceId]);
+    if (!currentSpaceId || !groupId || activeTab !== "alerts") return;
+    setAlertsLoading(true);
+    setAlertsError(null);
+    getGroupAlerts(currentSpaceId, groupId)
+      .then(setAlerts)
+      .catch(() => setAlertsError("שגיאה בטעינת התראות"))
+      .finally(() => setAlertsLoading(false));
+  }, [currentSpaceId, groupId, activeTab]);
 
-  // Fetch tasks when tasks tab is active
+  // ── Load messages ────────────────────────────────────────────────────────
   useEffect(() => {
-    if (activeTab !== "tasks" || !currentSpaceId) return;
+    if (!currentSpaceId || !groupId || activeTab !== "messages") return;
+    setMessagesLoading(true);
+    setMessagesError(null);
+    apiClient.get<{ messages: { id: string; content: string; authorName: string; createdAt: string; isPinned: boolean }[] }>(
+      `/spaces/${currentSpaceId}/groups/${groupId}/messages`
+    )
+      .then(res => setMessages(res.data.messages ?? []))
+      .catch(() => setMessagesError("שגיאה בטעינת הודעות"))
+      .finally(() => setMessagesLoading(false));
+  }, [currentSpaceId, groupId, activeTab]);
+
+  // ── Load tasks ───────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!currentSpaceId || !groupId || activeTab !== "tasks") return;
     setGroupTasksLoading(true);
     listGroupTasks(currentSpaceId, groupId)
       .then(setGroupTasks)
+      .catch(() => {})
       .finally(() => setGroupTasksLoading(false));
-  }, [activeTab, currentSpaceId]);
+  }, [currentSpaceId, groupId, activeTab]);
 
-  // Fetch constraints when constraints tab is active
+  // ── Load constraints ─────────────────────────────────────────────────────
   useEffect(() => {
-    if (activeTab !== "constraints" || !currentSpaceId) return;
+    if (!currentSpaceId || !groupId || activeTab !== "constraints") return;
     setConstraintsLoading(true);
     getConstraints(currentSpaceId)
       .then(setConstraints)
+      .catch(() => {})
       .finally(() => setConstraintsLoading(false));
-  }, [activeTab, currentSpaceId]);
+  }, [currentSpaceId, groupId, activeTab]);
 
-  // Fetch alerts when alerts tab is active
+  // ── Load settings data ───────────────────────────────────────────────────
   useEffect(() => {
-    if (activeTab !== "alerts" || !currentSpaceId) return;
-    fetchAlerts();
-  }, [activeTab, currentSpaceId]);
+    if (!currentSpaceId || !groupId || activeTab !== "settings") return;
+    setDeletedGroupsLoading(true);
+    getDeletedGroups(currentSpaceId)
+      .then(setDeletedGroups)
+      .catch(() => {})
+      .finally(() => setDeletedGroupsLoading(false));
+  }, [currentSpaceId, groupId, activeTab]);
 
-  // Fetch messages when messages tab is active
-  useEffect(() => {
-    if (activeTab !== "messages" || !currentSpaceId) return;
-    fetchMessages();
-  }, [activeTab, currentSpaceId]);
+  // ── Cleanup polling on unmount ───────────────────────────────────────────
+  useEffect(() => () => { if (pollingRef.current) clearInterval(pollingRef.current); }, []);
 
-  async function fetchMembers() {
-    if (!currentSpaceId) return;
-    setMembersLoading(true);
-    setMembersError(null);
-    try {
-      const data = await getGroupMembers(currentSpaceId, groupId);
-      setMembers(data);
-    } catch {
-      setMembersError("שגיאה בטעינת החברים");
-    } finally {
-      setMembersLoading(false);
-    }
-  }
-
-  async function fetchAlerts() {
-    if (!currentSpaceId) return;
-    setAlertsLoading(true);
-    setAlertsError(null);
-    try {
-      const data = await getGroupAlerts(currentSpaceId, groupId);
-      setAlerts(data);
-    } catch {
-      setAlertsError("שגיאה בטעינת ההתראות");
-    } finally {
-      setAlertsLoading(false);
-    }
-  }
-
-  async function fetchDraftVersion() {
-    if (!currentSpaceId) return;
-    try {
-      const r = await apiClient.get(`/spaces/${currentSpaceId}/schedule-versions?status=draft`);
-      const drafts: Array<{ id: string; status: string }> = r.data;
-      setDraftVersion(drafts.length > 0 ? drafts[0] : null);
-    } catch {
-      setDraftVersion(null);
-    }
-  }
-
-  async function openDraftModal() {
-    if (!draftVersion) return;
-    setShowDraftModal(true);
-  }
-
-  async function fetchGroupTasks() {
-    if (!currentSpaceId) return;
-    setGroupTasksLoading(true);
-    try {
-      const data = await listGroupTasks(currentSpaceId, groupId);
-      setGroupTasks(data);
-    } finally {
-      setGroupTasksLoading(false);
-    }
-  }
-
-  async function fetchMessages() {
-    if (!currentSpaceId) return;
-    setMessagesLoading(true);
-    setMessagesError(null);
-    try {
-      const r = await apiClient.get(`/spaces/${currentSpaceId}/groups/${groupId}/messages`);
-      setMessages(r.data);
-    } catch {
-      setMessagesError("שגיאה בטעינת ההודעות");
-    } finally {
-      setMessagesLoading(false);
-    }
-  }
-
-  async function handleCreateAlert(e: React.FormEvent) {
-    e.preventDefault();
-    if (!currentSpaceId || !newAlertTitle.trim() || !newAlertBody.trim()) return;
-    setAlertSubmitting(true);
-    setAlertSubmitError(null);
-    try {
-      await createGroupAlert(currentSpaceId, groupId, {
-        title: newAlertTitle.trim(),
-        body: newAlertBody.trim(),
-        severity: newAlertSeverity,
-      });
-      setNewAlertTitle("");
-      setNewAlertBody("");
-      setNewAlertSeverity("info");
-      setShowAlertForm(false);
-      await fetchAlerts();
-    } catch (err: any) {
-      setAlertSubmitError(err?.response?.data?.message ?? "שגיאה ביצירת ההתראה");
-    } finally {
-      setAlertSubmitting(false);
-    }
-  }
-
-  async function handleDeleteAlert(alertId: string) {
-    if (!currentSpaceId) return;
-    setAlertDeleteErrors(prev => { const n = { ...prev }; delete n[alertId]; return n; });
-    try {
-      await deleteGroupAlert(currentSpaceId, groupId, alertId);
-      await fetchAlerts();
-    } catch (err: any) {
-      setAlertDeleteErrors(prev => ({ ...prev, [alertId]: err?.response?.data?.message ?? "שגיאה" }));
-    }
-  }
-
-  async function handleUpdateAlert(alertId: string) {
-    if (!currentSpaceId) return;
-    setEditAlertSaving(true); setEditAlertError(null);
-    try {
-      await updateGroupAlert(currentSpaceId, groupId, alertId, {
-        title: editAlertTitle.trim(),
-        body: editAlertBody.trim(),
-        severity: editAlertSeverity,
-      });
-      setEditingAlertId(null);
-      await fetchAlerts();
-    } catch (err: any) {
-      setEditAlertError(err?.response?.data?.message ?? "שגיאה בעדכון ההתראה");
-    } finally { setEditAlertSaving(false); }
-  }
-
-  async function handleUpdateMessage(messageId: string) {
-    if (!currentSpaceId) return;
-    setEditMessageSaving(true); setEditMessageError(null);
-    try {
-      await updateGroupMessage(currentSpaceId, groupId, messageId, editMessageContent.trim());
-      setEditingMessageId(null);
-      await fetchMessages();
-    } catch (err: any) {
-      setEditMessageError(err?.response?.data?.message ?? "שגיאה בעדכון ההודעה");
-    } finally { setEditMessageSaving(false); }
-  }
-
-  async function handleDeleteMessage(messageId: string) {
-    if (!currentSpaceId) return;
-    try {
-      await deleteGroupMessage(currentSpaceId, groupId, messageId);
-      setMessages(prev => prev.filter(m => m.id !== messageId));
-    } catch (err: any) {
-      setMessagePinErrors(prev => ({ ...prev, [messageId]: err?.response?.data?.message ?? "שגיאה" }));
-    }
-  }
-
-  async function handlePinMessage(messageId: string, isPinned: boolean) {
-    if (!currentSpaceId) return;
-    setMessagePinErrors(prev => { const n = { ...prev }; delete n[messageId]; return n; });
-    try {
-      await pinGroupMessage(currentSpaceId, groupId, messageId, isPinned);
-      setMessages(prev => prev.map(m => m.id === messageId ? { ...m, isPinned } : m));
-    } catch (err: any) {
-      setMessagePinErrors(prev => ({ ...prev, [messageId]: err?.response?.data?.message ?? "שגיאה" }));
-    }
-  }
-
-  async function handleTaskFormSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!currentSpaceId) return;
-    setTaskSaving(true); setTaskError(null);
-    const payload = {
-      name: taskForm.name.trim(),
-      startsAt: new Date(taskForm.startsAt).toISOString(),
-      endsAt: new Date(taskForm.endsAt).toISOString(),
-      shiftDurationMinutes: taskForm.shiftDurationMinutes,
-      requiredHeadcount: taskForm.requiredHeadcount,
-      burdenLevel: taskForm.burdenLevel,
-      allowsDoubleShift: taskForm.allowsDoubleShift,
-      allowsOverlap: taskForm.allowsOverlap,
-    };
-    try {
-      if (editingTask) {
-        await updateGroupTask(currentSpaceId, groupId, editingTask.id, payload);
-      } else {
-        await createGroupTask(currentSpaceId, groupId, payload);
-      }
-      setShowTaskForm(false);
-      setEditingTask(null);
-      setTaskForm({ name: "", startsAt: "", endsAt: "", shiftDurationMinutes: 240, requiredHeadcount: 1, burdenLevel: "neutral", allowsDoubleShift: false, allowsOverlap: false });
-      await fetchGroupTasks();
-    } catch (err: any) {
-      setTaskError(err?.response?.data?.message ?? "שגיאה בשמירת המשימה");
-    } finally { setTaskSaving(false); }
-  }
-
-  async function handleDeleteTask(taskId: string) {
-    if (!currentSpaceId) return;
-    if (!confirm("האם אתה בטוח שברצונך למחוק משימה זו?")) return;
-    try {
-      await deleteGroupTask(currentSpaceId, groupId, taskId);
-      await fetchGroupTasks();
-    } catch (err: any) {
-      alert(err?.response?.data?.message ?? "שגיאה במחיקת המשימה");
-    }
-  }
-
-  async function handleUpdateConstraint(constraintId: string) {
-    if (!currentSpaceId) return;
-    try { JSON.parse(editConstraintPayload); } catch {
-      setEditConstraintError("Payload חייב להיות JSON תקין");
-      return;
-    }
-    setEditConstraintSaving(true); setEditConstraintError(null);
-    try {
-      await updateConstraint(currentSpaceId, constraintId, {
-        rulePayloadJson: editConstraintPayload,
-        effectiveFrom: editConstraintFrom || null,
-        effectiveUntil: editConstraintUntil || null,
-      });
-      setEditingConstraintId(null);
-      const updated = await getConstraints(currentSpaceId);
-      setConstraints(updated);
-    } catch (err: any) {
-      setEditConstraintError(err?.response?.data?.message ?? "שגיאה בעדכון האילוץ");
-    } finally { setEditConstraintSaving(false); }
-  }
-
-  async function handleDeleteConstraint(constraintId: string) {
-    if (!currentSpaceId) return;
-    if (!confirm("האם אתה בטוח שברצונך למחוק אילוץ זה?")) return;
-    setConstraintDeleteErrors(prev => { const n = { ...prev }; delete n[constraintId]; return n; });
-    try {
-      await deleteConstraint(currentSpaceId, constraintId);
-      setConstraints(prev => prev.filter(c => c.id !== constraintId));
-    } catch (err: any) {
-      setConstraintDeleteErrors(prev => ({ ...prev, [constraintId]: err?.response?.data?.message ?? "שגיאה" }));
-    }
-  }
-
-  async function handleTriggerSolver() {
-    if (!currentSpaceId) return;
-    setSolverError(null); setSolverStatus(null);
-    try {
-      const r = await apiClient.post(`/spaces/${currentSpaceId}/schedule-runs/trigger`, { triggerMode: "standard" });
-      const runId: string = r.data.runId ?? r.data.id;
-      setSolverRunId(runId);
-      setSolverPolling(true);
-      solverPollRef.current = setInterval(async () => {
-        try {
-          const poll = await apiClient.get(`/spaces/${currentSpaceId}/schedule-runs/${runId}`);
-          const status: string = poll.data.status;
-          if (status === "Completed") {
-            clearInterval(solverPollRef.current!);
-            setSolverPolling(false);
-            setSolverStatus("Completed");
-            setScheduleNeedsRefresh(true);
-            // Fetch the new draft so the banner + modal are ready
-            await fetchDraftVersion();
-          } else if (status === "Failed" || status === "TimedOut") {
-            clearInterval(solverPollRef.current!);
-            setSolverPolling(false);
-            setSolverStatus(status);
-            setSolverError(status === "Failed" ? "הסידור נכשל. נסה שוב מאוחר יותר." : "הסידור פג זמן. נסה שוב.");
-          }
-        } catch (pollErr: any) {
-          if (pollErr?.response?.status === 404) {
-            clearInterval(solverPollRef.current!);
-            setSolverPolling(false);
-            setSolverError("לא נמצא מידע על ריצת הסידור.");
-          }
-        }
-      }, 3000);
-    } catch (err: any) {
-      const msg = err?.response?.data?.error
-        ?? err?.response?.data?.message
-        ?? err?.response?.data?.title
-        ?? `שגיאה בהפעלת הסידור (${err?.response?.status ?? "network error"})`;
-      setSolverError(msg);
-    }
-  }
-
-  async function handlePublishVersion() {
+  // ── Schedule handlers ────────────────────────────────────────────────────
+  async function handlePublish() {
     if (!currentSpaceId || !draftVersion) return;
-    setPublishSaving(true); setScheduleVersionError(null);
+    setPublishSaving(true);
+    setScheduleVersionError(null);
     try {
-      await apiClient.post(`/spaces/${currentSpaceId}/schedule-versions/${draftVersion.id}/publish`);
+      await apiClient.post(`/spaces/${currentSpaceId}/groups/${groupId}/schedule/versions/${draftVersion.id}/publish`, {});
       setDraftVersion(null);
-      setScheduleNeedsRefresh(true);
-      // Switch to schedule tab so the user sees the published result
-      setActiveTab("schedule");
-    } catch (err: any) {
-      setScheduleVersionError(err?.response?.data?.message ?? "שגיאה בפרסום הסידור");
-    } finally { setPublishSaving(false); }
+      setScheduleData(null);
+      // Reload schedule
+      const res = await apiClient.get<{ assignments: ScheduleAssignment[]; draftVersion?: { id: string; status: string } }>(
+        `/spaces/${currentSpaceId}/groups/${groupId}/schedule/current`
+      );
+      setScheduleData(res.data.assignments ?? []);
+      setDraftVersion(res.data.draftVersion ?? null);
+    } catch {
+      setScheduleVersionError("שגיאה בפרסום הסידור");
+    } finally {
+      setPublishSaving(false);
+    }
   }
 
-  async function handleDiscardVersion() {
+  async function handleDiscard() {
     if (!currentSpaceId || !draftVersion) return;
-    setDiscardSaving(true); setScheduleVersionError(null);
+    setDiscardSaving(true);
+    setScheduleVersionError(null);
     try {
-      await apiClient.delete(`/spaces/${currentSpaceId}/schedule-versions/${draftVersion.id}`);
+      await apiClient.delete(`/spaces/${currentSpaceId}/groups/${groupId}/schedule/versions/${draftVersion.id}`);
       setDraftVersion(null);
-      setShowDiscardConfirm(false);
-      setScheduleNeedsRefresh(true);
-    } catch (err: any) {
-      setScheduleVersionError(err?.response?.data?.message ?? "שגיאה בביטול הטיוטה");
-    } finally { setDiscardSaving(false); }
-  }
-
-  async function handleAddMember(e: React.FormEvent) {
-    e.preventDefault();
-    if (!currentSpaceId) return;
-    if (!addEmail.trim()) {
-      setAddError("יש להזין אימייל או מספר טלפון");
-      return;
-    }
-    setAddError(null);
-    const input = addEmail.trim();
-    const isPhone = /^[+\d][\d\s\-()\+]{6,}$/.test(input);
-    try {
-      if (isPhone) {
-        await apiClient.post(`/spaces/${currentSpaceId}/groups/${groupId}/members/by-phone`, { phoneNumber: input });
-      } else {
-        await addGroupMemberByEmail(currentSpaceId, groupId, input);
-      }
-      await fetchMembers();
-      setAddEmail("");
-    } catch (err: any) {
-      setAddError(err?.response?.data?.message ?? "שגיאה");
+    } catch {
+      setScheduleVersionError("שגיאה בביטול הטיוטה");
+    } finally {
+      setDiscardSaving(false);
     }
   }
 
+  // ── Member handlers ──────────────────────────────────────────────────────
   async function handleRemoveMember(personId: string) {
     if (!currentSpaceId) return;
-    setRemoveErrors(prev => { const n = { ...prev }; delete n[personId]; return n; });
     try {
       await removeGroupMember(currentSpaceId, groupId, personId);
-      await fetchMembers();
-    } catch (err: any) {
-      setRemoveErrors(prev => ({ ...prev, [personId]: err?.response?.data?.message ?? "שגיאה" }));
+      setMembers(prev => prev.filter(m => m.personId !== personId));
+    } catch {
+      setRemoveErrors(prev => ({ ...prev, [personId]: "שגיאה בהסרת חבר" }));
+    }
+  }
+
+  async function handleAddByEmail(e: React.FormEvent) {
+    e.preventDefault();
+    if (!currentSpaceId) return;
+    setAddEmailSaving(true);
+    setAddEmailError(null);
+    try {
+      await addGroupMemberByEmail(currentSpaceId, groupId, addEmailInput);
+      setAddEmailInput("");
+      setShowAddByEmail(false);
+      const updated = await getGroupMembers(currentSpaceId, groupId);
+      setMembers(updated);
+    } catch {
+      setAddEmailError("שגיאה בהוספת חבר");
+    } finally {
+      setAddEmailSaving(false);
     }
   }
 
   async function handleCreatePerson(e: React.FormEvent) {
     e.preventDefault();
-    if (!currentSpaceId || !newPersonName.trim()) return;
-    setCreatePersonSaving(true); setCreatePersonError(null);
+    if (!currentSpaceId) return;
+    setCreatePersonSaving(true);
+    setCreatePersonError(null);
     try {
-      const result = await createPerson(currentSpaceId, newPersonName.trim(), newPersonDisplayName.trim() || undefined);
-      await apiClient.post(`/spaces/${currentSpaceId}/groups/${groupId}/members`, { personId: result.id });
-      setNewPersonName(""); setNewPersonDisplayName(""); setShowCreatePersonForm(false);
-      await fetchMembers();
-    } catch (err: any) {
-      setCreatePersonError(err?.response?.data?.message ?? "שגיאה ביצירת האדם");
-    } finally { setCreatePersonSaving(false); }
+      const person = await createPerson(currentSpaceId, createPersonName);
+      await addGroupMemberByEmail(currentSpaceId, groupId, person.id);
+      setCreatePersonName("");
+      setCreatePersonPhone("");
+      setShowCreatePerson(false);
+      const updated = await getGroupMembers(currentSpaceId, groupId);
+      setMembers(updated);
+    } catch {
+      setCreatePersonError("שגיאה ביצירת אדם");
+    } finally {
+      setCreatePersonSaving(false);
+    }
+  }
+
+  async function handleInvite(personId: string) {
+    if (!currentSpaceId) return;
+    const member = members.find(m => m.personId === personId);
+    const contact = member?.phoneNumber ?? "";
+    if (!contact) { setInviteError("אין מספר טלפון לשליחת הזמנה"); return; }
+    try {
+      await invitePerson(currentSpaceId, personId, contact, "whatsapp");
+    } catch {
+      setInviteError("שגיאה בשליחת הזמנה");
+    }
   }
 
   async function handleSaveMemberEdit(personId: string) {
-    if (!currentSpaceId || !editingMemberForm) return;
-    setMemberEditSaving(true); setMemberEditError(null);
+    if (!currentSpaceId || !memberEditForm) return;
+    setMemberEditSaving(true);
+    setMemberEditError(null);
     try {
-      await updatePersonInfo(currentSpaceId, personId, {
-        fullName: editingMemberForm.fullName || undefined,
-        displayName: editingMemberForm.displayName || undefined,
-        phoneNumber: editingMemberForm.phoneNumber || undefined,
-        profileImageUrl: editingMemberForm.profileImageUrl || undefined,
-        birthday: editingMemberForm.birthday || undefined,
-      });
-      await fetchMembers();
-      setSelectedMember(null);
-      setEditingMemberForm(null);
-    } catch (err: any) {
-      setMemberEditError(err?.response?.data?.message ?? "שגיאה בשמירת הפרטים");
-    } finally { setMemberEditSaving(false); }
+      await updatePersonInfo(currentSpaceId, personId, memberEditForm);
+      const updated = await getGroupMembers(currentSpaceId, groupId);
+      setMembers(updated);
+      const updatedMember = updated.find(m => m.personId === personId);
+      if (updatedMember) setSelectedMember(updatedMember);
+      setMemberEditForm(null);
+    } catch {
+      setMemberEditError("שגיאה בשמירת פרטים");
+    } finally {
+      setMemberEditSaving(false);
+    }
   }
 
-  async function handleInvitePerson(e: React.FormEvent) {
+  // ── Alert handlers ───────────────────────────────────────────────────────
+  async function handleCreateAlert(e: React.FormEvent) {
     e.preventDefault();
-    if (!currentSpaceId || !invitingPersonId || !inviteContact.trim()) return;
-    setInviteSaving(true); setInviteError(null); setInviteSuccess(null);
+    if (!currentSpaceId) return;
+    setAlertSubmitting(true);
+    setAlertSubmitError(null);
     try {
-      await invitePerson(currentSpaceId, invitingPersonId, inviteContact.trim(), inviteChannel);
-      setInviteSuccess("ההזמנה נשלחה בהצלחה!");
-      setInviteContact("");
-      setTimeout(() => { setInvitingPersonId(null); setInviteSuccess(null); }, 2000);
-    } catch (err: any) {
-      setInviteError(err?.response?.data?.message ?? "שגיאה בשליחת ההזמנה");
-    } finally { setInviteSaving(false); }
+      await createGroupAlert(currentSpaceId, groupId, {
+        title: newAlertTitle, body: newAlertBody, severity: newAlertSeverity,
+      });
+      // Reload alerts to get full DTO
+      const updated = await getGroupAlerts(currentSpaceId, groupId);
+      setAlerts(updated);
+      setNewAlertTitle(""); setNewAlertBody(""); setNewAlertSeverity("info");
+      setShowAlertForm(false);
+    } catch {
+      setAlertSubmitError("שגיאה ביצירת התראה");
+    } finally {
+      setAlertSubmitting(false);
+    }
   }
 
-  async function handlePeopleSearch(q: string) {
-    setPeopleSearchQuery(q);
-    if (!currentSpaceId || q.trim().length < 2) { setPeopleSearchResults([]); return; }
-    setPeopleSearchLoading(true);
+  async function handleDeleteAlert(id: string) {
+    if (!currentSpaceId) return;
     try {
-      const results = await searchPeople(currentSpaceId, q);
-      setPeopleSearchResults(results);
-    } catch { setPeopleSearchResults([]); }
-    finally { setPeopleSearchLoading(false); }
+      await deleteGroupAlert(currentSpaceId, groupId, id);
+      setAlerts(prev => prev.filter(a => a.id !== id));
+    } catch {
+      setAlertDeleteErrors(prev => ({ ...prev, [id]: "שגיאה במחיקת התראה" }));
+    }
+  }
+
+  async function handleUpdateAlert(id: string) {
+    if (!currentSpaceId) return;
+    setEditAlertSaving(true);
+    setEditAlertError(null);
+    try {
+      await updateGroupAlert(currentSpaceId, groupId, id, {
+        title: editAlertTitle, body: editAlertBody, severity: editAlertSeverity,
+      });
+      setAlerts(prev => prev.map(a => a.id === id ? { ...a, title: editAlertTitle, body: editAlertBody, severity: editAlertSeverity as "info" | "warning" | "critical" } : a));
+      setEditingAlertId(null);
+    } catch {
+      setEditAlertError("שגיאה בעדכון התראה");
+    } finally {
+      setEditAlertSaving(false);
+    }
+  }
+
+  // ── Message handlers ─────────────────────────────────────────────────────
+  async function handleSendMessage(e: React.FormEvent) {
+    e.preventDefault();
+    if (!currentSpaceId || !newMessageContent.trim()) return;
+    setMessageSending(true);
+    setMessageError(null);
+    try {
+      const res = await apiClient.post<{ message: { id: string; content: string; authorName: string; createdAt: string; isPinned: boolean } }>(
+        `/spaces/${currentSpaceId}/groups/${groupId}/messages`,
+        { content: newMessageContent }
+      );
+      setMessages(prev => [...prev, res.data.message]);
+      setNewMessageContent("");
+    } catch {
+      setMessageError("שגיאה בשליחת הודעה");
+    } finally {
+      setMessageSending(false);
+    }
+  }
+
+  async function handlePinMessage(id: string, isPinned: boolean) {
+    if (!currentSpaceId) return;
+    try {
+      await pinGroupMessage(currentSpaceId, groupId, id, isPinned);
+      setMessages(prev => prev.map(m => m.id === id ? { ...m, isPinned } : m));
+    } catch {
+      setMessagePinErrors(prev => ({ ...prev, [id]: "שגיאה בנעיצת הודעה" }));
+    }
+  }
+
+  async function handleUpdateMessage(id: string) {
+    if (!currentSpaceId) return;
+    setEditMessageSaving(true);
+    setEditMessageError(null);
+    try {
+      await updateGroupMessage(currentSpaceId, groupId, id, editMessageContent);
+      setMessages(prev => prev.map(m => m.id === id ? { ...m, content: editMessageContent } : m));
+      setEditingMessageId(null);
+    } catch {
+      setEditMessageError("שגיאה בעדכון הודעה");
+    } finally {
+      setEditMessageSaving(false);
+    }
+  }
+
+  async function handleDeleteMessage(id: string) {
+    if (!currentSpaceId) return;
+    try {
+      await deleteGroupMessage(currentSpaceId, groupId, id);
+      setMessages(prev => prev.filter(m => m.id !== id));
+    } catch {}
+  }
+
+  // ── Task handlers ────────────────────────────────────────────────────────
+  async function handleTaskSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!currentSpaceId) return;
+    setTaskSaving(true);
+    setTaskError(null);
+    try {
+      if (editingTask) {
+        await updateGroupTask(currentSpaceId, groupId, editingTask.id, taskForm);
+        setGroupTasks(prev => prev.map(t => t.id === editingTask.id ? { ...t, ...taskForm } : t));
+      } else {
+        await createGroupTask(currentSpaceId, groupId, taskForm);
+        // Reload to get full DTO with id
+        const updated = await listGroupTasks(currentSpaceId, groupId);
+        setGroupTasks(updated);
+      }
+      setShowTaskForm(false);
+      setEditingTask(null);
+      setTaskForm(DEFAULT_TASK_FORM);
+    } catch {
+      setTaskError("שגיאה בשמירת משימה");
+    } finally {
+      setTaskSaving(false);
+    }
+  }
+
+  async function handleDeleteTask(id: string) {
+    if (!currentSpaceId) return;
+    try {
+      await deleteGroupTask(currentSpaceId, groupId, id);
+      setGroupTasks(prev => prev.filter(t => t.id !== id));
+    } catch {}
+  }
+
+  // ── Constraint handlers ──────────────────────────────────────────────────
+  async function handleCreateConstraint(e: React.FormEvent) {
+    e.preventDefault();
+    if (!currentSpaceId) return;
+    setConstraintSaving(true);
+    setConstraintError(null);
+    try {
+      await createConstraint(
+        currentSpaceId,
+        "group",
+        groupId,
+        newConstraintSeverity,
+        newConstraintRuleType,
+        newConstraintPayload,
+        null,
+        null
+      );
+      // Reload to get full DTO
+      const updated = await getConstraints(currentSpaceId);
+      setConstraints(updated.filter(c => c.scopeId === groupId));
+      setShowConstraintForm(false);
+    } catch {
+      setConstraintError("שגיאה ביצירת אילוץ");
+    } finally {
+      setConstraintSaving(false);
+    }
+  }
+
+  async function handleDeleteConstraint(id: string) {
+    if (!currentSpaceId) return;
+    try {
+      await deleteConstraint(currentSpaceId, id);
+      setConstraints(prev => prev.filter(c => c.id !== id));
+    } catch {
+      setConstraintDeleteErrors(prev => ({ ...prev, [id]: "שגיאה במחיקת אילוץ" }));
+    }
+  }
+
+  async function handleUpdateConstraint(id: string) {
+    if (!currentSpaceId) return;
+    setEditConstraintSaving(true);
+    setEditConstraintError(null);
+    try {
+      await updateConstraint(currentSpaceId, id, {
+        rulePayloadJson: editConstraintPayload,
+        effectiveFrom: editConstraintFrom || null,
+        effectiveUntil: editConstraintUntil || null,
+      });
+      setConstraints(prev => prev.map(c => c.id === id ? { ...c, rulePayloadJson: editConstraintPayload, effectiveFrom: editConstraintFrom || null, effectiveUntil: editConstraintUntil || null } : c));
+      setEditingConstraintId(null);
+    } catch {
+      setEditConstraintError("שגיאה בעדכון אילוץ");
+    } finally {
+      setEditConstraintSaving(false);
+    }
+  }
+
+  // ── Settings handlers ────────────────────────────────────────────────────
+  async function handleRenameGroup() {
+    if (!currentSpaceId || !newGroupName.trim()) return;
+    setRenameSaving(true);
+    setRenameError(null);
+    try {
+      await renameGroup(currentSpaceId, groupId, newGroupName);
+      setGroup(prev => prev ? { ...prev, name: newGroupName } : prev);
+    } catch {
+      setRenameError("שגיאה בשינוי שם");
+    } finally {
+      setRenameSaving(false);
+    }
   }
 
   async function handleSaveSettings() {
@@ -669,67 +619,75 @@ export default function GroupDetailPage() {
     setSettingsSaved(false);
     try {
       await updateGroupSettings(currentSpaceId, groupId, solverHorizon);
+      setSolverHorizonDays(solverHorizon);
       setSettingsSaved(true);
       setTimeout(() => setSettingsSaved(false), 3000);
-    } catch (err: any) {
-      setSettingsError(err?.response?.data?.message ?? "שגיאה בשמירת ההגדרות");
+    } catch {
+      setSettingsError("שגיאה בשמירת הגדרות");
     } finally {
       setSavingSettings(false);
     }
   }
 
-  // Fetch deleted groups when settings tab opens
-  useEffect(() => {
-    if (activeTab !== "settings" || !currentSpaceId || adminGroupId !== groupId) return;
-    setDeletedGroupsLoading(true);
-    getDeletedGroups(currentSpaceId)
-      .then(setDeletedGroups)
-      .finally(() => setDeletedGroupsLoading(false));
-  }, [activeTab, currentSpaceId, adminGroupId, groupId]);
-
-  async function handleRenameGroup() {
-    if (!currentSpaceId || !newGroupName.trim()) return;
-    setRenameSaving(true); setRenameError(null);
-    try {
-      await renameGroup(currentSpaceId, groupId, newGroupName.trim());
-      setGroup(prev => prev ? { ...prev, name: newGroupName.trim() } : prev);
-    } catch (err: any) {
-      setRenameError(err?.response?.data?.message ?? "שגיאה בשינוי השם");
-    } finally { setRenameSaving(false); }
-  }
-
-  async function handleDeleteGroup() {
+  async function handleTriggerSolver() {
     if (!currentSpaceId) return;
-    setDeleteSaving(true); setDeleteError(null);
+    setSolverPolling(true);
+    setSolverStatus(null);
+    setSolverError(null);
     try {
-      await softDeleteGroup(currentSpaceId, groupId);
-      router.push("/groups");
-    } catch (err: any) {
-      setDeleteError(err?.response?.data?.message ?? "שגיאה במחיקת הקבוצה");
-      setDeleteSaving(false);
+      const res = await apiClient.post<{ runId: string }>(
+        `/spaces/${currentSpaceId}/groups/${groupId}/schedule/runs`, {}
+      );
+      const runId = res.data.runId;
+      pollingRef.current = setInterval(async () => {
+        try {
+          const statusRes = await apiClient.get<{ status: string }>(
+            `/spaces/${currentSpaceId}/groups/${groupId}/schedule/runs/${runId}`
+          );
+          setSolverStatus(statusRes.data.status);
+          if (statusRes.data.status === "Completed" || statusRes.data.status === "Failed") {
+            if (pollingRef.current) clearInterval(pollingRef.current);
+            setSolverPolling(false);
+            if (statusRes.data.status === "Completed") {
+              const schedRes = await apiClient.get<{ assignments: ScheduleAssignment[]; draftVersion?: { id: string; status: string } }>(
+                `/spaces/${currentSpaceId}/groups/${groupId}/schedule/current`
+              );
+              setDraftVersion(schedRes.data.draftVersion ?? null);
+            }
+          }
+        } catch {
+          if (pollingRef.current) clearInterval(pollingRef.current);
+          setSolverPolling(false);
+          setSolverError("שגיאה בבדיקת סטטוס");
+        }
+      }, 3000);
+    } catch {
+      setSolverPolling(false);
+      setSolverError("שגיאה בהפעלת הסולבר");
     }
   }
 
-  async function handleRestoreGroup(deletedGroupId: string) {
+  async function handleRestoreGroup(id: string) {
     if (!currentSpaceId) return;
     try {
-      await restoreGroup(currentSpaceId, deletedGroupId);
-      const updated = await getDeletedGroups(currentSpaceId);
-      setDeletedGroups(updated);
-    } catch (err: any) {
-      alert(err?.response?.data?.message ?? "שגיאה בשחזור הקבוצה");
-    }
+      await restoreGroup(currentSpaceId, id);
+      setDeletedGroups(prev => prev.filter(g => g.id !== id));
+    } catch {}
   }
 
   async function handleInitiateTransfer() {
     if (!currentSpaceId || !transferPersonId) return;
-    setTransferSaving(true); setTransferError(null);
+    setTransferSaving(true);
+    setTransferError(null);
     try {
       await initiateOwnershipTransfer(currentSpaceId, groupId, transferPersonId);
       setHasPendingTransfer(true);
-    } catch (err: any) {
-      setTransferError(err?.response?.data?.message ?? "שגיאה בהעברת הבעלות");
-    } finally { setTransferSaving(false); }
+      setTransferPersonId("");
+    } catch {
+      setTransferError("שגיאה בהעברת בעלות");
+    } finally {
+      setTransferSaving(false);
+    }
   }
 
   async function handleCancelTransfer() {
@@ -738,1927 +696,278 @@ export default function GroupDetailPage() {
     try {
       await cancelOwnershipTransfer(currentSpaceId, groupId);
       setHasPendingTransfer(false);
-    } catch (err: any) {
-      alert(err?.response?.data?.message ?? "שגיאה בביטול ההעברה");
-    } finally { setCancelTransferSaving(false); }
+    } catch {}
+    finally { setCancelTransferSaving(false); }
   }
 
-  async function handleCreateConstraint(e: React.FormEvent) {
-    e.preventDefault();
+  async function handleDeleteGroup() {
     if (!currentSpaceId) return;
-    // Validate JSON payload
-    try { JSON.parse(newConstraintPayload); } catch {
-      setConstraintError("Payload חייב להיות JSON תקין");
-      return;
-    }
-    setConstraintSaving(true); setConstraintError(null);
+    setDeleteSaving(true);
+    setDeleteError(null);
     try {
-      await createConstraint(currentSpaceId, newConstraintScope, null, newConstraintSeverity, newConstraintRuleType, newConstraintPayload, null, null);
-      const updated = await getConstraints(currentSpaceId);
-      setConstraints(updated);
-      setShowConstraintForm(false);
-    } catch (err: any) {
-      setConstraintError(err?.response?.data?.message ?? "שגיאה");
-    } finally { setConstraintSaving(false); }
-  }
-
-  const isAdmin = adminGroupId === groupId;
-
-  const baseTabs: { value: ActiveTab; label: string }[] = [
-    { value: "schedule", label: "סידור" },
-    { value: "members", label: "חברים" },
-    { value: "alerts", label: "התראות" },
-    { value: "messages", label: "הודעות" },
-  ];
-  const adminTabs: { value: ActiveTab; label: string }[] = [
-    { value: "tasks", label: "משימות" },
-    { value: "constraints", label: "אילוצים" },
-    { value: "settings", label: "הגדרות" },
-  ];
-  const visibleTabs = isAdmin ? [...baseTabs, ...adminTabs] : baseTabs;
-
-  function renderTabPanel() {
-    switch (activeTab) {
-      case "schedule":
-        return (
-          <ScheduleTab
-            groupId={groupId}
-            solverHorizonDays={group?.solverHorizonDays ?? 7}
-            scheduleData={scheduleData}
-            scheduleLoading={scheduleLoading}
-            scheduleError={scheduleError}
-            draftVersion={draftVersion}
-            isAdmin={isAdmin}
-            publishSaving={publishSaving}
-            discardSaving={discardSaving}
-            scheduleVersionError={scheduleVersionError}
-            onOpenDraftModal={openDraftModal}
-            onPublish={handlePublishVersion}
-            onDiscard={handleDiscardVersion}
-          />
-        );
-      case "members":
-        return isAdmin ? renderMembersEdit() : renderMembersReadOnly();
-      case "alerts":
-        return renderAlertsPanel();
-      case "messages":
-        return renderMessagesPanel();
-      case "tasks":
-        return renderTasksPanel();
-      case "constraints":
-        return renderConstraintsPanel();
-      case "settings":
-        return renderSettingsPanel();
-      default:
-        return null;
+      await softDeleteGroup(currentSpaceId, groupId);
+      router.push("/groups");
+    } catch {
+      setDeleteError("שגיאה במחיקת קבוצה");
+    } finally {
+      setDeleteSaving(false);
     }
   }
 
-  function renderSchedulePanel() {
-    const today = new Date().toISOString().split("T")[0];
-    const minDate = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
-    const maxDate = new Date(Date.now() + (group?.solverHorizonDays ?? 7) * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
-
-    function prevDay() {
-      const d = new Date(scheduleDate + "T00:00:00");
-      d.setDate(d.getDate() - 1);
-      const next = d.toISOString().split("T")[0];
-      if (next >= minDate) setScheduleDate(next);
-    }
-
-    function nextDay() {
-      const d = new Date(scheduleDate + "T00:00:00");
-      d.setDate(d.getDate() + 1);
-      const next = d.toISOString().split("T")[0];
-      if (next <= maxDate) setScheduleDate(next);
-    }
-
-    function getWeekDates(): string[] {
-      const dates: string[] = [];
-      const start = new Date(scheduleDate + "T00:00:00");
-      start.setDate(start.getDate() - start.getDay());
-      for (let i = 0; i < 7; i++) {
-        const d = new Date(start);
-        d.setDate(start.getDate() + i);
-        dates.push(d.toISOString().split("T")[0]);
-      }
-      return dates;
-    }
-
-    const formatDateLabel = (dateStr: string) => {
-      const d = new Date(dateStr + "T00:00:00");
-      const todayStr = new Date().toISOString().split("T")[0];
-      const yesterdayStr = new Date(Date.now() - 86400000).toISOString().split("T")[0];
-      const tomorrowStr = new Date(Date.now() + 86400000).toISOString().split("T")[0];
-      if (dateStr === todayStr) return "היום";
-      if (dateStr === yesterdayStr) return "אתמול";
-      if (dateStr === tomorrowStr) return "מחר";
-      return d.toLocaleDateString("he-IL", { weekday: "short", day: "numeric", month: "short" });
-    };
-
-    const dayAssignments = (scheduleData ?? [])
-      .filter(a => a.slotStartsAt?.startsWith(scheduleDate))
-      .filter(a => !schedulePersonFilter || a.personName.toLowerCase().includes(schedulePersonFilter.toLowerCase()));
-
-    const weekDates = getWeekDates();
-    const weekAssignments = weekDates.reduce<Record<string, ScheduleAssignment[]>>((acc, d) => {
-      acc[d] = (scheduleData ?? [])
-        .filter(a => a.slotStartsAt?.startsWith(d))
-        .filter(a => !schedulePersonFilter || a.personName.toLowerCase().includes(schedulePersonFilter.toLowerCase()));
-      return acc;
-    }, {});
-
+  // ── Render ───────────────────────────────────────────────────────────────
+  if (groupLoading) {
     return (
-      <div className="space-y-4">
-        {/* Draft version banner */}
-        {draftVersion && (          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4">
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2">
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-300">
-                  טיוטה
-                </span>
-                <span className="text-sm text-amber-800">סידור טיוטה מוכן לעיון ופרסום</span>
-              </div>
-              <div className="flex items-center gap-2 flex-shrink-0">
-                <button
-                  onClick={openDraftModal}
-                  className="text-xs text-amber-800 border border-amber-300 hover:bg-amber-100 px-3 py-1.5 rounded-lg transition-colors font-medium"
-                >
-                  👁 צפה בטיוטה
-                </button>
-                {isAdmin && (
-                  <>
-                    <button
-                      onClick={handlePublishVersion}
-                      disabled={publishSaving || discardSaving}
-                      className="bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-medium px-3 py-1.5 rounded-lg disabled:opacity-50 transition-colors"
-                    >
-                      {publishSaving ? "מפרסם..." : "פרסם סידור"}
-                    </button>
-                    <button
-                      onClick={() => setShowDiscardConfirm(true)}
-                      disabled={publishSaving || discardSaving}
-                      className="text-xs text-red-600 border border-red-200 hover:bg-red-50 px-3 py-1.5 rounded-lg disabled:opacity-50 transition-colors"
-                    >
-                      בטל טיוטה
-                    </button>
-                  </>
-                )}
-              </div>
-            </div>
-            {scheduleVersionError && (
-              <p className="text-xs text-red-600 mt-2">{scheduleVersionError}</p>
-            )}
-            {/* Discard confirmation */}
-            {showDiscardConfirm && (
-              <div className="mt-3 bg-red-50 border border-red-200 rounded-xl p-3 space-y-2">
-                <p className="text-sm text-red-700">האם אתה בטוח שברצונך לבטל את הטיוטה? פעולה זו אינה הפיכה.</p>
-                <div className="flex gap-2">
-                  <button
-                    onClick={handleDiscardVersion}
-                    disabled={discardSaving}
-                    className="bg-red-500 hover:bg-red-600 text-white text-xs font-medium px-3 py-1.5 rounded-lg disabled:opacity-50 transition-colors"
-                  >
-                    {discardSaving ? "מבטל..." : "כן, בטל טיוטה"}
-                  </button>
-                  <button
-                    onClick={() => setShowDiscardConfirm(false)}
-                    className="text-xs text-slate-500 hover:text-slate-700 px-2"
-                  >
-                    ביטול
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Person filter search */}
-        <div className="relative max-w-xs">
-          <input
-            type="text"
-            value={schedulePersonFilter}
-            onChange={e => setSchedulePersonFilter(e.target.value)}
-            placeholder="סנן לפי שם..."
-            className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 pr-9"
-          />
-          <svg className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
-        </div>
-
-        {/* Date navigation */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <button
-              onClick={prevDay}
-              disabled={scheduleDate <= minDate}
-              className="p-2 rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-            >
-              <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-              </svg>
-            </button>
-            <button
-              onClick={() => setScheduleDate(today)}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
-                scheduleDate === today
-                  ? "bg-blue-500 text-white border-blue-500"
-                  : "border-slate-200 text-slate-600 hover:bg-slate-50"
-              }`}
-            >
-              היום
-            </button>
-            <button
-              onClick={nextDay}
-              disabled={scheduleDate >= maxDate}
-              className="p-2 rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-            >
-              <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-              </svg>
-            </button>
-            <span className="text-sm font-medium text-slate-700 mr-2">{formatDateLabel(scheduleDate)}</span>
-          </div>
-
-          {/* View toggle */}
-          <div className="flex gap-1 bg-slate-100 p-1 rounded-lg">
-            <button
-              onClick={() => setScheduleView("day")}
-              className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${
-                scheduleView === "day" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500"
-              }`}
-            >יום</button>
-            <button
-              onClick={() => setScheduleView("week")}
-              className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${
-                scheduleView === "week" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500"
-              }`}
-            >שבוע</button>
-          </div>
-        </div>
-
-        {/* Loading / error */}
-        {scheduleLoading && (
-          <div className="flex items-center gap-3 text-slate-400 text-sm py-8">
-            <svg className="animate-spin h-5 w-5 text-blue-400" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-            </svg>
-            טוען...
-          </div>
-        )}
-        {scheduleError && <p className="text-sm text-red-600 py-4">{scheduleError}</p>}
-
-        {/* Day view */}
-        {!scheduleLoading && !scheduleError && scheduleView === "day" && (
-          dayAssignments.length === 0 ? (
-            <p className="text-sm text-slate-400 py-8 text-center">אין משימות ב{formatDateLabel(scheduleDate)}</p>
-          ) : (
-            <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-slate-100 bg-slate-50/80">
-                    <th className="px-4 py-3 text-start text-xs font-semibold text-slate-500 uppercase tracking-wider">שם</th>
-                    <th className="px-4 py-3 text-start text-xs font-semibold text-slate-500 uppercase tracking-wider">סוג משימה</th>
-                    <th className="px-4 py-3 text-start text-xs font-semibold text-slate-500 uppercase tracking-wider">שעות</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {dayAssignments.map((a, i) => (
-                    <tr key={i} className="hover:bg-slate-50/60">
-                      <td className="px-4 py-3.5 font-medium text-slate-900">{a.personName}</td>
-                      <td className="px-4 py-3.5 text-slate-600">{a.taskTypeName}</td>
-                      <td className="px-4 py-3.5 text-slate-500 text-xs tabular-nums">
-                        {new Date(a.slotStartsAt).toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" })}
-                        <span className="mx-1 text-slate-300">–</span>
-                        {new Date(a.slotEndsAt).toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" })}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )
-        )}
-
-        {/* Week view */}
-        {!scheduleLoading && !scheduleError && scheduleView === "week" && (
-          <div className="space-y-4">
-            {weekDates.map(d => {
-              const items = weekAssignments[d] ?? [];
-              const isToday = d === today;
-              return (
-                <div key={d}>
-                  <h3 className={`text-xs font-semibold uppercase tracking-wider mb-2 ${isToday ? "text-blue-600" : "text-slate-500"}`}>
-                    {formatDateLabel(d)}
-                    {isToday && <span className="mr-2 text-blue-500 normal-case font-normal">• היום</span>}
-                  </h3>
-                  {items.length === 0 ? (
-                    <p className="text-xs text-slate-400 py-2 pr-2">אין משימות</p>
-                  ) : (
-                    <div className="space-y-1.5">
-                      {items.map((a, i) => (
-                        <div key={i} className="flex items-center gap-3 bg-white border border-slate-200 rounded-xl px-4 py-2.5">
-                          <div className="text-xs tabular-nums text-slate-500 w-20 shrink-0">
-                            {new Date(a.slotStartsAt).toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" })}
-                            <span className="mx-1 text-slate-300">–</span>
-                            {new Date(a.slotEndsAt).toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" })}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-slate-900 truncate">{a.personName}</p>
-                            <p className="text-xs text-slate-400 truncate">{a.taskTypeName}</p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  function renderMembersReadOnly() {
-    const filteredReadOnly = membersSearch.trim()
-      ? members.filter(m =>
-          (m.displayName ?? m.fullName).toLowerCase().includes(membersSearch.toLowerCase()) ||
-          (m.phoneNumber ?? "").includes(membersSearch))
-      : members;
-
-    if (membersLoading) {
-      return (
-        <div className="flex items-center gap-3 text-slate-400 text-sm py-8">
-          <svg className="animate-spin h-5 w-5 text-blue-400" fill="none" viewBox="0 0 24 24">
+      <AppShell>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <svg className="animate-spin h-8 w-8 text-blue-400" fill="none" viewBox="0 0 24 24">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
           </svg>
-          טוען...
         </div>
-      );
-    }
-    if (membersError) return <p className="text-sm text-red-600 py-4">{membersError}</p>;
-    if (members.length === 0) return <p className="text-sm text-slate-400 py-8 text-center">אין חברים בקבוצה זו</p>;
-    return (
-      <div className="space-y-3">
-        {/* Search box */}
-        <div className="relative max-w-sm">
-          <input
-            type="text"
-            value={membersSearch}
-            onChange={e => setMembersSearch(e.target.value)}
-            placeholder="חפש לפי שם או טלפון..."
-            className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 pr-9"
-          />
-          <svg className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
-        </div>
-        <div className="space-y-2">
-          {filteredReadOnly.length === 0 ? (
-            <p className="text-sm text-slate-400 py-4 text-center">לא נמצאו חברים</p>
-          ) : filteredReadOnly.map(m => (
-            <div key={m.personId} className="flex items-center gap-3 bg-white border border-slate-200 rounded-xl px-4 py-3 cursor-pointer hover:bg-slate-50 transition-colors" onClick={() => setSelectedMember(m)}>
-              <div
-                className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-semibold flex-shrink-0"
-                style={{ background: m.profileImageUrl ? "transparent" : "linear-gradient(135deg, #3b82f6, #6366f1)" }}
-              >
-                {m.profileImageUrl
-                  ? <img src={m.profileImageUrl} alt="" style={{ width: 32, height: 32, borderRadius: "50%", objectFit: "cover" }} />
-                  : (m.displayName ?? m.fullName).charAt(0)}
-              </div>
-              <span className="text-sm font-medium text-slate-900">{m.displayName ?? m.fullName}</span>
-              {m.phoneNumber && (
-                <span className="text-xs text-slate-400 mr-2">{m.phoneNumber}</span>
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
+      </AppShell>
     );
   }
 
-  function renderMembersEdit() {
-    const inp = "border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500";
-    const filteredMembers = membersSearch.trim()
-      ? members.filter(m =>
-          (m.displayName ?? m.fullName).toLowerCase().includes(membersSearch.toLowerCase()) ||
-          (m.phoneNumber ?? "").includes(membersSearch))
-      : members;
+  if (!group) return null;
 
-    return (
-      <div className="space-y-4">
-        {/* Search box */}
-        <div className="relative max-w-sm">
-          <input
-            type="text"
-            value={membersSearch}
-            onChange={e => setMembersSearch(e.target.value)}
-            placeholder="חפש לפי שם או טלפון..."
-            className={`w-full ${inp} pr-9`}
-          />
-          <svg className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
-        </div>
-
-        {/* Add member buttons */}
-        <div className="flex gap-2">
-          <button
-            onClick={() => { setShowAddMemberModal(true); setAddEmail(""); setAddError(null); }}
-            className="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-3.5 py-2 rounded-xl transition-colors"
-          >
-            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-            </svg>
-            הוסף לפי אימייל/טלפון
-          </button>
-          <button
-            onClick={() => { setShowCreatePersonForm(true); setNewPersonName(""); setNewPersonDisplayName(""); setCreatePersonError(null); }}
-            className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 border border-blue-200 hover:border-blue-400 px-3.5 py-2 rounded-xl transition-colors"
-          >
-            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-            </svg>
-            הוסף לפי שם בלבד
-          </button>
-        </div>
-
-        {/* Members list */}
-        {membersLoading ? (
-          <div className="flex items-center gap-3 text-slate-400 text-sm py-4">
-            <svg className="animate-spin h-5 w-5 text-blue-400" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-            </svg>
-            טוען...
-          </div>
-        ) : membersError ? (
-          <p className="text-sm text-red-600">{membersError}</p>
-        ) : filteredMembers.length === 0 ? (
-          <p className="text-sm text-slate-400 py-4 text-center">
-            {membersSearch ? "לא נמצאו חברים התואמים לחיפוש" : "אין חברים בקבוצה זו"}
-          </p>
-        ) : (
-          <div className="space-y-2">
-            {filteredMembers.map(m => (
-              <div key={m.personId}>
-                <div className="flex items-center justify-between bg-white border border-slate-200 rounded-xl px-4 py-3">
-                  <div className="flex items-center gap-3">
-                    <div
-                      className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-semibold cursor-pointer flex-shrink-0"
-                      style={{ background: m.profileImageUrl ? "transparent" : "linear-gradient(135deg, #3b82f6, #6366f1)" }}
-                      onClick={() => setSelectedMember(m)}
-                    >
-                      {m.profileImageUrl
-                        ? <img src={m.profileImageUrl} alt="" style={{ width: 32, height: 32, borderRadius: "50%", objectFit: "cover" }} />
-                        : (m.displayName ?? m.fullName).charAt(0)}
-                    </div>
-                    <div>
-                      <span
-                        className="text-sm font-medium text-slate-900 cursor-pointer hover:text-blue-600 transition-colors"
-                        onClick={() => setSelectedMember(m)}
-                      >{m.displayName ?? m.fullName}</span>
-                      {m.phoneNumber && (
-                        <span className="text-xs text-slate-400 mr-2">{m.phoneNumber}</span>
-                      )}
-                    </div>
-                    {m.isOwner && (
-                      <span className="text-xs text-amber-600 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">בעלים</span>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {removeErrors[m.personId] && (
-                      <span className="text-xs text-red-600">{removeErrors[m.personId]}</span>
-                    )}
-                    {/* Invite button — only for pending members */}
-                    {m.invitationStatus !== "accepted" && (
-                      <button
-                        onClick={() => { setInvitingPersonId(m.personId); setInviteContact(""); setInviteError(null); setInviteSuccess(null); }}
-                        className="text-xs text-blue-500 hover:text-blue-700 border border-blue-200 hover:border-blue-400 px-2.5 py-1 rounded-lg transition-colors"
-                      >
-                        הזמן
-                      </button>
-                    )}
-                    {!m.isOwner && (
-                      <button
-                        onClick={() => handleRemoveMember(m.personId)}
-                        className="text-xs text-red-500 hover:text-red-700 border border-red-200 hover:border-red-400 px-2.5 py-1 rounded-lg transition-colors">
-                        הסר
-                      </button>
-                    )}
-                  </div>
-                </div>
-                {/* Inline invite form removed — handled via Modal */}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  function renderTasksPanel() {
-    if (groupTasksLoading) {
-      return (
-        <div className="flex items-center gap-3 text-slate-400 text-sm py-8">
-          <svg className="animate-spin h-5 w-5 text-blue-400" fill="none" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-          </svg>
-          טוען...
-        </div>
-      );
-    }
-
-    const inp = "border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500";
-
-    const burdenOptions = [
-      { value: "favorable", label: "נוח" },
-      { value: "neutral", label: "ניטרלי" },
-      { value: "disliked", label: "לא אהוב" },
-      { value: "hated", label: "שנוא" },
-    ];
-
-    return (
-      <div className="space-y-4">
-        {isAdmin && (
-          <div className="flex justify-end">
-            <button
-              onClick={() => {
-                setEditingTask(null);
-                const today = new Date().toISOString().split("T")[0];
-                setTaskForm({ name: "", startsAt: `${today}T00:00`, endsAt: `${today}T23:59`, shiftDurationMinutes: 240, requiredHeadcount: 1, burdenLevel: "neutral", allowsDoubleShift: false, allowsOverlap: false });
-                setTaskError(null);
-                setShowTaskForm(true);
-              }}
-              className="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-3.5 py-2 rounded-xl transition-colors"
-            >
-              <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-              </svg>
-              הוסף משימה
-            </button>
-          </div>
-        )}
-
-        <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-slate-100 bg-slate-50/80">
-                <th className="px-4 py-3 text-start text-xs font-semibold text-slate-500 uppercase tracking-wider">שם</th>
-                <th className="px-4 py-3 text-start text-xs font-semibold text-slate-500 uppercase tracking-wider">חלון זמן</th>
-                <th className="px-4 py-3 text-start text-xs font-semibold text-slate-500 uppercase tracking-wider">משך</th>
-                <th className="px-4 py-3 text-start text-xs font-semibold text-slate-500 uppercase tracking-wider">כוח אדם</th>
-                <th className="px-4 py-3 text-start text-xs font-semibold text-slate-500 uppercase tracking-wider">עומס</th>
-                {isAdmin && <th className="px-4 py-3" />}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {groupTasks.map(t => (
-                <tr key={t.id} className="hover:bg-slate-50/60">
-                  <td className="px-4 py-3.5 font-medium text-slate-900">{t.name}</td>
-                  <td className="px-4 py-3.5 text-slate-500 text-xs tabular-nums">
-                    {new Date(t.startsAt).toLocaleString("he-IL", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
-                    <span className="mx-1 text-slate-300">–</span>
-                    {new Date(t.endsAt).toLocaleString("he-IL", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
-                  </td>
-                  <td className="px-4 py-3.5 text-slate-500 text-xs">
-                    {t.shiftDurationMinutes >= 60
-                      ? `${Math.floor(t.shiftDurationMinutes / 60)}ש'${t.shiftDurationMinutes % 60 > 0 ? ` ${t.shiftDurationMinutes % 60}ד'` : ""}`
-                      : `${t.shiftDurationMinutes}ד'`}
-                  </td>
-                  <td className="px-4 py-3.5 text-slate-500">{t.requiredHeadcount}</td>
-                  <td className="px-4 py-3.5">
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${burdenColors[t.burdenLevel] ?? "bg-slate-100 text-slate-600 border-slate-200"}`}>
-                      {burdenLabels[t.burdenLevel] ?? t.burdenLevel}
-                    </span>
-                  </td>
-                  {isAdmin && (
-                    <td className="px-4 py-3.5">
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => {
-                            setEditingTask(t);
-                            setTaskForm({
-                              name: t.name,
-                              startsAt: t.startsAt.slice(0, 16),
-                              endsAt: t.endsAt.slice(0, 16),
-                              shiftDurationMinutes: t.shiftDurationMinutes,
-                              requiredHeadcount: t.requiredHeadcount,
-                              burdenLevel: t.burdenLevel,
-                              allowsDoubleShift: t.allowsDoubleShift,
-                              allowsOverlap: t.allowsOverlap,
-                            });
-                            setTaskError(null);
-                            setShowTaskForm(true);
-                          }}
-                          className="text-xs text-blue-500 hover:text-blue-700 border border-blue-200 hover:border-blue-400 px-2.5 py-1 rounded-lg transition-colors"
-                        >
-                          ערוך
-                        </button>
-                        <button
-                          onClick={() => handleDeleteTask(t.id)}
-                          className="text-xs text-red-500 hover:text-red-700 border border-red-200 hover:border-red-400 px-2.5 py-1 rounded-lg transition-colors"
-                        >
-                          מחק
-                        </button>
-                      </div>
-                    </td>
-                  )}
-                </tr>
-              ))}
-              {groupTasks.length === 0 && (
-                <tr><td colSpan={isAdmin ? 6 : 5} className="px-4 py-12 text-center text-slate-400 text-sm">אין משימות לקבוצה זו</td></tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    );
-  }
-
-  function renderConstraintsPanel() {
-    if (constraintsLoading) {
-      return (
-        <div className="flex items-center gap-3 text-slate-400 text-sm py-8">
-          <svg className="animate-spin h-5 w-5 text-blue-400" fill="none" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-          </svg>
-          טוען...
-        </div>
-      );
-    }
-
-    const inp = "border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500";
-
-    return (
-      <div className="space-y-4">
-        {isAdmin && (
-          <div className="flex justify-end">
-            <button onClick={() => setShowConstraintForm(true)}
-              className="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-3.5 py-2 rounded-xl transition-colors">
-              <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-              </svg>
-              אילוץ
-            </button>
-          </div>
-        )}
-
-        <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-slate-100 bg-slate-50/80">
-                <th className="px-4 py-3 text-start text-xs font-semibold text-slate-500 uppercase tracking-wider">כלל</th>
-                <th className="px-4 py-3 text-start text-xs font-semibold text-slate-500 uppercase tracking-wider">פרטים</th>
-                <th className="px-4 py-3 text-start text-xs font-semibold text-slate-500 uppercase tracking-wider">חומרה</th>
-                <th className="px-4 py-3 text-start text-xs font-semibold text-slate-500 uppercase tracking-wider">פעיל</th>
-                {isAdmin && <th className="px-4 py-3" />}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {constraints.map(c => {
-                const ruleLabels: Record<string, string> = {
-                  min_rest_hours: "מינימום מנוחה",
-                  max_kitchen_per_week: "מקסימום מטבח בשבוע",
-                  no_consecutive_burden: "ללא עומס רצוף",
-                  min_base_headcount: "מינימום כוח אדם",
-                  no_task_type_restriction: "הגבלת סוג משימה",
-                };
-                const formatPayload = (ruleType: string, json: string) => {
-                  try {
-                    const p = JSON.parse(json);
-                    if (ruleType === "min_rest_hours") return `${p.hours} שעות`;
-                    if (ruleType === "max_kitchen_per_week") return `מקסימום ${p.max}`;
-                    if (ruleType === "no_consecutive_burden") return `עומס: ${p.burden_level}`;
-                    if (ruleType === "min_base_headcount") return `${p.min} אנשים / ${p.window_hours}ש'`;
-                    if (ruleType === "no_task_type_restriction") return `סוג: ${p.task_type_id || "—"}`;
-                    return json;
-                  } catch { return json; }
-                };
-                return (
-                  <React.Fragment key={c.id}>
-                    <tr className="hover:bg-slate-50/60">
-                      <td className="px-4 py-3.5 font-medium text-slate-900">{ruleLabels[c.ruleType] ?? c.ruleType}</td>
-                      <td className="px-4 py-3.5 text-slate-500 text-xs">{formatPayload(c.ruleType, c.rulePayloadJson)}</td>
-                      <td className="px-4 py-3.5">
-                        <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium border ${SEVERITY_STYLES[c.severity] ?? "bg-slate-100 text-slate-600 border-slate-200"}`}>
-                          <span className={`w-1.5 h-1.5 rounded-full ${SEVERITY_DOTS[c.severity] ?? "bg-slate-400"}`} />
-                          {c.severity === "hard" ? "קשיח" : c.severity === "soft" ? "רך" : c.severity}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3.5">
-                        <span className={`text-xs font-medium ${c.isActive ? "text-emerald-600" : "text-slate-400"}`}>
-                          {c.isActive ? "כן" : "לא"}
-                        </span>
-                      </td>
-                      {isAdmin && (
-                        <td className="px-4 py-3.5">
-                          <div className="flex items-center gap-2">
-                            <button
-                              onClick={() => {
-                                setEditingConstraintId(c.id);
-                                setEditConstraintPayload(c.rulePayloadJson);
-                                setEditConstraintFrom(c.effectiveFrom ?? "");
-                                setEditConstraintUntil(c.effectiveUntil ?? "");
-                                setEditConstraintError(null);
-                              }}
-                              className="text-xs text-blue-500 hover:text-blue-700 border border-blue-200 hover:border-blue-400 px-2.5 py-1 rounded-lg transition-colors"
-                            >
-                              ערוך
-                            </button>
-                            <button
-                              onClick={() => handleDeleteConstraint(c.id)}
-                              className="text-xs text-red-500 hover:text-red-700 border border-red-200 hover:border-red-400 px-2.5 py-1 rounded-lg transition-colors"
-                            >
-                              מחק
-                            </button>
-                          </div>
-                          {constraintDeleteErrors[c.id] && (
-                            <p className="text-xs text-red-600 mt-1">{constraintDeleteErrors[c.id]}</p>
-                          )}
-                        </td>
-                      )}
-                    </tr>
-                    {/* Inline edit row removed — editing handled via Modal */}
-                  </React.Fragment>
-                );
-              })}
-              {constraints.length === 0 && (
-                <tr><td colSpan={isAdmin ? 5 : 4} className="px-4 py-12 text-center text-slate-400 text-sm">אין אילוצים</td></tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    );
-  }
-
-  function renderSettingsPanel() {
-    const nonOwnerMembers = members.filter(m => !m.isOwner);
-    return (
-      <div className="max-w-lg space-y-5">
-        {/* Rename section */}
-        {isAdmin && (
-          <div className="border-b border-slate-200 pb-5">
-            <h3 className="text-sm font-semibold text-slate-700 mb-3">שינוי שם קבוצה</h3>
-            <div className="flex gap-2 max-w-sm">
-              <input
-                value={newGroupName}
-                onChange={e => setNewGroupName(e.target.value)}
-                className="flex-1 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              <button
-                onClick={handleRenameGroup}
-                disabled={renameSaving}
-                className="bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl disabled:opacity-50">
-                {renameSaving ? "שומר..." : "שמור"}
-              </button>
-            </div>
-            {renameError && <p className="text-sm text-red-600 mt-2">{renameError}</p>}
-          </div>
-        )}
-
-        {/* Auto-schedule horizon */}
-        <div className={isAdmin ? "border-b border-slate-200 pb-5" : ""}>
-          <div className="flex items-center gap-2 mb-1">
-            <label className="block text-sm font-medium text-slate-700">
-              אופק סידור אוטומטי
-            </label>
-            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
-              🔄 אוטומטי
-            </span>
-          </div>
-          <p className="text-xs text-slate-400 mb-3">
-            המערכת תחשב סידור חדש אוטומטית כל פעם שהסידור הקיים לא מכסה את מספר הימים הזה קדימה.
-          </p>
-          <div className="flex items-center gap-4">
-            <input
-              type="range"
-              min={1}
-              max={90}
-              value={solverHorizon}
-              onChange={e => setSolverHorizon(Number(e.target.value))}
-              className="flex-1"
-            />
-            <span className="text-sm font-semibold text-slate-900 w-20 text-center">
-              {solverHorizon} ימים
-            </span>
-          </div>
-          {solverHorizon > 30 && (
-            <p className="mt-2 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
-              ⚠️ אופק זמן ארוך מגדיל משמעותית את זמן החישוב. מעל 14 ימים — מומלץ להשתמש בזהירות.
-            </p>
-          )}
-          <div className="flex items-center gap-3 mt-3">
-            <button
-              onClick={handleSaveSettings}
-              disabled={savingSettings}
-              className="bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl disabled:opacity-50 transition-colors">
-              {savingSettings ? "שומר..." : "שמור"}
-            </button>
-            {settingsSaved && (
-              <span className="text-sm text-emerald-600 font-medium">נשמר בהצלחה</span>
-            )}
-          </div>
-          {settingsError && <p className="text-sm text-red-600">{settingsError}</p>}
-        </div>
-
-        {/* Solver trigger section */}
-        {isAdmin && (
-          <div className="border-b border-slate-200 pb-5">
-            <h3 className="text-sm font-semibold text-slate-700 mb-1">הפעל סידור</h3>
-            <p className="text-xs text-slate-400 mb-3">הפעלת הסולבר תחשב סידור חדש ותיצור טיוטה לעיון.</p>
-            {solverPolling ? (
-              <div className="flex items-center gap-3 text-slate-600 text-sm">
-                <svg className="animate-spin h-5 w-5 text-blue-400 flex-shrink-0" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                </svg>
-                הסידור מחושב...
-              </div>
-            ) : solverStatus === "Completed" ? (
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2 text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3 text-sm">
-                  <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                  </svg>
-                  הסידור הושלם! הטיוטה מוכנה.
-                </div>
-                {draftVersion && (
-                  <button
-                    onClick={openDraftModal}
-                    className="bg-amber-500 hover:bg-amber-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl transition-colors"
-                  >
-                    👁 צפה בטיוטה
-                  </button>
-                )}
-              </div>
-            ) : (
-              <>
-                <button
-                  onClick={handleTriggerSolver}
-                  disabled={solverPolling}
-                  className="bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl disabled:opacity-50 transition-colors"
-                >
-                  הפעל סידור
-                </button>
-                {solverError && (
-                  <p className="text-sm text-red-600 mt-2">{solverError}</p>
-                )}
-              </>
-            )}
-          </div>
-        )}
-
-        {/* Deleted groups section */}
-        {isAdmin && (
-          <div className="border-t border-slate-200 pt-5">
-            <h3 className="text-sm font-semibold text-slate-700 mb-3">קבוצות מחוקות</h3>
-            {deletedGroupsLoading ? (
-              <p className="text-sm text-slate-400">טוען...</p>
-            ) : deletedGroups.length === 0 ? (
-              <p className="text-sm text-slate-400">אין קבוצות מחוקות</p>
-            ) : (
-              <div className="space-y-2">
-                {deletedGroups.map(dg => (
-                  <div key={dg.id} className="flex items-center justify-between bg-white border border-slate-200 rounded-xl px-4 py-3">
-                    <div>
-                      <span className="text-sm font-medium text-slate-900">{dg.name}</span>
-                      <p className="text-xs text-slate-400 mt-0.5">{new Date(dg.deletedAt).toLocaleDateString("he-IL")}</p>
-                    </div>
-                    <button
-                      onClick={() => handleRestoreGroup(dg.id)}
-                      className="text-xs text-emerald-600 border border-emerald-200 hover:bg-emerald-50 px-3 py-1.5 rounded-lg transition-colors">
-                      שחזר
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Ownership transfer section */}
-        {isAdmin && (
-          <div className="border-t border-slate-200 pt-5">
-            <h3 className="text-sm font-semibold text-slate-700 mb-3">העברת בעלות</h3>
-            {hasPendingTransfer ? (
-              <div className="flex items-center gap-3">
-                <span className="text-sm text-amber-700 bg-amber-50 border border-amber-200 px-3 py-2 rounded-xl">ממתין לאישור</span>
-                <button
-                  onClick={handleCancelTransfer}
-                  disabled={cancelTransferSaving}
-                  className="text-sm text-slate-500 hover:text-slate-700 border border-slate-200 hover:border-slate-400 px-3 py-2 rounded-xl transition-colors disabled:opacity-50">
-                  {cancelTransferSaving ? "מבטל..." : "בטל העברה"}
-                </button>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                <div className="flex gap-2 max-w-sm">
-                  <select
-                    value={transferPersonId}
-                    onChange={e => setTransferPersonId(e.target.value)}
-                    className="flex-1 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <option value="">בחר חבר</option>
-                    {nonOwnerMembers.map(m => (
-                      <option key={m.personId} value={m.personId}>
-                        {m.displayName ?? m.fullName}
-                      </option>
-                    ))}
-                  </select>
-                  <button
-                    onClick={handleInitiateTransfer}
-                    disabled={transferSaving || !transferPersonId}
-                    className="bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl disabled:opacity-50">
-                    {transferSaving ? "שולח..." : "העבר"}
-                  </button>
-                </div>
-                {transferError && <p className="text-sm text-red-600">{transferError}</p>}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Delete group section */}
-        {isAdmin && (
-          <div className="border-t border-slate-200 pt-5">
-            <h3 className="text-sm font-semibold text-red-600 mb-3">מחיקת קבוצה</h3>
-            {!showDeleteConfirm ? (
-              <button onClick={() => setShowDeleteConfirm(true)}
-                className="text-sm text-red-600 border border-red-200 hover:bg-red-50 px-4 py-2.5 rounded-xl transition-colors">
-                מחק קבוצה
-              </button>
-            ) : (
-              <div className="bg-red-50 border border-red-200 rounded-xl p-4 space-y-3">
-                <p className="text-sm text-red-700">האם אתה בטוח? ניתן לשחזר תוך 30 יום</p>
-                <div className="flex gap-2">
-                  <button onClick={handleDeleteGroup} disabled={deleteSaving}
-                    className="bg-red-500 hover:bg-red-600 text-white text-sm font-medium px-4 py-2 rounded-xl disabled:opacity-50">
-                    {deleteSaving ? "מוחק..." : "כן, מחק"}
-                  </button>
-                  <button onClick={() => setShowDeleteConfirm(false)}
-                    className="text-sm text-slate-500 hover:text-slate-700 px-3">ביטול</button>
-                </div>
-                {deleteError && <p className="text-sm text-red-600">{deleteError}</p>}
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  function renderMessagesPanel() {
-    const inp = "border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500";
-
-    async function handleSendMessage(e: React.FormEvent) {
-      e.preventDefault();
-      if (!currentSpaceId || !newMessageContent.trim()) return;
-      setMessageSending(true); setMessageError(null);
-      try {
-        await apiClient.post(`/spaces/${currentSpaceId}/groups/${groupId}/messages`, {
-          content: newMessageContent.trim(), isPinned: false
-        });
-        setNewMessageContent("");
-        // Refresh messages
-        const r = await apiClient.get(`/spaces/${currentSpaceId}/groups/${groupId}/messages`);
-        setMessages(r.data);
-      } catch (err: any) {
-        setMessageError(err?.response?.data?.message ?? "שגיאה בשליחת ההודעה");
-      } finally { setMessageSending(false); }
-    }
-
-    return (
-      <div className="space-y-4">
-        {/* Send message form — all members can send */}
-        <form onSubmit={handleSendMessage} className="flex gap-2">
-          <input
-            value={newMessageContent}
-            onChange={e => setNewMessageContent(e.target.value)}
-            placeholder="כתוב הודעה לקבוצה..."
-            className={`flex-1 ${inp}`}
-          />
-          <button type="submit" disabled={messageSending || !newMessageContent.trim()}
-            className="bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl disabled:opacity-50 transition-colors whitespace-nowrap">
-            {messageSending ? "שולח..." : "שלח"}
-          </button>
-        </form>
-        {messageError && <p className="text-sm text-red-600">{messageError}</p>}
-
-        {/* Messages list */}
-        {messagesLoading ? (
-          <div className="flex items-center gap-3 text-slate-400 text-sm py-8">
-            <svg className="animate-spin h-5 w-5 text-blue-400" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-            </svg>
-            טוען...
-          </div>
-        ) : messagesError ? (
-          <p className="text-sm text-red-600 py-4">{messagesError}</p>
-        ) : messages.length === 0 ? (
-          <p className="text-sm text-slate-400 py-8 text-center">אין הודעות עדיין. היה הראשון לכתוב!</p>
-        ) : (
-          <div className="space-y-3">
-            {[...messages].reverse().map(msg => (
-              <div key={msg.id} className={`rounded-2xl border p-4 ${msg.isPinned ? "bg-amber-50 border-amber-200 shadow-sm" : "bg-white border-slate-200"}`}>
-                <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 text-sm font-semibold flex-shrink-0">
-                    {msg.authorName?.charAt(0)?.toUpperCase() ?? "?"}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-2 mb-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-semibold text-slate-900">{msg.authorName}</span>
-                        {msg.isPinned && (
-                          <span className="text-xs text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded-full">📌 נעוץ</span>
-                        )}
-                        <span className="text-xs text-slate-400">
-                          {new Date(msg.createdAt).toLocaleString("he-IL", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
-                        </span>
-                      </div>
-                      {/* Admin action buttons */}
-                      {isAdmin && (
-                        <div className="flex items-center gap-1.5 flex-shrink-0">
-                          <button
-                            onClick={() => handlePinMessage(msg.id, !msg.isPinned)}
-                            title={msg.isPinned ? "בטל נעיצה" : "נעץ הודעה"}
-                            className={`text-xs border px-2 py-1 rounded-lg transition-colors ${
-                              msg.isPinned
-                                ? "text-amber-600 border-amber-200 hover:bg-amber-50"
-                                : "text-slate-500 border-slate-200 hover:bg-slate-50"
-                            }`}
-                          >
-                            {msg.isPinned ? "📌 בטל" : "📌 נעץ"}
-                          </button>
-                          <button
-                            onClick={() => {
-                              setEditingMessageId(msg.id);
-                              setEditMessageContent(msg.content);
-                              setEditMessageError(null);
-                            }}
-                            className="text-xs text-blue-500 hover:text-blue-700 border border-blue-200 hover:border-blue-400 px-2 py-1 rounded-lg transition-colors"
-                          >
-                            ערוך
-                          </button>
-                          <button
-                            onClick={() => {
-                              if (confirm("האם אתה בטוח שברצונך למחוק הודעה זו?")) {
-                                handleDeleteMessage(msg.id);
-                              }
-                            }}
-                            className="text-xs text-red-500 hover:text-red-700 border border-red-200 hover:border-red-400 px-2 py-1 rounded-lg transition-colors"
-                          >
-                            מחק
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                    {/* Inline edit form removed — editing handled via Modal */}
-                    <p className="text-sm text-slate-700 whitespace-pre-wrap">{msg.content}</p>
-                    {messagePinErrors[msg.id] && (
-                      <p className="text-xs text-red-600 mt-1">{messagePinErrors[msg.id]}</p>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  function renderAlertsPanel() {
-    const inp = "border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500";
-
-    return (
-      <div className="space-y-4">
-        {/* Create alert button — admin only */}
-        {isAdmin && (
-          <div className="flex justify-end">
-            <button
-              onClick={() => setShowAlertForm(true)}
-              className="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-3.5 py-2 rounded-xl transition-colors"
-            >
-              <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-              </svg>
-              התראה חדשה
-            </button>
-          </div>
-        )}
-
-        {/* Alerts list */}
-        {alertsLoading ? (
-          <div className="flex items-center gap-3 text-slate-400 text-sm py-8">
-            <svg className="animate-spin h-5 w-5 text-blue-400" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-            </svg>
-            טוען...
-          </div>
-        ) : alertsError ? (
-          <p className="text-sm text-red-600 py-4">{alertsError}</p>
-        ) : alerts.length === 0 ? (
-          <p className="text-sm text-slate-400 py-8 text-center">אין התראות לקבוצה זו</p>
-        ) : (
-          <div className="space-y-3">
-            {alerts.map(alert => {
-              const badge = getSeverityBadge(alert.severity);
-              return (
-                <div key={alert.id} className={`rounded-2xl border p-4 ${badge.bg} ${badge.border}`}>
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1.5">
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${badge.bg} ${badge.text} ${badge.border}`}>
-                          {badge.label}
-                        </span>
-                        <span className="text-xs text-slate-400">
-                          {new Date(alert.createdAt).toLocaleString("he-IL", {
-                            day: "numeric", month: "short", year: "numeric",
-                            hour: "2-digit", minute: "2-digit"
-                          })}
-                        </span>
-                      </div>
-                      <h3 className={`text-sm font-semibold mb-1 ${badge.text}`}>{alert.title}</h3>
-                      <p className="text-sm text-slate-700 whitespace-pre-wrap">{alert.body}</p>
-                      <p className="text-xs text-slate-400 mt-2">פורסם על ידי: {alert.createdByDisplayName}</p>
-                      {alertDeleteErrors[alert.id] && (
-                        <p className="text-xs text-red-600 mt-1">{alertDeleteErrors[alert.id]}</p>
-                      )}
-                    </div>
-                    {isAdmin && (
-                      <div className="flex items-center gap-2 flex-shrink-0">
-                        <button
-                          onClick={() => {
-                            setEditingAlertId(alert.id);
-                            setEditAlertTitle(alert.title);
-                            setEditAlertBody(alert.body);
-                            setEditAlertSeverity(alert.severity);
-                            setEditAlertError(null);
-                          }}
-                          className="text-xs text-blue-500 hover:text-blue-700 border border-blue-200 hover:border-blue-400 px-2.5 py-1 rounded-lg transition-colors"
-                        >
-                          ערוך
-                        </button>
-                        <button
-                          onClick={() => handleDeleteAlert(alert.id)}
-                          className="text-xs text-red-500 hover:text-red-700 border border-red-200 hover:border-red-400 px-2.5 py-1 rounded-lg transition-colors"
-                        >
-                          מחק
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
-    );
-  }
+  const visibleTabs = ALL_TABS.filter(t => isAdmin || !ADMIN_ONLY_TABS.includes(t));
+  const avatarColor = getAvatarColor(group.name);
+  const avatarLetter = getAvatarLetter(group.name);
 
   return (
     <AppShell>
-      {loading ? (
-        <div className="flex items-center gap-3 text-slate-400 text-sm py-8">
-          <svg className="animate-spin h-5 w-5 text-blue-400" fill="none" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-          </svg>
-          טוען...
-        </div>
-      ) : notFound ? (
-        <div className="flex flex-col items-center justify-center py-16 text-center">
-          <h1 className="text-2xl font-bold text-slate-900 mb-4">קבוצה לא נמצאה</h1>
-          <Link href="/groups" className="text-sm text-blue-500 hover:text-blue-700">
-            ← חזרה לקבוצות
+      <div className="max-w-4xl mx-auto px-4 py-6 space-y-6" dir="rtl">
+        {/* Header */}
+        <div className="flex items-center gap-4">
+          <Link href="/groups" className="text-slate-400 hover:text-slate-600 transition-colors">
+            <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+            </svg>
           </Link>
+          <div
+            className="w-10 h-10 rounded-xl flex items-center justify-center text-white text-lg font-bold flex-shrink-0"
+            style={{ background: avatarColor }}
+          >
+            {avatarLetter}
+          </div>
+          <div>
+            <h1 className="text-xl font-bold text-slate-900">{group.name}</h1>
+            <p className="text-sm text-slate-400">{group.memberCount ?? 0} חברים</p>
+          </div>
         </div>
-      ) : group ? (
-        <div className="max-w-4xl space-y-6">
-          {/* Header */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div
-                className="w-12 h-12 rounded-2xl flex items-center justify-center text-white text-xl font-bold flex-shrink-0"
-                style={{ background: getAvatarColor(group.name) }}
-              >
-                {getAvatarLetter(group.name)}
-              </div>
-              <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <Link href="/groups" className="text-sm text-slate-400 hover:text-slate-600">← קבוצות</Link>
-                </div>
-                <h1 className="text-2xl font-bold text-slate-900">{group.name}</h1>
-                <p className="text-sm text-slate-500 mt-1">{group.memberCount} חברים</p>
-              </div>
-            </div>
+
+        {/* Tabs */}
+        <div className="flex gap-1 bg-slate-100 p-1 rounded-xl overflow-x-auto">
+          {visibleTabs.map(tab => (
             <button
-              onClick={() => isAdmin ? exitAdminMode() : enterAdminMode(groupId)}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium border transition-colors ${
-                isAdmin
-                  ? "bg-amber-50 border-amber-200 text-amber-800 hover:bg-amber-100"
-                  : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-all ${
+                activeTab === tab
+                  ? "bg-white text-slate-900 shadow-sm"
+                  : "text-slate-500 hover:text-slate-700"
               }`}
             >
-              <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-              </svg>
-              {isAdmin ? "יציאה ממצב מנהל" : "כניסה למצב מנהל"}
+              {TAB_LABELS[tab]}
             </button>
-          </div>
-
-          {/* Tab bar */}
-          <div className="flex gap-1 border-b border-slate-200">
-            {visibleTabs.map(tab => (
-              <button
-                key={tab.value}
-                onClick={() => setActiveTab(tab.value)}
-                className={`px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors ${
-                  activeTab === tab.value
-                    ? "border-blue-500 text-blue-600"
-                    : "border-transparent text-slate-500 hover:text-slate-700"
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
-
-          {/* Tab panel */}
-          <div>{renderTabPanel()}</div>
+          ))}
         </div>
-      ) : null}
 
-      {/* ── Task modal ── */}
-      <Modal
-        title={editingTask ? "עריכת משימה" : "משימה חדשה"}
-        open={showTaskForm}
-        onClose={() => { setShowTaskForm(false); setEditingTask(null); setTaskError(null); }}
-      >
-        {(() => {
-          const inp = "border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500";
-          const burdenOptions = [
-            { value: "favorable", label: "נוח" },
-            { value: "neutral", label: "ניטרלי" },
-            { value: "disliked", label: "לא אהוב" },
-            { value: "hated", label: "שנוא" },
-          ];
-          return (
-            <form onSubmit={handleTaskFormSubmit} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="col-span-2">
-                  <label className="block text-xs font-medium text-slate-500 mb-1.5">שם *</label>
-                  <input value={taskForm.name} onChange={e => setTaskForm(f => ({ ...f, name: e.target.value }))}
-                    required className={`w-full ${inp}`} placeholder="שם המשימה" />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-slate-500 mb-1.5">התחלה *</label>
-                  <input type="datetime-local" value={taskForm.startsAt}
-                    onChange={e => setTaskForm(f => ({ ...f, startsAt: e.target.value }))}
-                    required className={`w-full ${inp}`} />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-slate-500 mb-1.5">סיום *</label>
-                  <input type="datetime-local" value={taskForm.endsAt}
-                    onChange={e => setTaskForm(f => ({ ...f, endsAt: e.target.value }))}
-                    required className={`w-full ${inp}`} />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-slate-500 mb-1.5">משך משמרת *</label>
-                  <div className="flex items-center gap-2">
-                    <input type="number" min={15} step={15} value={taskForm.shiftDurationMinutes}
-                      onChange={e => setTaskForm(f => ({ ...f, shiftDurationMinutes: Number(e.target.value) }))}
-                      required className={`w-24 ${inp}`} />
-                    <span className="text-xs text-slate-500">דקות</span>
-                    <span className="text-xs text-slate-400">
-                      ({Math.floor(taskForm.shiftDurationMinutes / 60) > 0 ? `${Math.floor(taskForm.shiftDurationMinutes / 60)}ש' ` : ""}{taskForm.shiftDurationMinutes % 60 > 0 ? `${taskForm.shiftDurationMinutes % 60}ד'` : ""})
-                    </span>
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-slate-500 mb-1.5">כוח אדם נדרש *</label>
-                  <input type="number" min={1} value={taskForm.requiredHeadcount}
-                    onChange={e => setTaskForm(f => ({ ...f, requiredHeadcount: Number(e.target.value) }))}
-                    required className={`w-full ${inp}`} />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-slate-500 mb-1.5">רמת עומס</label>
-                  <select value={taskForm.burdenLevel}
-                    onChange={e => setTaskForm(f => ({ ...f, burdenLevel: e.target.value }))}
-                    className={`w-full ${inp}`}>
-                    {burdenOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-                  </select>
-                </div>
-              </div>
-              <div className="flex gap-6">
-                <label className="flex items-center gap-2.5 text-sm text-slate-700 cursor-pointer">
-                  <input type="checkbox" checked={taskForm.allowsDoubleShift}
-                    onChange={e => setTaskForm(f => ({ ...f, allowsDoubleShift: e.target.checked }))}
-                    className="w-4 h-4 rounded" />
-                  מאפשר משמרת כפולה
-                </label>
-                <label className="flex items-center gap-2.5 text-sm text-slate-700 cursor-pointer">
-                  <input type="checkbox" checked={taskForm.allowsOverlap}
-                    onChange={e => setTaskForm(f => ({ ...f, allowsOverlap: e.target.checked }))}
-                    className="w-4 h-4 rounded" />
-                  מאפשר חפיפה
-                </label>
-              </div>
-              {taskError && <p className="text-sm text-red-600">{taskError}</p>}
-              <div className="flex gap-2">
-                <button type="submit" disabled={taskSaving}
-                  className="bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl disabled:opacity-50 transition-colors">
-                  {taskSaving ? "שומר..." : "שמור"}
-                </button>
-                <button type="button" onClick={() => { setShowTaskForm(false); setEditingTask(null); setTaskError(null); }}
-                  className="text-sm text-slate-500 hover:text-slate-700 px-3">ביטול</button>
-              </div>
-            </form>
-          );
-        })()}
-      </Modal>
-
-      {/* ── New constraint modal ── */}
-      <Modal
-        title="אילוץ חדש"
-        open={showConstraintForm}
-        onClose={() => { setShowConstraintForm(false); setConstraintError(null); }}
-        maxWidth={560}
-      >
-        {(() => {
-          const inp = "border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500";
-          return (
-            <form onSubmit={handleCreateConstraint} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-medium text-slate-500 mb-1.5">סוג כלל</label>
-                  <select value={newConstraintRuleType} onChange={e => {
-                    const rt = e.target.value;
-                    setNewConstraintRuleType(rt);
-                    const defaults: Record<string, string> = {
-                      min_rest_hours: '{"hours": 8}',
-                      max_kitchen_per_week: '{"max": 2, "task_type_name": "kitchen"}',
-                      no_consecutive_burden: '{"burden_level": "disliked"}',
-                      min_base_headcount: '{"min": 3, "window_hours": 24}',
-                      no_task_type_restriction: '{"task_type_id": ""}',
-                    };
-                    setNewConstraintPayload(defaults[rt] ?? "{}");
-                  }} className={`w-full ${inp}`}>
-                    <option value="min_rest_hours">מינימום מנוחה בין משמרות</option>
-                    <option value="max_kitchen_per_week">מקסימום משמרות מטבח בשבוע</option>
-                    <option value="no_consecutive_burden">ללא עומס רצוף</option>
-                    <option value="min_base_headcount">מינימום כוח אדם בסיסי</option>
-                    <option value="no_task_type_restriction">הגבלת סוג משימה לאדם</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-slate-500 mb-1.5">חומרה</label>
-                  <select value={newConstraintSeverity} onChange={e => setNewConstraintSeverity(e.target.value)} className={`w-full ${inp}`}>
-                    <option value="hard">קשיח — חייב להתקיים</option>
-                    <option value="soft">רך — עדיפות בלבד</option>
-                  </select>
-                </div>
-              </div>
-              {newConstraintRuleType === "min_rest_hours" && (
-                <div>
-                  <label className="block text-xs font-medium text-slate-500 mb-1.5">שעות מנוחה מינימליות בין משמרות</label>
-                  <input type="number" min={1} max={48}
-                    value={(() => { try { return JSON.parse(newConstraintPayload).hours ?? 8; } catch { return 8; } })()}
-                    onChange={e => setNewConstraintPayload(JSON.stringify({ hours: Number(e.target.value) }))}
-                    className={`w-32 ${inp}`} />
-                  <p className="text-xs text-slate-400 mt-1">לדוגמה: 8 שעות מנוחה בין סיום משמרת לתחילת הבאה</p>
-                </div>
-              )}
-              {newConstraintRuleType === "max_kitchen_per_week" && (
-                <div>
-                  <label className="block text-xs font-medium text-slate-500 mb-1.5">מקסימום משמרות מטבח בשבוע</label>
-                  <input type="number" min={1} max={7}
-                    value={(() => { try { return JSON.parse(newConstraintPayload).max ?? 2; } catch { return 2; } })()}
-                    onChange={e => setNewConstraintPayload(JSON.stringify({ max: Number(e.target.value), task_type_name: "kitchen" }))}
-                    className={`w-32 ${inp}`} />
-                </div>
-              )}
-              {newConstraintRuleType === "no_consecutive_burden" && (
-                <div>
-                  <label className="block text-xs font-medium text-slate-500 mb-1.5">רמת עומס שאסור לחזור ברצף</label>
-                  <select
-                    value={(() => { try { return JSON.parse(newConstraintPayload).burden_level ?? "disliked"; } catch { return "disliked"; } })()}
-                    onChange={e => setNewConstraintPayload(JSON.stringify({ burden_level: e.target.value }))}
-                    className={`w-full max-w-xs ${inp}`}>
-                    <option value="disliked">לא אהוב (Disliked)</option>
-                    <option value="hated">שנוא (Hated)</option>
-                    <option value="neutral">ניטרלי (Neutral)</option>
-                  </select>
-                </div>
-              )}
-              {newConstraintRuleType === "min_base_headcount" && (
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-medium text-slate-500 mb-1.5">מינימום אנשים</label>
-                    <input type="number" min={1}
-                      value={(() => { try { return JSON.parse(newConstraintPayload).min ?? 3; } catch { return 3; } })()}
-                      onChange={e => {
-                        const cur = (() => { try { return JSON.parse(newConstraintPayload); } catch { return { min: 3, window_hours: 24 }; } })();
-                        setNewConstraintPayload(JSON.stringify({ ...cur, min: Number(e.target.value) }));
-                      }}
-                      className={`w-full ${inp}`} />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-slate-500 mb-1.5">חלון זמן (שעות)</label>
-                    <input type="number" min={1}
-                      value={(() => { try { return JSON.parse(newConstraintPayload).window_hours ?? 24; } catch { return 24; } })()}
-                      onChange={e => {
-                        const cur = (() => { try { return JSON.parse(newConstraintPayload); } catch { return { min: 3, window_hours: 24 }; } })();
-                        setNewConstraintPayload(JSON.stringify({ ...cur, window_hours: Number(e.target.value) }));
-                      }}
-                      className={`w-full ${inp}`} />
-                  </div>
-                </div>
-              )}
-              {newConstraintRuleType === "no_task_type_restriction" && (
-                <div>
-                  <label className="block text-xs font-medium text-slate-500 mb-1.5">סוג משימה מוגבל</label>
-                  <select
-                    value={(() => { try { return JSON.parse(newConstraintPayload).task_type_id ?? ""; } catch { return ""; } })()}
-                    onChange={e => setNewConstraintPayload(JSON.stringify({ task_type_id: e.target.value }))}
-                    className={`w-full ${inp}`}>
-                    <option value="">בחר סוג משימה...</option>
-                    {groupTasks.map(tt => <option key={tt.id} value={tt.id}>{tt.name}</option>)}
-                  </select>
-                  <p className="text-xs text-slate-400 mt-1">האדם לא יוכל לבצע את סוג המשימה הזה</p>
-                </div>
-              )}
-              {constraintError && <p className="text-sm text-red-600">{constraintError}</p>}
-              <div className="flex gap-2">
-                <button type="submit" disabled={constraintSaving}
-                  className="bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl disabled:opacity-50 transition-colors">
-                  {constraintSaving ? "שומר..." : "שמור"}
-                </button>
-                <button type="button" onClick={() => { setShowConstraintForm(false); setConstraintError(null); }}
-                  className="text-sm text-slate-500 hover:text-slate-700 px-3">ביטול</button>
-              </div>
-            </form>
-          );
-        })()}
-      </Modal>
-
-      {/* ── Edit constraint modal ── */}
-      <Modal
-        title="עריכת אילוץ"
-        open={!!editingConstraintId}
-        onClose={() => { setEditingConstraintId(null); setEditConstraintError(null); }}
-      >
-        <div className="space-y-3">
-          <ConstraintPayloadEditor
-            ruleType={constraints.find(c => c.id === editingConstraintId)?.ruleType ?? ""}
-            value={editConstraintPayload}
-            onChange={setEditConstraintPayload}
-          />
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-medium text-slate-500 mb-1">בתוקף מ</label>
-              <input type="date" value={editConstraintFrom}
-                onChange={e => setEditConstraintFrom(e.target.value)}
-                className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-slate-500 mb-1">בתוקף עד</label>
-              <input type="date" value={editConstraintUntil}
-                onChange={e => setEditConstraintUntil(e.target.value)}
-                className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-            </div>
-          </div>
-          {editConstraintError && <p className="text-xs text-red-600">{editConstraintError}</p>}
-          <div className="flex gap-2">
-            <button
-              onClick={() => editingConstraintId && handleUpdateConstraint(editingConstraintId)}
-              disabled={editConstraintSaving}
-              className="bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium px-3 py-1.5 rounded-lg disabled:opacity-50 transition-colors"
-            >
-              {editConstraintSaving ? "שומר..." : "שמור"}
-            </button>
-            <button
-              onClick={() => { setEditingConstraintId(null); setEditConstraintError(null); }}
-              className="text-xs text-slate-500 hover:text-slate-700 px-2"
-            >
-              ביטול
-            </button>
-          </div>
-        </div>
-      </Modal>
-
-      {/* ── New alert modal ── */}
-      <Modal
-        title="התראה חדשה"
-        open={showAlertForm}
-        onClose={() => { setShowAlertForm(false); setAlertSubmitError(null); }}
-      >
-        {(() => {
-          const inp = "border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500";
-          return (
-            <form onSubmit={handleCreateAlert} className="space-y-4">
-              <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1.5">כותרת *</label>
-                <input value={newAlertTitle} onChange={e => setNewAlertTitle(e.target.value)}
-                  required maxLength={200} placeholder="כותרת ההתראה" className={`w-full ${inp}`} />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1.5">תוכן *</label>
-                <textarea value={newAlertBody} onChange={e => setNewAlertBody(e.target.value)}
-                  required maxLength={2000} rows={3} placeholder="תוכן ההתראה..."
-                  className={`w-full ${inp} resize-none`} />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1.5">רמת חומרה</label>
-                <select value={newAlertSeverity} onChange={e => setNewAlertSeverity(e.target.value)}
-                  className={`w-full max-w-xs ${inp}`}>
-                  <option value="info">מידע</option>
-                  <option value="warning">אזהרה</option>
-                  <option value="critical">קריטי</option>
-                </select>
-              </div>
-              {alertSubmitError && <p className="text-sm text-red-600">{alertSubmitError}</p>}
-              <button type="submit" disabled={alertSubmitting}
-                className="bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl disabled:opacity-50 transition-colors">
-                {alertSubmitting ? "שולח..." : "פרסם התראה"}
-              </button>
-            </form>
-          );
-        })()}
-      </Modal>
-
-      {/* ── Edit alert modal ── */}
-      <Modal
-        title="עריכת התראה"
-        open={!!editingAlertId}
-        onClose={() => { setEditingAlertId(null); setEditAlertError(null); }}
-      >
-        <div className="space-y-3">
-          <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1">כותרת</label>
-            <input value={editAlertTitle} onChange={e => setEditAlertTitle(e.target.value)}
-              maxLength={200}
-              className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1">תוכן</label>
-            <textarea value={editAlertBody} onChange={e => setEditAlertBody(e.target.value)}
-              maxLength={2000} rows={3}
-              className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1">רמת חומרה</label>
-            <select value={editAlertSeverity} onChange={e => setEditAlertSeverity(e.target.value)}
-              className="border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-              <option value="info">מידע</option>
-              <option value="warning">אזהרה</option>
-              <option value="critical">קריטי</option>
-            </select>
-          </div>
-          {editAlertError && <p className="text-xs text-red-600">{editAlertError}</p>}
-          <div className="flex gap-2">
-            <button onClick={() => editingAlertId && handleUpdateAlert(editingAlertId)}
-              disabled={editAlertSaving}
-              className="bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium px-3 py-1.5 rounded-lg disabled:opacity-50 transition-colors">
-              {editAlertSaving ? "שומר..." : "שמור"}
-            </button>
-            <button onClick={() => { setEditingAlertId(null); setEditAlertError(null); }}
-              className="text-xs text-slate-500 hover:text-slate-700 px-2">ביטול</button>
-          </div>
-        </div>
-      </Modal>
-
-      {/* ── Edit message modal ── */}
-      <Modal
-        title="עריכת הודעה"
-        open={!!editingMessageId}
-        onClose={() => { setEditingMessageId(null); setEditMessageError(null); }}
-      >
-        <div className="space-y-3">
-          <textarea
-            value={editMessageContent}
-            onChange={e => setEditMessageContent(e.target.value)}
-            rows={4}
-            className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-          />
-          {editMessageError && <p className="text-xs text-red-600">{editMessageError}</p>}
-          <div className="flex gap-2">
-            <button onClick={() => editingMessageId && handleUpdateMessage(editingMessageId)}
-              disabled={editMessageSaving}
-              className="bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium px-3 py-1.5 rounded-lg disabled:opacity-50 transition-colors">
-              {editMessageSaving ? "שומר..." : "שמור"}
-            </button>
-            <button onClick={() => { setEditingMessageId(null); setEditMessageError(null); }}
-              className="text-xs text-slate-500 hover:text-slate-700 px-2">ביטול</button>
-          </div>
-        </div>
-      </Modal>
-
-      {/* ── Add member by email/phone modal ── */}
-      <Modal
-        title="הוספת חבר"
-        open={showAddMemberModal}
-        onClose={() => { setShowAddMemberModal(false); setAddError(null); }}
-      >
-        {(() => {
-          const inp = "border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500";
-          return (
-            <form onSubmit={async (e) => { await handleAddMember(e); if (!addError) setShowAddMemberModal(false); }} className="space-y-3">
-              <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1.5">אימייל או מספר טלפון *</label>
-                <input type="text" value={addEmail} onChange={e => setAddEmail(e.target.value)}
-                  placeholder="הוסף לפי אימייל או מספר טלפון" className={`w-full ${inp}`} />
-                <p className="text-xs text-slate-400 mt-1">ניתן להזין אימייל או מספר טלפון</p>
-              </div>
-              {addError && <p className="text-sm text-red-600">{addError}</p>}
-              <div className="flex gap-2">
-                <button type="submit"
-                  className="bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl transition-colors">
-                  הוסף
-                </button>
-                <button type="button" onClick={() => { setShowAddMemberModal(false); setAddError(null); }}
-                  className="text-sm text-slate-500 hover:text-slate-700 px-3">ביטול</button>
-              </div>
-            </form>
-          );
-        })()}
-      </Modal>
-
-      {/* ── Add person by name modal ── */}
-      <Modal
-        title="הוספת אדם לפי שם"
-        open={showCreatePersonForm}
-        onClose={() => { setShowCreatePersonForm(false); setCreatePersonError(null); }}
-      >
-        {(() => {
-          const inp = "border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500";
-          return (
-            <form onSubmit={handleCreatePerson} className="space-y-3">
-              <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1">שם מלא *</label>
-                <input value={newPersonName} onChange={e => setNewPersonName(e.target.value)}
-                  required placeholder="לדוגמה: יוסי כהן" className={`w-full ${inp}`} />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1">שם תצוגה (אופציונלי)</label>
-                <input value={newPersonDisplayName} onChange={e => setNewPersonDisplayName(e.target.value)}
-                  placeholder="לדוגמה: יוסי" className={`w-full ${inp}`} />
-              </div>
-              {createPersonError && <p className="text-xs text-red-600">{createPersonError}</p>}
-              <div className="flex gap-2">
-                <button type="submit" disabled={createPersonSaving}
-                  className="bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium px-3 py-1.5 rounded-lg disabled:opacity-50 transition-colors">
-                  {createPersonSaving ? "שומר..." : "הוסף"}
-                </button>
-                <button type="button" onClick={() => { setShowCreatePersonForm(false); setCreatePersonError(null); }}
-                  className="text-xs text-slate-500 hover:text-slate-700 px-2">ביטול</button>
-              </div>
-            </form>
-          );
-        })()}
-      </Modal>
-
-      {/* ── Send invitation modal ── */}
-      <Modal
-        title="שליחת הזמנה"
-        open={!!invitingPersonId}
-        onClose={() => { setInvitingPersonId(null); setInviteError(null); setInviteSuccess(null); }}
-      >
-        <form onSubmit={handleInvitePerson} className="space-y-3">
-          <div className="flex gap-2">
-            <input
-              value={inviteContact}
-              onChange={e => setInviteContact(e.target.value)}
-              placeholder={inviteChannel === "email" ? "כתובת אימייל" : "מספר טלפון"}
-              required
-              className="flex-1 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        {/* Tab content */}
+        <div>
+          {activeTab === "schedule" && (
+            <ScheduleTab
+              groupId={groupId}
+              solverHorizonDays={solverHorizonDays}
+              scheduleData={scheduleData}
+              scheduleLoading={scheduleLoading}
+              scheduleError={scheduleError}
+              draftVersion={draftVersion}
+              isAdmin={isAdmin}
+              publishSaving={publishSaving}
+              discardSaving={discardSaving}
+              scheduleVersionError={scheduleVersionError}
+              onOpenDraftModal={() => setShowDraftModal(true)}
+              onPublish={handlePublish}
+              onDiscard={handleDiscard}
             />
-            <select value={inviteChannel} onChange={e => setInviteChannel(e.target.value as "email" | "whatsapp")}
-              className="border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none">
-              <option value="whatsapp">WhatsApp</option>
-              <option value="email">אימייל</option>
-            </select>
-          </div>
-          {inviteError && <p className="text-xs text-red-600">{inviteError}</p>}
-          {inviteSuccess && <p className="text-xs text-emerald-600">{inviteSuccess}</p>}
-          <div className="flex gap-2">
-            <button type="submit" disabled={inviteSaving}
-              className="bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium px-3 py-1.5 rounded-lg disabled:opacity-50 transition-colors">
-              {inviteSaving ? "שולח..." : "שלח הזמנה"}
-            </button>
-            <button type="button" onClick={() => { setInvitingPersonId(null); setInviteError(null); setInviteSuccess(null); }}
-              className="text-xs text-slate-500 hover:text-slate-700 px-2">ביטול</button>
-          </div>
-        </form>
-      </Modal>
+          )}
 
-      {/* Member profile modal */}
-      {selectedMember && (
-        <div
-          style={{
-            position: "fixed", inset: 0, zIndex: 50,
-            background: "rgba(0,0,0,0.45)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            padding: "1rem",
-          }}
-          onClick={() => { setSelectedMember(null); setEditingMemberForm(null); setMemberEditError(null); }}
-        >
-          <div
-            style={{
-              background: "white", borderRadius: 20,
-              boxShadow: "0 20px 60px rgba(0,0,0,0.15)",
-              width: "100%", maxWidth: 420,
-              padding: "1.75rem",
-              direction: "rtl",
-              position: "relative",
-            }}
-            onClick={e => e.stopPropagation()}
-          >
-            {/* Close button */}
-            <button
-              onClick={() => { setSelectedMember(null); setEditingMemberForm(null); setMemberEditError(null); }}
-              style={{
-                position: "absolute", top: "1rem", left: "1rem",
-                background: "none", border: "none", cursor: "pointer",
-                color: "#94a3b8", padding: 4, display: "flex", alignItems: "center",
-              }}
-            >
-              <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
+          {activeTab === "members" && (
+            <MembersTab
+              isAdmin={isAdmin}
+              members={members}
+              membersLoading={membersLoading}
+              membersError={membersError}
+              membersSearch={membersSearch}
+              removeErrors={removeErrors}
+              onSearchChange={setMembersSearch}
+              onSelectMember={m => { setSelectedMember(m); setMemberEditForm(null); }}
+              onRemoveMember={handleRemoveMember}
+              onOpenAddByEmail={() => setShowAddByEmail(true)}
+              onOpenCreatePerson={() => setShowCreatePerson(true)}
+              onOpenInvite={handleInvite}
+            />
+          )}
 
-            {editingMemberForm ? (
-              /* Edit mode */
-              <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-                <h2 style={{ fontSize: "1rem", fontWeight: 600, color: "#0f172a", margin: 0 }}>עריכת פרטי חבר</h2>
+          {activeTab === "alerts" && (
+            <AlertsTab
+              isAdmin={isAdmin}
+              alerts={alerts}
+              alertsLoading={alertsLoading}
+              alertsError={alertsError}
+              alertDeleteErrors={alertDeleteErrors}
+              showAlertForm={showAlertForm}
+              newAlertTitle={newAlertTitle}
+              newAlertBody={newAlertBody}
+              newAlertSeverity={newAlertSeverity}
+              alertSubmitting={alertSubmitting}
+              alertSubmitError={alertSubmitError}
+              editingAlertId={editingAlertId}
+              editAlertTitle={editAlertTitle}
+              editAlertBody={editAlertBody}
+              editAlertSeverity={editAlertSeverity}
+              editAlertSaving={editAlertSaving}
+              editAlertError={editAlertError}
+              onOpenCreateForm={() => setShowAlertForm(true)}
+              onCloseCreateForm={() => setShowAlertForm(false)}
+              onCreateTitleChange={setNewAlertTitle}
+              onCreateBodyChange={setNewAlertBody}
+              onCreateSeverityChange={setNewAlertSeverity}
+              onCreateSubmit={handleCreateAlert}
+              onDeleteAlert={handleDeleteAlert}
+              onStartEdit={a => { setEditingAlertId(a.id); setEditAlertTitle(a.title); setEditAlertBody(a.body); setEditAlertSeverity(a.severity); }}
+              onCloseEdit={() => setEditingAlertId(null)}
+              onEditTitleChange={setEditAlertTitle}
+              onEditBodyChange={setEditAlertBody}
+              onEditSeverityChange={setEditAlertSeverity}
+              onUpdateAlert={handleUpdateAlert}
+            />
+          )}
 
-                {[
-                  { label: "שם מלא", key: "fullName", type: "text" },
-                  { label: "שם תצוגה", key: "displayName", type: "text" },
-                  { label: "מספר טלפון", key: "phoneNumber", type: "tel" },
-                  { label: "תאריך לידה", key: "birthday", type: "date" },
-                ].map(field => (
-                  <div key={field.key}>
-                    <label style={{ display: "block", fontSize: "0.75rem", fontWeight: 600, color: "#94a3b8", marginBottom: "0.25rem" }}>
-                      {field.label}
-                    </label>
-                    <input
-                      type={field.type}
-                      value={(editingMemberForm as any)[field.key]}
-                      onChange={e => setEditingMemberForm(f => f ? { ...f, [field.key]: e.target.value } : f)}
-                      style={{
-                        width: "100%", border: "1px solid #e2e8f0", borderRadius: 10,
-                        padding: "0.625rem 0.875rem", fontSize: "0.875rem",
-                        color: "#0f172a", outline: "none", boxSizing: "border-box",
-                      }}
-                    />
-                  </div>
-                ))}
+          {activeTab === "messages" && (
+            <MessagesTab
+              isAdmin={isAdmin}
+              messages={messages}
+              messagesLoading={messagesLoading}
+              messagesError={messagesError}
+              newMessageContent={newMessageContent}
+              messageSending={messageSending}
+              messageError={messageError}
+              messagePinErrors={messagePinErrors}
+              editingMessageId={editingMessageId}
+              editMessageContent={editMessageContent}
+              editMessageSaving={editMessageSaving}
+              editMessageError={editMessageError}
+              onNewMessageChange={setNewMessageContent}
+              onSendMessage={handleSendMessage}
+              onPinMessage={handlePinMessage}
+              onStartEditMessage={(id, content) => { setEditingMessageId(id); setEditMessageContent(content); }}
+              onCloseEditMessage={() => setEditingMessageId(null)}
+              onEditMessageContentChange={setEditMessageContent}
+              onUpdateMessage={handleUpdateMessage}
+              onDeleteMessage={handleDeleteMessage}
+            />
+          )}
 
-                <div>
-                  <label style={{ display: "block", fontSize: "0.75rem", fontWeight: 600, color: "#94a3b8", marginBottom: "0.5rem" }}>
-                    תמונת פרופיל
-                  </label>
-                  <ImageUpload
-                    value={editingMemberForm.profileImageUrl || null}
-                    onChange={url => setEditingMemberForm(f => f ? { ...f, profileImageUrl: url } : f)}
-                    shape="circle"
-                    size={72}
-                    label="העלה תמונה"
-                    disabled={memberEditSaving}
-                  />
-                </div>
+          {activeTab === "tasks" && (
+            <TasksTab
+              isAdmin={isAdmin}
+              groupTasks={groupTasks}
+              groupTasksLoading={groupTasksLoading}
+              showTaskForm={showTaskForm}
+              editingTask={editingTask}
+              taskForm={taskForm}
+              taskSaving={taskSaving}
+              taskError={taskError}
+              onOpenCreate={() => { setEditingTask(null); setTaskForm(DEFAULT_TASK_FORM); setShowTaskForm(true); }}
+              onCloseForm={() => { setShowTaskForm(false); setEditingTask(null); }}
+              onFormChange={setTaskForm}
+              onFormSubmit={handleTaskSubmit}
+              onEditTask={t => { setEditingTask(t); setTaskForm({ name: t.name, startsAt: t.startsAt?.slice(0, 16) ?? "", endsAt: t.endsAt?.slice(0, 16) ?? "", shiftDurationMinutes: t.shiftDurationMinutes, requiredHeadcount: t.requiredHeadcount, burdenLevel: t.burdenLevel, allowsDoubleShift: t.allowsDoubleShift, allowsOverlap: t.allowsOverlap }); setShowTaskForm(true); }}
+              onDeleteTask={handleDeleteTask}
+            />
+          )}
 
-                {memberEditError && (
-                  <p style={{ fontSize: "0.875rem", color: "#dc2626", margin: 0 }}>{memberEditError}</p>
-                )}
+          {activeTab === "constraints" && (
+            <ConstraintsTab
+              isAdmin={isAdmin}
+              constraints={constraints}
+              constraintsLoading={constraintsLoading}
+              constraintDeleteErrors={constraintDeleteErrors}
+              groupTasks={groupTasks}
+              showConstraintForm={showConstraintForm}
+              newConstraintRuleType={newConstraintRuleType}
+              newConstraintSeverity={newConstraintSeverity}
+              newConstraintPayload={newConstraintPayload}
+              constraintSaving={constraintSaving}
+              constraintError={constraintError}
+              editingConstraintId={editingConstraintId}
+              editConstraintPayload={editConstraintPayload}
+              editConstraintFrom={editConstraintFrom}
+              editConstraintUntil={editConstraintUntil}
+              editConstraintSaving={editConstraintSaving}
+              editConstraintError={editConstraintError}
+              onOpenCreate={() => setShowConstraintForm(true)}
+              onCloseCreate={() => setShowConstraintForm(false)}
+              onRuleTypeChange={rt => { setNewConstraintRuleType(rt); const defaults: Record<string, string> = { min_rest_hours: '{"hours": 8}', max_kitchen_per_week: '{"max": 2, "task_type_name": "kitchen"}', no_consecutive_burden: '{"burden_level": "disliked"}', min_base_headcount: '{"min": 3, "window_hours": 24}', no_task_type_restriction: '{"task_type_id": ""}' }; setNewConstraintPayload(defaults[rt] ?? "{}"); }}
+              onSeverityChange={setNewConstraintSeverity}
+              onPayloadChange={setNewConstraintPayload}
+              onCreateSubmit={handleCreateConstraint}
+              onDeleteConstraint={handleDeleteConstraint}
+              onStartEdit={c => { setEditingConstraintId(c.id); setEditConstraintPayload(c.rulePayloadJson); setEditConstraintFrom(c.effectiveFrom?.slice(0, 10) ?? ""); setEditConstraintUntil(c.effectiveUntil?.slice(0, 10) ?? ""); }}
+              onCloseEdit={() => setEditingConstraintId(null)}
+              onEditPayloadChange={setEditConstraintPayload}
+              onEditFromChange={setEditConstraintFrom}
+              onEditUntilChange={setEditConstraintUntil}
+              onUpdateConstraint={handleUpdateConstraint}
+            />
+          )}
 
-                <div style={{ display: "flex", gap: "0.75rem" }}>
-                  <button
-                    onClick={() => handleSaveMemberEdit(selectedMember.personId)}
-                    disabled={memberEditSaving}
-                    style={{
-                      background: memberEditSaving ? "#93c5fd" : "#3b82f6",
-                      color: "white", border: "none", borderRadius: 10,
-                      padding: "0.625rem 1.25rem", fontSize: "0.875rem",
-                      fontWeight: 600, cursor: memberEditSaving ? "not-allowed" : "pointer",
-                    }}
-                  >
-                    {memberEditSaving ? "שומר..." : "שמור"}
-                  </button>
-                  <button
-                    onClick={() => { setEditingMemberForm(null); setMemberEditError(null); }}
-                    style={{
-                      background: "none", border: "1px solid #e2e8f0", borderRadius: 10,
-                      padding: "0.625rem 1.25rem", fontSize: "0.875rem",
-                      color: "#64748b", cursor: "pointer",
-                    }}
-                  >
-                    ביטול
-                  </button>
-                </div>
-              </div>
-            ) : (
-              /* View mode */
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "1rem", textAlign: "center" }}>
-                {/* Avatar */}
-                {selectedMember.profileImageUrl ? (
-                  <img
-                    src={selectedMember.profileImageUrl}
-                    alt=""
-                    style={{ width: 80, height: 80, borderRadius: "50%", objectFit: "cover" }}
-                  />
-                ) : (
-                  <div style={{
-                    width: 80, height: 80, borderRadius: "50%",
-                    background: "linear-gradient(135deg, #3b82f6, #6366f1)",
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    color: "white", fontSize: "1.75rem", fontWeight: 700,
-                  }}>
-                    {(selectedMember.displayName ?? selectedMember.fullName).charAt(0)}
-                  </div>
-                )}
-
-                {/* Name */}
-                <div>
-                  <h2 style={{ fontSize: "1.125rem", fontWeight: 700, color: "#0f172a", margin: "0 0 0.25rem" }}>
-                    {selectedMember.fullName}
-                  </h2>
-                  {selectedMember.displayName && selectedMember.displayName !== selectedMember.fullName && (
-                    <p style={{ fontSize: "0.875rem", color: "#64748b", margin: 0 }}>{selectedMember.displayName}</p>
-                  )}
-                </div>
-
-                {/* Status badge */}
-                <span style={{
-                  display: "inline-flex", alignItems: "center", gap: "0.375rem",
-                  padding: "0.25rem 0.75rem", borderRadius: 999, fontSize: "0.8125rem", fontWeight: 600,
-                  ...(selectedMember.invitationStatus === "accepted"
-                    ? { background: "#f0fdf4", color: "#16a34a", border: "1px solid #bbf7d0" }
-                    : { background: "#fffbeb", color: "#d97706", border: "1px solid #fde68a" }),
-                }}>
-                  {selectedMember.invitationStatus === "accepted" ? "מאושר ✓" : "ממתין לאישור"}
-                </span>
-
-                {/* Phone */}
-                {selectedMember.phoneNumber && (
-                  <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", color: "#475569", fontSize: "0.875rem" }}>
-                    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                    </svg>
-                    {selectedMember.phoneNumber}
-                  </div>
-                )}
-
-                {/* Owner badge */}
-                {selectedMember.isOwner && (
-                  <span style={{
-                    display: "inline-flex", padding: "0.25rem 0.75rem", borderRadius: 999,
-                    fontSize: "0.8125rem", fontWeight: 600,
-                    background: "#fffbeb", color: "#d97706", border: "1px solid #fde68a",
-                  }}>
-                    בעלים
-                  </span>
-                )}
-
-                {/* Admin edit button */}
-                {isAdmin && !selectedMember.isOwner && (
-                  <button
-                    onClick={() => setEditingMemberForm({
-                      fullName: selectedMember.fullName,
-                      displayName: selectedMember.displayName ?? "",
-                      phoneNumber: selectedMember.phoneNumber ?? "",
-                      profileImageUrl: selectedMember.profileImageUrl ?? "",
-                      birthday: "",
-                    })}
-                    style={{
-                      background: "#3b82f6", color: "white", border: "none",
-                      borderRadius: 10, padding: "0.625rem 1.5rem",
-                      fontSize: "0.875rem", fontWeight: 600, cursor: "pointer",
-                      marginTop: "0.5rem",
-                    }}
-                  >
-                    ערוך
-                  </button>
-                )}
-              </div>
-            )}
-          </div>
+          {activeTab === "settings" && (
+            <SettingsTab
+              isAdmin={isAdmin}
+              groupId={groupId}
+              newGroupName={newGroupName}
+              renameSaving={renameSaving}
+              renameError={renameError}
+              solverHorizon={solverHorizon}
+              savingSettings={savingSettings}
+              settingsError={settingsError}
+              settingsSaved={settingsSaved}
+              solverPolling={solverPolling}
+              solverStatus={solverStatus}
+              solverError={solverError}
+              draftVersion={draftVersion}
+              deletedGroups={deletedGroups}
+              deletedGroupsLoading={deletedGroupsLoading}
+              members={members}
+              transferPersonId={transferPersonId}
+              transferSaving={transferSaving}
+              transferError={transferError}
+              hasPendingTransfer={hasPendingTransfer}
+              cancelTransferSaving={cancelTransferSaving}
+              showDeleteConfirm={showDeleteConfirm}
+              deleteSaving={deleteSaving}
+              deleteError={deleteError}
+              onGroupNameChange={setNewGroupName}
+              onRenameGroup={handleRenameGroup}
+              onSolverHorizonChange={setSolverHorizon}
+              onSaveSettings={handleSaveSettings}
+              onTriggerSolver={handleTriggerSolver}
+              onOpenDraftModal={() => setShowDraftModal(true)}
+              onRestoreGroup={handleRestoreGroup}
+              onTransferPersonChange={setTransferPersonId}
+              onInitiateTransfer={handleInitiateTransfer}
+              onCancelTransfer={handleCancelTransfer}
+              onShowDeleteConfirm={setShowDeleteConfirm}
+              onDeleteGroup={handleDeleteGroup}
+            />
+          )}
         </div>
-      )}
+      </div>
 
-      {/* ── Draft schedule modal ── */}
+      {/* Draft schedule modal */}
       {showDraftModal && draftVersion && currentSpaceId && (
         <DraftScheduleModal
           open={showDraftModal}
@@ -2666,18 +975,83 @@ export default function GroupDetailPage() {
           spaceId={currentSpaceId}
           draftVersionId={draftVersion.id}
           isAdmin={isAdmin}
-          onPublish={async () => {
-            await handlePublishVersion();
-          }}
-          onDiscard={async () => {
-            await handleDiscardVersion();
-          }}
-          onRunAgain={() => {
-            setShowDraftModal(false);
-            setActiveTab("settings");
-            handleTriggerSolver();
-          }}
+          onPublish={async () => { await handlePublish(); setShowDraftModal(false); }}
+          onDiscard={async () => { await handleDiscard(); setShowDraftModal(false); }}
+          onRunAgain={() => { setShowDraftModal(false); setActiveTab("settings"); }}
         />
+      )}
+
+      {/* Add by email modal */}
+      <Modal title="הוסף חבר לפי אימייל/טלפון" open={showAddByEmail} onClose={() => setShowAddByEmail(false)}>
+        <form onSubmit={handleAddByEmail} className="space-y-4">
+          <input
+            type="text"
+            value={addEmailInput}
+            onChange={e => setAddEmailInput(e.target.value)}
+            placeholder="אימייל או מספר טלפון"
+            required
+            className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          {addEmailError && <p className="text-sm text-red-600">{addEmailError}</p>}
+          <button type="submit" disabled={addEmailSaving}
+            className="bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl disabled:opacity-50 transition-colors">
+            {addEmailSaving ? "מוסיף..." : "הוסף"}
+          </button>
+        </form>
+      </Modal>
+
+      {/* Create person modal */}
+      <Modal title="הוסף אדם לפי שם" open={showCreatePerson} onClose={() => setShowCreatePerson(false)}>
+        <form onSubmit={handleCreatePerson} className="space-y-4">
+          <input
+            type="text"
+            value={createPersonName}
+            onChange={e => setCreatePersonName(e.target.value)}
+            placeholder="שם מלא *"
+            required
+            className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <input
+            type="tel"
+            value={createPersonPhone}
+            onChange={e => setCreatePersonPhone(e.target.value)}
+            placeholder="מספר טלפון (אופציונלי)"
+            className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          {createPersonError && <p className="text-sm text-red-600">{createPersonError}</p>}
+          <button type="submit" disabled={createPersonSaving}
+            className="bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl disabled:opacity-50 transition-colors">
+            {createPersonSaving ? "יוצר..." : "צור"}
+          </button>
+        </form>
+      </Modal>
+
+      {/* Member profile modal */}
+      {selectedMember && (
+        <MemberProfileModal
+          member={selectedMember}
+          isAdmin={isAdmin}
+          editForm={memberEditForm}
+          saving={memberEditSaving}
+          error={memberEditError}
+          onClose={() => { setSelectedMember(null); setMemberEditForm(null); }}
+          onStartEdit={() => setMemberEditForm({
+            fullName: selectedMember.fullName,
+            displayName: selectedMember.displayName ?? "",
+            phoneNumber: selectedMember.phoneNumber ?? "",
+            profileImageUrl: selectedMember.profileImageUrl ?? "",
+            birthday: "",
+          })}
+          onCancelEdit={() => setMemberEditForm(null)}
+          onChangeForm={setMemberEditForm}
+          onSave={handleSaveMemberEdit}
+        />
+      )}
+
+      {inviteError && (
+        <div className="fixed bottom-4 right-4 bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-xl shadow-lg">
+          {inviteError}
+        </div>
       )}
     </AppShell>
   );

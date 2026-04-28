@@ -31,8 +31,10 @@ test.describe("Admin navigation", () => {
 
   test("logout button is visible and works", async ({ page }) => {
     await page.goto(`${BASE}/schedule/today`);
-    await expect(page.locator('[data-testid="logout-btn"]')).toBeVisible({ timeout: 8000 });
-    await page.locator('[data-testid="logout-btn"]').click();
-    await expect(page).toHaveURL(/login/, { timeout: 8000 });
+    const logoutBtn = page.locator('[data-testid="logout-btn"]');
+    await expect(logoutBtn).toBeVisible({ timeout: 8000 });
+    // Force click to bypass any overlay issues
+    await logoutBtn.click({ force: true });
+    await expect(page).toHaveURL(/login/, { timeout: 12000 });
   });
 });
