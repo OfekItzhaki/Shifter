@@ -708,36 +708,69 @@ export default function GroupDetailPage() {
     setSolverPolling(true);
     setSolverStatus(null);
     setSolverError(null);
+
+    // Safety timeout — stop polling after 90s regardless
+    const maxPollMs = 90_000;
+    const pollStartTime = Date.now();
+
     try {
       const res = await apiClient.post<{ runId: string }>(
         `/spaces/${currentSpaceId}/schedule-runs/trigger`,
         { triggerMode: "standard" }
       );
       const runId = res.data.runId;
+
       pollingRef.current = setInterval(async () => {
+        // Hard timeout guard
+        if (Date.now() - pollStartTime > maxPollMs) {
+          if (pollingRef.current) clearInterval(pollingRef.current);
+          setSolverPolling(false);
+          setSolverStatus("TimedOut");
+          setSolverError("הסולבר לא הגיב בזמן סביר. בדוק שהשירות פועל.");
+          return;
+        }
+
         try {
           const statusRes = await apiClient.get<{ status: string }>(
             `/spaces/${currentSpaceId}/schedule-runs/${runId}`
           );
-          setSolverStatus(statusRes.data.status);
-          if (statusRes.data.status === "Completed" || statusRes.data.status === "Failed" || statusRes.data.status === "TimedOut") {
+          const status = statusRes.data.status;
+          setSolverStatus(status);
+
+          const terminal = status === "Completed" || status === "Failed" || status === "TimedOut";
+          if (terminal) {
             if (pollingRef.current) clearInterval(pollingRef.current);
             setSolverPolling(false);
-            // Immediately refresh notifications so the bell updates without waiting for the 5s poll
             refetchNotifications();
-            if (statusRes.data.status === "Completed") {
-              const [schedRes, draftRes] = await Promise.all([
-                apiClient.get<{ version: { id: string; status: string }; assignments: ScheduleAssignment[] }>(
-                  `/spaces/${currentSpaceId}/schedule-versions/current`
-                ).catch(() => null),
-                apiClient.get<Array<{ id: string; status: string }>>(
-                  `/spaces/${currentSpaceId}/schedule-versions?status=draft`
-                ).catch(() => ({ data: [] as Array<{ id: string; status: string }> })),
-              ]);
-              setScheduleData(schedRes?.data?.assignments ?? []);
-              const drafts = Array.isArray(draftRes?.data) ? draftRes.data : [];
-              setDraftVersion(drafts.length > 0 ? drafts[0] : null);
+
+            // Always reload both draft and discarded versions so the schedule tab
+            // shows either the new draft or the infeasibility banner
+            const [schedRes, draftRes, discardedRes] = await Promise.all([
+              apiClient.get<{ version: { id: string; status: string }; assignments: ScheduleAssignment[] }>(
+                `/spaces/${currentSpaceId}/schedule-versions/current`
+              ).catch(() => null),
+              apiClient.get<Array<{ id: string; status: string; summaryJson?: string | null }>>(
+                `/spaces/${currentSpaceId}/schedule-versions?status=draft`
+              ).catch(() => ({ data: [] as Array<{ id: string; status: string; summaryJson?: string | null }> })),
+              apiClient.get<Array<{ id: string; status: string; summaryJson?: string | null }>>(
+                `/spaces/${currentSpaceId}/schedule-versions?status=discarded`
+              ).catch(() => ({ data: [] as Array<{ id: string; status: string; summaryJson?: string | null }> })),
+            ]);
+
+            setScheduleData(schedRes?.data?.assignments ?? []);
+            const drafts = Array.isArray(draftRes?.data) ? draftRes.data : [];
+            setDraftVersion(drafts.length > 0 ? drafts[0] : null);
+
+            // If no draft, show infeasibility reason from most recent discarded version
+            if (drafts.length === 0) {
+              const discarded = Array.isArray(discardedRes?.data) ? discardedRes.data : [];
+              setLastRunSummary(discarded[0]?.summaryJson ?? null);
+            } else {
+              setLastRunSummary(null);
             }
+
+            // Switch to schedule tab so the admin sees the result immediately
+            setActiveTab("schedule");
           }
         } catch {
           if (pollingRef.current) clearInterval(pollingRef.current);
