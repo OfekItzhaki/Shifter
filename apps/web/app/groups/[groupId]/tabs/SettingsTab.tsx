@@ -88,7 +88,7 @@ export default function SettingsTab({
           <input
             type="range"
             min={3}
-            max={30}
+            max={7}
             value={solverHorizon}
             onChange={e => onSolverHorizonChange(Number(e.target.value))}
             className="w-full accent-blue-500"

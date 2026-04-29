@@ -575,10 +575,12 @@ export default function GroupDetailPage() {
       // Default startsAt to today if empty
       const now = new Date();
       const startsAt = taskForm.startsAt || now.toISOString().slice(0, 16);
+      // Default endsAt to startsAt + 7 days if empty (recurring task)
+      const endsAt = taskForm.endsAt || new Date(new Date(startsAt).getTime() + 7 * 86400000).toISOString().slice(0, 16);
       const payload = {
         name: taskForm.name,
         startsAt,
-        endsAt: taskForm.endsAt || "",
+        endsAt: endsAt,
         shiftDurationMinutes: taskForm.shiftDurationMinutes,
         requiredHeadcount: taskForm.requiredHeadcount,
         burdenLevel: taskForm.burdenLevel,

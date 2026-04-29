@@ -5,6 +5,7 @@ using Jobuler.Domain.Scheduling;
 using Jobuler.Domain.Tasks;
 using Jobuler.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using System.Text.Json;
 
 namespace Jobuler.Infrastructure.Scheduling;
@@ -12,11 +13,16 @@ namespace Jobuler.Infrastructure.Scheduling;
 public class SolverPayloadNormalizer : ISolverPayloadNormalizer
 {
     private readonly AppDbContext _db;
+    private readonly ILogger<SolverPayloadNormalizer> _logger;
 
     // Default stability weights — sent in every payload per spec Section 5.4
     private static readonly StabilityWeightsDto DefaultWeights = new(10.0, 3.0, 1.0);
 
-    public SolverPayloadNormalizer(AppDbContext db) => _db = db;
+    public SolverPayloadNormalizer(AppDbContext db, ILogger<SolverPayloadNormalizer> logger)
+    {
+        _db = db;
+        _logger = logger;
+    }
 
     public async Task<SolverInputDto> BuildAsync(
         Guid spaceId, Guid runId, string triggerMode,
@@ -31,10 +37,11 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
         var horizonStart = today;
 
         // Use the maximum solver horizon across all groups in this space,
-        // falling back to 7 days if no groups are configured.
+        // capped at 7 days to keep the CP-SAT model tractable.
         var maxHorizon = await _db.Groups.AsNoTracking()
             .Where(g => g.SpaceId == spaceId && g.DeletedAt == null)
             .MaxAsync(g => (int?)g.SolverHorizonDays, ct) ?? 7;
+        maxHorizon = Math.Min(maxHorizon, 7); // hard cap
 
         var horizonEnd = today.AddDays(maxHorizon - 1); // inclusive
 
@@ -130,8 +137,7 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
         var groupTasks = await _db.GroupTasks.AsNoTracking()
             .Where(t => t.SpaceId == spaceId
                 && t.IsActive
-                && t.EndsAt >= horizonStartDt
-                && t.StartsAt <= schedulingCutoff)  // only tasks that overlap the near window
+                && t.StartsAt <= schedulingCutoff)  // task must start before the scheduling window ends
             .ToListAsync(ct);
 
         foreach (var task in groupTasks)
@@ -139,9 +145,15 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
             var shiftDuration = TimeSpan.FromMinutes(task.ShiftDurationMinutes);
             if (shiftDuration.TotalMinutes < 1) continue;
 
+            // If the task has no meaningful end date (MinValue or past), treat it as ongoing
+            // and schedule it from today through the scheduling window
+            var effectiveEnd = task.EndsAt <= horizonStartDt
+                ? schedulingCutoff
+                : task.EndsAt;
+
             // Clamp to the near scheduling window (not the full horizon)
             var windowStart = task.StartsAt < horizonStartDt ? horizonStartDt : task.StartsAt;
-            var windowEnd   = task.EndsAt   > schedulingCutoff ? schedulingCutoff : task.EndsAt;
+            var windowEnd   = effectiveEnd > schedulingCutoff ? schedulingCutoff : effectiveEnd;
 
             // Safety cap: never generate more than 48 shifts per task
             const int MaxShiftsPerTask = 48;
@@ -222,6 +234,11 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
             .Select(s => new { s.Locale })
             .FirstOrDefaultAsync(ct);
         var locale = space?.Locale ?? "en";
+
+        _logger.LogInformation(
+            "Solver payload built: people={People} slots={Slots} hard={Hard} soft={Soft} horizon={Start}→{End}",
+            peopleDto.Count, slotsDto.Count, hardConstraints.Count, softConstraints.Count,
+            horizonStart, horizonEnd);
 
         return new SolverInputDto(
             spaceId.ToString(), runId.ToString(), triggerMode,
