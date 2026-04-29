@@ -165,15 +165,20 @@ public class SolverWorkerService : BackgroundService
                 job.SpaceId, nextVersion, job.BaselineVersionId,
                 job.RunId, job.RequestedByUserId, summaryJson);
 
-            // If infeasible: discard the version immediately — no empty draft left for the admin
-            if (!output.Feasible)
+            // Discard the version if:
+            // - infeasible (no valid schedule found), OR
+            // - timed out with zero assignments (partial solve produced nothing useful)
+            var shouldDiscard = !output.Feasible ||
+                (output.TimedOut && output.Assignments.Count == 0);
+
+            if (shouldDiscard)
                 version.Discard();
 
             db.ScheduleVersions.Add(version);
             await db.SaveChangesAsync(ct); // get version.Id
 
-            // Persist assignments only when feasible
-            var assignments = output.Feasible
+            // Persist assignments only when the version is kept (feasible or timed-out with results)
+            var assignments = !shouldDiscard
                 ? output.Assignments.Select(a =>
                 {
                     if (!Guid.TryParse(a.SlotId, out var slotGuid))

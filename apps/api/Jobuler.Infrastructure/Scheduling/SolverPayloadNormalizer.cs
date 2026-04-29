@@ -122,11 +122,16 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
         // ── Group tasks → shift slots ─────────────────────────────────────────
         // Each GroupTask defines a window + shift duration. Expand into individual
         // shift slots so the solver assigns people to specific time windows.
+        // IMPORTANT: Only generate shifts for the next SCHEDULING_WINDOW_DAYS days
+        // to keep the CP-SAT model tractable. Beyond that, the solver would time out.
+        const int SchedulingWindowDays = 3;
+        var schedulingCutoff = horizonStartDt.AddDays(SchedulingWindowDays);
+
         var groupTasks = await _db.GroupTasks.AsNoTracking()
             .Where(t => t.SpaceId == spaceId
                 && t.IsActive
                 && t.EndsAt >= horizonStartDt
-                && t.StartsAt <= horizonEndDt)
+                && t.StartsAt <= schedulingCutoff)  // only tasks that overlap the near window
             .ToListAsync(ct);
 
         foreach (var task in groupTasks)
@@ -134,27 +139,23 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
             var shiftDuration = TimeSpan.FromMinutes(task.ShiftDurationMinutes);
             if (shiftDuration.TotalMinutes < 1) continue;
 
-            // Clamp to horizon
+            // Clamp to the near scheduling window (not the full horizon)
             var windowStart = task.StartsAt < horizonStartDt ? horizonStartDt : task.StartsAt;
-            var windowEnd   = task.EndsAt   > horizonEndDt   ? horizonEndDt   : task.EndsAt;
+            var windowEnd   = task.EndsAt   > schedulingCutoff ? schedulingCutoff : task.EndsAt;
 
-            // Generate one slot per shift within the window
+            // Safety cap: never generate more than 48 shifts per task
+            const int MaxShiftsPerTask = 48;
             var shiftStart = windowStart;
             var shiftIndex = 0;
-            while (shiftStart + shiftDuration <= windowEnd)
+            while (shiftStart + shiftDuration <= windowEnd && shiftIndex < MaxShiftsPerTask)
             {
                 var shiftEnd = shiftStart + shiftDuration;
-                // Generate a deterministic unique GUID per shift so each shift
-                // gets its own row in the assignments table.
-                // XOR the task GUID bytes with the shift index to get a stable unique ID.
                 var shiftGuid = DeriveShiftGuid(task.Id, shiftIndex);
-                // Use the shift GUID directly as the slot ID (no suffix needed)
-                // task_type_id carries the original task GUID for reverse lookup
                 var slotId = shiftGuid.ToString();
 
                 slotsDto.Add(new TaskSlotDto(
                     slotId,
-                    task.Id.ToString(),   // task_type_id = original task GUID for lookup
+                    task.Id.ToString(),
                     task.Name,
                     task.BurdenLevel.ToString().ToLower(),
                     shiftStart.ToString("o"),
