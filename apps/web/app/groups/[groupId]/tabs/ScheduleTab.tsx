@@ -19,8 +19,8 @@ interface Props {
   discardSaving: boolean;
   scheduleVersionError: string | null;
   onOpenDraftModal: () => void;
-  onPublish: () => void;
-  onDiscard: () => void;
+  onPublish: () => Promise<void>;
+  onDiscard: () => Promise<void>;
 }
 
 function formatDateLabel(dateStr: string, fDateShort: (d: string) => string): string {

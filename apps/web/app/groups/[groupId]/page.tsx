@@ -333,27 +333,34 @@ export default function GroupDetailPage() {
 
   // ── Schedule handlers ────────────────────────────────────────────────────
   async function handlePublish() {
-    if (!currentSpaceId || !draftVersion) return;
+    // Read from store directly at call time — avoids stale closure if spaceId
+    // wasn't set yet during the initial render (Zustand hydration lag).
+    const spaceId = useSpaceStore.getState().currentSpaceId ?? currentSpaceId;
+    if (!spaceId || !draftVersion) {
+      setScheduleVersionError("לא ניתן לפרסם — נסה לרענן את הדף");
+      return;
+    }
     setPublishSaving(true);
     setScheduleVersionError(null);
     try {
-      await apiClient.post(`/spaces/${currentSpaceId}/schedule-versions/${draftVersion.id}/publish`, {});
+      await apiClient.post(`/spaces/${spaceId}/schedule-versions/${draftVersion.id}/publish`, {});
       setDraftVersion(null);
       setScheduleData(null);
       // Reload schedule after publish
       const [currentRes, draftRes] = await Promise.all([
         apiClient.get<{ version: { id: string; status: string }; assignments: ScheduleAssignment[] }>(
-          `/spaces/${currentSpaceId}/schedule-versions/current`
+          `/spaces/${spaceId}/schedule-versions/current`
         ).catch(() => null),
         apiClient.get<Array<{ id: string; status: string }>>(
-          `/spaces/${currentSpaceId}/schedule-versions?status=draft`
+          `/spaces/${spaceId}/schedule-versions?status=draft`
         ).catch(() => ({ data: [] as Array<{ id: string; status: string }> })),
       ]);
       setScheduleData(currentRes?.data?.assignments ?? []);
       const drafts = Array.isArray(draftRes?.data) ? draftRes.data : [];
       setDraftVersion(drafts.length > 0 ? drafts[0] : null);
-    } catch {
+    } catch (err) {
       setScheduleVersionError("שגיאה בפרסום הסידור");
+      throw err; // re-throw so DraftScheduleModal can show the error too
     } finally {
       setPublishSaving(false);
     }
