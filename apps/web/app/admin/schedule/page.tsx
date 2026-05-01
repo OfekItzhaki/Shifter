@@ -3,12 +3,15 @@
 import { useEffect, useState } from "react";
 import AppShell from "@/components/shell/AppShell";
 import ScheduleTable2D from "@/components/schedule/ScheduleTable2D";
+import OverrideModal, { OverridePerson } from "@/components/schedule/OverrideModal";
 import DiffSummaryCard from "@/components/schedule/DiffSummaryCard";
 import {
   getScheduleVersions, getVersionDetail,
   publishVersion, rollbackVersion, triggerSolve, downloadExport,
+  applyManualOverride, removeManualOverride,
   ScheduleVersionDto, ScheduleVersionDetailDto
 } from "@/lib/api/schedule";
+import { getGroupMembers } from "@/lib/api/groups";
 import { useSpaceStore } from "@/lib/store/spaceStore";
 import { useAuthStore } from "@/lib/store/authStore";
 import { clsx } from "clsx";
@@ -142,9 +145,10 @@ interface VersionDetailPanelProps {
   spaceId: string | null;
   onPublish: () => void;
   onRollback: (id: string) => void;
+  onCellClick?: (slotKey: string, taskName: string, assignees: string[]) => void;
 }
 
-function VersionDetailPanel({ selected, actionLoading, spaceId, onPublish, onRollback }: VersionDetailPanelProps) {
+function VersionDetailPanel({ selected, actionLoading, spaceId, onPublish, onRollback, onCellClick }: VersionDetailPanelProps) {
   const today = new Date().toISOString().split("T")[0];
   const [selectedDate, setSelectedDate] = useState(today);
 
@@ -260,6 +264,7 @@ function VersionDetailPanel({ selected, actionLoading, spaceId, onPublish, onRol
       <ScheduleTable2D
         assignments={selected.assignments}
         filterDate={selectedDate}
+        onCellClick={onCellClick}
       />
     </div>
   );
@@ -275,6 +280,14 @@ export default function AdminSchedulePage() {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [message, setMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
+
+  // ── Override modal state ─────────────────────────────────────────────────
+  const [overrideCell, setOverrideCell] = useState<{
+    slotKey: string; taskName: string; assignees: string[];
+  } | null>(null);
+  const [eligiblePeople, setEligiblePeople] = useState<OverridePerson[]>([]);
+  const [overrideSaving, setOverrideSaving] = useState(false);
+  const [overrideError, setOverrideError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!currentSpaceId || !isAdminMode) { setLoading(false); return; }
@@ -349,6 +362,70 @@ export default function AdminSchedulePage() {
     } catch {
       setMessage({ text: "Failed to rollback.", type: "error" });
     } finally { setActionLoading(false); }
+  }
+
+  // ── Override handlers ────────────────────────────────────────────────────
+  async function handleCellClick(slotKey: string, taskName: string, assignees: string[]) {
+    if (!currentSpaceId || !selected) return;
+    setOverrideCell({ slotKey, taskName, assignees });
+    setOverrideError(null);
+
+    // Load eligible people from all assignments in the current version
+    // (use unique person IDs from the selected version's assignments as a proxy)
+    const uniquePersons = Array.from(
+      new Map(selected.assignments.map(a => [a.personId, a.personName])).entries()
+    ).map(([personId, displayName]) => ({ personId, displayName }));
+    setEligiblePeople(uniquePersons);
+  }
+
+  async function handleOverrideConfirm(slotKey: string, newPersonIds: string[]) {
+    if (!currentSpaceId) return;
+    setOverrideSaving(true);
+    setOverrideError(null);
+    // slotKey = "${startsAt}|${endsAt}" — we need the actual slot ID
+    // The slot ID is the taskSlotId from the assignment matching this slotKey
+    const slotId = selected?.assignments.find(a =>
+      `${a.slotStartsAt}|${a.slotEndsAt}` === slotKey
+    )?.taskSlotId;
+    if (!slotId) {
+      setOverrideError("לא ניתן למצוא את המשמרת");
+      setOverrideSaving(false);
+      return;
+    }
+    try {
+      await applyManualOverride(currentSpaceId, slotId, newPersonIds);
+      setMessage({ text: "עקיפה הוחלה בהצלחה — טיוטה עודכנה", type: "success" });
+      setOverrideCell(null);
+      await loadVersions();
+    } catch {
+      setOverrideError("שגיאה בהחלת העקיפה");
+    } finally {
+      setOverrideSaving(false);
+    }
+  }
+
+  async function handleOverrideClear(slotKey: string) {
+    if (!currentSpaceId) return;
+    setOverrideSaving(true);
+    setOverrideError(null);
+    const slotId = selected?.assignments.find(a =>
+      `${a.slotStartsAt}|${a.slotEndsAt}` === slotKey
+    )?.taskSlotId;
+    if (!slotId) {
+      setOverrideError("לא ניתן למצוא את המשמרת");
+      setOverrideSaving(false);
+      return;
+    }
+    try {
+      await removeManualOverride(currentSpaceId, slotId);
+      setMessage({ text: "המשמרת נוקתה — טיוטה עודכנה", type: "success" });
+      setOverrideCell(null);
+      await loadVersions();
+    } catch {
+      setOverrideError("שגיאה בניקוי המשמרת");
+    } finally {
+      setOverrideSaving(false);
+    }
   }
 
   if (!isAdminMode) {
@@ -437,6 +514,7 @@ export default function AdminSchedulePage() {
               spaceId={currentSpaceId}
               onPublish={handlePublish}
               onRollback={handleRollback}
+              onCellClick={handleCellClick}
             />
           ) : (
             <div className="col-span-2 flex flex-col items-center justify-center py-16 text-center bg-white rounded-xl border border-slate-200">
@@ -448,6 +526,22 @@ export default function AdminSchedulePage() {
           )}
         </div>
       </div>
+
+      {/* Override modal */}
+      {overrideCell && (
+        <OverrideModal
+          open={!!overrideCell}
+          slotKey={overrideCell.slotKey}
+          taskName={overrideCell.taskName}
+          currentAssignees={overrideCell.assignees}
+          eligiblePeople={eligiblePeople}
+          saving={overrideSaving}
+          error={overrideError}
+          onConfirm={handleOverrideConfirm}
+          onClear={handleOverrideClear}
+          onClose={() => { setOverrideCell(null); setOverrideError(null); }}
+        />
+      )}
     </AppShell>
   );
 }

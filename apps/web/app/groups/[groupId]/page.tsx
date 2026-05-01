@@ -14,6 +14,7 @@ import TasksTab from "./tabs/TasksTab";
 import ConstraintsTab from "./tabs/ConstraintsTab";
 import SettingsTab from "./tabs/SettingsTab";
 import StatsTab from "./tabs/StatsTab";
+import LiveStatusPanel from "@/components/schedule/LiveStatusPanel";
 import { ActiveTab, ADMIN_ONLY_TABS, ScheduleAssignment } from "./types";
 import { useSpaceStore } from "@/lib/store/spaceStore";
 import { useAuthStore } from "@/lib/store/authStore";
@@ -61,9 +62,10 @@ const TAB_LABELS: Record<ActiveTab, string> = {
   constraints: "אילוצים",
   settings: "הגדרות",
   stats: "סטטיסטיקות",
+  "live-status": "סטטוס נוכחי",
 };
 
-const ALL_TABS: ActiveTab[] = ["schedule", "members", "alerts", "messages", "tasks", "constraints", "stats", "settings"];
+const ALL_TABS: ActiveTab[] = ["schedule", "live-status", "members", "alerts", "messages", "tasks", "constraints", "stats", "settings"];
 
 // ── Main component ───────────────────────────────────────────────────────────
 export default function GroupDetailPage() {
@@ -1176,6 +1178,10 @@ export default function GroupDetailPage() {
 
           {activeTab === "stats" && currentSpaceId && (
             <StatsTab groupId={groupId} spaceId={currentSpaceId} members={members} />
+          )}
+
+          {activeTab === "live-status" && currentSpaceId && (
+            <LiveStatusPanel spaceId={currentSpaceId} groupId={groupId} />
           )}
         </div>
       </div>

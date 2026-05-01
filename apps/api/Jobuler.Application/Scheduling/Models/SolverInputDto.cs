@@ -22,7 +22,8 @@ public record SolverInputDto(
     List<SoftConstraintDto> SoftConstraints,
     List<HardConstraintDto> EmergencyConstraints,
     List<BaselineAssignmentDto> BaselineAssignments,
-    List<FairnessCountersDto> FairnessCounters);
+    List<FairnessCountersDto> FairnessCounters,
+    List<string>? LockedSlotIds = null);
 
 public record StabilityWeightsDto(
     [property: JsonPropertyName("today_tomorrow")] double TodayTomorrow,

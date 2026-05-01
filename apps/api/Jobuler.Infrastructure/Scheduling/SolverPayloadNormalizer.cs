@@ -2,8 +2,7 @@ using Jobuler.Application.Scheduling;
 using Jobuler.Application.Scheduling.Models;
 using Jobuler.Domain.Constraints;
 using Jobuler.Domain.Scheduling;
-using Jobuler.Domain.Tasks;
-using Jobuler.Infrastructure.Persistence;
+using Jobuler.Domain.Tasks;using Jobuler.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
@@ -252,12 +251,23 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
 
         // ── Baseline assignments ──────────────────────────────────────────────
         var baselineAssignments = new List<BaselineAssignmentDto>();
+        var lockedSlotIds = new List<string>();
         if (baselineVersionId.HasValue)
         {
-            baselineAssignments = await _db.Assignments.AsNoTracking()
+            var baselineRows = await _db.Assignments.AsNoTracking()
                 .Where(a => a.ScheduleVersionId == baselineVersionId.Value && a.SpaceId == spaceId)
-                .Select(a => new BaselineAssignmentDto(a.TaskSlotId.ToString(), a.PersonId.ToString()))
                 .ToListAsync(ct);
+
+            baselineAssignments = baselineRows
+                .Select(a => new BaselineAssignmentDto(a.TaskSlotId.ToString(), a.PersonId.ToString()))
+                .ToList();
+
+            // Slots with manual overrides are locked — solver must not reassign them
+            lockedSlotIds = baselineRows
+                .Where(a => a.Source == AssignmentSource.Override)
+                .Select(a => a.TaskSlotId.ToString())
+                .Distinct()
+                .ToList();
         }
 
         // ── Fairness counters ─────────────────────────────────────────────────
@@ -291,7 +301,8 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
             DefaultWeights,
             peopleDto, availabilityDto, presenceDto, slotsDto,
             hardConstraints, softConstraints, emergencyConstraints,
-            baselineAssignments, fairnessDto);
+            baselineAssignments, fairnessDto,
+            lockedSlotIds.Count > 0 ? lockedSlotIds : null);
     }
 
     private static Dictionary<string, object> DeserializePayload(string json)

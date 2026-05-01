@@ -160,3 +160,25 @@ export async function getBurdenStats(spaceId: string): Promise<BurdenStats> {
   const { data } = await apiClient.get(`/spaces/${spaceId}/stats/burden`);
   return data;
 }
+
+// ── Manual overrides ──────────────────────────────────────────────────────────
+
+export async function applyManualOverride(
+  spaceId: string,
+  slotId: string,
+  newPersonIds: string[]
+): Promise<{ draftVersionId: string }> {
+  const { data } = await apiClient.post(`/spaces/${spaceId}/schedule/overrides`, {
+    slotId,
+    newPersonIds,
+  });
+  return data;
+}
+
+export async function removeManualOverride(
+  spaceId: string,
+  slotId: string
+): Promise<{ draftVersionId: string }> {
+  const { data } = await apiClient.delete(`/spaces/${spaceId}/schedule/overrides/${slotId}`);
+  return data;
+}

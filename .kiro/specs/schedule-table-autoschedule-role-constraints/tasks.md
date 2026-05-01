@@ -299,14 +299,14 @@ Implementation is ordered so that each layer is ready before the next depends on
     - Generate role lists with mixed active/inactive roles
     - Verify: role selector in role constraint form shows only active roles
 
-- [ ] 26. Final checkpoint — ensure all tests pass
+- [x] 26. Final checkpoint — ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 ---
 
 ## Manual Override Assignments (Requirement 14)
 
-- [ ] 27. Backend: manual override domain and command
+- [x] 27. Backend: manual override domain and command
   - Add `ManualOverride` value object or flag to `Assignment` entity: `is_manual_override: bool`, `overridden_by_user_id: Guid?`
   - Create `ApplyManualOverrideCommand(SpaceId, GroupId, SlotId, NewPersonIds, RequestingUserId)` → `Guid` (returns draft version ID)
     - Requires `schedule.publish` permission
@@ -318,19 +318,19 @@ Implementation is ordered so that each layer is ready before the next depends on
     - Marks the slot as explicitly unassigned in the draft (no assignment row, but slot is "touched")
   - _Requirements: 14.3, 14.4, 14.5, 14.7_
 
-- [ ] 28. Backend: solver respects manual override locks
+- [x] 28. Backend: solver respects manual override locks
   - In `SolverPayloadNormalizer`, include a `locked_slot_ids` list in the solver payload: all slot IDs in the baseline version that have `is_manual_override = true`
   - In `engine.py`, add `add_locked_slot_constraints`: for each locked slot, force the solver to keep the same person assignment from the baseline
   - _Requirements: 14.8_
 
-- [ ] 29. API: manual override endpoint
+- [x] 29. API: manual override endpoint
   - Add `POST /spaces/{spaceId}/groups/{groupId}/schedule/overrides` → `ApplyManualOverrideCommand`
     - Body: `{ slotId, newPersonIds: string[] }`
   - Add `DELETE /spaces/{spaceId}/groups/{groupId}/schedule/overrides/{slotId}` → `RemoveManualOverrideCommand`
   - Both require `[Authorize]` and `schedule.publish` permission check
   - _Requirements: 14.5_
 
-- [ ] 30. Frontend: override modal in admin schedule table
+- [x] 30. Frontend: override modal in admin schedule table
   - In `ScheduleTable2D`, make cells clickable when `onCellClick` prop is provided
   - Create `OverrideModal` component: shows current assignees, person multi-selector (eligible members only), confirm/cancel buttons
   - Wire up in admin schedule page: clicking a cell opens `OverrideModal`, on confirm calls `POST .../overrides`, refreshes schedule data
@@ -341,7 +341,7 @@ Implementation is ordered so that each layer is ready before the next depends on
 
 ## Live Person Status Panel (Requirement 15)
 
-- [ ] 31. Backend: live status query
+- [x] 31. Backend: live status query
   - Create `GetGroupLiveStatusQuery(SpaceId, GroupId, RequestingUserId)` → `List<MemberLiveStatusDto>`
     - For each group member, determine current status:
       1. Check `presence_windows` for a record where `starts_at <= now <= ends_at` (manual override wins)
@@ -350,12 +350,12 @@ Implementation is ordered so that each layer is ready before the next depends on
     - Return `MemberLiveStatusDto(PersonId, DisplayName, Status, TaskName?, SlotEndsAt?, Location?)`
   - _Requirements: 15.6, 15.7, 15.8_
 
-- [ ] 32. API: live status endpoint
+- [x] 32. API: live status endpoint
   - Add `GET /spaces/{spaceId}/groups/{groupId}/live-status` → `GetGroupLiveStatusQuery`
   - Requires `[Authorize]` — any group member can call this
   - _Requirements: 15.8_
 
-- [ ] 33. Frontend: live status panel UI
+- [x] 33. Frontend: live status panel UI
   - Create `LiveStatusPanel` component in `apps/web/components/schedule/LiveStatusPanel.tsx`
   - Display each member with status badge: `on_mission` (blue), `at_home` (yellow), `blocked` (red), `free_in_base` (green)
   - For `on_mission` members: show task name and slot end time
@@ -364,7 +364,7 @@ Implementation is ordered so that each layer is ready before the next depends on
   - All labels in Hebrew
   - _Requirements: 15.1, 15.2, 15.3, 15.4, 15.5, 15.9_
 
-- [ ] 34. Final checkpoint — ensure all tests pass after new features
+- [x] 34. Final checkpoint — ensure all tests pass after new features
   - Ensure all tests pass, ask the user if questions arise.
 
 ---

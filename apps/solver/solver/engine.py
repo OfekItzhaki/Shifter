@@ -19,6 +19,7 @@ from solver.constraints import (
     add_availability_constraints,
     expand_role_constraints,
     expand_group_constraints,
+    add_locked_slot_constraints,
 )
 from solver.objectives import build_objective
 from solver.i18n import t
@@ -95,6 +96,15 @@ def solve(input: SolverInput) -> SolverOutput:
     add_kitchen_frequency_constraints(
         model, assign, slots, people, num_people,
         input.hard_constraints, input.fairness_counters)
+
+    # ── Locked slots (manual overrides) ──────────────────────────────────────
+    # Force the solver to keep manually overridden assignments unchanged.
+    locked_slot_ids = set(getattr(input, "locked_slot_ids", []) or [])
+    if locked_slot_ids:
+        add_locked_slot_constraints(
+            model, assign, slots, people, num_people,
+            locked_slot_ids, input.baseline_assignments
+        )
 
     # ── Soft objectives ───────────────────────────────────────────────────────
     penalties = build_objective(model, assign, input)

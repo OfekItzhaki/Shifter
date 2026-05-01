@@ -231,3 +231,24 @@ export async function deactivateGroupRole(
 ): Promise<void> {
   await apiClient.delete(`/spaces/${spaceId}/groups/${groupId}/roles/${roleId}`);
 }
+
+// ── Live Status ───────────────────────────────────────────────────────────────
+
+export interface MemberLiveStatusDto {
+  personId: string;
+  displayName: string;
+  status: "on_mission" | "at_home" | "blocked" | "free_in_base";
+  taskName: string | null;
+  slotEndsAt: string | null;
+  location: string | null;
+}
+
+export async function getGroupLiveStatus(
+  spaceId: string,
+  groupId: string
+): Promise<MemberLiveStatusDto[]> {
+  const { data } = await apiClient.get(
+    `/spaces/${spaceId}/groups/${groupId}/live-status`
+  );
+  return data as MemberLiveStatusDto[];
+}

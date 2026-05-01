@@ -515,3 +515,45 @@ def expand_group_constraints(
         return result
 
     return _expand(hard_constraints), _expand(soft_constraints), _expand(emergency_constraints)
+
+
+def add_locked_slot_constraints(
+    model: cp_model.CpModel,
+    assign: dict,
+    slots: list[TaskSlot],
+    people,
+    num_people: int,
+    locked_slot_ids: set[str],
+    baseline_assignments: list,
+):
+    """
+    For each slot that has a manual override (locked), force the solver to keep
+    exactly the same person assignments from the baseline.
+
+    This prevents the solver from reassigning manually overridden slots when
+    re-running after a manual override has been applied.
+    """
+    if not locked_slot_ids:
+        return
+
+    # Build baseline map: slot_id → set of person_ids
+    baseline_map: dict[str, set[str]] = {}
+    for ba in baseline_assignments:
+        baseline_map.setdefault(ba.slot_id, set()).add(ba.person_id)
+
+    person_id_to_idx = {person.person_id: idx for idx, person in enumerate(people)}
+
+    for s_idx, slot in enumerate(slots):
+        if slot.slot_id not in locked_slot_ids:
+            continue
+
+        locked_persons = baseline_map.get(slot.slot_id, set())
+
+        for p_idx, person in enumerate(people):
+            pid = person.person_id
+            if pid in locked_persons:
+                # Force this person to be assigned to this slot
+                model.add(assign[(s_idx, p_idx)] == 1)
+            else:
+                # Force all other people to NOT be assigned to this slot
+                model.add(assign[(s_idx, p_idx)] == 0)
