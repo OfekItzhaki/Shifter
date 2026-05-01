@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Modal from "@/components/Modal";
-import ConstraintPayloadEditor from "@/components/ConstraintPayloadEditor";
+import ConstraintPayloadEditor, { TaskOption } from "@/components/ConstraintPayloadEditor";
 import type { ConstraintDto } from "@/lib/api/constraints";
 import type { GroupRoleDto, GroupMemberDto } from "@/lib/api/groups";
 import { SEVERITY_STYLES, SEVERITY_DOTS } from "../types";
@@ -72,6 +72,8 @@ interface Props {
   groupRoles: GroupRoleDto[];
   groupRolesLoading: boolean;
   members: GroupMemberDto[];
+  /** Task options for the no_task_type_restriction dropdown */
+  taskOptions?: TaskOption[];
   onOpenCreate: () => void;
   onCloseCreate: () => void;
   onRuleTypeChange: (v: string) => void;
@@ -199,13 +201,14 @@ function ConstraintSection({
 
 // ── Inline create form for a section ─────────────────────────────────────────
 function SectionCreateForm({
-  scopeType, groupId, groupRoles, members,
+  scopeType, groupId, groupRoles, members, taskOptions,
   onSubmit,
 }: {
   scopeType: "group" | "role" | "person";
   groupId: string;
   groupRoles: GroupRoleDto[];
   members: GroupMemberDto[];
+  taskOptions?: TaskOption[];
   onSubmit: (form: ConstraintFormState) => Promise<void>;
 }) {
   const [open, setOpen] = useState(false);
@@ -219,7 +222,9 @@ function SectionCreateForm({
   const [error, setError] = useState<string | null>(null);
 
   const activeRoles = groupRoles.filter(r => r.isActive);
-  const registeredMembers = members.filter(m => m.invitationStatus === "accepted");
+  // Show members who have a linked user account (registered) OR have accepted invitation
+  // The backend enforces the real guard — this is just UX filtering
+  const registeredMembers = members.filter(m => m.linkedUserId != null || m.invitationStatus === "accepted");
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -308,7 +313,7 @@ function SectionCreateForm({
         </div>
       </div>
 
-      <ConstraintPayloadEditor ruleType={ruleType} value={payload} onChange={setPayload} />
+      <ConstraintPayloadEditor ruleType={ruleType} value={payload} onChange={setPayload} taskOptions={taskOptions} />
 
       <div className="grid grid-cols-2 gap-3">
         <div>
@@ -338,7 +343,7 @@ export default function ConstraintsTab({
   isAdmin, groupId, constraints, constraintsLoading, constraintDeleteErrors,
   showConstraintForm, newConstraintRuleType, newConstraintSeverity, newConstraintPayload, newConstraintFrom, newConstraintUntil, constraintSaving, constraintError,
   editingConstraintId, editConstraintPayload, editConstraintFrom, editConstraintUntil, editConstraintSeverity, editConstraintSaving, editConstraintError,
-  groupRoles, groupRolesLoading: _groupRolesLoading, members,
+  groupRoles, groupRolesLoading: _groupRolesLoading, members, taskOptions,
   onOpenCreate, onCloseCreate, onRuleTypeChange, onSeverityChange, onPayloadChange, onFromChange, onUntilChange, onCreateSubmit,
   onDeleteConstraint, onStartEdit, onCloseEdit, onEditPayloadChange, onEditFromChange, onEditUntilChange, onEditSeverityChange, onUpdateConstraint,
   onCreateWithScope,
@@ -383,6 +388,7 @@ export default function ConstraintsTab({
           <SectionCreateForm
             scopeType="group" groupId={groupId}
             groupRoles={groupRoles} members={members}
+            taskOptions={taskOptions}
             onSubmit={handleSectionCreate}
           />
         )}
@@ -411,6 +417,7 @@ export default function ConstraintsTab({
           <SectionCreateForm
             scopeType="role" groupId={groupId}
             groupRoles={groupRoles} members={members}
+            taskOptions={taskOptions}
             onSubmit={handleSectionCreate}
           />
         )}
@@ -434,6 +441,7 @@ export default function ConstraintsTab({
           <SectionCreateForm
             scopeType="person" groupId={groupId}
             groupRoles={groupRoles} members={members}
+            taskOptions={taskOptions}
             onSubmit={handleSectionCreate}
           />
         )}
@@ -512,7 +520,7 @@ export default function ConstraintsTab({
                 <option value="emergency">🚨 חירום (Emergency)</option>
               </select>
             </div>
-            <ConstraintPayloadEditor ruleType={editingConstraint.ruleType} value={editConstraintPayload} onChange={onEditPayloadChange} />
+            <ConstraintPayloadEditor ruleType={editingConstraint.ruleType} value={editConstraintPayload} onChange={onEditPayloadChange} taskOptions={taskOptions} />
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs text-slate-500 mb-1">בתוקף מ</label>

@@ -20,7 +20,6 @@ interface Props {
   discardSaving: boolean;
   scheduleVersionError: string | null;
   currentUserName?: string;
-  /** Names of group members — used to filter assignments to this group only */
   memberNames?: Set<string>;
   onOpenDraftModal: () => void;
   onPublish: () => Promise<void>;
@@ -29,20 +28,10 @@ interface Props {
 
 const DAY_NAMES = ["ראשון", "שני", "שלישי", "רביעי", "חמישי", "שישי", "שבת"];
 
-function formatDateLabel(dateStr: string, fDateShort: (d: string) => string): string {
-  const today = new Date().toISOString().split("T")[0];
-  const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0];
-  const tomorrow = new Date(Date.now() + 86400000).toISOString().split("T")[0];
-  if (dateStr === today) return "היום";
-  if (dateStr === yesterday) return "אתמול";
-  if (dateStr === tomorrow) return "מחר";
-  return fDateShort(dateStr + "T00:00:00");
-}
-
 function getWeekDates(fromDate: string): string[] {
   const dates: string[] = [];
   const start = new Date(fromDate + "T00:00:00");
-  start.setDate(start.getDate() - start.getDay());
+  start.setDate(start.getDate() - start.getDay()); // go to Sunday
   for (let i = 0; i < 7; i++) {
     const d = new Date(start);
     d.setDate(start.getDate() + i);
@@ -61,43 +50,53 @@ export default function ScheduleTab({
   const minDate = new Date(Date.now() - 2 * 86400000).toISOString().split("T")[0];
   const maxDate = new Date(Date.now() + solverHorizonDays * 86400000).toISOString().split("T")[0];
 
-  const [scheduleDate, setScheduleDate] = useState(today);
-  const [scheduleView, setScheduleView] = useState<"day" | "week">("day");
+  // Week navigation — which week to show (anchored to a date in that week)
+  const [weekAnchor, setWeekAnchor] = useState(today);
+  // Which day tab is selected within the week (0 = Sunday … 6 = Saturday)
+  const [selectedWeekDay, setSelectedWeekDay] = useState(new Date().getDay());
   const [personFilter, setPersonFilter] = useState("");
   const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
-  // Week view: which day tab is selected (0 = Sunday … 6 = Saturday)
-  const [selectedWeekDay, setSelectedWeekDay] = useState(new Date().getDay());
 
   const { fDateShort } = useDateFormat();
 
-  function prevDay() {
-    const d = new Date(scheduleDate + "T00:00:00");
-    d.setDate(d.getDate() - 1);
+  const weekDates = getWeekDates(weekAnchor);
+  const selectedDate = weekDates[selectedWeekDay] ?? weekDates[0];
+
+  function prevWeek() {
+    const d = new Date(weekAnchor + "T00:00:00");
+    d.setDate(d.getDate() - 7);
     const next = d.toISOString().split("T")[0];
-    if (next >= minDate) setScheduleDate(next);
+    if (next >= minDate) setWeekAnchor(next);
   }
 
-  function nextDay() {
-    const d = new Date(scheduleDate + "T00:00:00");
-    d.setDate(d.getDate() + 1);
+  function nextWeek() {
+    const d = new Date(weekAnchor + "T00:00:00");
+    d.setDate(d.getDate() + 7);
     const next = d.toISOString().split("T")[0];
-    if (next <= maxDate) setScheduleDate(next);
+    if (next <= maxDate) setWeekAnchor(next);
+  }
+
+  function goToToday() {
+    setWeekAnchor(today);
+    setSelectedWeekDay(new Date().getDay());
   }
 
   const filtered = (scheduleData ?? []).filter(a => {
-    // Filter to group members only (when memberNames is provided)
     if (memberNames && memberNames.size > 0 && !memberNames.has(a.personName)) return false;
-    // Text search filter
     if (personFilter && !a.personName.toLowerCase().includes(personFilter.toLowerCase())) return false;
     return true;
   });
 
-  const weekDates = getWeekDates(scheduleDate);
-  const selectedWeekDate = weekDates[selectedWeekDay] ?? weekDates[0];
+  // Week range label e.g. "12–18 ינואר"
+  const weekStart = weekDates[0];
+  const weekEnd = weekDates[6];
+  const weekLabel = weekStart && weekEnd
+    ? `${fDateShort(weekStart + "T00:00:00")} – ${fDateShort(weekEnd + "T00:00:00")}`
+    : "";
 
   return (
     <div className="space-y-4">
-      {/* Infeasibility banner — admin only, shown when last solver run failed */}
+      {/* Infeasibility banner — admin only */}
       {isAdmin && !draftVersion && lastRunSummary && (() => {
         try {
           const s = JSON.parse(lastRunSummary);
@@ -144,16 +143,12 @@ export default function ScheduleTab({
               <button onClick={onOpenDraftModal} className="text-xs text-amber-800 border border-amber-300 hover:bg-amber-100 px-3 py-1.5 rounded-lg transition-colors font-medium">
                 👁 צפה בטיוטה
               </button>
-              {isAdmin && (
-                <>
-                  <button onClick={onPublish} disabled={publishSaving || discardSaving} className="bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-medium px-3 py-1.5 rounded-lg disabled:opacity-50 transition-colors">
-                    {publishSaving ? "מפרסם..." : "פרסם סידור"}
-                  </button>
-                  <button onClick={() => setShowDiscardConfirm(true)} disabled={publishSaving || discardSaving} className="text-xs text-red-600 border border-red-200 hover:bg-red-50 px-3 py-1.5 rounded-lg disabled:opacity-50 transition-colors">
-                    בטל טיוטה
-                  </button>
-                </>
-              )}
+              <button onClick={onPublish} disabled={publishSaving || discardSaving} className="bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-medium px-3 py-1.5 rounded-lg disabled:opacity-50 transition-colors">
+                {publishSaving ? "מפרסם..." : "פרסם סידור"}
+              </button>
+              <button onClick={() => setShowDiscardConfirm(true)} disabled={publishSaving || discardSaving} className="text-xs text-red-600 border border-red-200 hover:bg-red-50 px-3 py-1.5 rounded-lg disabled:opacity-50 transition-colors">
+                בטל טיוטה
+              </button>
             </div>
           </div>
           {scheduleVersionError && <p className="text-xs text-red-600 mt-2">{scheduleVersionError}</p>}
@@ -171,7 +166,7 @@ export default function ScheduleTab({
         </div>
       )}
 
-      {/* Filter */}
+      {/* Search filter */}
       <div className="relative max-w-xs">
         <input
           type="text"
@@ -185,34 +180,49 @@ export default function ScheduleTab({
         </svg>
       </div>
 
-      {/* Date nav + view toggle */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <button onClick={prevDay} disabled={scheduleDate <= minDate} className="p-2 rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-40 transition-colors">
-            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
-          </button>
+      {/* Week navigation */}
+      <div className="flex items-center gap-2">
+        <button onClick={prevWeek} className="p-2 rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors">
+          <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
+        <button
+          onClick={goToToday}
+          className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
+            weekDates.includes(today) ? "bg-blue-500 text-white border-blue-500" : "border-slate-200 text-slate-600 hover:bg-slate-50"
+          }`}
+        >
+          השבוע
+        </button>
+        <button onClick={nextWeek} className="p-2 rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors">
+          <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
+        <span className="text-sm text-slate-500 mr-1">{weekLabel}</span>
+      </div>
+
+      {/* Day-name tabs */}
+      <div className="flex gap-1 overflow-x-auto pb-1">
+        {weekDates.map((d, i) => (
           <button
-            onClick={() => setScheduleDate(today)}
-            className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${scheduleDate === today ? "bg-blue-500 text-white border-blue-500" : "border-slate-200 text-slate-600 hover:bg-slate-50"}`}
+            key={d}
+            onClick={() => setSelectedWeekDay(i)}
+            className={`flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+              i === selectedWeekDay
+                ? "bg-blue-500 text-white shadow-sm"
+                : d === today
+                ? "bg-blue-50 text-blue-600 border border-blue-200"
+                : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+            }`}
           >
-            היום
+            {DAY_NAMES[i]}
+            {d === today && i !== selectedWeekDay && (
+              <span className="mr-1 text-blue-400">•</span>
+            )}
           </button>
-          <button onClick={nextDay} disabled={scheduleDate >= maxDate} className="p-2 rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-40 transition-colors">
-            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
-          </button>
-          <span className="text-sm font-medium text-slate-700 mr-2">{formatDateLabel(scheduleDate, fDateShort)}</span>
-        </div>
-        <div className="flex gap-1 bg-slate-100 p-1 rounded-lg">
-          {(["day", "week"] as const).map(v => (
-            <button
-              key={v}
-              onClick={() => setScheduleView(v)}
-              className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${scheduleView === v ? "bg-white text-slate-900 shadow-sm" : "text-slate-500"}`}
-            >
-              {v === "day" ? "יום" : "שבוע"}
-            </button>
-          ))}
-        </div>
+        ))}
       </div>
 
       {scheduleLoading && (
@@ -226,46 +236,13 @@ export default function ScheduleTab({
       )}
       {scheduleError && <p className="text-sm text-red-600 py-4">{scheduleError}</p>}
 
-      {/* Day view */}
-      {!scheduleLoading && !scheduleError && scheduleView === "day" && (
+      {/* 2D schedule table for selected day */}
+      {!scheduleLoading && !scheduleError && (
         <ScheduleTable2D
           assignments={filtered}
-          filterDate={scheduleDate}
+          filterDate={selectedDate}
           currentUserName={currentUserName}
         />
-      )}
-
-      {/* Week view — day-name tabs + 2D table for selected day */}
-      {!scheduleLoading && !scheduleError && scheduleView === "week" && (
-        <div className="space-y-3">
-          {/* Day-name tab buttons */}
-          <div className="flex gap-1 overflow-x-auto pb-1">
-            {weekDates.map((d, i) => (
-              <button
-                key={d}
-                onClick={() => setSelectedWeekDay(i)}
-                className={`flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                  i === selectedWeekDay
-                    ? "bg-blue-500 text-white shadow-sm"
-                    : d === today
-                    ? "bg-blue-50 text-blue-600 border border-blue-200"
-                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                }`}
-              >
-                {DAY_NAMES[i]}
-                {d === today && i !== selectedWeekDay && (
-                  <span className="mr-1 text-blue-400">•</span>
-                )}
-              </button>
-            ))}
-          </div>
-          {/* 2D table for the selected day */}
-          <ScheduleTable2D
-            assignments={filtered}
-            filterDate={selectedWeekDate}
-            currentUserName={currentUserName}
-          />
-        </div>
       )}
     </div>
   );

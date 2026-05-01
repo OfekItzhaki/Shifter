@@ -31,8 +31,8 @@ interface Props {
   // Roles
   groupRoles: GroupRoleDto[];
   groupRolesLoading: boolean;
-  onCreateRole: (name: string, description: string | null) => Promise<void>;
-  onUpdateRole: (roleId: string, name: string, description: string | null) => Promise<void>;
+  onCreateRole: (name: string, description: string | null, permissionLevel: string) => Promise<void>;
+  onUpdateRole: (roleId: string, name: string, description: string | null, permissionLevel: string) => Promise<void>;
   onDeactivateRole: (roleId: string) => Promise<void>;
   onGroupNameChange: (v: string) => void;
   onRenameGroup: () => void;
@@ -64,11 +64,13 @@ export default function SettingsTab({
   // Roles form state
   const [newRoleName, setNewRoleName] = useState("");
   const [newRoleDesc, setNewRoleDesc] = useState("");
+  const [newRolePermLevel, setNewRolePermLevel] = useState("view");
   const [roleFormSaving, setRoleFormSaving] = useState(false);
   const [roleFormError, setRoleFormError] = useState<string | null>(null);
   const [editingRoleId, setEditingRoleId] = useState<string | null>(null);
   const [editRoleName, setEditRoleName] = useState("");
   const [editRoleDesc, setEditRoleDesc] = useState("");
+  const [editRolePermLevel, setEditRolePermLevel] = useState("view");
   const [editRoleSaving, setEditRoleSaving] = useState(false);
   const [editRoleError, setEditRoleError] = useState<string | null>(null);
 
@@ -78,9 +80,10 @@ export default function SettingsTab({
     setRoleFormSaving(true);
     setRoleFormError(null);
     try {
-      await onCreateRole(newRoleName.trim(), newRoleDesc.trim() || null);
+      await onCreateRole(newRoleName.trim(), newRoleDesc.trim() || null, newRolePermLevel);
       setNewRoleName("");
       setNewRoleDesc("");
+      setNewRolePermLevel("view");
     } catch {
       setRoleFormError("שגיאה ביצירת תפקיד");
     } finally {
@@ -93,7 +96,7 @@ export default function SettingsTab({
     setEditRoleSaving(true);
     setEditRoleError(null);
     try {
-      await onUpdateRole(roleId, editRoleName.trim(), editRoleDesc.trim() || null);
+      await onUpdateRole(roleId, editRoleName.trim(), editRoleDesc.trim() || null, editRolePermLevel);
       setEditingRoleId(null);
     } catch {
       setEditRoleError("שגיאה בעדכון תפקיד");
@@ -209,7 +212,15 @@ export default function SettingsTab({
                           className="w-full border border-slate-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                           placeholder="תיאור (אופציונלי)"
                         />
-                        {editRoleError && <p className="text-xs text-red-600">{editRoleError}</p>}
+                        <select
+                          value={editRolePermLevel}
+                          onChange={e => setEditRolePermLevel(e.target.value)}
+                          className="w-full border border-slate-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                          <option value="view">צפייה בלבד</option>
+                          <option value="ViewAndEdit">צפייה + עריכה</option>
+                          <option value="Owner">בעלים</option>
+                        </select>                        {editRoleError && <p className="text-xs text-red-600">{editRoleError}</p>}
                         <div className="flex gap-2">
                           <button
                             onClick={() => handleUpdateRole(role.id)}
@@ -235,6 +246,16 @@ export default function SettingsTab({
                           {role.description && (
                             <span className="text-xs text-slate-400 mr-2">{role.description}</span>
                           )}
+                          {role.isActive && (
+                            <span className={`mr-2 text-xs px-1.5 py-0.5 rounded-full ${
+                              role.permissionLevel === "Owner" ? "bg-purple-100 text-purple-700" :
+                              role.permissionLevel === "ViewAndEdit" ? "bg-blue-100 text-blue-700" :
+                              "bg-slate-100 text-slate-500"
+                            }`}>
+                              {role.permissionLevel === "Owner" ? "בעלים" :
+                               role.permissionLevel === "ViewAndEdit" ? "צפייה + עריכה" : "צפייה"}
+                            </span>
+                          )}
                         </div>
                         {role.isActive && (
                           <div className="flex items-center gap-1 flex-shrink-0">
@@ -243,6 +264,7 @@ export default function SettingsTab({
                                 setEditingRoleId(role.id);
                                 setEditRoleName(role.name);
                                 setEditRoleDesc(role.description ?? "");
+                                setEditRolePermLevel(role.permissionLevel ?? "view");
                                 setEditRoleError(null);
                               }}
                               className="text-xs text-slate-500 border border-slate-200 hover:bg-slate-50 px-2.5 py-1 rounded-lg transition-colors"
@@ -289,6 +311,15 @@ export default function SettingsTab({
                 placeholder="תיאור (אופציונלי)"
                 className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
+              <select
+                value={newRolePermLevel}
+                onChange={e => setNewRolePermLevel(e.target.value)}
+                className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="view">צפייה בלבד</option>
+                <option value="ViewAndEdit">צפייה + עריכה</option>
+                <option value="Owner">בעלים</option>
+              </select>
               {roleFormError && <p className="text-xs text-red-600">{roleFormError}</p>}
             </form>
           </div>

@@ -16,6 +16,6 @@ public class GetGroupRolesQueryHandler : IRequestHandler<GetGroupRolesQuery, Lis
         await _db.SpaceRoles.AsNoTracking()
             .Where(r => r.SpaceId == req.SpaceId && r.GroupId == req.GroupId)
             .OrderBy(r => r.Name)
-            .Select(r => new GroupRoleDto(r.Id, r.Name, r.Description, r.IsActive))
+            .Select(r => new GroupRoleDto(r.Id, r.Name, r.Description, r.IsActive, r.PermissionLevel.ToString()))
             .ToListAsync(ct);
 }

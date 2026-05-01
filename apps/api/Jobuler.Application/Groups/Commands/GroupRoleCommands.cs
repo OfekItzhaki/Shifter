@@ -3,12 +3,11 @@ using Jobuler.Domain.Spaces;
 using Jobuler.Infrastructure.Persistence;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
-
 namespace Jobuler.Application.Groups.Commands;
 
 // ── DTOs ─────────────────────────────────────────────────────────────────────
 
-public record GroupRoleDto(Guid Id, string Name, string? Description, bool IsActive);
+public record GroupRoleDto(Guid Id, string Name, string? Description, bool IsActive, string PermissionLevel);
 
 // ── Create ────────────────────────────────────────────────────────────────────
 
@@ -17,6 +16,7 @@ public record CreateGroupRoleCommand(
     Guid GroupId,
     string Name,
     string? Description,
+    string PermissionLevel,
     Guid RequestingUserId) : IRequest<Guid>;
 
 public class CreateGroupRoleCommandHandler : IRequestHandler<CreateGroupRoleCommand, Guid>
@@ -49,7 +49,10 @@ public class CreateGroupRoleCommandHandler : IRequestHandler<CreateGroupRoleComm
         if (duplicate)
             throw new ConflictException($"A role named '{req.Name.Trim()}' already exists in this group.");
 
-        var role = SpaceRole.CreateForGroup(req.SpaceId, req.GroupId, req.Name, req.RequestingUserId, req.Description);
+        var permLevel = Enum.TryParse<RolePermissionLevel>(req.PermissionLevel, true, out var pl)
+            ? pl : RolePermissionLevel.View;
+
+        var role = SpaceRole.CreateForGroup(req.SpaceId, req.GroupId, req.Name, req.RequestingUserId, req.Description, permLevel);
         _db.SpaceRoles.Add(role);
         await _db.SaveChangesAsync(ct);
         return role.Id;
@@ -64,6 +67,7 @@ public record UpdateGroupRoleCommand(
     Guid RoleId,
     string Name,
     string? Description,
+    string PermissionLevel,
     Guid RequestingUserId) : IRequest;
 
 public class UpdateGroupRoleCommandHandler : IRequestHandler<UpdateGroupRoleCommand>
@@ -87,7 +91,9 @@ public class UpdateGroupRoleCommandHandler : IRequestHandler<UpdateGroupRoleComm
                 && r.GroupId == req.GroupId, ct)
             ?? throw new KeyNotFoundException("Role not found in this group.");
 
-        role.Update(req.Name, req.Description);
+        var permLevel = Enum.TryParse<RolePermissionLevel>(req.PermissionLevel, true, out var pl)
+            ? pl : RolePermissionLevel.View;
+        role.Update(req.Name, req.Description, permLevel);
         await _db.SaveChangesAsync(ct);
     }
 }

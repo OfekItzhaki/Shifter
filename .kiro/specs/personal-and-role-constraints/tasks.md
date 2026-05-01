@@ -50,15 +50,15 @@ This plan closes the gap between the existing backend domain (which already supp
     - _Requirements: 6.3, 6.4_
   - [x] 8.6 Test: group scope → succeeds without person/role checks
     - _Requirements: 6.6_
-  - [ ]* 8.7 Write property test for Property 7: unregistered person always rejected
+  - [x] 8.7 Write property test for Property 7: unregistered person always rejected
     - **Property 7: Unregistered person is rejected with HTTP 422**
     - **Validates: Requirements 8.2, 8.4**
     - `// Feature: personal-and-role-constraints, Property 7: unregistered person rejected with 422`
-  - [ ]* 8.8 Write property test for Property 8: non-existent or inactive role always rejected
+  - [x] 8.8 Write property test for Property 8: non-existent or inactive role always rejected
     - **Property 8: Non-existent or inactive role is rejected with HTTP 404**
     - **Validates: Requirements 3.7, 6.3, 6.4**
     - `// Feature: personal-and-role-constraints, Property 8: non-existent or inactive role rejected with 404`
-  - [ ]* 8.9 Write property test for Property 9: non-existent person always rejected
+  - [x] 8.9 Write property test for Property 9: non-existent person always rejected
     - **Property 9: Non-existent person is rejected with HTTP 404**
     - **Validates: Requirements 2.7, 6.1, 6.2**
     - `// Feature: personal-and-role-constraints, Property 9: non-existent person rejected with 404`
@@ -85,7 +85,7 @@ This plan closes the gap between the existing backend domain (which already supp
 
 ## Notes
 
-- Tasks marked with `*` are optional and can be skipped for faster MVP
+- All tasks are required — no optional tasks remain
 - The backend `ExceptionHandlingMiddleware` already maps `DomainValidationException` → HTTP 422 — no backend change needed
 - The `CreateConstraintCommandHandler` already contains the full person/role validation chain — no new commands needed
 - Each task references specific requirements for traceability

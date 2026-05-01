@@ -200,6 +200,8 @@ export default function GroupDetailPage() {
   // ── Group roles state ────────────────────────────────────────────────────
   const [groupRoles, setGroupRoles] = useState<import("@/lib/api/groups").GroupRoleDto[]>([]);
   const [groupRolesLoading, setGroupRolesLoading] = useState(false);
+  // Task options for the no_task_type_restriction constraint dropdown
+  const [constraintTaskOptions, setConstraintTaskOptions] = useState<{ id: string; name: string }[]>([]);
 
   // ── Re-evaluate admin state when adminGroupId changes ───────────────────
   useEffect(() => {
@@ -314,7 +316,7 @@ export default function GroupDetailPage() {
       .finally(() => setGroupTasksLoading(false));
   }, [currentSpaceId, groupId, activeTab]);
 
-  // ── Load constraints (+ roles if not yet loaded) ─────────────────────────
+  // ── Load constraints (+ roles + tasks if not yet loaded) ────────────────
   useEffect(() => {
     if (!currentSpaceId || !groupId || activeTab !== "constraints") return;
     setConstraintsLoading(true);
@@ -323,10 +325,13 @@ export default function GroupDetailPage() {
       groupRoles.length === 0
         ? getGroupRoles(currentSpaceId, groupId)
         : Promise.resolve(groupRoles),
+      listGroupTasks(currentSpaceId, groupId),
     ])
-      .then(([c, r]) => {
+      .then(([c, r, tasks]) => {
         setConstraints(c);
         setGroupRoles(r);
+        // Build task options for the no_task_type_restriction dropdown
+        setConstraintTaskOptions(tasks.map(t => ({ id: t.id, name: t.name })));
       })
       .catch(() => {})
       .finally(() => setConstraintsLoading(false));
@@ -710,16 +715,16 @@ export default function GroupDetailPage() {
   }
 
   // ── Group role handlers ──────────────────────────────────────────────────
-  async function handleCreateRole(name: string, description: string | null) {
+  async function handleCreateRole(name: string, description: string | null, permissionLevel = "view") {
     if (!currentSpaceId) return;
-    await createGroupRole(currentSpaceId, groupId, { name, description });
+    await createGroupRole(currentSpaceId, groupId, { name, description, permissionLevel });
     const updated = await getGroupRoles(currentSpaceId, groupId);
     setGroupRoles(updated);
   }
 
-  async function handleUpdateRole(roleId: string, name: string, description: string | null) {
+  async function handleUpdateRole(roleId: string, name: string, description: string | null, permissionLevel = "view") {
     if (!currentSpaceId) return;
-    await updateGroupRole(currentSpaceId, groupId, roleId, { name, description });
+    await updateGroupRole(currentSpaceId, groupId, roleId, { name, description, permissionLevel });
     const updated = await getGroupRoles(currentSpaceId, groupId);
     setGroupRoles(updated);
   }
@@ -1129,6 +1134,7 @@ export default function GroupDetailPage() {
               groupRoles={groupRoles}
               groupRolesLoading={groupRolesLoading}
               members={members}
+              taskOptions={constraintTaskOptions}
               onCreateWithScope={async (scopeType, scopeId, form) => {
                 if (!currentSpaceId) return;
                 try {

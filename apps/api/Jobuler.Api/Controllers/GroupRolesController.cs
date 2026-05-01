@@ -42,11 +42,12 @@ public class GroupRolesController : ControllerBase
         CancellationToken ct)
     {
         var id = await _mediator.Send(
-            new CreateGroupRoleCommand(spaceId, groupId, req.Name, req.Description, CurrentUserId), ct);
+            new CreateGroupRoleCommand(spaceId, groupId, req.Name, req.Description,
+                req.PermissionLevel ?? "view", CurrentUserId), ct);
         return Created($"/spaces/{spaceId}/groups/{groupId}/roles/{id}", new { id });
     }
 
-    /// <summary>Update a group role's name and description.</summary>
+    /// <summary>Update a group role's name, description, and permission level.</summary>
     [HttpPut("{roleId:guid}")]
     public async Task<IActionResult> Update(
         Guid spaceId, Guid groupId, Guid roleId,
@@ -54,7 +55,8 @@ public class GroupRolesController : ControllerBase
         CancellationToken ct)
     {
         await _mediator.Send(
-            new UpdateGroupRoleCommand(spaceId, groupId, roleId, req.Name, req.Description, CurrentUserId), ct);
+            new UpdateGroupRoleCommand(spaceId, groupId, roleId, req.Name, req.Description,
+                req.PermissionLevel ?? "view", CurrentUserId), ct);
         return NoContent();
     }
 
@@ -70,4 +72,4 @@ public class GroupRolesController : ControllerBase
     }
 }
 
-public record GroupRoleRequest(string Name, string? Description);
+public record GroupRoleRequest(string Name, string? Description, string? PermissionLevel);

@@ -5,17 +5,29 @@
  * friendly form fields based on the rule type.
  */
 
+export interface TaskOption {
+  id: string;
+  name: string;
+}
+
 interface Props {
   ruleType: string;
   value: string; // JSON string
   onChange: (json: string) => void;
+  /** Optional list of tasks for the no_task_type_restriction dropdown */
+  taskOptions?: TaskOption[];
 }
 
 function parsePayload(json: string): Record<string, unknown> {
   try { return JSON.parse(json) ?? {}; } catch { return {}; }
 }
 
-function field(label: string, key: string, payload: Record<string, unknown>, onChange: (p: Record<string, unknown>) => void, type: "number" | "text" = "number") {
+function field(
+  label: string, key: string,
+  payload: Record<string, unknown>,
+  onChange: (p: Record<string, unknown>) => void,
+  type: "number" | "text" = "number"
+) {
   return (
     <div key={key}>
       <label className="block text-xs font-medium text-slate-500 mb-1">{label}</label>
@@ -29,7 +41,7 @@ function field(label: string, key: string, payload: Record<string, unknown>, onC
   );
 }
 
-export default function ConstraintPayloadEditor({ ruleType, value, onChange }: Props) {
+export default function ConstraintPayloadEditor({ ruleType, value, onChange, taskOptions }: Props) {
   const payload = parsePayload(value);
   const update = (p: Record<string, unknown>) => onChange(JSON.stringify(p));
 
@@ -83,6 +95,24 @@ export default function ConstraintPayloadEditor({ ruleType, value, onChange }: P
       );
 
     case "no_task_type_restriction":
+      // If task options are provided, show a dropdown; otherwise fall back to text input
+      if (taskOptions && taskOptions.length > 0) {
+        return (
+          <div>
+            <label className="block text-xs font-medium text-slate-500 mb-1">סוג משימה מוגבל</label>
+            <select
+              value={String(payload.task_type_id ?? "")}
+              onChange={e => update({ task_type_id: e.target.value })}
+              className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">בחר משימה...</option>
+              {taskOptions.map(t => (
+                <option key={t.id} value={t.id}>{t.name}</option>
+              ))}
+            </select>
+          </div>
+        );
+      }
       return (
         <div>
           {field("מזהה סוג משימה", "task_type_id", payload, update, "text")}
@@ -90,7 +120,6 @@ export default function ConstraintPayloadEditor({ ruleType, value, onChange }: P
       );
 
     default:
-      // Fallback: pretty JSON editor for unknown rule types
       return (
         <div>
           <label className="block text-xs font-medium text-slate-500 mb-1">

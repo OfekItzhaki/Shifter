@@ -3,6 +3,14 @@ using Jobuler.Domain.Common;
 namespace Jobuler.Domain.Spaces;
 
 /// <summary>
+/// Permission level for a group role.
+/// View = read-only access to group data.
+/// ViewAndEdit = can edit schedule, tasks, and constraints.
+/// Owner = full control including member management and settings.
+/// </summary>
+public enum RolePermissionLevel { View, ViewAndEdit, Owner }
+
+/// <summary>
 /// Dynamic operational role within a space or group (Soldier, Medic, Squad Commander, etc.).
 /// Roles are data, not hardcoded enums.
 /// When GroupId is set, the role belongs to that group only.
@@ -16,6 +24,7 @@ public class SpaceRole : AuditableEntity, ITenantScoped
     public string? Description { get; private set; }
     public bool IsActive { get; private set; } = true;
     public Guid? CreatedByUserId { get; private set; }
+    public RolePermissionLevel PermissionLevel { get; private set; } = RolePermissionLevel.View;
 
     private SpaceRole() { }
 
@@ -30,16 +39,27 @@ public class SpaceRole : AuditableEntity, ITenantScoped
         };
 
     /// <summary>Creates a group-scoped role visible only within that group.</summary>
-    public static SpaceRole CreateForGroup(Guid spaceId, Guid groupId, string name, Guid createdByUserId, string? description = null) =>
+    public static SpaceRole CreateForGroup(
+        Guid spaceId, Guid groupId, string name, Guid createdByUserId,
+        string? description = null,
+        RolePermissionLevel permissionLevel = RolePermissionLevel.View) =>
         new()
         {
             SpaceId = spaceId,
             GroupId = groupId,
             Name = name.Trim(),
             Description = description?.Trim(),
-            CreatedByUserId = createdByUserId
+            CreatedByUserId = createdByUserId,
+            PermissionLevel = permissionLevel
         };
 
-    public void Update(string name, string? description) { Name = name.Trim(); Description = description?.Trim(); Touch(); }
+    public void Update(string name, string? description, RolePermissionLevel? permissionLevel = null)
+    {
+        Name = name.Trim();
+        Description = description?.Trim();
+        if (permissionLevel.HasValue) PermissionLevel = permissionLevel.Value;
+        Touch();
+    }
+
     public void Deactivate() { IsActive = false; Touch(); }
 }
