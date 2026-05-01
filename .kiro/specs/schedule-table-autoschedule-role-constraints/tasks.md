@@ -184,50 +184,50 @@ Implementation is ordered so that each layer is ready before the next depends on
   - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 19. Tests: backend — `CreateConstraintCommandHandler` scope validation
-  - [ ]* 19.1 Write property test for role constraint scope validation (Property 7)
+  - [x] 19.1 Write property test for role constraint scope validation (Property 7)
     - **Property 7: Role constraint scope validation**
     - **Validates: Requirements 8.1, 8.2**
     - Use FsCheck to generate random role IDs (existing active, existing inactive, missing)
     - Verify: missing or inactive role → no constraint inserted, non-2xx response
-  - [ ]* 19.2 Write property test for person constraint scope validation (Property 8)
+  - [x] 19.2 Write property test for person constraint scope validation (Property 8)
     - **Property 8: Person constraint scope validation**
     - **Validates: Requirements 9.1, 9.2, 9.3**
     - Use FsCheck to generate random person states (missing, unregistered, registered)
     - Verify: missing → 404, unregistered → 422, registered → 201, no insert on error
-  - [ ]* 19.3 Write unit tests for `CreateConstraintCommandHandler` role validation
+  - [x] 19.3 Write unit tests for `CreateConstraintCommandHandler` role validation
     - Test: null `ScopeId` with `ScopeType = Role` → 400
     - Test: inactive role → 404
     - Test: valid active role → 201
-  - [ ]* 19.4 Write unit tests for `CreateConstraintCommandHandler` person validation
+  - [x] 19.4 Write unit tests for `CreateConstraintCommandHandler` person validation
     - Test: null `ScopeId` with `ScopeType = Person` → 400
     - Test: person not in space → 404
     - Test: person with null `linked_user_id` → 422
     - Test: registered person → 201
 
 - [ ] 20. Tests: backend — `SolverPayloadNormalizer` effective-date filtering
-  - [ ]* 20.1 Write property test for effective-date filtering uniformity (Property 10)
+  - [x] 20.1 Write property test for effective-date filtering uniformity (Property 10)
     - **Property 10: Effective-date filtering is uniform across scope types**
     - **Validates: Requirements 10.4, 13.1, 13.2, 13.3, 13.4**
     - Use FsCheck to generate random date ranges relative to horizon
     - Verify: constraint included iff effective window overlaps horizon, for all scope types
-  - [ ]* 20.2 Write property test for payload including all scope types (Property 9)
+  - [x] 20.2 Write property test for payload including all scope types (Property 9)
     - **Property 9: Solver payload includes all three constraint scope levels**
     - **Validates: Requirements 10.1, 10.2, 10.3**
     - Generate constraint sets with group, role, and person scope types
     - Verify all three scope types appear in the built payload
-  - [ ]* 20.3 Write unit tests for `SolverPayloadNormalizer` date filtering
+  - [x] 20.3 Write unit tests for `SolverPayloadNormalizer` date filtering
     - Test: constraint with `effective_until < horizonStart` → excluded
     - Test: constraint with `effective_from > horizonEnd` → excluded
     - Test: constraint with null dates → always included
     - Test: constraint overlapping horizon → included
 
 - [ ] 21. Tests: backend — `AutoSchedulerService` gap detection
-  - [ ]* 21.1 Write property test for gap detection triggers solver exactly once (Property 5)
+  - [x] 21.1 Write property test for gap detection triggers solver exactly once (Property 5)
     - **Property 5: Gap detection triggers solver exactly once per group**
     - **Validates: Requirements 4.1, 4.2**
     - Use FsCheck to generate random task slot sets with random coverage gaps
     - Verify: at least one gap → solver triggered exactly once; no gaps → not triggered
-  - [ ]* 21.2 Write unit tests for `AutoSchedulerService.CheckGroupAsync`
+  - [x] 21.2 Write unit tests for `AutoSchedulerService.CheckGroupAsync`
     - Test: all slots covered → no trigger
     - Test: one slot uncovered → trigger once
     - Test: all slots uncovered → trigger once (not N times)
@@ -236,16 +236,16 @@ Implementation is ordered so that each layer is ready before the next depends on
     - Test: recent failure → skip
 
 - [ ] 22. Tests: backend — `GroupRolesController` and commands
-  - [ ]* 22.1 Write property test for group role creation scoping (Property 11)
+  - [x] 22.1 Write property test for group role creation scoping (Property 11)
     - **Property 11: Group role creation is group-scoped**
     - **Validates: Requirements 12.1, 12.7**
     - Use FsCheck to generate random role names and two groups
     - Verify: created role has `group_id = groupId`; fetching roles for other group does not return it
-  - [ ]* 22.2 Write property test for role update round-trip (Property 12)
+  - [x] 22.2 Write property test for role update round-trip (Property 12)
     - **Property 12: Role update round-trip**
     - **Validates: Requirements 12.2**
     - Generate random names/descriptions, PUT then GET, verify values match
-  - [ ]* 22.3 Write unit tests for group role CRUD
+  - [x] 22.3 Write unit tests for group role CRUD
     - Test: create role → 201 with ID
     - Test: create duplicate name in same group → 409
     - Test: same name in different group → 201 (allowed)
@@ -254,46 +254,46 @@ Implementation is ordered so that each layer is ready before the next depends on
     - Test: missing permission → 403
 
 - [ ] 23. Tests: solver — constraint expansion
-  - [ ]* 23.1 Write unit tests for `expand_role_constraints`
+  - [x] 23.1 Write unit tests for `expand_role_constraints`
     - Test: role with 0 members → warning logged, 0 expanded constraints, original removed
     - Test: role with 1 member → 1 person-scoped constraint
     - Test: role with N members → N person-scoped constraints
     - Test: expansion applies to hard, soft, and emergency lists
-  - [ ]* 23.2 Write unit tests for `expand_group_constraints`
+  - [x] 23.2 Write unit tests for `expand_group_constraints`
     - Test: group with 0 members → warning logged, 0 expanded constraints
     - Test: group with 1 member → 1 person-scoped constraint
     - Test: group with N members → N person-scoped constraints
     - Test: expansion applies to all three severity lists
 
 - [ ] 24. Tests: frontend — `ScheduleTable2D` property tests
-  - [ ]* 24.1 Write property test for column and row completeness (Property 1)
+  - [x] 24.1 Write property test for column and row completeness (Property 1)
     - **Property 1: ScheduleTable2D column and row completeness**
     - **Validates: Requirements 1.1**
     - Use fast-check to generate random assignment arrays (1–20 tasks, 1–10 slots)
     - Verify: exactly one column header per unique task name, one row header per unique slot pair
-  - [ ]* 24.2 Write property test for multi-person cell grouping (Property 2)
+  - [x] 24.2 Write property test for multi-person cell grouping (Property 2)
     - **Property 2: Multi-person cell grouping**
     - **Validates: Requirements 1.2**
     - Generate assignments with 2–5 people sharing the same task and slot
     - Verify: all names appear in the same cell
-  - [ ]* 24.3 Write property test for current user column highlight (Property 3)
+  - [x] 24.3 Write property test for current user column highlight (Property 3)
     - **Property 3: Current user column highlight**
     - **Validates: Requirements 1.8**
     - Generate random assignments + random current user name
     - Verify: user's task column has highlight class; all others do not
-  - [ ]* 24.4 Write property test for date filter correctness (Property 4)
+  - [x] 24.4 Write property test for date filter correctness (Property 4)
     - **Property 4: Date filter correctness**
     - **Validates: Requirements 3.2**
     - Generate assignments spanning 1–14 dates, random filter date
     - Verify: only assignments overlapping filter date are rendered
 
 - [ ] 25. Tests: frontend — `ConstraintsTab` property tests
-  - [ ]* 25.1 Write property test for constraint scope filtering in UI (Property 6)
+  - [x] 25.1 Write property test for constraint scope filtering in UI (Property 6)
     - **Property 6: Constraint scope filtering in UI**
     - **Validates: Requirements 5.1, 6.1, 7.1**
     - Use fast-check to generate random constraint lists with mixed scope types
     - Verify: group section shows only group constraints, role section only role, personal only person; no constraint in two sections
-  - [ ]* 25.2 Write property test for active-only role selector (Property 13)
+  - [x] 25.2 Write property test for active-only role selector (Property 13)
     - **Property 13: Active-only role selector**
     - **Validates: Requirements 12.6**
     - Generate role lists with mixed active/inactive roles
