@@ -106,6 +106,8 @@ function ConstraintRow({
   onDeleteConstraint: (id: string) => void;
 }) {
   const sev = normalizeSeverity(c.severity);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+
   return (
     <div className="bg-white border border-slate-200 rounded-xl p-4">
       <div className="flex items-start justify-between gap-2">
@@ -129,9 +131,32 @@ function ConstraintRow({
           )}
         </div>
         {isAdmin && (
-          <div className="flex gap-1.5 flex-shrink-0">
+          <div className="flex gap-1.5 flex-shrink-0 items-center">
             <button onClick={() => onStartEdit(c)} className="text-xs text-slate-500 hover:text-slate-700 border border-slate-200 px-2 py-1 rounded-lg hover:bg-slate-50 transition-colors">ערוך</button>
-            <button onClick={() => onDeleteConstraint(c.id)} className="text-xs text-red-500 hover:text-red-700 border border-red-100 px-2 py-1 rounded-lg hover:bg-red-50 transition-colors">מחק</button>
+            {confirmDelete ? (
+              <>
+                <span className="text-xs text-slate-600">האם למחוק?</span>
+                <button
+                  onClick={() => { setConfirmDelete(false); onDeleteConstraint(c.id); }}
+                  className="text-xs text-white bg-red-500 hover:bg-red-600 border border-red-500 px-2 py-1 rounded-lg transition-colors"
+                >
+                  אישור
+                </button>
+                <button
+                  onClick={() => setConfirmDelete(false)}
+                  className="text-xs text-slate-500 border border-slate-200 px-2 py-1 rounded-lg hover:bg-slate-50 transition-colors"
+                >
+                  ביטול
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={() => setConfirmDelete(true)}
+                className="text-xs text-red-500 hover:text-red-700 border border-red-100 px-2 py-1 rounded-lg hover:bg-red-50 transition-colors"
+              >
+                מחק
+              </button>
+            )}
           </div>
         )}
       </div>
@@ -175,15 +200,13 @@ function ConstraintSection({
 // ── Inline create form for a section ─────────────────────────────────────────
 function SectionCreateForm({
   scopeType, groupId, groupRoles, members,
-  onSubmit, saving, error,
+  onSubmit,
 }: {
   scopeType: "group" | "role" | "person";
   groupId: string;
   groupRoles: GroupRoleDto[];
   members: GroupMemberDto[];
   onSubmit: (form: ConstraintFormState) => Promise<void>;
-  saving: boolean;
-  error: string | null;
 }) {
   const [open, setOpen] = useState(false);
   const [ruleType, setRuleType] = useState("min_rest_hours");
@@ -192,6 +215,8 @@ function SectionCreateForm({
   const [from, setFrom] = useState("");
   const [until, setUntil] = useState("");
   const [scopeId, setScopeId] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const activeRoles = groupRoles.filter(r => r.isActive);
   const registeredMembers = members.filter(m => m.invitationStatus === "accepted");
@@ -200,12 +225,23 @@ function SectionCreateForm({
     e.preventDefault();
     const resolvedScopeId = scopeType === "group" ? groupId : scopeId;
     if ((scopeType === "role" || scopeType === "person") && !resolvedScopeId) return;
-    await onSubmit({ ruleType, severity, payload, from, until, scopeType, scopeId: resolvedScopeId });
-    setOpen(false);
-    setRuleType("min_rest_hours");
-    setSeverity("hard");
-    setPayload('{"hours": 8}');
-    setFrom(""); setUntil(""); setScopeId("");
+    setSaving(true);
+    setError(null);
+    try {
+      await onSubmit({ ruleType, severity, payload, from, until, scopeType, scopeId: resolvedScopeId });
+      setOpen(false);
+      setRuleType("min_rest_hours");
+      setSeverity("hard");
+      setPayload('{"hours": 8}');
+      setFrom(""); setUntil(""); setScopeId("");
+    } catch (err: unknown) {
+      const msg =
+        (err as { message?: string })?.message ||
+        "שגיאה ביצירת אילוץ";
+      setError(msg);
+    } finally {
+      setSaving(false);
+    }
   }
 
   if (!open) {
@@ -309,9 +345,11 @@ export default function ConstraintsTab({
 }: Props) {
   const editingConstraint = constraints.find(c => c.id === editingConstraintId) ?? null;
 
-  // Section-level create state
-  const [sectionSaving, setSectionSaving] = useState(false);
-  const [sectionError, setSectionError] = useState<string | null>(null);
+  // Section-level create state — each SectionCreateForm manages its own internally
+  async function handleSectionCreate(form: ConstraintFormState) {
+    if (!onCreateWithScope) return;
+    await onCreateWithScope(form.scopeType, form.scopeId, form);
+  }
 
   // Partition constraints by scope type
   const groupConstraints = constraints.filter(c => c.scopeType?.toLowerCase() === "group" && c.scopeId === groupId);
@@ -321,20 +359,6 @@ export default function ConstraintsTab({
   // Build lookup maps
   const roleMap = new Map(groupRoles.map(r => [r.id, r.name]));
   const memberMap = new Map(members.map(m => [m.personId, m.displayName ?? m.fullName]));
-
-  async function handleSectionCreate(form: ConstraintFormState) {
-    if (!onCreateWithScope) return;
-    setSectionSaving(true);
-    setSectionError(null);
-    try {
-      await onCreateWithScope(form.scopeType, form.scopeId, form);
-    } catch {
-      setSectionError("שגיאה ביצירת אילוץ");
-      throw new Error("שגיאה ביצירת אילוץ");
-    } finally {
-      setSectionSaving(false);
-    }
-  }
 
   if (constraintsLoading) {
     return <p className="text-sm text-slate-400 py-8">טוען אילוצים...</p>;
@@ -360,7 +384,6 @@ export default function ConstraintsTab({
             scopeType="group" groupId={groupId}
             groupRoles={groupRoles} members={members}
             onSubmit={handleSectionCreate}
-            saving={sectionSaving} error={sectionError}
           />
         )}
         {isAdmin && !onCreateWithScope && (
@@ -389,7 +412,6 @@ export default function ConstraintsTab({
             scopeType="role" groupId={groupId}
             groupRoles={groupRoles} members={members}
             onSubmit={handleSectionCreate}
-            saving={sectionSaving} error={sectionError}
           />
         )}
       </ConstraintSection>
@@ -413,7 +435,6 @@ export default function ConstraintsTab({
             scopeType="person" groupId={groupId}
             groupRoles={groupRoles} members={members}
             onSubmit={handleSectionCreate}
-            saving={sectionSaving} error={sectionError}
           />
         )}
       </ConstraintSection>
@@ -462,6 +483,27 @@ export default function ConstraintsTab({
       {editingConstraint && (
         <Modal title="עריכת אילוץ" open={!!editingConstraintId} onClose={onCloseEdit} maxWidth={520}>
           <div className="space-y-4">
+            {/* Read-only scope display for personal / role constraints */}
+            {editingConstraint.scopeType?.toLowerCase() === "person" && (
+              <div>
+                <label className="block text-xs text-slate-500 mb-1">חבר (לא ניתן לשינוי)</label>
+                <p className="text-sm text-slate-700 bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5">
+                  {editingConstraint.scopeId
+                    ? (memberMap.get(editingConstraint.scopeId) ?? editingConstraint.scopeId)
+                    : "—"}
+                </p>
+              </div>
+            )}
+            {editingConstraint.scopeType?.toLowerCase() === "role" && (
+              <div>
+                <label className="block text-xs text-slate-500 mb-1">תפקיד (לא ניתן לשינוי)</label>
+                <p className="text-sm text-slate-700 bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5">
+                  {editingConstraint.scopeId
+                    ? (roleMap.get(editingConstraint.scopeId) ?? editingConstraint.scopeId)
+                    : "—"}
+                </p>
+              </div>
+            )}
             <div>
               <label className="block text-xs text-slate-500 mb-1">חומרה</label>
               <select value={editConstraintSeverity} onChange={e => onEditSeverityChange(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">

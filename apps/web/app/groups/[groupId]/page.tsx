@@ -314,14 +314,23 @@ export default function GroupDetailPage() {
       .finally(() => setGroupTasksLoading(false));
   }, [currentSpaceId, groupId, activeTab]);
 
-  // ── Load constraints ─────────────────────────────────────────────────────
+  // ── Load constraints (+ roles if not yet loaded) ─────────────────────────
   useEffect(() => {
     if (!currentSpaceId || !groupId || activeTab !== "constraints") return;
     setConstraintsLoading(true);
-    getConstraints(currentSpaceId)
-      .then(setConstraints)
+    Promise.all([
+      getConstraints(currentSpaceId),
+      groupRoles.length === 0
+        ? getGroupRoles(currentSpaceId, groupId)
+        : Promise.resolve(groupRoles),
+    ])
+      .then(([c, r]) => {
+        setConstraints(c);
+        setGroupRoles(r);
+      })
       .catch(() => {})
       .finally(() => setConstraintsLoading(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentSpaceId, groupId, activeTab]);
 
   // ── Load settings data ───────────────────────────────────────────────────
@@ -657,9 +666,9 @@ export default function GroupDetailPage() {
         newConstraintFrom || null,
         newConstraintUntil || null
       );
-      // Reload to get full DTO
+      // Reload to get full DTO — keep all scope types (group, person, role)
       const updated = await getConstraints(currentSpaceId);
-      setConstraints(updated.filter(c => c.scopeId === groupId));
+      setConstraints(updated);
       setShowConstraintForm(false);
       setNewConstraintFrom("");
       setNewConstraintUntil("");
@@ -1122,11 +1131,22 @@ export default function GroupDetailPage() {
               members={members}
               onCreateWithScope={async (scopeType, scopeId, form) => {
                 if (!currentSpaceId) return;
-                await createConstraint(
-                  currentSpaceId, scopeType, scopeId,
-                  form.severity, form.ruleType, form.payload,
-                  form.from || null, form.until || null
-                );
+                try {
+                  await createConstraint(
+                    currentSpaceId, scopeType, scopeId,
+                    form.severity, form.ruleType, form.payload,
+                    form.from || null, form.until || null
+                  );
+                } catch (err: unknown) {
+                  // Extract the server error message and re-throw so SectionCreateForm can display it
+                  const apiMsg =
+                    (err as { response?: { data?: { error?: string; message?: string } } })
+                      ?.response?.data?.error ??
+                    (err as { response?: { data?: { error?: string; message?: string } } })
+                      ?.response?.data?.message ??
+                    "שגיאה ביצירת אילוץ";
+                  throw new Error(apiMsg);
+                }
                 const updated = await getConstraints(currentSpaceId);
                 setConstraints(updated);
               }}
