@@ -103,4 +103,8 @@ class SolverInput(BaseModel):
     emergency_constraints: list[HardConstraint] = []  # bypass all hard/soft constraints
     baseline_assignments: list[BaselineAssignment]
     fairness_counters: list[FairnessCounters]
-    locked_slot_ids: list[str] = []  # slot IDs with manual overrides — solver must not reassign these
+    locked_slot_ids: Optional[list[str]] = []  # slot IDs with manual overrides — solver must not reassign these
+
+    @property
+    def locked_slot_ids_safe(self) -> list[str]:
+        return self.locked_slot_ids or []

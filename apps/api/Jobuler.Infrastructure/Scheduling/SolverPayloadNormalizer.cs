@@ -302,7 +302,7 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
             peopleDto, availabilityDto, presenceDto, slotsDto,
             hardConstraints, softConstraints, emergencyConstraints,
             baselineAssignments, fairnessDto,
-            lockedSlotIds.Count > 0 ? lockedSlotIds : null);
+            lockedSlotIds);
     }
 
     private static Dictionary<string, object> DeserializePayload(string json)

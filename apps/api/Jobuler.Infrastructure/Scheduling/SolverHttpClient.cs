@@ -32,7 +32,10 @@ public class SolverHttpClient : ISolverClient
         _logger.LogInformation("Calling solver: run_id={RunId} space_id={SpaceId} slots={Slots} people={People}",
             input.RunId, input.SpaceId, input.TaskSlots.Count, input.People.Count);
 
-        var response = await _http.PostAsJsonAsync("/solve", input, JsonOptions, ct);
+        // Ensure LockedSlotIds is never null — Python Pydantic requires a list, not null
+        var safeInput = input with { LockedSlotIds = input.LockedSlotIds ?? [] };
+
+        var response = await _http.PostAsJsonAsync("/solve", safeInput, JsonOptions, ct);
 
         if (!response.IsSuccessStatusCode)
         {

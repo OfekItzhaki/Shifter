@@ -22,9 +22,9 @@ console.log("\nProperty 2: Phone number renders correctly for all members");
 
 test("non-null phone number is rendered as-is", () => {
   const members: GroupMemberDto[] = [
-    { personId: "1", fullName: "Alice", displayName: null, isOwner: false, phoneNumber: "050-1234567", invitationStatus: "pending", profileImageUrl: null, birthday: null },
-    { personId: "2", fullName: "Bob", displayName: "Bob", isOwner: false, phoneNumber: "+972501234567", invitationStatus: "accepted", profileImageUrl: null, birthday: null },
-    { personId: "3", fullName: "Carol", displayName: null, isOwner: true, phoneNumber: "03-9876543", invitationStatus: "accepted", profileImageUrl: null, birthday: null },
+    { personId: "1", fullName: "Alice", displayName: null, isOwner: false, phoneNumber: "050-1234567", invitationStatus: "pending", profileImageUrl: null, birthday: null, linkedUserId: null },
+    { personId: "2", fullName: "Bob", displayName: "Bob", isOwner: false, phoneNumber: "+972501234567", invitationStatus: "accepted", profileImageUrl: null, birthday: null, linkedUserId: null },
+    { personId: "3", fullName: "Carol", displayName: null, isOwner: true, phoneNumber: "03-9876543", invitationStatus: "accepted", profileImageUrl: null, birthday: null, linkedUserId: null },
   ];
   for (const m of members) {
     const rendered = renderPhone(m);
@@ -34,8 +34,8 @@ test("non-null phone number is rendered as-is", () => {
 
 test("null phone number renders as empty string (not 'null')", () => {
   const members: GroupMemberDto[] = [
-    { personId: "1", fullName: "Alice", displayName: null, isOwner: false, phoneNumber: null, invitationStatus: "pending", profileImageUrl: null, birthday: null },
-    { personId: "2", fullName: "Bob", displayName: "Bob", isOwner: false, phoneNumber: null, invitationStatus: "pending", profileImageUrl: null, birthday: null },
+    { personId: "1", fullName: "Alice", displayName: null, isOwner: false, phoneNumber: null, invitationStatus: "pending", profileImageUrl: null, birthday: null, linkedUserId: null },
+    { personId: "2", fullName: "Bob", displayName: "Bob", isOwner: false, phoneNumber: null, invitationStatus: "pending", profileImageUrl: null, birthday: null, linkedUserId: null },
   ];
   for (const m of members) {
     const rendered = renderPhone(m);
@@ -47,10 +47,10 @@ test("null phone number renders as empty string (not 'null')", () => {
 
 test("mixed null and non-null phone numbers in same list", () => {
   const members: GroupMemberDto[] = [
-    { personId: "1", fullName: "Alice", displayName: null, isOwner: false, phoneNumber: "050-1111111", invitationStatus: "accepted", profileImageUrl: null, birthday: null },
-    { personId: "2", fullName: "Bob", displayName: null, isOwner: false, phoneNumber: null, invitationStatus: "pending", profileImageUrl: null, birthday: null },
-    { personId: "3", fullName: "Carol", displayName: null, isOwner: false, phoneNumber: "050-2222222", invitationStatus: "accepted", profileImageUrl: null, birthday: null },
-    { personId: "4", fullName: "Dan", displayName: null, isOwner: false, phoneNumber: null, invitationStatus: "pending", profileImageUrl: null, birthday: null },
+    { personId: "1", fullName: "Alice", displayName: null, isOwner: false, phoneNumber: "050-1111111", invitationStatus: "accepted", profileImageUrl: null, birthday: null, linkedUserId: null },
+    { personId: "2", fullName: "Bob", displayName: null, isOwner: false, phoneNumber: null, invitationStatus: "pending", profileImageUrl: null, birthday: null, linkedUserId: null },
+    { personId: "3", fullName: "Carol", displayName: null, isOwner: false, phoneNumber: "050-2222222", invitationStatus: "accepted", profileImageUrl: null, birthday: null, linkedUserId: null },
+    { personId: "4", fullName: "Dan", displayName: null, isOwner: false, phoneNumber: null, invitationStatus: "pending", profileImageUrl: null, birthday: null, linkedUserId: null },
   ];
   const rendered = members.map(renderPhone);
   assert.strictEqual(rendered[0], "050-1111111");
@@ -70,7 +70,7 @@ test("100 random members — none render 'null' or 'undefined'", () => {
     const phone = phones[i % phones.length];
     const m: GroupMemberDto = {
       personId: String(i), fullName: `User ${i}`, displayName: null,
-      isOwner: false, phoneNumber: phone, invitationStatus: "pending", profileImageUrl: null, birthday: null
+      isOwner: false, phoneNumber: phone, invitationStatus: "pending", profileImageUrl: null, birthday: null, linkedUserId: null
     };
     const rendered = renderPhone(m);
     assert.notStrictEqual(rendered, "null", `Iteration ${i}: must not render "null"`);
