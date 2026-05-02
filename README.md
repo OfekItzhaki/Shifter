@@ -10,30 +10,38 @@ Shifter lets organizations manage people, groups, tasks, and constraints, then a
 
 | Tool | Version |
 |---|---|
-| Docker Desktop | Latest |
 | Node.js | 20+ |
 | .NET SDK | 8.0+ |
 | Python | 3.11+ |
-| PostgreSQL | 16 (via Docker) |
-| Redis | 7 (via Docker) |
+| PostgreSQL | 16 (local install or Docker) |
+| Redis | 7 (optional — in-memory fallback available) |
+| Docker Desktop | Optional (for containerised DB/Redis) |
+
+> **No virtualization?** Docker is optional. See [docs/LOCAL-SETUP.md](docs/LOCAL-SETUP.md) for the no-Docker setup path.
 
 ## Installation
 
+See **[docs/LOCAL-SETUP.md](docs/LOCAL-SETUP.md)** for full setup instructions.
+
+**Quick start (no Docker):**
+
 ```bash
-# 1. Clone the repo
-git clone <repo-url>
+# 1. Install PostgreSQL 16 locally, create database:
+#    CREATE USER jobuler WITH PASSWORD 'changeme_local';
+#    CREATE DATABASE jobuler OWNER jobuler;
 
-# 2. Copy environment template
-cp infra/compose/.env.example infra/compose/.env
+# 2. Run migrations
+psql -h localhost -U jobuler -d jobuler -f infra/migrations/000_extensions.sql
+# ... run all files in infra/migrations/ in order
 
-# 3. Start all services (DB, Redis, API, Web, Solver)
-docker compose -f infra/compose/docker-compose.yml up -d
+# 3. Install deps
+cd apps/web && npm install --legacy-peer-deps
+cd apps/solver && pip install -r requirements.txt
 
-# 4. Run DB migrations
-./infra/scripts/migrate.sh
-
-# 5. Seed demo data (optional)
-./infra/scripts/seed.sh
+# 4. Start services (3 terminals)
+dotnet run --project apps/api/Jobuler.Api   # http://localhost:5000
+python -m uvicorn main:app --port 8000       # http://localhost:8000 (from apps/solver)
+npm run dev                                   # http://localhost:3000 (from apps/web)
 ```
 
 ## Configuration

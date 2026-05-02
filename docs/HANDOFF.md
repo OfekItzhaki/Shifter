@@ -57,27 +57,30 @@ Uncommitted files at handoff (all staged in the commit below):
 
 ```bash
 # 1. Clone / pull
-git clone <repo-url>
-# or if already cloned:
-git fetch && git checkout feat/schedule-table-autoschedule-role-constraints
+git clone https://github.com/OfekItzhaki/Shifter.git
 
-# 2. Install frontend deps
-cd apps/web && npm install
+# 2. Install PostgreSQL 16 locally (no Docker needed)
+#    https://www.postgresql.org/download/windows/
+#    Then create the DB:
+#    CREATE USER jobuler WITH PASSWORD 'changeme_local';
+#    CREATE DATABASE jobuler OWNER jobuler;
 
-# 3. Restore .NET deps
-dotnet restore apps/api/Jobuler.Api/Jobuler.Api.csproj
+# 3. Run migrations (PowerShell)
+$env:PGPASSWORD="changeme_local"
+Get-ChildItem infra/migrations/*.sql | Sort-Object Name | ForEach-Object {
+    psql -h localhost -U jobuler -d jobuler -f $_.FullName
+}
 
-# 4. Install Python deps (solver)
+# 4. Load seed data
+psql -h localhost -U jobuler -d jobuler -f infra/scripts/seed.sql
+
+# 5. Install frontend deps
+cd apps/web && npm install --legacy-peer-deps
+
+# 6. Install Python deps (solver)
 cd apps/solver && pip install -r requirements.txt
 
-# 5. Set up env
-cp .env.example .env
-# Fill in DB connection string, JWT secret, etc.
-
-# 6. Run DB migrations
-dotnet ef database update --project apps/api/Jobuler.Infrastructure --startup-project apps/api/Jobuler.Api
-
-# 7. Start services
+# 7. Start services (3 terminals)
 # Terminal 1 — API:
 dotnet run --project apps/api/Jobuler.Api
 # Terminal 2 — Solver:
@@ -85,6 +88,10 @@ cd apps/solver && uvicorn main:app --port 8000
 # Terminal 3 — Frontend:
 cd apps/web && npm run dev
 ```
+
+> **Redis is optional** — the API falls back to an in-memory queue automatically.
+> **Docker is optional** — only needed if you want containerised PostgreSQL/Redis.
+> See `docs/LOCAL-SETUP.md` for full details.
 
 ---
 
