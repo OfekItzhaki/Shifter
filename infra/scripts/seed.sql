@@ -20,6 +20,7 @@
 -- GroupType: Platoon   30000000-0000-0000-0000-000000000002 → e1f2a3b4-c5d6-4e7f-8a9b-c0d1e2f3a4b5
 -- Group: Squad A       40000000-0000-0000-0000-000000000001 → f2a3b4c5-d6e7-4f8a-9b0c-d1e2f3a4b5c6
 -- Group: Squad B       40000000-0000-0000-0000-000000000002 → a3b4c5d6-e7f8-4a9b-0c1d-e2f3a4b5c6d7
+-- Person: Admin         (new) → a0b1c2d3-e4f5-4a6b-7c8d-e9f0a1b2c3d4
 -- Person: Ofek         50000000-0000-0000-0000-000000000001 → b4c5d6e7-f8a9-4b0c-1d2e-f3a4b5c6d7e8
 -- Person: Yael         50000000-0000-0000-0000-000000000002 → c5d6e7f8-a9b0-4c1d-2e3f-a4b5c6d7e8f9
 -- Person: Daniel       50000000-0000-0000-0000-000000000003 → d6e7f8a9-b0c1-4d2e-3f4a-b5c6d7e8f9a0
@@ -97,14 +98,29 @@ INSERT INTO groups (id, space_id, group_type_id, name) VALUES
   ('a3b4c5d6-e7f8-4a9b-0c1d-e2f3a4b5c6d7', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'd0e1f2a3-b4c5-4d6e-7f8a-b9c0d1e2f3a4', 'Squad B')
 ON CONFLICT DO NOTHING;
 
--- People
-INSERT INTO people (id, space_id, full_name, display_name) VALUES
-  ('b4c5d6e7-f8a9-4b0c-1d2e-f3a4b5c6d7e8', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'Ofek Israeli',   'Ofek'),
-  ('c5d6e7f8-a9b0-4c1d-2e3f-a4b5c6d7e8f9', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'Yael Cohen',     'Yael'),
-  ('d6e7f8a9-b0c1-4d2e-3f4a-b5c6d7e8f9a0', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'Daniel Levi',    'Daniel'),
-  ('e7f8a9b0-c1d2-4e3f-4a5b-c6d7e8f9a0b1', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'Michal Avraham', 'Michal'),
-  ('f8a9b0c1-d2e3-4f4a-5b6c-d7e8f9a0b1c2', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'Ron Shamir',     'Ron'),
-  ('a9b0c1d2-e3f4-4a5b-6c7d-e8f9a0b1c2d3', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'Noa Golan',      'Noa')
+-- People (linked to their user accounts)
+INSERT INTO people (id, space_id, full_name, display_name, linked_user_id, invitation_status) VALUES
+  ('a0b1c2d3-e4f5-4a6b-7c8d-e9f0a1b2c3d4', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'Admin',          'Admin',   'a1b2c3d4-e5f6-4a7b-8c9d-e0f1a2b3c4d5', 'accepted'),
+  ('b4c5d6e7-f8a9-4b0c-1d2e-f3a4b5c6d7e8', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'Ofek Israeli',   'Ofek',    'b2c3d4e5-f6a7-4b8c-9d0e-f1a2b3c4d5e6', 'accepted'),
+  ('c5d6e7f8-a9b0-4c1d-2e3f-a4b5c6d7e8f9', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'Yael Cohen',     'Yael',    'c3d4e5f6-a7b8-4c9d-0e1f-a2b3c4d5e6f7', 'accepted'),
+  ('d6e7f8a9-b0c1-4d2e-3f4a-b5c6d7e8f9a0', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'Daniel Levi',    'Daniel',  NULL, 'accepted'),
+  ('e7f8a9b0-c1d2-4e3f-4a5b-c6d7e8f9a0b1', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'Michal Avraham', 'Michal',  NULL, 'accepted'),
+  ('f8a9b0c1-d2e3-4f4a-5b6c-d7e8f9a0b1c2', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'Ron Shamir',     'Ron',     NULL, 'accepted'),
+  ('a9b0c1d2-e3f4-4a5b-6c7d-e8f9a0b1c2d3', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'Noa Golan',      'Noa',     NULL, 'accepted')
+ON CONFLICT DO NOTHING;
+
+-- Group memberships: Admin owns both groups; seed people are in Squad A
+INSERT INTO group_memberships (id, space_id, group_id, person_id, is_owner, joined_at) VALUES
+  -- Squad A
+  (uuid_generate_v4(), 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'f2a3b4c5-d6e7-4f8a-9b0c-d1e2f3a4b5c6', 'a0b1c2d3-e4f5-4a6b-7c8d-e9f0a1b2c3d4', TRUE,  NOW()),
+  (uuid_generate_v4(), 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'f2a3b4c5-d6e7-4f8a-9b0c-d1e2f3a4b5c6', 'b4c5d6e7-f8a9-4b0c-1d2e-f3a4b5c6d7e8', FALSE, NOW()),
+  (uuid_generate_v4(), 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'f2a3b4c5-d6e7-4f8a-9b0c-d1e2f3a4b5c6', 'c5d6e7f8-a9b0-4c1d-2e3f-a4b5c6d7e8f9', FALSE, NOW()),
+  (uuid_generate_v4(), 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'f2a3b4c5-d6e7-4f8a-9b0c-d1e2f3a4b5c6', 'd6e7f8a9-b0c1-4d2e-3f4a-b5c6d7e8f9a0', FALSE, NOW()),
+  (uuid_generate_v4(), 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'f2a3b4c5-d6e7-4f8a-9b0c-d1e2f3a4b5c6', 'e7f8a9b0-c1d2-4e3f-4a5b-c6d7e8f9a0b1', FALSE, NOW()),
+  (uuid_generate_v4(), 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'f2a3b4c5-d6e7-4f8a-9b0c-d1e2f3a4b5c6', 'f8a9b0c1-d2e3-4f4a-5b6c-d7e8f9a0b1c2', FALSE, NOW()),
+  (uuid_generate_v4(), 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'f2a3b4c5-d6e7-4f8a-9b0c-d1e2f3a4b5c6', 'a9b0c1d2-e3f4-4a5b-6c7d-e8f9a0b1c2d3', FALSE, NOW()),
+  -- Squad B
+  (uuid_generate_v4(), 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'a3b4c5d6-e7f8-4a9b-0c1d-e2f3a4b5c6d7', 'a0b1c2d3-e4f5-4a6b-7c8d-e9f0a1b2c3d4', TRUE,  NOW())
 ON CONFLICT DO NOTHING;
 
 -- Task Types
