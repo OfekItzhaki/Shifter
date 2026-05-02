@@ -50,6 +50,10 @@ public class ExceptionHandlingMiddleware
                 dbe.InnerException?.Message.Contains("23505") == true ||
                 dbe.InnerException?.Message.Contains("duplicate key") == true
                 => (HttpStatusCode.Conflict, "A record with this name or identifier already exists.", (List<string>?)[]),
+            // EF check constraint violations → 400 Bad Request
+            Microsoft.EntityFrameworkCore.DbUpdateException dbe2 when dbe2.InnerException?.Message.Contains("23514") == true ||
+                dbe2.InnerException?.Message.Contains("violates check constraint") == true
+                => (HttpStatusCode.BadRequest, ExtractCheckConstraintMessage(dbe2), (List<string>?)[]),
             // All other EF/DB exceptions → 500, never expose DB internals to client
             Microsoft.EntityFrameworkCore.DbUpdateException
                 => (HttpStatusCode.InternalServerError, "A database error occurred. Please try again.", (List<string>?)[]),
@@ -71,5 +75,17 @@ public class ExceptionHandlingMiddleware
             errors = errors?.Count > 0 ? errors : null
         });
         await context.Response.WriteAsync(body);
+    }
+
+    private static string ExtractCheckConstraintMessage(Microsoft.EntityFrameworkCore.DbUpdateException ex)
+    {
+        var msg = ex.InnerException?.Message ?? "";
+        if (msg.Contains("chk_task_ends_after_starts")) return "End time must be after start time.";
+        if (msg.Contains("chk_task_shift_duration")) return "Shift duration must be at least 1 minute.";
+        if (msg.Contains("chk_task_headcount_positive")) return "Required headcount must be at least 1.";
+        if (msg.Contains("chk_task_daily_window_both_or_neither")) return "Daily start time and end time must both be set, or both left empty.";
+        if (msg.Contains("chk_slot_order")) return "Slot end time must be after start time.";
+        if (msg.Contains("chk_constraint_severity")) return "Invalid constraint severity value.";
+        return "The data violates a business rule. Please check your input.";
     }
 }

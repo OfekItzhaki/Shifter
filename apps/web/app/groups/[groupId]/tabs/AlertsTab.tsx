@@ -41,7 +41,6 @@ const SEVERITIES = [
   { value: "info", label: "מידע" },
   { value: "warning", label: "אזהרה" },
   { value: "critical", label: "קריטי" },
-  { value: "success", label: "הצלחה" },
 ];
 
 export default function AlertsTab({

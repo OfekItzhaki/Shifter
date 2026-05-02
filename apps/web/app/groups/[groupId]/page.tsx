@@ -622,14 +622,33 @@ export default function GroupDetailPage() {
     try {
       // Default startsAt to today if empty
       const now = new Date();
-      const startsAt = taskForm.startsAt || now.toISOString().slice(0, 16);
+      const startsAt = taskForm.startsAt
+        ? new Date(taskForm.startsAt).toISOString()
+        : now.toISOString();
       // Default endsAt to startsAt + 7 days if empty (recurring task)
-      const endsAt = taskForm.endsAt || new Date(new Date(startsAt).getTime() + 7 * 86400000).toISOString().slice(0, 16);
+      const endsAtRaw = taskForm.endsAt
+        ? new Date(taskForm.endsAt).toISOString()
+        : new Date(new Date(startsAt).getTime() + 7 * 86400000).toISOString();
+
+      // Guard: endsAt must be strictly after startsAt
+      if (new Date(endsAtRaw) <= new Date(startsAt)) {
+        setTaskError("תאריך הסיום חייב להיות אחרי תאריך ההתחלה");
+        setTaskSaving(false);
+        return;
+      }
+
+      // Guard: daily time window — both or neither
+      if (!!taskForm.dailyStartTime !== !!taskForm.dailyEndTime) {
+        setTaskError("יש להגדיר שעת התחלה וסיום יומית יחד, או להשאיר שניהם ריקים");
+        setTaskSaving(false);
+        return;
+      }
+
       const payload = {
         name: taskForm.name,
         startsAt,
-        endsAt,
-        shiftDurationMinutes: taskForm.shiftDurationMinutes,
+        endsAt: endsAtRaw,
+        shiftDurationMinutes: Math.max(1, taskForm.shiftDurationMinutes),
         requiredHeadcount: taskForm.requiredHeadcount,
         burdenLevel: taskForm.burdenLevel,
         allowsDoubleShift: taskForm.allowsDoubleShift,
