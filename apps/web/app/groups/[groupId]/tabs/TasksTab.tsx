@@ -126,7 +126,7 @@ export default function TasksTab({
               />
             </div>
             <div>
-              <label className="block text-xs text-slate-500 mb-1">סיום <span className="text-slate-400">(אופציונלי)</span></label>
+              <label className="block text-xs text-slate-500 mb-1">סיום <span className="text-slate-400">(ריק = 90 יום קדימה)</span></label>
               <input
                 type="datetime-local"
                 value={taskForm.endsAt}

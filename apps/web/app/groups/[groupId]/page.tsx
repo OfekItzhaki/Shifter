@@ -625,10 +625,10 @@ export default function GroupDetailPage() {
       const startsAt = taskForm.startsAt
         ? new Date(taskForm.startsAt).toISOString()
         : now.toISOString();
-      // Default endsAt to startsAt + 7 days if empty (recurring task)
+      // Default endsAt to startsAt + 90 days if empty (open-ended recurring task)
       const endsAtRaw = taskForm.endsAt
         ? new Date(taskForm.endsAt).toISOString()
-        : new Date(new Date(startsAt).getTime() + 7 * 86400000).toISOString();
+        : new Date(new Date(startsAt).getTime() + 90 * 86400000).toISOString();
 
       // Guard: endsAt must be strictly after startsAt
       if (new Date(endsAtRaw) <= new Date(startsAt)) {
@@ -1125,7 +1125,15 @@ export default function GroupDetailPage() {
               taskForm={taskForm}
               taskSaving={taskSaving}
               taskError={taskError}
-              onOpenCreate={() => { setEditingTask(null); setTaskForm(DEFAULT_TASK_FORM); setShowTaskForm(true); }}
+              onOpenCreate={() => {
+                const now = new Date();
+                // Default start = current date at current hour, minutes zeroed
+                const pad = (n: number) => String(n).padStart(2, "0");
+                const defaultStart = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:00`;
+                setEditingTask(null);
+                setTaskForm({ ...DEFAULT_TASK_FORM, startsAt: defaultStart });
+                setShowTaskForm(true);
+              }}
               onCloseForm={() => { setShowTaskForm(false); setEditingTask(null); }}
               onFormChange={setTaskForm}
               onFormSubmit={handleTaskSubmit}
