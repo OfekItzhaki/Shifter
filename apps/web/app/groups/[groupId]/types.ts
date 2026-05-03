@@ -7,6 +7,7 @@ export type ActiveTab = "schedule" | "members" | "alerts" | "messages" | "tasks"
 export const ADMIN_ONLY_TABS: ActiveTab[] = ["tasks", "constraints", "settings", "stats"];
 
 export interface ScheduleAssignment {
+  personId: string;
   personName: string;
   taskTypeName: string;
   slotStartsAt: string;

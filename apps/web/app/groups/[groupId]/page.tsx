@@ -1029,7 +1029,8 @@ export default function GroupDetailPage() {
               discardSaving={discardSaving}
               scheduleVersionError={scheduleVersionError}
               currentUserName={displayName ?? undefined}
-              memberNames={members.length > 0 ? new Set(members.map(m => m.displayName ?? m.fullName)) : undefined}
+              memberIds={members.length > 0 ? new Set(members.map(m => m.personId)) : undefined}
+              membersLoading={membersLoading}
               onOpenDraftModal={() => setShowDraftModal(true)}
               onPublish={handlePublish}
               onDiscard={handleDiscard}

@@ -20,7 +20,9 @@ interface Props {
   discardSaving: boolean;
   scheduleVersionError: string | null;
   currentUserName?: string;
-  memberNames?: Set<string>;
+  /** Set of personIds belonging to this group — used to filter the space-wide schedule */
+  memberIds?: Set<string>;
+  membersLoading?: boolean;
   onOpenDraftModal: () => void;
   onPublish: () => Promise<void>;
   onDiscard: () => Promise<void>;
@@ -43,7 +45,7 @@ function getWeekDates(fromDate: string): string[] {
 export default function ScheduleTab({
   solverHorizonDays, scheduleData, scheduleLoading, scheduleError,
   draftVersion, lastRunSummary, isAdmin, publishSaving, discardSaving, scheduleVersionError,
-  currentUserName, memberNames,
+  currentUserName, memberIds, membersLoading,
   onOpenDraftModal, onPublish, onDiscard,
 }: Props) {
   const today = new Date().toISOString().split("T")[0];
@@ -81,8 +83,14 @@ export default function ScheduleTab({
     setSelectedWeekDay(new Date().getDay());
   }
 
+  // Only filter once members have loaded — if memberIds is undefined or empty
+  // because members haven't loaded yet, show nothing rather than everything.
   const filtered = (scheduleData ?? []).filter(a => {
-    if (memberNames && memberNames.size > 0 && !memberNames.has(a.personName)) return false;
+    // If members are still loading or memberIds not yet available, hide all
+    if (!memberIds || memberIds.size === 0) return false;
+    // Filter to this group's members only (by personId — reliable, not name-based)
+    if (!memberIds.has(a.personId)) return false;
+    // Optional text search filter
     if (personFilter && !a.personName.toLowerCase().includes(personFilter.toLowerCase())) return false;
     return true;
   });
@@ -225,7 +233,7 @@ export default function ScheduleTab({
         ))}
       </div>
 
-      {scheduleLoading && (
+      {(scheduleLoading || membersLoading) && (
         <div className="flex items-center gap-3 text-slate-400 text-sm py-8">
           <svg className="animate-spin h-5 w-5 text-blue-400" fill="none" viewBox="0 0 24 24">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
@@ -237,7 +245,7 @@ export default function ScheduleTab({
       {scheduleError && <p className="text-sm text-red-600 py-4">{scheduleError}</p>}
 
       {/* 2D schedule table for selected day */}
-      {!scheduleLoading && !scheduleError && (
+      {!scheduleLoading && !membersLoading && !scheduleError && (
         <ScheduleTable2D
           assignments={filtered}
           filterDate={selectedDate}
