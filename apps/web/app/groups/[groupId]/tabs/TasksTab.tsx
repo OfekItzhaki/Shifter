@@ -1,6 +1,7 @@
 "use client";
 
 import Modal from "@/components/Modal";
+import { useState } from "react";
 import type { GroupTaskDto } from "@/lib/api/tasks";
 import { burdenLabels, burdenColors } from "../types";
 
@@ -47,6 +48,7 @@ export default function TasksTab({
   taskSaving, taskError, onOpenCreate, onCloseForm, onFormChange, onFormSubmit, onEditTask, onDeleteTask,
 }: Props) {
   const { hours: durHours, mins: durMins } = minutesToHM(taskForm.shiftDurationMinutes);
+  const [confirmDeleteTask, setConfirmDeleteTask] = useState<string | null>(null);
 
   function setDuration(h: number, m: number) {
     onFormChange({ ...taskForm, shiftDurationMinutes: Math.max(1, h * 60 + m) });
@@ -86,7 +88,15 @@ export default function TasksTab({
             {isAdmin && (
               <div className="flex gap-1.5 flex-shrink-0">
                 <button onClick={() => onEditTask(t)} className="text-xs text-slate-500 hover:text-slate-700 border border-slate-200 px-2 py-1 rounded-lg hover:bg-slate-50 transition-colors">ערוך</button>
-                <button onClick={() => onDeleteTask(t.id)} className="text-xs text-red-500 hover:text-red-700 border border-red-100 px-2 py-1 rounded-lg hover:bg-red-50 transition-colors">מחק</button>
+                {confirmDeleteTask === t.id ? (
+                  <>
+                    <span className="text-xs text-slate-600">למחוק?</span>
+                    <button onClick={() => { setConfirmDeleteTask(null); onDeleteTask(t.id); }} className="text-xs text-white bg-red-500 hover:bg-red-600 px-2 py-1 rounded-lg transition-colors">אישור</button>
+                    <button onClick={() => setConfirmDeleteTask(null)} className="text-xs text-slate-500 border border-slate-200 px-2 py-1 rounded-lg hover:bg-slate-50 transition-colors">ביטול</button>
+                  </>
+                ) : (
+                  <button onClick={() => setConfirmDeleteTask(t.id)} className="text-xs text-red-500 hover:text-red-700 border border-red-100 px-2 py-1 rounded-lg hover:bg-red-50 transition-colors">מחק</button>
+                )}
               </div>
             )}
           </div>
@@ -139,30 +149,42 @@ export default function TasksTab({
           {/* Duration in hours + minutes */}
           <div>
             <label className="block text-xs text-slate-500 mb-1">משך משמרת</label>
-            <div className="flex items-center gap-2">
-              <div className="flex items-center gap-1.5">
+            <div className="space-y-2">
+              <label className="flex items-center gap-2 text-sm text-slate-600 cursor-pointer">
                 <input
-                  type="number"
-                  min={0}
-                  max={23}
-                  value={durHours}
-                  onChange={e => setDuration(Number(e.target.value), durMins)}
-                  className="w-16 border border-slate-200 rounded-xl px-2.5 py-2.5 text-sm text-center focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  type="checkbox"
+                  checked={taskForm.shiftDurationMinutes === 1440}
+                  onChange={e => onFormChange({ ...taskForm, shiftDurationMinutes: e.target.checked ? 1440 : 240 })}
+                  className="rounded"
                 />
-                <span className="text-xs text-slate-500">שעות</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <input
-                  type="number"
-                  min={0}
-                  max={59}
-                  step={5}
-                  value={durMins}
-                  onChange={e => setDuration(durHours, Number(e.target.value))}
-                  className="w-16 border border-slate-200 rounded-xl px-2.5 py-2.5 text-sm text-center focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                <span className="text-xs text-slate-500">דקות</span>
-              </div>
+                יום מלא (24 שעות)
+              </label>
+              {taskForm.shiftDurationMinutes !== 1440 && (
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5">
+                    <input
+                      type="number"
+                      min={0}
+                      value={durHours}
+                      onChange={e => setDuration(Number(e.target.value), durMins)}
+                      className="w-16 border border-slate-200 rounded-xl px-2.5 py-2.5 text-sm text-center focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <span className="text-xs text-slate-500">שעות</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <input
+                      type="number"
+                      min={0}
+                      max={59}
+                      step={5}
+                      value={durMins}
+                      onChange={e => setDuration(durHours, Number(e.target.value))}
+                      className="w-16 border border-slate-200 rounded-xl px-2.5 py-2.5 text-sm text-center focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <span className="text-xs text-slate-500">דקות</span>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 

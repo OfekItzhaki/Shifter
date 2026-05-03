@@ -51,6 +51,10 @@ public class PublishVersionCommandHandler : IRequestHandler<PublishVersionComman
             .FirstOrDefaultAsync(v => v.Id == req.VersionId && v.SpaceId == req.SpaceId, ct)
             ?? throw new KeyNotFoundException("Schedule version not found.");
 
+        // Guard: already published — idempotent, just return
+        if (version.Status == ScheduleVersionStatus.Published)
+            return;
+
         // Archive the current published version before publishing the new one
         var currentPublished = await _db.ScheduleVersions
             .Where(v => v.SpaceId == req.SpaceId && v.Status == ScheduleVersionStatus.Published)

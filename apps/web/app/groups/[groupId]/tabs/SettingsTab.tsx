@@ -73,6 +73,7 @@ export default function SettingsTab({
   const [editRolePermLevel, setEditRolePermLevel] = useState("view");
   const [editRoleSaving, setEditRoleSaving] = useState(false);
   const [editRoleError, setEditRoleError] = useState<string | null>(null);
+  const [confirmDeactivateRole, setConfirmDeactivateRole] = useState<string | null>(null);
 
   async function handleCreateRole(e: React.FormEvent) {
     e.preventDefault();
@@ -275,12 +276,20 @@ export default function SettingsTab({
                             >
                               ערוך
                             </button>
-                            <button
-                              onClick={() => onDeactivateRole(role.id)}
-                              className="text-xs text-red-500 border border-red-100 hover:bg-red-50 px-2.5 py-1 rounded-lg transition-colors"
-                            >
-                              בטל
-                            </button>
+                            {confirmDeactivateRole === role.id ? (
+                              <>
+                                <span className="text-xs text-slate-600">לבטל?</span>
+                                <button onClick={() => { setConfirmDeactivateRole(null); onDeactivateRole(role.id); }} className="text-xs text-white bg-red-500 hover:bg-red-600 px-2.5 py-1 rounded-lg transition-colors">אישור</button>
+                                <button onClick={() => setConfirmDeactivateRole(null)} className="text-xs text-slate-500 border border-slate-200 px-2.5 py-1 rounded-lg hover:bg-slate-50 transition-colors">ביטול</button>
+                              </>
+                            ) : (
+                              <button
+                                onClick={() => setConfirmDeactivateRole(role.id)}
+                                className="text-xs text-red-500 border border-red-100 hover:bg-red-50 px-2.5 py-1 rounded-lg transition-colors"
+                              >
+                                בטל
+                              </button>
+                            )}
                           </div>
                         )}
                       </>

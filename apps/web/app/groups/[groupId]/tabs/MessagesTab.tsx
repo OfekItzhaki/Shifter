@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+
 interface Message { id: string; content: string; authorName: string; createdAt: string; isPinned: boolean; }
 
 interface Props {
@@ -80,6 +82,7 @@ function MessageCard({ message: m, isAdmin, editingId, editContent, editSaving, 
   message: Message; isAdmin: boolean; editingId: string | null; editContent: string; editSaving: boolean; editError: string | null; pinErrors: Record<string, string>;
   onPin: (id: string, v: boolean) => void; onStartEdit: (id: string, c: string) => void; onCloseEdit: () => void; onEditChange: (v: string) => void; onUpdate: (id: string) => void; onDelete: (id: string) => void;
 }) {
+  const [confirmDelete, setConfirmDelete] = useState(false);
   return (
     <div className={`bg-white border rounded-2xl p-4 space-y-2 ${m.isPinned ? "border-amber-200 bg-amber-50/30" : "border-slate-200"}`}>
       {editingId === m.id ? (
@@ -99,10 +102,18 @@ function MessageCard({ message: m, isAdmin, editingId, editContent, editSaving, 
               <p className="text-sm text-slate-800 mt-0.5">{m.content}</p>
             </div>
             {isAdmin && (
-              <div className="flex gap-1.5 flex-shrink-0">
+              <div className="flex gap-1.5 flex-shrink-0 flex-wrap justify-end">
                 <button onClick={() => onPin(m.id, !m.isPinned)} className="text-xs text-slate-500 hover:text-amber-600 border border-slate-200 px-2 py-1 rounded-lg hover:bg-amber-50 transition-colors">{m.isPinned ? "בטל נעיצה" : "נעץ"}</button>
                 <button onClick={() => onStartEdit(m.id, m.content)} className="text-xs text-slate-500 hover:text-slate-700 border border-slate-200 px-2 py-1 rounded-lg hover:bg-slate-50 transition-colors">ערוך</button>
-                <button onClick={() => onDelete(m.id)} className="text-xs text-red-500 hover:text-red-700 border border-red-100 px-2 py-1 rounded-lg hover:bg-red-50 transition-colors">מחק</button>
+                {confirmDelete ? (
+                  <>
+                    <span className="text-xs text-slate-600">למחוק?</span>
+                    <button onClick={() => { setConfirmDelete(false); onDelete(m.id); }} className="text-xs text-white bg-red-500 hover:bg-red-600 px-2 py-1 rounded-lg transition-colors">אישור</button>
+                    <button onClick={() => setConfirmDelete(false)} className="text-xs text-slate-500 border border-slate-200 px-2 py-1 rounded-lg hover:bg-slate-50 transition-colors">ביטול</button>
+                  </>
+                ) : (
+                  <button onClick={() => setConfirmDelete(true)} className="text-xs text-red-500 hover:text-red-700 border border-red-100 px-2 py-1 rounded-lg hover:bg-red-50 transition-colors">מחק</button>
+                )}
               </div>
             )}
           </div>

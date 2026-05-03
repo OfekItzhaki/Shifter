@@ -42,13 +42,26 @@ public class CreateGroupRoleCommandHandler : IRequestHandler<CreateGroupRoleComm
             throw new KeyNotFoundException("Group not found in this space.");
 
         // Check for duplicate name within the group
-        var duplicate = await _db.SpaceRoles.AsNoTracking()
-            .AnyAsync(r => r.SpaceId == req.SpaceId
+        // If a deactivated role with the same name exists, reactivate it instead of creating a new one
+        var existingRole = await _db.SpaceRoles
+            .FirstOrDefaultAsync(r => r.SpaceId == req.SpaceId
                 && r.GroupId == req.GroupId
-                && r.Name == req.Name.Trim()
-                && r.IsActive, ct);
-        if (duplicate)
-            throw new ConflictException($"A role named '{req.Name.Trim()}' already exists in this group.");
+                && r.Name == req.Name.Trim(), ct);
+
+        if (existingRole is not null)
+        {
+            if (existingRole.IsActive)
+                throw new ConflictException($"A role named '{req.Name.Trim()}' already exists in this group.");
+
+            // Reactivate the deactivated role with the new settings
+            var permLevelReactivate = Enum.TryParse<RolePermissionLevel>(req.PermissionLevel, true, out var plr)
+                ? plr : RolePermissionLevel.View;
+            existingRole.Update(req.Name, req.Description, permLevelReactivate);
+            // Re-enable it by setting IsActive back to true via a new method
+            existingRole.Reactivate();
+            await _db.SaveChangesAsync(ct);
+            return existingRole.Id;
+        }
 
         var permLevel = Enum.TryParse<RolePermissionLevel>(req.PermissionLevel, true, out var pl)
             ? pl : RolePermissionLevel.View;
