@@ -79,7 +79,8 @@ public class CreateGroupTaskCommandHandler : IRequestHandler<CreateGroupTaskComm
 
         var task = GroupTask.Create(
             req.SpaceId, req.GroupId, req.Name,
-            req.StartsAt, req.EndsAt, req.ShiftDurationMinutes,
+            TaskTimeHelpers.RoundToHour(req.StartsAt), TaskTimeHelpers.RoundToHour(req.EndsAt),
+            req.ShiftDurationMinutes,
             req.RequiredHeadcount,
             Enum.Parse<TaskBurdenLevel>(req.BurdenLevel, true),
             req.AllowsDoubleShift, req.AllowsOverlap,
@@ -147,7 +148,7 @@ public class UpdateGroupTaskCommandHandler : IRequestHandler<UpdateGroupTaskComm
             ?? throw new KeyNotFoundException("Task not found.");
 
         task.Update(
-            req.Name, req.StartsAt, req.EndsAt,
+            req.Name, TaskTimeHelpers.RoundToHour(req.StartsAt), TaskTimeHelpers.RoundToHour(req.EndsAt),
             req.ShiftDurationMinutes, req.RequiredHeadcount,
             Enum.Parse<TaskBurdenLevel>(req.BurdenLevel, true),
             req.AllowsDoubleShift, req.AllowsOverlap,
@@ -191,3 +192,16 @@ public class DeleteGroupTaskCommandHandler : IRequestHandler<DeleteGroupTaskComm
         await _db.SaveChangesAsync(ct);
     }
 }
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+file static class TaskTimeHelpers
+{
+    /// <summary>
+    /// Rounds a DateTime down to the nearest whole hour.
+    /// Ensures task shifts always start/end on clean hour boundaries (e.g. 17:00, not 17:33).
+    /// </summary>
+    internal static DateTime RoundToHour(DateTime dt) =>
+        new(dt.Year, dt.Month, dt.Day, dt.Hour, 0, 0, dt.Kind);
+}
+
