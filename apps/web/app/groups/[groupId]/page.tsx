@@ -235,10 +235,21 @@ export default function GroupDetailPage() {
     if (!currentSpaceId || !groupId || activeTab !== "schedule") return;
     setScheduleLoading(true);
     setScheduleError(null);
-    // Schedule is GROUP-scoped. Each group is independent — "IDF platoon" and
-    // "downtown restaurant" share a space but have completely separate schedules.
-    // GET /spaces/{id}/groups/{groupId}/schedule → assignments for THIS group only.
-    // Draft/publish management still uses space-level schedule-versions endpoints.
+
+    // ── Offline-first: show cached schedule immediately while fetching ────
+    const cacheKey = `schedule:${currentSpaceId}:${groupId}`;
+    try {
+      const cached = localStorage.getItem(cacheKey);
+      if (cached) {
+        const { assignments: cachedAssignments } = JSON.parse(cached);
+        if (Array.isArray(cachedAssignments)) {
+          setScheduleData(cachedAssignments);
+          setScheduleLoading(false); // show cached immediately
+        }
+      }
+    } catch { /* ignore parse errors */ }
+
+    // Schedule is GROUP-scoped. Each group is independent.
     Promise.all([
       getGroupSchedule(currentSpaceId, groupId).catch(() => null),
       apiClient.get<Array<{ id: string; status: string; summaryJson?: string | null }>>(
@@ -248,7 +259,17 @@ export default function GroupDetailPage() {
         `/spaces/${currentSpaceId}/schedule-versions?status=discarded`
       ).catch(() => ({ data: [] as Array<{ id: string; status: string; summaryJson?: string | null }> })),
     ]).then(([groupAssignments, draftRes, discardedRes]) => {
-      setScheduleData(groupAssignments ?? []);
+      const assignments = groupAssignments ?? [];
+      setScheduleData(assignments);
+
+      // Cache the fresh schedule for offline use
+      try {
+        localStorage.setItem(cacheKey, JSON.stringify({
+          assignments,
+          cachedAt: new Date().toISOString(),
+        }));
+      } catch { /* storage full or unavailable */ }
+
       const drafts = Array.isArray(draftRes?.data) ? draftRes.data : [];
       setDraftVersion(drafts.length > 0 ? drafts[0] : null);
       if (drafts.length === 0) {
@@ -258,7 +279,10 @@ export default function GroupDetailPage() {
         setLastRunSummary(null);
       }
     })
-    .catch(() => setScheduleError("שגיאה בטעינת הסידור"))
+    .catch(() => {
+      // Network failed — keep showing cached data, just clear the loading state
+      setScheduleError(null); // don't show error if we have cached data
+    })
     .finally(() => setScheduleLoading(false));
   }, [currentSpaceId, groupId, activeTab]);
 
@@ -1030,6 +1054,7 @@ export default function GroupDetailPage() {
               discardSaving={discardSaving}
               scheduleVersionError={scheduleVersionError}
               currentUserName={displayName ?? undefined}
+              groupName={group?.name}
               onOpenDraftModal={() => setShowDraftModal(true)}
               onPublish={handlePublish}
               onDiscard={handleDiscard}

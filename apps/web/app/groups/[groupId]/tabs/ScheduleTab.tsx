@@ -20,6 +20,7 @@ interface Props {
   discardSaving: boolean;
   scheduleVersionError: string | null;
   currentUserName?: string;
+  groupName?: string;
   onOpenDraftModal: () => void;
   onPublish: () => Promise<void>;
   onDiscard: () => Promise<void>;
@@ -42,7 +43,7 @@ function getWeekDates(fromDate: string): string[] {
 export default function ScheduleTab({
   solverHorizonDays, scheduleData, scheduleLoading, scheduleError,
   draftVersion, lastRunSummary, isAdmin, publishSaving, discardSaving, scheduleVersionError,
-  currentUserName,
+  currentUserName, groupName,
   onOpenDraftModal, onPublish, onDiscard,
 }: Props) {
   const today = new Date().toISOString().split("T")[0];
@@ -85,6 +86,27 @@ export default function ScheduleTab({
     if (personFilter && !a.personName.toLowerCase().includes(personFilter.toLowerCase())) return false;
     return true;
   });
+
+  function exportCSV() {
+    if (!scheduleData || scheduleData.length === 0) return;
+    const rows = [
+      ["שם", "משימה", "התחלה", "סיום"],
+      ...scheduleData.map(a => [
+        a.personName,
+        a.taskTypeName,
+        new Date(a.slotStartsAt).toLocaleString("he-IL"),
+        new Date(a.slotEndsAt).toLocaleString("he-IL"),
+      ])
+    ];
+    const csv = rows.map(r => r.map(c => `"${c}"`).join(",")).join("\n");
+    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `schedule-${groupName ?? "group"}-${new Date().toISOString().split("T")[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
 
   // Week range label e.g. "12–18 ינואר"
   const weekStart = weekDates[0];
@@ -165,18 +187,32 @@ export default function ScheduleTab({
         </div>
       )}
 
-      {/* Search filter */}
-      <div className="relative max-w-xs">
-        <input
-          type="text"
-          value={personFilter}
-          onChange={e => setPersonFilter(e.target.value)}
-          placeholder="סנן לפי שם..."
-          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 pr-9"
-        />
-        <svg className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-        </svg>
+      {/* Search filter + export */}
+      <div className="flex items-center gap-2">
+        <div className="relative flex-1 max-w-xs">
+          <input
+            type="text"
+            value={personFilter}
+            onChange={e => setPersonFilter(e.target.value)}
+            placeholder="סנן לפי שם..."
+            className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 pr-9"
+          />
+          <svg className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+        </div>
+        {scheduleData && scheduleData.length > 0 && (
+          <button
+            onClick={exportCSV}
+            className="flex items-center gap-1.5 text-xs text-slate-600 border border-slate-200 bg-white hover:bg-slate-50 px-3 py-2 rounded-xl transition-colors flex-shrink-0"
+            title="ייצא לקובץ CSV"
+          >
+            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+            ייצא CSV
+          </button>
+        )}
       </div>
 
       {/* Week navigation */}
