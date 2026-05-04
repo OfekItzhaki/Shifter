@@ -8,7 +8,7 @@ import OverrideModal, { OverridePerson } from "@/components/schedule/OverrideMod
 import DiffSummaryCard from "@/components/schedule/DiffSummaryCard";
 import {
   getScheduleVersions, getVersionDetail,
-  publishVersion, rollbackVersion, triggerSolve, downloadExport,
+  publishVersion, rollbackVersion, discardVersion, triggerSolve, downloadExport,
   applyManualOverride, removeManualOverride,
   ScheduleVersionDto, ScheduleVersionDetailDto
 } from "@/lib/api/schedule";
@@ -50,8 +50,42 @@ interface VersionListSidebarProps {
   onSelect: (v: ScheduleVersionDto) => void;
 }
 
+function formatVersionTime(dateStr: string | null | undefined): string {
+  if (!dateStr) return "";
+  const d = new Date(dateStr);
+  return d.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+}
+
+function formatVersionDay(dateStr: string | null | undefined): string {
+  if (!dateStr) return "";
+  const d = new Date(dateStr);
+  const today = new Date();
+  const yesterday = new Date(Date.now() - 86400000);
+  if (d.toDateString() === today.toDateString()) return "Today";
+  if (d.toDateString() === yesterday.toDateString()) return "Yesterday";
+  return d.toLocaleDateString(undefined, { day: "numeric", month: "short" });
+}
+
 function VersionListSidebar({ versions, selectedId, loading, onSelect }: VersionListSidebarProps) {
   const t = useTranslations("admin");
+  const [showHistory, setShowHistory] = useState(false);
+
+  // Separate active (draft/published) from history (archived/rolled_back/discarded)
+  const activeVersions = versions.filter(v =>
+    v.status === "Draft" || v.status === "Published"
+  );
+  const historyVersions = versions.filter(v =>
+    v.status === "Archived" || v.status === "RolledBack" || v.status === "Discarded"
+  );
+
+  // Group history by publish day
+  const historyByDay = historyVersions.reduce<Record<string, ScheduleVersionDto[]>>((acc, v) => {
+    const dayKey = formatVersionDay(v.publishedAt ?? v.createdAt);
+    if (!acc[dayKey]) acc[dayKey] = [];
+    acc[dayKey].push(v);
+    return acc;
+  }, {});
+
   return (
     <div className="space-y-3">
       <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{t("versions")}</h2>
@@ -64,8 +98,10 @@ function VersionListSidebar({ versions, selectedId, loading, onSelect }: Version
           {t("loading")}
         </div>
       )}
+
+      {/* Active versions (Draft + Published) */}
       <div className="space-y-1.5">
-        {versions.map(v => (
+        {activeVersions.map(v => (
           <button
             key={v.id}
             onClick={() => onSelect(v)}
@@ -76,13 +112,70 @@ function VersionListSidebar({ versions, selectedId, loading, onSelect }: Version
                 : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50"
             )}
           >
-            <div className="font-semibold text-slate-900">v{v.versionNumber}</div>
+            <div className="flex items-center justify-between">
+              <span className="font-semibold text-slate-900">v{v.versionNumber}</span>
+              {v.publishedAt && (
+                <span className="text-xs text-slate-400">{formatVersionTime(v.publishedAt)}</span>
+              )}
+            </div>
             <div className="mt-1.5">
               <StatusBadge status={v.status} />
             </div>
           </button>
         ))}
       </div>
+
+      {/* History toggle */}
+      {historyVersions.length > 0 && (
+        <div className="pt-1">
+          <button
+            onClick={() => setShowHistory(h => !h)}
+            className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-700 transition-colors w-full"
+          >
+            <svg
+              className={clsx("w-3.5 h-3.5 transition-transform", showHistory && "rotate-90")}
+              fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+            </svg>
+            <span className="font-medium">History ({historyVersions.length})</span>
+          </button>
+
+          {showHistory && (
+            <div className="mt-2 space-y-3">
+              {Object.entries(historyByDay).map(([day, dayVersions]) => (
+                <div key={day}>
+                  <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1 px-1">{day}</p>
+                  <div className="space-y-1">
+                    {dayVersions.map(v => (
+                      <button
+                        key={v.id}
+                        onClick={() => onSelect(v)}
+                        className={clsx(
+                          "w-full text-start px-3 py-2 rounded-lg border text-xs transition-all",
+                          selectedId === v.id
+                            ? "border-blue-300 bg-blue-50 shadow-sm"
+                            : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50"
+                        )}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="font-medium text-slate-700">v{v.versionNumber}</span>
+                          {(v.publishedAt ?? v.createdAt) && (
+                            <span className="text-slate-400">{formatVersionTime(v.publishedAt ?? v.createdAt)}</span>
+                          )}
+                        </div>
+                        <div className="mt-1">
+                          <StatusBadge status={v.status} />
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -146,10 +239,11 @@ interface VersionDetailPanelProps {
   spaceId: string | null;
   onPublish: () => void;
   onRollback: (id: string) => void;
+  onDiscard: (id: string) => void;
   onCellClick?: (slotKey: string, taskName: string, assignees: string[]) => void;
 }
 
-function VersionDetailPanel({ selected, actionLoading, spaceId, onPublish, onRollback, onCellClick }: VersionDetailPanelProps) {
+function VersionDetailPanel({ selected, actionLoading, spaceId, onPublish, onRollback, onDiscard, onCellClick }: VersionDetailPanelProps) {
   const t = useTranslations("admin");
   const today = new Date().toISOString().split("T")[0];
   const [selectedDate, setSelectedDate] = useState(today);
@@ -196,6 +290,19 @@ function VersionDetailPanel({ selected, actionLoading, spaceId, onPublish, onRol
               <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
             </svg>
             {t("publish")}
+          </button>
+        )}
+
+        {selected.version.status === "Draft" && (
+          <button
+            onClick={() => onDiscard(selected.version.id)}
+            disabled={actionLoading}
+            className="flex items-center gap-1.5 bg-white hover:bg-red-50 text-red-600 border border-red-200 text-xs font-medium px-3 py-1.5 rounded-lg disabled:opacity-50 transition-colors"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+            {t("discard")}
           </button>
         )}
 
@@ -285,6 +392,15 @@ export default function AdminSchedulePage() {
   const [actionLoading, setActionLoading] = useState(false);
   const [message, setMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
 
+  // ── Start time override ──────────────────────────────────────────────────
+  // Default to current datetime (local), formatted for datetime-local input
+  function nowLocalInput(): string {
+    const d = new Date();
+    const pad = (n: number) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  }
+  const [solverStartTime, setSolverStartTime] = useState(nowLocalInput);
+
   // ── Override modal state ─────────────────────────────────────────────────
   const [overrideCell, setOverrideCell] = useState<{
     slotKey: string; taskName: string; assignees: string[];
@@ -308,6 +424,13 @@ export default function AdminSchedulePage() {
       if (draft) {
         const detail = await getVersionDetail(currentSpaceId, draft.id);
         setSelected(detail);
+      } else {
+        // No draft — select the most recent published version if available
+        const published = v.find(x => x.status === "Published");
+        if (published) {
+          const detail = await getVersionDetail(currentSpaceId, published.id);
+          setSelected(detail);
+        }
       }
     } finally {
       setLoading(false);
@@ -324,7 +447,11 @@ export default function AdminSchedulePage() {
     if (!currentSpaceId) return;
     setActionLoading(true);
     try {
-      const { runId } = await triggerSolve(currentSpaceId);
+      // Convert local datetime-local input to ISO UTC string
+      const startTimeIso = solverStartTime
+        ? new Date(solverStartTime).toISOString()
+        : undefined;
+      const { runId } = await triggerSolve(currentSpaceId, "standard", undefined, startTimeIso);
       setMessage({ text: t("solverStarted", { runId }), type: "success" });
       setTimeout(loadVersions, 3000);
     } catch {
@@ -336,7 +463,10 @@ export default function AdminSchedulePage() {
     if (!currentSpaceId) return;
     setActionLoading(true);
     try {
-      const { runId } = await triggerSolve(currentSpaceId, "emergency");
+      const startTimeIso = solverStartTime
+        ? new Date(solverStartTime).toISOString()
+        : undefined;
+      const { runId } = await triggerSolve(currentSpaceId, "emergency", undefined, startTimeIso);
       setMessage({ text: t("emergencyStarted", { runId }), type: "success" });
       setTimeout(loadVersions, 3000);
     } catch {
@@ -365,6 +495,18 @@ export default function AdminSchedulePage() {
       await loadVersions();
     } catch {
       setMessage({ text: tSchedule("rollbackError"), type: "error" });
+    } finally { setActionLoading(false); }
+  }
+
+  async function handleDiscard(versionId: string) {
+    if (!currentSpaceId) return;
+    setActionLoading(true);
+    try {
+      await discardVersion(currentSpaceId, versionId);
+      setMessage({ text: tSchedule("discardSuccess"), type: "success" });
+      await loadVersions();
+    } catch {
+      setMessage({ text: tSchedule("discardError"), type: "error" });
     } finally { setActionLoading(false); }
   }
 
@@ -449,12 +591,25 @@ export default function AdminSchedulePage() {
     <AppShell>
       <div className="max-w-5xl space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
             <h1 className="text-2xl font-bold text-slate-900">{t("title")}</h1>
             <p className="text-sm text-slate-500 mt-1">{t("manageScheduleSubtitle")}</p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Start time override */}
+            <div className="flex items-center gap-1.5 border border-slate-200 rounded-xl px-3 py-1.5 bg-white">
+              <svg className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <label className="text-xs text-slate-500 whitespace-nowrap">{t("solverStartTime")}</label>
+              <input
+                type="datetime-local"
+                value={solverStartTime}
+                onChange={e => setSolverStartTime(e.target.value)}
+                className="text-xs text-slate-700 border-none outline-none bg-transparent"
+              />
+            </div>
             <button
               onClick={handleEmergencyTrigger}
               disabled={actionLoading}
@@ -518,6 +673,7 @@ export default function AdminSchedulePage() {
               spaceId={currentSpaceId}
               onPublish={handlePublish}
               onRollback={handleRollback}
+              onDiscard={handleDiscard}
               onCellClick={handleCellClick}
             />
           ) : (

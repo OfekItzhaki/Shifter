@@ -38,8 +38,8 @@ export async function getCurrentSchedule(spaceId: string): Promise<ScheduleVersi
   try {
     const { data } = await apiClient.get(`/spaces/${spaceId}/schedule-versions/current`);
     return data;
-  } catch (e: any) {
-    if (e.response?.status === 404) return null;
+  } catch (e: unknown) {
+    if ((e as { response?: { status?: number } }).response?.status === 404) return null;
     throw e;
   }
 }
@@ -54,8 +54,8 @@ export async function getVersionDetail(spaceId: string, versionId: string): Prom
   return data;
 }
 
-export async function triggerSolve(spaceId: string, triggerMode = "standard", groupId?: string): Promise<{ runId: string }> {
-  const { data } = await apiClient.post(`/spaces/${spaceId}/schedule-runs/trigger`, { triggerMode, groupId });
+export async function triggerSolve(spaceId: string, triggerMode = "standard", groupId?: string, startTime?: string): Promise<{ runId: string }> {
+  const { data } = await apiClient.post(`/spaces/${spaceId}/schedule-runs/trigger`, { triggerMode, groupId, startTime: startTime ?? null });
   return data;
 }
 
@@ -71,6 +71,10 @@ export async function publishVersion(spaceId: string, versionId: string): Promis
 export async function rollbackVersion(spaceId: string, versionId: string): Promise<{ newVersionId: string }> {
   const { data } = await apiClient.post(`/spaces/${spaceId}/schedule-versions/${versionId}/rollback`);
   return data;
+}
+
+export async function discardVersion(spaceId: string, versionId: string): Promise<void> {
+  await apiClient.delete(`/spaces/${spaceId}/schedule-versions/${versionId}`);
 }
 
 export function exportCsvUrl(spaceId: string, versionId: string): string {

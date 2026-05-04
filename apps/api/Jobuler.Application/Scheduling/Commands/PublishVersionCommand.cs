@@ -5,6 +5,7 @@ using Jobuler.Infrastructure.Persistence;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace Jobuler.Application.Scheduling.Commands;
@@ -21,18 +22,21 @@ public class PublishVersionCommandHandler : IRequestHandler<PublishVersionComman
     private readonly IScheduleNotificationSender? _scheduleNotifications;
     private readonly IConfiguration _config;
     private readonly ILogger<PublishVersionCommandHandler> _logger;
+    private readonly IServiceScopeFactory _scopeFactory;
 
     public PublishVersionCommandHandler(
         AppDbContext db,
         IAuditLogger audit,
         IConfiguration config,
         ILogger<PublishVersionCommandHandler> logger,
+        IServiceScopeFactory scopeFactory,
         IScheduleNotificationSender? scheduleNotifications = null)
     {
         _db = db;
         _audit = audit;
         _config = config;
         _logger = logger;
+        _scopeFactory = scopeFactory;
         _scheduleNotifications = scheduleNotifications;
     }
 
@@ -84,10 +88,19 @@ public class PublishVersionCommandHandler : IRequestHandler<PublishVersionComman
         }
         await _db.SaveChangesAsync(ct);
 
-        // Send WhatsApp/email notifications to group members (fire-and-forget, non-blocking)
+        // Send WhatsApp/email notifications to group members (fire-and-forget, non-blocking).
+        // IMPORTANT: uses a NEW scope + DbContext so it doesn't race with the current request's
+        // DbContext instance (EF Core DbContext is not thread-safe).
         if (_scheduleNotifications is not null)
         {
-            _ = Task.Run(() => SendExternalNotificationsAsync(req, version.VersionNumber, ct), ct);
+            var versionNumber = version.VersionNumber;
+            _ = Task.Run(async () =>
+            {
+                using var scope = _scopeFactory.CreateScope();
+                var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                var notificationSender = scope.ServiceProvider.GetRequiredService<IScheduleNotificationSender>();
+                await SendExternalNotificationsAsync(req, versionNumber, db, notificationSender, CancellationToken.None);
+            });
         }
 
         // Audit log — required by security rules
@@ -102,26 +115,37 @@ public class PublishVersionCommandHandler : IRequestHandler<PublishVersionComman
     /// <summary>
     /// Sends WhatsApp/email notifications to all group members who have a phone or email.
     /// Runs fire-and-forget so it doesn't block the publish response.
+    /// Uses its own DbContext scope — never shares the request's DbContext.
     /// </summary>
     private async Task SendExternalNotificationsAsync(
-        PublishVersionCommand req, int versionNumber, CancellationToken ct)
+        PublishVersionCommand req, int versionNumber,
+        AppDbContext db, IScheduleNotificationSender notificationSender,
+        CancellationToken ct)
     {
         try
         {
+            // Set RLS for the new scope's DbContext
+            if (db.Database.IsRelational())
+            {
+                await db.Database.ExecuteSqlRawAsync(
+                    "SELECT set_config('app.current_space_id', {0}, TRUE)",
+                    req.SpaceId.ToString());
+            }
+
             var frontendUrl = _config["App:FrontendBaseUrl"] ?? "https://shifter.app";
 
             // Load all people in this space who have a linked user (registered members)
-            var members = await _db.People.AsNoTracking()
+            var members = await db.People.AsNoTracking()
                 .Where(p => p.SpaceId == req.SpaceId && p.IsActive && p.LinkedUserId != null)
                 .ToListAsync(ct);
 
             var userIds = members.Select(p => p.LinkedUserId!.Value).ToList();
-            var users = await _db.Users.AsNoTracking()
+            var users = await db.Users.AsNoTracking()
                 .Where(u => userIds.Contains(u.Id))
                 .ToDictionaryAsync(u => u.Id, ct);
 
             // Get the space name for the notification message
-            var space = await _db.Spaces.AsNoTracking()
+            var space = await db.Spaces.AsNoTracking()
                 .FirstOrDefaultAsync(s => s.Id == req.SpaceId, ct);
             var spaceName = space?.Name ?? "Shifter";
 
@@ -141,7 +165,7 @@ public class PublishVersionCommandHandler : IRequestHandler<PublishVersionComman
 
                 try
                 {
-                    await _scheduleNotifications!.SendSchedulePublishedAsync(
+                    await notificationSender.SendSchedulePublishedAsync(
                         contact,
                         person.DisplayName ?? person.FullName,
                         spaceName,

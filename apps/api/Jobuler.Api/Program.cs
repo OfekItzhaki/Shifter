@@ -242,6 +242,20 @@ var app = builder.Build();
 
 // ─── Middleware pipeline ──────────────────────────────────────────────────────
 app.UseMiddleware<ExceptionHandlingMiddleware>();
+
+// ─── Security headers ─────────────────────────────────────────────────────────
+app.Use(async (context, next) =>
+{
+    context.Response.Headers.Append("X-Content-Type-Options", "nosniff");
+    context.Response.Headers.Append("X-Frame-Options", "DENY");
+    context.Response.Headers.Append("Referrer-Policy", "no-referrer");
+    context.Response.Headers.Append("X-XSS-Protection", "1; mode=block");
+    if (!app.Environment.IsDevelopment())
+    {
+        context.Response.Headers.Append("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+    }
+    await next();
+});
 app.UseSerilogRequestLogging();
 
 if (app.Environment.IsDevelopment())

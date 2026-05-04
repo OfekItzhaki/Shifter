@@ -10,7 +10,8 @@ public record TriggerSolverCommand(
     Guid SpaceId,
     string TriggerMode,        // standard | emergency
     Guid? RequestedByUserId,
-    Guid? GroupId = null) : IRequest<Guid>;
+    Guid? GroupId = null,
+    DateTime? StartTime = null) : IRequest<Guid>;
 
 public class TriggerSolverCommandHandler : IRequestHandler<TriggerSolverCommand, Guid>
 {
@@ -55,7 +56,7 @@ public class TriggerSolverCommandHandler : IRequestHandler<TriggerSolverCommand,
         // Enqueue — worker picks it up asynchronously
         await _queue.EnqueueAsync(new SolverJobMessage(
             run.Id, request.SpaceId, request.TriggerMode,
-            baseline?.Id, request.RequestedByUserId, request.GroupId), ct);
+            baseline?.Id, request.RequestedByUserId, request.GroupId, request.StartTime), ct);
 
         return run.Id;
     }

@@ -25,7 +25,7 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
 
     public async Task<SolverInputDto> BuildAsync(
         Guid spaceId, Guid runId, string triggerMode,
-        Guid? baselineVersionId, Guid? groupId = null, CancellationToken ct = default)
+        Guid? baselineVersionId, Guid? groupId = null, DateTime? startTime = null, CancellationToken ct = default)
     {
         // Set PostgreSQL session variable so RLS policies allow queries on this space
         // Skip when using an in-memory provider (e.g. unit/integration tests).
@@ -38,9 +38,11 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
 
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
         var horizonStart = today;
-        // Use the current UTC time as the actual start so we don't generate
-        // shifts that are already in the past within today.
-        var nowUtc = DateTime.UtcNow;
+        // Use the provided startTime if given, otherwise default to now.
+        // This allows admins to override the calculation start point.
+        var nowUtc = startTime.HasValue
+            ? DateTime.SpecifyKind(startTime.Value, DateTimeKind.Utc)
+            : DateTime.UtcNow;
 
         // Use the solver horizon for the specific group (if scoped), otherwise max across all groups.
         // Capped at 7 days to keep the CP-SAT model tractable.

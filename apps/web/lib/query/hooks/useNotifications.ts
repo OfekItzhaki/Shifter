@@ -25,8 +25,8 @@ export function useDismissNotification(spaceId: string | null) {
     onMutate: async (id) => {
       await qc.cancelQueries({ queryKey: queryKeys.notifications(spaceId ?? "") });
       const prev = qc.getQueryData(queryKeys.notifications(spaceId ?? ""));
-      qc.setQueryData(queryKeys.notifications(spaceId ?? ""), (old: any[]) =>
-        (old ?? []).filter(n => n.id !== id)
+      qc.setQueryData(queryKeys.notifications(spaceId ?? ""), (old: unknown[]) =>
+        (old ?? []).filter((n: unknown) => (n as { id: string }).id !== id)
       );
       return { prev };
     },

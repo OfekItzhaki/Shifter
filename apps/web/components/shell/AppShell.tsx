@@ -164,6 +164,7 @@ export default function AppShell({ children }: AppShellProps) {
               {currentSpaceName && <div style={{ color: "#64748b", fontSize: 11, marginTop: 1 }}>{currentSpaceName}</div>}
             </div>
           </Link>
+          {/* NotificationBell is OUTSIDE the Link so clicks don't navigate */}
           <NotificationBell />
         </div>
 

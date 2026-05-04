@@ -141,7 +141,7 @@ public class SolverWorkerService : BackgroundService
         {
             // Build solver input
             input = await normalizer.BuildAsync(
-                job.SpaceId, job.RunId, job.TriggerMode, job.BaselineVersionId, job.GroupId, ct);
+                job.SpaceId, job.RunId, job.TriggerMode, job.BaselineVersionId, job.GroupId, job.StartTime, ct);
 
             // ── Pre-flight checks ─────────────────────────────────────────────
             if (input.TaskSlots.Count == 0)

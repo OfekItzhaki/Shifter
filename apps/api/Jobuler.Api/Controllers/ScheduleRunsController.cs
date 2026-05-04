@@ -39,7 +39,7 @@ public class ScheduleRunsController : ControllerBase
             CurrentUserId, spaceId, Permissions.ScheduleRecalculate, ct);
 
         var runId = await _mediator.Send(
-            new TriggerSolverCommand(spaceId, req.TriggerMode ?? "standard", CurrentUserId, req.GroupId), ct);
+            new TriggerSolverCommand(spaceId, req.TriggerMode ?? "standard", CurrentUserId, req.GroupId, req.StartTime), ct);
 
         return Accepted(new { runId });
     }
@@ -54,4 +54,4 @@ public class ScheduleRunsController : ControllerBase
     }
 }
 
-public record TriggerSolverRequest(string? TriggerMode, Guid? GroupId = null);
+public record TriggerSolverRequest(string? TriggerMode, Guid? GroupId = null, DateTime? StartTime = null);

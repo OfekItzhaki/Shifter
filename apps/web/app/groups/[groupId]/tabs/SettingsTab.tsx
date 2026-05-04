@@ -39,7 +39,7 @@ interface Props {
   onRenameGroup: () => void;
   onSolverHorizonChange: (v: number) => void;
   onSaveSettings: () => void;
-  onTriggerSolver: () => void;
+  onTriggerSolver: (startTime?: string) => void;
   onOpenDraftModal: () => void;
   onRestoreGroup?: never;
   onTransferPersonChange: (v: string) => void;
@@ -75,6 +75,13 @@ export default function SettingsTab({
   const [editRoleSaving, setEditRoleSaving] = useState(false);
   const [editRoleError, setEditRoleError] = useState<string | null>(null);
   const [confirmDeactivateRole, setConfirmDeactivateRole] = useState<string | null>(null);
+
+  // Solver start time — defaults to now
+  const [solverStartTime, setSolverStartTime] = useState(() => {
+    const d = new Date();
+    const pad = (n: number) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  });
 
   const t = useTranslations("groups.settings_tab");
   const tCommon = useTranslations("common");
@@ -167,8 +174,18 @@ export default function SettingsTab({
               <button onClick={onOpenDraftModal} className="text-xs text-amber-700 border border-amber-300 hover:bg-amber-100 px-3 py-1.5 rounded-lg transition-colors font-medium">{t("viewDraft")}</button>
             </div>
           )}
+          {/* Start time picker */}
+          <div className="flex items-center gap-2">
+            <label className="text-sm text-slate-600 whitespace-nowrap">{t("startFrom")}</label>
+            <input
+              type="datetime-local"
+              value={solverStartTime}
+              onChange={e => setSolverStartTime(e.target.value)}
+              className="flex-1 border border-slate-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
           <button
-            onClick={onTriggerSolver}
+            onClick={() => onTriggerSolver(solverStartTime ? new Date(solverStartTime).toISOString() : undefined)}
             disabled={solverPolling}
             className="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl disabled:opacity-50 transition-colors"
           >
