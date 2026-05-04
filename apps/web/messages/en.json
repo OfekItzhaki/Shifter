@@ -41,7 +41,7 @@
     "phone": "Phone number",
     "phoneHint": "Shown to group members so they can contact you",
     "birthday": "Birthday",
-    "profileImageUrl": "Profile image (URL, optional)",
+    "profileImageUrl": "Profile image",
     "optional": "optional",
     "accountCreated": "Account created successfully! Sign in to continue.",
     "passwordResetSuccess": "Password reset successfully! Sign in with your new password.",

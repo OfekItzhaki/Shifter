@@ -407,6 +407,8 @@ export default function GroupDetailPage() {
       setScheduleVersionError("Cannot publish — try refreshing the page");
       return;
     }
+    // Double-submit guard — if already saving, do nothing
+    if (publishSaving) return;
     setPublishSaving(true);
     setScheduleVersionError(null);
     try {

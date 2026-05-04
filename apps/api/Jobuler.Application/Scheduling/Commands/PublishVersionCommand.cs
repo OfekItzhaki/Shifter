@@ -59,6 +59,10 @@ public class PublishVersionCommandHandler : IRequestHandler<PublishVersionComman
         if (version.Status == ScheduleVersionStatus.Published)
             return;
 
+        // Guard: not a draft — cannot publish
+        if (version.Status != ScheduleVersionStatus.Draft)
+            throw new InvalidOperationException($"Cannot publish a version with status '{version.Status}'.");
+
         // Archive the current published version before publishing the new one
         var currentPublished = await _db.ScheduleVersions
             .Where(v => v.SpaceId == req.SpaceId && v.Status == ScheduleVersionStatus.Published)
@@ -88,6 +92,15 @@ public class PublishVersionCommandHandler : IRequestHandler<PublishVersionComman
         }
         await _db.SaveChangesAsync(ct);
 
+        // Audit log — do this BEFORE the fire-and-forget so it uses the same DbContext
+        // sequentially (no concurrency risk).
+        await _audit.LogAsync(
+            req.SpaceId, req.RequestingUserId,
+            "publish_schedule",
+            "schedule_version", req.VersionId,
+            afterJson: $"{{\"version_number\":{version.VersionNumber}}}",
+            ct: ct);
+
         // Send WhatsApp/email notifications to group members (fire-and-forget, non-blocking).
         // IMPORTANT: uses a NEW scope + DbContext so it doesn't race with the current request's
         // DbContext instance (EF Core DbContext is not thread-safe).
@@ -102,14 +115,6 @@ public class PublishVersionCommandHandler : IRequestHandler<PublishVersionComman
                 await SendExternalNotificationsAsync(req, versionNumber, db, notificationSender, CancellationToken.None);
             });
         }
-
-        // Audit log — required by security rules
-        await _audit.LogAsync(
-            req.SpaceId, req.RequestingUserId,
-            "publish_schedule",
-            "schedule_version", req.VersionId,
-            afterJson: $"{{\"version_number\":{version.VersionNumber}}}",
-            ct: ct);
     }
 
     /// <summary>

@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { forgotPassword } from "@/lib/api/auth";
 import ShifterLogo from "@/components/shell/ShifterLogo";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 export default function ForgotPasswordPage() {
   const t = useTranslations("auth");
@@ -73,6 +74,10 @@ export default function ForgotPasswordPage() {
               ← {t("backToLogin")}
             </Link>
           </p>
+
+          <div style={{ marginTop: "1.25rem", paddingTop: "1rem", borderTop: "1px solid #f1f5f9" }}>
+            <LanguageSwitcher variant="auth" />
+          </div>
         </div>
       </div>
     </main>

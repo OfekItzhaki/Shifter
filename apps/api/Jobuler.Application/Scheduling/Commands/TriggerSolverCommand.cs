@@ -36,6 +36,33 @@ public class TriggerSolverCommandHandler : IRequestHandler<TriggerSolverCommand,
                 request.RequestedByUserId?.ToString() ?? "");
         }
 
+        // ── Stale-task guard ──────────────────────────────────────────────────
+        // If a group is specified, reject the run when every active task for that
+        // group ends before the effective horizon start (i.e. all tasks are in the
+        // past). Scheduling against only past tasks produces an empty, meaningless
+        // draft and wastes solver capacity.
+        if (request.GroupId.HasValue)
+        {
+            var nowUtc = request.StartTime.HasValue
+                ? DateTime.SpecifyKind(request.StartTime.Value, DateTimeKind.Utc)
+                : DateTime.UtcNow;
+
+            var hasActiveFutureTasks = await _db.GroupTasks
+                .AsNoTracking()
+                .AnyAsync(t =>
+                    t.SpaceId == request.SpaceId &&
+                    t.GroupId == request.GroupId.Value &&
+                    t.IsActive &&
+                    t.EndsAt > nowUtc, ct);
+
+            if (!hasActiveFutureTasks)
+            {
+                throw new InvalidOperationException(
+                    "Cannot create a schedule: all tasks for this group end in the past. " +
+                    "Update the task dates before running the scheduler.");
+            }
+        }
+
         // Find the current published version to use as baseline
         var baseline = await _db.ScheduleVersions
             .AsNoTracking()

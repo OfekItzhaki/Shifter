@@ -6,6 +6,7 @@ import { useAuthStore } from "@/lib/store/authStore";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import ShifterLogo from "@/components/shell/ShifterLogo";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 function LoginForm() {
   const t = useTranslations("auth");
@@ -149,6 +150,10 @@ function LoginForm() {
               {t("registerButton")}
             </Link>
           </p>
+
+          <div style={{ marginTop: "1.25rem", paddingTop: "1rem", borderTop: "1px solid #f1f5f9" }}>
+            <LanguageSwitcher variant="auth" />
+          </div>
         </div>
       </div>
     </main>

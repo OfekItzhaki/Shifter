@@ -1,41 +1,24 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import AppShell from "@/components/shell/AppShell";
-import { apiClient } from "@/lib/api/client";
 import { useSpaceStore } from "@/lib/store/spaceStore";
 import { useDateFormat } from "@/lib/hooks/useDateFormat";
-
-interface NotificationDto {
-  id: string;
-  eventType: string;
-  title: string;
-  body: string;
-  isRead: boolean;
-  createdAt: string;
-}
+import {
+  useNotifications,
+  useDismissNotification,
+  useDismissAllNotifications,
+} from "@/lib/query/hooks/useNotifications";
 
 export default function NotificationsPage() {
   const t = useTranslations("notifications");
   const tCommon = useTranslations("common");
   const { currentSpaceId } = useSpaceStore();
   const { fDateTime } = useDateFormat();
-  const [notifications, setNotifications] = useState<NotificationDto[]>([]);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (!currentSpaceId) { setLoading(false); return; }
-    apiClient.get(`/spaces/${currentSpaceId}/notifications`)
-      .then(r => setNotifications(r.data))
-      .catch(() => setNotifications([]))
-      .finally(() => setLoading(false));
-  }, [currentSpaceId]);
-
-  async function markRead(id: string) {
-    await apiClient.patch(`/spaces/${currentSpaceId}/notifications/${id}/read`).catch(() => {});
-    setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
-  }
+  const { data: notifications = [], isLoading: loading } = useNotifications(currentSpaceId);
+  const dismissOne = useDismissNotification(currentSpaceId);
+  const dismissAll = useDismissAllNotifications(currentSpaceId);
 
   const unread = notifications.filter(n => !n.isRead);
   const read = notifications.filter(n => n.isRead);
@@ -43,11 +26,22 @@ export default function NotificationsPage() {
   return (
     <AppShell>
       <div className="max-w-2xl space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">{t("title")}</h1>
-          <p className="text-sm text-slate-500 mt-1">
-            {unread.length > 0 ? t("unreadCount", { count: unread.length }) : t("allRead")}
-          </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900">{t("title")}</h1>
+            <p className="text-sm text-slate-500 mt-1">
+              {unread.length > 0 ? t("unreadCount", { count: unread.length }) : t("allRead")}
+            </p>
+          </div>
+          {unread.length > 0 && (
+            <button
+              onClick={() => dismissAll.mutate()}
+              disabled={dismissAll.isPending}
+              className="text-sm text-blue-600 hover:underline disabled:opacity-50"
+            >
+              {t("markAllRead")}
+            </button>
+          )}
         </div>
 
         {loading ? (
@@ -64,7 +58,7 @@ export default function NotificationsPage() {
             {[...unread, ...read].map(n => (
               <div
                 key={n.id}
-                onClick={() => !n.isRead && markRead(n.id)}
+                onClick={() => !n.isRead && dismissOne.mutate(n.id)}
                 className={`flex items-start gap-4 bg-white border rounded-xl px-4 py-3.5 transition-colors ${
                   n.isRead
                     ? "border-slate-200 cursor-default"

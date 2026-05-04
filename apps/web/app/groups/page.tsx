@@ -3,13 +3,10 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import AppShell from "@/components/shell/AppShell";
-import { apiClient } from "@/lib/api/client";
 import { useSpaceStore } from "@/lib/store/spaceStore";
 import { useRouter, useSearchParams } from "next/navigation";
 import { getAvatarColor, getAvatarLetter } from "@/lib/utils/groupAvatar";
-import { getDeletedGroups, restoreGroup, DeletedGroupDto } from "@/lib/api/groups";
-
-interface GroupDto { id: string; name: string; memberCount: number; solverHorizonDays: number; ownerPersonId: string | null; }
+import { useGroups, useDeletedGroups, useCreateGroup, useRestoreGroup } from "@/lib/query/hooks/useGroups";
 
 export default function GroupsPage() {
   const t = useTranslations("groups");
@@ -20,30 +17,17 @@ export default function GroupsPage() {
   const searchParams = useSearchParams();
   const deletedRef = useRef<HTMLDivElement>(null);
 
-  const [groups, setGroups] = useState<GroupDto[]>([]);
-  const [loading, setLoading] = useState(true);
   const [newGroupName, setNewGroupName] = useState("");
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [createError, setCreateError] = useState<string | null>(null);
 
-  const [deletedGroups, setDeletedGroups] = useState<DeletedGroupDto[]>([]);
-  const [deletedLoading, setDeletedLoading] = useState(true);
-
-  useEffect(() => {
-    if (!currentSpaceId) { setLoading(false); setDeletedLoading(false); return; }
-    // Load active and deleted groups in parallel
-    apiClient.get(`/spaces/${currentSpaceId}/groups`)
-      .then(r => setGroups(r.data))
-      .finally(() => setLoading(false));
-    getDeletedGroups(currentSpaceId)
-      .then(setDeletedGroups)
-      .catch(() => {})
-      .finally(() => setDeletedLoading(false));
-  }, [currentSpaceId]);
+  const { data: groups = [], isLoading: loading } = useGroups(currentSpaceId);
+  const { data: deletedGroups = [], isLoading: deletedLoading } = useDeletedGroups(currentSpaceId);
+  const createGroup = useCreateGroup(currentSpaceId);
+  const restoreGroup = useRestoreGroup(currentSpaceId);
 
   // Scroll to deleted section if ?tab=deleted
   useEffect(() => {
-    if (searchParams.get("tab") === "deleted" && deletedRef.current) {
+    if (searchParams.get("tab") === "deleted" && deletedRef.current && !deletedLoading) {
       setTimeout(() => deletedRef.current?.scrollIntoView({ behavior: "smooth" }), 300);
     }
   }, [searchParams, deletedLoading]);
@@ -51,25 +35,23 @@ export default function GroupsPage() {
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
     if (!currentSpaceId || !newGroupName.trim()) return;
-    setSaving(true); setError(null);
+    setCreateError(null);
     try {
-      await apiClient.post(`/spaces/${currentSpaceId}/groups`, { name: newGroupName.trim(), description: null });
-      const { data } = await apiClient.get(`/spaces/${currentSpaceId}/groups`);
-      setGroups(data);
+      await createGroup.mutateAsync(newGroupName.trim());
       setNewGroupName("");
     } catch (err: unknown) {
-      setError((err as { response?: { data?: { error?: string } } })?.response?.data?.error || tErrors("errorCreateGroup"));
-    } finally { setSaving(false); }
+      setCreateError(
+        (err as { response?: { data?: { error?: string } } })?.response?.data?.error ||
+        tErrors("errorCreateGroup")
+      );
+    }
   }
 
   async function handleRestore(id: string) {
     if (!currentSpaceId) return;
     try {
-      await restoreGroup(currentSpaceId, id);
-      setDeletedGroups(prev => prev.filter(g => g.id !== id));
-      const { data } = await apiClient.get(`/spaces/${currentSpaceId}/groups`);
-      setGroups(data);
-    } catch {}
+      await restoreGroup.mutateAsync(id);
+    } catch { /* non-fatal */ }
   }
 
   return (
@@ -84,16 +66,22 @@ export default function GroupsPage() {
 
         {/* Create group */}
         <form onSubmit={handleCreate} className="flex gap-2 max-w-sm">
-          <input value={newGroupName} onChange={e => setNewGroupName(e.target.value)}
+          <input
+            value={newGroupName}
+            onChange={e => setNewGroupName(e.target.value)}
             placeholder={t("newGroupPlaceholder")}
-            className="flex-1 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-          <button type="submit" disabled={saving}
-            className="bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl disabled:opacity-50 whitespace-nowrap">
-            {saving ? "..." : t("newGroup")}
+            className="flex-1 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <button
+            type="submit"
+            disabled={createGroup.isPending}
+            className="bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl disabled:opacity-50 whitespace-nowrap"
+          >
+            {createGroup.isPending ? "..." : t("newGroup")}
           </button>
         </form>
 
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {createError && <p className="text-sm text-red-600">{createError}</p>}
 
         {/* Active groups */}
         {loading ? (
@@ -108,8 +96,11 @@ export default function GroupsPage() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {groups.map(g => (
-              <button key={g.id} onClick={() => router.push(`/groups/${g.id}`)}
-                className="text-start bg-white border border-slate-200 rounded-2xl p-5 hover:border-blue-300 hover:shadow-md transition-all group">
+              <button
+                key={g.id}
+                onClick={() => router.push(`/groups/${g.id}`)}
+                className="text-start bg-white border border-slate-200 rounded-2xl p-5 hover:border-blue-300 hover:shadow-md transition-all group"
+              >
                 <div className="flex items-start justify-between mb-3">
                   <div
                     className="w-10 h-10 rounded-xl flex items-center justify-center text-white text-base font-bold flex-shrink-0"
@@ -128,7 +119,7 @@ export default function GroupsPage() {
           </div>
         )}
 
-        {/* Deleted groups — always shown */}
+        {/* Deleted groups */}
         <div ref={deletedRef} className="border-t border-slate-100 pt-6">
           <h2 className="text-base font-semibold text-slate-700 mb-3">{t("deletedGroups")}</h2>
           {deletedLoading ? (
@@ -142,7 +133,8 @@ export default function GroupsPage() {
                   <span className="text-sm text-slate-700">{g.name}</span>
                   <button
                     onClick={() => handleRestore(g.id)}
-                    className="text-xs text-blue-600 border border-blue-200 hover:bg-blue-50 px-3 py-1.5 rounded-lg transition-colors"
+                    disabled={restoreGroup.isPending}
+                    className="text-xs text-blue-600 border border-blue-200 hover:bg-blue-50 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
                   >
                     {t("restore")}
                   </button>

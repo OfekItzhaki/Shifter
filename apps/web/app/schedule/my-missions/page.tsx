@@ -4,22 +4,10 @@ import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import AppShell from "@/components/shell/AppShell";
 import ScheduleTaskTable, { type TaskAssignment } from "@/components/schedule/ScheduleTaskTable";
-import { apiClient } from "@/lib/api/client";
 import { useSpaceStore } from "@/lib/store/spaceStore";
 import { useAuthStore } from "@/lib/store/authStore";
 import { useDateFormat } from "@/lib/hooks/useDateFormat";
-
-interface MyAssignmentDto {
-  id: string;
-  groupId: string;
-  groupName: string;
-  taskTypeName: string;
-  slotStartsAt: string;
-  slotEndsAt: string;
-  source: string;
-}
-
-type Range = "today" | "week" | "month" | "year";
+import { useMyAssignments, type AssignmentRange } from "@/lib/query/hooks/useMyAssignments";
 
 function getCurrentWeekDays(): string[] {
   const today = new Date();
@@ -38,16 +26,16 @@ export default function MyMissionsPage() {
   const { currentSpaceId } = useSpaceStore();
   const { displayName } = useAuthStore();
   const { fDateLong } = useDateFormat();
-  const [range, setRange] = useState<Range>("week");
-  const [assignments, setAssignments] = useState<MyAssignmentDto[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [range, setRange] = useState<AssignmentRange>("week");
   const [search, setSearch] = useState("");
   const [selectedDay, setSelectedDay] = useState<string>(new Date().toISOString().split("T")[0]);
 
   const todayStr = new Date().toISOString().split("T")[0];
   const weekDays = getCurrentWeekDays();
 
-  const RANGE_LABELS: Record<Range, string> = {
+  const { data: assignments = [], isLoading: loading } = useMyAssignments(currentSpaceId, range);
+
+  const RANGE_LABELS: Record<AssignmentRange, string> = {
     today: tMy("rangeToday"),
     week: tMy("rangeWeek"),
     month: tMy("rangeMonth"),
@@ -55,15 +43,6 @@ export default function MyMissionsPage() {
   };
 
   const DAY_NAMES = tMy.raw("dayNames") as string[];
-
-  useEffect(() => {
-    if (!currentSpaceId) { setLoading(false); return; }
-    setLoading(true);
-    apiClient.get(`/spaces/${currentSpaceId}/my-assignments?range=${range}`)
-      .then(r => setAssignments(r.data))
-      .catch(() => setAssignments([]))
-      .finally(() => setLoading(false));
-  }, [currentSpaceId, range]);
 
   // Auto-select today when switching to week range
   useEffect(() => {
@@ -100,11 +79,14 @@ export default function MyMissionsPage() {
 
         {/* Range selector */}
         <div className="flex gap-1 bg-slate-100 p-1 rounded-xl w-fit">
-          {(Object.keys(RANGE_LABELS) as Range[]).map(r => (
-            <button key={r} onClick={() => setRange(r)}
+          {(Object.keys(RANGE_LABELS) as AssignmentRange[]).map(r => (
+            <button
+              key={r}
+              onClick={() => setRange(r)}
               className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
                 range === r ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"
-              }`}>
+              }`}
+            >
               {RANGE_LABELS[r]}
             </button>
           ))}
@@ -165,7 +147,6 @@ export default function MyMissionsPage() {
             <p className="text-slate-400 text-sm">{tMy("noMissionsInRange", { range: RANGE_LABELS[range] })}</p>
           </div>
         ) : range === "week" ? (
-          // Week view: show selected day's per-task table
           <div>
             <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">
               {fDateLong(selectedDay + "T00:00:00")}
@@ -177,7 +158,6 @@ export default function MyMissionsPage() {
             />
           </div>
         ) : (
-          // Month/year view: show each date as a section with its per-task table
           <div className="space-y-8">
             {sortedDates.map(date => (
               <div key={date}>

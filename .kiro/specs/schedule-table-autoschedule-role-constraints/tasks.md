@@ -183,7 +183,7 @@ Implementation is ordered so that each layer is ready before the next depends on
 - [x] 18. Checkpoint — ensure frontend builds and all existing tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 19. Tests: backend — `CreateConstraintCommandHandler` scope validation
+- [x] 19. Tests: backend — `CreateConstraintCommandHandler` scope validation
   - [x] 19.1 Write property test for role constraint scope validation (Property 7)
     - **Property 7: Role constraint scope validation**
     - **Validates: Requirements 8.1, 8.2**
@@ -204,7 +204,7 @@ Implementation is ordered so that each layer is ready before the next depends on
     - Test: person with null `linked_user_id` → 422
     - Test: registered person → 201
 
-- [ ] 20. Tests: backend — `SolverPayloadNormalizer` effective-date filtering
+- [x] 20. Tests: backend — `SolverPayloadNormalizer` effective-date filtering
   - [x] 20.1 Write property test for effective-date filtering uniformity (Property 10)
     - **Property 10: Effective-date filtering is uniform across scope types**
     - **Validates: Requirements 10.4, 13.1, 13.2, 13.3, 13.4**
@@ -221,7 +221,7 @@ Implementation is ordered so that each layer is ready before the next depends on
     - Test: constraint with null dates → always included
     - Test: constraint overlapping horizon → included
 
-- [ ] 21. Tests: backend — `AutoSchedulerService` gap detection
+- [x] 21. Tests: backend — `AutoSchedulerService` gap detection
   - [x] 21.1 Write property test for gap detection triggers solver exactly once (Property 5)
     - **Property 5: Gap detection triggers solver exactly once per group**
     - **Validates: Requirements 4.1, 4.2**
@@ -235,7 +235,7 @@ Implementation is ordered so that each layer is ready before the next depends on
     - Test: draft exists → skip
     - Test: recent failure → skip
 
-- [ ] 22. Tests: backend — `GroupRolesController` and commands
+- [x] 22. Tests: backend — `GroupRolesController` and commands
   - [x] 22.1 Write property test for group role creation scoping (Property 11)
     - **Property 11: Group role creation is group-scoped**
     - **Validates: Requirements 12.1, 12.7**
@@ -253,7 +253,7 @@ Implementation is ordered so that each layer is ready before the next depends on
     - Test: deactivate role → 200, `is_active = false`
     - Test: missing permission → 403
 
-- [ ] 23. Tests: solver — constraint expansion
+- [x] 23. Tests: solver — constraint expansion
   - [x] 23.1 Write unit tests for `expand_role_constraints`
     - Test: role with 0 members → warning logged, 0 expanded constraints, original removed
     - Test: role with 1 member → 1 person-scoped constraint
@@ -265,7 +265,7 @@ Implementation is ordered so that each layer is ready before the next depends on
     - Test: group with N members → N person-scoped constraints
     - Test: expansion applies to all three severity lists
 
-- [ ] 24. Tests: frontend — `ScheduleTable2D` property tests
+- [x] 24. Tests: frontend — `ScheduleTable2D` property tests
   - [x] 24.1 Write property test for column and row completeness (Property 1)
     - **Property 1: ScheduleTable2D column and row completeness**
     - **Validates: Requirements 1.1**
@@ -287,7 +287,7 @@ Implementation is ordered so that each layer is ready before the next depends on
     - Generate assignments spanning 1–14 dates, random filter date
     - Verify: only assignments overlapping filter date are rendered
 
-- [ ] 25. Tests: frontend — `ConstraintsTab` property tests
+- [x] 25. Tests: frontend — `ConstraintsTab` property tests
   - [x] 25.1 Write property test for constraint scope filtering in UI (Property 6)
     - **Property 6: Constraint scope filtering in UI**
     - **Validates: Requirements 5.1, 6.1, 7.1**

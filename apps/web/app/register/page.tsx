@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { register } from "@/lib/api/auth";
 import ShifterLogo from "@/components/shell/ShifterLogo";
+import ImageUpload from "@/components/ImageUpload";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 export default function RegisterPage() {
   const t = useTranslations("auth");
@@ -144,12 +146,11 @@ export default function RegisterPage() {
               <label style={{ display: "block", fontSize: "0.875rem", fontWeight: 500, color: "#374151", marginBottom: "0.375rem" }}>
                 {t("profileImageUrl")} <span style={{ color: "#94a3b8", fontWeight: 400 }}>({t("optional")})</span>
               </label>
-              <input
-                type="url"
-                value={profileImageUrl}
-                onChange={e => setProfileImageUrl(e.target.value)}
-                placeholder="https://example.com/photo.jpg"
-                style={{ width: "100%", border: "1px solid #e2e8f0", borderRadius: 10, padding: "0.625rem 0.875rem", fontSize: "0.875rem", color: "#0f172a", outline: "none", boxSizing: "border-box" }}
+              <ImageUpload
+                value={profileImageUrl || null}
+                onChange={url => setProfileImageUrl(url)}
+                shape="circle"
+                size={80}
               />
             </div>
 
@@ -211,6 +212,10 @@ export default function RegisterPage() {
               {t("loginButton")}
             </Link>
           </p>
+
+          <div style={{ marginTop: "1.25rem", paddingTop: "1rem", borderTop: "1px solid #f1f5f9" }}>
+            <LanguageSwitcher variant="auth" />
+          </div>
         </div>
       </div>
     </main>

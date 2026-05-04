@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useTranslations } from "next-intl";
 import { useSpaceStore } from "@/lib/store/spaceStore";
 import { useDateFormat } from "@/lib/hooks/useDateFormat";
@@ -15,20 +16,42 @@ export default function NotificationBell({ variant = "dark" }: { variant?: "ligh
   const { currentSpaceId } = useSpaceStore();
   const { fDateTime } = useDateFormat();
   const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+  const [dropdownPos, setDropdownPos] = useState<{ top: number; left: number }>({ top: 60, left: 16 });
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [mounted, setMounted] = useState(false);
 
   const { data: notifications = [] } = useNotifications(currentSpaceId);
   const dismissOne = useDismissNotification(currentSpaceId);
   const dismissAll = useDismissAllNotifications(currentSpaceId);
 
+  // Wait for client mount before rendering portal
+  useEffect(() => { setMounted(true); }, []);
+
   // Close on outside click
   useEffect(() => {
     function handler(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      const target = e.target as Node;
+      if (
+        buttonRef.current && !buttonRef.current.contains(target) &&
+        dropdownRef.current && !dropdownRef.current.contains(target)
+      ) {
+        setOpen(false);
+      }
     }
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
+
+  function handleToggle(e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!open && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      setDropdownPos({ top: rect.bottom + 8, left: rect.left });
+    }
+    setOpen(o => !o);
+  }
 
   const unreadCount = notifications.filter(n => !n.isRead).length;
 
@@ -41,12 +64,70 @@ export default function NotificationBell({ variant = "dark" }: { variant?: "ligh
     return "🔔";
   }
 
+  const dropdown = open && mounted ? createPortal(
+    <div
+      ref={dropdownRef}
+      className="bg-white border border-gray-200 rounded-xl shadow-xl"
+      style={{
+        position: "fixed",
+        top: dropdownPos.top,
+        left: dropdownPos.left,
+        width: 340,
+        maxHeight: "70vh",
+        overflowY: "auto",
+        direction: "rtl",
+        zIndex: 99999,
+      }}
+      onClick={e => e.stopPropagation()}
+    >
+      <div className="flex items-center justify-between px-4 py-3 border-b" style={{ direction: "ltr" }}>
+        <span className="text-sm font-semibold">{t("title")}</span>
+        {unreadCount > 0 && (
+          <button
+            type="button"
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); dismissAll.mutate(); }}
+            className="text-xs text-blue-600 hover:underline">
+            {t("markAllRead")}
+          </button>
+        )}
+      </div>
+
+      <div className="divide-y divide-gray-100" style={{ direction: "ltr" }}>
+        {notifications.length === 0 ? (
+          <p className="text-xs text-gray-400 text-center py-6">{t("noNotifications")}</p>
+        ) : notifications.map(n => (
+          <div key={n.id}
+            className={`px-4 py-3 flex gap-3 ${n.isRead ? "opacity-50" : "bg-blue-50/40"}`}>
+            <span className="text-base mt-0.5 flex-shrink-0">{eventIcon(n.eventType)}</span>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-semibold text-gray-800">{n.title}</p>
+              <p className="text-xs text-gray-600 mt-0.5 leading-relaxed">{n.body}</p>
+              <p className="text-[10px] text-gray-400 mt-1.5">
+                {fDateTime(n.createdAt)}
+              </p>
+            </div>
+            {!n.isRead && (
+              <button
+                type="button"
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); dismissOne.mutate(n.id); }}
+                className="text-gray-300 hover:text-gray-500 flex-shrink-0 self-start mt-0.5 text-base leading-none"
+                aria-label="Dismiss">×</button>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>,
+    document.body
+  ) : null;
+
   return (
-    <div ref={ref} className="relative">
+    <>
       <button
-        onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpen(!open); }}
+        ref={buttonRef}
+        onClick={handleToggle}
         className={`relative p-1.5 rounded-lg ${variant === "dark" ? "hover:bg-white/10 text-slate-400 hover:text-white" : "hover:bg-gray-100 text-gray-600"}`}
         aria-label="Notifications"
+        type="button"
       >
         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none"
           viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -59,57 +140,7 @@ export default function NotificationBell({ variant = "dark" }: { variant?: "ligh
           </span>
         )}
       </button>
-
-      {open && (
-        <div
-          className="bg-white border border-gray-200 rounded-xl shadow-xl z-[100]"
-          style={{
-            position: "fixed",
-            top: 12,
-            left: 268,
-            width: 340,
-            maxHeight: "80vh",
-            overflowY: "auto",
-            direction: "rtl",
-          }}
-          onClick={e => e.stopPropagation()}
-        >
-          <div className="flex items-center justify-between px-4 py-3 border-b">
-            <span className="text-sm font-semibold">{t("title")}</span>
-            {unreadCount > 0 && (
-              <button
-                onClick={(e) => { e.preventDefault(); e.stopPropagation(); dismissAll.mutate(); }}
-                className="text-xs text-blue-600 hover:underline">
-                {t("markAllRead")}
-              </button>
-            )}
-          </div>
-
-          <div className="max-h-80 overflow-y-auto divide-y divide-gray-100">
-            {notifications.length === 0 ? (
-              <p className="text-xs text-gray-400 text-center py-6">{t("noNotifications")}</p>
-            ) : notifications.map(n => (
-              <div key={n.id}
-                className={`px-4 py-3 flex gap-3 ${n.isRead ? "opacity-50" : "bg-blue-50/40"}`}>
-                <span className="text-base mt-0.5 flex-shrink-0">{eventIcon(n.eventType)}</span>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-semibold text-gray-800">{n.title}</p>
-                  <p className="text-xs text-gray-600 mt-0.5 leading-relaxed">{n.body}</p>
-                  <p className="text-[10px] text-gray-400 mt-1.5">
-                    {fDateTime(n.createdAt)}
-                  </p>
-                </div>
-                {!n.isRead && (
-                  <button
-                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); dismissOne.mutate(n.id); }}
-                    className="text-gray-300 hover:text-gray-500 flex-shrink-0 self-start mt-0.5 text-base leading-none"
-                    aria-label="Dismiss">×</button>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
+      {dropdown}
+    </>
   );
 }

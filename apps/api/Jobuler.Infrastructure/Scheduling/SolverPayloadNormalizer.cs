@@ -37,12 +37,17 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
         }
 
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
-        var horizonStart = today;
         // Use the provided startTime if given, otherwise default to now.
         // This allows admins to override the calculation start point.
         var nowUtc = startTime.HasValue
             ? DateTime.SpecifyKind(startTime.Value, DateTimeKind.Utc)
             : DateTime.UtcNow;
+
+        // horizonStart is the DATE sent to the solver as horizon_start.
+        // When a custom startTime is provided, use that date; otherwise use today.
+        var horizonStart = startTime.HasValue
+            ? DateOnly.FromDateTime(nowUtc)
+            : today;
 
         // Use the solver horizon for the specific group (if scoped), otherwise max across all groups.
         // Capped at 7 days to keep the CP-SAT model tractable.
@@ -62,7 +67,7 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
         }
         maxHorizon = Math.Max(1, maxHorizon); // at least 1 day
 
-        var horizonEnd = today.AddDays(maxHorizon - 1); // inclusive
+        var horizonEnd = horizonStart.AddDays(maxHorizon - 1); // inclusive
 
         // ── People eligibility ────────────────────────────────────────────────
         // When group-scoped, only include members of that group.
