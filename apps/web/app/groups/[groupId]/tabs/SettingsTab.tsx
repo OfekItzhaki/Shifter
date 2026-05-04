@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
-import type { GroupMemberDto, GroupRoleDto } from "@/lib/api/groups";
+import type { GroupMemberDto } from "@/lib/api/groups";
 
 interface DraftVersion { id: string; status: string; }
 
@@ -30,11 +30,11 @@ interface Props {
   deleteSaving: boolean;
   deleteError: string | null;
   // Roles
-  groupRoles: GroupRoleDto[];
-  groupRolesLoading: boolean;
-  onCreateRole: (name: string, description: string | null, permissionLevel: string) => Promise<void>;
-  onUpdateRole: (roleId: string, name: string, description: string | null, permissionLevel: string) => Promise<void>;
-  onDeactivateRole: (roleId: string) => Promise<void>;
+  groupRoles?: never;
+  groupRolesLoading?: never;
+  onCreateRole?: never;
+  onUpdateRole?: never;
+  onDeactivateRole?: never;
   onGroupNameChange: (v: string) => void;
   onRenameGroup: () => void;
   onSolverHorizonChange: (v: number) => void;
@@ -54,7 +54,6 @@ export default function SettingsTab({
   solverHorizon, savingSettings, settingsError, settingsSaved,
   solverPolling, solverStatus, solverError, draftVersion,
   members,
-  groupRoles, groupRolesLoading, onCreateRole, onUpdateRole, onDeactivateRole,
   transferPersonId, transferSaving, transferError, hasPendingTransfer, cancelTransferSaving,
   showDeleteConfirm, deleteSaving, deleteError,
   onGroupNameChange, onRenameGroup, onSolverHorizonChange, onSaveSettings,
@@ -62,22 +61,7 @@ export default function SettingsTab({
   onTransferPersonChange, onInitiateTransfer, onCancelTransfer,
   onShowDeleteConfirm, onDeleteGroup,
 }: Props) {
-  // Roles form state
-  const [newRoleName, setNewRoleName] = useState("");
-  const [newRoleDesc, setNewRoleDesc] = useState("");
-  const [newRolePermLevel, setNewRolePermLevel] = useState("view");
-  const [roleFormSaving, setRoleFormSaving] = useState(false);
-  const [roleFormError, setRoleFormError] = useState<string | null>(null);
-  const [editingRoleId, setEditingRoleId] = useState<string | null>(null);
-  const [editRoleName, setEditRoleName] = useState("");
-  const [editRoleDesc, setEditRoleDesc] = useState("");
-  const [editRolePermLevel, setEditRolePermLevel] = useState("view");
-  const [editRoleSaving, setEditRoleSaving] = useState(false);
-  const [editRoleError, setEditRoleError] = useState<string | null>(null);
-  const [confirmDeactivateRole, setConfirmDeactivateRole] = useState<string | null>(null);
-
-  // Solver start time — defaults to now
-  const [solverStartTime, setSolverStartTime] = useState(() => {
+  // Solver start time — defaults to now  const [solverStartTime, setSolverStartTime] = useState(() => {
     const d = new Date();
     const pad = (n: number) => String(n).padStart(2, "0");
     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
@@ -85,37 +69,6 @@ export default function SettingsTab({
 
   const t = useTranslations("groups.settings_tab");
   const tCommon = useTranslations("common");
-
-  async function handleCreateRole(e: React.FormEvent) {
-    e.preventDefault();
-    if (!newRoleName.trim()) return;
-    setRoleFormSaving(true);
-    setRoleFormError(null);
-    try {
-      await onCreateRole(newRoleName.trim(), newRoleDesc.trim() || null, newRolePermLevel);
-      setNewRoleName("");
-      setNewRoleDesc("");
-      setNewRolePermLevel("view");
-    } catch {
-      setRoleFormError(t("errorCreateRole"));
-    } finally {
-      setRoleFormSaving(false);
-    }
-  }
-
-  async function handleUpdateRole(roleId: string) {
-    if (!editRoleName.trim()) return;
-    setEditRoleSaving(true);
-    setEditRoleError(null);
-    try {
-      await onUpdateRole(roleId, editRoleName.trim(), editRoleDesc.trim() || null, editRolePermLevel);
-      setEditingRoleId(null);
-    } catch {
-      setEditRoleError(t("errorUpdateRole"));
-    } finally {
-      setEditRoleSaving(false);
-    }
-  }
 
   if (!isAdmin) {
     return (
@@ -207,156 +160,6 @@ export default function SettingsTab({
             </div>
           )}
         </div>
-      </Section>
-
-      {/* Roles management */}
-      <Section title={t("roles")}>
-        {groupRolesLoading ? (
-          <p className="text-sm text-slate-400">{t("loadingRoles")}</p>
-        ) : (
-          <div className="space-y-3">
-            {/* Existing roles list */}
-            {groupRoles.length > 0 && (
-              <div className="space-y-2">
-                {groupRoles.map(role => (
-                  <div key={role.id} className={`flex items-center gap-2 px-3 py-2 rounded-xl border ${role.isActive ? "border-slate-200 bg-white" : "border-slate-100 bg-slate-50"}`}>
-                    {editingRoleId === role.id ? (
-                      <div className="flex-1 space-y-2">
-                        <input
-                          type="text"
-                          value={editRoleName}
-                          onChange={e => setEditRoleName(e.target.value)}
-                          className="w-full border border-slate-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          placeholder={t("addRole")}
-                        />
-                        <input
-                          type="text"
-                          value={editRoleDesc}
-                          onChange={e => setEditRoleDesc(e.target.value)}
-                          className="w-full border border-slate-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          placeholder={t("roleDescription")}
-                        />
-                        <select
-                          value={editRolePermLevel}
-                          onChange={e => setEditRolePermLevel(e.target.value)}
-                          className="w-full border border-slate-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        >
-                          <option value="view">{t("viewOnly")}</option>
-                          <option value="ViewAndEdit">{t("viewAndEdit")}</option>
-                          <option value="Owner">{t("ownerRole")}</option>
-                        </select>
-                        {editRoleError && <p className="text-xs text-red-600">{editRoleError}</p>}
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => handleUpdateRole(role.id)}
-                            disabled={editRoleSaving}
-                            className="bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium px-3 py-1.5 rounded-lg disabled:opacity-50 transition-colors"
-                          >
-                            {editRoleSaving ? t("saving") : t("save")}
-                          </button>
-                          <button
-                            onClick={() => setEditingRoleId(null)}
-                            className="text-xs text-slate-500 border border-slate-200 px-3 py-1.5 rounded-lg hover:bg-slate-50 transition-colors"
-                          >
-                            {t("cancel")}
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <>
-                        <div className="flex-1 min-w-0">
-                          <span className={`text-sm font-medium ${role.isActive ? "text-slate-800" : "text-slate-400 line-through"}`}>
-                            {role.name}
-                          </span>
-                          {role.description && (
-                            <span className="text-xs text-slate-400 mr-2">{role.description}</span>
-                          )}
-                          {role.isActive && (
-                            <span className={`mr-2 text-xs px-1.5 py-0.5 rounded-full ${
-                              role.permissionLevel === "Owner" ? "bg-purple-100 text-purple-700" :
-                              role.permissionLevel === "ViewAndEdit" ? "bg-blue-100 text-blue-700" :
-                              "bg-slate-100 text-slate-500"
-                            }`}>
-                              {role.permissionLevel === "Owner" ? t("ownerRole") :
-                               role.permissionLevel === "ViewAndEdit" ? t("viewAndEdit") : t("viewOnly")}
-                            </span>
-                          )}
-                        </div>
-                        {role.isActive && (
-                          <div className="flex items-center gap-1 flex-shrink-0">
-                            <button
-                              onClick={() => {
-                                setEditingRoleId(role.id);
-                                setEditRoleName(role.name);
-                                setEditRoleDesc(role.description ?? "");
-                                setEditRolePermLevel(role.permissionLevel ?? "view");
-                                setEditRoleError(null);
-                              }}
-                              className="text-xs text-slate-500 border border-slate-200 hover:bg-slate-50 px-2.5 py-1 rounded-lg transition-colors"
-                            >
-                              {t("edit")}
-                            </button>
-                            {confirmDeactivateRole === role.id ? (
-                              <>
-                                <span className="text-xs text-slate-600">{t("deactivateConfirm")}</span>
-                                <button onClick={() => { setConfirmDeactivateRole(null); onDeactivateRole(role.id); }} className="text-xs text-white bg-red-500 hover:bg-red-600 px-2.5 py-1 rounded-lg transition-colors">{t("confirm")}</button>
-                                <button onClick={() => setConfirmDeactivateRole(null)} className="text-xs text-slate-500 border border-slate-200 px-2.5 py-1 rounded-lg hover:bg-slate-50 transition-colors">{t("cancel")}</button>
-                              </>
-                            ) : (
-                              <button
-                                onClick={() => setConfirmDeactivateRole(role.id)}
-                                className="text-xs text-red-500 border border-red-100 hover:bg-red-50 px-2.5 py-1 rounded-lg transition-colors"
-                              >
-                                {t("deactivate")}
-                              </button>
-                            )}
-                          </div>
-                        )}
-                      </>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* Add role form */}
-            <form onSubmit={handleCreateRole} className="space-y-2 pt-1">
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={newRoleName}
-                  onChange={e => setNewRoleName(e.target.value)}
-                  placeholder={t("addRole")}
-                  className="flex-1 border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                <button
-                  type="submit"
-                  disabled={roleFormSaving || !newRoleName.trim()}
-                  className="bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-4 py-2 rounded-xl disabled:opacity-50 transition-colors"
-                >
-                  {roleFormSaving ? "..." : t("add")}
-                </button>
-              </div>
-              <input
-                type="text"
-                value={newRoleDesc}
-                onChange={e => setNewRoleDesc(e.target.value)}
-                placeholder={t("roleDescription")}
-                className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              <select
-                value={newRolePermLevel}
-                onChange={e => setNewRolePermLevel(e.target.value)}
-                className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="view">{t("viewOnly")}</option>
-                <option value="ViewAndEdit">{t("viewAndEdit")}</option>
-                <option value="Owner">{t("ownerRole")}</option>
-              </select>
-              {roleFormError && <p className="text-xs text-red-600">{roleFormError}</p>}
-            </form>
-          </div>
-        )}
       </Section>
 
       {/* Ownership transfer */}      <Section title={t("ownershipTransfer")}>

@@ -17,6 +17,7 @@ import ConstraintsTab from "./tabs/ConstraintsTab";
 import SettingsTab from "./tabs/SettingsTab";
 import StatsTab from "./tabs/StatsTab";
 import QualificationsTab from "./tabs/QualificationsTab";
+import RolesTab from "./tabs/RolesTab";
 import LiveStatusPanel from "@/components/schedule/LiveStatusPanel";
 import { ActiveTab, ADMIN_ONLY_TABS, ScheduleAssignment } from "./types";
 import { useSpaceStore } from "@/lib/store/spaceStore";
@@ -51,6 +52,7 @@ function getTabLabels(t: (key: string) => string): Record<ActiveTab, string> {
     schedule: t("tabs.schedule"),
     members: t("tabs.members"),
     qualifications: t("tabs.qualifications"),
+    roles: t("tabs.roles"),
     alerts: t("tabs.alerts"),
     messages: t("tabs.messages"),
     tasks: t("tabs.tasks"),
@@ -61,7 +63,7 @@ function getTabLabels(t: (key: string) => string): Record<ActiveTab, string> {
   };
 }
 
-const ALL_TABS: ActiveTab[] = ["schedule", "live-status", "members", "qualifications", "alerts", "messages", "tasks", "constraints", "stats", "settings"];
+const ALL_TABS: ActiveTab[] = ["schedule", "live-status", "members", "qualifications", "roles", "alerts", "messages", "tasks", "constraints", "stats", "settings"];
 
 // ── Main component ───────────────────────────────────────────────────────────
 export default function GroupDetailPage() {
@@ -388,6 +390,23 @@ export default function GroupDetailPage() {
       })
       .catch(() => {})
       .finally(() => setQualificationsLoading(false));
+  }, [currentSpaceId, groupId, activeTab]);
+
+  // ── Load roles tab ───────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!currentSpaceId || !groupId || activeTab !== "roles") return;
+    setGroupRolesLoading(true);
+    Promise.all([
+      getGroupRoles(currentSpaceId, groupId),
+      members.length === 0 ? getGroupMembers(currentSpaceId, groupId) : Promise.resolve(members),
+    ])
+      .then(([roles, m]) => {
+        setGroupRoles(roles);
+        if (members.length === 0) setMembers(m);
+      })
+      .catch(() => {})
+      .finally(() => setGroupRolesLoading(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentSpaceId, groupId, activeTab]);
 
   // ── Cleanup polling on unmount ───────────────────────────────────────────
@@ -1292,11 +1311,6 @@ export default function GroupDetailPage() {
               solverError={solverError}
               draftVersion={draftVersion}
               members={members}
-              groupRoles={groupRoles}
-              groupRolesLoading={groupRolesLoading}
-              onCreateRole={handleCreateRole}
-              onUpdateRole={handleUpdateRole}
-              onDeactivateRole={handleDeactivateRole}
               transferPersonId={transferPersonId}
               transferSaving={transferSaving}
               transferError={transferError}
@@ -1330,6 +1344,19 @@ export default function GroupDetailPage() {
               onDeactivateQualification={handleDeactivateQualification}
               onAssign={handleAssignQualification}
               onRemove={handleRemoveQualification}
+            />
+          )}
+
+          {activeTab === "roles" && (
+            <RolesTab
+              isAdmin={isAdmin}
+              groupRoles={groupRoles}
+              groupRolesLoading={groupRolesLoading}
+              members={members}
+              onCreateRole={handleCreateRole}
+              onUpdateRole={handleUpdateRole}
+              onDeactivateRole={handleDeactivateRole}
+              onUpdateMemberRole={handleUpdateMemberRole}
             />
           )}
 

@@ -2,9 +2,9 @@ import type { GroupMemberDto, GroupAlertDto, DeletedGroupDto, GroupWithMemberCou
 import type { GroupTaskDto } from "@/lib/api/tasks";
 import type { ConstraintDto } from "@/lib/api/constraints";
 
-export type ActiveTab = "schedule" | "members" | "qualifications" | "alerts" | "messages" | "tasks" | "constraints" | "settings" | "stats" | "live-status";
+export type ActiveTab = "schedule" | "members" | "qualifications" | "roles" | "alerts" | "messages" | "tasks" | "constraints" | "settings" | "stats" | "live-status";
 
-export const ADMIN_ONLY_TABS: ActiveTab[] = ["tasks", "constraints", "settings", "stats"];
+export const ADMIN_ONLY_TABS: ActiveTab[] = ["tasks", "constraints", "roles", "settings", "stats"];
 
 export interface ScheduleAssignment {
   id: string;

@@ -121,6 +121,7 @@
       "liveStatus": "Live Status",
       "members": "Members",
       "qualifications": "Qualifications",
+      "roles": "Roles",
       "alerts": "Alerts",
       "messages": "Messages",
       "tasks": "Tasks",
@@ -266,7 +267,17 @@
       "role": "Role",
       "loading": "Loading constraints..."
     },
-    "settings_tab": {
+    "roles_tab": {
+      "adminOnly": "Role management is available to admins only",
+      "explainerTitle": "What are roles?",
+      "explainerBody": "Roles define what each member is allowed to see and do in this group. Every member can hold exactly one role — unlike qualifications, roles are not stackable.",
+      "singleRoleNote": "Each member can hold only one role at a time. Assigning a new role replaces the previous one.",
+      "definedRoles": "Defined Roles",
+      "memberRoles": "Member Role Assignments",
+      "memberRolesHint": "Each member can hold exactly one role.",
+      "default": "default",
+      "noRole": "No role"
+    },
       "groupName": "Group Name",
       "save": "Save",
       "saving": "Saving...",
