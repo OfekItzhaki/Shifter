@@ -73,8 +73,9 @@ export default function ScheduleTaskTable({ assignments, currentUserName, filter
   const taskNames = Array.from(byTask.keys()).sort();
 
   return (
-    <div className="space-y-6">
-      {taskNames.map(taskName => {
+    <>
+      <div className="space-y-6">
+        {taskNames.map(taskName => {
         const taskAssignments = byTask.get(taskName)!;
 
         // Group by slot key → list of people assigned to that slot
@@ -168,21 +169,22 @@ export default function ScheduleTaskTable({ assignments, currentUserName, filter
           </div>
         );
       })}
-    </div>
+      </div>
 
-    {/* Can't make it modal */}
-    {cantMakeIt && spaceId && (
-      <CantMakeItModal
-        open={true}
-        onClose={() => setCantMakeIt(null)}
-        spaceId={spaceId}
-        personId={cantMakeIt.personId}
-        personName={cantMakeIt.personName}
-        onSaved={(triggerRerun) => {
-          setCantMakeIt(null);
-          onPersonBlocked?.(cantMakeIt.personId, triggerRerun);
-        }}
-      />
-    )}
+      {/* Can't make it modal */}
+      {cantMakeIt && spaceId && (
+        <CantMakeItModal
+          open={true}
+          onClose={() => setCantMakeIt(null)}
+          spaceId={spaceId}
+          personId={cantMakeIt.personId}
+          personName={cantMakeIt.personName}
+          onSaved={(triggerRerun) => {
+            setCantMakeIt(null);
+            onPersonBlocked?.(cantMakeIt.personId, triggerRerun);
+          }}
+        />
+      )}
+    </>
   );
 }

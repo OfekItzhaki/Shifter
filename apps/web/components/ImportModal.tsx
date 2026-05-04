@@ -2,7 +2,7 @@
 
 import { useState, useRef } from "react";
 import { useLocale } from "next-intl";
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
 import { createPerson } from "@/lib/api/people";
 import { addGroupMemberById } from "@/lib/api/groups";
 import { createGroupTask } from "@/lib/api/tasks";
@@ -108,12 +108,30 @@ function parseTaskSheet(rows: Record<string, string>[]): TaskRow[] {
 function readWorkbook(file: File): Promise<Record<string, string>[]> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onload = e => {
+    reader.onload = async e => {
       try {
-        const data = new Uint8Array(e.target!.result as ArrayBuffer);
-        const wb = XLSX.read(data, { type: "array" });
-        const ws = wb.Sheets[wb.SheetNames[0]];
-        const rows = XLSX.utils.sheet_to_json<Record<string, string>>(ws, { defval: "" });
+        const buffer = e.target!.result as ArrayBuffer;
+        const wb = new ExcelJS.Workbook();
+        await wb.xlsx.load(buffer);
+        const ws = wb.worksheets[0];
+        if (!ws) { resolve([]); return; }
+
+        // First row = headers
+        const headers: string[] = [];
+        ws.getRow(1).eachCell({ includeEmpty: true }, (cell, colNumber) => {
+          headers[colNumber - 1] = String(cell.value ?? "").trim();
+        });
+
+        const rows: Record<string, string>[] = [];
+        ws.eachRow((row, rowNumber) => {
+          if (rowNumber === 1) return; // skip header
+          const obj: Record<string, string> = {};
+          row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+            const header = headers[colNumber - 1];
+            if (header) obj[header] = String(cell.value ?? "").trim();
+          });
+          rows.push(obj);
+        });
         resolve(rows);
       } catch (err) {
         reject(err);
@@ -253,14 +271,31 @@ export default function ImportModal({ open, onClose, spaceId, groupId, onImporte
     if (ok > 0) onImported();
   }
 
-  function downloadTemplate() {
+  async function downloadTemplate() {
     const cols = mode === "members" ? MEMBER_COLUMNS : TASK_COLUMNS;
-    const header = cols.map(c => c.key);
-    const example = cols.map(c => c.example);
-    const ws = XLSX.utils.aoa_to_sheet([header, example]);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, mode === "members" ? "Members" : "Tasks");
-    XLSX.writeFile(wb, `${mode}-template.xlsx`);
+    const wb = new ExcelJS.Workbook();
+    const ws = wb.addWorksheet(mode === "members" ? "Members" : "Tasks");
+
+    // Header row — bold
+    ws.addRow(cols.map(c => c.key)).eachCell(cell => {
+      cell.font = { bold: true };
+    });
+    // Example row
+    ws.addRow(cols.map(c => c.example));
+
+    // Auto-width columns
+    cols.forEach((_, i) => {
+      ws.getColumn(i + 1).width = 22;
+    });
+
+    const buffer = await wb.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${mode}-template.xlsx`;
+    a.click();
+    URL.revokeObjectURL(url);
   }
 
   function reset() {
