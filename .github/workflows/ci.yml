@@ -29,8 +29,13 @@ jobs:
       - name: Build
         run: dotnet build Jobuler.sln --no-restore --configuration Release
 
-      - name: Test
-        run: dotnet test Jobuler.sln --no-build --configuration Release --verbosity normal
+      - name: Test (unit + integration, skip solver-dependent tests)
+        run: |
+          dotnet test Jobuler.sln \
+            --no-build \
+            --configuration Release \
+            --verbosity normal \
+            --filter "Category!=RequiresSolver"
 
   # ── Python Solver ───────────────────────────────────────────────────────────
   solver:
@@ -51,20 +56,17 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Install test dependencies
-        run: pip install pytest ruff
-
       - name: Lint with ruff
         run: ruff check .
         continue-on-error: true
 
-      - name: Run solver tests
-        run: pytest tests/ -v
+      - name: Run solver unit tests
+        run: pytest tests/ -v --timeout=60
 
-      - name: Run solver health check
+      - name: Solver health check
         run: |
           uvicorn main:app --host 0.0.0.0 --port 8000 &
-          sleep 3
+          sleep 5
           curl -f http://localhost:8000/health
           kill %1
 
@@ -100,3 +102,4 @@ jobs:
         run: npm run build
         env:
           NEXT_PUBLIC_API_URL: http://localhost:5000
+          NEXT_PUBLIC_APP_VERSION: ${{ github.ref_name }}

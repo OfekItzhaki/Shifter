@@ -15,9 +15,9 @@ jobs:
     name: Build & Push Images
     runs-on: ubuntu-latest
     outputs:
-      api-image: ${{ steps.meta-api.outputs.tags }}
-      solver-image: ${{ steps.meta-solver.outputs.tags }}
-      web-image: ${{ steps.meta-web.outputs.tags }}
+      api-tag: ${{ github.sha }}
+      solver-tag: ${{ github.sha }}
+      web-tag: ${{ github.sha }}
 
     steps:
       - uses: actions/checkout@v4
@@ -33,38 +33,95 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
       - name: Build and push API image
-        id: meta-api
         uses: docker/build-push-action@v5
         with:
           context: apps/api
           file: infra/docker/api.Dockerfile
           push: true
-          tags: ${{ env.ECR_REGISTRY }}/jobuler-api:${{ github.sha }},${{ env.ECR_REGISTRY }}/jobuler-api:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          tags: |
+            ${{ env.ECR_REGISTRY }}/jobuler-api:${{ github.sha }}
+            ${{ env.ECR_REGISTRY }}/jobuler-api:latest
 
       - name: Build and push Solver image
-        id: meta-solver
         uses: docker/build-push-action@v5
         with:
           context: apps/solver
           file: infra/docker/solver.Dockerfile
           push: true
-          tags: ${{ env.ECR_REGISTRY }}/jobuler-solver:${{ github.sha }},${{ env.ECR_REGISTRY }}/jobuler-solver:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          tags: |
+            ${{ env.ECR_REGISTRY }}/jobuler-solver:${{ github.sha }}
+            ${{ env.ECR_REGISTRY }}/jobuler-solver:latest
 
       - name: Build and push Web image
-        id: meta-web
         uses: docker/build-push-action@v5
         with:
           context: apps/web
           file: infra/docker/web.Dockerfile
           push: true
-          tags: ${{ env.ECR_REGISTRY }}/jobuler-web:${{ github.sha }},${{ env.ECR_REGISTRY }}/jobuler-web:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            NEXT_PUBLIC_API_URL=${{ secrets.NEXT_PUBLIC_API_URL }}
+            NEXT_PUBLIC_APP_VERSION=${{ github.ref_name }}
+          tags: |
+            ${{ env.ECR_REGISTRY }}/jobuler-web:${{ github.sha }}
+            ${{ env.ECR_REGISTRY }}/jobuler-web:latest
+
+  # ── Run DB migrations ───────────────────────────────────────────────────────
+  migrate:
+    name: Run DB Migrations
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    environment: production
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Run migrations via ECS task
+        run: |
+          TASK_ARN=$(aws ecs run-task \
+            --cluster jobuler-cluster \
+            --task-definition jobuler-migrate \
+            --launch-type FARGATE \
+            --network-configuration "awsvpcConfiguration={subnets=[${{ secrets.ECS_SUBNET_ID }}],securityGroups=[${{ secrets.ECS_SECURITY_GROUP_ID }}],assignPublicIp=DISABLED}" \
+            --query 'tasks[0].taskArn' \
+            --output text \
+            --region ${{ env.AWS_REGION }})
+          echo "Migration task: $TASK_ARN"
+          aws ecs wait tasks-stopped \
+            --cluster jobuler-cluster \
+            --tasks "$TASK_ARN" \
+            --region ${{ env.AWS_REGION }}
+          EXIT_CODE=$(aws ecs describe-tasks \
+            --cluster jobuler-cluster \
+            --tasks "$TASK_ARN" \
+            --query 'tasks[0].containers[0].exitCode' \
+            --output text \
+            --region ${{ env.AWS_REGION }})
+          echo "Migration exit code: $EXIT_CODE"
+          [ "$EXIT_CODE" = "0" ] || exit 1
+        continue-on-error: false
 
   # ── Deploy to ECS ───────────────────────────────────────────────────────────
   deploy:
     name: Deploy to ECS
     runs-on: ubuntu-latest
-    needs: build-and-push
+    needs: migrate
     environment: production
 
     steps:
@@ -101,9 +158,23 @@ jobs:
             --force-new-deployment \
             --region ${{ env.AWS_REGION }}
 
-      - name: Wait for API deployment
+      - name: Wait for API to stabilise
         run: |
           aws ecs wait services-stable \
             --cluster jobuler-cluster \
             --services jobuler-api \
             --region ${{ env.AWS_REGION }}
+
+      - name: Wait for Web to stabilise
+        run: |
+          aws ecs wait services-stable \
+            --cluster jobuler-cluster \
+            --services jobuler-web \
+            --region ${{ env.AWS_REGION }}
+
+      - name: Tag release
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -f deployed-production
+          git push origin deployed-production --force

@@ -38,6 +38,9 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
 
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
         var horizonStart = today;
+        // Use the current UTC time as the actual start so we don't generate
+        // shifts that are already in the past within today.
+        var nowUtc = DateTime.UtcNow;
 
         // Use the solver horizon for the specific group (if scoped), otherwise max across all groups.
         // Capped at 7 days to keep the CP-SAT model tractable.
@@ -55,7 +58,7 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
                 .Where(g => g.SpaceId == spaceId && g.DeletedAt == null)
                 .MaxAsync(g => (int?)g.SolverHorizonDays, ct) ?? 7;
         }
-        maxHorizon = Math.Min(maxHorizon, 7); // hard cap
+        maxHorizon = Math.Max(1, maxHorizon); // at least 1 day
 
         var horizonEnd = today.AddDays(maxHorizon - 1); // inclusive
 
@@ -96,7 +99,7 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
         )).ToList();
 
         // ── Availability windows ──────────────────────────────────────────────
-        var horizonStartDt = horizonStart.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
+        var horizonStartDt = nowUtc; // start from NOW, not midnight
         var horizonEndDt   = horizonEnd.ToDateTime(TimeOnly.MaxValue, DateTimeKind.Utc);
 
         var availability = await _db.AvailabilityWindows.AsNoTracking()
@@ -175,7 +178,7 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
                 ? horizonEndDt
                 : task.EndsAt;
 
-            // Clamp to the full solver horizon
+            // Clamp to the full solver horizon — start from now, not midnight
             var windowStart = task.StartsAt < horizonStartDt ? horizonStartDt : task.StartsAt;
             var windowEnd   = effectiveEnd > horizonEndDt ? horizonEndDt : effectiveEnd;
 
@@ -183,11 +186,11 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
             var dailyStart = task.DailyStartTime;
             var dailyEnd   = task.DailyEndTime;
 
-            // Safety cap: never generate more than 336 shifts per task (7 days × 48 half-hour slots)
-            const int MaxShiftsPerTask = 336;
+            // Safety cap: never generate more than 48 shifts per day × horizon days
+            int maxShiftsPerTask = Math.Max(336, maxHorizon * 48);
             var shiftStart = windowStart;
             var shiftIndex = 0;
-            while (shiftStart + shiftDuration <= windowEnd && shiftIndex < MaxShiftsPerTask)
+            while (shiftStart + shiftDuration <= windowEnd && shiftIndex < maxShiftsPerTask)
             {
                 var shiftEnd = shiftStart + shiftDuration;
 

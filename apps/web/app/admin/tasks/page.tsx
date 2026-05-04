@@ -59,9 +59,9 @@ export default function TasksPage() {
       setTaskTypes(updated);
       setTypeName(""); setTypeDesc(""); setBurden("Neutral"); setPriority(5); setAllowsOverlap(false);
       setShowTypeForm(false);
-      setSuccess("Task type created successfully");
+      setSuccess(t("taskTypeCreated"));
     } catch (err: any) {
-      setError(err?.response?.data?.message || "Error creating task type");
+      setError(err?.response?.data?.message || t("errorCreateTaskType"));
     } finally { setSavingType(false); }
   }
 
@@ -77,9 +77,9 @@ export default function TasksPage() {
       setSlots(updated);
       setSlotStart(""); setSlotEnd(""); setHeadcount(1); setLocation(""); setSlotTypeId("");
       setShowSlotForm(false);
-      setSuccess("Task slot created successfully");
+      setSuccess(t("taskSlotCreated"));
     } catch (err: any) {
-      setError(err?.response?.data?.message || "Error creating task slot");
+      setError(err?.response?.data?.message || t("errorCreateTaskSlot"));
     } finally { setSavingSlot(false); }
   }
 

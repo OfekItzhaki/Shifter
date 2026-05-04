@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { useDateFormat } from "@/lib/hooks/useDateFormat";
 import type { ScheduleAssignment } from "../types";
 import ScheduleTaskTable from "@/components/schedule/ScheduleTaskTable";
@@ -28,7 +28,8 @@ interface Props {
   onDiscard: () => Promise<void>;
 }
 
-const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const DAY_NAMES_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const DAY_NAMES_HE   = ["א׳", "ב׳", "ג׳", "ד׳", "ה׳", "ו׳", "ש׳"];
 
 function getWeekDates(fromDate: string): string[] {
   const dates: string[] = [];
@@ -50,6 +51,9 @@ export default function ScheduleTab({
 }: Props) {
   const t = useTranslations("groups.schedule_tab");
   const tCommon = useTranslations("common");
+  const tAdmin = useTranslations("admin");
+  const locale = useLocale();
+  const dayNames = locale === "he" ? DAY_NAMES_HE : DAY_NAMES_SHORT;
   const today = new Date().toISOString().split("T")[0];
   const minDate = new Date(Date.now() - 2 * 86400000).toISOString().split("T")[0];
   const maxDate = new Date(Date.now() + solverHorizonDays * 86400000).toISOString().split("T")[0];
@@ -289,24 +293,34 @@ export default function ScheduleTab({
 
       {/* Day-name tabs */}
       <div className="flex gap-1 overflow-x-auto pb-1">
-        {weekDates.map((d, i) => (
-          <button
-            key={d}
-            onClick={() => setSelectedWeekDay(i)}
-            className={`flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-              i === selectedWeekDay
-                ? "bg-blue-500 text-white shadow-sm"
-                : d === today
-                ? "bg-blue-50 text-blue-600 border border-blue-200"
-                : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-            }`}
-          >
-            {DAY_NAMES[i]}
-            {d === today && i !== selectedWeekDay && (
-              <span className="mr-1 text-blue-400">•</span>
-            )}
-          </button>
-        ))}
+        {weekDates.map((d, i) => {
+          const dayNum = new Date(d + "T00:00:00").getDate();
+          const isSelected = i === selectedWeekDay;
+          const isToday = d === today;
+          return (
+            <button
+              key={d}
+              onClick={() => setSelectedWeekDay(i)}
+              className={`flex-shrink-0 flex flex-col items-center px-3 py-2 rounded-xl text-xs font-medium transition-all min-w-[48px] ${
+                isSelected
+                  ? "bg-blue-500 text-white shadow-sm"
+                  : isToday
+                  ? "bg-blue-50 text-blue-600 border border-blue-200"
+                  : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+              }`}
+            >
+              <span className={`text-[10px] font-normal mb-0.5 ${isSelected ? "text-blue-100" : "text-slate-400"}`}>
+                {dayNames[i]}
+              </span>
+              <span className={`text-sm font-bold leading-none ${isToday && !isSelected ? "text-blue-600" : ""}`}>
+                {dayNum}
+              </span>
+              {isToday && !isSelected && (
+                <span className="mt-1 w-1 h-1 rounded-full bg-blue-400" />
+              )}
+            </button>
+          );
+        })}
       </div>
 
       {(scheduleLoading) && (
@@ -336,11 +350,27 @@ export default function ScheduleTab({
 
       {/* Per-task schedule tables — show even when offline (cached data) */}
       {!scheduleLoading && (
-        <ScheduleTaskTable
-          assignments={filtered}
-          filterDate={selectedDate}
-          currentUserName={currentUserName}
-        />
+        <>
+          {/* Selected day label */}
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-semibold text-slate-700">
+              {new Date(selectedDate + "T00:00:00").toLocaleDateString(
+                locale === "he" ? "he-IL" : locale === "ru" ? "ru-RU" : "en-US",
+                { weekday: "long", day: "numeric", month: "long" }
+              )}
+            </span>
+            {selectedDate === today && (
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-700 border border-blue-200">
+                {tAdmin("today")}
+              </span>
+            )}
+          </div>
+          <ScheduleTaskTable
+            assignments={filtered}
+            filterDate={selectedDate}
+            currentUserName={currentUserName}
+          />
+        </>
       )}
     </div>
   );
