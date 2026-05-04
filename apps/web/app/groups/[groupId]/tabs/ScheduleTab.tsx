@@ -23,9 +23,11 @@ interface Props {
   scheduleVersionError: string | null;
   currentUserName?: string;
   groupName?: string;
+  spaceId?: string;
   onOpenDraftModal: () => void;
   onPublish: () => Promise<void>;
   onDiscard: () => Promise<void>;
+  onTriggerSolver?: () => void;
 }
 
 const DAY_NAMES_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -46,8 +48,8 @@ function getWeekDates(fromDate: string): string[] {
 export default function ScheduleTab({
   solverHorizonDays, scheduleData, scheduleLoading, scheduleError, scheduleIsOffline = false,
   draftVersion, lastRunSummary, isAdmin, publishSaving, discardSaving, scheduleVersionError,
-  currentUserName, groupName,
-  onOpenDraftModal, onPublish, onDiscard,
+  currentUserName, groupName, spaceId,
+  onOpenDraftModal, onPublish, onDiscard, onTriggerSolver,
 }: Props) {
   const t = useTranslations("groups.schedule_tab");
   const tCommon = useTranslations("common");
@@ -369,6 +371,11 @@ export default function ScheduleTab({
             assignments={filtered}
             filterDate={selectedDate}
             currentUserName={currentUserName}
+            isAdmin={isAdmin}
+            spaceId={spaceId}
+            onPersonBlocked={(_personId, triggerRerun) => {
+              if (triggerRerun && onTriggerSolver) onTriggerSolver();
+            }}
           />
         </>
       )}

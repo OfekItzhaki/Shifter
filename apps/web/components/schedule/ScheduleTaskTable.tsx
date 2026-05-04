@@ -1,9 +1,13 @@
 "use client";
 
+import { useState } from "react";
 import { useTranslations } from "next-intl";
+import CantMakeItModal from "./CantMakeItModal";
 
 /** Minimal assignment shape needed by this component */
 export interface TaskAssignment {
+  id?: string;
+  personId: string;
   personName: string;
   taskTypeName: string;
   slotStartsAt: string;
@@ -14,6 +18,11 @@ interface Props {
   assignments: TaskAssignment[];
   currentUserName?: string;
   filterDate?: string;
+  /** Admin-only: enables the "can't make it" button per person */
+  isAdmin?: boolean;
+  spaceId?: string;
+  /** Called after a presence window is saved — parent decides whether to re-run solver */
+  onPersonBlocked?: (personId: string, triggerRerun: boolean) => void;
 }
 
 function formatTime(iso: string): string {
@@ -38,8 +47,9 @@ function overlapsDate(a: TaskAssignment, dateStr: string): boolean {
  *
  * This cleanly handles tasks with different shift times and multiple people per shift.
  */
-export default function ScheduleTaskTable({ assignments, currentUserName, filterDate }: Props) {
+export default function ScheduleTaskTable({ assignments, currentUserName, filterDate, isAdmin, spaceId, onPersonBlocked }: Props) {
   const t = useTranslations("schedule");
+  const [cantMakeIt, setCantMakeIt] = useState<{ personId: string; personName: string } | null>(null);
   const visible = filterDate
     ? assignments.filter(a => overlapsDate(a, filterDate))
     : assignments;
@@ -68,11 +78,12 @@ export default function ScheduleTaskTable({ assignments, currentUserName, filter
         const taskAssignments = byTask.get(taskName)!;
 
         // Group by slot key → list of people assigned to that slot
-        const slotMap = new Map<string, { startsAt: string; endsAt: string; people: string[] }>();
+        const slotMap = new Map<string, { startsAt: string; endsAt: string; people: string[]; personIds: string[] }>();
         for (const a of taskAssignments) {
           const key = `${a.slotStartsAt}|${a.slotEndsAt}`;
-          const slot = slotMap.get(key) ?? { startsAt: a.slotStartsAt, endsAt: a.slotEndsAt, people: [] };
+          const slot = slotMap.get(key) ?? { startsAt: a.slotStartsAt, endsAt: a.slotEndsAt, people: [], personIds: [] };
           slot.people.push(a.personName);
+          slot.personIds.push(a.personId);
           slotMap.set(key, slot);
         }
 
@@ -121,13 +132,27 @@ export default function ScheduleTaskTable({ assignments, currentUserName, filter
                         {/* Person columns */}
                         {personCols.map(i => {
                           const name = slot.people[i];
+                          const personId = slot.personIds[i];
                           const isCurrentUser = name === currentUserName;
                           return (
                             <td key={i} className={`px-4 py-3 text-center ${isCurrentUser ? "bg-blue-50/60" : ""}`}>
                               {name ? (
-                                <span className={`text-sm font-medium ${isCurrentUser ? "text-blue-700" : "text-slate-800"}`}>
-                                  {name}
-                                </span>
+                                <div className="flex items-center justify-center gap-1.5 group">
+                                  <span className={`text-sm font-medium ${isCurrentUser ? "text-blue-700" : "text-slate-800"}`}>
+                                    {name}
+                                  </span>
+                                  {isAdmin && spaceId && personId && (
+                                    <button
+                                      onClick={() => setCantMakeIt({ personId, personName: name })}
+                                      title="Can't make it"
+                                      className="opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 text-amber-500 hover:text-red-500"
+                                    >
+                                      <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+                                      </svg>
+                                    </button>
+                                  )}
+                                </div>
                               ) : (
                                 <span className="text-slate-300">—</span>
                               )}
@@ -144,5 +169,20 @@ export default function ScheduleTaskTable({ assignments, currentUserName, filter
         );
       })}
     </div>
+
+    {/* Can't make it modal */}
+    {cantMakeIt && spaceId && (
+      <CantMakeItModal
+        open={true}
+        onClose={() => setCantMakeIt(null)}
+        spaceId={spaceId}
+        personId={cantMakeIt.personId}
+        personName={cantMakeIt.personName}
+        onSaved={(triggerRerun) => {
+          setCantMakeIt(null);
+          onPersonBlocked?.(cantMakeIt.personId, triggerRerun);
+        }}
+      />
+    )}
   );
 }

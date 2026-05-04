@@ -1163,9 +1163,11 @@ export default function GroupDetailPage() {
               scheduleVersionError={scheduleVersionError}
               currentUserName={displayName ?? undefined}
               groupName={group?.name}
+              spaceId={currentSpaceId ?? undefined}
               onOpenDraftModal={() => setShowDraftModal(true)}
               onPublish={handlePublish}
               onDiscard={handleDiscard}
+              onTriggerSolver={handleTriggerSolver}
             />
           )}
 
