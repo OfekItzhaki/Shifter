@@ -617,6 +617,7 @@
     "createNew": "Create new workspace",
     "newWorkspace": "New Workspace",
     "workspaceName": "Workspace name",
+    "selectWorkspace": "Select your workspace",
     "create": "Create",
     "creating": "Creating...",
     "cancel": "Cancel",

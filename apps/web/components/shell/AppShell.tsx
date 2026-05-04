@@ -148,10 +148,8 @@ export default function AppShell({ children }: AppShellProps) {
       <aside style={{
         ...S.sidebar,
         transform: sidebarOpen ? "translateX(0)" : undefined,
-        // On mobile: hidden by default, slides in when open
-        // On desktop (≥768px): always visible via CSS media query handled inline
       }}
-        className={`${sidebarOpen ? "" : "max-md:hidden"}`}
+        className={`sidebar-nav ${sidebarOpen ? "sidebar-open" : ""}`}
       >
         <div style={{ ...S.logo, textDecoration: "none" }}>
           <Link href="/spaces" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none", flex: 1, minWidth: 0 }}>
@@ -208,8 +206,8 @@ export default function AppShell({ children }: AppShellProps) {
       </aside>
 
       {/* Main */}
-      <div style={S.main} className="md:ml-64">
-        <header style={S.topbar(false)} className="md:hidden flex items-center gap-3 px-4">
+      <div style={S.main} className="main-content">
+        <header style={S.topbar(false)} className="mobile-topbar flex items-center gap-3 px-4">
           <button
             onClick={() => setSidebarOpen(o => !o)}
             style={{ background: "none", border: "none", cursor: "pointer", padding: 4, color: "#64748b" }}
@@ -221,7 +219,7 @@ export default function AppShell({ children }: AppShellProps) {
           </button>
           <span style={{ fontWeight: 700, fontSize: 15, color: "#0f172a" }}>Shifter</span>
         </header>
-        <header style={{ ...S.topbar(false), display: "none" }} className="md:flex">
+        <header style={{ ...S.topbar(false), display: "none" }} className="desktop-topbar">
           {/* desktop topbar — empty, admin mode indicator shown per-group */}
         </header>
         <main style={S.content}>{children}</main>

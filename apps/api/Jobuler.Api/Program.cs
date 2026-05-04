@@ -33,7 +33,7 @@ var builder = WebApplication.CreateBuilder(args);
 Log.Logger = new LoggerConfiguration()
     .ReadFrom.Configuration(builder.Configuration)
     .Enrich.FromLogContext()
-    .WriteTo.Console(new Serilog.Formatting.Json.JsonFormatter())
+    .WriteTo.Console()   // plain text in dev — easier to read
     .CreateLogger();
 
 builder.Host.UseSerilog();

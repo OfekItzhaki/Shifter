@@ -263,8 +263,10 @@ export default function GroupDetailPage() {
     const cacheKey = `schedule:${currentSpaceId}:${groupId}`;
 
     // Try to fetch fresh data first. Only fall back to cache if offline/network error.
+    // Capture the error so we can distinguish server errors (5xx) from network failures.
+    let scheduleError: unknown = null;
     Promise.all([
-      getGroupSchedule(currentSpaceId, groupId).catch(() => null),
+      getGroupSchedule(currentSpaceId, groupId).catch(e => { scheduleError = e; return null; }),
       apiClient.get<Array<{ id: string; status: string; summaryJson?: string | null }>>(
         `/spaces/${currentSpaceId}/schedule-versions?status=draft`
       ).catch(() => ({ data: [] as Array<{ id: string; status: string; summaryJson?: string | null }> })),
@@ -283,28 +285,37 @@ export default function GroupDetailPage() {
           }));
         } catch { /* storage full */ }
       } else {
-        // Network failed — try cache
-        try {
-          const cached = localStorage.getItem(cacheKey);
-          if (cached) {
-            const { assignments: cachedAssignments, cachedAt } = JSON.parse(cached);
-            if (Array.isArray(cachedAssignments)) {
-              setScheduleData(cachedAssignments);
-              const cachedDate = cachedAt
-                ? new Date(cachedAt).toLocaleDateString(undefined, { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" })
-                : "";
-              setScheduleIsOffline(true);
-              setScheduleError(tErrors("offlineWithCache", { date: cachedDate }));
+        // Check if this was a server error (has HTTP status) vs a real network failure
+        const httpStatus = (scheduleError as { response?: { status?: number } })?.response?.status;
+        const isServerError = httpStatus !== undefined;
+
+        if (isServerError) {
+          // Server returned an error — don't show "no internet", show a real error message
+          setScheduleError(tErrors("errorLoadSchedule"));
+        } else {
+          // Network failed — try cache
+          try {
+            const cached = localStorage.getItem(cacheKey);
+            if (cached) {
+              const { assignments: cachedAssignments, cachedAt } = JSON.parse(cached);
+              if (Array.isArray(cachedAssignments)) {
+                setScheduleData(cachedAssignments);
+                const cachedDate = cachedAt
+                  ? new Date(cachedAt).toLocaleDateString(undefined, { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" })
+                  : "";
+                setScheduleIsOffline(true);
+                setScheduleError(tErrors("offlineWithCache", { date: cachedDate }));
+              } else {
+                setScheduleIsOffline(true);
+                setScheduleError(tErrors("offlineNoCache"));
+              }
             } else {
               setScheduleIsOffline(true);
               setScheduleError(tErrors("offlineNoCache"));
             }
-          } else {
-            setScheduleIsOffline(true);
-            setScheduleError(tErrors("offlineNoCache"));
+          } catch {
+            setScheduleError(tErrors("errorLoadSchedule"));
           }
-        } catch {
-          setScheduleError(tErrors("errorLoadSchedule"));
         }
       }
 

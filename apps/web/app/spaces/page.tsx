@@ -67,11 +67,11 @@ export default function SpacesPage() {
         {/* Header */}
         <div className="text-center">
           <div className="flex justify-center mb-4">
-            <div className="w-12 h-12 rounded-2xl bg-blue-500 flex items-center justify-center shadow-lg shadow-blue-500/30">
-              <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
-              </svg>
-            </div>
+            <img
+              src="/favicon.jpeg"
+              alt="Shifter"
+              className="w-16 h-16 rounded-2xl shadow-lg object-cover"
+            />
           </div>
           <h1 className="text-2xl font-bold text-slate-900">{t("app.name")}</h1>
           <p className="text-sm text-slate-500 mt-1">{t("spaces.selectWorkspace")}</p>
