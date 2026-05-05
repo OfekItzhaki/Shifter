@@ -167,10 +167,12 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
         // shift slots so the solver assigns people to specific time windows.
         // Use the full solver horizon (up to 7 days) so 24/7 tasks are fully covered.
         // When group-scoped, only include tasks belonging to that group.
+        // Only include tasks whose EndsAt is in the future (or open-ended / MinValue).
         var groupTasks = await _db.GroupTasks.AsNoTracking()
             .Where(t => t.SpaceId == spaceId
                 && t.IsActive
                 && t.StartsAt <= horizonEndDt
+                && t.EndsAt > horizonStartDt   // ← skip tasks that have already ended
                 && (groupId == null || t.GroupId == groupId.Value))
             .ToListAsync(ct);
 
@@ -179,15 +181,10 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
             var shiftDuration = TimeSpan.FromMinutes(task.ShiftDurationMinutes);
             if (shiftDuration.TotalMinutes < 1) continue;
 
-            // If the task has no meaningful end date (MinValue or past), treat it as ongoing
-            // and schedule it through the full horizon
-            var effectiveEnd = task.EndsAt <= horizonStartDt
-                ? horizonEndDt
-                : task.EndsAt;
-
-            // Clamp to the full solver horizon — start from now, not midnight
+            // Clamp to the solver horizon — start from now, not midnight.
+            // Never extend a task beyond its own EndsAt; that date is authoritative.
             var windowStart = task.StartsAt < horizonStartDt ? horizonStartDt : task.StartsAt;
-            var windowEnd   = effectiveEnd > horizonEndDt ? horizonEndDt : effectiveEnd;
+            var windowEnd   = task.EndsAt > horizonEndDt ? horizonEndDt : task.EndsAt;
 
             // Apply daily time window if configured (e.g. task only runs 08:00–22:00 each day)
             var dailyStart = task.DailyStartTime;
