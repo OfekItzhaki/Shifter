@@ -127,6 +127,7 @@ export default function NotificationBell({ variant = "dark" }: { variant?: "ligh
         onClick={handleToggle}
         className={`relative p-1.5 rounded-lg ${variant === "dark" ? "hover:bg-white/10 text-slate-400 hover:text-white" : "hover:bg-gray-100 text-gray-600"}`}
         aria-label="Notifications"
+        data-testid="notification-bell"
         type="button"
       >
         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none"

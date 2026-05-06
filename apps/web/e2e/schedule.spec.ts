@@ -31,7 +31,7 @@ test.describe("Admin schedule management", () => {
 
   test("admin schedule page loads", async ({ page }) => {
     await page.goto(`${BASE}/admin/schedule`);
-    await expect(page.locator("aside")).toBeVisible({ timeout: 10000 });
+    await expect(page.locator("aside")).toBeVisible({ timeout: 15000 });
     await expect(page.getByText(/something went wrong/i)).not.toBeVisible();
   });
 

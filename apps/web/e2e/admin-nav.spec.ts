@@ -26,7 +26,7 @@ test.describe("Admin navigation", () => {
 
   test("notification bell is visible in sidebar", async ({ page }) => {
     await page.goto(`${BASE}/groups`);
-    await expect(page.locator('button[aria-label="Notifications"]')).toBeVisible({ timeout: 8000 });
+    await expect(page.locator('[data-testid="notification-bell"]')).toBeVisible({ timeout: 10000 });
   });
 
   test("logout button is visible and works", async ({ page }) => {

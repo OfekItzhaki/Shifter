@@ -7,6 +7,7 @@ const API_URL     = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000";
 
 /**
  * Log in as the demo admin using structural selectors (locale-agnostic).
+ * Waits for the space to be selected (skips the /spaces page if needed).
  */
 export async function loginAsAdmin(page: Page): Promise<void> {
   await page.goto(`${BASE}/login`);
@@ -15,6 +16,15 @@ export async function loginAsAdmin(page: Page): Promise<void> {
   await page.locator('button[type="submit"]').click();
   // Wait until we leave /login
   await page.waitForFunction(() => !window.location.pathname.startsWith("/login"), { timeout: 20000 });
+
+  // If redirected to /spaces (space selection), pick the first space
+  if (page.url().includes("/spaces")) {
+    const firstSpaceBtn = page.locator("button").first();
+    if (await firstSpaceBtn.isVisible({ timeout: 5000 }).catch(() => false)) {
+      await firstSpaceBtn.click();
+      await page.waitForFunction(() => !window.location.pathname.startsWith("/spaces"), { timeout: 10000 });
+    }
+  }
 }
 
 /**

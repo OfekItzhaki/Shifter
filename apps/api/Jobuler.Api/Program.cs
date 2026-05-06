@@ -120,8 +120,17 @@ builder.Services.AddScoped<IInvitationSender, CompositeInvitationSender>();
 // ─── Schedule notifications ───────────────────────────────────────────────────
 builder.Services.AddScoped<IScheduleNotificationSender, ScheduleNotificationSender>();
 // ─── File storage ─────────────────────────────────────────────────────────────
-// LocalDiskFileStorage for dev — swap for S3FileStorage in prod via config/DI
-builder.Services.AddScoped<IFileStorage, LocalDiskFileStorage>();
+// Use S3-compatible storage when Storage:S3:BucketName is configured, otherwise local disk.
+if (!string.IsNullOrWhiteSpace(builder.Configuration["Storage:S3:BucketName"]))
+{
+    builder.Services.AddScoped<IFileStorage, Jobuler.Infrastructure.Storage.S3FileStorage>();
+    Log.Information("File storage: S3-compatible (bucket={Bucket})", builder.Configuration["Storage:S3:BucketName"]);
+}
+else
+{
+    builder.Services.AddScoped<IFileStorage, LocalDiskFileStorage>();
+    Log.Information("File storage: local disk (wwwroot/uploads)");
+}
 
 // ─── Redis ───────────────────────────────────────────────────────────────────
 var redisConn = builder.Configuration["Redis:ConnectionString"] ?? "localhost:6379";
