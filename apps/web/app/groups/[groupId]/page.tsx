@@ -162,8 +162,13 @@ export default function GroupDetailPage() {
         setSolverHorizon(found.solverHorizonDays ?? 14);
         setSolverHorizonDays(found.solverHorizonDays ?? 14);
         // Initialise the configured auto-scheduler start date from the API
+        // The API stores UTC; convert to local time for the datetime-local input
         setSolverStartDateTime(found.solverStartDateTime
-          ? new Date(found.solverStartDateTime).toISOString().slice(0, 16)
+          ? (() => {
+              const d = new Date(found.solverStartDateTime!);
+              const pad = (n: number) => String(n).padStart(2, "0");
+              return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+            })()
           : null);
         // Use adminGroupId directly — isAdminForGroup is a derived function that
         // changes reference on every render and would cause an infinite loop in deps.

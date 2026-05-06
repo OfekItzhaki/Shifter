@@ -21,6 +21,7 @@ export default function TomorrowPage() {
   const [selectedGroupId, setSelectedGroupId] = useState("");
   const [loading, setLoading] = useState(false);
   const [groupsLoading, setGroupsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
@@ -55,7 +56,7 @@ export default function TomorrowPage() {
         slotStartsAt: a.slotStartsAt,
         slotEndsAt: a.slotEndsAt,
       }))))
-      .catch(() => setAssignments([]))
+      .catch(() => { setAssignments([]); setError(t("loading")); })
       .finally(() => setLoading(false));
   }, [currentSpaceId, selectedGroupId]);
 
@@ -98,11 +99,14 @@ export default function TomorrowPage() {
         )}
 
         {selectedGroupId && !loading && (
-          <ScheduleTaskTable
-            assignments={assignments}
-            filterDate={tomorrowStr}
-            currentUserName={displayName ?? undefined}
-          />
+          <>
+            {error && <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl px-4 py-3">{error}</p>}
+            <ScheduleTaskTable
+              assignments={assignments}
+              filterDate={tomorrowStr}
+              currentUserName={displayName ?? undefined}
+            />
+          </>
         )}
       </div>
     </AppShell>

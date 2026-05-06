@@ -60,7 +60,8 @@ public class AdminManagementIntegrationTests
     {
         var config = Substitute.For<Microsoft.Extensions.Configuration.IConfiguration>();
         var logger = Substitute.For<Microsoft.Extensions.Logging.ILogger<PublishVersionCommandHandler>>();
-        return new PublishVersionCommandHandler(db, NoOpAuditLogger(), config, logger, scheduleNotifications: null);
+        var scopeFactory = Substitute.For<Microsoft.Extensions.DependencyInjection.IServiceScopeFactory>();
+        return new PublishVersionCommandHandler(db, NoOpAuditLogger(), config, logger, scopeFactory, scheduleNotifications: null);
     }
 
     private static async Task<(Guid spaceId, Guid groupId)> SeedGroup(AppDbContext db)

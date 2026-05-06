@@ -301,14 +301,27 @@ export function MemberProfileModal({ member, isAdmin, editForm, saving, error, o
           ) : (
             <div className="space-y-2">
               {presenceWindows.map((w, i) => (
-                <div key={i} className="flex items-center justify-between bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm">
+                <div key={w.id ?? i} className="flex items-center justify-between bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm">
                   <div>
                     <span className="font-medium text-slate-700">
                       {new Date(w.startsAt).toLocaleDateString(undefined)} – {new Date(w.endsAt).toLocaleDateString(undefined)}
                     </span>
-                    {w.note && <span className="text-slate-400 mr-2 text-xs">{w.note}</span>}
+                    {w.note && <span className="text-slate-400 mr-2 text-xs"> · {w.note}</span>}
                   </div>
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">{t("unavailable")}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">{t("unavailable")}</span>
+                    <button
+                      onClick={async () => {
+                        if (!currentSpaceId) return;
+                        try {
+                          await apiClient.delete(`/spaces/${currentSpaceId}/people/${member.personId}/presence/${w.id}`);
+                          setPresenceWindows(prev => prev.filter(p => p.id !== w.id));
+                        } catch { /* non-fatal */ }
+                      }}
+                      className="text-xs text-red-400 hover:text-red-600 transition-colors"
+                      title="Remove"
+                    >✕</button>
+                  </div>
                 </div>
               ))}
             </div>

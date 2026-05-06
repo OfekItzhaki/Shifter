@@ -30,8 +30,6 @@ apiClient.interceptors.response.use(
         const { data } = await axios.post(`${API_URL}/auth/refresh`, { refreshToken });
         localStorage.setItem("access_token", data.accessToken);
         localStorage.setItem("refresh_token", data.refreshToken);
-        // Keep cookie in sync with localStorage
-        document.cookie = `access_token=${data.accessToken}; path=/; max-age=900; SameSite=Strict`;
 
         original.headers.Authorization = `Bearer ${data.accessToken}`;
         return apiClient(original);

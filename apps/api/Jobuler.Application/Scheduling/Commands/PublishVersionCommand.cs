@@ -86,8 +86,8 @@ public class PublishVersionCommandHandler : IRequestHandler<PublishVersionComman
             _db.Notifications.Add(Notification.Create(
                 req.SpaceId, userId,
                 "schedule.published",
-                "סידור חדש פורסם",
-                $"סידור גרסה {version.VersionNumber} פורסם ומוכן לצפייה.",
+                "New schedule published",
+                $"Schedule version {version.VersionNumber} has been published and is ready to view.",
                 System.Text.Json.JsonSerializer.Serialize(new { versionId = req.VersionId })));
         }
         await _db.SaveChangesAsync(ct);

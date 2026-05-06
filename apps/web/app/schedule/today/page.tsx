@@ -21,6 +21,7 @@ export default function TodayPage() {
   const [selectedGroupId, setSelectedGroupId] = useState("");
   const [loading, setLoading] = useState(false);
   const [groupsLoading, setGroupsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const today = new Date().toISOString().split("T")[0];
   const [todayLabel, setTodayLabel] = useState("");
@@ -52,7 +53,7 @@ export default function TodayPage() {
         slotStartsAt: a.slotStartsAt,
         slotEndsAt: a.slotEndsAt,
       }))))
-      .catch(() => setAssignments([]))
+      .catch(() => { setAssignments([]); setError(t("loading")); })
       .finally(() => setLoading(false));
   }, [currentSpaceId, selectedGroupId]);
 
@@ -99,11 +100,14 @@ export default function TodayPage() {
         )}
 
         {selectedGroupId && !loading && (
-          <ScheduleTaskTable
-            assignments={assignments}
-            filterDate={today}
-            currentUserName={displayName ?? undefined}
-          />
+          <>
+            {error && <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl px-4 py-3">{error}</p>}
+            <ScheduleTaskTable
+              assignments={assignments}
+              filterDate={today}
+              currentUserName={displayName ?? undefined}
+            />
+          </>
         )}
       </div>
     </AppShell>

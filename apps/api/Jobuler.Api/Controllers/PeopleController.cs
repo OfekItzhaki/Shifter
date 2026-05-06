@@ -139,6 +139,35 @@ public class PeopleController : ControllerBase
         await _mediator.Send(new InvitePersonCommand(spaceId, personId, req.Contact, req.Channel, CurrentUserId), ct);
         return NoContent();
     }
+
+    // ── Presence windows ──────────────────────────────────────────────────────
+
+    [HttpGet("{personId:guid}/presence")]
+    public async Task<IActionResult> GetPresenceWindows(Guid spaceId, Guid personId, CancellationToken ct)
+    {
+        await _permissions.RequirePermissionAsync(CurrentUserId, spaceId, Permissions.PeopleManage, ct);
+        var result = await _mediator.Send(new Jobuler.Application.People.Queries.GetPresenceQuery(spaceId, personId), ct);
+        return Ok(result);
+    }
+
+    [HttpPost("{personId:guid}/presence")]
+    public async Task<IActionResult> AddPresenceWindow(Guid spaceId, Guid personId,
+        [FromBody] AddPresenceWindowRequest req, CancellationToken ct)
+    {
+        await _permissions.RequirePermissionAsync(CurrentUserId, spaceId, Permissions.PeopleManage, ct);
+        var id = await _mediator.Send(new Jobuler.Application.People.Commands.AddPresenceWindowCommand(
+            spaceId, personId, req.State,
+            req.StartsAt, req.EndsAt, req.Note, CurrentUserId), ct);
+        return Created("", new { id });
+    }
+
+    [HttpDelete("{personId:guid}/presence/{windowId:guid}")]
+    public async Task<IActionResult> DeletePresenceWindow(Guid spaceId, Guid personId, Guid windowId, CancellationToken ct)
+    {
+        await _permissions.RequirePermissionAsync(CurrentUserId, spaceId, Permissions.PeopleManage, ct);
+        await _mediator.Send(new Jobuler.Application.People.Commands.DeletePresenceWindowCommand(spaceId, personId, windowId), ct);
+        return NoContent();
+    }
 }
 
 // Accept invitation — no auth required (user may not be logged in yet)
@@ -171,3 +200,4 @@ public record AddRestrictionRequest(
     string RestrictionType, Guid? TaskTypeId,
     DateOnly EffectiveFrom, DateOnly? EffectiveUntil,
     string? OperationalNote, string? SensitiveReason);
+public record AddPresenceWindowRequest(string State, DateTime StartsAt, DateTime EndsAt, string? Note);

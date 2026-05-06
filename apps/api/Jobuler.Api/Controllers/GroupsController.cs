@@ -107,7 +107,7 @@ public class GroupsController : ControllerBase
     public async Task<IActionResult> ConfirmTransfer([FromQuery] string token, CancellationToken ct)
     {
         await _mediator.Send(new ConfirmOwnershipTransferCommand(token), ct);
-        return Ok(new { message = "הבעלות הועברה בהצלחה" });
+        return Ok(new { message = "Ownership transferred successfully." });
     }
 
     // ── Members ───────────────────────────────────────────────────────────────

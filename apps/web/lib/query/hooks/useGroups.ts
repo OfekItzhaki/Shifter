@@ -8,6 +8,7 @@ export interface GroupDto {
   name: string;
   memberCount: number;
   solverHorizonDays: number;
+  solverStartDateTime?: string | null;
   ownerPersonId: string | null;
 }
 

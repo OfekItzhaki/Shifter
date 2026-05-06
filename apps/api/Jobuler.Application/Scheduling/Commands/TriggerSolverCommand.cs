@@ -1,3 +1,4 @@
+using FluentValidation;
 using Jobuler.Application.Scheduling;
 using Jobuler.Domain.Scheduling;
 using Jobuler.Infrastructure.Persistence;
@@ -12,6 +13,19 @@ public record TriggerSolverCommand(
     Guid? RequestedByUserId,
     Guid? GroupId = null,
     DateTime? StartTime = null) : IRequest<Guid>;
+
+public class TriggerSolverCommandValidator : FluentValidation.AbstractValidator<TriggerSolverCommand>
+{
+    private static readonly string[] ValidModes = ["standard", "emergency"];
+
+    public TriggerSolverCommandValidator()
+    {
+        RuleFor(x => x.TriggerMode)
+            .NotEmpty()
+            .Must(m => ValidModes.Contains(m?.ToLowerInvariant()))
+            .WithMessage("TriggerMode must be 'standard' or 'emergency'.");
+    }
+}
 
 public class TriggerSolverCommandHandler : IRequestHandler<TriggerSolverCommand, Guid>
 {

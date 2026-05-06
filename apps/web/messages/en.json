@@ -278,6 +278,7 @@
       "default": "default",
       "noRole": "No role"
     },
+    "settings_tab": {
       "groupName": "Group Name",
       "save": "Save",
       "saving": "Saving...",

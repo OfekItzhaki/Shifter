@@ -99,6 +99,7 @@ export default function GroupsPage() {
               <button
                 key={g.id}
                 onClick={() => router.push(`/groups/${g.id}`)}
+                aria-label={`${g.name} — ${g.memberCount} ${t("members")}`}
                 className="text-start bg-white border border-slate-200 rounded-2xl p-5 hover:border-blue-300 hover:shadow-md transition-all group"
               >
                 <div className="flex items-start justify-between mb-3">
