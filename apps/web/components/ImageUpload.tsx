@@ -14,6 +14,7 @@ interface ImageUploadProps {
 }
 
 const ACCEPTED = "image/jpeg,image/png,image/webp,image/gif";
+const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB
 
 /** Sanitize and validate an image URL entered by the user */
 function sanitizeImageUrl(raw: string): { url: string; error: string | null } {
@@ -57,7 +58,7 @@ export default function ImageUpload({
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 10 * 1024 * 1024) {
+    if (file.size > MAX_FILE_SIZE_BYTES) {
       setError(t("fileTooLarge"));
       return;
     }
@@ -148,7 +149,7 @@ export default function ImageUpload({
       >
         {value ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={value} alt="Preview" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          <img src={value} alt={resolvedLabel} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
         ) : (
           <span style={{ fontSize: 11, color: "#94a3b8", padding: 4, display: "block", textAlign: "center" }}>
             {uploading ? t("uploading") : resolvedLabel}

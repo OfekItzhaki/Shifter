@@ -214,8 +214,10 @@ test("re-fetch pattern: fetch count increments for each mutation", async () => {
 // Validates: Requirements 3.10
 // ---------------------------------------------------------------------------
 
+const SOLVER_HORIZON_WARNING_THRESHOLD = 30;
+
 function shouldShowWarning(v: number): boolean {
-  return v > 30;
+  return v > SOLVER_HORIZON_WARNING_THRESHOLD;
 }
 
 console.log("\nProperty 6: Solver horizon warning threshold");
@@ -310,8 +312,9 @@ console.log("\nProperty 9: Seed UUID validity");
 const UUID_V4_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 const UUID_PATTERN = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi;
 
-// __dirname when compiled = apps/web/__tests__/dist/__tests__ → need 5 levels up to repo root
-const seedPath = path.resolve(__dirname, "../../../../../infra/scripts/seed.sql");
+// When run with ts-node from apps/web, __dirname = apps/web/__tests__
+// Go up 3 levels: __tests__ → apps/web → apps → workspace root
+const seedPath = path.resolve(__dirname, "../../../infra/scripts/seed.sql");
 
 test("seed.sql file exists", () => {
   assert.ok(fs.existsSync(seedPath), `seed.sql not found at ${seedPath}`);

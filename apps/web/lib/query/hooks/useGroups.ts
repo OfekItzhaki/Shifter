@@ -3,6 +3,10 @@ import { apiClient } from "@/lib/api/client";
 import { getDeletedGroups, restoreGroup, DeletedGroupDto } from "@/lib/api/groups";
 import { queryKeys } from "../keys";
 
+// Cache durations
+const GROUPS_STALE_MS = 30_000;         // 30 seconds — groups change infrequently
+const DELETED_GROUPS_STALE_MS = 60_000; // 60 seconds — deleted groups change even less
+
 export interface GroupDto {
   id: string;
   name: string;
@@ -20,7 +24,7 @@ export function useGroups(spaceId: string | null) {
       return data;
     },
     enabled: !!spaceId,
-    staleTime: 30_000,
+    staleTime: GROUPS_STALE_MS,
   });
 }
 
@@ -29,7 +33,7 @@ export function useDeletedGroups(spaceId: string | null) {
     queryKey: ["deleted-groups", spaceId ?? ""],
     queryFn: () => getDeletedGroups(spaceId!),
     enabled: !!spaceId,
-    staleTime: 60_000,
+    staleTime: DELETED_GROUPS_STALE_MS,
   });
 }
 
