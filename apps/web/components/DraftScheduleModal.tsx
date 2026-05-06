@@ -87,13 +87,17 @@ export default function DraftScheduleModal({
           : all;
         setAssignments(filtered);
 
-        // Jump to the first day that has assignments
+        // Jump to today if it has assignments, otherwise the first future date,
+        // otherwise the first assignment date. Never jump backwards into the past.
         if (filtered.length > 0) {
-          const firstDate = filtered.map(a => a.slotStartsAt.split("T")[0]).sort()[0];
-          if (firstDate) {
-            setWeekAnchor(firstDate);
-            // Use UTC day to avoid timezone shifting
-            const parts = firstDate.split("-").map(Number);
+          const dates = filtered.map(a => a.slotStartsAt.split("T")[0]).sort();
+          const todayDate = new Date().toISOString().split("T")[0];
+          const hasToday = dates.some(d => d === todayDate);
+          const firstFuture = dates.find(d => d >= todayDate);
+          const anchorDate = hasToday ? todayDate : (firstFuture ?? dates[0]);
+          if (anchorDate) {
+            setWeekAnchor(anchorDate);
+            const parts = anchorDate.split("-").map(Number);
             setSelectedDay(new Date(Date.UTC(parts[0], parts[1] - 1, parts[2])).getUTCDay());
           }
         }

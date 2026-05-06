@@ -130,6 +130,7 @@ export default function GroupDetailPage() {
     newGroupName, setNewGroupName, renameSaving, setRenameSaving, renameError, setRenameError,
     solverHorizon, setSolverHorizon, savingSettings, setSavingSettings,
     settingsError, setSettingsError, settingsSaved, setSettingsSaved,
+    solverStartDateTime, setSolverStartDateTime,
     solverPolling, setSolverPolling, solverStatus, setSolverStatus, solverError, setSolverError,
     deletedGroups, setDeletedGroups, deletedGroupsLoading, setDeletedGroupsLoading,
     transferPersonId, setTransferPersonId, transferSaving, setTransferSaving,
@@ -160,6 +161,10 @@ export default function GroupDetailPage() {
         setNewGroupName(found.name);
         setSolverHorizon(found.solverHorizonDays ?? 14);
         setSolverHorizonDays(found.solverHorizonDays ?? 14);
+        // Initialise the configured auto-scheduler start date from the API
+        setSolverStartDateTime(found.solverStartDateTime
+          ? new Date(found.solverStartDateTime).toISOString().slice(0, 16)
+          : null);
         // Use adminGroupId directly — isAdminForGroup is a derived function that
         // changes reference on every render and would cause an infinite loop in deps.
         setIsAdmin(adminGroupId === groupId);
@@ -866,7 +871,11 @@ export default function GroupDetailPage() {
     setSettingsError(null);
     setSettingsSaved(false);
     try {
-      await updateGroupSettings(currentSpaceId, groupId, solverHorizon);
+      // Convert the datetime-local string (YYYY-MM-DDTHH:mm) to ISO UTC string for the API
+      const startDateTimeIso = solverStartDateTime
+        ? new Date(solverStartDateTime).toISOString()
+        : null;
+      await updateGroupSettings(currentSpaceId, groupId, solverHorizon, startDateTimeIso);
       setSolverHorizonDays(solverHorizon);
       setSettingsSaved(true);
       setTimeout(() => setSettingsSaved(false), 3000);
@@ -1306,6 +1315,7 @@ export default function GroupDetailPage() {
               savingSettings={savingSettings}
               settingsError={settingsError}
               settingsSaved={settingsSaved}
+              solverStartDateTime={solverStartDateTime}
               solverPolling={solverPolling}
               solverStatus={solverStatus}
               solverError={solverError}
@@ -1322,6 +1332,7 @@ export default function GroupDetailPage() {
               onGroupNameChange={setNewGroupName}
               onRenameGroup={handleRenameGroup}
               onSolverHorizonChange={setSolverHorizon}
+              onSolverStartDateTimeChange={setSolverStartDateTime}
               onSaveSettings={handleSaveSettings}
               onTriggerSolver={handleTriggerSolver}
               onOpenDraftModal={() => setShowDraftModal(true)}

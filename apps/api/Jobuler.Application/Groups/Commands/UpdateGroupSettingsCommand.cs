@@ -7,7 +7,8 @@ namespace Jobuler.Application.Groups.Commands;
 public record UpdateGroupSettingsCommand(
     Guid SpaceId,
     Guid GroupId,
-    int SolverHorizonDays) : IRequest;
+    int SolverHorizonDays,
+    DateTime? SolverStartDateTime = null) : IRequest;
 
 public class UpdateGroupSettingsCommandHandler : IRequestHandler<UpdateGroupSettingsCommand>
 {
@@ -20,7 +21,7 @@ public class UpdateGroupSettingsCommandHandler : IRequestHandler<UpdateGroupSett
             .FirstOrDefaultAsync(g => g.Id == req.GroupId && g.SpaceId == req.SpaceId, ct);
         if (group is null) throw new KeyNotFoundException("Group not found.");
 
-        group.UpdateSettings(req.SolverHorizonDays);
+        group.UpdateSettings(req.SolverHorizonDays, req.SolverStartDateTime);
         await _db.SaveChangesAsync(ct);
     }
 }

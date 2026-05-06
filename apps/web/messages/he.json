@@ -332,7 +332,9 @@
       "deleting": "מוחק...",
       "adminOnly": "הגדרות זמינות למנהלים בלבד",
       "errorCreateRole": "שגיאה ביצירת תפקיד",
-      "errorUpdateRole": "שגיאה בעדכון תפקיד"
+      "errorUpdateRole": "שגיאה בעדכון תפקיד",
+      "solverStartFrom": "תאריך התחלה לסולבר",
+      "solverStartFromHint": "ריק = התחל מהרגע הנוכחי. שנה כדי לקבוע תאריך/שעה קבועים לסידור האוטומטי."
     },
     "schedule_tab": {
       "draftReady": "סידור טיוטה מוכן לעיון ופרסום",

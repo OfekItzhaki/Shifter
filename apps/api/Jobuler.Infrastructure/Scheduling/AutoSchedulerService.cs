@@ -84,7 +84,7 @@ public class AutoSchedulerService : BackgroundService
         // Get all active groups with their solver horizon
         var groups = await db.Groups.AsNoTracking()
             .Where(g => g.IsActive && g.DeletedAt == null)
-            .Select(g => new { g.Id, g.SpaceId, g.Name, g.SolverHorizonDays })
+            .Select(g => new { g.Id, g.SpaceId, g.Name, g.SolverHorizonDays, g.SolverStartDateTime })
             .ToListAsync(ct);
 
         _logger.LogDebug("AutoScheduler checking {Count} groups.", groups.Count);
@@ -93,7 +93,7 @@ public class AutoSchedulerService : BackgroundService
         {
             try
             {
-                await CheckGroupAsync(db, mediator, queue, group.SpaceId, group.Id, group.Name, group.SolverHorizonDays, now, ct);
+                await CheckGroupAsync(db, mediator, queue, group.SpaceId, group.Id, group.Name, group.SolverHorizonDays, group.SolverStartDateTime, now, ct);
             }
             catch (Exception ex)
             {
@@ -110,6 +110,7 @@ public class AutoSchedulerService : BackgroundService
         Guid groupId,
         string groupName,
         int horizonDays,
+        DateTime? solverStartDateTime,
         DateTime now,
         CancellationToken ct)
     {
@@ -224,7 +225,9 @@ public class AutoSchedulerService : BackgroundService
         try
         {
             var runId = await mediator.Send(
-                new TriggerSolverCommand(spaceId, "standard", SystemUserId), ct);
+                new TriggerSolverCommand(spaceId, "standard", SystemUserId,
+                    GroupId: groupId,
+                    StartTime: solverStartDateTime), ct);
 
             _logger.LogInformation(
                 "AutoScheduler: triggered solver for group {GroupName} ({GroupId}). RunId={RunId}",

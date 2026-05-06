@@ -16,6 +16,7 @@ interface Props {
   savingSettings: boolean;
   settingsError: string | null;
   settingsSaved: boolean;
+  solverStartDateTime: string | null;
   solverPolling: boolean;
   solverStatus: string | null;
   solverError: string | null;
@@ -38,6 +39,7 @@ interface Props {
   onGroupNameChange: (v: string) => void;
   onRenameGroup: () => void;
   onSolverHorizonChange: (v: number) => void;
+  onSolverStartDateTimeChange: (v: string | null) => void;
   onSaveSettings: () => void;
   onTriggerSolver: (startTime?: string) => void;
   onOpenDraftModal: () => void;
@@ -52,24 +54,26 @@ interface Props {
 export default function SettingsTab({
   isAdmin, newGroupName, renameSaving, renameError,
   solverHorizon, savingSettings, settingsError, settingsSaved,
+  solverStartDateTime,
   solverPolling, solverStatus, solverError, draftVersion,
   members,
   transferPersonId, transferSaving, transferError, hasPendingTransfer, cancelTransferSaving,
   showDeleteConfirm, deleteSaving, deleteError,
-  onGroupNameChange, onRenameGroup, onSolverHorizonChange, onSaveSettings,
+  onGroupNameChange, onRenameGroup, onSolverHorizonChange, onSolverStartDateTimeChange, onSaveSettings,
   onTriggerSolver, onOpenDraftModal,
   onTransferPersonChange, onInitiateTransfer, onCancelTransfer,
   onShowDeleteConfirm, onDeleteGroup,
 }: Props) {
-  // Solver start time — defaults to now
+  const t = useTranslations("groups.settings_tab");
+  const tCommon = useTranslations("common");
+
+  // Solver start time — resets to now on every render of this component.
+  // Stored in state so the admin can override it before clicking Run.
   const [solverStartTime, setSolverStartTime] = useState(() => {
     const d = new Date();
     const pad = (n: number) => String(n).padStart(2, "0");
     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
   });
-
-  const t = useTranslations("groups.settings_tab");
-  const tCommon = useTranslations("common");
 
   if (!isAdmin) {
     return (
@@ -111,6 +115,23 @@ export default function SettingsTab({
             onChange={e => onSolverHorizonChange(Number(e.target.value))}
             className="w-full accent-blue-500"
           />
+          <div className="flex items-center gap-2">
+            <label className="text-sm text-slate-600 whitespace-nowrap">{t("solverStartFrom")}</label>
+            <input
+              type="datetime-local"
+              value={solverStartDateTime ?? ""}
+              onChange={e => onSolverStartDateTimeChange(e.target.value || null)}
+              className="flex-1 border border-slate-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            {solverStartDateTime && (
+              <button
+                onClick={() => onSolverStartDateTimeChange(null)}
+                className="text-xs text-slate-400 hover:text-slate-600 transition-colors"
+                title="Clear — use current time"
+              >✕</button>
+            )}
+          </div>
+          <p className="text-xs text-slate-400">{t("solverStartFromHint")}</p>
           <button onClick={onSaveSettings} disabled={savingSettings} className="bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl disabled:opacity-50 transition-colors">
             {savingSettings ? t("saving") : t("saveSettings")}
           </button>
@@ -128,7 +149,7 @@ export default function SettingsTab({
               <button onClick={onOpenDraftModal} className="text-xs text-amber-700 border border-amber-300 hover:bg-amber-100 px-3 py-1.5 rounded-lg transition-colors font-medium">{t("viewDraft")}</button>
             </div>
           )}
-          {/* Start time picker */}
+          {/* Start time picker — defaults to now, admin can override */}
           <div className="flex items-center gap-2">
             <label className="text-sm text-slate-600 whitespace-nowrap">{t("startFrom")}</label>
             <input

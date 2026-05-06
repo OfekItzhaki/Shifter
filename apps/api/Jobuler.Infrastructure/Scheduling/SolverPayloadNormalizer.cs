@@ -145,22 +145,24 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
             .Where(t => t.SpaceId == spaceId)
             .ToDictionaryAsync(t => t.Id, ct);
 
-        var slotsDto = slots.Select(s =>
-        {
-            taskTypes.TryGetValue(s.TaskTypeId, out var tt);
-            return new TaskSlotDto(
-                s.Id.ToString(),
-                s.TaskTypeId.ToString(),
-                tt?.Name ?? "Unknown",
-                (tt?.BurdenLevel ?? Domain.Tasks.TaskBurdenLevel.Neutral).ToString().ToLower(),
-                s.StartsAt.ToString("o"),
-                s.EndsAt.ToString("o"),
-                s.RequiredHeadcount,
-                s.Priority,
-                s.RequiredRoleIds.Select(id => id.ToString()).ToList(),
-                s.RequiredQualificationIds.Select(id => id.ToString()).ToList(),
-                tt?.AllowsOverlap ?? false);
-        }).ToList();
+        var slotsDto = slots
+            .Where(s => s.EndsAt >= horizonStartDt) // double-check: exclude any past slots
+            .Select(s =>
+            {
+                taskTypes.TryGetValue(s.TaskTypeId, out var tt);
+                return new TaskSlotDto(
+                    s.Id.ToString(),
+                    s.TaskTypeId.ToString(),
+                    tt?.Name ?? "Unknown",
+                    (tt?.BurdenLevel ?? Domain.Tasks.TaskBurdenLevel.Neutral).ToString().ToLower(),
+                    s.StartsAt.ToString("o"),
+                    s.EndsAt.ToString("o"),
+                    s.RequiredHeadcount,
+                    s.Priority,
+                    s.RequiredRoleIds.Select(id => id.ToString()).ToList(),
+                    s.RequiredQualificationIds.Select(id => id.ToString()).ToList(),
+                    tt?.AllowsOverlap ?? false);
+            }).ToList();
 
         // ── Group tasks → shift slots ─────────────────────────────────────────
         // Each GroupTask defines a window + shift duration. Expand into individual
@@ -289,6 +291,8 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
             .ToList();
 
         // ── Baseline assignments ──────────────────────────────────────────────
+        // Only include baseline assignments whose slot IDs appear in the current
+        // slotsDto — this prevents past assignments from leaking into the new run.
         var baselineAssignments = new List<BaselineAssignmentDto>();
         var lockedSlotIds = new List<string>();
         if (baselineVersionId.HasValue)
@@ -297,13 +301,18 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
                 .Where(a => a.ScheduleVersionId == baselineVersionId.Value && a.SpaceId == spaceId)
                 .ToListAsync(ct);
 
+            // Build a set of slot IDs that are actually in the current horizon payload
+            var currentSlotIds = slotsDto.Select(s => s.SlotId).ToHashSet();
+
             baselineAssignments = baselineRows
+                .Where(a => currentSlotIds.Contains(a.TaskSlotId.ToString()))
                 .Select(a => new BaselineAssignmentDto(a.TaskSlotId.ToString(), a.PersonId.ToString()))
                 .ToList();
 
             // Slots with manual overrides are locked — solver must not reassign them
             lockedSlotIds = baselineRows
-                .Where(a => a.Source == AssignmentSource.Override)
+                .Where(a => a.Source == AssignmentSource.Override
+                         && currentSlotIds.Contains(a.TaskSlotId.ToString()))
                 .Select(a => a.TaskSlotId.ToString())
                 .Distinct()
                 .ToList();
@@ -328,9 +337,9 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
         var locale = space?.Locale ?? "en";
 
         _logger.LogInformation(
-            "Solver payload built: group={Group} people={People} slots={Slots} hard={Hard} soft={Soft} horizon={Start}→{End}",
+            "Solver payload built: group={Group} people={People} slots={Slots} hard={Hard} soft={Soft} horizon={Start}→{End} horizonStartDt={HorizonStartDt}",
             groupId?.ToString() ?? "all", peopleDto.Count, slotsDto.Count, hardConstraints.Count, softConstraints.Count,
-            horizonStart, horizonEnd);
+            horizonStart, horizonEnd, horizonStartDt.ToString("o"));
 
         return new SolverInputDto(
             spaceId.ToString(), runId.ToString(), triggerMode,
