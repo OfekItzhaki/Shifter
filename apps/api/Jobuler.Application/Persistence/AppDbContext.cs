@@ -83,6 +83,11 @@ public class AppDbContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+
+        // QualificationRequirement is a value object serialized as JSONB inside GroupTask.
+        // EF must not treat it as a standalone entity.
+        modelBuilder.Ignore<Jobuler.Domain.Tasks.QualificationRequirement>();
+
         if (ConfigurationAssembly is not null)
             modelBuilder.ApplyConfigurationsFromAssembly(ConfigurationAssembly);
     }
