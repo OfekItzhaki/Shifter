@@ -21,6 +21,16 @@ public class UpdateGroupSettingsCommandHandler : IRequestHandler<UpdateGroupSett
             .FirstOrDefaultAsync(g => g.Id == req.GroupId && g.SpaceId == req.SpaceId, ct);
         if (group is null) throw new KeyNotFoundException("Group not found.");
 
+        // Validate: SolverStartDateTime cannot be in the past
+        if (req.SolverStartDateTime.HasValue)
+        {
+            var startTime = DateTime.SpecifyKind(req.SolverStartDateTime.Value, DateTimeKind.Utc);
+            if (startTime < DateTime.UtcNow)
+            {
+                throw new InvalidOperationException("Solver start date cannot be in the past.");
+            }
+        }
+
         group.UpdateSettings(req.SolverHorizonDays, req.SolverStartDateTime);
         await _db.SaveChangesAsync(ct);
     }

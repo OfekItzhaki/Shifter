@@ -24,5 +24,16 @@ public class UpdateGroupSettingsCommandValidator : AbstractValidator<UpdateGroup
     {
         RuleFor(x => x.SolverHorizonDays)
             .InclusiveBetween(1, 90).WithMessage("Solver horizon must be between 1 and 90 days.");
+
+        // SolverStartDateTime is optional — null means "use now".
+        // When provided, reject obviously wrong values:
+        //   - More than 1 year in the past (likely a mistake)
+        //   - More than 1 year in the future (solver horizon is max 90 days anyway)
+        RuleFor(x => x.SolverStartDateTime)
+            .Must(dt => dt == null || dt.Value >= DateTime.UtcNow.AddYears(-1))
+            .WithMessage("Solver start date cannot be more than 1 year in the past.")
+            .Must(dt => dt == null || dt.Value <= DateTime.UtcNow.AddYears(1))
+            .WithMessage("Solver start date cannot be more than 1 year in the future.")
+            .When(x => x.SolverStartDateTime.HasValue);
     }
 }

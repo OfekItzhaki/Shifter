@@ -1,3 +1,4 @@
+using Jobuler.Application.Common;
 using Jobuler.Application.Scheduling;
 using Jobuler.Application.Scheduling.Models;
 using Jobuler.Domain.Constraints;
@@ -15,7 +16,10 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
     private readonly ILogger<SolverPayloadNormalizer> _logger;
 
     // Default stability weights — sent in every payload per spec Section 5.4
-    private static readonly StabilityWeightsDto DefaultWeights = new(10.0, 3.0, 1.0);
+    private static readonly StabilityWeightsDto DefaultWeights = new(
+        SchedulingConstants.StabilityWeightTodayTomorrow,
+        SchedulingConstants.StabilityWeightDays3To4,
+        SchedulingConstants.StabilityWeightDays5To7);
 
     public SolverPayloadNormalizer(AppDbContext db, ILogger<SolverPayloadNormalizer> logger)
     {
@@ -65,7 +69,7 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
                 .Where(g => g.SpaceId == spaceId && g.DeletedAt == null)
                 .MaxAsync(g => (int?)g.SolverHorizonDays, ct) ?? 7;
         }
-        maxHorizon = Math.Max(1, maxHorizon); // at least 1 day
+        maxHorizon = Math.Max(SchedulingConstants.MinHorizonDays, maxHorizon);
 
         var horizonEnd = horizonStart.AddDays(maxHorizon - 1); // inclusive
 
@@ -192,8 +196,8 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
             var dailyStart = task.DailyStartTime;
             var dailyEnd   = task.DailyEndTime;
 
-            // Safety cap: never generate more than 48 shifts per day × horizon days
-            int maxShiftsPerTask = Math.Max(336, maxHorizon * 48);
+            // Safety cap: never generate more than SlotsPerDay shifts per day × horizon days
+            int maxShiftsPerTask = Math.Max(SchedulingConstants.BaseMaxShiftsPerTask, maxHorizon * SchedulingConstants.SlotsPerDay);
             var shiftStart = windowStart;
             var shiftIndex = 0;
             while (shiftStart + shiftDuration <= windowEnd && shiftIndex < maxShiftsPerTask)

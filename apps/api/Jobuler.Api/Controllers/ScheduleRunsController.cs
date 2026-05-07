@@ -38,8 +38,13 @@ public class ScheduleRunsController : ControllerBase
         await _permissions.RequirePermissionAsync(
             CurrentUserId, spaceId, Permissions.ScheduleRecalculate, ct);
 
+        // Validate trigger mode — only "standard" and "emergency" are accepted
+        var mode = (req.TriggerMode ?? "standard").ToLowerInvariant();
+        if (mode != "standard" && mode != "emergency")
+            return BadRequest(new { error = $"Invalid trigger_mode '{req.TriggerMode}'. Must be 'standard' or 'emergency'." });
+
         var runId = await _mediator.Send(
-            new TriggerSolverCommand(spaceId, req.TriggerMode ?? "standard", CurrentUserId, req.GroupId, req.StartTime), ct);
+            new TriggerSolverCommand(spaceId, mode, CurrentUserId, req.GroupId, req.StartTime), ct);
 
         return Accepted(new { runId });
     }
