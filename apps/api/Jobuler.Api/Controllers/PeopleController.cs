@@ -141,25 +141,9 @@ public class PeopleController : ControllerBase
     }
 
     // ── Presence windows ──────────────────────────────────────────────────────
-
-    [HttpGet("{personId:guid}/presence")]
-    public async Task<IActionResult> GetPresenceWindows(Guid spaceId, Guid personId, CancellationToken ct)
-    {
-        await _permissions.RequirePermissionAsync(CurrentUserId, spaceId, Permissions.PeopleManage, ct);
-        var result = await _mediator.Send(new Jobuler.Application.People.Queries.GetPresenceQuery(spaceId, personId), ct);
-        return Ok(result);
-    }
-
-    [HttpPost("{personId:guid}/presence")]
-    public async Task<IActionResult> AddPresenceWindow(Guid spaceId, Guid personId,
-        [FromBody] AddPresenceWindowRequest req, CancellationToken ct)
-    {
-        await _permissions.RequirePermissionAsync(CurrentUserId, spaceId, Permissions.PeopleManage, ct);
-        var id = await _mediator.Send(new Jobuler.Application.People.Commands.AddPresenceWindowCommand(
-            spaceId, personId, req.State,
-            req.StartsAt, req.EndsAt, req.Note, CurrentUserId), ct);
-        return Created("", new { id });
-    }
+    // NOTE: GET/POST presence are intentionally omitted here.
+    // They are handled by AvailabilityController (route: spaces/{spaceId}/people/{personId}/presence).
+    // Having both controllers register the same route caused an AmbiguousMatchException (500).
 
     [HttpDelete("{personId:guid}/presence/{windowId:guid}")]
     public async Task<IActionResult> DeletePresenceWindow(Guid spaceId, Guid personId, Guid windowId, CancellationToken ct)
