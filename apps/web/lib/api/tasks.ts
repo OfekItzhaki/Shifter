@@ -71,6 +71,12 @@ export async function createTaskSlot(
 
 // ── Group Tasks (new flat model) ──────────────────────────────────────────────
 
+export interface QualificationRequirementDto {
+  qualificationName: string;
+  count: number;
+  mandatory: boolean;
+}
+
 export interface GroupTaskDto {
   id: string;
   name: string;
@@ -83,7 +89,7 @@ export interface GroupTaskDto {
   allowsOverlap: boolean;
   dailyStartTime: string | null;
   dailyEndTime: string | null;
-  requiredQualificationNames: string[];
+  qualificationRequirements: QualificationRequirementDto[];
   createdAt: string;
   updatedAt: string;
 }
@@ -99,7 +105,7 @@ export interface GroupTaskPayload {
   allowsOverlap: boolean;
   dailyStartTime?: string | null;
   dailyEndTime?: string | null;
-  requiredQualificationNames?: string[];
+  qualificationRequirements?: QualificationRequirementDto[];
 }
 
 export async function listGroupTasks(spaceId: string, groupId: string): Promise<GroupTaskDto[]> {

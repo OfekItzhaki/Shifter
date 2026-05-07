@@ -40,7 +40,7 @@ def build_objective(
 
     # ── Objective 2: coverage — penalise uncovered headcount ─────────────────
     # Weight is very high so coverage is prioritised over stability
-    coverage_weight = 1000
+    coverage_weight = 1000  # see SchedulingConstants.CoverageWeight in the .NET layer
     for s_idx, slot in enumerate(slots):
         assigned_count = sum(assign[(s_idx, p_idx)] for p_idx in range(num_people))
         # Shortfall = required - assigned (clamped to 0)

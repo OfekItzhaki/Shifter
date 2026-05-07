@@ -28,7 +28,7 @@ const DEFAULT_TASK_FORM: TaskForm = {
   concurrentTaskIds: [],
   dailyStartTime: "",
   dailyEndTime: "",
-  requiredQualificationNames: [],
+  qualificationRequirements: [],
 };
 
 export { DEFAULT_TASK_FORM };

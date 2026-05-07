@@ -59,7 +59,13 @@ public record TaskSlotDto(
     List<string> RequiredRoleIds,
     List<string> RequiredQualificationIds,
     bool AllowsOverlap,
-    bool AllowsDoubleShift = false);
+    bool AllowsDoubleShift = false,
+    List<QualificationRequirementSolverDto>? QualificationRequirements = null);
+
+public record QualificationRequirementSolverDto(
+    string QualificationName,
+    int Count,
+    bool Mandatory);
 
 public record HardConstraintDto(
     string ConstraintId,

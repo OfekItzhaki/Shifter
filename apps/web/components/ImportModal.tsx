@@ -6,6 +6,7 @@ import ExcelJS from "exceljs";
 import { createPerson } from "@/lib/api/people";
 import { addGroupMemberById } from "@/lib/api/groups";
 import { createGroupTask } from "@/lib/api/tasks";
+import { DEFAULT_TASK_HORIZON_DAYS, MS_PER_DAY } from "@/lib/utils/constants";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -236,7 +237,7 @@ export default function ImportModal({ open, onClose, spaceId, groupId, onImporte
       const updated = [...taskRows];
       const now = new Date();
       const startsAt = now.toISOString();
-      const endsAt = new Date(now.getTime() + 90 * 86400000).toISOString();
+      const endsAt = new Date(now.getTime() + DEFAULT_TASK_HORIZON_DAYS * MS_PER_DAY).toISOString();
 
       for (let i = 0; i < updated.length; i++) {
         const row = updated[i];
@@ -253,7 +254,7 @@ export default function ImportModal({ open, onClose, spaceId, groupId, onImporte
             allowsOverlap: false,
             dailyStartTime: row.data.dailyStartTime || null,
             dailyEndTime: row.data.dailyEndTime || null,
-            requiredQualificationNames: [],
+            qualificationRequirements: [],
           });
           updated[i] = { ...row, status: "ok" };
           ok++;

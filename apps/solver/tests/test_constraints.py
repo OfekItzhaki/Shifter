@@ -54,7 +54,7 @@ class TestNoOverlapConstraint:
         # Force both slots assigned to p1
         model.add(assign[(0, 0)] == 1)
         model.add(assign[(1, 0)] == 1)
-        add_no_overlap_constraints(model, assign, slots, 1)
+        add_no_overlap_constraints(model, assign, slots, people, 1)
 
         feasible, _, _ = solve_simple(model, assign, 2, 1)
         assert not feasible  # should be infeasible
@@ -68,7 +68,7 @@ class TestNoOverlapConstraint:
 
         model.add(assign[(0, 0)] == 1)
         model.add(assign[(1, 0)] == 1)
-        add_no_overlap_constraints(model, assign, slots, 1)
+        add_no_overlap_constraints(model, assign, slots, people, 1)
 
         feasible, _, _ = solve_simple(model, assign, 2, 1)
         assert feasible  # should be feasible
@@ -79,12 +79,13 @@ class TestMinRestConstraint:
         model = cp_model.CpModel()
         # slot1 ends at 16:00, slot2 starts at 20:00 — only 4h gap, need 8h
         slots = [make_slot("s1", 8, 16), make_slot("s2", 20, 23)]
+        people = [make_person("p1")]
         assign = {(s, p): model.new_bool_var(f"a_{s}_{p}")
                   for s in range(2) for p in range(1)}
 
         model.add(assign[(0, 0)] == 1)
         model.add(assign[(1, 0)] == 1)
-        add_min_rest_constraints(model, assign, slots, 1, min_rest_hours=8.0)
+        add_min_rest_constraints(model, assign, slots, people, 1, min_rest_hours=8.0)
 
         feasible, _, _ = solve_simple(model, assign, 2, 1)
         assert not feasible
@@ -93,12 +94,13 @@ class TestMinRestConstraint:
         model = cp_model.CpModel()
         # slot1 ends at 08:00, slot2 starts at 20:00 — 12h gap
         slots = [make_slot("s1", 0, 8), make_slot("s2", 20, 23)]
+        people = [make_person("p1")]
         assign = {(s, p): model.new_bool_var(f"a_{s}_{p}")
                   for s in range(2) for p in range(1)}
 
         model.add(assign[(0, 0)] == 1)
         model.add(assign[(1, 0)] == 1)
-        add_min_rest_constraints(model, assign, slots, 1, min_rest_hours=8.0)
+        add_min_rest_constraints(model, assign, slots, people, 1, min_rest_hours=8.0)
 
         feasible, _, _ = solve_simple(model, assign, 2, 1)
         assert feasible

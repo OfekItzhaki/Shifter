@@ -20,6 +20,7 @@ from solver.constraints import (
     expand_role_constraints,
     expand_group_constraints,
     add_locked_slot_constraints,
+    add_composition_constraints,
 )
 from solver.objectives import build_objective
 from solver.i18n import t
@@ -80,7 +81,7 @@ def solve(input: SolverInput) -> SolverOutput:
 
     add_headcount_constraints(model, assign, slots, num_people)
     add_no_duplicate_assignment(model, assign, num_slots, num_people)
-    add_no_overlap_constraints(model, assign, slots, num_people, emergency_person_ids)
+    add_no_overlap_constraints(model, assign, slots, people, num_people, emergency_person_ids)
     add_qualification_constraints(model, assign, slots, people, num_people, emergency_person_ids)
     add_role_constraints(model, assign, slots, people, num_people, emergency_person_ids)
     add_restriction_constraints(model, assign, slots, people, num_people, input.hard_constraints)
@@ -91,7 +92,7 @@ def solve(input: SolverInput) -> SolverOutput:
     # Extract min_rest_hours from hard constraints if configured
     rest_rules = [c for c in input.hard_constraints if c.rule_type == "min_rest_hours"]
     rest_hours = float(rest_rules[0].payload.get("hours", 8)) if rest_rules else 8.0
-    add_min_rest_constraints(model, assign, slots, num_people, rest_hours, emergency_person_ids)
+    add_min_rest_constraints(model, assign, slots, people, num_people, rest_hours, emergency_person_ids)
 
     add_kitchen_frequency_constraints(
         model, assign, slots, people, num_people,
@@ -108,6 +109,16 @@ def solve(input: SolverInput) -> SolverOutput:
 
     # ── Soft objectives ───────────────────────────────────────────────────────
     penalties = build_objective(model, assign, input)
+
+    # ── Composition constraints (mandatory/optional qualification seats per slot) ──
+    # Collected as (var, weight) tuples and added to the minimisation objective.
+    composition_penalty_vars: list[tuple] = []
+    add_composition_constraints(
+        model, assign, slots, people, num_people,
+        composition_penalty_vars, emergency_person_ids)
+    for penalty_var, weight in composition_penalty_vars:
+        penalties.append(penalty_var * weight)
+
     model.minimize(sum(penalties))
 
     # ── Solve ─────────────────────────────────────────────────────────────────

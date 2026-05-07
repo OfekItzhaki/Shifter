@@ -32,11 +32,20 @@ public class GroupTask : AuditableEntity, ITenantScoped
     public TimeOnly? DailyStartTime { get; private set; }
     /// <summary>Optional daily end time. Must be set together with DailyStartTime.</summary>
     public TimeOnly? DailyEndTime { get; private set; }
+
     /// <summary>
-    /// Qualification names that at least one assignee per shift must hold.
-    /// Empty list = no qualification requirement.
+    /// Structured qualification requirements per shift.
+    /// Each entry specifies how many seats require a given qualification and whether it is mandatory.
     /// </summary>
-    public List<string> RequiredQualificationNames { get; private set; } = new();
+    public List<QualificationRequirement> QualificationRequirements { get; private set; } = new();
+
+    /// <summary>
+    /// Backward-compat derived property: names of qualifications that are mandatory (hard requirements).
+    /// Derived from QualificationRequirements where Mandatory == true.
+    /// </summary>
+    public List<string> RequiredQualificationNames =>
+        QualificationRequirements.Where(r => r.Mandatory).Select(r => r.QualificationName).ToList();
+
     public bool IsActive { get; private set; } = true;
     public Guid? CreatedByUserId { get; private set; }
     public Guid? UpdatedByUserId { get; private set; }
@@ -57,7 +66,7 @@ public class GroupTask : AuditableEntity, ITenantScoped
         Guid createdByUserId,
         TimeOnly? dailyStartTime = null,
         TimeOnly? dailyEndTime = null,
-        List<string>? requiredQualificationNames = null) =>
+        List<QualificationRequirement>? qualificationRequirements = null) =>
         new()
         {
             SpaceId = spaceId,
@@ -72,7 +81,7 @@ public class GroupTask : AuditableEntity, ITenantScoped
             AllowsOverlap = allowsOverlap,
             DailyStartTime = dailyStartTime,
             DailyEndTime = dailyEndTime,
-            RequiredQualificationNames = requiredQualificationNames ?? new(),
+            QualificationRequirements = qualificationRequirements ?? new(),
             CreatedByUserId = createdByUserId
         };
 
@@ -88,7 +97,7 @@ public class GroupTask : AuditableEntity, ITenantScoped
         Guid updatedByUserId,
         TimeOnly? dailyStartTime = null,
         TimeOnly? dailyEndTime = null,
-        List<string>? requiredQualificationNames = null)
+        List<QualificationRequirement>? qualificationRequirements = null)
     {
         Name = name.Trim();
         StartsAt = startsAt;
@@ -100,7 +109,7 @@ public class GroupTask : AuditableEntity, ITenantScoped
         AllowsOverlap = allowsOverlap;
         DailyStartTime = dailyStartTime;
         DailyEndTime = dailyEndTime;
-        RequiredQualificationNames = requiredQualificationNames ?? new();
+        QualificationRequirements = qualificationRequirements ?? new();
         UpdatedByUserId = updatedByUserId;
         Touch();
     }

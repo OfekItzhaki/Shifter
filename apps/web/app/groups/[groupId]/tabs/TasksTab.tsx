@@ -21,7 +21,7 @@ export interface TaskForm {
   concurrentTaskIds: string[];
   dailyStartTime: string;
   dailyEndTime: string;
-  requiredQualificationNames: string[];
+  qualificationRequirements: Array<{ qualificationName: string; count: number; mandatory: boolean }>;
 }
 
 interface Props {
@@ -172,11 +172,15 @@ export default function TasksTab({
               <p className="text-xs text-slate-400">
                 {task.requiredHeadcount} {t("people")} · {minutesToHM(task.shiftDurationMinutes).hours}h {minutesToHM(task.shiftDurationMinutes).mins > 0 ? `${minutesToHM(task.shiftDurationMinutes).mins}m` : ""}
               </p>
-              {task.requiredQualificationNames?.length > 0 && (
+              {task.qualificationRequirements?.length > 0 && (
                 <div className="flex flex-wrap gap-1 mt-1">
-                  {task.requiredQualificationNames.map(q => (
-                    <span key={q} className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-medium bg-violet-50 text-violet-700 border border-violet-200">
-                      {q}
+                  {task.qualificationRequirements.map((req, idx) => (
+                    <span key={idx} className={`inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-medium border ${
+                      req.mandatory
+                        ? "bg-red-50 text-red-700 border-red-200"
+                        : "bg-violet-50 text-violet-700 border-violet-200"
+                    }`}>
+                      {req.qualificationName} ×{req.count}
                     </span>
                   ))}
                 </div>
@@ -320,31 +324,96 @@ export default function TasksTab({
             </div>
           </div>
 
-          {/* Required qualifications */}
+          {/* Qualification requirements */}
           {groupQualifications.length > 0 && (
             <div>
-              <label className="block text-xs text-slate-500 mb-1">
-                Required qualifications
-                <span className="text-slate-400 ml-1">(at least one assignee per shift must hold)</span>
-              </label>
-              <div className="border border-slate-200 rounded-xl p-3 space-y-1.5 max-h-36 overflow-y-auto">
-                {groupQualifications.map(q => (
-                  <label key={q.id} className="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={taskForm.requiredQualificationNames.includes(q.name)}
+              <label className="block text-xs text-slate-500 mb-2">דרישות כישורים</label>
+              <div className="space-y-2">
+                {taskForm.qualificationRequirements.map((req, idx) => (
+                  <div key={idx} className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2">
+                    {/* Qualification selector */}
+                    <select
+                      value={req.qualificationName}
                       onChange={e => {
-                        const names = e.target.checked
-                          ? [...taskForm.requiredQualificationNames, q.name]
-                          : taskForm.requiredQualificationNames.filter(n => n !== q.name);
-                        onFormChange({ ...taskForm, requiredQualificationNames: names });
+                        const updated = [...taskForm.qualificationRequirements];
+                        updated[idx] = { ...req, qualificationName: e.target.value };
+                        onFormChange({ ...taskForm, qualificationRequirements: updated });
                       }}
-                      className="rounded"
+                      className="flex-1 border border-slate-200 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      {groupQualifications.map(q => (
+                        <option key={q.id} value={q.name}>{q.name}</option>
+                      ))}
+                    </select>
+                    {/* Count */}
+                    <input
+                      type="number"
+                      min={1}
+                      max={taskForm.requiredHeadcount}
+                      value={req.count}
+                      onChange={e => {
+                        const updated = [...taskForm.qualificationRequirements];
+                        updated[idx] = { ...req, count: Number(e.target.value) };
+                        onFormChange({ ...taskForm, qualificationRequirements: updated });
+                      }}
+                      className="w-14 border border-slate-200 rounded-lg px-2 py-1.5 text-sm text-center focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
-                    {q.name}
-                  </label>
+                    {/* Mandatory toggle */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const updated = [...taskForm.qualificationRequirements];
+                        updated[idx] = { ...req, mandatory: !req.mandatory };
+                        onFormChange({ ...taskForm, qualificationRequirements: updated });
+                      }}
+                      className={`text-xs px-2.5 py-1.5 rounded-lg border font-medium transition-colors ${
+                        req.mandatory
+                          ? "bg-red-50 text-red-700 border-red-200"
+                          : "bg-slate-100 text-slate-500 border-slate-200"
+                      }`}
+                    >
+                      {req.mandatory ? "חובה" : "רצוי"}
+                    </button>
+                    {/* Remove */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const updated = taskForm.qualificationRequirements.filter((_, i) => i !== idx);
+                        onFormChange({ ...taskForm, qualificationRequirements: updated });
+                      }}
+                      className="text-slate-400 hover:text-red-500 transition-colors"
+                    >
+                      ×
+                    </button>
+                  </div>
                 ))}
+                {/* Add requirement */}
+                {groupQualifications.length > taskForm.qualificationRequirements.length && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const usedNames = taskForm.qualificationRequirements.map(r => r.qualificationName);
+                      const next = groupQualifications.find(q => !usedNames.includes(q.name));
+                      if (!next) return;
+                      onFormChange({
+                        ...taskForm,
+                        qualificationRequirements: [
+                          ...taskForm.qualificationRequirements,
+                          { qualificationName: next.name, count: 1, mandatory: true }
+                        ]
+                      });
+                    }}
+                    className="text-sm text-blue-600 border border-blue-200 bg-blue-50 hover:bg-blue-100 px-3 py-2 rounded-xl transition-colors w-full"
+                  >
+                    + הוסף דרישת כישור
+                  </button>
+                )}
               </div>
+              {taskForm.qualificationRequirements.length > 0 && (
+                <p className="text-xs text-slate-400 mt-1.5">
+                  {taskForm.requiredHeadcount - taskForm.qualificationRequirements.reduce((s, r) => s + r.count, 0)} מקומות פנויים לכל אחד
+                </p>
+              )}
             </div>
           )}
 

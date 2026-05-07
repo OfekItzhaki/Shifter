@@ -7,7 +7,7 @@ import CantMakeItModal from "./CantMakeItModal";
 /** Minimal assignment shape needed by this component */
 export interface TaskAssignment {
   id?: string;
-  personId: string;
+  personId?: string;  // optional — only needed for admin "can't make it" action
   personName: string;
   taskTypeName: string;
   slotStartsAt: string;
@@ -84,7 +84,7 @@ export default function ScheduleTaskTable({ assignments, currentUserName, filter
           const key = `${a.slotStartsAt}|${a.slotEndsAt}`;
           const slot = slotMap.get(key) ?? { startsAt: a.slotStartsAt, endsAt: a.slotEndsAt, people: [], personIds: [] };
           slot.people.push(a.personName);
-          slot.personIds.push(a.personId);
+          slot.personIds.push(a.personId ?? "");
           slotMap.set(key, slot);
         }
 

@@ -10,6 +10,8 @@ namespace Jobuler.Application.Tasks.Commands;
 
 // ── DTOs ──────────────────────────────────────────────────────────────────────
 
+public record QualificationRequirementDto(string QualificationName, int Count, bool Mandatory);
+
 public record GroupTaskDto(
     Guid Id,
     string Name,
@@ -22,7 +24,7 @@ public record GroupTaskDto(
     bool AllowsOverlap,
     string? DailyStartTime,
     string? DailyEndTime,
-    List<string> RequiredQualificationNames,
+    List<QualificationRequirementDto> QualificationRequirements,
     DateTime CreatedAt,
     DateTime UpdatedAt);
 
@@ -42,7 +44,7 @@ public record CreateGroupTaskCommand(
     bool AllowsOverlap,
     TimeOnly? DailyStartTime = null,
     TimeOnly? DailyEndTime = null,
-    List<string>? RequiredQualificationNames = null) : IRequest<Guid>;
+    List<QualificationRequirementDto>? QualificationRequirements = null) : IRequest<Guid>;
 
 public class CreateGroupTaskCommandValidator : AbstractValidator<CreateGroupTaskCommand>
 {
@@ -88,7 +90,9 @@ public class CreateGroupTaskCommandHandler : IRequestHandler<CreateGroupTaskComm
             req.AllowsDoubleShift, req.AllowsOverlap,
             req.RequestingUserId,
             req.DailyStartTime, req.DailyEndTime,
-            req.RequiredQualificationNames);
+            req.QualificationRequirements?
+                .Select(r => new QualificationRequirement(r.QualificationName, r.Count, r.Mandatory))
+                .ToList());
 
         _db.GroupTasks.Add(task);
         await _db.SaveChangesAsync(ct);
@@ -113,7 +117,7 @@ public record UpdateGroupTaskCommand(
     bool AllowsOverlap,
     TimeOnly? DailyStartTime = null,
     TimeOnly? DailyEndTime = null,
-    List<string>? RequiredQualificationNames = null) : IRequest;
+    List<QualificationRequirementDto>? QualificationRequirements = null) : IRequest;
 
 public class UpdateGroupTaskCommandValidator : AbstractValidator<UpdateGroupTaskCommand>
 {
@@ -158,7 +162,9 @@ public class UpdateGroupTaskCommandHandler : IRequestHandler<UpdateGroupTaskComm
             req.AllowsDoubleShift, req.AllowsOverlap,
             req.RequestingUserId,
             req.DailyStartTime, req.DailyEndTime,
-            req.RequiredQualificationNames);
+            req.QualificationRequirements?
+                .Select(r => new QualificationRequirement(r.QualificationName, r.Count, r.Mandatory))
+                .ToList());
 
         await _db.SaveChangesAsync(ct);
     }

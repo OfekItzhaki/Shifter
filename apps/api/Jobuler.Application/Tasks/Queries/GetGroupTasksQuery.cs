@@ -50,7 +50,9 @@ public class GetGroupTasksQueryHandler : IRequestHandler<GetGroupTasksQuery, Lis
             t.AllowsOverlap,
             t.DailyStartTime.HasValue ? t.DailyStartTime.Value.ToString("HH:mm") : null,
             t.DailyEndTime.HasValue   ? t.DailyEndTime.Value.ToString("HH:mm")   : null,
-            t.RequiredQualificationNames,
+            t.QualificationRequirements
+                .Select(r => new QualificationRequirementDto(r.QualificationName, r.Count, r.Mandatory))
+                .ToList(),
             t.CreatedAt,
             t.UpdatedAt)).ToList();
     }

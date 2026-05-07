@@ -6,107 +6,9 @@ and adds the appropriate constraints to the model.
 from ortools.sat.python import cp_model
 from models.solver_input import SolverInput, TaskSlot, HardConstraint, SoftConstraint
 from datetime import datetime, timezone
-import copy
 import logging
 
 logger = logging.getLogger(__name__)
-
-
-def expand_role_constraints(
-    hard_constraints: list,
-    soft_constraints: list,
-    emergency_constraints: list,
-    people
-) -> tuple:
-    """
-    Expand role-scoped constraints to individual person-scoped constraints.
-
-    For each constraint with scope_type == "role":
-      - Find all people whose role_ids include the role's scope_id
-      - Create one person-scoped copy per matching person
-      - Remove the original role-scoped constraint
-
-    Returns the modified (hard, soft, emergency) tuple.
-    """
-    # Build role_id → [person_id, ...] map
-    role_to_people: dict[str, list[str]] = {}
-    for person in people:
-        for role_id in person.role_ids:
-            role_to_people.setdefault(role_id, []).append(person.person_id)
-
-    def _expand_list(constraints: list) -> list:
-        result = []
-        for c in constraints:
-            if c.scope_type != "role":
-                result.append(c)
-                continue
-            role_id = c.scope_id
-            members = role_to_people.get(role_id, [])
-            if not members:
-                logger.warning(
-                    "expand_role_constraints: role %s has no members — constraint %s dropped",
-                    role_id, c.constraint_id
-                )
-                continue
-            for person_id in members:
-                expanded = copy.copy(c)
-                expanded = expanded.model_copy(update={"scope_type": "person", "scope_id": person_id})
-                result.append(expanded)
-        return result
-
-    return (
-        _expand_list(hard_constraints),
-        _expand_list(soft_constraints),
-        _expand_list(emergency_constraints),
-    )
-
-
-def expand_group_constraints(
-    hard_constraints: list,
-    soft_constraints: list,
-    emergency_constraints: list,
-    people
-) -> tuple:
-    """
-    Expand group-scoped constraints to individual person-scoped constraints.
-
-    For each constraint with scope_type == "group":
-      - Find all people whose group_ids include the group's scope_id
-      - Create one person-scoped copy per matching person
-      - Remove the original group-scoped constraint
-
-    Returns the modified (hard, soft, emergency) tuple.
-    """
-    # Build group_id → [person_id, ...] map
-    group_to_people: dict[str, list[str]] = {}
-    for person in people:
-        for group_id in person.group_ids:
-            group_to_people.setdefault(group_id, []).append(person.person_id)
-
-    def _expand_list(constraints: list) -> list:
-        result = []
-        for c in constraints:
-            if c.scope_type != "group":
-                result.append(c)
-                continue
-            group_id = c.scope_id
-            members = group_to_people.get(group_id, [])
-            if not members:
-                logger.warning(
-                    "expand_group_constraints: group %s has no members — constraint %s dropped",
-                    group_id, c.constraint_id
-                )
-                continue
-            for person_id in members:
-                expanded = c.model_copy(update={"scope_type": "person", "scope_id": person_id})
-                result.append(expanded)
-        return result
-
-    return (
-        _expand_list(hard_constraints),
-        _expand_list(soft_constraints),
-        _expand_list(emergency_constraints),
-    )
 
 
 def add_headcount_constraints(
@@ -150,6 +52,7 @@ def add_no_overlap_constraints(
     model: cp_model.CpModel,
     assign: dict,
     slots: list[TaskSlot],
+    people,
     num_people: int,
     emergency_person_ids: set = None
 ):
@@ -160,6 +63,8 @@ def add_no_overlap_constraints(
     """
     emergency_person_ids = emergency_person_ids or set()
     for p_idx in range(num_people):
+        if people[p_idx].person_id in emergency_person_ids:
+            continue  # emergency bypass — skip overlap constraints for this person
         for s1_idx, slot1 in enumerate(slots):
             for s2_idx, slot2 in enumerate(slots):
                 if s2_idx <= s1_idx:
@@ -176,6 +81,7 @@ def add_min_rest_constraints(
     model: cp_model.CpModel,
     assign: dict,
     slots: list[TaskSlot],
+    people,
     num_people: int,
     min_rest_hours: float = 8.0,
     emergency_person_ids: set = None
@@ -188,6 +94,8 @@ def add_min_rest_constraints(
     min_rest_seconds = int(min_rest_hours * 3600)
 
     for p_idx in range(num_people):
+        if people[p_idx].person_id in emergency_person_ids:
+            continue  # emergency bypass — skip rest constraints for this person
         for s1_idx, slot1 in enumerate(slots):
             for s2_idx, slot2 in enumerate(slots):
                 if s2_idx <= s1_idx:
@@ -557,3 +465,63 @@ def add_locked_slot_constraints(
             else:
                 # Force all other people to NOT be assigned to this slot
                 model.add(assign[(s_idx, p_idx)] == 0)
+
+
+def add_composition_constraints(
+    model: cp_model.CpModel,
+    assign: dict,
+    slots: list[TaskSlot],
+    people,
+    num_people: int,
+    penalty_vars: list,
+    emergency_person_ids: set = None
+):
+    """
+    Enforce per-slot qualification composition requirements.
+
+    For each slot with qualification_requirements:
+      - mandatory=True, count=N: at least N people with that qualification must be assigned (soft — penalise shortfall)
+      - mandatory=False, count=N: try to assign N people with that qualification (soft bonus)
+
+    Both are implemented as soft constraints (penalise shortfall) so the solver
+    never blocks a shift entirely due to missing qualified people.
+    The penalty weight for mandatory seats is higher than optional seats.
+    """
+    MANDATORY_PENALTY = 500   # high but below coverage weight (1000)
+    OPTIONAL_PENALTY  = 50    # low — nice to have
+
+    emergency_person_ids = emergency_person_ids or set()
+
+    for s_idx, slot in enumerate(slots):
+        if not slot.qualification_requirements:
+            continue
+
+        for req in slot.qualification_requirements:
+            qual_name = req.qualification_name
+            required_count = req.count
+            penalty_weight = MANDATORY_PENALTY if req.mandatory else OPTIONAL_PENALTY
+
+            # Find people who hold this qualification (excluding emergency bypasses)
+            qualified_p_idxs = [
+                p_idx for p_idx, person in enumerate(people)
+                if qual_name in person.qualification_ids
+                and person.person_id not in emergency_person_ids
+            ]
+
+            if not qualified_p_idxs:
+                # No one has this qualification — add max penalty if mandatory
+                if req.mandatory:
+                    shortfall_var = model.new_int_var(0, required_count, f"comp_shortfall_{s_idx}_{qual_name}")
+                    model.add(shortfall_var == required_count)
+                    penalty_vars.append((shortfall_var, penalty_weight))
+                continue
+
+            # Count how many qualified people are assigned to this slot
+            assigned_qualified = sum(assign[(s_idx, p_idx)] for p_idx in qualified_p_idxs)
+
+            # Shortfall = max(0, required_count - assigned_qualified)
+            shortfall_var = model.new_int_var(0, required_count, f"comp_shortfall_{s_idx}_{qual_name}")
+            model.add(shortfall_var >= required_count - assigned_qualified)
+            model.add(shortfall_var >= 0)
+
+            penalty_vars.append((shortfall_var, penalty_weight))

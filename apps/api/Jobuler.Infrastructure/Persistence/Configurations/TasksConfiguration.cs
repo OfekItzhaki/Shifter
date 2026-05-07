@@ -107,15 +107,21 @@ public class GroupTaskConfiguration : IEntityTypeConfiguration<GroupTask>
             .HasConversion(
                 v => v.HasValue ? v.Value.ToTimeSpan() : (TimeSpan?)null,
                 v => v.HasValue ? TimeOnly.FromTimeSpan(v.Value) : (TimeOnly?)null);
-        builder.Property(t => t.RequiredQualificationNames).HasColumnName("required_qualification_names")
-            .HasColumnType("text[]")
+        // required_qualification_names is kept in the DB for backward compat but is now a
+        // computed property on the domain entity — EF must not try to map it.
+        builder.Ignore(t => t.RequiredQualificationNames);
+
+        builder.Property(t => t.QualificationRequirements)
+            .HasColumnName("qualification_requirements")
+            .HasColumnType("jsonb")
             .HasConversion(
-                v => v.ToArray(),
-                v => v.ToList())
-            .Metadata.SetValueComparer(new ValueComparer<List<string>>(
+                v => System.Text.Json.JsonSerializer.Serialize(v, (System.Text.Json.JsonSerializerOptions?)null),
+                v => System.Text.Json.JsonSerializer.Deserialize<List<Jobuler.Domain.Tasks.QualificationRequirement>>(v, (System.Text.Json.JsonSerializerOptions?)null) ?? new())
+            .Metadata.SetValueComparer(new ValueComparer<List<Jobuler.Domain.Tasks.QualificationRequirement>>(
                 (a, b) => a != null && b != null && a.SequenceEqual(b),
                 v => v.Aggregate(0, (h, e) => HashCode.Combine(h, e.GetHashCode())),
                 v => v.ToList()));
+
         builder.Property(t => t.IsActive).HasColumnName("is_active");
         builder.Property(t => t.CreatedByUserId).HasColumnName("created_by_user_id");
         builder.Property(t => t.UpdatedByUserId).HasColumnName("updated_by_user_id");

@@ -44,6 +44,7 @@ import { getConstraints, createConstraint, updateConstraint, deleteConstraint, C
 import { createPerson, invitePerson, searchPeople } from "@/lib/api/people";
 import { addGroupMemberById } from "@/lib/api/groups";
 import { apiClient } from "@/lib/api/client";
+import { DEFAULT_TASK_HORIZON_DAYS, MS_PER_DAY } from "@/lib/utils/constants";
 import type { TaskForm } from "./tabs/TasksTab";
 import { useGroupPageState, DEFAULT_TASK_FORM } from "./useGroupPageState";
 // ── Tab labels ───────────────────────────────────────────────────────────────
@@ -680,7 +681,7 @@ export default function GroupDetailPage() {
       // Default endsAt to startsAt + 90 days if empty (open-ended recurring task)
       const endsAtRaw = taskForm.endsAt
         ? new Date(taskForm.endsAt).toISOString()
-        : new Date(new Date(startsAt).getTime() + 90 * 86400000).toISOString();
+        : new Date(new Date(startsAt).getTime() + DEFAULT_TASK_HORIZON_DAYS * MS_PER_DAY).toISOString();
 
       // Guard: endsAt must be strictly after startsAt
       if (new Date(endsAtRaw) <= new Date(startsAt)) {
@@ -707,7 +708,7 @@ export default function GroupDetailPage() {
         allowsOverlap: taskForm.allowsOverlap,
         dailyStartTime: taskForm.dailyStartTime || null,
         dailyEndTime: taskForm.dailyEndTime || null,
-        requiredQualificationNames: taskForm.requiredQualificationNames,
+        qualificationRequirements: taskForm.qualificationRequirements,
       };
       if (editingTask) {
         await updateGroupTask(currentSpaceId, groupId, editingTask.id, payload);
@@ -1238,7 +1239,7 @@ export default function GroupDetailPage() {
               onCloseForm={() => { setShowTaskForm(false); setEditingTask(null); }}
               onFormChange={setTaskForm}
               onFormSubmit={handleTaskSubmit}
-              onEditTask={t => { setEditingTask(t); setTaskForm({ name: t.name, startsAt: t.startsAt?.slice(0, 16) ?? "", endsAt: t.endsAt?.slice(0, 16) ?? "", shiftDurationMinutes: t.shiftDurationMinutes, requiredHeadcount: t.requiredHeadcount, burdenLevel: t.burdenLevel, allowsDoubleShift: t.allowsDoubleShift, allowsOverlap: t.allowsOverlap, concurrentTaskIds: [], dailyStartTime: t.dailyStartTime ?? "", dailyEndTime: t.dailyEndTime ?? "", requiredQualificationNames: t.requiredQualificationNames ?? [] }); setShowTaskForm(true); }}
+              onEditTask={t => { setEditingTask(t); setTaskForm({ name: t.name, startsAt: t.startsAt?.slice(0, 16) ?? "", endsAt: t.endsAt?.slice(0, 16) ?? "", shiftDurationMinutes: t.shiftDurationMinutes, requiredHeadcount: t.requiredHeadcount, burdenLevel: t.burdenLevel, allowsDoubleShift: t.allowsDoubleShift, allowsOverlap: t.allowsOverlap, concurrentTaskIds: [], dailyStartTime: t.dailyStartTime ?? "", dailyEndTime: t.dailyEndTime ?? "", qualificationRequirements: t.qualificationRequirements ?? [] }); setShowTaskForm(true); }}
               onDeleteTask={handleDeleteTask}
             />
           )}

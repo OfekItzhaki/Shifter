@@ -6,59 +6,57 @@ import AppShell from "@/components/shell/AppShell";
 import ScheduleTaskTable, { type TaskAssignment } from "@/components/schedule/ScheduleTaskTable";
 import { useSpaceStore } from "@/lib/store/spaceStore";
 import { useAuthStore } from "@/lib/store/authStore";
-import { apiClient } from "@/lib/api/client";
-import { getGroupSchedule } from "@/lib/api/groups";
-
-interface GroupDto { id: string; name: string; }
+import { useGroups } from "@/lib/query/hooks/useGroups";
+import { useGroupSchedule } from "@/lib/query/hooks/useGroupSchedule";
 
 export default function TomorrowPage() {
   const t = useTranslations("schedule");
   const tNav = useTranslations("nav");
   const { currentSpaceId } = useSpaceStore();
   const { displayName } = useAuthStore();
-  const [assignments, setAssignments] = useState<TaskAssignment[]>([]);
-  const [groups, setGroups] = useState<GroupDto[]>([]);
   const [selectedGroupId, setSelectedGroupId] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [groupsLoading, setGroupsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [tomorrowLabel, setTomorrowLabel] = useState("");
 
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
   const tomorrowStr = tomorrow.toISOString().split("T")[0];
-  const [tomorrowLabel, setTomorrowLabel] = useState("");
 
+  // Hydration-safe date label
   useEffect(() => {
     const d = new Date();
     d.setDate(d.getDate() + 1);
     setTomorrowLabel(d.toLocaleDateString(undefined, {
-      weekday: "long", year: "numeric", month: "long", day: "numeric"
+      weekday: "long", year: "numeric", month: "long", day: "numeric",
     }));
   }, []);
 
-  useEffect(() => {
-    if (!currentSpaceId) { setGroupsLoading(false); return; }
-    apiClient.get(`/spaces/${currentSpaceId}/groups`)
-      .then(r => {
-        setGroups(r.data);
-        if (r.data.length > 0) setSelectedGroupId(r.data[0].id);
-      })
-      .finally(() => setGroupsLoading(false));
-  }, [currentSpaceId]);
+  // React Query — groups list
+  const { data: groups = [], isLoading: groupsLoading } = useGroups(currentSpaceId);
 
+  // Auto-select first group when groups load
   useEffect(() => {
-    if (!currentSpaceId || !selectedGroupId) { setAssignments([]); return; }
-    setLoading(true);
-    getGroupSchedule(currentSpaceId, selectedGroupId)
-      .then(data => setAssignments(data.map(a => ({
-        personName: a.personName,
-        taskTypeName: a.taskTypeName,
-        slotStartsAt: a.slotStartsAt,
-        slotEndsAt: a.slotEndsAt,
-      }))))
-      .catch(() => { setAssignments([]); setError(t("loading")); })
-      .finally(() => setLoading(false));
-  }, [currentSpaceId, selectedGroupId]);
+    if (groups.length > 0 && !selectedGroupId) {
+      setSelectedGroupId(groups[0].id);
+    }
+  }, [groups, selectedGroupId]);
+
+  // React Query — schedule for selected group
+  const {
+    data: rawAssignments = [],
+    isLoading: scheduleLoading,
+    isError,
+  } = useGroupSchedule(currentSpaceId, selectedGroupId || null);
+
+  const assignments: TaskAssignment[] = rawAssignments.map(a => ({
+    id: a.id,
+    personId: a.personId,
+    personName: a.personName,
+    taskTypeName: a.taskTypeName,
+    slotStartsAt: a.slotStartsAt,
+    slotEndsAt: a.slotEndsAt,
+  }));
+
+  const loading = groupsLoading || scheduleLoading;
 
   return (
     <AppShell>
@@ -94,13 +92,17 @@ export default function TomorrowPage() {
           </div>
         )}
 
-        {(groupsLoading || loading) && (
+        {loading && (
           <p className="text-slate-400 text-sm py-8">{t("loading")}</p>
         )}
 
         {selectedGroupId && !loading && (
           <>
-            {error && <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl px-4 py-3">{error}</p>}
+            {isError && (
+              <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
+                {t("loading")}
+              </p>
+            )}
             <ScheduleTaskTable
               assignments={assignments}
               filterDate={tomorrowStr}

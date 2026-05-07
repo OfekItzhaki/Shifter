@@ -39,6 +39,12 @@ class PresenceWindow(BaseModel):
     ends_at: datetime
 
 
+class QualificationRequirement(BaseModel):
+    qualification_name: str
+    count: int
+    mandatory: bool
+
+
 class TaskSlot(BaseModel):
     slot_id: str
     task_type_id: str
@@ -52,6 +58,7 @@ class TaskSlot(BaseModel):
     required_qualification_ids: list[str]
     allows_overlap: bool
     allows_double_shift: bool = False
+    qualification_requirements: list[QualificationRequirement] = []
 
 
 class HardConstraint(BaseModel):

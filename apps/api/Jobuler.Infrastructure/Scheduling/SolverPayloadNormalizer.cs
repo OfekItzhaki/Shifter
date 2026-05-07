@@ -149,6 +149,15 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
             .Where(t => t.SpaceId == spaceId)
             .ToDictionaryAsync(t => t.Id, ct);
 
+        // Load qualification name lookup: id → name
+        // TaskSlot.RequiredQualificationIds contains UUIDs but PersonEligibility.qualification_ids contains names.
+        // Resolve UUIDs to names so the solver can match them correctly.
+        var qualificationNameLookup = await _db.PersonQualifications.AsNoTracking()
+            .Where(q => q.SpaceId == spaceId)
+            .Select(q => new { q.Id, q.Qualification })
+            .Distinct()
+            .ToDictionaryAsync(q => q.Id.ToString(), q => q.Qualification, ct);
+
         var slotsDto = slots
             .Where(s => s.EndsAt >= horizonStartDt) // double-check: exclude any past slots
             .Select(s =>
@@ -164,7 +173,10 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
                     s.RequiredHeadcount,
                     s.Priority,
                     s.RequiredRoleIds.Select(id => id.ToString()).ToList(),
-                    s.RequiredQualificationIds.Select(id => id.ToString()).ToList(),
+                    // Resolve qualification UUIDs to names so the solver can match against person.qualification_ids
+                    s.RequiredQualificationIds
+                        .Select(id => qualificationNameLookup.TryGetValue(id.ToString(), out var name) ? name : id.ToString())
+                        .ToList(),
                     tt?.AllowsOverlap ?? false);
             }).ToList();
 
@@ -242,7 +254,10 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
                     [],
                     task.RequiredQualificationNames,
                     task.AllowsOverlap,
-                    task.AllowsDoubleShift));
+                    task.AllowsDoubleShift,
+                    task.QualificationRequirements
+                        .Select(r => new QualificationRequirementSolverDto(r.QualificationName, r.Count, r.Mandatory))
+                        .ToList()));
 
                 shiftStart = shiftEnd;
                 shiftIndex++;
