@@ -64,3 +64,6 @@ logs/
 
 # Migrations lock (keep SQL, ignore generated artifacts)
 infra/migrations/*.lock
+
+# Seed file copied into migrations for Docker init — not a real migration
+infra/migrations/999_seed.sql

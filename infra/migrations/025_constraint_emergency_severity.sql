@@ -1,13 +1,11 @@
 -- Migration 025: Add 'emergency' severity to constraint_rules
 -- Emergency constraints bypass all hard/soft constraints in the solver.
+--
+-- At this point in the migration sequence, constraint_rules.severity is still
+-- a native PostgreSQL enum type (constraint_severity). Migration 029 will later
+-- convert it to TEXT. So here we must use ALTER TYPE to add the new enum value.
 
--- Drop the existing check constraint and recreate with 'emergency' included
-ALTER TABLE constraint_rules
-    DROP CONSTRAINT IF EXISTS chk_constraint_severity;
-
-ALTER TABLE constraint_rules
-    ADD CONSTRAINT chk_constraint_severity
-        CHECK (severity IN ('hard', 'soft', 'emergency'));
+ALTER TYPE constraint_severity ADD VALUE IF NOT EXISTS 'emergency';
 
 -- Track migration
 INSERT INTO schema_migrations (version) VALUES ('025') ON CONFLICT DO NOTHING;
