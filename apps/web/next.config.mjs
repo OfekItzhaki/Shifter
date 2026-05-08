@@ -39,6 +39,11 @@ const nextConfig = {
   experimental: {
     // optimizeCss causes CSS preload warnings in dev mode — disabled
   },
+  turbopack: {
+    // Fix CSS MIME type error caused by Windows absolute path in chunk names.
+    // Use __dirname equivalent via fileURLToPath for cross-platform compatibility.
+    root: new URL(".", import.meta.url).pathname.replace(/^\/([A-Z]:)/, "$1"),
+  },
   async headers() {
     return [
       {

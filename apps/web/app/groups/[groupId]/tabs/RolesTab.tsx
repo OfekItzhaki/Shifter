@@ -7,10 +7,10 @@ import type { GroupRoleDto, GroupMemberDto } from "@/lib/api/groups";
 const PERM_LEVELS = ["view", "ViewAndEdit", "Owner"] as const;
 type PermLevel = typeof PERM_LEVELS[number];
 
-const PERM_META: Record<PermLevel, { label: string; color: string; description: string }> = {
-  view:        { label: "View only",     color: "bg-slate-100 text-slate-600 border-slate-200",   description: "Can see the schedule, members, and alerts. Cannot make any changes." },
-  ViewAndEdit: { label: "View + Edit",   color: "bg-blue-50 text-blue-700 border-blue-200",       description: "Can edit tasks, constraints, and member details. Cannot publish schedules or manage roles." },
-  Owner:       { label: "Owner",         color: "bg-purple-50 text-purple-700 border-purple-200", description: "Full access — can publish schedules, manage roles, and transfer ownership." },
+const PERM_COLORS: Record<PermLevel, string> = {
+  view:        "bg-slate-100 text-slate-600 border-slate-200",
+  ViewAndEdit: "bg-blue-50 text-blue-700 border-blue-200",
+  Owner:       "bg-purple-50 text-purple-700 border-purple-200",
 };
 
 interface Props {
@@ -30,6 +30,13 @@ export default function RolesTab({
 }: Props) {
   const t = useTranslations("groups.roles_tab");
   const tSettings = useTranslations("groups.settings_tab");
+
+  // Build PERM_META using translations so labels/descriptions are localised
+  const PERM_META: Record<PermLevel, { label: string; color: string; description: string }> = {
+    view:        { label: t("permViewLabel"),        color: PERM_COLORS.view,        description: t("permViewDesc") },
+    ViewAndEdit: { label: t("permViewAndEditLabel"), color: PERM_COLORS.ViewAndEdit, description: t("permViewAndEditDesc") },
+    Owner:       { label: t("permOwnerLabel"),       color: PERM_COLORS.Owner,       description: t("permOwnerDesc") },
+  };
 
   const [newRoleName, setNewRoleName] = useState("");
   const [newRoleDesc, setNewRoleDesc] = useState("");

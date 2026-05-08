@@ -160,3 +160,58 @@ INSERT INTO space_permission_grants (space_id, user_id, permission_key, granted_
    'space.view', 'a1b2c3d4-e5f6-4a7b-8c9d-e0f1a2b3c4d5')
 ON CONFLICT DO NOTHING;
 -- NOTE: No group_memberships rows for Dana — she is ungrouped by design
+
+-- =============================================================================
+-- Squad B: seed members for solver testing
+-- Squad B needs at least 10 members to cover its tasks 24/7.
+-- Adding 10 people directly into Squad B membership.
+-- =============================================================================
+
+-- Additional people for Squad B
+INSERT INTO people (id, space_id, full_name, display_name, invitation_status) VALUES
+  ('650ad631-e5c8-4c97-b149-abfb9b923c03', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'אופק יצחקי',  'אופק',  'accepted'),
+  ('1fb7ad3a-4fdb-4356-851f-e986ee4208fb', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'נעם כהן',     'נעם',   'accepted'),
+  ('9dc1bd92-d276-4939-8405-9e9a18b44580', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'דימה לוי',    'דימה',  'accepted'),
+  ('a994261b-ca89-41b0-807b-f6032b7aff43', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'יוגב שמיר',   'יוגב',  'accepted'),
+  ('8f568eb7-57aa-4c7a-850f-5b313bbd8938', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'שחר דמרי',    'שחר',   'accepted'),
+  ('9478c177-64e4-4a54-a35e-0a771c52929e', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'אופיר יצחקי', 'אופיר', 'accepted'),
+  ('057d89ce-1a61-4ef0-a8cf-76450bd35eda', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'דנוך בן-דוד', 'דנוך',  'accepted'),
+  ('3589519f-49a9-40a9-9f8a-9263ef624d03', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'Avi Mizrahi',     'Avi',   'accepted'),
+  ('2bd3b096-10b8-4685-953a-28619e1500f2', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'Tamar Ben-David', 'Tamar', 'accepted'),
+  ('4282eaf4-0e04-453f-b7f9-541d652173ea', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'Gal Peretz',      'Gal',   'accepted'),
+  ('853eacd3-95b1-4a8a-843a-2f0be4ce40a0', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'Itay Shapiro',    'Itay',  'accepted'),
+  ('0ac3af9e-018e-4de8-9116-6ef267bf68f7', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'Maya Katz',       'Maya',  'accepted')
+ON CONFLICT DO NOTHING;
+
+-- Squad B memberships (13 members total — enough for 24/7 coverage)
+INSERT INTO group_memberships (id, space_id, group_id, person_id, is_owner, joined_at) VALUES
+  (uuid_generate_v4(), 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'a3b4c5d6-e7f8-4a9b-0c1d-e2f3a4b5c6d7', '650ad631-e5c8-4c97-b149-abfb9b923c03', FALSE, NOW()),
+  (uuid_generate_v4(), 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'a3b4c5d6-e7f8-4a9b-0c1d-e2f3a4b5c6d7', '1fb7ad3a-4fdb-4356-851f-e986ee4208fb', FALSE, NOW()),
+  (uuid_generate_v4(), 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'a3b4c5d6-e7f8-4a9b-0c1d-e2f3a4b5c6d7', '9dc1bd92-d276-4939-8405-9e9a18b44580', FALSE, NOW()),
+  (uuid_generate_v4(), 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'a3b4c5d6-e7f8-4a9b-0c1d-e2f3a4b5c6d7', 'a994261b-ca89-41b0-807b-f6032b7aff43', FALSE, NOW()),
+  (uuid_generate_v4(), 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'a3b4c5d6-e7f8-4a9b-0c1d-e2f3a4b5c6d7', '8f568eb7-57aa-4c7a-850f-5b313bbd8938', FALSE, NOW()),
+  (uuid_generate_v4(), 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'a3b4c5d6-e7f8-4a9b-0c1d-e2f3a4b5c6d7', '9478c177-64e4-4a54-a35e-0a771c52929e', FALSE, NOW()),
+  (uuid_generate_v4(), 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'a3b4c5d6-e7f8-4a9b-0c1d-e2f3a4b5c6d7', '057d89ce-1a61-4ef0-a8cf-76450bd35eda', FALSE, NOW()),
+  (uuid_generate_v4(), 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'a3b4c5d6-e7f8-4a9b-0c1d-e2f3a4b5c6d7', '3589519f-49a9-40a9-9f8a-9263ef624d03', FALSE, NOW()),
+  (uuid_generate_v4(), 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'a3b4c5d6-e7f8-4a9b-0c1d-e2f3a4b5c6d7', '2bd3b096-10b8-4685-953a-28619e1500f2', FALSE, NOW()),
+  (uuid_generate_v4(), 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'a3b4c5d6-e7f8-4a9b-0c1d-e2f3a4b5c6d7', '4282eaf4-0e04-453f-b7f9-541d652173ea', FALSE, NOW()),
+  (uuid_generate_v4(), 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'a3b4c5d6-e7f8-4a9b-0c1d-e2f3a4b5c6d7', '853eacd3-95b1-4a8a-843a-2f0be4ce40a0', FALSE, NOW()),
+  (uuid_generate_v4(), 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'a3b4c5d6-e7f8-4a9b-0c1d-e2f3a4b5c6d7', '0ac3af9e-018e-4de8-9116-6ef267bf68f7', FALSE, NOW())
+ON CONFLICT DO NOTHING;
+
+-- Squad B tasks with future dates for solver testing
+-- Uses NOW() + interval so they're always in the future regardless of when seed runs
+INSERT INTO tasks (id, space_id, group_id, name, starts_at, ends_at, shift_duration_minutes, required_headcount, burden_level, allows_double_shift, allows_overlap, qualification_requirements, created_by_user_id) VALUES
+  ('b7df56c7-e6d9-4584-8c87-11a2a5a1a576', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'a3b4c5d6-e7f8-4a9b-0c1d-e2f3a4b5c6d7',
+   'תל 7', NOW(), NOW() + INTERVAL '90 days', 120, 1, 'neutral', false, false, '[]', 'a1b2c3d4-e5f6-4a7b-8c9d-e0f1a2b3c4d5'),
+  ('a899c417-9e35-4afd-9572-78eab9ee0788', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'a3b4c5d6-e7f8-4a9b-0c1d-e2f3a4b5c6d7',
+   'תל 9', NOW() + INTERVAL '6 hours', NOW() + INTERVAL '90 days', 240, 1, 'neutral', false, false, '[]', 'a1b2c3d4-e5f6-4a7b-8c9d-e0f1a2b3c4d5'),
+  ('a3d01500-ea30-4079-8a4f-5dfdb35f55b0', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'a3b4c5d6-e7f8-4a9b-0c1d-e2f3a4b5c6d7',
+   'מטבח', NOW() + INTERVAL '4 hours', NOW() + INTERVAL '90 days', 1440, 1, 'neutral', false, false, '[]', 'a1b2c3d4-e5f6-4a7b-8c9d-e0f1a2b3c4d5')
+ON CONFLICT DO NOTHING;
+
+-- Squad B constraints
+INSERT INTO constraint_rules (id, space_id, scope_type, scope_id, severity, rule_type, rule_payload_json, created_by_user_id) VALUES
+  ('aa029b4d-a1e9-4006-803b-8b8b913483a7', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'group', 'a3b4c5d6-e7f8-4a9b-0c1d-e2f3a4b5c6d7', 'soft', 'max_kitchen_per_week', '{"max": 2, "hours": 8}', 'a1b2c3d4-e5f6-4a7b-8c9d-e0f1a2b3c4d5'),
+  ('edeae01d-398f-425f-9e0e-a7e55ae0cac4', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'group', 'a3b4c5d6-e7f8-4a9b-0c1d-e2f3a4b5c6d7', 'hard', 'min_rest_hours',      '{"hours": 8}',          'a1b2c3d4-e5f6-4a7b-8c9d-e0f1a2b3c4d5')
+ON CONFLICT DO NOTHING;

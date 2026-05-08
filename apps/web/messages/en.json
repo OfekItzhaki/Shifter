@@ -276,7 +276,13 @@
       "memberRoles": "Member Role Assignments",
       "memberRolesHint": "Each member can hold exactly one role.",
       "default": "default",
-      "noRole": "No role"
+      "noRole": "No role",
+      "permViewLabel": "View only",
+      "permViewAndEditLabel": "View + Edit",
+      "permOwnerLabel": "Owner",
+      "permViewDesc": "Can see the schedule, members, and alerts. Cannot make any changes.",
+      "permViewAndEditDesc": "Can edit tasks, constraints, and member details. Cannot publish schedules or manage roles.",
+      "permOwnerDesc": "Full access — can publish schedules, manage roles, and transfer ownership."
     },
     "settings_tab": {
       "groupName": "Group Name",

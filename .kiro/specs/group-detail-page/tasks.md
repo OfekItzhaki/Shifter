@@ -26,7 +26,7 @@ Three coordinated changes: extend the groups API client, build the full group de
     - Render "קבוצה לא נמצאה" + back link to `/groups` when `notFound` is true
     - _Requirements: 1.1, 1.2, 1.3_
 
-  - [ ]* 2.2 Write property test for group lookup correctness
+  - [x]* 2.2 Write property test for group lookup correctness
     - **Property 1: Group lookup correctness**
     - For any array of `GroupWithMemberCountDto` and any `groupId` string, `list.find(g => g.id === groupId) ?? null` returns the correct group or null
     - **Validates: Requirements 1.1, 1.2**
@@ -45,12 +45,12 @@ Three coordinated changes: extend the groups API client, build the full group de
     - When admin mode exits and `activeTab` is an admin-only tab, reset `activeTab` to `"schedule"` via `useEffect` on `adminGroupId`
     - _Requirements: 2.1, 3.1_
 
-  - [ ]* 3.2 Write property test for base tabs always present
+  - [x]* 3.2 Write property test for base tabs always present
     - **Property 2: Base tabs always present**
     - For any value of `adminGroupId` (null, equal to groupId, or any other string), both "סידור" and "חברים" tab labels are present in the rendered tab bar
     - **Validates: Requirements 2.1**
 
-  - [ ]* 3.3 Write property test for admin tabs conditional on adminGroupId
+  - [x]* 3.3 Write property test for admin tabs conditional on adminGroupId
     - **Property 4: Admin tabs appear exactly when adminGroupId matches**
     - For any `groupId` and any `adminGroupId`: admin tabs present iff `adminGroupId === groupId`; none of the four admin tabs rendered otherwise
     - **Validates: Requirements 3.1**
@@ -67,7 +67,7 @@ Three coordinated changes: extend the groups API client, build the full group de
     - Show "שגיאה בטעינת החברים" on fetch error
     - _Requirements: 2.3, 2.4, 2.5_
 
-  - [ ]* 3.6 Write property test for displayName fallback
+  - [x]* 3.6 Write property test for displayName fallback
     - **Property 3: DisplayName fallback**
     - For any `GroupMemberDto`, `getDisplayName(m)` returns `m.displayName` when non-null, and `m.fullName` when `displayName` is null
     - **Validates: Requirements 2.4**
@@ -83,7 +83,7 @@ Three coordinated changes: extend the groups API client, build the full group de
     - Per-member remove button: call `removeGroupMember(spaceId, groupId, member.personId)`, then re-fetch members
     - _Requirements: 3.2, 3.3, 3.4, 3.5, 3.6_
 
-  - [ ]* 5.2 Write property test for members list re-fetched after mutation
+  - [x]* 5.2 Write property test for members list re-fetched after mutation
     - **Property 5: Members list re-fetched after any mutation**
     - Mock `addGroupMemberByEmail` and `removeGroupMember` to resolve successfully; assert `getGroupMembers` is called once after each successful mutation
     - **Validates: Requirements 3.6**
@@ -104,7 +104,7 @@ Three coordinated changes: extend the groups API client, build the full group de
     - Save button: call `updateGroupSettings(spaceId, groupId, solverHorizon)`, set `savingSettings` during call; display `err?.response?.data?.message` on error
     - _Requirements: 3.9, 3.10, 3.11, 3.12_
 
-  - [ ]* 5.6 Write property test for solver horizon warning threshold
+  - [x]* 5.6 Write property test for solver horizon warning threshold
     - **Property 6: Solver horizon warning threshold**
     - For any integer `v` in range 1–90: warning message is displayed iff `v > 30`
     - **Validates: Requirements 3.10**
@@ -125,12 +125,12 @@ Three coordinated changes: extend the groups API client, build the full group de
     - Use a groups/people SVG icon consistent with the existing icon style
     - _Requirements: 4.2_
 
-  - [ ]* 6.3 Write property test for no Admin section in AppShell
+  - [x]* 6.3 Write property test for no Admin section in AppShell
     - **Property 7: No Admin section in AppShell for any adminGroupId**
     - For any value of `adminGroupId` (null or any non-null string), the rendered AppShell sidebar contains no "Admin" section label and no `/admin/*` nav links
     - **Validates: Requirements 4.3**
 
-  - [ ]* 6.4 Write property test for amber topbar when adminGroupId is non-null
+  - [x]* 6.4 Write property test for amber topbar when adminGroupId is non-null
     - **Property 8: Amber topbar when adminGroupId is non-null**
     - For any non-null `adminGroupId`, topbar background is `#fffbeb`; when null, topbar background is white
     - **Validates: Requirements 4.6**
@@ -153,7 +153,7 @@ Three coordinated changes: extend the groups API client, build the full group de
     - Preserve all `ON CONFLICT DO NOTHING` / `ON CONFLICT DO UPDATE` clauses unchanged
     - _Requirements: 5.1, 5.2, 5.3, 5.4_
 
-  - [ ]* 8.3 Write property test for seed UUID validity and FK integrity
+  - [x]* 8.3 Write property test for seed UUID validity and FK integrity
     - **Property 9: Seed UUID validity and FK integrity**
     - Parse `seed.sql` statically; assert every UUID matches the v4 regex `[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}`; assert every UUID used as a FK reference also appears as a PK definition in the same file
     - **Validates: Requirements 5.1, 5.2**
@@ -163,7 +163,7 @@ Three coordinated changes: extend the groups API client, build the full group de
   - Include: title, phase, purpose, what was built (all 4 changed files), key decisions, how it connects, how to run/verify, what comes next, and git commit command
   - _Requirements: (workspace step-documentation rule)_
 
-- [ ] 10. Final checkpoint — Ensure all tests pass
+- [x] 10. Final checkpoint — Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 ## Notes
