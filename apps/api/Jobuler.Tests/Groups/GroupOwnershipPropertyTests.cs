@@ -248,3 +248,241 @@ public class GroupOwnershipPropertyTests
         await act.Should().ThrowAsync<Exception>("name over 100 chars should be rejected");
     }
 }
+
+// ── Property 7: GetDeletedGroupsQuery respects 30-day window ─────────────────
+// Feature: group-ownership, Property 7: deleted groups 30-day window
+
+public class GroupOwnershipPropertyTests_P7_P15
+{
+    private static AppDbContext CreateDb()
+    {
+        var options = new DbContextOptionsBuilder<AppDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .Options;
+        return new AppDbContext(options);
+    }
+
+    private static IEmailSender NoOpEmail()
+    {
+        var e = Substitute.For<IEmailSender>();
+        e.SendAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+        return e;
+    }
+
+    private static async Task<(AppDbContext db, Guid spaceId, Guid userId, Guid personId)> SetupAsync()
+    {
+        var db = CreateDb();
+        var spaceId = Guid.NewGuid();
+        var userId = Guid.NewGuid();
+
+        var user = User.Create("test@test.com", "Test User", "hash");
+        typeof(Jobuler.Domain.Common.Entity).GetProperty("Id")!.SetValue(user, userId);
+        db.Users.Add(user);
+
+        var person = Person.Create(spaceId, "Test User", linkedUserId: userId);
+        db.People.Add(person);
+
+        await db.SaveChangesAsync();
+        return (db, spaceId, userId, person.Id);
+    }
+
+    private static async Task<Guid> CreateGroupAsync(AppDbContext db, Guid spaceId, Guid userId, string name = "Test Group")
+    {
+        var handler = new CreateGroupCommandHandler(db);
+        return await handler.Handle(
+            new CreateGroupCommand(spaceId, null, name, null, userId),
+            CancellationToken.None);
+    }
+
+    // Feature: group-ownership, Property 7: GetDeletedGroupsQuery respects 30-day window
+
+    [Fact]
+    public async Task Property7_DeletedGroupOlderThan30Days_NotReturnedByQuery()
+    {
+        var (db, spaceId, userId, _) = await SetupAsync();
+        var groupId = await CreateGroupAsync(db, spaceId, userId);
+
+        // Soft-delete the group
+        var deleteHandler = new SoftDeleteGroupCommandHandler(db);
+        await deleteHandler.Handle(new SoftDeleteGroupCommand(spaceId, groupId, userId), CancellationToken.None);
+
+        // Manually backdate DeletedAt to 31 days ago
+        var group = await db.Groups.FindAsync(groupId);
+        typeof(Group).GetProperty("DeletedAt")!.SetValue(group, DateTime.UtcNow.AddDays(-31));
+        await db.SaveChangesAsync();
+
+        var queryHandler = new GetDeletedGroupsQueryHandler(db);
+        var result = await queryHandler.Handle(new GetDeletedGroupsQuery(spaceId, userId), CancellationToken.None);
+
+        result.Should().NotContain(g => g.Id == groupId,
+            "groups deleted more than 30 days ago should not appear in the deleted groups list");
+    }
+
+    [Fact]
+    public async Task Property7_DeletedGroupWithin30Days_ReturnedByQuery()
+    {
+        var (db, spaceId, userId, _) = await SetupAsync();
+        var groupId = await CreateGroupAsync(db, spaceId, userId);
+
+        var deleteHandler = new SoftDeleteGroupCommandHandler(db);
+        await deleteHandler.Handle(new SoftDeleteGroupCommand(spaceId, groupId, userId), CancellationToken.None);
+
+        var queryHandler = new GetDeletedGroupsQueryHandler(db);
+        var result = await queryHandler.Handle(new GetDeletedGroupsQuery(spaceId, userId), CancellationToken.None);
+
+        result.Should().Contain(g => g.Id == groupId,
+            "recently deleted group should appear in the deleted groups list");
+    }
+
+    // Feature: group-ownership, Property 8: restore triggers notifications for linked members
+
+    [Fact]
+    public async Task Property8_Restore_CreatesNotificationForEachLinkedMember()
+    {
+        var (db, spaceId, userId, _) = await SetupAsync();
+        var groupId = await CreateGroupAsync(db, spaceId, userId);
+
+        // Add a second linked member
+        var user2Id = Guid.NewGuid();
+        var user2 = User.Create("member2@test.com", "Member 2", "hash");
+        typeof(Jobuler.Domain.Common.Entity).GetProperty("Id")!.SetValue(user2, user2Id);
+        db.Users.Add(user2);
+        var person2 = Person.Create(spaceId, "Member 2", linkedUserId: user2Id);
+        db.People.Add(person2);
+        await db.SaveChangesAsync();
+
+        var membership2 = GroupMembership.Create(spaceId, groupId, person2.Id, isOwner: false);
+        db.GroupMemberships.Add(membership2);
+        await db.SaveChangesAsync();
+
+        // Soft-delete then restore
+        var deleteHandler = new SoftDeleteGroupCommandHandler(db);
+        await deleteHandler.Handle(new SoftDeleteGroupCommand(spaceId, groupId, userId), CancellationToken.None);
+
+        var notificationsBefore = await db.Notifications.CountAsync();
+
+        var restoreHandler = new RestoreGroupCommandHandler(db, NoOpEmail());
+        await restoreHandler.Handle(new RestoreGroupCommand(spaceId, groupId, userId), CancellationToken.None);
+
+        var notificationsAfter = await db.Notifications.CountAsync();
+
+        // 2 linked members (owner + member2) should each get a notification
+        (notificationsAfter - notificationsBefore).Should().Be(2,
+            "restore should create one notification per linked member");
+    }
+
+    // Feature: group-ownership, Property 13: at most one pending transfer per group
+
+    [Fact]
+    public async Task Property13_SecondInitiateTransfer_ThrowsConflict()
+    {
+        var (db, spaceId, userId, personId) = await SetupAsync();
+        var groupId = await CreateGroupAsync(db, spaceId, userId);
+
+        // Add a second member to transfer to
+        var user2Id = Guid.NewGuid();
+        var user2 = User.Create("proposed@test.com", "Proposed", "hash");
+        typeof(Jobuler.Domain.Common.Entity).GetProperty("Id")!.SetValue(user2, user2Id);
+        db.Users.Add(user2);
+        var person2 = Person.Create(spaceId, "Proposed", linkedUserId: user2Id);
+        db.People.Add(person2);
+        await db.SaveChangesAsync();
+
+        var membership2 = GroupMembership.Create(spaceId, groupId, person2.Id, isOwner: false);
+        db.GroupMemberships.Add(membership2);
+        await db.SaveChangesAsync();
+
+        var handler = new InitiateOwnershipTransferCommandHandler(db, NoOpEmail());
+        var cmd = new InitiateOwnershipTransferCommand(spaceId, groupId, userId, person2.Id);
+
+        // First transfer — should succeed
+        await handler.Handle(cmd, CancellationToken.None);
+
+        // Second transfer — should throw ConflictException
+        var act = () => handler.Handle(cmd, CancellationToken.None);
+        await act.Should().ThrowAsync<ConflictException>(
+            "a second pending transfer for the same group should throw ConflictException");
+    }
+
+    // Feature: group-ownership, Property 14: expired tokens rejected
+
+    [Fact]
+    public async Task Property14_ExpiredToken_ThrowsInvalidOperation()
+    {
+        var (db, spaceId, userId, personId) = await SetupAsync();
+        var groupId = await CreateGroupAsync(db, spaceId, userId);
+
+        var user2Id = Guid.NewGuid();
+        var user2 = User.Create("proposed2@test.com", "Proposed2", "hash");
+        typeof(Jobuler.Domain.Common.Entity).GetProperty("Id")!.SetValue(user2, user2Id);
+        db.Users.Add(user2);
+        var person2 = Person.Create(spaceId, "Proposed2", linkedUserId: user2Id);
+        db.People.Add(person2);
+        await db.SaveChangesAsync();
+
+        var membership2 = GroupMembership.Create(spaceId, groupId, person2.Id, isOwner: false);
+        db.GroupMemberships.Add(membership2);
+        await db.SaveChangesAsync();
+
+        // Create a transfer and manually expire it
+        var transfer = PendingOwnershipTransfer.Create(spaceId, groupId, personId, person2.Id);
+        typeof(PendingOwnershipTransfer).GetProperty("ExpiresAt")!.SetValue(transfer, DateTime.UtcNow.AddHours(-1));
+        db.PendingOwnershipTransfers.Add(transfer);
+        await db.SaveChangesAsync();
+
+        var handler = new ConfirmOwnershipTransferCommandHandler(db);
+        var act = () => handler.Handle(
+            new ConfirmOwnershipTransferCommand(transfer.ConfirmationToken),
+            CancellationToken.None);
+
+        await act.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("*expired*");
+    }
+
+    // Feature: group-ownership, Property 15: atomic ownership swap
+
+    [Fact]
+    public async Task Property15_ConfirmTransfer_AtomicallySwapsOwnership()
+    {
+        var (db, spaceId, userId, personId) = await SetupAsync();
+        var groupId = await CreateGroupAsync(db, spaceId, userId);
+
+        var user2Id = Guid.NewGuid();
+        var user2 = User.Create("newowner@test.com", "New Owner", "hash");
+        typeof(Jobuler.Domain.Common.Entity).GetProperty("Id")!.SetValue(user2, user2Id);
+        db.Users.Add(user2);
+        var person2 = Person.Create(spaceId, "New Owner", linkedUserId: user2Id);
+        db.People.Add(person2);
+        await db.SaveChangesAsync();
+
+        var membership2 = GroupMembership.Create(spaceId, groupId, person2.Id, isOwner: false);
+        db.GroupMemberships.Add(membership2);
+        await db.SaveChangesAsync();
+
+        // Initiate transfer
+        var initiateHandler = new InitiateOwnershipTransferCommandHandler(db, NoOpEmail());
+        await initiateHandler.Handle(
+            new InitiateOwnershipTransferCommand(spaceId, groupId, userId, person2.Id),
+            CancellationToken.None);
+
+        var transfer = await db.PendingOwnershipTransfers.FirstAsync(t => t.GroupId == groupId);
+
+        // Confirm transfer
+        var confirmHandler = new ConfirmOwnershipTransferCommandHandler(db);
+        await confirmHandler.Handle(
+            new ConfirmOwnershipTransferCommand(transfer.ConfirmationToken),
+            CancellationToken.None);
+
+        // Verify: new owner has IsOwner=true, old owner has IsOwner=false
+        var oldOwnerMembership = await db.GroupMemberships.AsNoTracking()
+            .FirstAsync(m => m.GroupId == groupId && m.PersonId == personId);
+        var newOwnerMembership = await db.GroupMemberships.AsNoTracking()
+            .FirstAsync(m => m.GroupId == groupId && m.PersonId == person2.Id);
+        var pendingTransferExists = await db.PendingOwnershipTransfers.AnyAsync(t => t.GroupId == groupId);
+
+        oldOwnerMembership.IsOwner.Should().BeFalse("previous owner should no longer be owner");
+        newOwnerMembership.IsOwner.Should().BeTrue("new owner should have IsOwner=true");
+        pendingTransferExists.Should().BeFalse("pending transfer record should be deleted after confirmation");
+    }
+}

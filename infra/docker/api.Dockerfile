@@ -6,6 +6,7 @@ COPY Jobuler.Api/*.csproj Jobuler.Api/
 COPY Jobuler.Domain/*.csproj Jobuler.Domain/
 COPY Jobuler.Application/*.csproj Jobuler.Application/
 COPY Jobuler.Infrastructure/*.csproj Jobuler.Infrastructure/
+COPY Jobuler.Tests/*.csproj Jobuler.Tests/
 
 RUN dotnet restore
 

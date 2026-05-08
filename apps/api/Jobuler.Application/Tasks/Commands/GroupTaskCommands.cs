@@ -57,6 +57,12 @@ public class CreateGroupTaskCommandValidator : AbstractValidator<CreateGroupTask
         RuleFor(x => x.ShiftDurationMinutes).GreaterThanOrEqualTo(1).WithMessage("shift_duration_minutes must be at least 1 minute.");
         RuleFor(x => x.RequiredHeadcount).GreaterThanOrEqualTo(1).WithMessage("required_headcount must be at least 1.");
         RuleFor(x => x.BurdenLevel).NotEmpty().Must(b => ValidBurdenLevels.Contains(b.ToLowerInvariant())).WithMessage("burden_level must be one of: favorable, neutral, disliked, hated.");
+
+        // Total qualification seats cannot exceed required headcount
+        RuleFor(x => x)
+            .Must(x => x.QualificationRequirements == null
+                || x.QualificationRequirements.Sum(r => r.Count) <= x.RequiredHeadcount)
+            .WithMessage("Total qualification seat count across all requirements cannot exceed required_headcount.");
     }
 }
 
@@ -130,6 +136,12 @@ public class UpdateGroupTaskCommandValidator : AbstractValidator<UpdateGroupTask
         RuleFor(x => x.ShiftDurationMinutes).GreaterThanOrEqualTo(1).WithMessage("shift_duration_minutes must be at least 1 minute.");
         RuleFor(x => x.RequiredHeadcount).GreaterThanOrEqualTo(1).WithMessage("required_headcount must be at least 1.");
         RuleFor(x => x.BurdenLevel).NotEmpty().Must(b => ValidBurdenLevels.Contains(b.ToLowerInvariant())).WithMessage("burden_level must be one of: favorable, neutral, disliked, hated.");
+
+        // Total qualification seats cannot exceed required headcount
+        RuleFor(x => x)
+            .Must(x => x.QualificationRequirements == null
+                || x.QualificationRequirements.Sum(r => r.Count) <= x.RequiredHeadcount)
+            .WithMessage("Total qualification seat count across all requirements cannot exceed required_headcount.");
     }
 }
 

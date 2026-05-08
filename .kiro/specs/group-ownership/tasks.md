@@ -69,7 +69,7 @@ Introduces a formal ownership model for groups: creator auto-membership, owner-o
   - File: `apps/api/Jobuler.Application/Groups/Queries/GetGroupsQuery.cs`
   - _Requirements: 2.3_
 
-- [ ] 8. New commands — group lifecycle management
+- [x] 8. New commands — group lifecycle management
   - [x] 8.1 Create `RenameGroupCommand` and handler
     - New file: `apps/api/Jobuler.Application/Groups/Commands/RenameGroupCommand.cs`
     - Record: `RenameGroupCommand(Guid SpaceId, Guid GroupId, Guid RequestingUserId, string NewName)`
@@ -200,7 +200,7 @@ Introduces a formal ownership model for groups: creator auto-membership, owner-o
   - Show error state in Hebrew for invalid/expired token (HTTP 400) or network error
   - _Requirements: 9.2, 9.3_
 
-- [ ] 19. Checkpoint — ensure all tests pass
+- [x] 19. Checkpoint — ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 - [x]* 19.1 Write property tests P1–P10 (FsCheck, C# backend)
@@ -242,7 +242,7 @@ Introduces a formal ownership model for groups: creator auto-membership, owner-o
     - **Validates: Requirements 8.2**
   - File: `apps/web/__tests__/transferDropdown.test.tsx`
 
-- [ ] 20. Step documentation
+- [x] 20. Step documentation
   - Create `docs/steps/029-group-ownership.md`
   - Include: title, phase, purpose, files created/modified, key decisions, how it connects, how to verify, what comes next, git commit command
   - _Requirements: all_
