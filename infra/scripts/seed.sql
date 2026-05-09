@@ -220,3 +220,173 @@ INSERT INTO constraint_rules (id, space_id, scope_type, scope_id, severity, rule
   ('aa029b4d-a1e9-4006-803b-8b8b913483a7', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'group', 'a3b4c5d6-e7f8-4a9b-0c1d-e2f3a4b5c6d7', 'soft', 'max_kitchen_per_week', '{"max": 2, "hours": 8}', 'a1b2c3d4-e5f6-4a7b-8c9d-e0f1a2b3c4d5'),
   ('edeae01d-398f-425f-9e0e-a7e55ae0cac4', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'group', 'a3b4c5d6-e7f8-4a9b-0c1d-e2f3a4b5c6d7', 'hard', 'min_rest_hours',      '{"hours": 8}',          'a1b2c3d4-e5f6-4a7b-8c9d-e0f1a2b3c4d5')
 ON CONFLICT DO NOTHING;
+
+-- =============================================================================
+-- Step 122: Rich test data for Squad B
+-- Qualifications, member qualifications, qualification constraints,
+-- group messages, group alerts, and task qualification requirements.
+-- =============================================================================
+
+SET client_encoding = 'UTF8';
+
+-- -----------------------------------------------------------------------------
+-- 1. Group Qualifications for Squad B
+-- -----------------------------------------------------------------------------
+-- UUID mapping:
+--   מפקד כיתה  → c1a2b3c4-d5e6-4f7a-8b9c-0d1e2f3a4b5c
+--   חובש       → d2b3c4d5-e6f7-4a8b-9c0d-1e2f3a4b5c6d
+--   נהג        → e3c4d5e6-f7a8-4b9c-0d1e-2f3a4b5c6d7e
+--   צלף        → f4d5e6f7-a8b9-4c0d-1e2f-3a4b5c6d7e8f
+--   מפקד מחלקה → a5e6f7a8-b9c0-4d1e-2f3a-4b5c6d7e8f9a
+
+INSERT INTO group_qualifications (id, space_id, group_id, name, is_active, created_at, updated_at) VALUES
+  ('c1a2b3c4-d5e6-4f7a-8b9c-0d1e2f3a4b5c', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'a3b4c5d6-e7f8-4a9b-0c1d-e2f3a4b5c6d7', 'מפקד כיתה',  TRUE, NOW(), NOW()),
+  ('d2b3c4d5-e6f7-4a8b-9c0d-1e2f3a4b5c6d', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'a3b4c5d6-e7f8-4a9b-0c1d-e2f3a4b5c6d7', 'חובש',       TRUE, NOW(), NOW()),
+  ('e3c4d5e6-f7a8-4b9c-0d1e-2f3a4b5c6d7e', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'a3b4c5d6-e7f8-4a9b-0c1d-e2f3a4b5c6d7', 'נהג',        TRUE, NOW(), NOW()),
+  ('f4d5e6f7-a8b9-4c0d-1e2f-3a4b5c6d7e8f', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'a3b4c5d6-e7f8-4a9b-0c1d-e2f3a4b5c6d7', 'צלף',        TRUE, NOW(), NOW()),
+  ('a5e6f7a8-b9c0-4d1e-2f3a-4b5c6d7e8f9a', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'a3b4c5d6-e7f8-4a9b-0c1d-e2f3a4b5c6d7', 'מפקד מחלקה', TRUE, NOW(), NOW())
+ON CONFLICT DO NOTHING;
+
+-- -----------------------------------------------------------------------------
+-- 2. Member Qualifications
+-- -----------------------------------------------------------------------------
+-- אופק יצחקי  (650ad631): מפקד כיתה, נהג
+-- נעם כהן     (1fb7ad3a): חובש
+-- דימה לוי    (9dc1bd92): צלף, נהג
+-- יוגב שמיר   (a994261b): מפקד כיתה, חובש
+-- שחר דמרי    (8f568eb7): מפקד מחלקה, מפקד כיתה
+-- אופיר יצחקי (9478c177): נהג
+-- Avi Mizrahi (3589519f): חובש, צלף
+-- Tamar Ben-David (2bd3b096): מפקד כיתה
+
+INSERT INTO member_qualifications (id, space_id, group_id, person_id, qualification_id, assigned_at) VALUES
+  -- אופק יצחקי: מפקד כיתה
+  ('b1c2d3e4-f5a6-4b7c-8d9e-0f1a2b3c4d5e', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'a3b4c5d6-e7f8-4a9b-0c1d-e2f3a4b5c6d7', '650ad631-e5c8-4c97-b149-abfb9b923c03', 'c1a2b3c4-d5e6-4f7a-8b9c-0d1e2f3a4b5c', NOW()),
+  -- אופק יצחקי: נהג
+  ('c2d3e4f5-a6b7-4c8d-9e0f-1a2b3c4d5e6f', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'a3b4c5d6-e7f8-4a9b-0c1d-e2f3a4b5c6d7', '650ad631-e5c8-4c97-b149-abfb9b923c03', 'e3c4d5e6-f7a8-4b9c-0d1e-2f3a4b5c6d7e', NOW()),
+  -- נעם כהן: חובש
+  ('d3e4f5a6-b7c8-4d9e-0f1a-2b3c4d5e6f7a', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'a3b4c5d6-e7f8-4a9b-0c1d-e2f3a4b5c6d7', '1fb7ad3a-4fdb-4356-851f-e986ee4208fb', 'd2b3c4d5-e6f7-4a8b-9c0d-1e2f3a4b5c6d', NOW()),
+  -- דימה לוי: צלף
+  ('e4f5a6b7-c8d9-4e0f-1a2b-3c4d5e6f7a8b', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'a3b4c5d6-e7f8-4a9b-0c1d-e2f3a4b5c6d7', '9dc1bd92-d276-4939-8405-9e9a18b44580', 'f4d5e6f7-a8b9-4c0d-1e2f-3a4b5c6d7e8f', NOW()),
+  -- דימה לוי: נהג
+  ('f5a6b7c8-d9e0-4f1a-2b3c-4d5e6f7a8b9c', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'a3b4c5d6-e7f8-4a9b-0c1d-e2f3a4b5c6d7', '9dc1bd92-d276-4939-8405-9e9a18b44580', 'e3c4d5e6-f7a8-4b9c-0d1e-2f3a4b5c6d7e', NOW()),
+  -- יוגב שמיר: מפקד כיתה
+  ('a6b7c8d9-e0f1-4a2b-3c4d-5e6f7a8b9c0d', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'a3b4c5d6-e7f8-4a9b-0c1d-e2f3a4b5c6d7', 'a994261b-ca89-41b0-807b-f6032b7aff43', 'c1a2b3c4-d5e6-4f7a-8b9c-0d1e2f3a4b5c', NOW()),
+  -- יוגב שמיר: חובש
+  ('b7c8d9e0-f1a2-4b3c-4d5e-6f7a8b9c0d1e', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'a3b4c5d6-e7f8-4a9b-0c1d-e2f3a4b5c6d7', 'a994261b-ca89-41b0-807b-f6032b7aff43', 'd2b3c4d5-e6f7-4a8b-9c0d-1e2f3a4b5c6d', NOW()),
+  -- שחר דמרי: מפקד מחלקה
+  ('c8d9e0f1-a2b3-4c4d-5e6f-7a8b9c0d1e2f', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'a3b4c5d6-e7f8-4a9b-0c1d-e2f3a4b5c6d7', '8f568eb7-57aa-4c7a-850f-5b313bbd8938', 'a5e6f7a8-b9c0-4d1e-2f3a-4b5c6d7e8f9a', NOW()),
+  -- שחר דמרי: מפקד כיתה
+  ('d9e0f1a2-b3c4-4d5e-6f7a-8b9c0d1e2f3a', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'a3b4c5d6-e7f8-4a9b-0c1d-e2f3a4b5c6d7', '8f568eb7-57aa-4c7a-850f-5b313bbd8938', 'c1a2b3c4-d5e6-4f7a-8b9c-0d1e2f3a4b5c', NOW()),
+  -- אופיר יצחקי: נהג
+  ('e0f1a2b3-c4d5-4e6f-7a8b-9c0d1e2f3a4b', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'a3b4c5d6-e7f8-4a9b-0c1d-e2f3a4b5c6d7', '9478c177-64e4-4a54-a35e-0a771c52929e', 'e3c4d5e6-f7a8-4b9c-0d1e-2f3a4b5c6d7e', NOW()),
+  -- Avi Mizrahi: חובש
+  ('f1a2b3c4-d5e6-4f7a-8b9c-0d1e2f3a4b5c', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'a3b4c5d6-e7f8-4a9b-0c1d-e2f3a4b5c6d7', '3589519f-49a9-40a9-9f8a-9263ef624d03', 'd2b3c4d5-e6f7-4a8b-9c0d-1e2f3a4b5c6d', NOW()),
+  -- Avi Mizrahi: צלף
+  ('a2b3c4d5-e6f7-4a8b-9c0d-1e2f3a4b5c6d', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'a3b4c5d6-e7f8-4a9b-0c1d-e2f3a4b5c6d7', '3589519f-49a9-40a9-9f8a-9263ef624d03', 'f4d5e6f7-a8b9-4c0d-1e2f-3a4b5c6d7e8f', NOW()),
+  -- Tamar Ben-David: מפקד כיתה
+  ('b3c4d5e6-f7a8-4b9c-0d1e-2f3a4b5c6d7e', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'a3b4c5d6-e7f8-4a9b-0c1d-e2f3a4b5c6d7', '2bd3b096-10b8-4685-953a-28619e1500f2', 'c1a2b3c4-d5e6-4f7a-8b9c-0d1e2f3a4b5c', NOW())
+ON CONFLICT DO NOTHING;
+
+-- -----------------------------------------------------------------------------
+-- 3. Group Constraints — qualification-based
+-- -----------------------------------------------------------------------------
+-- Hard constraint: תל 7 requires at least 1 מפקד כיתה per shift
+-- Soft constraint: prefer חובש on תל 9
+
+INSERT INTO constraint_rules (id, space_id, scope_type, scope_id, severity, rule_type, rule_payload_json, created_by_user_id) VALUES
+  ('c4d5e6f7-a8b9-4c0d-1e2f-3a4b5c6d7e8f',
+   'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9',
+   'group',
+   'a3b4c5d6-e7f8-4a9b-0c1d-e2f3a4b5c6d7',
+   'soft',
+   'required_qualification_per_shift',
+   '{"qualification_name": "מפקד כיתה", "task_name": "תל 7", "min_count": 1}',
+   'a1b2c3d4-e5f6-4a7b-8c9d-e0f1a2b3c4d5'),
+  ('d5e6f7a8-b9c0-4d1e-2f3a-4b5c6d7e8f9a',
+   'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9',
+   'group',
+   'a3b4c5d6-e7f8-4a9b-0c1d-e2f3a4b5c6d7',
+   'soft',
+   'preferred_qualification_per_shift',
+   '{"qualification_name": "חובש", "task_name": "תל 9", "min_count": 1}',
+   'a1b2c3d4-e5f6-4a7b-8c9d-e0f1a2b3c4d5')
+ON CONFLICT DO NOTHING;
+
+-- -----------------------------------------------------------------------------
+-- 4. Group Messages
+-- NOTE: group_messages uses author_user_id (FK to users), not author_person_id.
+-- אופק יצחקי has no linked user account, so all 3 messages are authored by admin.
+-- -----------------------------------------------------------------------------
+
+INSERT INTO group_messages (id, space_id, group_id, author_user_id, content, is_pinned, created_at, updated_at) VALUES
+  ('e6f7a8b9-c0d1-4e2f-3a4b-5c6d7e8f9a0b',
+   'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9',
+   'a3b4c5d6-e7f8-4a9b-0c1d-e2f3a4b5c6d7',
+   'a1b2c3d4-e5f6-4a7b-8c9d-e0f1a2b3c4d5',
+   'שלום לכולם! הסידור החדש עלה. אנא בדקו את המשמרות שלכם.',
+   TRUE,
+   NOW() - INTERVAL '2 hours',
+   NOW() - INTERVAL '2 hours'),
+  ('f7a8b9c0-d1e2-4f3a-4b5c-6d7e8f9a0b1c',
+   'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9',
+   'a3b4c5d6-e7f8-4a9b-0c1d-e2f3a4b5c6d7',
+   'a1b2c3d4-e5f6-4a7b-8c9d-e0f1a2b3c4d5',
+   'תזכורת: כל מי שיש לו כישורים רפואיים - אנא עדכנו אותי.',
+   FALSE,
+   NOW() - INTERVAL '1 hour',
+   NOW() - INTERVAL '1 hour'),
+  ('a8b9c0d1-e2f3-4a4b-5c6d-7e8f9a0b1c2d',
+   'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9',
+   'a3b4c5d6-e7f8-4a9b-0c1d-e2f3a4b5c6d7',
+   'a1b2c3d4-e5f6-4a7b-8c9d-e0f1a2b3c4d5',
+   'קיבלתי את הסידור, תודה!',
+   FALSE,
+   NOW() - INTERVAL '30 minutes',
+   NOW() - INTERVAL '30 minutes')
+ON CONFLICT DO NOTHING;
+
+-- -----------------------------------------------------------------------------
+-- 5. Group Alerts
+-- NOTE: group_alerts has no updated_at column per migration 012.
+-- -----------------------------------------------------------------------------
+
+INSERT INTO group_alerts (id, space_id, group_id, created_by_person_id, title, body, severity, created_at) VALUES
+  ('b9c0d1e2-f3a4-4b5c-6d7e-8f9a0b1c2d3e',
+   'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9',
+   'a3b4c5d6-e7f8-4a9b-0c1d-e2f3a4b5c6d7',
+   'a0b1c2d3-e4f5-4a6b-7c8d-e9f0a1b2c3d4',
+   'עדכון סידור',
+   'הסידור לשבוע הקרוב פורסם. בדקו את המשמרות שלכם.',
+   'info',
+   NOW() - INTERVAL '3 hours'),
+  ('c0d1e2f3-a4b5-4c6d-7e8f-9a0b1c2d3e4f',
+   'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9',
+   'a3b4c5d6-e7f8-4a9b-0c1d-e2f3a4b5c6d7',
+   'a0b1c2d3-e4f5-4a6b-7c8d-e9f0a1b2c3d4',
+   'תרגיל מחר',
+   'מחר בשעה 06:00 יתקיים תרגיל. כל הכוחות נדרשים להיות נוכחים.',
+   'warning',
+   NOW() - INTERVAL '1 hour')
+ON CONFLICT DO NOTHING;
+
+-- -----------------------------------------------------------------------------
+-- 6. Update Squad B tasks with qualification_requirements
+-- תל 7: requires 1 מפקד כיתה (mandatory)
+-- תל 9: prefers 1 חובש (optional)
+-- מטבח: no requirements (keep as [])
+-- -----------------------------------------------------------------------------
+
+UPDATE tasks
+SET qualification_requirements = '[{"qualification_name": "מפקד כיתה", "min_count": 1, "mandatory": true}]'::jsonb,
+    updated_at = NOW()
+WHERE id = 'b7df56c7-e6d9-4584-8c87-11a2a5a1a576'
+  AND space_id = 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9';
+
+UPDATE tasks
+SET qualification_requirements = '[{"qualification_name": "חובש", "min_count": 1, "mandatory": false}]'::jsonb,
+    updated_at = NOW()
+WHERE id = 'a899c417-9e35-4afd-9572-78eab9ee0788'
+  AND space_id = 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9';
+
+-- מטבח already has qualification_requirements = '[]', no update needed.

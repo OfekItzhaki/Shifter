@@ -208,6 +208,21 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
             var windowStart = task.StartsAt < horizonStartDt ? horizonStartDt : task.StartsAt;
             var windowEnd   = task.EndsAt > horizonEndDt ? horizonEndDt : task.EndsAt;
 
+            // For full-day tasks (1440 min = 24h), align the first shift to the task's
+            // configured start time-of-day. E.g. if task starts at 18:40 and now is 12:00,
+            // the first shift should be 18:40→18:40+1d, not 12:00→12:00+1d.
+            if (task.ShiftDurationMinutes == 1440 && task.StartsAt < horizonStartDt)
+            {
+                // Find the most recent occurrence of task.StartsAt's time-of-day
+                // that is <= horizonStartDt, then advance to the next one if needed.
+                var taskTimeOfDay = task.StartsAt.TimeOfDay;
+                var candidateStart = horizonStartDt.Date + taskTimeOfDay;
+                if (candidateStart < horizonStartDt)
+                    candidateStart = candidateStart.AddDays(1);
+                // Use UTC kind
+                windowStart = DateTime.SpecifyKind(candidateStart, DateTimeKind.Utc);
+            }
+
             // Apply daily time window if configured (e.g. task only runs 08:00–22:00 each day)
             var dailyStart = task.DailyStartTime;
             var dailyEnd   = task.DailyEndTime;
