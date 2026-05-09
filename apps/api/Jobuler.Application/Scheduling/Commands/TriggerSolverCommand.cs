@@ -84,6 +84,17 @@ public class TriggerSolverCommandHandler : IRequestHandler<TriggerSolverCommand,
             .OrderByDescending(v => v.VersionNumber)
             .FirstOrDefaultAsync(ct);
 
+        // ── Auto-discard existing drafts ──────────────────────────────────────
+        // When a new solver run is triggered, automatically discard any existing
+        // Draft versions for this space. This prevents stale drafts from
+        // accumulating and confusing the admin.
+        var existingDrafts = await _db.ScheduleVersions
+            .Where(v => v.SpaceId == request.SpaceId && v.Status == ScheduleVersionStatus.Draft)
+            .ToListAsync(ct);
+
+        foreach (var draft in existingDrafts)
+            draft.Discard();
+
         var trigger = request.TriggerMode == "emergency"
             ? ScheduleRunTrigger.Emergency
             : ScheduleRunTrigger.Standard;

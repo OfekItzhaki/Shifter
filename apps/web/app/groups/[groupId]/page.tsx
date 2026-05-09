@@ -954,6 +954,8 @@ export default function GroupDetailPage() {
             setScheduleData(schedRes?.data?.assignments ?? []);
             const drafts = Array.isArray(draftRes?.data) ? draftRes.data : [];
             setDraftVersion(drafts.length > 0 ? drafts[0] : null);
+            // Close the draft modal so it reloads with the new draft when reopened
+            setShowDraftModal(false);
 
             // If no draft, show infeasibility reason from most recent discarded version
             if (drafts.length === 0) {
