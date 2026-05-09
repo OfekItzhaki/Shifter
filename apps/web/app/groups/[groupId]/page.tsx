@@ -1347,6 +1347,8 @@ export default function GroupDetailPage() {
               onCancelTransfer={handleCancelTransfer}
               onShowDeleteConfirm={setShowDeleteConfirm}
               onDeleteGroup={handleDeleteGroup}
+              onImportMembers={() => { setImportMode("members"); setShowImportModal(true); }}
+              onImportTasks={() => { setImportMode("tasks"); setShowImportModal(true); }}
             />
           )}
 

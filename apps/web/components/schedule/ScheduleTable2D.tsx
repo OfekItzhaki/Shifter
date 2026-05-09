@@ -21,7 +21,9 @@ function overlapsDate(a: TableAssignment, dateStr: string): boolean {
   const slotStart = new Date(a.slotStartsAt).getTime();
   const slotEnd   = new Date(a.slotEndsAt).getTime();
   if (isNaN(slotStart) || isNaN(slotEnd)) return false;
-  return slotStart <= dayEnd && slotEnd >= dayStart;
+  // Use strict > for slotEnd so a shift ending exactly at midnight (00:00:00)
+  // does not bleed into the next day.
+  return slotStart <= dayEnd && slotEnd > dayStart;
 }
 
 function formatTime(iso: string): string {
