@@ -201,14 +201,22 @@ ON CONFLICT DO NOTHING;
 
 -- Squad B tasks with future dates for solver testing
 -- Uses NOW() + interval so they're always in the future regardless of when seed runs
+-- תל 7: 4-hour shifts (240 min), starts NOW so current time is covered
+-- תל 9: 4-hour shifts (240 min), starts NOW so current time is covered
+-- מטבח: 24-hour shifts (1440 min), starts NOW
 INSERT INTO tasks (id, space_id, group_id, name, starts_at, ends_at, shift_duration_minutes, required_headcount, burden_level, allows_double_shift, allows_overlap, qualification_requirements, created_by_user_id) VALUES
   ('b7df56c7-e6d9-4584-8c87-11a2a5a1a576', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'a3b4c5d6-e7f8-4a9b-0c1d-e2f3a4b5c6d7',
-   'תל 7', NOW(), NOW() + INTERVAL '90 days', 120, 1, 'neutral', false, false, '[]', 'a1b2c3d4-e5f6-4a7b-8c9d-e0f1a2b3c4d5'),
+   'תל 7', NOW(), NOW() + INTERVAL '90 days', 240, 1, 'neutral', false, false, '[]', 'a1b2c3d4-e5f6-4a7b-8c9d-e0f1a2b3c4d5'),
   ('a899c417-9e35-4afd-9572-78eab9ee0788', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'a3b4c5d6-e7f8-4a9b-0c1d-e2f3a4b5c6d7',
-   'תל 9', NOW() + INTERVAL '6 hours', NOW() + INTERVAL '90 days', 240, 1, 'neutral', false, false, '[]', 'a1b2c3d4-e5f6-4a7b-8c9d-e0f1a2b3c4d5'),
+   'תל 9', NOW(), NOW() + INTERVAL '90 days', 240, 1, 'neutral', false, false, '[]', 'a1b2c3d4-e5f6-4a7b-8c9d-e0f1a2b3c4d5'),
   ('a3d01500-ea30-4079-8a4f-5dfdb35f55b0', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'a3b4c5d6-e7f8-4a9b-0c1d-e2f3a4b5c6d7',
-   'מטבח', NOW() + INTERVAL '4 hours', NOW() + INTERVAL '90 days', 1440, 1, 'neutral', false, false, '[]', 'a1b2c3d4-e5f6-4a7b-8c9d-e0f1a2b3c4d5')
-ON CONFLICT DO NOTHING;
+   'מטבח', NOW(), NOW() + INTERVAL '90 days', 1440, 1, 'neutral', false, false, '[]', 'a1b2c3d4-e5f6-4a7b-8c9d-e0f1a2b3c4d5')
+ON CONFLICT (id) DO UPDATE SET
+  starts_at = NOW(),
+  ends_at = NOW() + INTERVAL '90 days',
+  shift_duration_minutes = EXCLUDED.shift_duration_minutes,
+  required_headcount = EXCLUDED.required_headcount,
+  updated_at = NOW();
 
 -- Squad B constraints
 INSERT INTO constraint_rules (id, space_id, scope_type, scope_id, severity, rule_type, rule_payload_json, created_by_user_id) VALUES

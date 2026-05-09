@@ -140,7 +140,13 @@ export default function DraftScheduleModal({
     const parts = weekAnchor.split("-").map(Number);
     const d = new Date(Date.UTC(parts[0], parts[1] - 1, parts[2]));
     d.setUTCDate(d.getUTCDate() + 7);
-    setWeekAnchor(d.toISOString().split("T")[0]);
+    const next = d.toISOString().split("T")[0];
+    setWeekAnchor(next);
+    // Select the first day of the new week that is today or in the future
+    const newWeekDates = getWeekDates(next);
+    const todayStr = new Date().toISOString().split("T")[0];
+    const firstFutureIdx = newWeekDates.findIndex(d => d >= todayStr);
+    setSelectedDay(firstFutureIdx >= 0 ? firstFutureIdx : 0);
   }
 
   // Convert to ScheduleTaskTable format

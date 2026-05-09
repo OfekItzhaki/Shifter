@@ -83,7 +83,15 @@ export default function ScheduleTab({
     const d = new Date(weekAnchor + "T00:00:00");
     d.setDate(d.getDate() + 7);
     const next = d.toISOString().split("T")[0];
-    if (next <= maxDate) setWeekAnchor(next);
+    if (next <= maxDate) {
+      setWeekAnchor(next);
+      // When navigating to a new week, select the first day that has assignments,
+      // or Sunday (0) if none. Never stay on a day that's in the past.
+      const newWeekDates = getWeekDates(next);
+      const todayStr = new Date().toISOString().split("T")[0];
+      const firstFutureIdx = newWeekDates.findIndex(d => d >= todayStr);
+      setSelectedWeekDay(firstFutureIdx >= 0 ? firstFutureIdx : 0);
+    }
   }
 
   function goToToday() {
