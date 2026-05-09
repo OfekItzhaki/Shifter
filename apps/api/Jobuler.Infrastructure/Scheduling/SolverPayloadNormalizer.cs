@@ -47,6 +47,10 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
             ? DateTime.SpecifyKind(startTime.Value, DateTimeKind.Utc)
             : DateTime.UtcNow;
 
+        // Round nowUtc DOWN to the nearest whole hour so shifts start on clean boundaries.
+        // e.g. if it's 12:25, shifts start from 12:00 not 12:25.
+        nowUtc = new DateTime(nowUtc.Year, nowUtc.Month, nowUtc.Day, nowUtc.Hour, 0, 0, DateTimeKind.Utc);
+
         // horizonStart is the DATE sent to the solver as horizon_start.
         // When a custom startTime is provided, use that date; otherwise use today.
         var horizonStart = startTime.HasValue

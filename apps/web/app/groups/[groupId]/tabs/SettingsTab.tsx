@@ -71,12 +71,14 @@ export default function SettingsTab({
   const t = useTranslations("groups.settings_tab");
   const tCommon = useTranslations("common");
 
-  // Solver start time — resets to now on every render of this component.
+  // Solver start time — defaults to current time rounded down to the nearest hour.
   // Stored in state so the admin can override it before clicking Run.
   const [solverStartTime, setSolverStartTime] = useState(() => {
     const d = new Date();
+    // Round down to the nearest hour
+    d.setMinutes(0, 0, 0);
     const pad = (n: number) => String(n).padStart(2, "0");
-    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:00`;
   });
 
   if (!isAdmin) {
