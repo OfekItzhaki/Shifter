@@ -103,6 +103,7 @@ services:
     restart: unless-stopped
     environment:
       SOLVER_TIMEOUT_SECONDS: ${SOLVER_TIMEOUT_SECONDS}
+      SOLVE_TIMEOUT_SECONDS: ${SOLVE_TIMEOUT_SECONDS:-120}
     ports:
       - "${SOLVER_PORT}:8000"
     healthcheck:
