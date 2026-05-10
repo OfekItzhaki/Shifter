@@ -748,6 +748,22 @@
     "errorAddRestriction": "שגיאה בהוספת הגבלה.",
     "onwards": "ואילך"
   },
+  "import": {
+    "title": "ייבוא חכם",
+    "subtitle": "העלה קובץ אקסל או תמונה של סידור",
+    "dropzone": "גרור קובץ לכאן או לחץ לבחירה",
+    "parsing": "מנתח את הקובץ...",
+    "preview": "תצוגה מקדימה",
+    "found": "נמצאו {people} אנשים, {tasks} משימות, {assignments} שיבוצים",
+    "confirm": "אשר וצור טיוטה",
+    "confirming": "יוצר טיוטה...",
+    "done": "הייבוא הושלם! טיוטה נוצרה.",
+    "viewDraft": "צפה בטיוטה",
+    "noAiKey": "שירות AI לא מוגדר. הוסף מפתח API בהגדרות השרת.",
+    "parseError": "שגיאה בניתוח הקובץ. נסה שוב או העלה קובץ אחר.",
+    "maxSize": "גודל מקסימלי: 10MB",
+    "supportedFormats": "פורמטים נתמכים: Excel, CSV, תמונה, PDF"
+  },
   "platform": {
     "title": "פלטפורמה",
     "totalUsers": "משתמשים רשומים",

@@ -1,4 +1,6 @@
 using Jobuler.Application.Common;
+using Jobuler.Domain.Groups;
+using Jobuler.Domain.Scheduling;
 using Jobuler.Domain.Spaces;
 using Jobuler.Infrastructure.Persistence;
 using MediatR;
@@ -9,57 +11,54 @@ namespace Jobuler.Application.AI.Commands;
 
 // ── DTOs ──────────────────────────────────────────────────────────────────────
 
-public record SmartImportPersonDto(
-    string FullName,
-    string? DisplayName,
-    bool IsNew);
+public record ImportPreviewDto(
+    List<string> People,
+    List<ImportTaskDto> Tasks,
+    List<ImportAssignmentDto> Assignments,
+    string? AiConfidence);
 
-public record SmartImportTaskDto(
-    string Name,
-    int ShiftDurationMinutes,
-    int RequiredHeadcount,
-    string BurdenLevel,
-    bool IsNew);
+public record ImportTaskDto(string Name, int ShiftDurationHours, int RequiredHeadcount);
 
-public record SmartImportAssignmentDto(
+public record ImportAssignmentDto(
     string PersonName,
     string TaskName,
-    string StartsAt,
-    string EndsAt);
+    string DayOfWeek,
+    int StartHour,
+    int EndHour);
 
-public record SmartImportPreviewDto(
-    List<SmartImportPersonDto> People,
-    List<SmartImportTaskDto> Tasks,
-    List<SmartImportAssignmentDto> Assignments,
-    string Summary);
+public record ImportConfirmResultDto(Guid DraftVersionId);
 
 // ── AI raw response shape ─────────────────────────────────────────────────────
 
-public record AiImportPersonRaw(string FullName, string? DisplayName);
-public record AiImportTaskRaw(string Name, int ShiftDurationMinutes, int RequiredHeadcount, string BurdenLevel);
-public record AiImportAssignmentRaw(string PersonName, string TaskName, string StartsAt, string EndsAt);
-
-public record AiImportRawResponse(
-    List<AiImportPersonRaw>? People,
+internal record AiImportRawResponse(
+    List<string>? People,
     List<AiImportTaskRaw>? Tasks,
     List<AiImportAssignmentRaw>? Assignments);
 
-// ── Preview command ───────────────────────────────────────────────────────────
+internal record AiImportTaskRaw(string Name, int ShiftDurationHours, int RequiredHeadcount);
 
-public record SmartImportCommand(
+internal record AiImportAssignmentRaw(
+    string PersonName,
+    string TaskName,
+    string DayOfWeek,
+    int StartHour,
+    int EndHour);
+
+// ── Parse command ─────────────────────────────────────────────────────────────
+
+public record ParseScheduleImportCommand(
     Guid SpaceId,
     Guid GroupId,
     Guid RequestingUserId,
     string FileName,
     string FileContentBase64,
-    string ContentType) : IRequest<SmartImportPreviewDto>;
+    string ContentType) : IRequest<ImportPreviewDto>;
 
-public class SmartImportCommandHandler : IRequestHandler<SmartImportCommand, SmartImportPreviewDto>
+public class ParseScheduleImportCommandHandler : IRequestHandler<ParseScheduleImportCommand, ImportPreviewDto>
 {
     private readonly IAiAssistant _ai;
     private readonly AppDbContext _db;
     private readonly IPermissionService _permissions;
-    private readonly bool _aiAvailable;
 
     private static readonly JsonSerializerOptions JsonOpts = new()
     {
@@ -67,15 +66,14 @@ public class SmartImportCommandHandler : IRequestHandler<SmartImportCommand, Sma
         PropertyNameCaseInsensitive = true
     };
 
-    public SmartImportCommandHandler(IAiAssistant ai, AppDbContext db, IPermissionService permissions)
+    public ParseScheduleImportCommandHandler(IAiAssistant ai, AppDbContext db, IPermissionService permissions)
     {
         _ai = ai;
         _db = db;
         _permissions = permissions;
-        _aiAvailable = ai is not Infrastructure.AI.NoOpAiAssistant;
     }
 
-    public async Task<SmartImportPreviewDto> Handle(SmartImportCommand req, CancellationToken ct)
+    public async Task<ImportPreviewDto> Handle(ParseScheduleImportCommand req, CancellationToken ct)
     {
         await _permissions.RequirePermissionAsync(
             req.RequestingUserId, req.SpaceId, Permissions.TasksManage, ct);
@@ -86,73 +84,15 @@ public class SmartImportCommandHandler : IRequestHandler<SmartImportCommand, Sma
         if (!groupExists)
             throw new KeyNotFoundException("Group not found in this space.");
 
-        AiImportRawResponse? parsed;
+        var rawJson = await _ai.ParseScheduleFileAsync(
+            req.FileContentBase64, req.ContentType, req.FileName, ct);
 
-        if (_aiAvailable)
-        {
-            parsed = await ParseWithAiAsync(req, ct);
-        }
-        else
-        {
+        if (string.IsNullOrWhiteSpace(rawJson))
             throw new InvalidOperationException(
                 "Smart import requires AI to be configured. Please set up the AI:ApiKey in configuration.");
-        }
-
-        if (parsed == null)
-            throw new InvalidOperationException("Failed to parse the uploaded file.");
-
-        // Determine which people/tasks are new vs existing
-        var existingPeople = await _db.People
-            .Where(p => p.SpaceId == req.SpaceId && p.IsActive)
-            .Select(p => p.FullName.ToLower())
-            .ToListAsync(ct);
-
-        var existingTasks = await _db.GroupTasks
-            .Where(t => t.SpaceId == req.SpaceId && t.GroupId == req.GroupId)
-            .Select(t => t.Name.ToLower())
-            .ToListAsync(ct);
-
-        var existingPeopleSet = new HashSet<string>(existingPeople);
-        var existingTasksSet = new HashSet<string>(existingTasks);
-
-        var people = (parsed.People ?? []).Select(p => new SmartImportPersonDto(
-            p.FullName,
-            p.DisplayName,
-            !existingPeopleSet.Contains(p.FullName.Trim().ToLowerInvariant())
-        )).ToList();
-
-        var tasks = (parsed.Tasks ?? []).Select(t => new SmartImportTaskDto(
-            t.Name,
-            t.ShiftDurationMinutes > 0 ? t.ShiftDurationMinutes : 240,
-            t.RequiredHeadcount > 0 ? t.RequiredHeadcount : 1,
-            string.IsNullOrWhiteSpace(t.BurdenLevel) ? "neutral" : t.BurdenLevel.ToLowerInvariant(),
-            !existingTasksSet.Contains(t.Name.Trim().ToLowerInvariant())
-        )).ToList();
-
-        var assignments = (parsed.Assignments ?? []).Select(a => new SmartImportAssignmentDto(
-            a.PersonName,
-            a.TaskName,
-            a.StartsAt,
-            a.EndsAt
-        )).ToList();
-
-        var newPeopleCount = people.Count(p => p.IsNew);
-        var newTasksCount = tasks.Count(t => t.IsNew);
-        var summary = $"Found {people.Count} people ({newPeopleCount} new), " +
-                      $"{tasks.Count} tasks ({newTasksCount} new), " +
-                      $"{assignments.Count} assignments";
-
-        return new SmartImportPreviewDto(people, tasks, assignments, summary);
-    }
-
-    private async Task<AiImportRawResponse?> ParseWithAiAsync(SmartImportCommand req, CancellationToken ct)
-    {
-        var result = await _ai.ParseScheduleFileAsync(req.FileContentBase64, req.ContentType, req.FileName, ct);
-        if (string.IsNullOrWhiteSpace(result))
-            return null;
 
         // Strip markdown code fences if present
-        var json = result.Trim();
+        var json = rawJson.Trim();
         if (json.StartsWith("```"))
         {
             var firstNewline = json.IndexOf('\n');
@@ -161,39 +101,58 @@ public class SmartImportCommandHandler : IRequestHandler<SmartImportCommand, Sma
             json = json.Trim();
         }
 
-        return JsonSerializer.Deserialize<AiImportRawResponse>(json, JsonOpts);
+        var parsed = JsonSerializer.Deserialize<AiImportRawResponse>(json, JsonOpts);
+        if (parsed == null)
+            throw new InvalidOperationException("Failed to parse the uploaded file.");
+
+        var people = parsed.People ?? [];
+        var tasks = (parsed.Tasks ?? []).Select(t => new ImportTaskDto(
+            t.Name,
+            t.ShiftDurationHours > 0 ? t.ShiftDurationHours : 4,
+            t.RequiredHeadcount > 0 ? t.RequiredHeadcount : 1
+        )).ToList();
+
+        var assignments = (parsed.Assignments ?? []).Select(a => new ImportAssignmentDto(
+            a.PersonName,
+            a.TaskName,
+            a.DayOfWeek.ToLowerInvariant(),
+            a.StartHour,
+            a.EndHour
+        )).ToList();
+
+        // Determine confidence based on data completeness
+        string? confidence = "high";
+        if (assignments.Count == 0) confidence = "low";
+        else if (people.Count == 0 || tasks.Count == 0) confidence = "medium";
+
+        return new ImportPreviewDto(people, tasks, assignments, confidence);
     }
 }
 
 // ── Confirm command ───────────────────────────────────────────────────────────
 
-public record SmartImportConfirmCommand(
+public record ConfirmScheduleImportCommand(
     Guid SpaceId,
     Guid GroupId,
     Guid RequestingUserId,
-    List<SmartImportPersonDto> People,
-    List<SmartImportTaskDto> Tasks,
-    List<SmartImportAssignmentDto> Assignments) : IRequest<SmartImportConfirmResultDto>;
+    List<string> People,
+    List<ImportTaskDto> Tasks,
+    List<ImportAssignmentDto> Assignments) : IRequest<ImportConfirmResultDto>;
 
-public record SmartImportConfirmResultDto(
-    int PeopleCreated,
-    int TasksCreated,
-    int AssignmentsCreated);
-
-public class SmartImportConfirmCommandHandler : IRequestHandler<SmartImportConfirmCommand, SmartImportConfirmResultDto>
+public class ConfirmScheduleImportCommandHandler : IRequestHandler<ConfirmScheduleImportCommand, ImportConfirmResultDto>
 {
     private readonly AppDbContext _db;
     private readonly IPermissionService _permissions;
     private readonly IMediator _mediator;
 
-    public SmartImportConfirmCommandHandler(AppDbContext db, IPermissionService permissions, IMediator mediator)
+    public ConfirmScheduleImportCommandHandler(AppDbContext db, IPermissionService permissions, IMediator mediator)
     {
         _db = db;
         _permissions = permissions;
         _mediator = mediator;
     }
 
-    public async Task<SmartImportConfirmResultDto> Handle(SmartImportConfirmCommand req, CancellationToken ct)
+    public async Task<ImportConfirmResultDto> Handle(ConfirmScheduleImportCommand req, CancellationToken ct)
     {
         await _permissions.RequirePermissionAsync(
             req.RequestingUserId, req.SpaceId, Permissions.TasksManage, ct);
@@ -203,40 +162,39 @@ public class SmartImportConfirmCommandHandler : IRequestHandler<SmartImportConfi
         if (!groupExists)
             throw new KeyNotFoundException("Group not found in this space.");
 
-        int peopleCreated = 0;
-        int tasksCreated = 0;
-
-        // Create new people
-        foreach (var person in req.People.Where(p => p.IsNew))
+        // 1. Create people who don't exist and add them to the group
+        foreach (var personName in req.People)
         {
-            var nameLower = person.FullName.Trim().ToLowerInvariant();
-            var exists = await _db.People
-                .AnyAsync(p => p.SpaceId == req.SpaceId && p.IsActive &&
+            var nameLower = personName.Trim().ToLowerInvariant();
+            var existingPerson = await _db.People
+                .FirstOrDefaultAsync(p => p.SpaceId == req.SpaceId && p.IsActive &&
                                p.FullName.ToLower() == nameLower, ct);
-            if (exists) continue;
+
+            if (existingPerson != null)
+            {
+                // Ensure they're in the group
+                var isMember = await _db.GroupMemberships
+                    .AnyAsync(gm => gm.GroupId == req.GroupId && gm.PersonId == existingPerson.Id, ct);
+                if (!isMember)
+                {
+                    _db.GroupMemberships.Add(GroupMembership.Create(req.SpaceId, req.GroupId, existingPerson.Id));
+                    await _db.SaveChangesAsync(ct);
+                }
+                continue;
+            }
 
             try
             {
-                await _mediator.Send(new Application.People.Commands.CreatePersonCommand(
-                    req.SpaceId, person.FullName, person.DisplayName, null, req.RequestingUserId), ct);
+                var personId = await _mediator.Send(new Application.People.Commands.CreatePersonCommand(
+                    req.SpaceId, personName.Trim(), null, null, req.RequestingUserId), ct);
 
-                // Add to group
-                var newPerson = await _db.People
-                    .FirstAsync(p => p.SpaceId == req.SpaceId && p.IsActive &&
-                                     p.FullName.ToLower() == nameLower, ct);
-                var alreadyMember = await _db.GroupMembers
-                    .AnyAsync(gm => gm.GroupId == req.GroupId && gm.PersonId == newPerson.Id, ct);
+                var alreadyMember = await _db.GroupMemberships
+                    .AnyAsync(gm => gm.GroupId == req.GroupId && gm.PersonId == personId, ct);
                 if (!alreadyMember)
                 {
-                    _db.GroupMembers.Add(new Domain.Groups.GroupMember
-                    {
-                        GroupId = req.GroupId,
-                        PersonId = newPerson.Id
-                    });
+                    _db.GroupMemberships.Add(GroupMembership.Create(req.SpaceId, req.GroupId, personId));
                     await _db.SaveChangesAsync(ct);
                 }
-
-                peopleCreated++;
             }
             catch (ConflictException)
             {
@@ -244,11 +202,11 @@ public class SmartImportConfirmCommandHandler : IRequestHandler<SmartImportConfi
             }
         }
 
-        // Create new tasks
+        // 2. Create tasks that don't exist
         var now = DateTime.UtcNow;
         var endsAt = now.AddDays(90);
 
-        foreach (var task in req.Tasks.Where(t => t.IsNew))
+        foreach (var task in req.Tasks)
         {
             var taskNameLower = task.Name.Trim().ToLowerInvariant();
             var exists = await _db.GroupTasks
@@ -260,19 +218,48 @@ public class SmartImportConfirmCommandHandler : IRequestHandler<SmartImportConfi
             {
                 await _mediator.Send(new Application.Tasks.Commands.CreateGroupTaskCommand(
                     req.SpaceId, req.GroupId, req.RequestingUserId,
-                    task.Name, now, endsAt,
-                    task.ShiftDurationMinutes,
+                    task.Name.Trim(), now, endsAt,
+                    task.ShiftDurationHours * 60,
                     task.RequiredHeadcount,
-                    task.BurdenLevel,
+                    "neutral",
                     false, false), ct);
-                tasksCreated++;
             }
             catch
             {
-                // Skip on error
+                // Skip on error — task may already exist
             }
         }
 
-        return new SmartImportConfirmResultDto(peopleCreated, tasksCreated, req.Assignments.Count);
+        // 3. Create a draft schedule version with summary of the import
+        var maxVersion = await _db.ScheduleVersions
+            .Where(v => v.SpaceId == req.SpaceId)
+            .MaxAsync(v => (int?)v.VersionNumber, ct) ?? 0;
+
+        var draft = ScheduleVersion.CreateDraft(
+            req.SpaceId,
+            maxVersion + 1,
+            baselineVersionId: null,
+            sourceRunId: null,
+            createdByUserId: req.RequestingUserId,
+            summaryJson: JsonSerializer.Serialize(new
+            {
+                source = "ai_import",
+                peopleCount = req.People.Count,
+                tasksCount = req.Tasks.Count,
+                assignmentsCount = req.Assignments.Count,
+                assignments = req.Assignments.Select(a => new
+                {
+                    a.PersonName,
+                    a.TaskName,
+                    a.DayOfWeek,
+                    a.StartHour,
+                    a.EndHour
+                })
+            }));
+
+        _db.ScheduleVersions.Add(draft);
+        await _db.SaveChangesAsync(ct);
+
+        return new ImportConfirmResultDto(draft.Id);
     }
 }

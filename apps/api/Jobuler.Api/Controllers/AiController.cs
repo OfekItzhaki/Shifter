@@ -80,55 +80,7 @@ public class AiController : ControllerBase
         return Ok(new { explanation });
     }
 
-    /// <summary>
-    /// Smart import: parse a file (Excel, image, PDF) using AI and return structured preview.
-    /// </summary>
-    [HttpPost("/spaces/{spaceId:guid}/groups/{groupId:guid}/import/smart")]
-    [RequestSizeLimit(10 * 1024 * 1024)] // 10MB
-    public async Task<IActionResult> SmartImport(
-        Guid spaceId, Guid groupId, IFormFile file, CancellationToken ct)
-    {
-        await _permissions.RequirePermissionAsync(
-            CurrentUserId, spaceId, Permissions.TasksManage, ct);
-
-        if (file == null || file.Length == 0)
-            return BadRequest(new { error = "No file uploaded." });
-
-        if (file.Length > 10 * 1024 * 1024)
-            return BadRequest(new { error = "File too large. Maximum 10MB." });
-
-        using var ms = new MemoryStream();
-        await file.CopyToAsync(ms, ct);
-        var base64 = Convert.ToBase64String(ms.ToArray());
-
-        var result = await _mediator.Send(new SmartImportCommand(
-            spaceId, groupId, CurrentUserId,
-            file.FileName, base64, file.ContentType), ct);
-
-        return Ok(result);
-    }
-
-    /// <summary>
-    /// Confirm smart import: create people, tasks, and assignments from the preview data.
-    /// </summary>
-    [HttpPost("/spaces/{spaceId:guid}/groups/{groupId:guid}/import/confirm")]
-    public async Task<IActionResult> ConfirmImport(
-        Guid spaceId, Guid groupId, [FromBody] SmartImportConfirmRequest req, CancellationToken ct)
-    {
-        await _permissions.RequirePermissionAsync(
-            CurrentUserId, spaceId, Permissions.TasksManage, ct);
-
-        var result = await _mediator.Send(new SmartImportConfirmCommand(
-            spaceId, groupId, CurrentUserId,
-            req.People, req.Tasks, req.Assignments), ct);
-
-        return Ok(result);
-    }
+    // Smart import endpoints moved to ImportController
 }
 
 public record ParseConstraintRequest(string Input);
-
-public record SmartImportConfirmRequest(
-    List<SmartImportPersonDto> People,
-    List<SmartImportTaskDto> Tasks,
-    List<SmartImportAssignmentDto> Assignments);

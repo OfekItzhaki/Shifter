@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import type { GroupMemberDto } from "@/lib/api/groups";
+import SmartImportModal from "@/components/SmartImportModal";
 
 interface DraftVersion { id: string; status: string; }
 
@@ -49,13 +50,10 @@ interface Props {
   onCancelTransfer: () => void;
   onShowDeleteConfirm: (v: boolean) => void;
   onDeleteGroup: () => void;
-  // Import/Export
-  onImportMembers?: () => void;
-  onImportTasks?: () => void;
 }
 
 export default function SettingsTab({
-  isAdmin, newGroupName, renameSaving, renameError,
+  isAdmin, groupId, newGroupName, renameSaving, renameError,
   solverHorizon, savingSettings, settingsError, settingsSaved,
   solverStartDateTime,
   solverPolling, solverStatus, solverError, draftVersion,
@@ -66,10 +64,12 @@ export default function SettingsTab({
   onTriggerSolver, onOpenDraftModal,
   onTransferPersonChange, onInitiateTransfer, onCancelTransfer,
   onShowDeleteConfirm, onDeleteGroup,
-  onImportMembers, onImportTasks,
 }: Props) {
   const t = useTranslations("groups.settings_tab");
   const tCommon = useTranslations("common");
+  const tImport = useTranslations("import");
+
+  const [importModalOpen, setImportModalOpen] = useState(false);
 
   // Solver start time — defaults to current time rounded down to the nearest hour.
   // Stored in state so the admin can override it before clicking Run.
@@ -221,35 +221,27 @@ export default function SettingsTab({
         {transferError && <p className="text-sm text-red-600 mt-2">{transferError}</p>}
       </Section>
 
-      {/* Import data */}
-      {(onImportMembers || onImportTasks) && (
-        <Section title="ייבוא נתונים">
-          <div className="flex flex-wrap gap-2">
-            {onImportMembers && (
-              <button
-                onClick={onImportMembers}
-                className="flex items-center gap-2 text-sm font-medium text-slate-600 border border-slate-200 bg-white hover:bg-slate-50 px-4 py-2.5 rounded-xl transition-colors"
-              >
-                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                </svg>
-                ייבוא חברים
-              </button>
-            )}
-            {onImportTasks && (
-              <button
-                onClick={onImportTasks}
-                className="flex items-center gap-2 text-sm font-medium text-slate-600 border border-slate-200 bg-white hover:bg-slate-50 px-4 py-2.5 rounded-xl transition-colors"
-              >
-                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                </svg>
-                ייבוא משימות
-              </button>
-            )}
-          </div>
-        </Section>
-      )}
+      {/* Smart Import */}
+      <Section title={tImport("title")}>
+        <div className="space-y-2">
+          <p className="text-sm text-slate-500">{tImport("subtitle")}</p>
+          <button
+            onClick={() => setImportModalOpen(true)}
+            className="flex items-center gap-2 text-sm font-medium text-white bg-blue-500 hover:bg-blue-600 px-4 py-2.5 rounded-xl transition-colors"
+          >
+            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+            </svg>
+            {tImport("title")}
+          </button>
+        </div>
+      </Section>
+
+      <SmartImportModal
+        groupId={groupId}
+        open={importModalOpen}
+        onClose={() => setImportModalOpen(false)}
+      />
 
       {/* Delete group */}
       <Section title={t("deleteGroup")}>

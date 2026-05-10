@@ -745,6 +745,22 @@
     "errorAddRestriction": "Error adding restriction.",
     "onwards": "onwards"
   },
+  "import": {
+    "title": "Smart Import",
+    "subtitle": "Upload an Excel file or image of a schedule",
+    "dropzone": "Drag a file here or click to browse",
+    "parsing": "Analyzing file...",
+    "preview": "Preview",
+    "found": "Found {people} people, {tasks} tasks, {assignments} assignments",
+    "confirm": "Confirm & Create Draft",
+    "confirming": "Creating draft...",
+    "done": "Import complete! Draft created.",
+    "viewDraft": "View Draft",
+    "noAiKey": "AI service not configured. Add an API key in server settings.",
+    "parseError": "Error parsing file. Try again or upload a different file.",
+    "maxSize": "Maximum size: 10MB",
+    "supportedFormats": "Supported formats: Excel, CSV, Image, PDF"
+  },
   "platform": {
     "title": "Platform",
     "totalUsers": "Registered Users",
