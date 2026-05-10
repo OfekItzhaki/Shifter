@@ -117,6 +117,8 @@ services:
     build:
       context: ../../apps/web
       dockerfile: ../../infra/docker/web.Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:5000}
     restart: unless-stopped
     environment:
       NEXT_PUBLIC_API_URL: "http://localhost:${API_PORT}"
