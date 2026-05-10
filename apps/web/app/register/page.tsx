@@ -178,14 +178,20 @@ export default function RegisterPage() {
               <label style={{ display: "block", fontSize: "0.875rem", fontWeight: 500, color: "#374151", marginBottom: "0.375rem" }}>
                 {t("confirmPassword")} <span style={{ color: "#ef4444" }}>*</span>
               </label>
-              <input
-                type={showPassword ? "text" : "password"}
-                required
-                value={confirmPassword}
-                onChange={e => setConfirmPassword(e.target.value)}
-                placeholder={t("confirmPasswordPlaceholder")}
-                style={{ width: "100%", border: "1px solid #e2e8f0", borderRadius: 10, padding: "0.625rem 0.875rem", fontSize: "0.875rem", color: "#0f172a", outline: "none", boxSizing: "border-box" }}
-              />
+              <div style={{ position: "relative" }}>
+                <input
+                  type={showPassword ? "text" : "password"}
+                  required
+                  value={confirmPassword}
+                  onChange={e => setConfirmPassword(e.target.value)}
+                  placeholder={t("confirmPasswordPlaceholder")}
+                  style={{ width: "100%", border: "1px solid #e2e8f0", borderRadius: 10, padding: "0.625rem 2.5rem 0.625rem 0.875rem", fontSize: "0.875rem", color: "#0f172a", outline: "none", boxSizing: "border-box" }}
+                />
+                <button type="button" onClick={() => setShowPassword(!showPassword)}
+                  style={{ position: "absolute", right: "0.75rem", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "#94a3b8", padding: 0, display: "flex", alignItems: "center" }}>
+                  {eyeIcon(showPassword)}
+                </button>
+              </div>
             </div>
 
             {error && (
