@@ -378,13 +378,13 @@ ON CONFLICT DO NOTHING;
 -- -----------------------------------------------------------------------------
 
 UPDATE tasks
-SET qualification_requirements = '[{"qualification_name": "מפקד כיתה", "min_count": 1, "mandatory": true}]'::jsonb,
+SET qualification_requirements = '[{"qualification_name": "מפקד כיתה", "count": 1, "mandatory": true}]'::jsonb,
     updated_at = NOW()
 WHERE id = 'b7df56c7-e6d9-4584-8c87-11a2a5a1a576'
   AND space_id = 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9';
 
 UPDATE tasks
-SET qualification_requirements = '[{"qualification_name": "חובש", "min_count": 1, "mandatory": false}]'::jsonb,
+SET qualification_requirements = '[{"qualification_name": "חובש", "count": 1, "mandatory": false}]'::jsonb,
     updated_at = NOW()
 WHERE id = 'a899c417-9e35-4afd-9572-78eab9ee0788'
   AND space_id = 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9';

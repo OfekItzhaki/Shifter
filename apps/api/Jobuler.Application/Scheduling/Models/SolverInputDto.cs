@@ -63,9 +63,9 @@ public record TaskSlotDto(
     List<QualificationRequirementSolverDto>? QualificationRequirements = null);
 
 public record QualificationRequirementSolverDto(
-    string QualificationName,
-    int Count,
-    bool Mandatory);
+    [property: JsonPropertyName("qualification_name")] string QualificationName,
+    [property: JsonPropertyName("count")]              int Count,
+    [property: JsonPropertyName("mandatory")]          bool Mandatory);
 
 public record HardConstraintDto(
     string ConstraintId,
