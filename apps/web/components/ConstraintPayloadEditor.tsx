@@ -121,6 +121,55 @@ export default function ConstraintPayloadEditor({ ruleType, value, onChange, tas
         </div>
       );
 
+    case "required_qualification_per_shift":
+    case "preferred_qualification_per_shift":
+      return (
+        <div className="space-y-3">
+          <div>
+            <label className="block text-xs font-medium text-slate-500 mb-1">שם כישור</label>
+            <input
+              type="text"
+              value={String(payload.qualification_name ?? "")}
+              onChange={e => update({ ...payload, qualification_name: e.target.value })}
+              placeholder="לדוגמה: מפקד כיתה, חובש"
+              className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-slate-500 mb-1">שם משימה (אופציונלי)</label>
+            {taskOptions && taskOptions.length > 0 ? (
+              <select
+                value={String(payload.task_name ?? "")}
+                onChange={e => update({ ...payload, task_name: e.target.value || undefined })}
+                className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">כל המשימות</option>
+                {taskOptions.map(opt => (
+                  <option key={opt.id} value={opt.name}>{opt.name}</option>
+                ))}
+              </select>
+            ) : (
+              <input
+                type="text"
+                value={String(payload.task_name ?? "")}
+                onChange={e => update({ ...payload, task_name: e.target.value || undefined })}
+                placeholder="ריק = כל המשימות"
+                className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            )}
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-slate-500 mb-1">מספר מינימלי</label>
+            <input
+              type="number" min={1} max={10}
+              value={Number(payload.min_count ?? 1)}
+              onChange={e => update({ ...payload, min_count: Number(e.target.value) })}
+              className="w-24 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+        </div>
+      );
+
     default:
       return (
         <div>

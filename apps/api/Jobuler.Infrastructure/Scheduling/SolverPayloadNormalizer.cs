@@ -203,10 +203,15 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
             var shiftDuration = TimeSpan.FromMinutes(task.ShiftDurationMinutes);
             if (shiftDuration.TotalMinutes < 1) continue;
 
-            // Clamp to the solver horizon — start from now, not midnight.
-            // Never extend a task beyond its own EndsAt; that date is authoritative.
-            var windowStart = task.StartsAt < horizonStartDt ? horizonStartDt : task.StartsAt;
-            var windowEnd   = task.EndsAt > horizonEndDt ? horizonEndDt : task.EndsAt;
+            // Clamp to the solver horizon — start from horizonStartDt (user's chosen time, rounded to hour).
+            // task.StartsAt is only used to prevent generating shifts before the task existed.
+            // If the task started in the past, use horizonStartDt. If it starts in the future
+            // (after horizonStartDt), use task.StartsAt — but only for tasks that haven't started yet.
+            var windowStart = horizonStartDt;
+            // Only use task.StartsAt if it's genuinely in the future AND the task hasn't been running yet
+            if (task.StartsAt > horizonEndDt)
+                continue; // task hasn't started yet and won't start within the horizon — skip entirely
+            var windowEnd = task.EndsAt > horizonEndDt ? horizonEndDt : task.EndsAt;
 
             // For full-day tasks (1440 min = 24h), align the first shift to the task's
             // configured start time-of-day. E.g. if task starts at 18:40 and now is 12:00,
