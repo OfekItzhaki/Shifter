@@ -977,9 +977,10 @@ export default function GroupDetailPage() {
           setSolverError("Error checking status");
         }
       }, 3000);
-    } catch {
+    } catch (err: unknown) {
       setSolverPolling(false);
-      setSolverError("Error starting solver");
+      const axiosErr = err as { response?: { data?: { error?: string; title?: string } } };
+      setSolverError(axiosErr?.response?.data?.error || axiosErr?.response?.data?.title || "Error starting solver");
     }
   }
 
