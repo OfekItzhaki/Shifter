@@ -23,6 +23,17 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Guid>
         _db.Users.Add(user);
         await _db.SaveChangesAsync(ct);
 
+        // Auto-create a personal space for the new user
+        var space = Jobuler.Domain.Spaces.Space.Create(
+            $"{request.DisplayName ?? request.Email.Split('@')[0]}'s Space",
+            user.Id);
+        _db.Spaces.Add(space);
+
+        // Add user as space member
+        var membership = Jobuler.Domain.Spaces.SpaceMembership.Create(space.Id, user.Id);
+        _db.SpaceMemberships.Add(membership);
+        await _db.SaveChangesAsync(ct);
+
         return user.Id;
     }
 }
