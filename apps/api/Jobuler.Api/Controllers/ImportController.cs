@@ -68,6 +68,26 @@ public class ImportController : ControllerBase
     }
 
     /// <summary>
+    /// Download a CSV template with the expected column format for structured import.
+    /// </summary>
+    [HttpGet("template")]
+    public async Task<IActionResult> DownloadTemplate(
+        Guid spaceId, Guid groupId, CancellationToken ct)
+    {
+        await _permissions.RequirePermissionAsync(
+            CurrentUserId, spaceId, Permissions.TasksManage, ct);
+
+        // UTF-8 BOM for proper Hebrew display in Excel
+        var bom = new byte[] { 0xEF, 0xBB, 0xBF };
+        var csvContent = "שם,משימה,יום,שעת_התחלה,שעת_סיום,משך_משמרת,נדרשים\n" +
+                         "ישראל ישראלי,שמירה,א׳,8,16,8,2\n";
+
+        var bytes = bom.Concat(System.Text.Encoding.UTF8.GetBytes(csvContent)).ToArray();
+
+        return File(bytes, "text/csv; charset=utf-8", "import-template.csv");
+    }
+
+    /// <summary>
     /// Confirm the import: create people, tasks, and a draft schedule from the reviewed preview data.
     /// </summary>
     [HttpPost("confirm")]

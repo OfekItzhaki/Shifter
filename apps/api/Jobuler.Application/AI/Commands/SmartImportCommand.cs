@@ -1,3 +1,4 @@
+using Jobuler.Application.AI.Import;
 using Jobuler.Application.Common;
 using Jobuler.Domain.Groups;
 using Jobuler.Domain.Scheduling;
@@ -15,7 +16,9 @@ public record ImportPreviewDto(
     List<string> People,
     List<ImportTaskDto> Tasks,
     List<ImportAssignmentDto> Assignments,
-    string? AiConfidence);
+    string? AiConfidence,
+    string? ParseMethod,
+    List<string>? Warnings);
 
 public record ImportTaskDto(string Name, int ShiftDurationHours, int RequiredHeadcount);
 
@@ -59,6 +62,7 @@ public class ParseScheduleImportCommandHandler : IRequestHandler<ParseScheduleIm
     private readonly IAiAssistant _ai;
     private readonly AppDbContext _db;
     private readonly IPermissionService _permissions;
+    private readonly IStructuredImportParser _parser;
 
     private static readonly JsonSerializerOptions JsonOpts = new()
     {
@@ -66,11 +70,16 @@ public class ParseScheduleImportCommandHandler : IRequestHandler<ParseScheduleIm
         PropertyNameCaseInsensitive = true
     };
 
-    public ParseScheduleImportCommandHandler(IAiAssistant ai, AppDbContext db, IPermissionService permissions)
+    public ParseScheduleImportCommandHandler(
+        IAiAssistant ai,
+        AppDbContext db,
+        IPermissionService permissions,
+        IStructuredImportParser parser)
     {
         _ai = ai;
         _db = db;
         _permissions = permissions;
+        _parser = parser;
     }
 
     public async Task<ImportPreviewDto> Handle(ParseScheduleImportCommand req, CancellationToken ct)
@@ -84,12 +93,46 @@ public class ParseScheduleImportCommandHandler : IRequestHandler<ParseScheduleIm
         if (!groupExists)
             throw new KeyNotFoundException("Group not found in this space.");
 
+        var extension = Path.GetExtension(req.FileName)?.ToLowerInvariant();
+        var isStructuredFormat = extension is ".csv" or ".xlsx" or ".xls";
+        var isImageOrPdf = extension is ".png" or ".jpg" or ".jpeg" or ".pdf";
+
+        // ── Structured parsing (CSV/Excel) ────────────────────────────────────
+        if (isStructuredFormat)
+        {
+            var fileBytes = Convert.FromBase64String(req.FileContentBase64);
+            var structuredResult = _parser.TryParse(fileBytes, req.FileName);
+
+            if (structuredResult != null)
+            {
+                if (structuredResult.Assignments.Count == 0)
+                    throw new InvalidOperationException("File contains no valid data rows.");
+
+                return new ImportPreviewDto(
+                    structuredResult.People,
+                    structuredResult.Tasks,
+                    structuredResult.Assignments,
+                    null,
+                    "structured",
+                    structuredResult.Warnings.Count > 0 ? structuredResult.Warnings : null);
+            }
+
+            // Structured parsing failed — fall through to AI parsing below
+        }
+
+        // ── AI parsing (images/PDFs, or structured fallback) ──────────────────
         var rawJson = await _ai.ParseScheduleFileAsync(
             req.FileContentBase64, req.ContentType, req.FileName, ct);
 
         if (string.IsNullOrWhiteSpace(rawJson))
+        {
+            if (isImageOrPdf)
+                throw new InvalidOperationException(
+                    "AI is not configured. Image/PDF import requires AI. Please set up the AI:ApiKey or upload a structured CSV/Excel file.");
+
             throw new InvalidOperationException(
-                "Smart import requires AI to be configured. Please set up the AI:ApiKey in configuration.");
+                "Could not detect columns. Expected: שם (person_name), משימה (task_name), יום (day_of_week), שעת_התחלה (start_hour), שעת_סיום (end_hour)");
+        }
 
         // Strip markdown code fences if present
         var json = rawJson.Trim();
@@ -125,7 +168,7 @@ public class ParseScheduleImportCommandHandler : IRequestHandler<ParseScheduleIm
         if (assignments.Count == 0) confidence = "low";
         else if (people.Count == 0 || tasks.Count == 0) confidence = "medium";
 
-        return new ImportPreviewDto(people, tasks, assignments, confidence);
+        return new ImportPreviewDto(people, tasks, assignments, confidence, "ai", null);
     }
 }
 

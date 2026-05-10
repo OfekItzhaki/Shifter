@@ -1,3 +1,4 @@
+using Jobuler.Application.AI.Import;
 using FluentValidation;
 using Jobuler.Api.Middleware;
 using Jobuler.Application.Exports;
@@ -175,6 +176,8 @@ builder.Services.AddHttpClient<ISolverClient, SolverHttpClient>(client =>
 });
 
 // ─── AI assistant (optional — only registered when API key is configured) ────
+builder.Services.AddSingleton<IStructuredImportParser, StructuredImportParser>();
+
 if (!string.IsNullOrEmpty(builder.Configuration["AI:ApiKey"]))
 {
     builder.Services.AddHttpClient<IAiAssistant, OpenAiAssistant>();

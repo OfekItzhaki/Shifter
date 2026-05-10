@@ -762,7 +762,14 @@
     "noAiKey": "שירות AI לא מוגדר. הוסף מפתח API בהגדרות השרת.",
     "parseError": "שגיאה בניתוח הקובץ. נסה שוב או העלה קובץ אחר.",
     "maxSize": "גודל מקסימלי: 10MB",
-    "supportedFormats": "פורמטים נתמכים: Excel, CSV, תמונה, PDF"
+    "supportedFormats": "פורמטים נתמכים: Excel, CSV, תמונה, PDF",
+    "fieldExplanation": "עמודות נדרשות: שם, משימה, יום, שעת_התחלה, שעת_סיום",
+    "downloadTemplate": "הורד תבנית CSV",
+    "parseMethodStructured": "ניתוח מובנה",
+    "parseMethodAi": "ניתוח AI",
+    "warningsTitle": "שורות שדולגו",
+    "expectedFormat": "הפורמט הנדרש: שם, משימה, יום (א׳-ש׳), שעת_התחלה (0-23), שעת_סיום (0-23)",
+    "optionalColumns": "עמודות אופציונליות: משך_משמרת, נדרשים"
   },
   "platform": {
     "title": "פלטפורמה",

@@ -25,6 +25,8 @@ interface ImportPreview {
   tasks: ImportTaskDto[];
   assignments: ImportAssignmentDto[];
   aiConfidence: string | null;
+  parseMethod: "structured" | "ai" | null;
+  warnings: string[] | null;
 }
 
 type ModalState = "idle" | "parsing" | "preview" | "confirming" | "done";
@@ -97,7 +99,7 @@ export default function SmartImportModal({ groupId, open, onClose }: Props) {
       setState("preview");
     } catch (err: unknown) {
       setState("idle");
-      const axiosErr = err as { response?: { data?: { error?: string } } };
+      const axiosErr = err as { response?: { status?: number; data?: { error?: string } } };
       setError(axiosErr?.response?.data?.error || t("parseError"));
     }
   }, [currentSpaceId, groupId, t]);
@@ -143,6 +145,23 @@ export default function SmartImportModal({ groupId, open, onClose }: Props) {
     });
   };
 
+  const handleDownloadTemplate = useCallback(async () => {
+    try {
+      const response = await apiClient.get(
+        `/spaces/${currentSpaceId}/groups/${groupId}/import/template`,
+        { responseType: 'blob' }
+      );
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'import-template.csv';
+      link.click();
+      window.URL.revokeObjectURL(url);
+    } catch {
+      // Silently fail — template download is not critical
+    }
+  }, [currentSpaceId, groupId]);
+
   if (!open) return null;
 
   return (
@@ -181,8 +200,33 @@ export default function SmartImportModal({ groupId, open, onClose }: Props) {
               }}
             />
 
+            {/* Field explanation */}
+            <div className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 space-y-1">
+              <p className="text-xs text-slate-600 font-medium">{t("fieldExplanation")}</p>
+              <p className="text-xs text-slate-400">{t("optionalColumns")}</p>
+              <button
+                onClick={handleDownloadTemplate}
+                type="button"
+                className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 font-medium mt-1"
+              >
+                <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+                {t("downloadTemplate")}
+              </button>
+            </div>
+
             {error && (
-              <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error}</p>
+              <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2 space-y-1">
+                <p>{error}</p>
+                <button
+                  onClick={handleDownloadTemplate}
+                  type="button"
+                  className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 font-medium"
+                >
+                  {t("downloadTemplate")}
+                </button>
+              </div>
             )}
           </div>
         )}
@@ -214,7 +258,25 @@ export default function SmartImportModal({ groupId, open, onClose }: Props) {
                   AI confidence: {preview.aiConfidence}
                 </p>
               )}
+              {preview.parseMethod && (
+                <span className={`inline-block text-xs px-2 py-0.5 rounded-full font-medium mt-1 ${
+                  preview.parseMethod === "structured"
+                    ? "bg-emerald-100 text-emerald-700"
+                    : "bg-purple-100 text-purple-700"
+                }`}>
+                  {preview.parseMethod === "structured" ? t("parseMethodStructured") : t("parseMethodAi")}
+                </span>
+              )}
             </div>
+
+            {preview.warnings && preview.warnings.length > 0 && (
+              <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+                <p className="text-xs font-medium text-amber-700 mb-1">{t("warningsTitle")}</p>
+                <ul className="text-xs text-amber-600 space-y-0.5 max-h-24 overflow-y-auto">
+                  {preview.warnings.map((w, i) => <li key={i}>{w}</li>)}
+                </ul>
+              </div>
+            )}
 
             {/* People */}
             {preview.people.length > 0 && (
