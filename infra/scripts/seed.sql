@@ -207,7 +207,7 @@ INSERT INTO tasks (id, space_id, group_id, name, starts_at, ends_at, shift_durat
   ('a899c417-9e35-4afd-9572-78eab9ee0788', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'a3b4c5d6-e7f8-4a9b-0c1d-e2f3a4b5c6d7',
    'תל 9', date_trunc('hour', NOW()), NOW() + INTERVAL '90 days', 240, 1, 'neutral', false, false, '[]', 'a1b2c3d4-e5f6-4a7b-8c9d-e0f1a2b3c4d5'),
   ('a3d01500-ea30-4079-8a4f-5dfdb35f55b0', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'a3b4c5d6-e7f8-4a9b-0c1d-e2f3a4b5c6d7',
-   'מטבח', date_trunc('hour', NOW()), NOW() + INTERVAL '90 days', 1440, 1, 'neutral', false, false, '[]', 'a1b2c3d4-e5f6-4a7b-8c9d-e0f1a2b3c4d5')
+   'מטבח', date_trunc('day', NOW()) + INTERVAL '8 hours', NOW() + INTERVAL '90 days', 1440, 1, 'neutral', false, false, '[]', 'a1b2c3d4-e5f6-4a7b-8c9d-e0f1a2b3c4d5')
 ON CONFLICT (id) DO UPDATE SET
   starts_at = date_trunc('hour', NOW()),
   ends_at = NOW() + INTERVAL '90 days',
