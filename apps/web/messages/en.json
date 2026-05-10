@@ -647,7 +647,8 @@
     "create": "Create",
     "creating": "Creating...",
     "cancel": "Cancel",
-    "errorCreate": "Error creating workspace."
+    "errorCreate": "Error creating workspace.",
+    "spaceOf": "{name}'s Space"
   },
   "notifications": {
     "title": "Notifications",

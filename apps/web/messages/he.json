@@ -650,7 +650,8 @@
     "create": "צור",
     "creating": "יוצר...",
     "cancel": "ביטול",
-    "errorCreate": "שגיאה ביצירת המרחב."
+    "errorCreate": "שגיאה ביצירת המרחב.",
+    "spaceOf": "המרחב של {name}"
   },
   "notifications": {
     "title": "התראות",
