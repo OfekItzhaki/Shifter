@@ -216,7 +216,7 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
             // For full-day tasks (1440 min = 24h), align the first shift to the task's
             // configured start time-of-day. E.g. if task starts at 18:40 and now is 12:00,
             // the first shift should be 18:40→18:40+1d, not 12:00→12:00+1d.
-            if (task.ShiftDurationMinutes == 1440 && task.StartsAt < horizonStartDt)
+            if (task.ShiftDurationMinutes == 1440 && task.StartsAt <= horizonStartDt)
             {
                 // Find the most recent occurrence of task.StartsAt's time-of-day
                 // that is <= horizonStartDt, then advance to the next one if needed.

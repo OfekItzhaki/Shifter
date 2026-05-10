@@ -163,7 +163,7 @@ public class GetScheduleVersionDetailQueryHandler
             // Same logic as normalizer: non-24h tasks start from solverStartDt,
             // 24h tasks align to their own time-of-day.
             DateTime windowStart;
-            if (gt.ShiftDurationMinutes == 1440 && gt.StartsAt < solverStartDt)
+            if (gt.ShiftDurationMinutes == 1440 && gt.StartsAt <= solverStartDt)
             {
                 var taskTimeOfDay = gt.StartsAt.TimeOfDay;
                 var candidateStart = solverStartDt.Date + taskTimeOfDay;
