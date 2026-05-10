@@ -25,7 +25,7 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Guid>
 
         // Auto-create a personal space for the new user
         var space = Jobuler.Domain.Spaces.Space.Create(
-            $"{request.DisplayName ?? request.Email.Split('@')[0]}'s Space",
+            $"המרחב של {request.DisplayName ?? request.Email.Split('@')[0]}",
             user.Id);
         _db.Spaces.Add(space);
 
