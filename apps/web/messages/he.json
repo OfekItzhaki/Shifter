@@ -56,7 +56,8 @@
     "myProfile": "הפרופיל שלי",
     "myGroups": "הקבוצות שלי",
     "admin": "ניהול",
-    "logs": "יומן"
+    "logs": "יומן",
+    "platform": "פלטפורמה"
   },
   "schedule": {
     "title": "לוח זמנים",
@@ -746,5 +747,23 @@
     "restrictionAdded": "הגבלה נוספה בהצלחה.",
     "errorAddRestriction": "שגיאה בהוספת הגבלה.",
     "onwards": "ואילך"
+  },
+  "platform": {
+    "title": "פלטפורמה",
+    "totalUsers": "משתמשים רשומים",
+    "activeUsers7d": "פעילים (7 ימים)",
+    "totalSpaces": "מרחבים",
+    "totalGroups": "קבוצות",
+    "totalPeople": "אנשים",
+    "solverRuns24h": "הרצות סולבר (24ש׳)",
+    "completed": "הושלמו",
+    "failed": "נכשלו",
+    "avgDuration": "זמן ממוצע",
+    "queueDepth": "בתור",
+    "totalAssignments": "שיבוצים",
+    "totalConstraints": "אילוצים",
+    "totalTasks": "משימות",
+    "accessDenied": "גישה מוגבלת — בעלי הפלטפורמה בלבד",
+    "ms": "מ״ש"
   }
 }

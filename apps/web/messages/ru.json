@@ -56,7 +56,8 @@
     "myProfile": "Мой профиль",
     "myGroups": "Мои группы",
     "admin": "Администрирование",
-    "logs": "Журнал"
+    "logs": "Журнал",
+    "platform": "Платформа"
   },
   "schedule": {
     "title": "Расписание",
@@ -743,5 +744,23 @@
     "restrictionAdded": "Ограничение добавлено успешно.",
     "errorAddRestriction": "Ошибка добавления ограничения.",
     "onwards": "и далее"
+  },
+  "platform": {
+    "title": "Платформа",
+    "totalUsers": "Зарегистрированные пользователи",
+    "activeUsers7d": "Активные (7 дней)",
+    "totalSpaces": "Пространства",
+    "totalGroups": "Группы",
+    "totalPeople": "Люди",
+    "solverRuns24h": "Запуски решателя (24ч)",
+    "completed": "Завершены",
+    "failed": "Неудачные",
+    "avgDuration": "Среднее время",
+    "queueDepth": "В очереди",
+    "totalAssignments": "Назначения",
+    "totalConstraints": "Ограничения",
+    "totalTasks": "Задачи",
+    "accessDenied": "Доступ запрещён — только для владельца платформы",
+    "ms": "мс"
   }
 }

@@ -32,6 +32,16 @@ public interface IAiAssistant
         InfeasibilityContextDto context,
         string locale,
         CancellationToken ct = default);
+
+    /// <summary>
+    /// Parse a schedule file (image, PDF, or extracted Excel text) using AI vision/text.
+    /// Returns raw JSON string with people, tasks, and assignments.
+    /// </summary>
+    Task<string> ParseScheduleFileAsync(
+        string fileContentBase64,
+        string contentType,
+        string fileName,
+        CancellationToken ct = default);
 }
 
 public record ParsedConstraintDto(

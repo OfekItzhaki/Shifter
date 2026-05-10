@@ -24,4 +24,8 @@ public class NoOpAiAssistant : IAiAssistant
         InfeasibilityContextDto context, string locale, CancellationToken ct = default) =>
         Task.FromResult(
             "The schedule could not be solved. Review the hard constraints and availability windows.");
+
+    public Task<string> ParseScheduleFileAsync(
+        string fileContentBase64, string contentType, string fileName, CancellationToken ct = default) =>
+        Task.FromResult(string.Empty);
 }

@@ -56,7 +56,8 @@
     "myProfile": "My Profile",
     "myGroups": "My Groups",
     "admin": "Admin",
-    "logs": "Logs"
+    "logs": "Logs",
+    "platform": "Platform"
   },
   "schedule": {
     "title": "Schedule",
@@ -743,5 +744,23 @@
     "restrictionAdded": "Restriction added successfully.",
     "errorAddRestriction": "Error adding restriction.",
     "onwards": "onwards"
+  },
+  "platform": {
+    "title": "Platform",
+    "totalUsers": "Registered Users",
+    "activeUsers7d": "Active (7 days)",
+    "totalSpaces": "Spaces",
+    "totalGroups": "Groups",
+    "totalPeople": "People",
+    "solverRuns24h": "Solver Runs (24h)",
+    "completed": "Completed",
+    "failed": "Failed",
+    "avgDuration": "Avg Duration",
+    "queueDepth": "In Queue",
+    "totalAssignments": "Assignments",
+    "totalConstraints": "Constraints",
+    "totalTasks": "Tasks",
+    "accessDenied": "Access denied — platform owner only",
+    "ms": "ms"
   }
 }

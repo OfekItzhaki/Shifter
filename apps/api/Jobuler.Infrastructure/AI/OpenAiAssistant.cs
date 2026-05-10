@@ -134,6 +134,85 @@ public class OpenAiAssistant : IAiAssistant
         }
     }
 
+    public async Task<string> ParseScheduleFileAsync(
+        string fileContentBase64, string contentType, string fileName, CancellationToken ct = default)
+    {
+        var systemPrompt = """
+            You are a military schedule parser. Extract all information from this schedule document.
+            Return a JSON object with:
+            {
+              "people": [{"fullName": "...", "displayName": "..."}],
+              "tasks": [{"name": "...", "shiftDurationMinutes": 240, "requiredHeadcount": 1, "burdenLevel": "neutral"}],
+              "assignments": [{"personName": "...", "taskName": "...", "startsAt": "ISO datetime", "endsAt": "ISO datetime"}]
+            }
+            Extract Hebrew names as-is. Infer shift durations from the time slots shown.
+            If a time range like "6-10" is shown, it means 06:00 to 10:00 (4 hours).
+            If you can't determine exact dates, use today's date.
+            Return ONLY valid JSON, no markdown fences or explanation.
+            """;
+
+        try
+        {
+            var isImage = contentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase);
+
+            object[] messages;
+            if (isImage)
+            {
+                // Use vision: send image as base64 data URL
+                var dataUrl = $"data:{contentType};base64,{fileContentBase64}";
+                messages = new object[]
+                {
+                    new { role = "system", content = systemPrompt },
+                    new
+                    {
+                        role = "user",
+                        content = new object[]
+                        {
+                            new { type = "text", text = "Parse this schedule image and extract all people, tasks, and assignments." },
+                            new { type = "image_url", image_url = new { url = dataUrl } }
+                        }
+                    }
+                };
+            }
+            else
+            {
+                // For PDF/Excel: the content is already extracted as text
+                var textContent = System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(fileContentBase64));
+                messages = new object[]
+                {
+                    new { role = "system", content = systemPrompt },
+                    new { role = "user", content = $"Parse this schedule data and extract all people, tasks, and assignments:\n\n{textContent}" }
+                };
+            }
+
+            var body = new
+            {
+                model = _model,
+                messages,
+                max_tokens = 4000,
+                temperature = 0.1
+            };
+
+            var response = await _http.PostAsJsonAsync(
+                "https://api.openai.com/v1/chat/completions", body, ct);
+            response.EnsureSuccessStatusCode();
+
+            using var doc = await JsonDocument.ParseAsync(
+                await response.Content.ReadAsStreamAsync(ct), cancellationToken: ct);
+
+            return doc.RootElement
+                .GetProperty("choices")[0]
+                .GetProperty("message")
+                .GetProperty("content")
+                .GetString() ?? string.Empty;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "AI schedule file parsing failed for: {FileName}", fileName);
+            return string.Empty;
+        }
+    }
+
     private async Task<string> CallOpenAiAsync(
         string systemPrompt, string userPrompt, CancellationToken ct)
     {
