@@ -1,7 +1,9 @@
 using Jobuler.Application.Platform.Queries;
+using Jobuler.Infrastructure.Persistence;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 
 namespace Jobuler.Api.Controllers;
@@ -12,17 +14,12 @@ namespace Jobuler.Api.Controllers;
 public class PlatformController : ControllerBase
 {
     private readonly IMediator _mediator;
+    private readonly AppDbContext _db;
 
-    /// <summary>
-    /// Hardcoded platform owner user ID.
-    /// Only this user can access platform-level endpoints.
-    /// </summary>
-    private static readonly Guid PlatformOwnerUserId =
-        Guid.Parse("a1b2c3d4-e5f6-4a7b-8c9d-e0f1a2b3c4d5");
-
-    public PlatformController(IMediator mediator)
+    public PlatformController(IMediator mediator, AppDbContext db)
     {
         _mediator = mediator;
+        _db = db;
     }
 
     private Guid CurrentUserId =>
@@ -30,12 +27,14 @@ public class PlatformController : ControllerBase
 
     /// <summary>
     /// GET /platform/stats
-    /// Returns global platform metrics. Platform owner only.
+    /// Returns global platform metrics. Platform admin only.
     /// </summary>
     [HttpGet("stats")]
     public async Task<IActionResult> GetStats(CancellationToken ct)
     {
-        if (CurrentUserId != PlatformOwnerUserId)
+        var user = await _db.Users.AsNoTracking()
+            .FirstOrDefaultAsync(u => u.Id == CurrentUserId, ct);
+        if (user?.IsPlatformAdmin != true)
             return Forbid();
 
         var result = await _mediator.Send(new GetPlatformStatsQuery(), ct);

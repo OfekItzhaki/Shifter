@@ -7,6 +7,7 @@ export interface LoginResponse {
   userId: string;
   displayName: string;
   preferredLocale: string;
+  isPlatformAdmin: boolean;
 }
 
 export async function login(email: string, password: string): Promise<LoginResponse> {

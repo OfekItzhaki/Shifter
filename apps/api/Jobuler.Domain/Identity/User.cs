@@ -12,6 +12,7 @@ public class User : AuditableEntity
     public string? ProfileImageUrl { get; private set; }
     public DateTime? LastLoginAt { get; private set; }
     public string? PhoneNumber { get; private set; }
+    public bool IsPlatformAdmin { get; private set; }
 
     // EF Core constructor
     private User() { }

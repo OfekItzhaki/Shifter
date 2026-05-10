@@ -47,6 +47,6 @@ public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, L
         return new LoginResult(
             accessToken, rawRefresh,
             DateTime.UtcNow.AddMinutes(15),
-            existing.User.Id, existing.User.DisplayName, existing.User.PreferredLocale);
+            existing.User.Id, existing.User.DisplayName, existing.User.PreferredLocale, existing.User.IsPlatformAdmin);
     }
 }

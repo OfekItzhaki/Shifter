@@ -8,6 +8,7 @@ interface AuthState {
   displayName: string | null;
   preferredLocale: string;
   isAuthenticated: boolean;
+  isPlatformAdmin: boolean;
   // Admin mode is scoped to a specific group — null means not in admin mode
   adminGroupId: string | null;
 
@@ -28,6 +29,7 @@ export const useAuthStore = create<AuthState>()(
       displayName: null,
       preferredLocale: "he",
       isAuthenticated: false,
+      isPlatformAdmin: false,
       adminGroupId: null,
 
       get isAdminMode() { return get().adminGroupId !== null; },
@@ -46,6 +48,7 @@ export const useAuthStore = create<AuthState>()(
           displayName: result.displayName,
           preferredLocale: locale,
           isAuthenticated: true,
+          isPlatformAdmin: result.isPlatformAdmin ?? false,
           adminGroupId: null,
         });
       },
@@ -61,7 +64,7 @@ export const useAuthStore = create<AuthState>()(
         localStorage.removeItem("jobuler-space");
         document.cookie = "access_token=; path=/; max-age=0";
         document.cookie = "locale=; path=/; max-age=0";
-        set({ userId: null, displayName: null, isAuthenticated: false, adminGroupId: null });
+        set({ userId: null, displayName: null, isAuthenticated: false, isPlatformAdmin: false, adminGroupId: null });
       },
 
       enterAdminMode: (groupId: string) => set({ adminGroupId: groupId }),
@@ -75,6 +78,7 @@ export const useAuthStore = create<AuthState>()(
         displayName: state.displayName,
         preferredLocale: state.preferredLocale,
         isAuthenticated: state.isAuthenticated,
+        isPlatformAdmin: state.isPlatformAdmin,
         // Don't persist adminGroupId — always reset on page load
       }),
     }

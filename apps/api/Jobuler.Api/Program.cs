@@ -221,6 +221,18 @@ builder.Services.AddSwaggerGen(c =>
 // ─── Rate limiting ───────────────────────────────────────────────────────────
 builder.Services.AddRateLimiter(options =>
 {
+    // Global limit per IP — 100 requests per minute
+    options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 100,
+                Window = TimeSpan.FromMinutes(1),
+                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                QueueLimit = 10
+            }));
+
     // Strict limit on auth endpoints — prevents brute force
     options.AddFixedWindowLimiter("auth", o =>
     {

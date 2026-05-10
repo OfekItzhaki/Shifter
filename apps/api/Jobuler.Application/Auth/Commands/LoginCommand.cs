@@ -10,4 +10,5 @@ public record LoginResult(
     DateTime AccessTokenExpiresAt,
     Guid UserId,
     string DisplayName,
-    string PreferredLocale);
+    string PreferredLocale,
+    bool IsPlatformAdmin);

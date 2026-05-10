@@ -41,6 +41,6 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, LoginResult>
         var accessToken = _jwt.GenerateAccessToken(user.Id, user.Email, user.DisplayName);
         var expiresAt = DateTime.UtcNow.AddMinutes(15);
 
-        return new LoginResult(accessToken, rawRefresh, expiresAt, user.Id, user.DisplayName, user.PreferredLocale);
+        return new LoginResult(accessToken, rawRefresh, expiresAt, user.Id, user.DisplayName, user.PreferredLocale, user.IsPlatformAdmin);
     }
 }
