@@ -46,8 +46,19 @@ public class ForgotPasswordCommandHandler : IRequestHandler<ForgotPasswordComman
         _db.PasswordResetTokens.Add(resetToken);
         await _db.SaveChangesAsync(ct);
 
-        // Deliver via INotificationSender — prefer phone number, fall back to email
-        var to = !string.IsNullOrWhiteSpace(user.PhoneNumber) ? user.PhoneNumber : user.Email;
-        await _notifications.SendPasswordResetAsync(to, rawToken, ct);
+        // Deliver via INotificationSender — send to email always, also try phone if available
+        await _notifications.SendPasswordResetAsync(user.Email, rawToken, ct);
+
+        if (!string.IsNullOrWhiteSpace(user.PhoneNumber))
+        {
+            try
+            {
+                await _notifications.SendPasswordResetAsync(user.PhoneNumber, rawToken, ct);
+            }
+            catch
+            {
+                // WhatsApp delivery failure is non-critical — email was already sent
+            }
+        }
     }
 }
