@@ -19,15 +19,27 @@ const RULE_TYPES = [
   { value: "emergency_space_bypass", label: "🚨 Emergency — space" },
 ];
 
-function formatPayload(ruleType: string, json: string): string {
+function formatPayload(ruleType: string, json: string, taskOptions?: TaskOption[]): string {
   try {
     const p = JSON.parse(json);
     switch (ruleType) {
-      case "min_rest_hours": return `${p.hours ?? 8} rest hours`;
-      case "max_kitchen_per_week": return `Max ${p.max ?? 2} kitchen per week`;
-      case "no_consecutive_burden": return `No consecutive ${p.burden_level ?? "hated"}`;
-      case "min_base_headcount": return `Min ${p.min ?? 3} people per ${p.window_hours ?? 24}h`;
-      case "no_task_type_restriction": return `Restricted task: ${p.task_type_id ?? "—"}`;
+      case "min_rest_hours": return `${p.hours ?? 8} שעות מנוחה`;
+      case "max_kitchen_per_week": return `מקסימום ${p.max ?? 2} מטבח בשבוע`;
+      case "no_consecutive_burden": return `ללא עומס רצוף: ${p.burden_level ?? "hated"}`;
+      case "min_base_headcount": return `מינימום ${p.min ?? 3} אנשים כל ${p.window_hours ?? 24}ש׳`;
+      case "no_task_type_restriction": {
+        const taskId = p.task_type_id ?? p.task_type_name ?? "—";
+        // Try to resolve UUID to task name
+        const taskName = taskOptions?.find(t => t.id === taskId)?.name ?? taskId;
+        return `משימה מוגבלת: ${taskName}`;
+      }
+      case "required_qualification_per_shift":
+        return `נדרש ${p.qualification_name ?? "—"} במשמרת${p.task_name ? ` (${p.task_name})` : ""}`;
+      case "preferred_qualification_per_shift":
+        return `מועדף ${p.qualification_name ?? "—"} במשמרת${p.task_name ? ` (${p.task_name})` : ""}`;
+      case "emergency_person_bypass": return `חירום — עקיפת אדם`;
+      case "emergency_slot_bypass": return `חירום — עקיפת משמרת`;
+      case "emergency_space_bypass": return `חירום — עקיפת מרחב`;
       default: return json;
     }
   } catch { return json; }
@@ -97,7 +109,7 @@ interface Props {
 
 // ── Constraint row ────────────────────────────────────────────────────────────
 function ConstraintRow({
-  c, isAdmin, deleteError, roleName, personName,
+  c, isAdmin, deleteError, roleName, personName, taskOptions,
   onStartEdit, onDeleteConstraint,
 }: {
   c: ConstraintDto;
@@ -105,6 +117,7 @@ function ConstraintRow({
   deleteError?: string;
   roleName?: string;
   personName?: string;
+  taskOptions?: TaskOption[];
   onStartEdit: (c: ConstraintDto) => void;
   onDeleteConstraint: (id: string) => void;
 }) {
@@ -125,7 +138,7 @@ function ConstraintRow({
             {roleName && <span className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">{roleName}</span>}
             {personName && <span className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">{personName}</span>}
           </div>
-          <p className="text-xs text-slate-500">{formatPayload(c.ruleType, c.rulePayloadJson)}</p>
+          <p className="text-xs text-slate-500">{formatPayload(c.ruleType, c.rulePayloadJson, taskOptions)}</p>
           {(c.effectiveFrom || c.effectiveUntil) && (
             <p className="text-xs text-slate-400">
               {c.effectiveFrom ? `From ${c.effectiveFrom.slice(0, 10)}` : ""}
@@ -378,6 +391,7 @@ export default function ConstraintsTab({
           <ConstraintRow
             key={c.id} c={c} isAdmin={isAdmin}
             deleteError={constraintDeleteErrors[c.id]}
+            taskOptions={taskOptions}
             onStartEdit={onStartEdit}
             onDeleteConstraint={onDeleteConstraint}
           />
@@ -407,6 +421,7 @@ export default function ConstraintsTab({
             key={c.id} c={c} isAdmin={isAdmin}
             deleteError={constraintDeleteErrors[c.id]}
             roleName={c.scopeId ? roleMap.get(c.scopeId) : undefined}
+            taskOptions={taskOptions}
             onStartEdit={onStartEdit}
             onDeleteConstraint={onDeleteConstraint}
           />
@@ -431,6 +446,7 @@ export default function ConstraintsTab({
             key={c.id} c={c} isAdmin={isAdmin}
             deleteError={constraintDeleteErrors[c.id]}
             personName={c.scopeId ? memberMap.get(c.scopeId) : undefined}
+            taskOptions={taskOptions}
             onStartEdit={onStartEdit}
             onDeleteConstraint={onDeleteConstraint}
           />

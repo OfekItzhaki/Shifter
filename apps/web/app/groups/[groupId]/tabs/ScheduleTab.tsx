@@ -35,11 +35,15 @@ const DAY_NAMES_HE   = ["א׳", "ב׳", "ג׳", "ד׳", "ה׳", "ו׳", "ש׳"];
 
 function getWeekDates(fromDate: string): string[] {
   const dates: string[] = [];
-  const start = new Date(fromDate + "T00:00:00");
-  start.setDate(start.getDate() - start.getDay()); // go to Sunday
+  // Parse as UTC to avoid timezone shifting the date
+  const parts = fromDate.split("-").map(Number);
+  const start = new Date(Date.UTC(parts[0], parts[1] - 1, parts[2]));
+  // Go back to Sunday (UTC)
+  const day = start.getUTCDay();
+  start.setUTCDate(start.getUTCDate() - day);
   for (let i = 0; i < 7; i++) {
     const d = new Date(start);
-    d.setDate(start.getDate() + i);
+    d.setUTCDate(start.getUTCDate() + i);
     dates.push(d.toISOString().split("T")[0]);
   }
   return dates;
@@ -62,8 +66,11 @@ export default function ScheduleTab({
 
   // Week navigation — which week to show (anchored to a date in that week)
   const [weekAnchor, setWeekAnchor] = useState(today);
-  // Which day tab is selected within the week (0 = Sunday … 6 = Saturday)
-  const [selectedWeekDay, setSelectedWeekDay] = useState(new Date().getDay());
+  // Which day tab is selected within the week (0 = Sunday … 6 = Saturday) — use UTC day
+  const [selectedWeekDay, setSelectedWeekDay] = useState(() => {
+    const parts = today.split("-").map(Number);
+    return new Date(Date.UTC(parts[0], parts[1] - 1, parts[2])).getUTCDay();
+  });
   const [personFilter, setPersonFilter] = useState("");
   const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
 
@@ -96,7 +103,8 @@ export default function ScheduleTab({
 
   function goToToday() {
     setWeekAnchor(today);
-    setSelectedWeekDay(new Date().getDay());
+    const parts = today.split("-").map(Number);
+    setSelectedWeekDay(new Date(Date.UTC(parts[0], parts[1] - 1, parts[2])).getUTCDay());
   }
 
   // Data is already group-scoped from the API — just apply the optional text search filter
