@@ -12,6 +12,8 @@ export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
+  const [resendCount, setResendCount] = useState(0);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -19,6 +21,26 @@ export default function ForgotPasswordPage() {
     await forgotPassword(email);
     setSubmitted(true);
     setLoading(false);
+    startCooldown();
+  }
+
+  async function handleResend() {
+    if (resendCooldown > 0 || resendCount >= 3) return;
+    setLoading(true);
+    await forgotPassword(email);
+    setLoading(false);
+    setResendCount(c => c + 1);
+    startCooldown();
+  }
+
+  function startCooldown() {
+    setResendCooldown(60);
+    const interval = setInterval(() => {
+      setResendCooldown(prev => {
+        if (prev <= 1) { clearInterval(interval); return 0; }
+        return prev - 1;
+      });
+    }, 1000);
   }
 
   return (
@@ -39,10 +61,34 @@ export default function ForgotPasswordPage() {
           </div>
 
           {submitted ? (
-            <div style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 10, padding: "1rem", textAlign: "center" }}>
-              <p style={{ fontSize: "0.875rem", color: "#15803d", margin: 0 }}>
-                {t("forgotPasswordSent")}
-              </p>
+            <div style={{ textAlign: "center" }}>
+              <div style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 10, padding: "1rem" }}>
+                <p style={{ fontSize: "0.875rem", color: "#15803d", margin: 0 }}>
+                  {t("forgotPasswordSent")}
+                </p>
+              </div>
+              {resendCount < 3 && (
+                <button
+                  onClick={handleResend}
+                  disabled={resendCooldown > 0 || loading}
+                  style={{
+                    marginTop: "1rem",
+                    background: "none",
+                    border: "none",
+                    color: resendCooldown > 0 ? "#94a3b8" : "#3b82f6",
+                    fontSize: "0.875rem",
+                    fontWeight: 500,
+                    cursor: resendCooldown > 0 ? "not-allowed" : "pointer",
+                  }}
+                >
+                  {resendCooldown > 0 ? `שלח שוב (${resendCooldown}s)` : "שלח שוב"}
+                </button>
+              )}
+              {resendCount >= 3 && (
+                <p style={{ fontSize: "0.75rem", color: "#94a3b8", marginTop: "0.75rem" }}>
+                  הגעת למגבלת הניסיונות. נסה שוב מאוחר יותר.
+                </p>
+              )}
             </div>
           ) : (
             <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>

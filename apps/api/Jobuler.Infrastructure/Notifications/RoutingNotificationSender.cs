@@ -15,28 +15,32 @@ public class RoutingNotificationSender : INotificationSender
     private readonly TwilioWhatsAppSender _whatsApp;
     private readonly IEmailSender _email;
     private readonly ILogger<RoutingNotificationSender> _logger;
+    private readonly string _frontendBaseUrl;
 
     public RoutingNotificationSender(
         TwilioWhatsAppSender whatsApp,
         IEmailSender email,
-        ILogger<RoutingNotificationSender> logger)
+        ILogger<RoutingNotificationSender> logger,
+        Microsoft.Extensions.Configuration.IConfiguration config)
     {
         _whatsApp = whatsApp;
         _email = email;
         _logger = logger;
+        _frontendBaseUrl = config["App:FrontendBaseUrl"]?.TrimEnd('/') ?? "https://shifter.ofeklabs.dev";
     }
 
     public async Task SendPasswordResetAsync(string to, string token, CancellationToken ct = default)
     {
         if (IsEmail(to))
         {
+            var resetUrl = $"{_frontendBaseUrl}/reset-password?token={token}";
             var subject = "איפוס סיסמה — Shifter";
             var html = $"""
                 <div dir="rtl" style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
                   <h2>איפוס סיסמה</h2>
                   <p>קיבלנו בקשה לאיפוס הסיסמה שלך ב-Shifter.</p>
                   <p>לחץ על הכפתור למטה כדי לאפס את הסיסמה:</p>
-                  <a href="{token}"
+                  <a href="{resetUrl}"
                      style="display:inline-block;background:#3b82f6;color:white;padding:12px 24px;
                             border-radius:8px;text-decoration:none;font-weight:bold;margin:16px 0;">
                     אפס סיסמה
