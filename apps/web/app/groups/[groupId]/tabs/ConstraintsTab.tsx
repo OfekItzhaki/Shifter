@@ -9,14 +9,16 @@ import type { GroupRoleDto, GroupMemberDto } from "@/lib/api/groups";
 import { SEVERITY_STYLES, SEVERITY_DOTS } from "../types";
 
 const RULE_TYPES = [
-  { value: "min_rest_hours", label: "Min rest hours" },
-  { value: "max_kitchen_per_week", label: "Max kitchen per week" },
-  { value: "no_consecutive_burden", label: "No consecutive burden" },
-  { value: "min_base_headcount", label: "Min base headcount" },
-  { value: "no_task_type_restriction", label: "Task type restriction" },
-  { value: "emergency_person_bypass", label: "🚨 Emergency — person" },
-  { value: "emergency_slot_bypass", label: "🚨 Emergency — shift" },
-  { value: "emergency_space_bypass", label: "🚨 Emergency — space" },
+  { value: "min_rest_hours", label: "מנוחה מינימלית" },
+  { value: "max_kitchen_per_week", label: "מקסימום מטבח בשבוע" },
+  { value: "no_consecutive_burden", label: "ללא עומס רצוף" },
+  { value: "min_base_headcount", label: "מינימום אנשים" },
+  { value: "no_task_type_restriction", label: "הגבלת משימה" },
+  { value: "required_qualification_per_shift", label: "כישור נדרש במשמרת" },
+  { value: "preferred_qualification_per_shift", label: "כישור מועדף במשמרת" },
+  { value: "emergency_person_bypass", label: "🚨 חירום — אדם" },
+  { value: "emergency_slot_bypass", label: "🚨 חירום — משמרת" },
+  { value: "emergency_space_bypass", label: "🚨 חירום — מרחב" },
 ];
 
 function formatPayload(ruleType: string, json: string, taskOptions?: TaskOption[]): string {
@@ -25,7 +27,10 @@ function formatPayload(ruleType: string, json: string, taskOptions?: TaskOption[
     switch (ruleType) {
       case "min_rest_hours": return `${p.hours ?? 8} שעות מנוחה`;
       case "max_kitchen_per_week": return `מקסימום ${p.max ?? 2} מטבח בשבוע`;
-      case "no_consecutive_burden": return `ללא עומס רצוף: ${p.burden_level ?? "hated"}`;
+      case "no_consecutive_burden": {
+        const burdenMap: Record<string, string> = { favorable: "נוח", neutral: "ניטרלי", disliked: "לא אהוב", hated: "שנוא" };
+        return `ללא עומס רצוף: ${burdenMap[p.burden_level] ?? p.burden_level ?? "שנוא"}`;
+      }
       case "min_base_headcount": return `מינימום ${p.min ?? 3} אנשים כל ${p.window_hours ?? 24}ש׳`;
       case "no_task_type_restriction": {
         const taskId = p.task_type_id ?? p.task_type_name ?? "—";
