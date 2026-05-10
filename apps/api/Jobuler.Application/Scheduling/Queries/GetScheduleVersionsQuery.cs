@@ -128,14 +128,55 @@ public class GetScheduleVersionDetailQueryHandler
                 .ToListAsync(ct)
             : new();
 
+        // To reconstruct slot times correctly, we need the solver's horizonStartDt.
+        // The normalizer uses the run's start time (rounded to hour) as the base for shift generation.
+        // Since we don't store the exact solver start time on the run, we derive it from
+        // the version's CreatedAt (which is set when the solver finishes — close enough for alignment).
+        // For non-24h tasks, the normalizer uses horizonStartDt; for 24h tasks, it uses the task's time-of-day.
+        var solverStartDt = version.CreatedAt;
+        // Round down to the nearest hour (same as normalizer does)
+        solverStartDt = new DateTime(solverStartDt.Year, solverStartDt.Month, solverStartDt.Day,
+            solverStartDt.Hour, 0, 0, DateTimeKind.Utc);
+
+        // If the run has a SourceRunId, try to get a more accurate start time from the run's StartedAt
+        if (version.SourceRunId.HasValue)
+        {
+            var run = await _db.ScheduleRuns.AsNoTracking()
+                .FirstOrDefaultAsync(r => r.Id == version.SourceRunId.Value, ct);
+            if (run?.StartedAt.HasValue == true)
+            {
+                solverStartDt = new DateTime(
+                    run.StartedAt.Value.Year, run.StartedAt.Value.Month, run.StartedAt.Value.Day,
+                    run.StartedAt.Value.Hour, 0, 0, DateTimeKind.Utc);
+            }
+        }
+
         // Build reverse lookup: for each group task, try all possible shift GUIDs
-        // that could map to the missing slot IDs
+        // that could map to the missing slot IDs.
+        // Use the same start-time logic as the normalizer.
         var shiftGuidToTask = new Dictionary<Guid, (string Name, DateTime StartsAt, DateTime EndsAt)>();
         foreach (var gt in allGroupTasks)
         {
             if (gt.ShiftDurationMinutes < 1) continue;
             var shiftDuration = TimeSpan.FromMinutes(gt.ShiftDurationMinutes);
-            var shiftStart = gt.StartsAt;
+
+            // Same logic as normalizer: non-24h tasks start from solverStartDt,
+            // 24h tasks align to their own time-of-day.
+            DateTime windowStart;
+            if (gt.ShiftDurationMinutes == 1440 && gt.StartsAt < solverStartDt)
+            {
+                var taskTimeOfDay = gt.StartsAt.TimeOfDay;
+                var candidateStart = solverStartDt.Date + taskTimeOfDay;
+                if (candidateStart < solverStartDt)
+                    candidateStart = candidateStart.AddDays(1);
+                windowStart = DateTime.SpecifyKind(candidateStart, DateTimeKind.Utc);
+            }
+            else
+            {
+                windowStart = solverStartDt;
+            }
+
+            var shiftStart = windowStart;
             var shiftIndex = 0;
             while (shiftStart + shiftDuration <= gt.EndsAt)
             {
