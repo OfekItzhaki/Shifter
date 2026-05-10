@@ -61,6 +61,8 @@ Thumbs.db
 # Logs
 *.log
 logs/
+!**/Jobuler.Domain/Logs/
+!**/Jobuler.Application/Logs/
 
 # Migrations lock (keep SQL, ignore generated artifacts)
 infra/migrations/*.lock
