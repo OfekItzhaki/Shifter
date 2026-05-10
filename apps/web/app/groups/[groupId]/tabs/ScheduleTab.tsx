@@ -60,9 +60,21 @@ export default function ScheduleTab({
   const tAdmin = useTranslations("admin");
   const locale = useLocale();
   const dayNames = locale === "he" ? DAY_NAMES_HE : DAY_NAMES_SHORT;
-  const today = new Date().toISOString().split("T")[0];
-  const minDate = new Date(Date.now() - 2 * 86400000).toISOString().split("T")[0];
-  const maxDate = new Date(Date.now() + solverHorizonDays * 86400000).toISOString().split("T")[0];
+  const today = (() => {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, "0");
+    const d = String(now.getDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+  })();
+  const minDate = (() => {
+    const d = new Date(Date.now() - 2 * 86400000);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  })();
+  const maxDate = (() => {
+    const d = new Date(Date.now() + solverHorizonDays * 86400000);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  })();
 
   // Week navigation — which week to show (anchored to a date in that week)
   const [weekAnchor, setWeekAnchor] = useState(today);
@@ -82,21 +94,20 @@ export default function ScheduleTab({
   function prevWeek() {
     const d = new Date(weekAnchor + "T00:00:00");
     d.setDate(d.getDate() - 7);
-    const next = d.toISOString().split("T")[0];
+    const next = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
     if (next >= minDate) setWeekAnchor(next);
   }
 
   function nextWeek() {
     const d = new Date(weekAnchor + "T00:00:00");
     d.setDate(d.getDate() + 7);
-    const next = d.toISOString().split("T")[0];
+    const next = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
     if (next <= maxDate) {
       setWeekAnchor(next);
       // When navigating to a new week, select the first day that has assignments,
       // or Sunday (0) if none. Never stay on a day that's in the past.
       const newWeekDates = getWeekDates(next);
-      const todayStr = new Date().toISOString().split("T")[0];
-      const firstFutureIdx = newWeekDates.findIndex(d => d >= todayStr);
+      const firstFutureIdx = newWeekDates.findIndex(d => d >= today);
       setSelectedWeekDay(firstFutureIdx >= 0 ? firstFutureIdx : 0);
     }
   }
