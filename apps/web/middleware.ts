@@ -32,19 +32,23 @@ const PUBLIC_PATHS = [
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // Debug: add header to verify middleware is running
+  const response = NextResponse.next();
+  response.headers.set("x-middleware-active", "true");
+
   // Allow the root/landing page
   if (pathname === "/") {
-    return NextResponse.next();
+    return response;
   }
 
   // Allow public paths
   if (PUBLIC_PATHS.some((p) => pathname.startsWith(p))) {
-    return NextResponse.next();
+    return response;
   }
 
   // Allow static files
   if (pathname.includes(".")) {
-    return NextResponse.next();
+    return response;
   }
 
   // Check for access_token cookie
@@ -52,8 +56,7 @@ export function middleware(request: NextRequest) {
 
   if (!token) {
     // No token — redirect to login
-    const loginUrl = new URL("/login", request.url);
-    return NextResponse.redirect(loginUrl);
+    return NextResponse.redirect(new URL("/login", request.url));
   }
 
   // Basic JWT expiry check (decode payload without verification)
