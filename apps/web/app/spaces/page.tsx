@@ -21,6 +21,13 @@ export default function SpacesPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    // Check if user has a valid token before making API calls
+    const token = localStorage.getItem("access_token");
+    if (!token) {
+      router.replace("/login");
+      return;
+    }
+
     getMySpaces()
       .then(s => {
         setSpaces(s);
@@ -28,6 +35,11 @@ export default function SpacesPage() {
           setCurrentSpace(s[0].id, s[0].name);
           router.push("/schedule/today");
         }
+      })
+      .catch(() => {
+        // If API call fails (401, network error, etc.), redirect to login
+        // The axios interceptor handles token refresh, so if we get here
+        // it means refresh also failed
       })
       .finally(() => setLoading(false));
   }, []);

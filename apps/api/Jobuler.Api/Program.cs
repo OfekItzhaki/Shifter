@@ -27,6 +27,7 @@ using Serilog;
 using StackExchange.Redis;
 using System.Text;
 using System.Threading.RateLimiting;
+using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -82,7 +83,28 @@ builder.Services.AddScoped<IPermissionService, PermissionService>();
 builder.Services.AddScoped<IAuditLogger, AuditLogger>();
 builder.Services.AddScoped<ISystemLogger, SystemLogger>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddScoped<IPushNotificationSender, PushNotificationSender>();
 builder.Services.AddScoped<IPdfRenderer, QuestPdfRenderer>();
+
+// ─── VAPID configuration (Web Push) ──────────────────────────────────────────
+builder.Services.Configure<VapidSettings>(options =>
+{
+    options.PublicKey = builder.Configuration["VAPID_PUBLIC_KEY"]
+        ?? Environment.GetEnvironmentVariable("VAPID_PUBLIC_KEY")
+        ?? string.Empty;
+    options.PrivateKey = builder.Configuration["VAPID_PRIVATE_KEY"]
+        ?? Environment.GetEnvironmentVariable("VAPID_PRIVATE_KEY")
+        ?? string.Empty;
+    options.Subject = builder.Configuration["VAPID_SUBJECT"]
+        ?? Environment.GetEnvironmentVariable("VAPID_SUBJECT")
+        ?? string.Empty;
+});
+
+// Named HttpClient for Web Push service requests (used by PushNotificationSender)
+builder.Services.AddHttpClient("WebPush", client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(30);
+});
 
 // ─── Email: SendGrid (real) or NoOp (dev fallback) ────────────────────────────
 if (!string.IsNullOrWhiteSpace(builder.Configuration["SendGrid:ApiKey"]))

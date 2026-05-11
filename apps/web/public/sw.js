@@ -199,6 +199,60 @@ function offlineHTML() {
 </html>`;
 }
 
+// Push notification: display native notification from server payload
+self.addEventListener("push", (event) => {
+  if (!event.data) return;
+
+  let payload;
+  try {
+    payload = event.data.json();
+  } catch {
+    // Malformed payload — ignore gracefully
+    return;
+  }
+
+  const { title, body, icon, url, tag, timestamp } = payload;
+
+  // title is required for showNotification; skip if missing
+  if (!title) return;
+
+  event.waitUntil(
+    self.registration.showNotification(title, {
+      body: body || "",
+      icon: icon || "/favicon.jpeg",
+      badge: "/favicon.jpeg",
+      tag: tag || undefined,
+      timestamp: timestamp || Date.now(),
+      data: { url },
+      dir: "auto",
+    })
+  );
+});
+
+// Push notification click: close notification and navigate to target URL
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+
+  const url = event.notification.data?.url || "/";
+
+  event.waitUntil(
+    self.clients
+      .matchAll({ type: "window", includeUncontrolled: true })
+      .then((clients) => {
+        // Focus existing app window if one is open
+        const existing = clients.find((c) =>
+          c.url.includes(self.location.origin)
+        );
+        if (existing) {
+          existing.navigate(url);
+          return existing.focus();
+        }
+        // Otherwise open a new window
+        return self.clients.openWindow(url);
+      })
+  );
+});
+
 // Listen for messages from the app
 self.addEventListener("message", (event) => {
   if (event.data === "skipWaiting") {

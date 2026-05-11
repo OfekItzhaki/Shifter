@@ -55,6 +55,23 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
+  // Basic JWT expiry check (decode payload without verification)
+  try {
+    const parts = token.split(".");
+    if (parts.length === 3) {
+      const payload = JSON.parse(atob(parts[1].replace(/-/g, "+").replace(/_/g, "/")));
+      if (payload.exp && payload.exp * 1000 < Date.now()) {
+        // Token expired — clear cookie and redirect to login
+        const response = NextResponse.redirect(new URL("/login", request.url));
+        response.cookies.delete("access_token");
+        return response;
+      }
+    }
+  } catch {
+    // If we can't decode the token, let it through — the API will reject it
+    // and the axios interceptor will handle the refresh
+  }
+
   return NextResponse.next();
 }
 

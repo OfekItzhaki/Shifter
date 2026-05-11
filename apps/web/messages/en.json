@@ -436,6 +436,13 @@
     "deleteAccountButton": "Delete My Account",
     "deleteConfirmText": "Are you sure? This will permanently delete your account, all your data, and remove you from all groups.",
     "yesDelete": "Yes, Delete Everything",
+    "push": {
+      "title": "Push Notifications",
+      "enableLabel": "Enable push notifications",
+      "enableDescription": "Receive browser notifications for schedule updates, solver results, and group alerts",
+      "notSupported": "Push notifications are not supported in this browser",
+      "permissionDenied": "Notifications are blocked. Enable them in your browser settings to receive push alerts."
+    },
     "notificationPrefs": {
       "title": "Notification Preferences",
       "description": "Choose which notifications you want to receive in the app",

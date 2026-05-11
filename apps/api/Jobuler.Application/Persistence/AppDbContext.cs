@@ -73,6 +73,7 @@ public class AppDbContext : DbContext
 
     // Notifications
     public DbSet<Notification> Notifications => Set<Notification>();
+    public DbSet<PushSubscription> PushSubscriptions => Set<PushSubscription>();
 
     // Billing
     public DbSet<Jobuler.Domain.Billing.GroupSubscription> GroupSubscriptions => Set<Jobuler.Domain.Billing.GroupSubscription>();

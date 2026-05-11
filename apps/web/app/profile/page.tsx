@@ -9,6 +9,8 @@ import { getMe, updateMe, MeDto } from "@/lib/api/auth";
 import { apiClient } from "@/lib/api/client";
 import ImageUpload from "@/components/ImageUpload";
 import NotificationPreferences from "@/components/NotificationPreferences";
+import PushNotificationSettings from "@/components/PushNotificationSettings";
+import { useSpaceStore } from "@/lib/store/spaceStore";
 
 function getInitials(name: string): string {
   return name
@@ -81,6 +83,8 @@ export default function ProfilePage() {
   const [me, setMe] = useState<MeDto | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const currentSpaceId = useSpaceStore((s) => s.currentSpaceId);
 
   const [editOpen, setEditOpen] = useState(false);
   const [form, setForm] = useState({ displayName: "", phoneNumber: "", profileImageUrl: "", birthday: "" });
@@ -247,6 +251,13 @@ export default function ProfilePage() {
         <div style={{ ...cardStyle, marginTop: "1rem" }}>
           <NotificationPreferences />
         </div>
+
+        {/* Push Notification Settings */}
+        {currentSpaceId && (
+          <div style={{ ...cardStyle, marginTop: "1rem" }}>
+            <PushNotificationSettings spaceId={currentSpaceId} />
+          </div>
+        )}
       </div>
 
       {/* Delete Account */}

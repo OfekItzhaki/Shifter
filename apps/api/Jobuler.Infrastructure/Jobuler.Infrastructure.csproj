@@ -26,5 +26,7 @@
     <PackageReference Include="Twilio" Version="7.3.1" />
     <!-- S3-compatible storage -->
     <PackageReference Include="AWSSDK.S3" Version="3.7.307.19" />
+    <!-- Web Push (VAPID + RFC 8291 payload encryption) -->
+    <PackageReference Include="WebPush" Version="1.0.12" />
   </ItemGroup>
 </Project>
