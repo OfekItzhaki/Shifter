@@ -337,9 +337,10 @@ public class SolverWorkerService : BackgroundService
             // Do NOT persist a version if there's nothing useful to show the admin:
             // - solver proved infeasible, OR
             // - feasible but zero assignments (solver bug / all slots unparseable)
-            // In all these cases, mark the run failed/timed-out and notify the admin.
-            // A timed-out run with partial assignments IS kept — it has useful data.
-            var shouldDiscard = !output.Feasible || assignments.Count == 0;
+            // - feasible but has uncovered slots (not all tasks could be filled)
+            // In all these cases, mark the run failed and notify the admin.
+            var hasUncoveredSlots = output.UncoveredSlotIds.Count > 0;
+            var shouldDiscard = !output.Feasible || assignments.Count == 0 || hasUncoveredSlots;
 
             if (!shouldDiscard)
             {
@@ -388,13 +389,25 @@ public class SolverWorkerService : BackgroundService
             {
                 // No version created — just update the run status
                 _logger.LogWarning(
-                    "Skipping version creation: feasible={Feasible} assignments={Count}",
-                    output.Feasible, assignments.Count);
+                    "Skipping version creation: feasible={Feasible} assignments={Count} uncovered={Uncovered}",
+                    output.Feasible, assignments.Count, output.UncoveredSlotIds.Count);
 
                 if (output.TimedOut)
                     run.MarkTimedOut(summaryJson);
                 else if (!output.Feasible)
                     run.MarkFailed($"Solver returned infeasible. Hard conflicts: {output.HardConflicts.Count}");
+                else if (hasUncoveredSlots)
+                {
+                    // Identify which tasks have uncovered slots
+                    var uncoveredSlotSet = output.UncoveredSlotIds.ToHashSet();
+                    var uncoveredTaskNames = input.TaskSlots
+                        .Where(s => uncoveredSlotSet.Contains(s.SlotId))
+                        .Select(s => s.TaskTypeName)
+                        .Distinct()
+                        .ToList();
+                    var taskList = string.Join(", ", uncoveredTaskNames);
+                    run.MarkFailed($"לא ניתן לאייש את כל המשמרות. משימות חסרות: {taskList} ({output.UncoveredSlotIds.Count} משמרות)");
+                }
                 else
                     run.MarkFailed("Solver returned zero assignments despite reporting feasible.");
 
