@@ -45,6 +45,7 @@ public class ScheduleRunsController : ControllerBase
                 new Application.Scheduling.Queries.CheckGroupSubscriptionQuery(spaceId, req.GroupId.Value), ct);
             if (sub != null && !sub.IsActive)
                 return StatusCode(402, new { error = "תקופת הניסיון הסתיימה. שדרג את התוכנית כדי להפעיל סידור." });
+            // If sub is null, no subscription exists yet — allow (grace period)
         }
 
         // Validate trigger mode — only "standard" and "emergency" are accepted

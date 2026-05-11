@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import AppShell from "@/components/shell/AppShell";
 import { useAuthStore } from "@/lib/store/authStore";
 import { getPlatformStats, PlatformStats } from "@/lib/api/platform";
+import CouponManager from "@/components/platform/CouponManager";
 
 const card: React.CSSProperties = {
   background: "white",
@@ -120,11 +121,14 @@ export default function PlatformPage() {
             </div>
 
             {/* Row 3: Storage */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "1rem" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "1rem", marginBottom: "2rem" }}>
               <StatCard label={t("totalAssignments")} value={stats.storageStats.totalAssignments} />
               <StatCard label={t("totalConstraints")} value={stats.storageStats.totalConstraints} />
               <StatCard label={t("totalTasks")} value={stats.storageStats.totalTasks} />
             </div>
+
+            {/* Coupon Management */}
+            <CouponManager />
           </>
         )}
       </div>
