@@ -24,7 +24,7 @@ export default function LandingPage() {
   if (checking) return null;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 text-white">
+    <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 text-white" dir="ltr">
       <nav className="sticky top-0 z-50 backdrop-blur-md bg-slate-900/80 border-b border-slate-700/50">
         <div className="flex items-center justify-between px-6 py-3 max-w-6xl mx-auto">
           <div className="flex items-center gap-3">
@@ -61,10 +61,6 @@ export default function LandingPage() {
       </nav>
 
       <section className="px-6 pt-16 pb-20 sm:pt-24 sm:pb-28 max-w-4xl mx-auto text-center">
-        <div className="inline-flex items-center gap-2 bg-blue-500/10 border border-blue-500/20 rounded-full px-4 py-1.5 mb-6">
-          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-          <span className="text-xs text-blue-300 font-medium">Free to use &bull; No credit card required</span>
-        </div>
         <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-tight mb-6">
           Smart Shift<br /><span className="text-blue-400">Scheduling</span>
         </h1>
