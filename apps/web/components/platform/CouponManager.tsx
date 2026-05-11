@@ -24,6 +24,7 @@ export default function CouponManager() {
   const [newDescription, setNewDescription] = useState("");
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   async function loadCoupons() {
     try {
@@ -160,12 +161,29 @@ export default function CouponManager() {
                   </td>
                   <td style={{ padding: "0.5rem", textAlign: "center" }}>
                     {c.isActive && (
-                      <button
-                        onClick={() => handleDeactivate(c.id)}
-                        style={{ background: "none", border: "none", color: "#dc2626", cursor: "pointer", fontSize: "0.75rem" }}
-                      >
-                        בטל
-                      </button>
+                      confirmDeleteId === c.id ? (
+                        <span style={{ display: "flex", gap: 4, justifyContent: "center" }}>
+                          <button
+                            onClick={() => { handleDeactivate(c.id); setConfirmDeleteId(null); }}
+                            style={{ background: "#dc2626", color: "white", border: "none", borderRadius: 6, padding: "2px 8px", fontSize: "0.7rem", cursor: "pointer" }}
+                          >
+                            אישור
+                          </button>
+                          <button
+                            onClick={() => setConfirmDeleteId(null)}
+                            style={{ background: "none", border: "1px solid #e2e8f0", borderRadius: 6, padding: "2px 8px", fontSize: "0.7rem", cursor: "pointer" }}
+                          >
+                            ביטול
+                          </button>
+                        </span>
+                      ) : (
+                        <button
+                          onClick={() => setConfirmDeleteId(c.id)}
+                          style={{ background: "none", border: "none", color: "#dc2626", cursor: "pointer", fontSize: "0.75rem" }}
+                        >
+                          בטל
+                        </button>
+                      )
                     )}
                   </td>
                 </tr>

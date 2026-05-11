@@ -27,7 +27,7 @@ export default function PricingPage() {
             תוכניות ומחירים
           </h1>
           <p style={{ color: "#64748b", fontSize: "0.95rem", marginTop: "0.5rem" }}>
-            14 ימי ניסיון חינם · ללא כרטיס אשראי · ביטול בכל עת
+            ביטול בכל עת · ללא התחייבות · תשלום חודשי
           </p>
         </div>
 
@@ -77,7 +77,7 @@ export default function PricingPage() {
                   cursor: "pointer",
                 }}
               >
-                התחל ניסיון
+                בחר תוכנית
               </button>
             </div>
           ))}
