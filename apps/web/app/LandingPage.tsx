@@ -173,6 +173,8 @@ export default function LandingPage() {
             <span className="text-sm text-slate-400">Shifter © {new Date().getFullYear()}</span>
           </div>
           <div className="flex items-center gap-6 text-sm text-slate-400">
+            <Link href="/terms" className="hover:text-white transition-colors">תנאי שימוש</Link>
+            <Link href="/privacy" className="hover:text-white transition-colors">פרטיות</Link>
             <Link href="/login" className="hover:text-white transition-colors">התחברות</Link>
             <Link href="/register" className="hover:text-white transition-colors">הרשמה</Link>
           </div>
