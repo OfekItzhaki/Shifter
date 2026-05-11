@@ -81,18 +81,18 @@ export default function ScheduleTable2D({
     : undefined;
 
   return (
-    <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
-      <table className="w-full text-sm border-collapse">
+    <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm -mx-2 sm:mx-0">
+      <table className="w-full text-sm border-collapse min-w-[320px]">
         <thead>
           <tr className="border-b border-slate-100 bg-slate-50/80">
             {/* Row header column */}
-            <th className="px-4 py-3 text-start text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap sticky right-0 bg-slate-50/80 z-10">
+            <th className="px-2.5 sm:px-4 py-2.5 sm:py-3 text-start text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap sticky right-0 bg-slate-50/80 z-10">
               {t("time")}
             </th>
             {taskNames.map(task => (
               <th
                 key={task}
-                className={`px-4 py-3 text-center text-xs font-semibold text-slate-700 uppercase tracking-wider whitespace-nowrap ${
+                className={`px-2.5 sm:px-4 py-2.5 sm:py-3 text-center text-xs font-semibold text-slate-700 uppercase tracking-wider whitespace-nowrap ${
                   task === currentUserTaskName ? "bg-blue-50" : ""
                 }`}
               >
@@ -107,7 +107,7 @@ export default function ScheduleTable2D({
             return (
               <tr key={key} className="hover:bg-slate-50/40 transition-colors">
                 {/* Time slot row header */}
-                <td className="px-4 py-3 text-xs tabular-nums text-slate-500 whitespace-nowrap sticky right-0 bg-white z-10 border-r border-slate-100">
+                <td className="px-2.5 sm:px-4 py-2.5 sm:py-3 text-xs tabular-nums text-slate-500 whitespace-nowrap sticky right-0 bg-white z-10 border-r border-slate-100">
                   {formatTime(startsAt)}
                   <span className="mx-1 text-slate-300">–</span>
                   {formatTime(endsAt)}
@@ -121,7 +121,7 @@ export default function ScheduleTable2D({
                       key={task}
                       onClick={isClickable ? () => onCellClick(key, task, names) : undefined}
                       className={[
-                        "px-4 py-3 text-center align-top",
+                        "px-2.5 sm:px-4 py-2.5 sm:py-3 text-center align-top",
                         isUserTask ? "bg-blue-50/60" : "",
                         isClickable ? "cursor-pointer hover:bg-blue-50 transition-colors" : "",
                       ].filter(Boolean).join(" ")}

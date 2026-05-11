@@ -56,16 +56,16 @@ export default function GroupsPage() {
 
   return (
     <AppShell>
-      <div className="max-w-4xl space-y-6">
+      <div className="max-w-4xl space-y-5 sm:space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-slate-900">{t("title")}</h1>
-            <p className="text-sm text-slate-500 mt-1">{t("subtitle")}</p>
+            <h1 className="text-xl sm:text-2xl font-bold text-slate-900">{t("title")}</h1>
+            <p className="text-xs sm:text-sm text-slate-500 mt-1">{t("subtitle")}</p>
           </div>
         </div>
 
         {/* Create group */}
-        <form onSubmit={handleCreate} className="flex gap-2 max-w-sm">
+        <form onSubmit={handleCreate} className="flex gap-2 w-full sm:max-w-sm">
           <input
             value={newGroupName}
             onChange={e => setNewGroupName(e.target.value)}
@@ -75,7 +75,7 @@ export default function GroupsPage() {
           <button
             type="submit"
             disabled={createGroup.isPending}
-            className="bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl disabled:opacity-50 whitespace-nowrap"
+            className="bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl disabled:opacity-50 whitespace-nowrap flex-shrink-0"
           >
             {createGroup.isPending ? "..." : t("newGroup")}
           </button>
@@ -94,7 +94,7 @@ export default function GroupsPage() {
             <p className="text-slate-400 text-sm">{t("noGroups")}</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
             {groups.map(g => (
               <button
                 key={g.id}

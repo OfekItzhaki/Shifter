@@ -181,9 +181,9 @@ export default function ProfilePage() {
       <div style={{ maxWidth: 720, direction: "rtl" }}>
         {/* Hero section */}
         <div style={{ ...cardStyle, marginBottom: "1.5rem" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "1.5rem" }}>
+          <div className="flex flex-col sm:flex-row items-center sm:items-center gap-4 sm:gap-6">
             {avatarContent}
-            <div style={{ flex: 1 }}>
+            <div style={{ flex: 1 }} className="text-center sm:text-start">
               <h1 style={{ fontSize: "1.5rem", fontWeight: 700, color: "#0f172a", margin: "0 0 0.25rem" }}>
                 {me.displayName}
               </h1>
@@ -203,7 +203,7 @@ export default function ProfilePage() {
         </div>
 
         {/* Info cards grid */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }} className="mobile-stack">
           {/* Contact info */}
           <div style={cardStyle}>
             <h2 style={{ fontSize: "0.875rem", fontWeight: 600, color: "#0f172a", margin: "0 0 1rem" }}>{t("contactInfo")}</h2>

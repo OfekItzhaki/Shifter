@@ -25,11 +25,11 @@ export default function NotificationsPage() {
 
   return (
     <AppShell>
-      <div className="max-w-2xl space-y-6">
-        <div className="flex items-center justify-between">
+      <div className="max-w-2xl space-y-5 sm:space-y-6">
+        <div className="flex items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-bold text-slate-900">{t("title")}</h1>
-            <p className="text-sm text-slate-500 mt-1">
+            <h1 className="text-xl sm:text-2xl font-bold text-slate-900">{t("title")}</h1>
+            <p className="text-xs sm:text-sm text-slate-500 mt-1">
               {unread.length > 0 ? t("unreadCount", { count: unread.length }) : t("allRead")}
             </p>
           </div>

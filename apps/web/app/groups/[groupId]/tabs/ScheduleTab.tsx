@@ -236,13 +236,13 @@ export default function ScheduleTab({
 
       {/* Draft banner — admin only */}
       {isAdmin && draftVersion && (
-        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4">
-          <div className="flex items-center justify-between gap-3">
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-3 sm:p-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-center gap-2">
               <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-300">{t("draftBadge")}</span>
               <span className="text-sm text-amber-800">{t("draftReady")}</span>
             </div>
-            <div className="flex items-center gap-2 flex-shrink-0">
+            <div className="flex items-center gap-2 flex-shrink-0 flex-wrap">
               <button onClick={onOpenDraftModal} className="text-xs text-amber-800 border border-amber-300 hover:bg-amber-100 px-3 py-1.5 rounded-lg transition-colors font-medium">
                 {t("viewDraft")}
               </button>
@@ -270,14 +270,14 @@ export default function ScheduleTab({
       )}
 
       {/* Search filter + export */}
-      <div className="flex items-center gap-2">
-        <div className="relative flex-1 max-w-xs">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+        <div className="relative flex-1">
           <input
             type="text"
             value={personFilter}
             onChange={e => setPersonFilter(e.target.value)}
             placeholder={t("filterByName")}
-            className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 pr-9"
+            className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 sm:py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 pr-9"
           />
           <svg className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -286,7 +286,7 @@ export default function ScheduleTab({
         {scheduleData && scheduleData.length > 0 && (
           <button
             onClick={exportCSV}
-            className="flex items-center gap-1.5 text-xs text-slate-600 border border-slate-200 bg-white hover:bg-slate-50 px-3 py-2 rounded-xl transition-colors flex-shrink-0"
+            className="flex items-center justify-center gap-1.5 text-xs text-slate-600 border border-slate-200 bg-white hover:bg-slate-50 px-3 py-2.5 sm:py-2 rounded-xl transition-colors flex-shrink-0"
             title={t("exportCsv") ?? "Export CSV"}
           >
             <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -321,7 +321,7 @@ export default function ScheduleTab({
       </div>
 
       {/* Day-name tabs */}
-      <div className="flex gap-1 overflow-x-auto pb-1">
+      <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-2 px-2 sm:mx-0 sm:px-0">
         {weekDates.map((d, i) => {
           const dayNum = new Date(d + "T00:00:00").getDate();
           const isSelected = i === selectedWeekDay;
@@ -330,7 +330,7 @@ export default function ScheduleTab({
             <button
               key={d}
               onClick={() => setSelectedWeekDay(i)}
-              className={`flex-shrink-0 flex flex-col items-center px-3 py-2 rounded-xl text-xs font-medium transition-all min-w-[48px] ${
+              className={`flex-shrink-0 flex flex-col items-center px-3 py-2.5 sm:py-2 rounded-xl text-xs font-medium transition-all min-w-[44px] sm:min-w-[48px] ${
                 isSelected
                   ? "bg-blue-500 text-white shadow-sm"
                   : isToday

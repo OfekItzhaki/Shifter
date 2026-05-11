@@ -165,28 +165,37 @@ export default function DraftScheduleModal({
       style={{
         position: "fixed", inset: 0, zIndex: 60,
         background: "rgba(0,0,0,0.5)",
-        display: "flex", alignItems: "center", justifyContent: "center",
-        padding: "1rem",
+        display: "flex", alignItems: "flex-end", justifyContent: "center",
+        padding: 0,
       }}
+      className="sm:!items-center sm:!p-4"
       onClick={onClose}
     >
       <div
         style={{
-          background: "white", borderRadius: 20,
+          background: "white", borderRadius: "20px 20px 0 0",
           boxShadow: "0 24px 64px rgba(0,0,0,0.18)",
           width: "100%", maxWidth: 900,
-          maxHeight: "90vh",
+          maxHeight: "95vh",
           display: "flex", flexDirection: "column",
         }}
+        className="sm:!rounded-[20px]"
         onClick={e => e.stopPropagation()}
       >
+        {/* Drag handle for mobile */}
+        <div className="flex justify-center pt-2 pb-0 sm:hidden">
+          <div style={{ width: 36, height: 4, borderRadius: 2, background: "#e2e8f0" }} />
+        </div>
+
         {/* Header */}
         <div style={{
-          padding: "1.25rem 1.5rem",
+          padding: "1rem 1rem",
           borderBottom: "1px solid #e2e8f0",
           display: "flex", alignItems: "center", justifyContent: "space-between",
           flexShrink: 0,
-        }}>
+        }}
+        className="sm:!px-6 sm:!py-5"
+        >
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <span style={{
               background: "#fef3c7", color: "#92400e", border: "1px solid #fde68a",
@@ -204,7 +213,7 @@ export default function DraftScheduleModal({
         </div>
 
         {/* Body */}
-        <div style={{ flex: 1, overflowY: "auto", padding: "1rem 1.5rem" }}>
+        <div style={{ flex: 1, overflowY: "auto", padding: "1rem" }} className="sm:!px-6">
           {loading ? (
             <div style={{ display: "flex", justifyContent: "center", padding: "3rem 0", color: "#94a3b8" }}>
               <svg className="animate-spin" width="24" height="24" fill="none" viewBox="0 0 24 24">
@@ -305,11 +314,13 @@ export default function DraftScheduleModal({
         {/* Footer */}
         {isAdmin && (
           <div style={{
-            padding: "1rem 1.5rem",
+            padding: "0.75rem 1rem",
             borderTop: "1px solid #e2e8f0",
-            display: "flex", alignItems: "center", gap: 10,
-            flexShrink: 0,
-          }}>
+            display: "flex", alignItems: "center", gap: 8,
+            flexShrink: 0, flexWrap: "wrap",
+          }}
+          className="sm:!px-6 sm:!py-4 sm:!gap-[10px]"
+          >
             {showDiscardConfirm ? (
               <>
                 <p style={{ fontSize: 13, color: "#dc2626", flex: 1, margin: 0 }}>{t("discardConfirmText")}</p>

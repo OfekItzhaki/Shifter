@@ -26,25 +26,32 @@ export default function Modal({ open, onClose, title, children, maxWidth = 480 }
       style={{
         position: "fixed", inset: 0, zIndex: 50,
         background: "rgba(0,0,0,0.45)",
-        display: "flex", alignItems: "center", justifyContent: "center",
-        padding: "1rem",
+        display: "flex", alignItems: "flex-end", justifyContent: "center",
+        padding: 0,
       }}
+      className="sm:!items-center sm:!p-4"
       onClick={onClose}
     >
       <div
         style={{
           background: "white",
-          borderRadius: 20,
+          borderRadius: "20px 20px 0 0",
           boxShadow: "0 20px 60px rgba(0,0,0,0.15)",
           width: "100%",
           maxWidth,
-          maxHeight: "90vh",
+          maxHeight: "92vh",
           overflowY: "auto",
           direction: "rtl",
           position: "relative",
         }}
+        className="sm:!rounded-[20px]"
         onClick={e => e.stopPropagation()}
       >
+        {/* Drag handle for mobile bottom-sheet */}
+        <div className="flex justify-center pt-2 pb-0 sm:hidden">
+          <div style={{ width: 36, height: 4, borderRadius: 2, background: "#e2e8f0" }} />
+        </div>
+
         {/* Header */}
         <div style={{
           display: "flex", alignItems: "center", justifyContent: "space-between",

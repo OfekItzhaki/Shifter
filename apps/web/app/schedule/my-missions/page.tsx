@@ -71,19 +71,19 @@ export default function MyMissionsPage() {
 
   return (
     <AppShell>
-      <div className="max-w-3xl space-y-6">
+      <div className="max-w-3xl space-y-5 sm:space-y-6">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">{tMy("title")}</h1>
-          <p className="text-sm text-slate-500 mt-1">{tMy("subtitle")}</p>
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-900">{tMy("title")}</h1>
+          <p className="text-xs sm:text-sm text-slate-500 mt-1">{tMy("subtitle")}</p>
         </div>
 
         {/* Range selector */}
-        <div className="flex gap-1 bg-slate-100 p-1 rounded-xl w-fit">
+        <div className="flex gap-1 bg-slate-100 p-1 rounded-xl w-full sm:w-fit overflow-x-auto">
           {(Object.keys(RANGE_LABELS) as AssignmentRange[]).map(r => (
             <button
               key={r}
               onClick={() => setRange(r)}
-              className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
+              className={`flex-1 sm:flex-none px-3 sm:px-4 py-2 sm:py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all whitespace-nowrap ${
                 range === r ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"
               }`}
             >
@@ -94,7 +94,7 @@ export default function MyMissionsPage() {
 
         {/* Week day buttons */}
         {range === "week" && (
-          <div className="flex flex-wrap gap-2">
+          <div className="flex gap-1.5 sm:gap-2 overflow-x-auto pb-1 -mx-2 px-2 sm:mx-0 sm:px-0">
             {weekDays.map((dayIso, i) => {
               const hasMissions = datesWithAssignments.has(dayIso);
               const isToday = dayIso === todayStr;
@@ -103,7 +103,7 @@ export default function MyMissionsPage() {
                 <button
                   key={dayIso}
                   onClick={() => setSelectedDay(dayIso)}
-                  className={`relative px-4 py-2 rounded-xl text-sm font-semibold transition-all border ${
+                  className={`relative flex-shrink-0 px-3 sm:px-4 py-2.5 sm:py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all border min-w-[40px] ${
                     isSelected
                       ? "bg-blue-500 text-white border-blue-500 shadow-sm"
                       : isToday
@@ -124,7 +124,7 @@ export default function MyMissionsPage() {
         )}
 
         {/* Search */}
-        <div className="relative max-w-sm">
+        <div className="relative w-full sm:max-w-sm">
           <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="#94a3b8" strokeWidth={2}
             className="absolute left-3 top-1/2 -translate-y-1/2">
             <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />

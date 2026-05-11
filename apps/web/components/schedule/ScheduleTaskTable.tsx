@@ -129,15 +129,15 @@ export default function ScheduleTaskTable({ assignments, currentUserName, filter
               </span>
             </div>
 
-            <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
-              <table className="w-full text-sm border-collapse table-fixed">
+            <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm -mx-2 sm:mx-0">
+              <table className="w-full text-sm border-collapse table-fixed min-w-[280px]">
                 <thead>
                   <tr className="border-b border-slate-100 bg-slate-50/80">
-                    <th className="px-4 py-3 text-start text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap sticky right-0 bg-slate-50/80 z-10">
+                    <th className="px-2.5 sm:px-4 py-2.5 sm:py-3 text-start text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap sticky right-0 bg-slate-50/80 z-10">
                       {t("time")}
                     </th>
                     {personCols.map(i => (
-                      <th key={i} className="px-4 py-3 text-center text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                      <th key={i} className="px-2.5 sm:px-4 py-2.5 sm:py-3 text-center text-xs font-semibold text-slate-500 uppercase tracking-wider">
                         {maxPeople === 1 ? t("assignee") : t("assigneeN", { n: i + 1 })}
                       </th>
                     ))}
@@ -149,7 +149,7 @@ export default function ScheduleTaskTable({ assignments, currentUserName, filter
                     return (
                       <tr key={key} className="hover:bg-slate-50/40 transition-colors">
                         {/* Time */}
-                        <td className="px-4 py-3 text-xs tabular-nums text-slate-500 whitespace-nowrap sticky right-0 bg-white z-10 border-r border-slate-100">
+                        <td className="px-2.5 sm:px-4 py-2.5 sm:py-3 text-xs tabular-nums text-slate-500 whitespace-nowrap sticky right-0 bg-white z-10 border-r border-slate-100">
                           {formatShiftTime(slot.startsAt, slot.endsAt)}
                         </td>
                         {/* Person columns */}
@@ -158,10 +158,10 @@ export default function ScheduleTaskTable({ assignments, currentUserName, filter
                           const personId = slot.personIds[i];
                           const isCurrentUser = name === currentUserName;
                           return (
-                            <td key={i} className={`px-4 py-3 text-center ${isCurrentUser ? "bg-blue-50/60" : ""}`}>
+                            <td key={i} className={`px-2.5 sm:px-4 py-2.5 sm:py-3 text-center ${isCurrentUser ? "bg-blue-50/60" : ""}`}>
                               {name ? (
                                 <div className="flex items-center justify-center gap-1.5 group">
-                                  <span className={`text-sm font-medium ${isCurrentUser ? "text-blue-700" : "text-slate-800"}`}>
+                                  <span className={`text-xs sm:text-sm font-medium ${isCurrentUser ? "text-blue-700" : "text-slate-800"}`}>
                                     {name}
                                   </span>
                                   {isAdmin && spaceId && personId && (

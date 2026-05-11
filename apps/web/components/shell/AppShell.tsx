@@ -30,14 +30,14 @@ const S = {
   logoutBtn: { display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "9px 12px", borderRadius: 8, background: "none", border: "none", cursor: "pointer", color: "#64748b", fontSize: 14, textAlign: "left" as const },
   topbar: (admin: boolean) => ({ height: 56, display: "flex", alignItems: "center", justifyContent: "flex-end", padding: "0 24px", borderBottom: `1px solid ${admin ? "#fde68a" : "#e2e8f0"}`, background: admin ? "#fffbeb" : "white", position: "sticky" as const, top: 0, zIndex: 20 }),
   main: { marginLeft: 256, display: "flex", flexDirection: "column" as const, minHeight: "100vh", width: "calc(100vw - 256px)" },
-  content: { flex: 1, padding: 32, background: "#f8fafc", width: "100%" },
+  content: { flex: 1, padding: "clamp(16px, 4vw, 32px)", background: "#f8fafc", width: "100%" },
 };
 
-function NavItem({ href, label, icon, admin }: { href: string; label: string; icon: React.ReactNode; admin?: boolean }) {
+function NavItem({ href, label, icon, admin, onNavigate }: { href: string; label: string; icon: React.ReactNode; admin?: boolean; onNavigate?: () => void }) {
   const pathname = usePathname();
   const active = pathname === href || pathname.startsWith(href + "/");
   return (
-    <Link href={href} style={S.navLink(active, !!admin)}>
+    <Link href={href} style={S.navLink(active, !!admin)} onClick={onNavigate}>
       <span style={{ flexShrink: 0, display: "flex" }}>{icon}</span>
       <span>{label}</span>
       {active && <span style={{ marginLeft: "auto", width: 6, height: 6, borderRadius: "50%", background: admin ? "#fbbf24" : "#3b82f6" }} />}
@@ -119,11 +119,11 @@ export default function AppShell({ children }: AppShellProps) {
         </div>
 
         <nav style={S.nav}>
-          <NavItem href="/profile" label={t("nav.myProfile")} icon={ic("M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z")} />
-          <NavItem href="/schedule/my-missions" label={t("nav.myMissions")} icon={ic("M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01")} />
-          <NavItem href="/groups" label={t("nav.myGroups")} icon={ic("M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z")} />
+          <NavItem href="/profile" label={t("nav.myProfile")} icon={ic("M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z")} onNavigate={() => setSidebarOpen(false)} />
+          <NavItem href="/schedule/my-missions" label={t("nav.myMissions")} icon={ic("M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01")} onNavigate={() => setSidebarOpen(false)} />
+          <NavItem href="/groups" label={t("nav.myGroups")} icon={ic("M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z")} onNavigate={() => setSidebarOpen(false)} />
           {isPlatformAdmin && (
-            <NavItem href="/platform" label={t("nav.platform")} icon={ic("M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6")} />
+            <NavItem href="/platform" label={t("nav.platform")} icon={ic("M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6")} onNavigate={() => setSidebarOpen(false)} />
           )}
         </nav>
 
@@ -164,14 +164,18 @@ export default function AppShell({ children }: AppShellProps) {
         <header style={S.topbar(false)} className="mobile-topbar flex items-center gap-3 px-4">
           <button
             onClick={() => setSidebarOpen(o => !o)}
-            style={{ background: "none", border: "none", cursor: "pointer", padding: 4, color: "#64748b" }}
+            style={{ background: "none", border: "none", cursor: "pointer", padding: 8, color: "#0f172a", borderRadius: 8 }}
             aria-label="Toggle menu"
           >
             <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
             </svg>
           </button>
-          <span style={{ fontWeight: 700, fontSize: 15, color: "#0f172a" }}>Shifter</span>
+          <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 8 }}>
+            <ShifterLogo size={24} />
+            <span style={{ fontWeight: 700, fontSize: 15, color: "#0f172a" }}>Shifter</span>
+          </div>
+          <NotificationBell />
         </header>
         <header style={{ ...S.topbar(false), display: "none" }} className="desktop-topbar">
           {/* desktop topbar — empty, admin mode indicator shown per-group */}

@@ -1067,23 +1067,23 @@ export default function GroupDetailPage() {
 
   return (
     <AppShell>
-      <div className="max-w-4xl mx-auto px-4 py-6 space-y-6" dir="rtl">
+      <div className="max-w-4xl mx-auto px-2 sm:px-4 py-4 sm:py-6 space-y-4 sm:space-y-6" dir="rtl">
         {/* Header */}
-        <div className="flex items-center gap-4">
-          <Link href="/groups" className="text-slate-400 hover:text-slate-600 transition-colors">
+        <div className="flex items-center gap-3 sm:gap-4">
+          <Link href="/groups" className="text-slate-400 hover:text-slate-600 transition-colors flex-shrink-0">
             <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
             </svg>
           </Link>
           <div
-            className="w-10 h-10 rounded-xl flex items-center justify-center text-white text-lg font-bold flex-shrink-0"
+            className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center text-white text-base sm:text-lg font-bold flex-shrink-0"
             style={{ background: avatarColor }}
           >
             {avatarLetter}
           </div>
-          <div className="flex-1">
-            <h1 className="text-xl font-bold text-slate-900">{group.name}</h1>
-            <p className="text-sm text-slate-400">{group.memberCount ?? 0} {tGroups("members")}</p>
+          <div className="flex-1 min-w-0">
+            <h1 className="text-lg sm:text-xl font-bold text-slate-900 truncate">{group.name}</h1>
+            <p className="text-xs sm:text-sm text-slate-400">{group.memberCount ?? 0} {tGroups("members")}</p>
           </div>
           {/* Admin mode toggle — always visible to group owner */}
           <button
@@ -1096,7 +1096,7 @@ export default function GroupDetailPage() {
                 setIsAdmin(true);
               }
             }}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium border transition-colors ${
+            className={`flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-medium border transition-colors flex-shrink-0 ${
               isAdmin
                 ? "bg-amber-50 border-amber-300 text-amber-700 hover:bg-amber-100"
                 : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
@@ -1105,7 +1105,7 @@ export default function GroupDetailPage() {
             <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
             </svg>
-            {isAdmin ? tGroups("exitAdminMode") : tGroups("enterAdminMode")}
+            <span className="hidden sm:inline">{isAdmin ? tGroups("exitAdminMode") : tGroups("enterAdminMode")}</span>
           </button>
         </div>
 
@@ -1113,12 +1113,12 @@ export default function GroupDetailPage() {
         <TrialBanner groupId={groupId} />
 
         {/* Tabs */}
-        <div className="flex gap-1 bg-slate-100 p-1 rounded-xl overflow-x-auto">
+        <div className="flex gap-1 bg-slate-100 p-1 rounded-xl overflow-x-auto scrollbar-hide -mx-2 px-2 sm:mx-0 sm:px-1">
           {visibleTabs.map(tab => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-all ${
+              className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium whitespace-nowrap transition-all ${
                 activeTab === tab
                   ? "bg-white text-slate-900 shadow-sm"
                   : "text-slate-500 hover:text-slate-700"
