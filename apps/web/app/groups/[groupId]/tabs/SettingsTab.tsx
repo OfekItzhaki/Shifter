@@ -71,14 +71,13 @@ export default function SettingsTab({
 
   const [importModalOpen, setImportModalOpen] = useState(false);
 
-  // Solver start time — defaults to current time rounded down to the nearest hour.
-  // Stored in state so the admin can override it before clicking Run.
+  // Solver start time — defaults to midnight (00:00) of today.
+  // Shifts always start from day boundaries for cleaner schedules.
   const [solverStartTime, setSolverStartTime] = useState(() => {
     const d = new Date();
-    // Round down to the nearest hour
-    d.setMinutes(0, 0, 0);
+    d.setHours(0, 0, 0, 0);
     const pad = (n: number) => String(n).padStart(2, "0");
-    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:00`;
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T00:00`;
   });
 
   if (!isAdmin) {

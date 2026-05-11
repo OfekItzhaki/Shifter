@@ -41,14 +41,13 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
         }
 
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
-        // Use the provided startTime if given, otherwise default to now.
-        // This allows admins to override the calculation start point.
+        // Use the provided startTime if given, otherwise default to midnight (00:00 UTC) of today.
+        // This ensures shifts always align to day boundaries for cleaner schedules.
         var nowUtc = startTime.HasValue
             ? DateTime.SpecifyKind(startTime.Value, DateTimeKind.Utc)
-            : DateTime.UtcNow;
+            : new DateTime(today.Year, today.Month, today.Day, 0, 0, 0, DateTimeKind.Utc);
 
         // Round nowUtc DOWN to the nearest whole hour so shifts start on clean boundaries.
-        // e.g. if it's 12:25, shifts start from 12:00 not 12:25.
         nowUtc = new DateTime(nowUtc.Year, nowUtc.Month, nowUtc.Day, nowUtc.Hour, 0, 0, DateTimeKind.Utc);
 
         // horizonStart is the DATE sent to the solver as horizon_start.
