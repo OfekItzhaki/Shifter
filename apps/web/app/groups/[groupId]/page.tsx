@@ -8,6 +8,7 @@ import AppShell from "@/components/shell/AppShell";
 import Modal from "@/components/Modal";
 import DraftScheduleModal from "@/components/DraftScheduleModal";
 import ImportModal from "@/components/ImportModal";
+import TrialBanner from "@/components/billing/TrialBanner";
 import ScheduleTab from "./tabs/ScheduleTab";
 import MembersTab, { MemberProfileModal } from "./tabs/MembersTab";
 import AlertsTab from "./tabs/AlertsTab";
@@ -1094,6 +1095,9 @@ export default function GroupDetailPage() {
             {isAdmin ? tGroups("exitAdminMode") : tGroups("enterAdminMode")}
           </button>
         </div>
+
+        {/* Trial/subscription banner */}
+        <TrialBanner groupId={groupId} />
 
         {/* Tabs */}
         <div className="flex gap-1 bg-slate-100 p-1 rounded-xl overflow-x-auto">
