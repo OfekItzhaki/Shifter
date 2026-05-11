@@ -1,0 +1,176 @@
+export type LandingLang = "en" | "he" | "ru";
+
+export const LANDING_CONTENT: Record<LandingLang, {
+  nav: { features: string; howItWorks: string; about: string; faq: string; signIn: string; getStarted: string };
+  hero: { title1: string; title2: string; subtitle: string; cta: string; signIn: string };
+  features: { title: string; subtitle: string; items: Array<{ icon: string; title: string; desc: string }> };
+  howItWorks: { title: string; steps: Array<{ title: string; desc: string }> };
+  about: { title: string; subtitle: string; paragraphs: string[]; stats: Array<{ value: string; label: string }> };
+  faq: { title: string; subtitle: string; items: Array<{ q: string; a: string }> };
+  cta: { title: string; subtitle: string; primary: string; secondary: string };
+  footer: { about: string; faq: string; terms: string; privacy: string; signIn: string };
+  dir: "ltr" | "rtl";
+}> = {
+  en: {
+    dir: "ltr",
+    nav: { features: "Features", howItWorks: "How it Works", about: "About", faq: "FAQ", signIn: "Sign In", getStarted: "Get Started Free" },
+    hero: { title1: "Smart Shift", title2: "Scheduling", subtitle: "Shifter generates fair, balanced shift schedules at the click of a button. No spreadsheets. No headaches. No arguments.", cta: "Get Started — It's Free", signIn: "I have an account — Sign In" },
+    features: {
+      title: "Why Shifter?",
+      subtitle: "Everything you need to manage shift schedules — in one place",
+      items: [
+        { icon: "⚡", title: "Auto Scheduling", desc: "Smart algorithm distributes shifts fairly while respecting all constraints" },
+        { icon: "📱", title: "Mobile First", desc: "Everyone sees their shifts on mobile — even offline with no internet" },
+        { icon: "⚖️", title: "Fair Distribution", desc: "The system balances workload across all people and prevents overloading" },
+        { icon: "🔒", title: "Flexible Constraints", desc: "Set minimum rest, personal restrictions, required qualifications and more" },
+        { icon: "📊", title: "Statistics", desc: "See who did how many shifts, who's overloaded, who's available — in real time" },
+        { icon: "🔔", title: "Notifications", desc: "Every schedule change is pushed directly to team members' phones" },
+      ],
+    },
+    howItWorks: {
+      title: "How it Works",
+      steps: [
+        { title: "Define", desc: "Add people, tasks, and constraints to your group" },
+        { title: "Generate", desc: "Click 'Create Schedule' — the algorithm does the rest" },
+        { title: "Publish", desc: "Review the draft and publish — everyone gets notified" },
+      ],
+    },
+    about: {
+      title: "About",
+      subtitle: "The story behind Shifter",
+      paragraphs: [
+        "Shifter was born from the real need of team leaders who spend hours building shift schedules in Excel — and someone always ends up unhappy.",
+        "The system uses a constraint-optimization algorithm (CP-SAT) that distributes shifts fairly and balanced, while respecting all constraints: minimum rest, required qualifications, personal preferences, and more.",
+        "The platform is built mobile-first — because team members need to check their schedule in the field, even without internet. Every change is pushed directly to their phone.",
+        "Shifter works for military teams, security, factories, hospitals, restaurants — anywhere that needs smart, fair shift distribution.",
+      ],
+      stats: [
+        { value: "90%", label: "Time Saved" },
+        { value: "0", label: "Spreadsheets" },
+        { value: "24/7", label: "Mobile Access" },
+      ],
+    },
+    faq: {
+      title: "FAQ",
+      subtitle: "Answers to common questions",
+      items: [
+        { q: "Is it really free?", a: "Yes. The basic plan is completely free and works for most teams. Advanced plans with extra features will be available in the future." },
+        { q: "How many people can I add?", a: "The free plan supports up to 30 people per group. Enough for most platoons and teams." },
+        { q: "Is my data secure?", a: "Absolutely. All data is encrypted, passwords are hashed with BCrypt, and communication uses HTTPS. Full isolation between groups." },
+        { q: "Can I view the schedule offline?", a: "Yes! The app caches your latest schedule on your device. Even without signal, you can see your shifts." },
+        { q: "What if someone can't make their shift?", a: "The admin can mark 'can't make it' and re-run the algorithm — it automatically finds a replacement." },
+        { q: "Can I import people from Excel?", a: "Yes. You can import people and tasks from CSV or Excel files with one click." },
+      ],
+    },
+    cta: { title: "Ready to get started?", subtitle: "Sign up free in 30 seconds. No credit card needed.", primary: "Create Free Account", secondary: "Sign In to Existing Account" },
+    footer: { about: "About", faq: "FAQ", terms: "Terms", privacy: "Privacy", signIn: "Sign In" },
+  },
+  he: {
+    dir: "rtl",
+    nav: { features: "יתרונות", howItWorks: "איך זה עובד", about: "אודות", faq: "שאלות נפוצות", signIn: "כניסה", getStarted: "הרשמה חינם" },
+    hero: { title1: "סידור משמרות", title2: "חכם ואוטומטי", subtitle: "Shifter מייצר סידור עבודה הוגן ומאוזן בלחיצת כפתור. בלי אקסלים, בלי כאב ראש, בלי ויכוחים.", cta: "התחל עכשיו — חינם", signIn: "יש לי חשבון — כניסה" },
+    features: {
+      title: "למה Shifter?",
+      subtitle: "כל מה שצריך כדי לנהל סידור עבודה — ממקום אחד",
+      items: [
+        { icon: "⚡", title: "סידור אוטומטי", desc: "אלגוריתם חכם שמחלק משמרות בצורה הוגנת תוך שמירה על כל האילוצים" },
+        { icon: "📱", title: "עובד בנייד", desc: "כל חייל רואה את המשמרות שלו בנייד — גם בלי אינטרנט" },
+        { icon: "⚖️", title: "חלוקה הוגנת", desc: "המערכת מאזנת עומס בין כל האנשים ומונעת העמסה על אחד" },
+        { icon: "🔒", title: "אילוצים גמישים", desc: "הגדר מנוחה מינימלית, הגבלות אישיות, כישורים נדרשים ועוד" },
+        { icon: "📊", title: "סטטיסטיקות", desc: "ראה מי עשה כמה משמרות, מי עמוס ומי פנוי — בזמן אמת" },
+        { icon: "🔔", title: "התראות", desc: "כל שינוי בסידור מגיע ישירות לנייד של החיילים" },
+      ],
+    },
+    howItWorks: {
+      title: "איך זה עובד?",
+      steps: [
+        { title: "הגדר", desc: "הוסף אנשים, משימות ואילוצים לקבוצה שלך" },
+        { title: "הפעל", desc: "לחץ על 'צור סידור' — האלגוריתם עושה את השאר" },
+        { title: "פרסם", desc: "בדוק את הטיוטה ופרסם — כולם מקבלים התראה בנייד" },
+      ],
+    },
+    about: {
+      title: "אודות",
+      subtitle: "הסיפור מאחורי Shifter",
+      paragraphs: [
+        "Shifter נולד מתוך הצורך האמיתי של מפקדים ומנהלי צוותים שמבלים שעות על סידור משמרות באקסל — ובסוף תמיד מישהו לא מרוצה.",
+        "המערכת משתמשת באלגוריתם אופטימיזציה (CP-SAT) שמחלק משמרות בצורה הוגנת ומאוזנת, תוך שמירה על כל האילוצים: מנוחה מינימלית, כישורים נדרשים, העדפות אישיות ועוד.",
+        "הפלטפורמה בנויה עם דגש על חוויית משתמש בנייד — כי חיילים צריכים לראות את הסידור שלהם בשטח, גם בלי אינטרנט. כל שינוי בסידור מגיע ישירות לנייד.",
+        "Shifter מתאים לצוותים צבאיים, שמירה, מפעלים, בתי חולים, מסעדות — כל מקום שצריך לחלק משמרות בצורה חכמה והוגנת.",
+      ],
+      stats: [
+        { value: "90%", label: "חיסכון בזמן" },
+        { value: "0", label: "אקסלים" },
+        { value: "24/7", label: "גישה מהנייד" },
+      ],
+    },
+    faq: {
+      title: "שאלות נפוצות",
+      subtitle: "תשובות לשאלות הכי נפוצות",
+      items: [
+        { q: "האם זה באמת חינם?", a: "כן. התוכנית הבסיסית חינמית לחלוטין ומתאימה לרוב הצוותים. בעתיד יהיו תוכניות מתקדמות עם יכולות נוספות." },
+        { q: "כמה אנשים אפשר להוסיף?", a: "בתוכנית החינמית אפשר להוסיף עד 30 אנשים לקבוצה. מספיק לרוב הפלוגות והצוותים." },
+        { q: "האם המידע שלי מאובטח?", a: "בהחלט. כל המידע מוצפן, סיסמאות מאובטחות ב-BCrypt, והתקשורת מוצפנת ב-HTTPS. יש בידוד מלא בין קבוצות." },
+        { q: "אפשר לראות את הסידור בלי אינטרנט?", a: "כן! האפליקציה שומרת את הסידור האחרון במכשיר. גם בלי קליטה תוכל לראות את המשמרות שלך." },
+        { q: "מה קורה אם מישהו לא יכול להגיע?", a: "המנהל יכול לסמן 'לא יכול להגיע' ולהפעיל את האלגוריתם מחדש — הוא ימצא מחליף אוטומטית." },
+        { q: "אפשר לייבא אנשים מאקסל?", a: "כן. אפשר לייבא רשימת אנשים ומשימות מקובץ CSV או Excel בלחיצה אחת." },
+      ],
+    },
+    cta: { title: "מוכן להתחיל?", subtitle: "הרשמה חינם תוך 30 שניות. בלי כרטיס אשראי.", primary: "צור חשבון חינם", secondary: "כניסה לחשבון קיים" },
+    footer: { about: "אודות", faq: "שאלות נפוצות", terms: "תנאי שימוש", privacy: "פרטיות", signIn: "כניסה" },
+  },
+  ru: {
+    dir: "ltr",
+    nav: { features: "Возможности", howItWorks: "Как это работает", about: "О нас", faq: "FAQ", signIn: "Войти", getStarted: "Начать бесплатно" },
+    hero: { title1: "Умное", title2: "Расписание смен", subtitle: "Shifter создаёт справедливое и сбалансированное расписание одним нажатием. Без таблиц. Без головной боли. Без споров.", cta: "Начать — бесплатно", signIn: "У меня есть аккаунт — Войти" },
+    features: {
+      title: "Почему Shifter?",
+      subtitle: "Всё для управления сменами — в одном месте",
+      items: [
+        { icon: "⚡", title: "Автоматическое расписание", desc: "Умный алгоритм распределяет смены справедливо с учётом всех ограничений" },
+        { icon: "📱", title: "Мобильная версия", desc: "Каждый видит свои смены на телефоне — даже без интернета" },
+        { icon: "⚖️", title: "Справедливое распределение", desc: "Система балансирует нагрузку и предотвращает перегрузку" },
+        { icon: "🔒", title: "Гибкие ограничения", desc: "Минимальный отдых, личные ограничения, квалификации и многое другое" },
+        { icon: "📊", title: "Статистика", desc: "Кто сколько отработал, кто перегружен, кто свободен — в реальном времени" },
+        { icon: "🔔", title: "Уведомления", desc: "Каждое изменение расписания приходит прямо на телефон" },
+      ],
+    },
+    howItWorks: {
+      title: "Как это работает",
+      steps: [
+        { title: "Настройте", desc: "Добавьте людей, задачи и ограничения в группу" },
+        { title: "Запустите", desc: "Нажмите 'Создать расписание' — алгоритм сделает остальное" },
+        { title: "Опубликуйте", desc: "Проверьте черновик и опубликуйте — все получат уведомление" },
+      ],
+    },
+    about: {
+      title: "О нас",
+      subtitle: "История Shifter",
+      paragraphs: [
+        "Shifter родился из реальной потребности руководителей, которые тратят часы на составление расписания в Excel — и кто-то всегда остаётся недоволен.",
+        "Система использует алгоритм оптимизации (CP-SAT), который распределяет смены справедливо и сбалансированно, соблюдая все ограничения.",
+        "Платформа создана для мобильных устройств — потому что сотрудники должны видеть расписание в поле, даже без интернета.",
+        "Shifter подходит для военных, охраны, заводов, больниц, ресторанов — везде, где нужно умное распределение смен.",
+      ],
+      stats: [
+        { value: "90%", label: "Экономия времени" },
+        { value: "0", label: "Таблиц" },
+        { value: "24/7", label: "Мобильный доступ" },
+      ],
+    },
+    faq: {
+      title: "Частые вопросы",
+      subtitle: "Ответы на популярные вопросы",
+      items: [
+        { q: "Это действительно бесплатно?", a: "Да. Базовый план полностью бесплатный. В будущем появятся расширенные планы." },
+        { q: "Сколько людей можно добавить?", a: "Бесплатный план поддерживает до 30 человек в группе." },
+        { q: "Мои данные в безопасности?", a: "Абсолютно. Все данные зашифрованы, пароли хешируются BCrypt, связь через HTTPS." },
+        { q: "Можно смотреть расписание офлайн?", a: "Да! Приложение сохраняет последнее расписание на устройстве." },
+        { q: "Что если кто-то не может выйти на смену?", a: "Админ отмечает 'не может' и перезапускает алгоритм — замена находится автоматически." },
+        { q: "Можно импортировать из Excel?", a: "Да. Импорт людей и задач из CSV или Excel одним кликом." },
+      ],
+    },
+    cta: { title: "Готовы начать?", subtitle: "Регистрация бесплатна за 30 секунд. Без кредитной карты.", primary: "Создать бесплатный аккаунт", secondary: "Войти в существующий аккаунт" },
+    footer: { about: "О нас", faq: "FAQ", terms: "Условия", privacy: "Конфиденциальность", signIn: "Войти" },
+  },
+};
