@@ -74,6 +74,10 @@ public class AppDbContext : DbContext
     // Notifications
     public DbSet<Notification> Notifications => Set<Notification>();
 
+    // Billing
+    public DbSet<Jobuler.Domain.Billing.GroupSubscription> GroupSubscriptions => Set<Jobuler.Domain.Billing.GroupSubscription>();
+    public DbSet<Jobuler.Domain.Billing.Coupon> Coupons => Set<Jobuler.Domain.Billing.Coupon>();
+
     /// <summary>
     /// Set by Infrastructure at startup so OnModelCreating can apply EF configurations
     /// from the Infrastructure assembly without a circular project reference.

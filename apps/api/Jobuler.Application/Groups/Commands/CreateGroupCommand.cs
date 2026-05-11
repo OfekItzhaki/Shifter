@@ -65,6 +65,11 @@ public class CreateGroupCommandHandler : IRequestHandler<CreateGroupCommand, Gui
         _db.SpaceRoles.Add(defaultRole);
 
         _db.GroupMemberships.Add(GroupMembership.Create(req.SpaceId, group.Id, person.Id, isOwner: true));
+
+        // Auto-create a trial subscription for the new group
+        var subscription = Jobuler.Domain.Billing.GroupSubscription.CreateTrial(req.SpaceId, group.Id);
+        _db.GroupSubscriptions.Add(subscription);
+
         await _db.SaveChangesAsync(ct);
         return group.Id;
     }
