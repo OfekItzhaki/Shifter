@@ -5,6 +5,8 @@ using Jobuler.Domain.Spaces;
 using Jobuler.Infrastructure.Notifications;
 using Jobuler.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
+using NSubstitute;
 using Xunit;
 
 namespace Jobuler.Tests.Application;
@@ -76,7 +78,7 @@ public class NotificationTests
             SpaceMembership.Create(spaceId, user2));
         await db.SaveChangesAsync();
 
-        var service = new NotificationService(db);
+        var service = new NotificationService(db, Substitute.For<IPushNotificationSender>(), NullLogger<NotificationService>.Instance);
         await service.NotifySpaceAdminsAsync(
             spaceId, "solver_completed", "Ready", "Draft created.");
 
@@ -96,7 +98,7 @@ public class NotificationTests
     public async Task NotifySpaceAdmins_WithNoMembers_CreatesNoNotifications()
     {
         var db = CreateDb();
-        var service = new NotificationService(db);
+        var service = new NotificationService(db, Substitute.For<IPushNotificationSender>(), NullLogger<NotificationService>.Instance);
 
         await service.NotifySpaceAdminsAsync(
             Guid.NewGuid(), "solver_completed", "Ready", "Body");
