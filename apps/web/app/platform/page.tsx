@@ -41,7 +41,14 @@ export default function PlatformPage() {
   const [accessDenied, setAccessDenied] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [hydrated, setHydrated] = useState(false);
+
   useEffect(() => {
+    setHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    if (!hydrated) return;
     if (!isAuthenticated) {
       router.push("/login");
       return;
@@ -58,9 +65,9 @@ export default function PlatformPage() {
         }
       })
       .finally(() => setLoading(false));
-  }, [isAuthenticated, router]);
+  }, [hydrated, isAuthenticated, router]);
 
-  if (!isAuthenticated) return null;
+  if (!hydrated || !isAuthenticated) return null;
 
   return (
     <AppShell>
