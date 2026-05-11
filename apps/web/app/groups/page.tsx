@@ -7,6 +7,8 @@ import { useSpaceStore } from "@/lib/store/spaceStore";
 import { useRouter, useSearchParams } from "next/navigation";
 import { getAvatarColor, getAvatarLetter } from "@/lib/utils/groupAvatar";
 import { useGroups, useDeletedGroups, useCreateGroup, useRestoreGroup } from "@/lib/query/hooks/useGroups";
+import Modal from "@/components/Modal";
+import GroupTemplatePicker from "@/components/GroupTemplatePicker";
 
 export default function GroupsPage() {
   const t = useTranslations("groups");
@@ -19,6 +21,7 @@ export default function GroupsPage() {
 
   const [newGroupName, setNewGroupName] = useState("");
   const [createError, setCreateError] = useState<string | null>(null);
+  const [templateGroupId, setTemplateGroupId] = useState<string | null>(null);
 
   const { data: groups = [], isLoading: loading } = useGroups(currentSpaceId);
   const { data: deletedGroups = [], isLoading: deletedLoading } = useDeletedGroups(currentSpaceId);
@@ -37,8 +40,13 @@ export default function GroupsPage() {
     if (!currentSpaceId || !newGroupName.trim()) return;
     setCreateError(null);
     try {
-      await createGroup.mutateAsync(newGroupName.trim());
+      const result = await createGroup.mutateAsync(newGroupName.trim());
       setNewGroupName("");
+      // Show template picker for the new group
+      const newGroupId = (result as { data?: { id?: string } })?.data?.id;
+      if (newGroupId) {
+        setTemplateGroupId(newGroupId);
+      }
     } catch (err: unknown) {
       setCreateError(
         (err as { response?: { data?: { error?: string } } })?.response?.data?.error ||
@@ -145,6 +153,23 @@ export default function GroupsPage() {
           )}
         </div>
       </div>
+
+      {/* Template picker modal — shown after creating a new group */}
+      {templateGroupId && currentSpaceId && (
+        <Modal
+          open={true}
+          onClose={() => { setTemplateGroupId(null); router.push(`/groups/${templateGroupId}`); }}
+          title={t("templates.title")}
+          maxWidth={600}
+        >
+          <GroupTemplatePicker
+            spaceId={currentSpaceId}
+            groupId={templateGroupId}
+            onComplete={() => { setTemplateGroupId(null); router.push(`/groups/${templateGroupId}`); }}
+            onSkip={() => { setTemplateGroupId(null); router.push(`/groups/${templateGroupId}`); }}
+          />
+        </Modal>
+      )}
     </AppShell>
   );
 }

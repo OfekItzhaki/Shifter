@@ -131,6 +131,14 @@
     "noDeletedGroups": "אין קבוצות מחוקות",
     "restore": "שחזר",
     "members": "חברים",
+    "templates": {
+      "title": "בחר תבנית",
+      "subtitle": "התחל במהירות עם הגדרה מוכנה מראש",
+      "skip": "דלג — אגדיר ידנית",
+      "apply": "החל תבנית",
+      "applying": "מגדיר...",
+      "errorApplying": "שגיאה בהחלת התבנית. ניתן להגדיר ידנית."
+    },
     "enterAdminMode": "כניסה למצב ניהול",
     "exitAdminMode": "יציאה ממצב ניהול",
     "tabs": {
