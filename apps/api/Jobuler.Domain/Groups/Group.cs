@@ -12,6 +12,7 @@ public class Group : AuditableEntity, ITenantScoped
     public bool IsActive { get; private set; } = true;
     public int SolverHorizonDays { get; private set; } = 7;
     public DateTime? SolverStartDateTime { get; private set; }
+    public bool AutoPublish { get; private set; } = false;
     public string? JoinCode { get; private set; }
     public DateTime? DeletedAt { get; private set; }
 
@@ -45,6 +46,7 @@ public class Group : AuditableEntity, ITenantScoped
     }
 
     public void UpdateSettings(int solverHorizonDays, DateTime? solverStartDateTime = null) { SolverHorizonDays = Math.Clamp(solverHorizonDays, 1, 90); SolverStartDateTime = solverStartDateTime; Touch(); }
+    public void SetAutoPublish(bool autoPublish) { AutoPublish = autoPublish; Touch(); }
     public void Deactivate() { IsActive = false; Touch(); }
 
     public void SoftDelete() { DeletedAt = DateTime.UtcNow; Touch(); }

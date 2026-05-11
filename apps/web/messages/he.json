@@ -109,6 +109,14 @@
       "errorLoading": "שגיאה בטעינת השינויים",
       "showDiff": "הצג שינויים"
     },
+    "history": {
+      "title": "היסטוריית סידורים",
+      "close": "סגור",
+      "noVersions": "אין סידורים שפורסמו עדיין",
+      "version": "גרסה",
+      "current": "נוכחי",
+      "viewChanges": "הצג שינויים"
+    },
     "myMissions": {
       "title": "המשימות שלי",
       "subtitle": "כל המשימות שלך בכל הקבוצות",

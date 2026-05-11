@@ -106,6 +106,14 @@
       "errorLoading": "Error loading changes",
       "showDiff": "Show Changes"
     },
+    "history": {
+      "title": "Schedule History",
+      "close": "Close",
+      "noVersions": "No published schedules yet",
+      "version": "Version",
+      "current": "Current",
+      "viewChanges": "View Changes"
+    },
     "myMissions": {
       "title": "My Missions",
       "subtitle": "All your missions across all groups",

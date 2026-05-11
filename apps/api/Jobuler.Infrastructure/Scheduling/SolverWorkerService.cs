@@ -475,6 +475,22 @@ public class SolverWorkerService : BackgroundService
                 job.SpaceId, evt, notifTitle, notifBody,
                 metadataJson: summaryJson, ct: ct);
 
+            // Auto-publish: if the group has auto_publish enabled and the schedule is feasible,
+            // publish the draft immediately without admin review.
+            if (!shouldDiscard && output.Feasible && job.GroupId.HasValue)
+            {
+                var autoPublishGroup = await db.Groups.AsNoTracking()
+                    .FirstOrDefaultAsync(g => g.Id == job.GroupId.Value, ct);
+                if (autoPublishGroup?.AutoPublish == true)
+                {
+                    version.Publish(Guid.Empty); // Guid.Empty = system-published
+                    await db.SaveChangesAsync(ct);
+                    _logger.LogInformation(
+                        "AutoPublish: version {Version} auto-published for group {GroupId}.",
+                        nextVersion, job.GroupId.Value);
+                }
+            }
+
             _logger.LogInformation(
                 "Solver job completed: run_id={RunId} version={Version} feasible={Feasible} assignments={Count}",
                 job.RunId, nextVersion, output.Feasible, assignments.Count);
