@@ -41,6 +41,7 @@ export interface MeDto {
   profileImageUrl: string | null;
   birthday: string | null;
   createdAt: string;
+  emailVerified: boolean;
 }
 
 export async function getMe(): Promise<MeDto> {
@@ -72,4 +73,12 @@ export async function forgotPassword(email: string): Promise<void> {
 export async function resetPassword(token: string, newPassword: string): Promise<void> {
   const { data } = await apiClient.post("/auth/reset-password", { token, newPassword });
   return data;
+}
+
+export async function verifyEmail(token: string): Promise<void> {
+  await apiClient.post("/auth/verify-email", { token });
+}
+
+export async function resendVerification(): Promise<void> {
+  await apiClient.post("/auth/resend-verification");
 }

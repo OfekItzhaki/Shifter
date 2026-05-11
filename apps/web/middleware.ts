@@ -18,6 +18,7 @@ const PUBLIC_PATHS = [
   "/register",
   "/forgot-password",
   "/reset-password",
+  "/verify-email",
   "/pricing",
   "/invitations",
   "/group-opt-out",

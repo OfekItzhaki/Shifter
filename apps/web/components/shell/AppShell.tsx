@@ -10,6 +10,7 @@ import NotificationBell from "@/components/shell/NotificationBell";
 import ShifterLogo from "@/components/shell/ShifterLogo";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import DarkModeToggle from "@/components/DarkModeToggle";
+import VerificationBanner from "@/components/shell/VerificationBanner";
 import { getMySpaces } from "@/lib/api/spaces";
 import { getMe } from "@/lib/api/auth";
 
@@ -183,7 +184,10 @@ export default function AppShell({ children }: AppShellProps) {
         <header style={{ ...S.topbar(false), display: "none" }} className="desktop-topbar">
           {/* desktop topbar — empty, admin mode indicator shown per-group */}
         </header>
-        <main style={S.content} className="bg-slate-50 dark:bg-slate-900">{children}</main>
+        <main style={S.content} className="bg-slate-50 dark:bg-slate-900">
+          <VerificationBanner />
+          {children}
+        </main>
       </div>
     </div>
   );

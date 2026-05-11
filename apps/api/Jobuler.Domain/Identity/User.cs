@@ -13,6 +13,7 @@ public class User : AuditableEntity
     public DateTime? LastLoginAt { get; private set; }
     public string? PhoneNumber { get; private set; }
     public bool IsPlatformAdmin { get; private set; }
+    public bool EmailVerified { get; private set; } = false;
 
     // EF Core constructor
     private User() { }
@@ -61,4 +62,10 @@ public class User : AuditableEntity
     }
 
     public void Deactivate() { IsActive = false; Touch(); }
+
+    public void MarkEmailVerified()
+    {
+        EmailVerified = true;
+        Touch();
+    }
 }

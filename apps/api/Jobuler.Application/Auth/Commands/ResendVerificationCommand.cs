@@ -9,17 +9,19 @@ using Microsoft.Extensions.Logging;
 
 namespace Jobuler.Application.Auth.Commands;
 
-public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Guid>
+public record ResendVerificationCommand(Guid UserId) : IRequest;
+
+public class ResendVerificationCommandHandler : IRequestHandler<ResendVerificationCommand>
 {
     private readonly AppDbContext _db;
     private readonly IEmailSender _emailSender;
-    private readonly ILogger<RegisterCommandHandler> _logger;
+    private readonly ILogger<ResendVerificationCommandHandler> _logger;
     private readonly string _frontendBaseUrl;
 
-    public RegisterCommandHandler(
+    public ResendVerificationCommandHandler(
         AppDbContext db,
         IEmailSender emailSender,
-        ILogger<RegisterCommandHandler> logger,
+        ILogger<ResendVerificationCommandHandler> logger,
         IConfiguration configuration)
     {
         _db = db;
@@ -29,56 +31,41 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Guid>
             ?? "https://jobuler.app";
     }
 
-    public async Task<Guid> Handle(RegisterCommand request, CancellationToken ct)
+    public async Task Handle(ResendVerificationCommand req, CancellationToken ct)
     {
-        var exists = await _db.Users.AnyAsync(u => u.Email == request.Email.ToLowerInvariant().Trim(), ct);
-        if (exists)
-            throw new InvalidOperationException("Email already registered.");
+        var user = await _db.Users.FirstOrDefaultAsync(u => u.Id == req.UserId, ct)
+            ?? throw new KeyNotFoundException("User not found.");
 
-        var hash = BCrypt.Net.BCrypt.HashPassword(request.Password, workFactor: 12);
-        var user = User.Create(request.Email, request.DisplayName, hash, request.PreferredLocale, request.PhoneNumber, request.ProfileImageUrl, request.Birthday);
+        if (user.EmailVerified)
+            throw new InvalidOperationException("Email already verified.");
 
-        _db.Users.Add(user);
-        await _db.SaveChangesAsync(ct);
+        // Invalidate existing active tokens
+        var existing = await _db.EmailVerificationTokens
+            .Where(t => t.UserId == user.Id && t.UsedAt == null && t.ExpiresAt > DateTime.UtcNow)
+            .ToListAsync(ct);
+        foreach (var t in existing)
+            t.MarkUsed();
 
-        // Auto-create a personal space for the new user
-        var displayName = request.DisplayName ?? request.Email.Split('@')[0];
-        var spaceName = (request.PreferredLocale ?? "he") switch
-        {
-            "he" => $"המרחב של {displayName}",
-            "ru" => $"Пространство {displayName}",
-            _ => $"{displayName}'s Space",
-        };
-        var space = Jobuler.Domain.Spaces.Space.Create(spaceName, user.Id);
-        _db.Spaces.Add(space);
-
-        // Add user as space member
-        var membership = Jobuler.Domain.Spaces.SpaceMembership.Create(space.Id, user.Id);
-        _db.SpaceMemberships.Add(membership);
-
-        // Generate email verification token
+        // Generate new 64-char hex token
         var rawToken = Convert.ToHexString(RandomNumberGenerator.GetBytes(32)).ToLowerInvariant();
         var tokenHash = ComputeSha256(rawToken);
+
         var verificationToken = EmailVerificationToken.Create(user.Id, tokenHash);
         _db.EmailVerificationTokens.Add(verificationToken);
-
         await _db.SaveChangesAsync(ct);
 
-        // Send verification email — wrapped in try-catch so registration succeeds even if email fails
+        // Send verification email (wrapped in try-catch so it doesn't fail the command)
         try
         {
             var verifyUrl = $"{_frontendBaseUrl}/verify-email?token={rawToken}";
-            var locale = request.PreferredLocale ?? "he";
-            var subject = GetSubject(locale);
-            var html = BuildVerificationEmailHtml(user.DisplayName, verifyUrl, locale);
+            var subject = GetSubject(user.PreferredLocale);
+            var html = BuildVerificationEmailHtml(user.DisplayName, verifyUrl, user.PreferredLocale);
             await _emailSender.SendAsync(user.Email, subject, html, ct);
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to send verification email during registration for user {UserId}", user.Id);
+            _logger.LogWarning(ex, "Failed to send verification email to user {UserId}", user.Id);
         }
-
-        return user.Id;
     }
 
     private static string ComputeSha256(string input)

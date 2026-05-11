@@ -48,7 +48,8 @@ public class AuthController : ControllerBase
             phoneNumber = user.PhoneNumber,
             profileImageUrl = user.ProfileImageUrl,
             birthday = user.Birthday,
-            createdAt = user.CreatedAt
+            createdAt = user.CreatedAt,
+            emailVerified = user.EmailVerified
         });
     }
 
@@ -126,6 +127,24 @@ public class AuthController : ControllerBase
         return NoContent();
     }
 
+    /// <summary>Verify email using a token from the verification email.</summary>
+    [HttpPost("verify-email")]
+    [AllowAnonymous]
+    public async Task<IActionResult> VerifyEmail([FromBody] VerifyEmailRequest req, CancellationToken ct)
+    {
+        await _mediator.Send(new VerifyEmailCommand(req.Token), ct);
+        return NoContent();
+    }
+
+    /// <summary>Resend verification email to the current user.</summary>
+    [HttpPost("resend-verification")]
+    [Authorize]
+    public async Task<IActionResult> ResendVerification(CancellationToken ct)
+    {
+        await _mediator.Send(new ResendVerificationCommand(CurrentUserId), ct);
+        return NoContent();
+    }
+
     /// <summary>Delete the current user's account and all associated data.</summary>
     [HttpDelete("me")]
     [Authorize]
@@ -166,3 +185,4 @@ public record RefreshRequest(string RefreshToken);
 public record ForgotPasswordRequest(string Email);
 public record ResetPasswordRequest(string Token, string NewPassword);
 public record UpdateMeRequest(string DisplayName, string? PhoneNumber, string? ProfileImageUrl, DateOnly? Birthday);
+public record VerifyEmailRequest(string Token);

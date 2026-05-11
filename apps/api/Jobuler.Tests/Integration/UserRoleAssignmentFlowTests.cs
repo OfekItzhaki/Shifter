@@ -1,5 +1,6 @@
 using FluentAssertions;
 using Jobuler.Application.Auth.Commands;
+using Jobuler.Application.Common;
 using Jobuler.Application.People.Commands;
 using Jobuler.Application.People.Queries;
 using Jobuler.Application.Spaces.Commands;
@@ -7,6 +8,9 @@ using Jobuler.Application.Spaces.Queries;
 using Jobuler.Domain.People;
 using Jobuler.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging.Abstractions;
+using NSubstitute;
 using Xunit;
 
 namespace Jobuler.Tests.Integration;
@@ -28,7 +32,13 @@ public class UserRoleAssignmentFlowTests
         var db = CreateDb();
 
         // 1. Register admin user
-        var registerHandler = new RegisterCommandHandler(db);
+        var emailSender = Substitute.For<IEmailSender>();
+        emailSender.SendAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+        var config = Substitute.For<IConfiguration>();
+        config["App:FrontendBaseUrl"].Returns("https://test.local");
+        var registerHandler = new RegisterCommandHandler(
+            db, emailSender, NullLogger<RegisterCommandHandler>.Instance, config);
         var adminId = await registerHandler.Handle(
             new RegisterCommand("admin@test.local", "Admin User", "Password1!", "en"),
             default);

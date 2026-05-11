@@ -871,6 +871,20 @@
     "accessDenied": "Access denied — platform owner only",
     "ms": "ms"
   },
+  "verifyEmail": {
+    "loading": "Verifying your email...",
+    "success": "Email Verified",
+    "successMessage": "Your email has been verified successfully. You can now sign in.",
+    "error": "Verification Failed",
+    "errorMessage": "The verification link is invalid or has expired. Please request a new one.",
+    "resend": "Resend Verification Email",
+    "goToLogin": "Go to Login",
+    "banner": {
+      "message": "Please verify your email address to secure your account.",
+      "resend": "Resend",
+      "dismiss": "Dismiss"
+    }
+  },
   "errorPages": {
     "notFound": {
       "heading": "Page Not Found",

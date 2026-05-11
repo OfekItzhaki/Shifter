@@ -23,6 +23,7 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(u => u.PhoneNumber).HasColumnName("phone_number");
         builder.Property(u => u.Birthday).HasColumnName("birthday");
         builder.Property(u => u.IsPlatformAdmin).HasColumnName("is_platform_admin");
+        builder.Property(u => u.EmailVerified).HasColumnName("email_verified").HasDefaultValue(false);
         builder.HasIndex(u => u.Email).IsUnique();
     }
 }
