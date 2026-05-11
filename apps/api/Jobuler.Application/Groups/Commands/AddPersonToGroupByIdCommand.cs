@@ -66,6 +66,25 @@ public class AddPersonToGroupByIdCommandHandler : IRequestHandler<AddPersonToGro
 
         if (!alreadyMember)
         {
+            // Check member limit based on subscription tier
+            var sub = await _db.GroupSubscriptions
+                .FirstOrDefaultAsync(s => s.GroupId == req.GroupId && s.SpaceId == req.SpaceId, ct);
+            if (sub != null && sub.IsActive)
+            {
+                var currentCount = await _db.GroupMemberships.CountAsync(m => m.GroupId == req.GroupId, ct);
+                var maxMembers = sub.TierId switch
+                {
+                    "starter" => 15,
+                    "growth" => 30,
+                    "team" => 60,
+                    "org" => 90,
+                    "unlimited" => int.MaxValue,
+                    _ => int.MaxValue, // trial = no limit
+                };
+                if (currentCount >= maxMembers)
+                    throw new InvalidOperationException($"הגעת למגבלת החברים בתוכנית ({maxMembers}). שדרג כדי להוסיף עוד.");
+            }
+
             _db.GroupMemberships.Add(GroupMembership.Create(req.SpaceId, req.GroupId, req.PersonId));
 
             // Notify linked user if they have an account
@@ -110,5 +129,14 @@ public class AddPersonToGroupByIdCommandHandler : IRequestHandler<AddPersonToGro
         }
 
         await _db.SaveChangesAsync(ct);
+
+        // Update peak member count for billing
+        var memberCount = await _db.GroupMemberships.CountAsync(m => m.GroupId == req.GroupId, ct);
+        var subForPeak = await _db.GroupSubscriptions.FirstOrDefaultAsync(s => s.GroupId == req.GroupId, ct);
+        if (subForPeak != null)
+        {
+            subForPeak.UpdatePeakMemberCount(memberCount);
+            await _db.SaveChangesAsync(ct);
+        }
     }
 }
