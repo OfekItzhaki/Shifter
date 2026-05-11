@@ -29,6 +29,19 @@ function formatTime(iso: string): string {
   return new Date(iso).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
 }
 
+function formatShiftTime(startIso: string, endIso: string): string {
+  const start = new Date(startIso);
+  const end = new Date(endIso);
+  const durationHours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
+
+  // For 24h shifts, show "24 שעות" with the start time
+  if (durationHours >= 23.5) {
+    return `${formatTime(startIso)} (24h)`;
+  }
+
+  return `${formatTime(startIso)} – ${formatTime(endIso)}`;
+}
+
 function overlapsDate(a: TaskAssignment, dateStr: string): boolean {
   const dayStart = new Date(dateStr + "T00:00:00").getTime();
   const dayEnd   = new Date(dateStr + "T23:59:59").getTime();
@@ -137,9 +150,7 @@ export default function ScheduleTaskTable({ assignments, currentUserName, filter
                       <tr key={key} className="hover:bg-slate-50/40 transition-colors">
                         {/* Time */}
                         <td className="px-4 py-3 text-xs tabular-nums text-slate-500 whitespace-nowrap sticky right-0 bg-white z-10 border-r border-slate-100">
-                          {formatTime(slot.startsAt)}
-                          <span className="mx-1 text-slate-300">–</span>
-                          {formatTime(slot.endsAt)}
+                          {formatShiftTime(slot.startsAt, slot.endsAt)}
                         </td>
                         {/* Person columns */}
                         {personCols.map(i => {
