@@ -34,7 +34,7 @@ export function useServiceWorker(): SWState {
 
     // Register service worker
     navigator.serviceWorker
-      .register("/sw.js")
+      .register("/sw.js", { scope: "/" })
       .then((reg) => {
         setRegistration(reg);
         setIsRegistered(true);
