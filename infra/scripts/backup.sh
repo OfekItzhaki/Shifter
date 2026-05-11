@@ -23,6 +23,13 @@ docker exec "$CONTAINER" pg_dump -U "$DB_USER" -d "$DB_NAME" --format=custom --c
 
 echo "[$(date)] Backup created: backup_${DATE}.dump ($(du -h "$BACKUP_DIR/backup_${DATE}.dump" | cut -f1))"
 
+# Backup uploaded files (profile pictures, etc.)
+UPLOADS_VOL=$(docker volume inspect compose_uploads_data --format '{{.Mountpoint}}' 2>/dev/null)
+if [ -n "$UPLOADS_VOL" ] && [ -d "$UPLOADS_VOL" ]; then
+  tar -czf "$BACKUP_DIR/uploads_${DATE}.tar.gz" -C "$UPLOADS_VOL" . 2>/dev/null
+  echo "[$(date)] Uploads backup: uploads_${DATE}.tar.gz"
+fi
+
 # Remove backups older than KEEP_DAYS
 find "$BACKUP_DIR" -name "backup_*.dump" -mtime +$KEEP_DAYS -delete
 
