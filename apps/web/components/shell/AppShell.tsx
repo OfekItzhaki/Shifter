@@ -9,6 +9,7 @@ import Link from "next/link";
 import NotificationBell from "@/components/shell/NotificationBell";
 import ShifterLogo from "@/components/shell/ShifterLogo";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
+import DarkModeToggle from "@/components/DarkModeToggle";
 import { getMySpaces } from "@/lib/api/spaces";
 import { getMe } from "@/lib/api/auth";
 
@@ -30,7 +31,7 @@ const S = {
   logoutBtn: { display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "9px 12px", borderRadius: 8, background: "none", border: "none", cursor: "pointer", color: "#64748b", fontSize: 14, textAlign: "left" as const },
   topbar: (admin: boolean) => ({ height: 56, display: "flex", alignItems: "center", justifyContent: "flex-end", padding: "0 24px", borderBottom: `1px solid ${admin ? "#fde68a" : "#e2e8f0"}`, background: admin ? "#fffbeb" : "white", position: "sticky" as const, top: 0, zIndex: 20 }),
   main: { marginLeft: 256, display: "flex", flexDirection: "column" as const, minHeight: "100vh", width: "calc(100vw - 256px)" },
-  content: { flex: 1, padding: "clamp(16px, 4vw, 32px)", background: "#f8fafc", width: "100%" },
+  content: { flex: 1, padding: "clamp(16px, 4vw, 32px)", width: "100%" },
 };
 
 function NavItem({ href, label, icon, admin, onNavigate }: { href: string; label: string; icon: React.ReactNode; admin?: boolean; onNavigate?: () => void }) {
@@ -130,6 +131,8 @@ export default function AppShell({ children }: AppShellProps) {
         <div style={S.bottom}>
           {/* Language switcher */}
           <LanguageSwitcher />
+          {/* Dark mode toggle */}
+          <DarkModeToggle />
 
           {/* User info — always shown */}
           <div style={{ ...S.userInfo, display: "flex", alignItems: "center", gap: 10 }}>
@@ -180,7 +183,7 @@ export default function AppShell({ children }: AppShellProps) {
         <header style={{ ...S.topbar(false), display: "none" }} className="desktop-topbar">
           {/* desktop topbar — empty, admin mode indicator shown per-group */}
         </header>
-        <main style={S.content}>{children}</main>
+        <main style={S.content} className="bg-slate-50 dark:bg-slate-900">{children}</main>
       </div>
     </div>
   );

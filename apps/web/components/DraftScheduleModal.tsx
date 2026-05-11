@@ -5,6 +5,7 @@ import { useTranslations, useLocale } from "next-intl";
 import { apiClient } from "@/lib/api/client";
 import { useDateFormat } from "@/lib/hooks/useDateFormat";
 import ScheduleTaskTable from "@/components/schedule/ScheduleTaskTable";
+import ScheduleDiffView from "@/components/schedule/ScheduleDiffView";
 
 interface Assignment {
   id: string;
@@ -60,6 +61,7 @@ export default function DraftScheduleModal({
   const [discarding, setDiscarding] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
+  const [viewMode, setViewMode] = useState<"schedule" | "diff">("schedule");
   const { fDateShort } = useDateFormat();
 
   const today = new Date().toISOString().split("T")[0];
@@ -236,6 +238,34 @@ export default function DraftScheduleModal({
             </div>
           ) : (
             <div className="space-y-4">
+              {/* View toggle: Schedule vs Changes */}
+              <div className="flex gap-1 bg-slate-100 dark:bg-slate-700 p-1 rounded-xl w-fit">
+                <button
+                  onClick={() => setViewMode("schedule")}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                    viewMode === "schedule" ? "bg-white dark:bg-slate-600 text-slate-900 dark:text-white shadow-sm" : "text-slate-500 hover:text-slate-700"
+                  }`}
+                >
+                  {tSchedule("title")}
+                </button>
+                <button
+                  onClick={() => setViewMode("diff")}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                    viewMode === "diff" ? "bg-white dark:bg-slate-600 text-slate-900 dark:text-white shadow-sm" : "text-slate-500 hover:text-slate-700"
+                  }`}
+                >
+                  {tSchedule("diff.title")}
+                </button>
+              </div>
+
+              {viewMode === "diff" ? (
+                <ScheduleDiffView
+                  spaceId={spaceId}
+                  currentVersionId={draftVersionId}
+                  onClose={() => setViewMode("schedule")}
+                />
+              ) : (
+              <>
               {/* Week navigation */}
               <div className="flex items-center gap-2">
                 <button onClick={prevWeek} className="p-2 rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors">
@@ -307,6 +337,8 @@ export default function DraftScheduleModal({
                 assignments={tableAssignments}
                 filterDate={selectedDate}
               />
+              </>
+              )}
             </div>
           )}
         </div>
