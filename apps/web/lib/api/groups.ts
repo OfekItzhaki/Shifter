@@ -33,6 +33,7 @@ export interface GroupWithMemberCountDto {
   memberCount: number;
   solverHorizonDays: number;
   solverStartDateTime?: string | null;
+  autoPublish?: boolean;
   ownerPersonId: string | null;
 }
 
@@ -90,8 +91,8 @@ export async function removeGroupMember(spaceId: string, groupId: string, person
   await apiClient.delete(`/spaces/${spaceId}/groups/${groupId}/members/${personId}`);
 }
 
-export async function updateGroupSettings(spaceId: string, groupId: string, solverHorizonDays: number, solverStartDateTime?: string | null): Promise<void> {
-  await apiClient.patch(`/spaces/${spaceId}/groups/${groupId}/settings`, { solverHorizonDays, solverStartDateTime });
+export async function updateGroupSettings(spaceId: string, groupId: string, solverHorizonDays: number, solverStartDateTime?: string | null, autoPublish?: boolean): Promise<void> {
+  await apiClient.patch(`/spaces/${spaceId}/groups/${groupId}/settings`, { solverHorizonDays, solverStartDateTime, autoPublish });
 }
 
 export async function renameGroup(spaceId: string, groupId: string, name: string): Promise<void> {

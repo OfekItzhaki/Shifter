@@ -20,6 +20,7 @@ interface Props {
   settingsError: string | null;
   settingsSaved: boolean;
   solverStartDateTime: string | null;
+  autoPublish: boolean;
   solverPolling: boolean;
   solverStatus: string | null;
   solverError: string | null;
@@ -43,6 +44,7 @@ interface Props {
   onRenameGroup: () => void;
   onSolverHorizonChange: (v: number) => void;
   onSolverStartDateTimeChange: (v: string | null) => void;
+  onAutoPublishChange: (v: boolean) => void;
   onSaveSettings: () => void;
   onTriggerSolver: (startTime?: string) => void;
   onOpenDraftModal: () => void;
@@ -57,12 +59,12 @@ interface Props {
 export default function SettingsTab({
   isAdmin, spaceId, groupId, newGroupName, renameSaving, renameError,
   solverHorizon, savingSettings, settingsError, settingsSaved,
-  solverStartDateTime,
+  solverStartDateTime, autoPublish,
   solverPolling, solverStatus, solverError, draftVersion,
   members,
   transferPersonId, transferSaving, transferError, hasPendingTransfer, cancelTransferSaving,
   showDeleteConfirm, deleteSaving, deleteError,
-  onGroupNameChange, onRenameGroup, onSolverHorizonChange, onSolverStartDateTimeChange, onSaveSettings,
+  onGroupNameChange, onRenameGroup, onSolverHorizonChange, onSolverStartDateTimeChange, onAutoPublishChange, onSaveSettings,
   onTriggerSolver, onOpenDraftModal,
   onTransferPersonChange, onInitiateTransfer, onCancelTransfer,
   onShowDeleteConfirm, onDeleteGroup,
@@ -150,6 +152,29 @@ export default function SettingsTab({
           </button>
           {settingsError && <p className="text-sm text-red-600">{settingsError}</p>}
           {settingsSaved && <p className="text-sm text-emerald-600">{t("save")} ✓</p>}
+        </div>
+      </Section>
+
+      {/* Auto-publish toggle */}
+      <Section title={t("autoPublish")}>
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm text-slate-600">{t("autoPublishDesc")}</p>
+          </div>
+          <button
+            role="switch"
+            aria-checked={autoPublish}
+            onClick={() => onAutoPublishChange(!autoPublish)}
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors flex-shrink-0 ${
+              autoPublish ? "bg-blue-500" : "bg-slate-200"
+            }`}
+          >
+            <span
+              className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform ${
+                autoPublish ? "translate-x-6" : "translate-x-1"
+              }`}
+            />
+          </button>
         </div>
       </Section>
 

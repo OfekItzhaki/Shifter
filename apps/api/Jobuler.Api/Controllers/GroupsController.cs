@@ -50,7 +50,7 @@ public class GroupsController : ControllerBase
         [FromBody] UpdateGroupSettingsRequest req, CancellationToken ct)
     {
         await _permissions.RequirePermissionAsync(CurrentUserId, spaceId, Permissions.PeopleManage, ct);
-        await _mediator.Send(new UpdateGroupSettingsCommand(spaceId, groupId, req.SolverHorizonDays, req.SolverStartDateTime), ct);
+        await _mediator.Send(new UpdateGroupSettingsCommand(spaceId, groupId, req.SolverHorizonDays, req.SolverStartDateTime, req.AutoPublish), ct);
         return NoContent();
     }
 
@@ -317,7 +317,7 @@ public record CreateGroupTypeRequest(string Name, string? Description);
 public record CreateGroupRequest(Guid? GroupTypeId, string Name, string? Description);
 public record AddMemberByEmailRequest(string Email, Guid? RoleId = null);
 public record AddMemberByPhoneRequest(string PhoneNumber, Guid? RoleId = null);
-public record UpdateGroupSettingsRequest(int SolverHorizonDays, DateTime? SolverStartDateTime = null);
+public record UpdateGroupSettingsRequest(int SolverHorizonDays, DateTime? SolverStartDateTime = null, bool? AutoPublish = null);
 public record RenameGroupRequest(string Name);
 public record InitiateGroupTransferRequest(Guid ProposedPersonId);
 public record CreateAlertRequest(string Title, string Body, string Severity);

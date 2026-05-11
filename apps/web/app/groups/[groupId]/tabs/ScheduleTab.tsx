@@ -6,6 +6,7 @@ import { useDateFormat } from "@/lib/hooks/useDateFormat";
 import type { ScheduleAssignment } from "../types";
 import ScheduleTaskTable from "@/components/schedule/ScheduleTaskTable";
 import ScheduleDiffView from "@/components/schedule/ScheduleDiffView";
+import ScheduleHistory from "@/components/schedule/ScheduleHistory";
 
 interface DraftVersion { id: string; status: string; summaryJson?: string | null; }
 
@@ -87,6 +88,7 @@ export default function ScheduleTab({
   const [personFilter, setPersonFilter] = useState("");
   const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
   const [showDiff, setShowDiff] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
 
   const { fDateShort } = useDateFormat();
 
@@ -308,7 +310,25 @@ export default function ScheduleTab({
             {t("showDiff")}
           </button>
         )}
+        {isAdmin && spaceId && (
+          <button
+            onClick={() => setShowHistory(!showHistory)}
+            className="flex items-center justify-center gap-1.5 text-xs text-slate-600 border border-slate-200 bg-white hover:bg-slate-50 px-3 py-2.5 sm:py-2 rounded-xl transition-colors flex-shrink-0"
+          >
+            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            {t("history")}
+          </button>
+        )}
       </div>
+
+      {/* Schedule History panel */}
+      {showHistory && spaceId && (
+        <div className="bg-white border border-slate-200 rounded-2xl p-4 sm:p-5">
+          <ScheduleHistory spaceId={spaceId} onClose={() => setShowHistory(false)} />
+        </div>
+      )}
 
       {/* Week navigation */}
       <div className="flex items-center gap-2">

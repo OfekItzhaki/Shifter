@@ -136,6 +136,7 @@ export default function GroupDetailPage() {
     solverHorizon, setSolverHorizon, savingSettings, setSavingSettings,
     settingsError, setSettingsError, settingsSaved, setSettingsSaved,
     solverStartDateTime, setSolverStartDateTime,
+    autoPublish, setAutoPublish,
     solverPolling, setSolverPolling, solverStatus, setSolverStatus, solverError, setSolverError,
     deletedGroups, setDeletedGroups, deletedGroupsLoading, setDeletedGroupsLoading,
     transferPersonId, setTransferPersonId, transferSaving, setTransferSaving,
@@ -166,6 +167,7 @@ export default function GroupDetailPage() {
         setNewGroupName(found.name);
         setSolverHorizon(found.solverHorizonDays ?? 14);
         setSolverHorizonDays(found.solverHorizonDays ?? 14);
+        setAutoPublish(found.autoPublish ?? false);
         // Initialise the configured auto-scheduler start date from the API
         // The API stores UTC; convert to local time for the datetime-local input
         setSolverStartDateTime(found.solverStartDateTime
@@ -885,7 +887,7 @@ export default function GroupDetailPage() {
       const startDateTimeIso = solverStartDateTime
         ? new Date(solverStartDateTime).toISOString()
         : null;
-      await updateGroupSettings(currentSpaceId, groupId, solverHorizon, startDateTimeIso);
+      await updateGroupSettings(currentSpaceId, groupId, solverHorizon, startDateTimeIso, autoPublish);
       setSolverHorizonDays(solverHorizon);
       setSettingsSaved(true);
       setTimeout(() => setSettingsSaved(false), 3000);
@@ -1346,6 +1348,7 @@ export default function GroupDetailPage() {
               settingsError={settingsError}
               settingsSaved={settingsSaved}
               solverStartDateTime={solverStartDateTime}
+              autoPublish={autoPublish}
               solverPolling={solverPolling}
               solverStatus={solverStatus}
               solverError={solverError}
@@ -1363,6 +1366,7 @@ export default function GroupDetailPage() {
               onRenameGroup={handleRenameGroup}
               onSolverHorizonChange={setSolverHorizon}
               onSolverStartDateTimeChange={setSolverStartDateTime}
+              onAutoPublishChange={setAutoPublish}
               onSaveSettings={handleSaveSettings}
               onTriggerSolver={handleTriggerSolver}
               onOpenDraftModal={() => setShowDraftModal(true)}

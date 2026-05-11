@@ -48,13 +48,15 @@ apiClient.interceptors.response.use(
         const { data } = await axios.post(`${API_URL}/auth/refresh`, { refreshToken });
         localStorage.setItem("access_token", data.accessToken);
         localStorage.setItem("refresh_token", data.refreshToken);
+        document.cookie = `access_token=${data.accessToken}; path=/; max-age=900; SameSite=Strict`;
 
         original.headers.Authorization = `Bearer ${data.accessToken}`;
         return apiClient(original);
       } catch {
-        // Refresh failed — clear tokens and redirect to unauthorized page
+        // Refresh failed — clear tokens and cookie, redirect to unauthorized page
         localStorage.removeItem("access_token");
         localStorage.removeItem("refresh_token");
+        document.cookie = "access_token=; path=/; max-age=0";
         redirectToErrorPage("/error/unauthorized");
         return Promise.reject(error);
       }

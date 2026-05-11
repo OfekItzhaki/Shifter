@@ -144,6 +144,7 @@ export function useGroupPageState() {
   const [renameError, setRenameError] = useState<string | null>(null);
   const [solverHorizon, setSolverHorizon] = useState(14);
   const [solverStartDateTime, setSolverStartDateTime] = useState<string | null>(null);
+  const [autoPublish, setAutoPublish] = useState(false);
   const [savingSettings, setSavingSettings] = useState(false);
   const [settingsError, setSettingsError] = useState<string | null>(null);
   const [settingsSaved, setSettingsSaved] = useState(false);
@@ -283,6 +284,7 @@ export function useGroupPageState() {
     renameError, setRenameError,
     solverHorizon, setSolverHorizon,
     solverStartDateTime, setSolverStartDateTime,
+    autoPublish, setAutoPublish,
     savingSettings, setSavingSettings,
     settingsError, setSettingsError,
     settingsSaved, setSettingsSaved,
