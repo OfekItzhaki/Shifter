@@ -38,6 +38,15 @@ public class ScheduleRunsController : ControllerBase
         await _permissions.RequirePermissionAsync(
             CurrentUserId, spaceId, Permissions.ScheduleRecalculate, ct);
 
+        // Check subscription status — block if trial expired and no active subscription
+        if (req.GroupId.HasValue)
+        {
+            var sub = await _mediator.Send(
+                new Application.Scheduling.Queries.CheckGroupSubscriptionQuery(spaceId, req.GroupId.Value), ct);
+            if (sub != null && !sub.IsActive)
+                return StatusCode(402, new { error = "תקופת הניסיון הסתיימה. שדרג את התוכנית כדי להפעיל סידור." });
+        }
+
         // Validate trigger mode — only "standard" and "emergency" are accepted
         var mode = (req.TriggerMode ?? "standard").ToLowerInvariant();
         if (mode != "standard" && mode != "emergency")
