@@ -1,5 +1,3 @@
-/// <reference lib="webworker" />
-
 /**
  * Shifter Service Worker
  * 
@@ -128,7 +126,7 @@ async function cacheFirst(request, cacheName) {
       cache.put(request, response.clone());
     }
     return response;
-  } catch {
+  } catch (e) {
     return new Response("", { status: 503 });
   }
 }
@@ -206,7 +204,7 @@ self.addEventListener("push", (event) => {
   let payload;
   try {
     payload = event.data.json();
-  } catch {
+  } catch (e) {
     // Malformed payload — ignore gracefully
     return;
   }
