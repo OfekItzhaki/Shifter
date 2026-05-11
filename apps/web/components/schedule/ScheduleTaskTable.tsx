@@ -80,7 +80,7 @@ export default function ScheduleTaskTable({ assignments, currentUserName, filter
 
   if (visible.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-12 text-center bg-white rounded-xl border border-slate-200">
+      <div className="flex flex-col items-center justify-center py-12 text-center bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
         <p className="text-sm text-slate-400">{t("noTasksThisDay")}</p>
       </div>
     );
@@ -123,33 +123,33 @@ export default function ScheduleTaskTable({ assignments, currentUserName, filter
           <div key={taskName}>
             {/* Task header */}
             <div className="flex items-center gap-2 mb-2">
-              <span className="text-sm font-semibold text-slate-800">{taskName}</span>
-              <span className="text-xs text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">
+              <span className="text-sm font-semibold text-slate-800 dark:text-slate-200">{taskName}</span>
+              <span className="text-xs text-slate-400 bg-slate-100 dark:bg-slate-700 dark:text-slate-300 px-2 py-0.5 rounded-full">
                 {slots.length} {t("shifts")}
               </span>
             </div>
 
-            <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm -mx-2 sm:mx-0">
+            <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm -mx-2 sm:mx-0">
               <table className="w-full text-sm border-collapse table-fixed min-w-[280px]">
                 <thead>
-                  <tr className="border-b border-slate-100 bg-slate-50/80">
-                    <th className="px-2.5 sm:px-4 py-2.5 sm:py-3 text-start text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap sticky right-0 bg-slate-50/80 z-10">
+                  <tr className="border-b border-slate-100 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-800/80">
+                    <th className="px-2.5 sm:px-4 py-2.5 sm:py-3 text-start text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider whitespace-nowrap sticky right-0 bg-slate-50/80 dark:bg-slate-800/80 z-10">
                       {t("time")}
                     </th>
                     {personCols.map(i => (
-                      <th key={i} className="px-2.5 sm:px-4 py-2.5 sm:py-3 text-center text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                      <th key={i} className="px-2.5 sm:px-4 py-2.5 sm:py-3 text-center text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                         {maxPeople === 1 ? t("assignee") : t("assigneeN", { n: i + 1 })}
                       </th>
                     ))}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                   {slots.map(slot => {
                     const key = `${slot.startsAt}|${slot.endsAt}`;
                     return (
-                      <tr key={key} className="hover:bg-slate-50/40 transition-colors">
+                      <tr key={key} className="hover:bg-slate-50/40 dark:hover:bg-slate-700/40 transition-colors">
                         {/* Time */}
-                        <td className="px-2.5 sm:px-4 py-2.5 sm:py-3 text-xs tabular-nums text-slate-500 whitespace-nowrap sticky right-0 bg-white z-10 border-r border-slate-100">
+                        <td className="px-2.5 sm:px-4 py-2.5 sm:py-3 text-xs tabular-nums text-slate-500 dark:text-slate-400 whitespace-nowrap sticky right-0 bg-white dark:bg-slate-800 z-10 border-r border-slate-100 dark:border-slate-700">
                           {formatShiftTime(slot.startsAt, slot.endsAt)}
                         </td>
                         {/* Person columns */}
@@ -158,10 +158,10 @@ export default function ScheduleTaskTable({ assignments, currentUserName, filter
                           const personId = slot.personIds[i];
                           const isCurrentUser = name === currentUserName;
                           return (
-                            <td key={i} className={`px-2.5 sm:px-4 py-2.5 sm:py-3 text-center ${isCurrentUser ? "bg-blue-50/60" : ""}`}>
+                            <td key={i} className={`px-2.5 sm:px-4 py-2.5 sm:py-3 text-center ${isCurrentUser ? "bg-blue-50/60 dark:bg-blue-900/20" : ""}`}>
                               {name ? (
                                 <div className="flex items-center justify-center gap-1.5 group">
-                                  <span className={`text-xs sm:text-sm font-medium ${isCurrentUser ? "text-blue-700" : "text-slate-800"}`}>
+                                  <span className={`text-xs sm:text-sm font-medium ${isCurrentUser ? "text-blue-700 dark:text-blue-300" : "text-slate-800 dark:text-slate-200"}`}>
                                     {name}
                                   </span>
                                   {isAdmin && spaceId && personId && (

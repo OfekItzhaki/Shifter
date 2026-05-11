@@ -281,7 +281,7 @@ export default function ScheduleTab({
             value={personFilter}
             onChange={e => setPersonFilter(e.target.value)}
             placeholder={t("filterByName")}
-            className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 sm:py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 pr-9"
+            className="w-full border border-slate-200 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 rounded-xl px-3.5 py-2.5 sm:py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 pr-9"
           />
           <svg className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -290,7 +290,7 @@ export default function ScheduleTab({
         {scheduleData && scheduleData.length > 0 && (
           <button
             onClick={exportCSV}
-            className="flex items-center justify-center gap-1.5 text-xs text-slate-600 border border-slate-200 bg-white hover:bg-slate-50 px-3 py-2.5 sm:py-2 rounded-xl transition-colors flex-shrink-0"
+            className="flex items-center justify-center gap-1.5 text-xs text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 px-3 py-2.5 sm:py-2 rounded-xl transition-colors flex-shrink-0"
             title={t("exportCsv") ?? "Export CSV"}
           >
             <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -313,7 +313,7 @@ export default function ScheduleTab({
         {isAdmin && spaceId && (
           <button
             onClick={() => setShowHistory(!showHistory)}
-            className="flex items-center justify-center gap-1.5 text-xs text-slate-600 border border-slate-200 bg-white hover:bg-slate-50 px-3 py-2.5 sm:py-2 rounded-xl transition-colors flex-shrink-0"
+            className="flex items-center justify-center gap-1.5 text-xs text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 px-3 py-2.5 sm:py-2 rounded-xl transition-colors flex-shrink-0"
           >
             <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -325,14 +325,14 @@ export default function ScheduleTab({
 
       {/* Schedule History panel */}
       {showHistory && spaceId && (
-        <div className="bg-white border border-slate-200 rounded-2xl p-4 sm:p-5">
+        <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-4 sm:p-5">
           <ScheduleHistory spaceId={spaceId} onClose={() => setShowHistory(false)} />
         </div>
       )}
 
       {/* Week navigation */}
       <div className="flex items-center gap-2">
-        <button onClick={prevWeek} className="p-2 rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors">
+        <button onClick={prevWeek} className="p-2 rounded-lg border border-slate-200 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
           <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
           </svg>
@@ -340,12 +340,12 @@ export default function ScheduleTab({
         <button
           onClick={goToToday}
           className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
-            weekDates.includes(today) ? "bg-blue-500 text-white border-blue-500" : "border-slate-200 text-slate-600 hover:bg-slate-50"
+            weekDates.includes(today) ? "bg-blue-500 text-white border-blue-500" : "border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"
           }`}
         >
           {t("thisWeek")}
         </button>
-        <button onClick={nextWeek} className="p-2 rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors">
+        <button onClick={nextWeek} className="p-2 rounded-lg border border-slate-200 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
           <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
           </svg>
@@ -415,7 +415,7 @@ export default function ScheduleTab({
         <>
           {/* Diff view — shown when admin clicks "Show Changes" */}
           {showDiff && spaceId && (
-            <div className="bg-white border border-slate-200 rounded-2xl p-4 sm:p-5">
+            <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-4 sm:p-5">
               <ScheduleDiffView
                 spaceId={spaceId}
                 currentVersionId="current"
@@ -425,7 +425,7 @@ export default function ScheduleTab({
           )}
           {/* Selected day label */}
           <div className="flex items-center gap-2">
-            <span className="text-sm font-semibold text-slate-700">
+            <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">
               {new Date(selectedDate + "T00:00:00").toLocaleDateString(
                 locale === "he" ? "he-IL" : locale === "ru" ? "ru-RU" : "en-US",
                 { weekday: "long", day: "numeric", month: "long" }
