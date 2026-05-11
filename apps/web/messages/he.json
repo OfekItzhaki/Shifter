@@ -379,7 +379,30 @@
     "fullName": "שם מלא",
     "displayName": "שם תצוגה",
     "profileImage": "תמונת פרופיל",
-    "uploadImage": "העלה תמונה"
+    "uploadImage": "העלה תמונה",
+    "notificationPrefs": {
+      "title": "העדפות התראות",
+      "description": "בחר אילו התראות תרצה לקבל באפליקציה",
+      "resetDefaults": "איפוס",
+      "showBadge": "הצג תג התראות",
+      "showBadgeDesc": "נקודה אדומה על הפעמון כשיש התראות חדשות",
+      "categories": {
+        "solver_completed": "סידור הושלם",
+        "solver_infeasible": "סידור לא אפשרי",
+        "solver_failed": "שגיאה בסידור",
+        "solver_preflight_failed": "בדיקה מקדימה נכשלה",
+        "schedule_published": "סידור פורסם",
+        "group_alert": "התראת קבוצה"
+      },
+      "categoriesDesc": {
+        "solver_completed": "כשטיוטת סידור חדשה מוכנה לבדיקה",
+        "solver_infeasible": "כשלא ניתן ליצור סידור עם האילוצים הנוכחיים",
+        "solver_failed": "כשהמערכת נתקלה בשגיאה בזמן יצירת הסידור",
+        "solver_preflight_failed": "כשהבדיקה המקדימה מזהה בעיות",
+        "schedule_published": "כשסידור חדש מפורסם לקבוצה",
+        "group_alert": "כשמנהל הקבוצה שולח התראה"
+      }
+    }
   },
   "admin": {
     "title": "מצב ניהול",

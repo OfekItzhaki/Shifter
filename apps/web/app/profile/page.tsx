@@ -6,6 +6,7 @@ import AppShell from "@/components/shell/AppShell";
 import Modal from "@/components/Modal";
 import { getMe, updateMe, MeDto } from "@/lib/api/auth";
 import ImageUpload from "@/components/ImageUpload";
+import NotificationPreferences from "@/components/NotificationPreferences";
 
 function getInitials(name: string): string {
   return name
@@ -238,6 +239,11 @@ export default function ProfilePage() {
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Notification Preferences */}
+        <div style={{ ...cardStyle, marginTop: "1rem" }}>
+          <NotificationPreferences />
         </div>
       </div>
 

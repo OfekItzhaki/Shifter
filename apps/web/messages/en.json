@@ -376,7 +376,30 @@
     "fullName": "Full Name",
     "displayName": "Display Name",
     "profileImage": "Profile Image",
-    "uploadImage": "Upload Image"
+    "uploadImage": "Upload Image",
+    "notificationPrefs": {
+      "title": "Notification Preferences",
+      "description": "Choose which notifications you want to receive in the app",
+      "resetDefaults": "Reset",
+      "showBadge": "Show notification badge",
+      "showBadgeDesc": "Red dot on the bell when there are new notifications",
+      "categories": {
+        "solver_completed": "Schedule completed",
+        "solver_infeasible": "Schedule infeasible",
+        "solver_failed": "Schedule error",
+        "solver_preflight_failed": "Pre-check failed",
+        "schedule_published": "Schedule published",
+        "group_alert": "Group alert"
+      },
+      "categoriesDesc": {
+        "solver_completed": "When a new draft schedule is ready for review",
+        "solver_infeasible": "When a schedule can't be created with current constraints",
+        "solver_failed": "When the system encounters an error creating the schedule",
+        "solver_preflight_failed": "When the pre-check identifies issues",
+        "schedule_published": "When a new schedule is published to the group",
+        "group_alert": "When a group admin sends an alert"
+      }
+    }
   },
   "admin": {
     "title": "Admin Mode",

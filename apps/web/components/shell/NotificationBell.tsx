@@ -10,6 +10,7 @@ import {
   useDismissNotification,
   useDismissAllNotifications,
 } from "@/lib/query/hooks/useNotifications";
+import { useNotificationPrefsStore } from "@/lib/store/notificationPrefsStore";
 
 export default function NotificationBell({ variant = "dark" }: { variant?: "light" | "dark" }) {
   const t = useTranslations("notifications");
@@ -24,6 +25,13 @@ export default function NotificationBell({ variant = "dark" }: { variant?: "ligh
   const { data: notifications = [] } = useNotifications(currentSpaceId);
   const dismissOne = useDismissNotification(currentSpaceId);
   const dismissAll = useDismissAllNotifications(currentSpaceId);
+  const { enabled: enabledCategories, showBadge } = useNotificationPrefsStore();
+
+  // Filter notifications based on user preferences
+  const filteredNotifications = notifications.filter(n => {
+    const category = n.eventType as keyof typeof enabledCategories;
+    return enabledCategories[category] !== false; // show if not explicitly disabled
+  });
 
   // Wait for client mount before rendering portal
   useEffect(() => { setMounted(true); }, []);
@@ -53,7 +61,7 @@ export default function NotificationBell({ variant = "dark" }: { variant?: "ligh
     setOpen(o => !o);
   }
 
-  const unreadCount = notifications.filter(n => !n.isRead).length;
+  const unreadCount = filteredNotifications.filter(n => !n.isRead).length;
 
   function eventIcon(eventType: string) {
     if (eventType === "solver_failed") return "❌";
@@ -93,9 +101,9 @@ export default function NotificationBell({ variant = "dark" }: { variant?: "ligh
       </div>
 
       <div className="divide-y divide-gray-100" style={{ direction: "ltr" }}>
-        {notifications.length === 0 ? (
+        {filteredNotifications.length === 0 ? (
           <p className="text-xs text-gray-400 text-center py-6">{t("noNotifications")}</p>
-        ) : notifications.map(n => (
+        ) : filteredNotifications.map(n => (
           <div key={n.id}
             className={`px-4 py-3 flex gap-3 ${n.isRead ? "opacity-50" : "bg-blue-50/40"}`}>
             <span className="text-base mt-0.5 flex-shrink-0">{eventIcon(n.eventType)}</span>
@@ -135,7 +143,7 @@ export default function NotificationBell({ variant = "dark" }: { variant?: "ligh
           <path strokeLinecap="round" strokeLinejoin="round"
             d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 10-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
         </svg>
-        {unreadCount > 0 && (
+        {showBadge && unreadCount > 0 && (
           <span className="absolute top-1 right-1 h-4 w-4 rounded-full bg-red-500 text-white text-[10px] flex items-center justify-center font-bold">
             {unreadCount > 9 ? "9+" : unreadCount}
           </span>
