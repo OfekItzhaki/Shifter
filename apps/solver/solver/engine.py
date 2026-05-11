@@ -92,7 +92,8 @@ def solve(input: SolverInput) -> SolverOutput:
     # Extract min_rest_hours from hard constraints if configured
     rest_rules = [c for c in input.hard_constraints if c.rule_type == "min_rest_hours"]
     rest_hours = float(rest_rules[0].payload.get("hours", 8)) if rest_rules else 8.0
-    add_min_rest_constraints(model, assign, slots, people, num_people, rest_hours, emergency_person_ids)
+    rest_soft_penalties: list = []
+    add_min_rest_constraints(model, assign, slots, people, num_people, rest_hours, emergency_person_ids, rest_soft_penalties)
 
     add_kitchen_frequency_constraints(
         model, assign, slots, people, num_people,
@@ -109,6 +110,8 @@ def solve(input: SolverInput) -> SolverOutput:
 
     # ── Soft objectives ───────────────────────────────────────────────────────
     penalties = build_objective(model, assign, input)
+    # Add soft rest penalties for 24h shifts
+    penalties.extend(rest_soft_penalties)
 
     # ── Composition constraints (mandatory/optional qualification seats per slot) ──
     # Collected as (var, weight) tuples and added to the minimisation objective.

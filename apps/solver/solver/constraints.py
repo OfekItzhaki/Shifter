@@ -84,14 +84,18 @@ def add_min_rest_constraints(
     people,
     num_people: int,
     min_rest_hours: float = 8.0,
-    emergency_person_ids: set = None
+    emergency_person_ids: set = None,
+    soft_penalties: list = None
 ):
     """
     A person must have at least min_rest_hours between assignments.
     Emergency-bypassed people skip this constraint.
+    For long shifts (>=12h), rest is a soft constraint (penalty) rather than hard,
+    so the solver can still assign people to 24h tasks when resources are tight.
     """
     emergency_person_ids = emergency_person_ids or set()
     min_rest_seconds = int(min_rest_hours * 3600)
+    long_shift_threshold = 24 * 3600  # 24 hours in seconds
 
     for p_idx in range(num_people):
         if people[p_idx].person_id in emergency_person_ids:
@@ -106,10 +110,27 @@ def add_min_rest_constraints(
                 end2   = _to_timestamp(slot2.ends_at)
                 start1 = _to_timestamp(slot1.starts_at)
 
+                # Check if either slot is a long shift (>=12h)
+                slot1_duration = end1 - start1
+                slot2_duration = end2 - start2
+                is_long_shift = slot1_duration >= long_shift_threshold or slot2_duration >= long_shift_threshold
+
                 if end1 <= start2 and (start2 - end1) < min_rest_seconds:
-                    model.add(assign[(s1_idx, p_idx)] + assign[(s2_idx, p_idx)] <= 1)
+                    if is_long_shift and soft_penalties is not None:
+                        # Soft constraint for long shifts — penalize but allow
+                        violation = model.new_bool_var(f"rest_soft_{s1_idx}_{s2_idx}_{p_idx}")
+                        model.add(assign[(s1_idx, p_idx)] + assign[(s2_idx, p_idx)] <= 1 + violation)
+                        soft_penalties.append(violation * 50)  # moderate penalty
+                    else:
+                        model.add(assign[(s1_idx, p_idx)] + assign[(s2_idx, p_idx)] <= 1)
+
                 if end2 <= start1 and (start1 - end2) < min_rest_seconds:
-                    model.add(assign[(s1_idx, p_idx)] + assign[(s2_idx, p_idx)] <= 1)
+                    if is_long_shift and soft_penalties is not None:
+                        violation = model.new_bool_var(f"rest_soft_{s2_idx}_{s1_idx}_{p_idx}")
+                        model.add(assign[(s1_idx, p_idx)] + assign[(s2_idx, p_idx)] <= 1 + violation)
+                        soft_penalties.append(violation * 50)
+                    else:
+                        model.add(assign[(s1_idx, p_idx)] + assign[(s2_idx, p_idx)] <= 1)
 
 
 def add_qualification_constraints(
