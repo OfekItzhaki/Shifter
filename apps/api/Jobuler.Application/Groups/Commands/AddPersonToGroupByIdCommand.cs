@@ -82,7 +82,7 @@ public class AddPersonToGroupByIdCommandHandler : IRequestHandler<AddPersonToGro
                     _ => int.MaxValue, // trial = no limit
                 };
                 if (currentCount >= maxMembers)
-                    throw new InvalidOperationException($"הגעת למגבלת החברים בתוכנית ({maxMembers}). שדרג כדי להוסיף עוד.");
+                    throw new InvalidOperationException($"MEMBER_LIMIT_REACHED:{maxMembers}");
             }
 
             _db.GroupMemberships.Add(GroupMembership.Create(req.SpaceId, req.GroupId, req.PersonId));

@@ -440,6 +440,7 @@
     "errorCreatePerson": "שגיאה ביצירת אדם",
     "errorCreateGroup": "שגיאה ביצירת קבוצה",
     "errorAddMember": "שגיאה בהוספת חבר",
+    "memberLimitReached": "הגעת למגבלת החברים בתוכנית ({limit}). שדרג כדי להוסיף עוד.",
     "errorRemoveMember": "שגיאה בהסרת חבר",
     "errorSaveSettings": "שגיאה בשמירת הגדרות",
     "errorSaveConstraint": "שגיאה בשמירת אילוץ",
