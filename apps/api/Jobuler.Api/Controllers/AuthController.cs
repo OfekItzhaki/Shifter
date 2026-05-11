@@ -125,6 +125,39 @@ public class AuthController : ControllerBase
         await _mediator.Send(new ResetPasswordCommand(req.Token, req.NewPassword), ct);
         return NoContent();
     }
+
+    /// <summary>Delete the current user's account and all associated data.</summary>
+    [HttpDelete("me")]
+    [Authorize]
+    public async Task<IActionResult> DeleteAccount([FromServices] AppDbContext db, CancellationToken ct)
+    {
+        var userId = CurrentUserId;
+
+        // Remove all linked person records
+        var linkedPeople = await db.People
+            .Where(p => p.LinkedUserId == userId)
+            .ToListAsync(ct);
+        db.People.RemoveRange(linkedPeople);
+
+        // Remove refresh tokens
+        var tokens = await db.RefreshTokens
+            .Where(t => t.UserId == userId)
+            .ToListAsync(ct);
+        db.RefreshTokens.RemoveRange(tokens);
+
+        // Remove notifications
+        var notifications = await db.Notifications
+            .Where(n => n.UserId == userId)
+            .ToListAsync(ct);
+        db.Notifications.RemoveRange(notifications);
+
+        // Remove the user
+        var user = await db.Users.FirstOrDefaultAsync(u => u.Id == userId, ct);
+        if (user != null) db.Users.Remove(user);
+
+        await db.SaveChangesAsync(ct);
+        return NoContent();
+    }
 }
 
 public record RegisterRequest(string Email, string DisplayName, string Password, string? PreferredLocale, string? PhoneNumber, string? ProfileImageUrl = null, DateOnly? Birthday = null);

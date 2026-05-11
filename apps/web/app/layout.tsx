@@ -8,8 +8,28 @@ import { Providers } from "./providers";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Shifter",
-  description: "Smart Shift Scheduling",
+  title: {
+    default: "Shifter — Smart Shift Scheduling",
+    template: "%s | Shifter",
+  },
+  description: "Automatic, fair shift scheduling for teams. No spreadsheets, no headaches. Works for military, security, hospitals, restaurants and more.",
+  keywords: ["shift scheduling", "roster", "workforce management", "military scheduling", "fair shifts", "automatic scheduling"],
+  authors: [{ name: "Shifter" }],
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    url: "https://shifter.ofeklabs.dev",
+    siteName: "Shifter",
+    title: "Shifter — Smart Shift Scheduling",
+    description: "Automatic, fair shift scheduling for teams. No spreadsheets, no headaches.",
+    images: [{ url: "/favicon.jpeg", width: 192, height: 192, alt: "Shifter Logo" }],
+  },
+  twitter: {
+    card: "summary",
+    title: "Shifter — Smart Shift Scheduling",
+    description: "Automatic, fair shift scheduling for teams.",
+  },
+  robots: { index: true, follow: true },
   icons: {
     icon: "/favicon.jpeg",
     shortcut: "/favicon.jpeg",

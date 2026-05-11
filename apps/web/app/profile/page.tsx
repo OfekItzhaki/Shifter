@@ -2,9 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
+import { useRouter } from "next/navigation";
 import AppShell from "@/components/shell/AppShell";
 import Modal from "@/components/Modal";
 import { getMe, updateMe, MeDto } from "@/lib/api/auth";
+import { apiClient } from "@/lib/api/client";
 import ImageUpload from "@/components/ImageUpload";
 import NotificationPreferences from "@/components/NotificationPreferences";
 
@@ -247,6 +249,9 @@ export default function ProfilePage() {
         </div>
       </div>
 
+      {/* Delete Account */}
+      <DeleteAccountSection />
+
       {/* Edit Profile Modal */}
       <Modal open={editOpen} onClose={() => { setEditOpen(false); setSaveError(null); }} title={t("edit")} maxWidth={480}>
         <form onSubmit={handleSave} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
@@ -325,5 +330,82 @@ export default function ProfilePage() {
         </form>
       </Modal>
     </AppShell>
+  );
+}
+
+
+function DeleteAccountSection() {
+  const t = useTranslations("profile");
+  const router = useRouter();
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleDelete() {
+    setDeleting(true);
+    setError(null);
+    try {
+      await apiClient.delete("/auth/me");
+      localStorage.removeItem("access_token");
+      localStorage.removeItem("refresh_token");
+      router.push("/login");
+    } catch {
+      setError("Error deleting account");
+    } finally {
+      setDeleting(false);
+    }
+  }
+
+  return (
+    <div style={{ ...cardStyle, marginTop: "1.5rem", borderColor: "#fecaca" }}>
+      <h2 style={{ fontSize: "0.875rem", fontWeight: 600, color: "#dc2626", margin: "0 0 0.5rem" }}>
+        {t("deleteAccount") ?? "Delete Account"}
+      </h2>
+      <p style={{ fontSize: "0.75rem", color: "#64748b", margin: "0 0 1rem" }}>
+        {t("deleteAccountDesc") ?? "Permanently delete your account and all associated data. This cannot be undone."}
+      </p>
+      {!showConfirm ? (
+        <button
+          onClick={() => setShowConfirm(true)}
+          style={{
+            background: "none", border: "1px solid #fecaca", borderRadius: 10,
+            padding: "0.5rem 1rem", fontSize: "0.8125rem", color: "#dc2626",
+            cursor: "pointer",
+          }}
+        >
+          {t("deleteAccountButton") ?? "Delete My Account"}
+        </button>
+      ) : (
+        <div style={{ background: "#fef2f2", borderRadius: 10, padding: "1rem", display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+          <p style={{ fontSize: "0.8125rem", color: "#dc2626", fontWeight: 600, margin: 0 }}>
+            {t("deleteConfirmText") ?? "Are you sure? This will permanently delete your account, all your data, and remove you from all groups."}
+          </p>
+          {error && <p style={{ fontSize: "0.75rem", color: "#dc2626", margin: 0 }}>{error}</p>}
+          <div style={{ display: "flex", gap: "0.5rem" }}>
+            <button
+              onClick={handleDelete}
+              disabled={deleting}
+              style={{
+                background: "#dc2626", color: "white", border: "none", borderRadius: 8,
+                padding: "0.5rem 1rem", fontSize: "0.8125rem", fontWeight: 600,
+                cursor: deleting ? "not-allowed" : "pointer", opacity: deleting ? 0.6 : 1,
+              }}
+            >
+              {deleting ? "..." : (t("yesDelete") ?? "Yes, Delete Everything")}
+            </button>
+            <button
+              onClick={() => setShowConfirm(false)}
+              style={{
+                background: "none", border: "1px solid #e2e8f0", borderRadius: 8,
+                padding: "0.5rem 1rem", fontSize: "0.8125rem", color: "#64748b",
+                cursor: "pointer",
+              }}
+            >
+              {t("cancel")}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

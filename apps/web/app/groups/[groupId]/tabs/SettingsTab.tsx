@@ -1,14 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import type { GroupMemberDto } from "@/lib/api/groups";
+import { getJoinCode, regenerateJoinCode } from "@/lib/api/groups";
 import SmartImportModal from "@/components/SmartImportModal";
 
 interface DraftVersion { id: string; status: string; }
 
 interface Props {
   isAdmin: boolean;
+  spaceId: string;
   groupId: string;
   newGroupName: string;
   renameSaving: boolean;
@@ -53,7 +55,7 @@ interface Props {
 }
 
 export default function SettingsTab({
-  isAdmin, groupId, newGroupName, renameSaving, renameError,
+  isAdmin, spaceId, groupId, newGroupName, renameSaving, renameError,
   solverHorizon, savingSettings, settingsError, settingsSaved,
   solverStartDateTime,
   solverPolling, solverStatus, solverError, draftVersion,
@@ -105,6 +107,9 @@ export default function SettingsTab({
         </div>
         {renameError && <p className="text-sm text-red-600 mt-2">{renameError}</p>}
       </Section>
+
+      {/* Join Code */}
+      <JoinCodeSection spaceId={spaceId} groupId={groupId} />
 
       {/* Solver horizon */}
       <Section title={t("planningHorizon")}>
@@ -271,5 +276,73 @@ function Section({ title, children }: { title: string; children: React.ReactNode
       <h3 className="text-sm font-semibold text-slate-700">{title}</h3>
       {children}
     </div>
+  );
+}
+
+function JoinCodeSection({ spaceId, groupId }: { spaceId: string; groupId: string }) {
+  const t = useTranslations("groups.settings_tab");
+  const [joinCode, setJoinCode] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [copied, setCopied] = useState(false);
+  const [regenerating, setRegenerating] = useState(false);
+
+  useEffect(() => {
+    getJoinCode(spaceId, groupId)
+      .then(code => setJoinCode(code))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [spaceId, groupId]);
+
+  async function handleRegenerate() {
+    setRegenerating(true);
+    try {
+      const newCode = await regenerateJoinCode(spaceId, groupId);
+      setJoinCode(newCode);
+    } catch {}
+    finally { setRegenerating(false); }
+  }
+
+  function handleCopy() {
+    const url = `${window.location.origin}/groups/join?code=${joinCode}`;
+    navigator.clipboard.writeText(url).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }
+
+  return (
+    <Section title={t("inviteLink")}>
+      {loading ? (
+        <p className="text-sm text-slate-400">{t("loading")}</p>
+      ) : (
+        <div className="space-y-3">
+          <p className="text-xs text-slate-500">{t("inviteLinkDesc")}</p>
+          <div className="flex items-center gap-2">
+            <div className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 font-mono text-sm text-slate-700 tracking-widest text-center">
+              {joinCode ?? "—"}
+            </div>
+            <button
+              onClick={handleCopy}
+              disabled={!joinCode}
+              className="flex items-center gap-1.5 bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium px-4 py-2.5 rounded-xl disabled:opacity-50 transition-colors"
+            >
+              {copied ? "✓" : (
+                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                </svg>
+              )}
+              {copied ? t("copied") : t("copyLink")}
+            </button>
+          </div>
+          <button
+            onClick={handleRegenerate}
+            disabled={regenerating}
+            className="text-xs text-slate-500 hover:text-slate-700 disabled:opacity-50"
+          >
+            {regenerating ? "..." : t("regenerateCode")}
+          </button>
+        </div>
+      )}
+    </Section>
   );
 }

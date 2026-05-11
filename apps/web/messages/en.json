@@ -361,7 +361,13 @@
       "errorCreateRole": "Error creating role",
       "errorUpdateRole": "Error updating role",
       "solverStartFrom": "Auto-scheduler start date",
-      "solverStartFromHint": "Empty = start from now. Set a fixed date/time for the auto-scheduler to use."
+      "solverStartFromHint": "Empty = start from now. Set a fixed date/time for the auto-scheduler to use.",
+      "inviteLink": "Invite Link",
+      "inviteLinkDesc": "Share this link with people to let them join your group instantly.",
+      "copyLink": "Copy Link",
+      "copied": "Copied!",
+      "regenerateCode": "Generate new code (invalidates old link)",
+      "loading": "Loading..."
     },
     "stats_tab": {
       "activeMembers": "Active Members",
@@ -414,6 +420,11 @@
     "displayName": "Display Name",
     "profileImage": "Profile Image",
     "uploadImage": "Upload Image",
+    "deleteAccount": "Delete Account",
+    "deleteAccountDesc": "Permanently delete your account and all associated data. This cannot be undone.",
+    "deleteAccountButton": "Delete My Account",
+    "deleteConfirmText": "Are you sure? This will permanently delete your account, all your data, and remove you from all groups.",
+    "yesDelete": "Yes, Delete Everything",
     "notificationPrefs": {
       "title": "Notification Preferences",
       "description": "Choose which notifications you want to receive in the app",

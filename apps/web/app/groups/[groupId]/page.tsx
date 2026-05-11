@@ -1336,6 +1336,7 @@ export default function GroupDetailPage() {
           {activeTab === "settings" && (
             <SettingsTab
               isAdmin={isAdmin}
+              spaceId={currentSpaceId ?? ""}
               groupId={groupId}
               newGroupName={newGroupName}
               renameSaving={renameSaving}
