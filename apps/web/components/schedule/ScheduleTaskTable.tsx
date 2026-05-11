@@ -107,7 +107,7 @@ export default function ScheduleTaskTable({ assignments, currentUserName, filter
             </div>
 
             <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
-              <table className="w-full text-sm border-collapse">
+              <table className="w-full text-sm border-collapse table-fixed">
                 <thead>
                   <tr className="border-b border-slate-100 bg-slate-50/80">
                     <th className="px-4 py-3 text-start text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap sticky right-0 bg-slate-50/80 z-10">
