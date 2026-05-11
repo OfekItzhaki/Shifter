@@ -1,15 +1,12 @@
-import { redirect } from "next/navigation";
-import { cookies } from "next/headers";
 import LandingPage from "./LandingPage";
 
 /**
  * Root page:
- * - Authenticated users → redirect to /spaces (then to schedule)
+ * - Authenticated users → client-side redirect to /spaces
  * - Unauthenticated users → show landing/marketing page
  * 
- * We check for the presence of an access_token cookie or rely on
- * client-side redirect. Since tokens are in localStorage (not cookies),
- * we always show the landing page on the server and let the client redirect.
+ * Since tokens are in localStorage (not cookies), the landing page
+ * always renders on the server. The client checks for a token and redirects.
  */
 export default function RootPage() {
   return <LandingPage />;
