@@ -1,7 +1,8 @@
 using Jobuler.Application.Common;
 using Jobuler.Application.Groups.Commands;
 using Jobuler.Application.Groups.Queries;
-using Jobuler.Application.Scheduling.Queries;using Jobuler.Domain.Spaces;
+using Jobuler.Application.Scheduling.Queries;
+using Jobuler.Domain.Spaces;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -278,6 +279,34 @@ public class GroupsController : ControllerBase
         var id = await _mediator.Send(new CreateGroupTypeCommand(spaceId, req.Name, req.Description), ct);
         return Created("", new { id });
     }
+
+    // ── Join Code ─────────────────────────────────────────────────────────────
+
+    /// <summary>Get the join code for a group (admin only).</summary>
+    [HttpGet("spaces/{spaceId:guid}/groups/{groupId:guid}/join-code")]
+    public async Task<IActionResult> GetJoinCode(Guid spaceId, Guid groupId, CancellationToken ct)
+    {
+        await _permissions.RequirePermissionAsync(CurrentUserId, spaceId, Permissions.PeopleManage, ct);
+        var result = await _mediator.Send(new GetJoinCodeQuery(spaceId, groupId), ct);
+        return Ok(new { joinCode = result });
+    }
+
+    /// <summary>Regenerate the join code for a group (admin only).</summary>
+    [HttpPost("spaces/{spaceId:guid}/groups/{groupId:guid}/join-code/regenerate")]
+    public async Task<IActionResult> RegenerateJoinCode(Guid spaceId, Guid groupId, CancellationToken ct)
+    {
+        await _permissions.RequirePermissionAsync(CurrentUserId, spaceId, Permissions.PeopleManage, ct);
+        var newCode = await _mediator.Send(new RegenerateJoinCodeCommand(spaceId, groupId), ct);
+        return Ok(new { joinCode = newCode });
+    }
+
+    /// <summary>Join a group using a join code. Any authenticated user can call this.</summary>
+    [HttpPost("groups/join")]
+    public async Task<IActionResult> JoinByCode([FromBody] JoinByCodeRequest req, CancellationToken ct)
+    {
+        var result = await _mediator.Send(new JoinGroupByCodeCommand(req.Code, CurrentUserId), ct);
+        return Ok(result);
+    }
 }
 
 // ── Request records ───────────────────────────────────────────────────────────
@@ -296,3 +325,4 @@ public record UpdateAlertRequest(string Title, string Body, string Severity);
 public record UpdateMessageRequest(string Content);
 public record PinMessageRequest(bool IsPinned);
 public record UpdateMemberRoleRequest(Guid? RoleId);
+public record JoinByCodeRequest(string Code);

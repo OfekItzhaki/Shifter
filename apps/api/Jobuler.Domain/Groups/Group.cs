@@ -12,6 +12,7 @@ public class Group : AuditableEntity, ITenantScoped
     public bool IsActive { get; private set; } = true;
     public int SolverHorizonDays { get; private set; } = 7;
     public DateTime? SolverStartDateTime { get; private set; }
+    public string? JoinCode { get; private set; }
     public DateTime? DeletedAt { get; private set; }
 
     private Group() { }
@@ -23,8 +24,14 @@ public class Group : AuditableEntity, ITenantScoped
             GroupTypeId = groupTypeId,
             Name = name.Trim(),
             Description = description?.Trim(),
-            CreatedByUserId = createdByUserId
+            CreatedByUserId = createdByUserId,
+            JoinCode = GenerateJoinCode()
         };
+
+    public string RegenerateJoinCode() { JoinCode = GenerateJoinCode(); Touch(); return JoinCode; }
+
+    private static string GenerateJoinCode() =>
+        Guid.NewGuid().ToString("N")[..8].ToUpperInvariant();
 
     public void Update(string name, string? description) { Name = name.Trim(); Description = description?.Trim(); Touch(); }
 

@@ -139,6 +139,21 @@
       "applying": "מגדיר...",
       "errorApplying": "שגיאה בהחלת התבנית. ניתן להגדיר ידנית."
     },
+    "join": {
+      "title": "הצטרף לקבוצה",
+      "subtitle": "הזן את הקוד שקיבלת ממנהל הקבוצה",
+      "codeLabel": "קוד הצטרפות",
+      "joinButton": "הצטרף",
+      "joining": "מצטרף...",
+      "success": "הצטרפת בהצלחה!",
+      "successDesc": "הצטרפת לקבוצה {name}",
+      "goToGroup": "עבור לקבוצה",
+      "invalidCode": "קוד לא תקין. בדוק עם מנהל הקבוצה.",
+      "loginRequired": "התחבר כדי להצטרף",
+      "loginRequiredDesc": "צריך חשבון כדי להצטרף לקבוצה",
+      "signIn": "התחברות",
+      "createAccount": "צור חשבון"
+    },
     "enterAdminMode": "כניסה למצב ניהול",
     "exitAdminMode": "יציאה ממצב ניהול",
     "tabs": {

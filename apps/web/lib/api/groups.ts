@@ -332,3 +332,21 @@ export async function assignMemberQualification(spaceId: string, groupId: string
 export async function removeMemberQualification(spaceId: string, groupId: string, personId: string, qualificationId: string): Promise<void> {
   await apiClient.delete(`/spaces/${spaceId}/groups/${groupId}/qualifications/members/${personId}/${qualificationId}`);
 }
+
+
+// ── Join Code ─────────────────────────────────────────────────────────────────
+
+export async function getJoinCode(spaceId: string, groupId: string): Promise<string | null> {
+  const { data } = await apiClient.get(`/spaces/${spaceId}/groups/${groupId}/join-code`);
+  return data.joinCode ?? null;
+}
+
+export async function regenerateJoinCode(spaceId: string, groupId: string): Promise<string> {
+  const { data } = await apiClient.post(`/spaces/${spaceId}/groups/${groupId}/join-code/regenerate`);
+  return data.joinCode;
+}
+
+export async function joinGroupByCode(code: string): Promise<{ groupId: string; spaceId: string; groupName: string }> {
+  const { data } = await apiClient.post("/groups/join", { code });
+  return data;
+}

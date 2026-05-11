@@ -136,6 +136,21 @@
       "applying": "Setting up...",
       "errorApplying": "Error applying template. You can set up manually."
     },
+    "join": {
+      "title": "Join a Group",
+      "subtitle": "Enter the code shared by your group admin",
+      "codeLabel": "Join Code",
+      "joinButton": "Join Group",
+      "joining": "Joining...",
+      "success": "You're in!",
+      "successDesc": "You've joined {name}",
+      "goToGroup": "Go to Group",
+      "invalidCode": "Invalid join code. Check with your group admin.",
+      "loginRequired": "Sign in to join",
+      "loginRequiredDesc": "You need an account to join a group",
+      "signIn": "Sign In",
+      "createAccount": "Create an account"
+    },
     "enterAdminMode": "Enter Admin Mode",
     "exitAdminMode": "Exit Admin Mode",
     "tabs": {
