@@ -35,7 +35,17 @@ function overlapsDate(a: TaskAssignment, dateStr: string): boolean {
   const slotStart = new Date(a.slotStartsAt).getTime();
   const slotEnd   = new Date(a.slotEndsAt).getTime();
   if (isNaN(slotStart) || isNaN(slotEnd)) return false;
-  // Use strict > for slotEnd so a shift ending exactly at midnight does not bleed into the next day.
+
+  const durationHours = (slotEnd - slotStart) / (1000 * 60 * 60);
+
+  // For long shifts (>=12h like 24h tasks), only show on the day they START
+  // This prevents yesterday's 24h shift from appearing on today's view
+  if (durationHours >= 12) {
+    const slotStartDate = new Date(a.slotStartsAt).toLocaleDateString("sv"); // YYYY-MM-DD format
+    return slotStartDate === dateStr;
+  }
+
+  // For normal shifts, show if they overlap with the selected day
   return slotStart <= dayEnd && slotEnd > dayStart;
 }
 
