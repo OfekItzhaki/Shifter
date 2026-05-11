@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import ShifterLogo from "@/components/shell/ShifterLogo";
@@ -14,6 +15,15 @@ const PLANS = [
 ];
 
 export default function PricingPage() {
+  const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
+
+  function handleSelectPlan(planId: string) {
+    // TODO: Integrate with Stripe Checkout
+    // For now, show a message that payment is coming soon
+    setSelectedPlan(planId);
+    alert("תשלום יהיה זמין בקרוב! צור קשר דרך הצ׳אט לפרטים.");
+  }
+
   return (
     <main style={{ minHeight: "100vh", background: "#f8fafc", padding: "2rem 1rem" }}>
       <div style={{ maxWidth: 900, margin: "0 auto" }}>
@@ -65,6 +75,7 @@ export default function PricingPage() {
                 לחודש / לקבוצה
               </div>
               <button
+                onClick={() => handleSelectPlan(plan.id)}
                 style={{
                   width: "100%",
                   padding: "0.6rem",
