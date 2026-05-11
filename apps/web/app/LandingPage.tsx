@@ -27,8 +27,8 @@ export default function LandingPage() {
       signal: controller.signal,
     }).then(res => {
       if (res.ok) router.replace("/spaces");
-      else { localStorage.removeItem("access_token"); localStorage.removeItem("refresh_token"); setChecking(false); }
-    }).catch(() => { localStorage.removeItem("access_token"); localStorage.removeItem("refresh_token"); setChecking(false); });
+      else { localStorage.removeItem("access_token"); localStorage.removeItem("refresh_token"); document.cookie = "access_token=; path=/; max-age=0"; setChecking(false); }
+    }).catch(() => { localStorage.removeItem("access_token"); localStorage.removeItem("refresh_token"); document.cookie = "access_token=; path=/; max-age=0"; setChecking(false); });
     return () => controller.abort();
   }, [router]);
 

@@ -38,7 +38,7 @@ const nextConfig = {
     NEXT_PUBLIC_APP_VERSION: version,
   },
   experimental: {
-    // optimizeCss causes CSS preload warnings in dev mode — disabled
+    viewTransition: true,
   },
   turbopack: {
     // Fix CSS MIME type error caused by Windows absolute path in chunk names.
