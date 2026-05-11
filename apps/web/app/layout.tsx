@@ -29,6 +29,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="theme-color" content="#0f172a" />
+        <link rel="manifest" href="/manifest.json" />
       </head>
       <body>
         <Providers>

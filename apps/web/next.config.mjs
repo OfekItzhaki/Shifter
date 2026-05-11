@@ -25,6 +25,7 @@ const securityHeaders = [
       "img-src 'self' data: blob: http://localhost:5000 https://api.jobuler.app https:",
       "font-src 'self'",
       "connect-src 'self' http://localhost:5000 https://api.jobuler.app ws://localhost:3000 wss:",
+      "worker-src 'self'",
       "frame-ancestors 'none'",
     ].join("; "),
   },
