@@ -860,5 +860,35 @@
     "totalTasks": "Tasks",
     "accessDenied": "Access denied — platform owner only",
     "ms": "ms"
+  },
+  "errorPages": {
+    "notFound": {
+      "heading": "Page Not Found",
+      "message": "The page you're looking for doesn't exist or has been moved.",
+      "goHome": "Go Home"
+    },
+    "unauthorized": {
+      "heading": "Session Expired",
+      "message": "Your session has expired. Please log in again to continue.",
+      "login": "Log In"
+    },
+    "forbidden": {
+      "heading": "Access Denied",
+      "message": "You don't have permission to access this resource.",
+      "goHome": "Go Home",
+      "goBack": "Go Back"
+    },
+    "serverError": {
+      "heading": "Something Went Wrong",
+      "message": "An unexpected error occurred on the server. Please try again.",
+      "tryAgain": "Try Again",
+      "goHome": "Go Home"
+    },
+    "clientError": {
+      "heading": "Something Went Wrong",
+      "message": "An unexpected error occurred. Please reload the page.",
+      "reload": "Reload Page",
+      "goHome": "Go Home"
+    }
   }
 }

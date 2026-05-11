@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "test": "vitest --run",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "generate:api": "nswag run nswag.json"
@@ -24,20 +25,28 @@
     "zustand": "^4.5.2"
   },
   "devDependencies": {
+    "@axe-core/react": "^4.10.0",
     "@playwright/test": "^1.44.0",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.1.0",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
+    "@vitejs/plugin-react": "^4.3.4",
     "autoprefixer": "^10",
+    "axe-core": "^4.10.2",
     "eslint": "^9",
     "eslint-config-next": "^16.2.4",
+    "fast-check": "^3.23.2",
     "husky": "^9.0.0",
+    "jsdom": "^25.0.1",
     "lint-staged": "^15.0.0",
     "nswag": "^14.1.0",
     "postcss": "^8",
     "tailwindcss": "^3.4.3",
     "ts-node": "^10.9.2",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^2.1.8"
   },
   "lint-staged": {
     "apps/web/**/*.{ts,tsx}": [
