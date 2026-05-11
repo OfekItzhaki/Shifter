@@ -91,5 +91,14 @@ public class AddPersonToGroupCommandHandler : IRequestHandler<AddPersonToGroupCo
 
         _db.GroupMemberships.Add(GroupMembership.Create(req.SpaceId, req.GroupId, req.PersonId));
         await _db.SaveChangesAsync(ct);
+
+        // Update peak member count for billing
+        var memberCount = await _db.GroupMemberships.CountAsync(m => m.GroupId == req.GroupId, ct);
+        var sub = await _db.GroupSubscriptions.FirstOrDefaultAsync(s => s.GroupId == req.GroupId, ct);
+        if (sub != null)
+        {
+            sub.UpdatePeakMemberCount(memberCount);
+            await _db.SaveChangesAsync(ct);
+        }
     }
 }
