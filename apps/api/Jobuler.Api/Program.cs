@@ -274,6 +274,9 @@ app.Use(async (context, next) =>
     context.Response.Headers.Append("X-Frame-Options", "DENY");
     context.Response.Headers.Append("Referrer-Policy", "no-referrer");
     context.Response.Headers.Append("X-XSS-Protection", "1; mode=block");
+    context.Response.Headers.Append("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+    context.Response.Headers.Remove("Server");
+    context.Response.Headers.Remove("X-Powered-By");
     if (!app.Environment.IsDevelopment())
     {
         context.Response.Headers.Append("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
