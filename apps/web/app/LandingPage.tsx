@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import ShifterLogo from "@/components/shell/ShifterLogo";
-import { getMySpaces } from "@/lib/api/spaces";
 
 export default function LandingPage() {
   const router = useRouter();
@@ -14,11 +13,26 @@ export default function LandingPage() {
   useEffect(() => {
     const token = localStorage.getItem("access_token");
     if (!token) { setChecking(false); return; }
-    getMySpaces().then(() => router.replace("/spaces")).catch(() => {
+    // Temporarily prevent the axios interceptor from redirecting to /login
+    // by checking if the token is valid first
+    const controller = new AbortController();
+    fetch(`${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000"}/auth/me`, {
+      headers: { Authorization: `Bearer ${token}` },
+      signal: controller.signal,
+    }).then(res => {
+      if (res.ok) {
+        router.replace("/spaces");
+      } else {
+        localStorage.removeItem("access_token");
+        localStorage.removeItem("refresh_token");
+        setChecking(false);
+      }
+    }).catch(() => {
       localStorage.removeItem("access_token");
       localStorage.removeItem("refresh_token");
       setChecking(false);
     });
+    return () => controller.abort();
   }, [router]);
 
   if (checking) return null;
