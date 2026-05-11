@@ -1,0 +1,50 @@
+using Jobuler.Domain.Billing;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+
+namespace Jobuler.Infrastructure.Persistence.Configurations;
+
+public class GroupSubscriptionConfiguration : IEntityTypeConfiguration<GroupSubscription>
+{
+    public void Configure(EntityTypeBuilder<GroupSubscription> builder)
+    {
+        builder.ToTable("group_subscriptions");
+        builder.HasKey(s => s.Id);
+        builder.Property(s => s.Id).HasColumnName("id");
+        builder.Property(s => s.SpaceId).HasColumnName("space_id").IsRequired();
+        builder.Property(s => s.GroupId).HasColumnName("group_id").IsRequired();
+        builder.Property(s => s.TierId).HasColumnName("tier_id").IsRequired();
+        builder.Property(s => s.Status).HasColumnName("status").HasConversion<string>()
+            .IsRequired();
+        builder.Property(s => s.StripeSubscriptionId).HasColumnName("stripe_subscription_id");
+        builder.Property(s => s.StripeCustomerId).HasColumnName("stripe_customer_id");
+        builder.Property(s => s.TrialEndsAt).HasColumnName("trial_ends_at");
+        builder.Property(s => s.CurrentPeriodStart).HasColumnName("current_period_start");
+        builder.Property(s => s.CurrentPeriodEnd).HasColumnName("current_period_end");
+        builder.Property(s => s.PeakMemberCount).HasColumnName("peak_member_count");
+        builder.Property(s => s.CouponCode).HasColumnName("coupon_code");
+        builder.Property(s => s.DiscountPercent).HasColumnName("discount_percent");
+        builder.Property(s => s.CanceledAt).HasColumnName("canceled_at");
+        builder.Property<DateTime>("CreatedAt").HasColumnName("created_at");
+        builder.Property<DateTime>("UpdatedAt").HasColumnName("updated_at");
+    }
+}
+
+public class CouponConfiguration : IEntityTypeConfiguration<Coupon>
+{
+    public void Configure(EntityTypeBuilder<Coupon> builder)
+    {
+        builder.ToTable("coupons");
+        builder.HasKey(c => c.Id);
+        builder.Property(c => c.Id).HasColumnName("id");
+        builder.Property(c => c.Code).HasColumnName("code").IsRequired();
+        builder.Property(c => c.DiscountPercent).HasColumnName("discount_percent").IsRequired();
+        builder.Property(c => c.MaxUses).HasColumnName("max_uses");
+        builder.Property(c => c.CurrentUses).HasColumnName("current_uses");
+        builder.Property(c => c.ValidFrom).HasColumnName("valid_from").IsRequired();
+        builder.Property(c => c.ValidUntil).HasColumnName("valid_until");
+        builder.Property(c => c.IsActive).HasColumnName("is_active").IsRequired();
+        builder.Property(c => c.Description).HasColumnName("description");
+        builder.Property<DateTime>("CreatedAt").HasColumnName("created_at");
+    }
+}
