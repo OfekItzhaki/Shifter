@@ -2,7 +2,7 @@
  * Shifter Service Worker
  * 
  * Strategy:
- * - Schedule data (GET /spaces/*/schedule-versions/current, /my-assignments):
+ * - Schedule data (GET /spaces/{id}/schedule-versions/current, /my-assignments):
  *   Network-first with cache fallback. Soldiers can view their schedule offline.
  * - Static assets (JS, CSS, images): Cache-first for fast loads.
  * - API mutations (POST, PUT, DELETE): Always network, never cache.
