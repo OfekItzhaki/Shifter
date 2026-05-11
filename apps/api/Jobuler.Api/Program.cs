@@ -194,6 +194,9 @@ builder.Services.AddHostedService<SolverWorkerService>();
 // Auto-scheduler — triggers solver automatically when schedule coverage is insufficient
 builder.Services.AddHostedService<AutoSchedulerService>();
 
+// Subscription cleanup — auto-deletes groups 6 months after subscription cancellation
+builder.Services.AddHostedService<SubscriptionCleanupService>();
+
 // ─── API ─────────────────────────────────────────────────────────────────────
 builder.Services.AddControllers()
     .AddJsonOptions(o =>
