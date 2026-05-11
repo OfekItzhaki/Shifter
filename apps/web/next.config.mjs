@@ -67,6 +67,11 @@ const nextConfig = {
       },
     ];
   },
+  async redirects() {
+    // Explicitly prevent any redirect from root to login
+    // (This is a no-op but ensures no other config adds this redirect)
+    return [];
+  },
 };
 
 export default withNextIntl(nextConfig);
