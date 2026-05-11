@@ -5,6 +5,7 @@ import { useTranslations, useLocale } from "next-intl";
 import { useDateFormat } from "@/lib/hooks/useDateFormat";
 import type { ScheduleAssignment } from "../types";
 import ScheduleTaskTable from "@/components/schedule/ScheduleTaskTable";
+import ScheduleDiffView from "@/components/schedule/ScheduleDiffView";
 
 interface DraftVersion { id: string; status: string; summaryJson?: string | null; }
 
@@ -85,6 +86,7 @@ export default function ScheduleTab({
   });
   const [personFilter, setPersonFilter] = useState("");
   const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
+  const [showDiff, setShowDiff] = useState(false);
 
   const { fDateShort } = useDateFormat();
 
@@ -295,6 +297,17 @@ export default function ScheduleTab({
             {t("exportCsv")}
           </button>
         )}
+        {isAdmin && scheduleData && scheduleData.length > 0 && (
+          <button
+            onClick={() => setShowDiff(true)}
+            className="flex items-center justify-center gap-1.5 text-xs text-blue-600 border border-blue-200 bg-white hover:bg-blue-50 px-3 py-2.5 sm:py-2 rounded-xl transition-colors flex-shrink-0"
+          >
+            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+            </svg>
+            {t("showDiff")}
+          </button>
+        )}
       </div>
 
       {/* Week navigation */}
@@ -380,6 +393,16 @@ export default function ScheduleTab({
       {/* Per-task schedule tables — show even when offline (cached data) */}
       {!scheduleLoading && (
         <>
+          {/* Diff view — shown when admin clicks "Show Changes" */}
+          {showDiff && spaceId && (
+            <div className="bg-white border border-slate-200 rounded-2xl p-4 sm:p-5">
+              <ScheduleDiffView
+                spaceId={spaceId}
+                currentVersionId="current"
+                onClose={() => setShowDiff(false)}
+              />
+            </div>
+          )}
           {/* Selected day label */}
           <div className="flex items-center gap-2">
             <span className="text-sm font-semibold text-slate-700">

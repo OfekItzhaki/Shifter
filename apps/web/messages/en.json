@@ -93,6 +93,19 @@
       "yesClear": "Yes, clear",
       "saving": "Saving..."
     },
+    "diff": {
+      "title": "Schedule Changes",
+      "close": "Close",
+      "noChanges": "No changes — schedule is identical to previous",
+      "added": "Added",
+      "removed": "Removed",
+      "changed": "Changed",
+      "assignedTo": "Assigned",
+      "removedFrom": "Removed",
+      "replacedBy": "Replaced",
+      "errorLoading": "Error loading changes",
+      "showDiff": "Show Changes"
+    },
     "myMissions": {
       "title": "My Missions",
       "subtitle": "All your missions across all groups",
@@ -353,6 +366,7 @@
       "cancel": "Cancel",
       "filterByName": "Filter by name...",
       "exportCsv": "Export CSV",
+      "showDiff": "Changes",
       "thisWeek": "This Week",
       "infeasible": "Could not create schedule",
       "infeasibleDesc": "The solver could not build a schedule with the current constraints.",

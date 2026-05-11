@@ -96,6 +96,19 @@
       "yesClear": "כן, נקה",
       "saving": "שומר..."
     },
+    "diff": {
+      "title": "שינויים בסידור",
+      "close": "סגור",
+      "noChanges": "אין שינויים — הסידור זהה לקודם",
+      "added": "נוספו",
+      "removed": "הוסרו",
+      "changed": "הוחלפו",
+      "assignedTo": "שובץ",
+      "removedFrom": "הוסר",
+      "replacedBy": "הוחלף",
+      "errorLoading": "שגיאה בטעינת השינויים",
+      "showDiff": "הצג שינויים"
+    },
     "myMissions": {
       "title": "המשימות שלי",
       "subtitle": "כל המשימות שלך בכל הקבוצות",
@@ -356,6 +369,7 @@
       "cancel": "ביטול",
       "filterByName": "סנן לפי שם...",
       "exportCsv": "ייצא CSV",
+      "showDiff": "שינויים",
       "thisWeek": "השבוע",
       "infeasible": "לא ניתן היה ליצור סידור",
       "infeasibleDesc": "הסולבר לא הצליח לבנות סידור עם האילוצים הנוכחיים.",
