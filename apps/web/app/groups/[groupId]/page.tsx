@@ -77,6 +77,7 @@ export default function GroupDetailPage() {
   const refetchNotifications = useRefetchNotifications(currentSpaceId);
   const tGroups = useTranslations("groups");
   const tErrors = useTranslations("errors");
+  const tAdmin = useTranslations("admin");
   const TAB_LABELS = getTabLabels(tGroups);
 
   // ── All state via hook ───────────────────────────────────────────────────
@@ -929,7 +930,19 @@ export default function GroupDetailPage() {
 
           // Show pre-flight / solver error immediately when failed
           if (status === "Failed" && statusRes.data.errorSummary) {
-            setSolverError(statusRes.data.errorSummary);
+            const raw = statusRes.data.errorSummary as string;
+            // Parse structured error codes and translate
+            if (raw.startsWith("UNCOVERED_SLOTS:")) {
+              const parts = raw.split(":");
+              const tasks = parts[1] || "";
+              const count = parts[2] || "0";
+              setSolverError(tAdmin("solver_uncovered_slots", { tasks, count }));
+            } else if (raw.startsWith("MEMBER_LIMIT_REACHED:")) {
+              const limit = raw.split(":")[1] || "";
+              setSolverError(tAdmin("member_limit_reached", { limit }));
+            } else {
+              setSolverError(raw);
+            }
           }
 
           const terminal = status === "Completed" || status === "Failed" || status === "TimedOut";

@@ -460,6 +460,8 @@
     "solverStarted": "Solver started. Run ID: {runId}",
     "emergencyStarted": "Emergency solver started. Run ID: {runId}",
     "errorSolver": "Error starting solver.",
+    "solver_uncovered_slots": "Could not fill all shifts. Missing tasks: {tasks} ({count} shifts). Try adding more members.",
+    "member_limit_reached": "You've reached the member limit for your plan ({limit}). Upgrade to add more.",
     "errorEmergencySolver": "Error starting emergency solver.",
     "selectVersion": "Select a version to view details.",
     "selectGroup": "Select a group to manage",

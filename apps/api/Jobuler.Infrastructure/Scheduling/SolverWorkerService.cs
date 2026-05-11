@@ -406,7 +406,7 @@ public class SolverWorkerService : BackgroundService
                         .Distinct()
                         .ToList();
                     var taskList = string.Join(", ", uncoveredTaskNames);
-                    run.MarkFailed($"לא ניתן לאייש את כל המשמרות. משימות חסרות: {taskList} ({output.UncoveredSlotIds.Count} משמרות)");
+                    run.MarkFailed($"UNCOVERED_SLOTS:{taskList}:{output.UncoveredSlotIds.Count}");
                 }
                 else
                     run.MarkFailed("Solver returned zero assignments despite reporting feasible.");

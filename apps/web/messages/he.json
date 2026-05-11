@@ -464,6 +464,8 @@
     "solverStarted": "הסולבר הופעל. מזהה: {runId}",
     "emergencyStarted": "סולבר חירום הופעל. מזהה: {runId}",
     "errorSolver": "שגיאה בהפעלת הסולבר.",
+    "solver_uncovered_slots": "לא ניתן לאייש את כל המשמרות. משימות חסרות: {tasks} ({count} משמרות). נסה להוסיף חברים נוספים.",
+    "member_limit_reached": "הגעת למגבלת החברים בתוכנית ({limit}). שדרג כדי להוסיף עוד.",
     "errorEmergencySolver": "שגיאה בהפעלת סולבר חירום.",
     "selectVersion": "בחר גרסה לצפייה בפרטים.",
     "selectGroup": "בחר קבוצה לניהול",
