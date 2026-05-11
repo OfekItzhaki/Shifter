@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, lazy, Suspense } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
@@ -11,15 +11,17 @@ import ImportModal from "@/components/ImportModal";
 import TrialBanner from "@/components/billing/TrialBanner";
 import ScheduleTab from "./tabs/ScheduleTab";
 import MembersTab, { MemberProfileModal } from "./tabs/MembersTab";
-import AlertsTab from "./tabs/AlertsTab";
-import MessagesTab from "./tabs/MessagesTab";
-import TasksTab from "./tabs/TasksTab";
-import ConstraintsTab from "./tabs/ConstraintsTab";
-import SettingsTab from "./tabs/SettingsTab";
-import StatsTab from "./tabs/StatsTab";
-import QualificationsTab from "./tabs/QualificationsTab";
-import RolesTab from "./tabs/RolesTab";
-import LiveStatusPanel from "@/components/schedule/LiveStatusPanel";
+
+// Lazy-load less-frequently-used tabs for faster initial load
+const AlertsTab = lazy(() => import("./tabs/AlertsTab"));
+const MessagesTab = lazy(() => import("./tabs/MessagesTab"));
+const TasksTab = lazy(() => import("./tabs/TasksTab"));
+const ConstraintsTab = lazy(() => import("./tabs/ConstraintsTab"));
+const SettingsTab = lazy(() => import("./tabs/SettingsTab"));
+const StatsTab = lazy(() => import("./tabs/StatsTab"));
+const QualificationsTab = lazy(() => import("./tabs/QualificationsTab"));
+const RolesTab = lazy(() => import("./tabs/RolesTab"));
+const LiveStatusPanel = lazy(() => import("@/components/schedule/LiveStatusPanel"));
 import { ActiveTab, ADMIN_ONLY_TABS, ScheduleAssignment } from "./types";
 import { useSpaceStore } from "@/lib/store/spaceStore";
 import { useAuthStore } from "@/lib/store/authStore";
@@ -1130,6 +1132,7 @@ export default function GroupDetailPage() {
         </div>
 
         {/* Tab content */}
+        <Suspense fallback={<div className="flex justify-center py-12"><svg className="animate-spin h-6 w-6 text-blue-400" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg></div>}>
         <div>
           {activeTab === "schedule" && (
             <ScheduleTab
@@ -1405,6 +1408,7 @@ export default function GroupDetailPage() {
             <LiveStatusPanel spaceId={currentSpaceId} groupId={groupId} />
           )}
         </div>
+        </Suspense>
       </div>
 
       {/* Draft schedule modal */}
