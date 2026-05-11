@@ -29,7 +29,7 @@ export default function NotificationPreferences() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-slate-900">{t("title")}</h2>
+        <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">{t("title")}</h2>
         <button
           onClick={resetDefaults}
           className="text-xs text-blue-600 hover:underline"
@@ -38,15 +38,15 @@ export default function NotificationPreferences() {
         </button>
       </div>
 
-      <p className="text-xs text-slate-500">{t("description")}</p>
+      <p className="text-xs text-slate-500 dark:text-slate-400">{t("description")}</p>
 
       {/* Badge toggle */}
-      <div className="flex items-center justify-between py-2.5 border-b border-slate-100">
-        <div className="flex items-center gap-3">
-          <span className="text-base">🔴</span>
-          <div>
-            <p className="text-sm font-medium text-slate-800">{t("showBadge")}</p>
-            <p className="text-xs text-slate-400">{t("showBadgeDesc")}</p>
+      <div className="flex items-center justify-between py-2.5 border-b border-slate-100 dark:border-slate-700">
+        <div className="flex items-center gap-3 min-w-0 flex-1">
+          <span className="text-base flex-shrink-0">🔴</span>
+          <div className="min-w-0">
+            <p className="text-sm font-medium text-slate-800 dark:text-slate-200">{t("showBadge")}</p>
+            <p className="text-xs text-slate-400 dark:text-slate-500">{t("showBadgeDesc")}</p>
           </div>
         </div>
         <ToggleSwitch checked={showBadge} onChange={toggleBadge} />
@@ -57,20 +57,20 @@ export default function NotificationPreferences() {
         {CATEGORIES.map(({ key, icon, color }) => (
           <div
             key={key}
-            className="flex items-center justify-between py-2.5 border-b border-slate-50 last:border-0"
+            className="flex items-center justify-between py-2.5 border-b border-slate-50 dark:border-slate-700 last:border-0"
           >
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 min-w-0 flex-1">
               <span
-                className="w-7 h-7 rounded-lg flex items-center justify-center text-xs"
+                className="w-7 h-7 rounded-lg flex items-center justify-center text-xs flex-shrink-0"
                 style={{ background: `${color}15`, color }}
               >
                 {icon}
               </span>
-              <div>
-                <p className="text-sm font-medium text-slate-800">
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-slate-800 dark:text-slate-200">
                   {t(`categories.${key}`)}
                 </p>
-                <p className="text-xs text-slate-400">
+                <p className="text-xs text-slate-400 dark:text-slate-500">
                   {t(`categoriesDesc.${key}`)}
                 </p>
               </div>
