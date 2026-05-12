@@ -59,16 +59,17 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             </ErrorBoundary>
           </NextIntlClientProvider>
         </Providers>
-        {/* Crisp Live Chat — replace CRISP_WEBSITE_ID with your actual ID from crisp.chat */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              window.$crisp=[];
-              window.CRISP_WEBSITE_ID="CRISP_WEBSITE_ID_PLACEHOLDER";
-              (function(){var d=document;var s=d.createElement("script");s.src="https://client.crisp.chat/l.js";s.async=1;d.getElementsByTagName("head")[0].appendChild(s);})();
-            `,
-          }}
-        />
+        {process.env.NEXT_PUBLIC_CRISP_WEBSITE_ID && (
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `
+                window.$crisp=[];
+                window.CRISP_WEBSITE_ID="${process.env.NEXT_PUBLIC_CRISP_WEBSITE_ID}";
+                (function(){var d=document;var s=d.createElement("script");s.src="https://client.crisp.chat/l.js";s.async=1;d.getElementsByTagName("head")[0].appendChild(s);})();
+              `,
+            }}
+          />
+        )}
       </body>
     </html>
   );

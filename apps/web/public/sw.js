@@ -9,8 +9,9 @@
  * - Auth endpoints: Never cache.
  */
 
-const CACHE_NAME = "shifter-v1";
-const STATIC_CACHE = "shifter-static-v1";
+const CACHE_VERSION = "2.0.0";
+const CACHE_NAME = "shifter-" + CACHE_VERSION;
+const STATIC_CACHE = "shifter-static-" + CACHE_VERSION;
 
 // Patterns for schedule-related GET requests to cache
 const SCHEDULE_PATTERNS = [
