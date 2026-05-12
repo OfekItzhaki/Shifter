@@ -37,21 +37,21 @@ function LoginForm() {
   }
 
   return (
-    <main style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#f8fafc", padding: "1rem" }}>
+    <main className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900 p-4">
       <div style={{ width: "100%", maxWidth: "380px" }}>
         {/* Logo */}
         <div style={{ display: "flex", justifyContent: "center", marginBottom: "2rem" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
             <ShifterLogo size={40} />
-            <span style={{ fontSize: "1.5rem", fontWeight: 700, color: "#0f172a" }}>Shifter</span>
+            <span className="text-2xl font-bold text-slate-900 dark:text-white">Shifter</span>
           </div>
         </div>
 
         {/* Card */}
-        <div style={{ background: "white", borderRadius: "16px", boxShadow: "0 4px 24px rgba(0,0,0,0.08)", border: "1px solid #e2e8f0", padding: "2rem" }}>
+        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 p-8">
           <div style={{ marginBottom: "1.5rem" }}>
-            <h1 style={{ fontSize: "1.25rem", fontWeight: 600, color: "#0f172a", margin: 0 }}>{t("login")}</h1>
-            <p style={{ fontSize: "0.875rem", color: "#64748b", marginTop: "0.25rem" }}>Sign in to your workspace</p>
+            <h1 className="text-xl font-semibold text-slate-900 dark:text-white m-0">{t("login")}</h1>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Sign in to your workspace</p>
           </div>
 
           {justRegistered && (

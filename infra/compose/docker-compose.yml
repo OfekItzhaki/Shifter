@@ -58,7 +58,7 @@ services:
       dockerfile: ../../infra/docker/api.Dockerfile
     restart: unless-stopped
     environment:
-      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_ENVIRONMENT: Production
       ConnectionStrings__DefaultConnection: "Host=${POSTGRES_HOST};Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}"
       Redis__ConnectionString: "${REDIS_HOST}:6379"
       Jwt__Secret: ${JWT_SECRET}
