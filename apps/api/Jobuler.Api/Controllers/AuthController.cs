@@ -49,7 +49,8 @@ public class AuthController : ControllerBase
             profileImageUrl = user.ProfileImageUrl,
             birthday = user.Birthday,
             createdAt = user.CreatedAt,
-            emailVerified = user.EmailVerified
+            emailVerified = user.EmailVerified,
+            isPlatformAdmin = user.IsPlatformAdmin
         });
     }
 

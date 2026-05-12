@@ -42,6 +42,7 @@ export interface MeDto {
   birthday: string | null;
   createdAt: string;
   emailVerified: boolean;
+  isPlatformAdmin?: boolean;
 }
 
 export async function getMe(): Promise<MeDto> {
