@@ -36,14 +36,14 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Guid>
         {
             var emailExists = await _db.Users.AnyAsync(u => u.Email == request.Email.ToLowerInvariant().Trim(), ct);
             if (emailExists)
-                throw new InvalidOperationException("Email already registered.");
+                throw new InvalidOperationException("An account with these credentials already exists.");
         }
 
         if (!string.IsNullOrWhiteSpace(request.PhoneNumber))
         {
             var phoneExists = await _db.Users.AnyAsync(u => u.PhoneNumber == request.PhoneNumber.Trim(), ct);
             if (phoneExists)
-                throw new InvalidOperationException("Phone number already registered.");
+                throw new InvalidOperationException("An account with these credentials already exists.");
         }
 
         // If no email provided, generate a placeholder

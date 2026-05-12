@@ -35,6 +35,7 @@
     "loading": "Загрузка...",
     "joinShifter": "Присоединиться к Shifter",
     "emailAlreadyRegistered": "Этот email уже зарегистрирован",
+    "credentialsAlreadyTaken": "Аккаунт с такими данными уже существует. Попробуйте войти.",
     "registerError": "Ошибка регистрации, попробуйте ещё раз",
     "registering": "Регистрация...",
     "alreadyHaveAccount": "Уже есть аккаунт?",

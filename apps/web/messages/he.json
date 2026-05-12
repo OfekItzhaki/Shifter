@@ -35,6 +35,7 @@
     "loading": "טוען...",
     "joinShifter": "הצטרף ל-Shifter",
     "emailAlreadyRegistered": "האימייל הזה כבר רשום",
+    "credentialsAlreadyTaken": "חשבון עם פרטים אלה כבר קיים. נסה להתחבר במקום.",
     "registerError": "שגיאה בהרשמה, נסה שוב",
     "registering": "נרשם...",
     "alreadyHaveAccount": "כבר יש לך חשבון?",

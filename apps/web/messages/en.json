@@ -35,6 +35,7 @@
     "loading": "Loading...",
     "joinShifter": "Join Shifter",
     "emailAlreadyRegistered": "This email is already registered",
+    "credentialsAlreadyTaken": "An account with these credentials already exists. Try logging in instead.",
     "registerError": "Registration error, please try again",
     "registering": "Registering...",
     "alreadyHaveAccount": "Already have an account?",

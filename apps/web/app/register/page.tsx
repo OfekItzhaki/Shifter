@@ -47,8 +47,8 @@ export default function RegisterPage() {
       router.push("/login?registered=1");
     } catch (err: any) {
       const msg = err?.response?.data?.error ?? err?.response?.data?.message;
-      if (msg?.toLowerCase().includes("already registered")) {
-        setError(t("emailAlreadyRegistered"));
+      if (msg?.toLowerCase().includes("already exists") || msg?.toLowerCase().includes("already registered")) {
+        setError(t("credentialsAlreadyTaken"));
       } else {
         setError(msg ?? t("registerError"));
       }
