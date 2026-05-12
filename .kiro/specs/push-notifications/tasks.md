@@ -176,7 +176,7 @@ Implement Web Push Notifications for Shifter, extending the existing in-app noti
 - [x] 10. Checkpoint — Full integration
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 11. Final wiring and verification
+- [x] 11. Final wiring and verification
   - [x] 11.1 End-to-end integration verification
     - Verify NotificationService → PushNotificationSender pipeline is wired correctly
     - Verify PushSubscriptionsController is registered in routing
