@@ -1,6 +1,7 @@
 "use client";
 
 import { useLocale, useTranslations } from "next-intl";
+import { useRouter } from "next/navigation";
 
 const LOCALES = [
   { code: "he", label: "עב", full: "עברית" },
@@ -16,11 +17,14 @@ interface Props {
 export default function LanguageSwitcher({ variant = "sidebar" }: Props) {
   const locale = useLocale();
   const t = useTranslations("language");
+  const router = useRouter();
 
   function switchLocale(code: string) {
     if (code === locale) return;
     document.cookie = `locale=${code}; path=/; max-age=31536000; SameSite=Strict`;
-    window.location.reload();
+    // Use router.refresh() to update server components without full page reload
+    // This preserves client state (admin mode, store data, etc.)
+    router.refresh();
   }
 
   if (variant === "auth") {
