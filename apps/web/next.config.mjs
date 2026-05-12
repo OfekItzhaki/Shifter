@@ -37,9 +37,7 @@ const nextConfig = {
   env: {
     NEXT_PUBLIC_APP_VERSION: version,
   },
-  experimental: {
-    viewTransition: true,
-  },
+  experimental: {},
   async headers() {
     return [
       {
