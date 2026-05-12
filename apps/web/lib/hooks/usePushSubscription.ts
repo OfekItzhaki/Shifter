@@ -103,7 +103,7 @@ export function usePushSubscription(spaceId: string): UsePushSubscriptionReturn 
 
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
+        applicationServerKey: urlBase64ToUint8Array(vapidPublicKey) as BufferSource,
       });
 
       // Step 3: Send subscription to backend
