@@ -258,10 +258,10 @@ export default function ProfilePage() {
             <PushNotificationSettings spaceId={currentSpaceId} />
           </div>
         )}
-      </div>
 
-      {/* Delete Account */}
-      <DeleteAccountSection />
+        {/* Delete Account */}
+        <DeleteAccountSection />
+      </div>
 
       {/* Edit Profile Modal */}
       <Modal open={editOpen} onClose={() => { setEditOpen(false); setSaveError(null); }} title={t("edit")} maxWidth={480}>
