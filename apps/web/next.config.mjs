@@ -25,7 +25,7 @@ const securityHeaders = [
       // Allow images from: self, data URIs, blobs, local API, production API, and any HTTPS source for external profile images
       "img-src 'self' data: blob: http://localhost:5000 https://api.shifter.ofeklabs.com https:",
       "font-src 'self'",
-      "connect-src 'self' http://localhost:5000 https://api.shifter.ofeklabs.com ws://localhost:3000 wss: https://*.sentry.io https://*.ingest.sentry.io https://*.posthog.com https://us.i.posthog.com",
+      "connect-src 'self' http://localhost:5000 https://api.shifter.ofeklabs.com https://*.ofeklabs.com ws://localhost:3000 wss: https://*.sentry.io https://*.ingest.sentry.io https://*.posthog.com https://us.i.posthog.com",
       "worker-src 'self'",
       "frame-ancestors 'none'",
     ].join("; "),
