@@ -43,7 +43,12 @@ export default function NotificationPreferences() {
       {/* Badge toggle */}
       <div className="flex items-center justify-between py-2.5 border-b border-slate-100 dark:border-slate-700">
         <div className="flex items-center gap-3 min-w-0 flex-1">
-          <span className="text-base flex-shrink-0">🔴</span>
+          <span
+            className="w-7 h-7 rounded-lg flex items-center justify-center text-xs flex-shrink-0"
+            style={{ background: "#ef444415", color: "#ef4444" }}
+          >
+            ●
+          </span>
           <div className="min-w-0">
             <p className="text-sm font-medium text-slate-800 dark:text-slate-200">{t("showBadge")}</p>
             <p className="text-xs text-slate-400 dark:text-slate-500">{t("showBadgeDesc")}</p>
@@ -98,13 +103,13 @@ function ToggleSwitch({
       role="switch"
       aria-checked={checked}
       onClick={onChange}
-      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors flex-shrink-0 ${
-        checked ? "bg-blue-500" : "bg-slate-200"
+      className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors flex-shrink-0 ${
+        checked ? "bg-blue-500" : "bg-slate-300 dark:bg-slate-600"
       }`}
     >
       <span
-        className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform ${
-          checked ? "translate-x-6" : "translate-x-1"
+        className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow-sm transition-transform ${
+          checked ? "translate-x-[18px]" : "translate-x-[3px]"
         }`}
       />
     </button>
