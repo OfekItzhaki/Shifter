@@ -126,6 +126,16 @@ export default function RegisterPage() {
               />
             </div>
 
+            {/* Email/Phone notice */}
+            <div style={{ background: "#f0f9ff", border: "1px solid #bae6fd", borderRadius: 10, padding: "0.625rem 0.875rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+              <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="#0284c7" strokeWidth={2} style={{ flexShrink: 0 }}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <p style={{ fontSize: "0.75rem", color: "#0369a1", margin: 0 }}>
+                {t("emailOrPhoneHint")}
+              </p>
+            </div>
+
             <div>
               <label style={{ display: "block", fontSize: "0.875rem", fontWeight: 500, color: "#374151", marginBottom: "0.375rem" }}>
                 {t("email")} <span style={{ color: "#94a3b8", fontWeight: 400 }}>({t("optional")})</span>
@@ -137,9 +147,6 @@ export default function RegisterPage() {
                 placeholder="you@example.com"
                 style={{ width: "100%", border: "1px solid #e2e8f0", borderRadius: 10, padding: "0.625rem 0.875rem", fontSize: "0.875rem", color: "#0f172a", outline: "none", boxSizing: "border-box" }}
               />
-              <p style={{ fontSize: "0.75rem", color: "#94a3b8", marginTop: "0.25rem" }}>
-                {t("emailOrPhoneHint")}
-              </p>
             </div>
 
             <div>
@@ -153,9 +160,6 @@ export default function RegisterPage() {
                 placeholder="+1 555 000 0000"
                 style={{ width: "100%", border: "1px solid #e2e8f0", borderRadius: 10, padding: "0.625rem 0.875rem", fontSize: "0.875rem", color: "#0f172a", outline: "none", boxSizing: "border-box" }}
               />
-              <p style={{ fontSize: "0.75rem", color: "#94a3b8", marginTop: "0.25rem" }}>
-                {t("phoneHint")}
-              </p>
             </div>
 
             <div>

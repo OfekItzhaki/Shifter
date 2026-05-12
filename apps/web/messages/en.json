@@ -55,7 +55,7 @@
     "noAccount": "Don't have an account?",
     "emailOrPhone": "Email or Phone Number",
     "emailOrPhoneRequired": "Either email or phone number is required",
-    "emailOrPhoneHint": "Provide at least email or phone number"
+    "emailOrPhoneHint": "At least one is required — email or phone"
   },
   "nav": {
     "schedule": "Schedule",

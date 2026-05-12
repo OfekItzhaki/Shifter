@@ -55,7 +55,7 @@
     "noAccount": "אין לך חשבון?",
     "emailOrPhone": "אימייל או מספר טלפון",
     "emailOrPhoneRequired": "יש להזין אימייל או מספר טלפון",
-    "emailOrPhoneHint": "יש לספק לפחות אימייל או מספר טלפון"
+    "emailOrPhoneHint": "נדרש לפחות אחד מהם — אימייל או טלפון"
   },
   "nav": {
     "schedule": "לוח זמנים",

@@ -55,7 +55,7 @@
     "noAccount": "Нет аккаунта?",
     "emailOrPhone": "Email или номер телефона",
     "emailOrPhoneRequired": "Необходимо указать email или номер телефона",
-    "emailOrPhoneHint": "Укажите хотя бы email или номер телефона"
+    "emailOrPhoneHint": "Необходимо хотя бы одно — email или телефон"
   },
   "nav": {
     "schedule": "Расписание",
