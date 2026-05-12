@@ -908,6 +908,40 @@
     "back": "חזרה",
     "comingSoon": "תשלום יהיה זמין בקרוב! צור קשר דרך הצ׳אט לפרטים."
   },
+  "onboarding": {
+    "title": "תחילת העבודה",
+    "dismiss": "דלג",
+    "success": "הכל מוכן!",
+    "successMessage": "סביבת העבודה שלך מוכנה לשימוש.",
+    "restart": "מדריך הגדרה",
+    "steps": {
+      "createGroup": {
+        "title": "צור קבוצה",
+        "description": "הגדר את הצוות או היחידה הראשונה שלך",
+        "cta": "צור קבוצה"
+      },
+      "addMembers": {
+        "title": "הוסף חברים",
+        "description": "הזמן אנשים לקבוצה שלך",
+        "cta": "הוסף חברים"
+      },
+      "defineTasks": {
+        "title": "הגדר משימות",
+        "description": "הגדר משמרות ותפקידים",
+        "cta": "הגדר משימות"
+      },
+      "setConstraints": {
+        "title": "הגדר אילוצים",
+        "description": "הגדר כללי שיבוץ",
+        "cta": "הגדר כללים"
+      },
+      "runSolver": {
+        "title": "צור סידור",
+        "description": "הפעל את המסדר האוטומטי",
+        "cta": "הפעל מסדר"
+      }
+    }
+  },
   "errorPages": {
     "notFound": {
       "heading": "הדף לא נמצא",

@@ -897,6 +897,40 @@
     "back": "Back",
     "comingSoon": "Payment will be available soon! Contact us via chat for details."
   },
+  "onboarding": {
+    "title": "Getting Started",
+    "dismiss": "Skip",
+    "success": "You're all set!",
+    "successMessage": "Your scheduling workspace is ready.",
+    "restart": "Setup Guide",
+    "steps": {
+      "createGroup": {
+        "title": "Create a Group",
+        "description": "Set up your first team or unit",
+        "cta": "Create Group"
+      },
+      "addMembers": {
+        "title": "Add Members",
+        "description": "Invite people to your group",
+        "cta": "Add Members"
+      },
+      "defineTasks": {
+        "title": "Define Tasks",
+        "description": "Set up shifts and roles",
+        "cta": "Define Tasks"
+      },
+      "setConstraints": {
+        "title": "Set Constraints",
+        "description": "Define scheduling rules",
+        "cta": "Set Rules"
+      },
+      "runSolver": {
+        "title": "Generate Schedule",
+        "description": "Run the auto-scheduler",
+        "cta": "Run Solver"
+      }
+    }
+  },
   "errorPages": {
     "notFound": {
       "heading": "Page Not Found",
