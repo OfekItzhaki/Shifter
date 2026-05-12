@@ -1,4 +1,5 @@
 import createNextIntlPlugin from "next-intl/plugin";
+import { withSentryConfig } from "@sentry/nextjs";
 import { createRequire } from "module";
 
 const require = createRequire(import.meta.url);
@@ -24,7 +25,7 @@ const securityHeaders = [
       // Allow images from: self, data URIs, blobs, local API, production API, and any HTTPS source for external profile images
       "img-src 'self' data: blob: http://localhost:5000 https://api.jobuler.app https:",
       "font-src 'self'",
-      "connect-src 'self' http://localhost:5000 https://api.jobuler.app ws://localhost:3000 wss:",
+      "connect-src 'self' http://localhost:5000 https://api.jobuler.app ws://localhost:3000 wss: https://*.sentry.io https://*.ingest.sentry.io",
       "worker-src 'self'",
       "frame-ancestors 'none'",
     ].join("; "),
@@ -67,4 +68,10 @@ const nextConfig = {
   },
 };
 
-export default withNextIntl(nextConfig);
+export default withSentryConfig(withNextIntl(nextConfig), {
+  // Suppress source map upload warnings when no auth token is set
+  silent: true,
+  // Don't upload source maps (requires Sentry auth token)
+  disableServerWebpackPlugin: true,
+  disableClientWebpackPlugin: true,
+});
