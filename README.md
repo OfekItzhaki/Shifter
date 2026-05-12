@@ -4,7 +4,7 @@ A secure, multilingual, multi-tenant shift scheduling SaaS for force/platoon/shi
 
 ## Overview
 
-Shifter lets organizations manage people, groups, tasks, and constraints, then automatically generate optimized shift schedules using a CP-SAT solver. It supports multiple spaces (tenants), role-based permissions, real-time notifications, and full audit logging.
+Shifter is a secure, multilingual, multi-tenant shift scheduling platform for shift-based organizations. It helps teams generate fair, optimized schedules automatically, manage constraints, and notify members in real time.
 
 ## Prerequisites
 
