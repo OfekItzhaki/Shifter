@@ -1,0 +1,149 @@
+# CloudWatch Alarms for Jobuler ECS Services
+# Deploy with: aws cloudformation deploy --template-file cloudwatch-alarms.yml --stack-name jobuler-monitoring --parameter-overrides AlertEmail=your@email.com
+#
+# Prerequisites:
+# - ECS cluster named "jobuler-cluster"
+# - Services: jobuler-api, jobuler-solver, jobuler-web
+
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Monitoring and alerting for Jobuler ECS services
+
+Parameters:
+  AlertEmail:
+    Type: String
+    Description: Email address for alarm notifications
+  ClusterName:
+    Type: String
+    Default: jobuler-cluster
+  ApiServiceName:
+    Type: String
+    Default: jobuler-api
+  WebServiceName:
+    Type: String
+    Default: jobuler-web
+  SolverServiceName:
+    Type: String
+    Default: jobuler-solver
+
+Resources:
+  # ─── SNS Topic for Alerts ─────────────────────────────────────────────────
+  AlertTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: jobuler-alerts
+      DisplayName: Jobuler Alerts
+
+  AlertSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      TopicArn: !Ref AlertTopic
+      Protocol: email
+      Endpoint: !Ref AlertEmail
+
+  # ─── API Service Alarms ───────────────────────────────────────────────────
+  ApiCpuAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: jobuler-api-high-cpu
+      AlarmDescription: API CPU utilization > 80% for 5 minutes
+      Namespace: AWS/ECS
+      MetricName: CPUUtilization
+      Dimensions:
+        - Name: ClusterName
+          Value: !Ref ClusterName
+        - Name: ServiceName
+          Value: !Ref ApiServiceName
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 80
+      ComparisonOperator: GreaterThanThreshold
+      AlarmActions:
+        - !Ref AlertTopic
+
+  ApiMemoryAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: jobuler-api-high-memory
+      AlarmDescription: API memory utilization > 85% for 5 minutes
+      Namespace: AWS/ECS
+      MetricName: MemoryUtilization
+      Dimensions:
+        - Name: ClusterName
+          Value: !Ref ClusterName
+        - Name: ServiceName
+          Value: !Ref ApiServiceName
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 85
+      ComparisonOperator: GreaterThanThreshold
+      AlarmActions:
+        - !Ref AlertTopic
+
+  ApiUnhealthyTaskAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: jobuler-api-unhealthy-tasks
+      AlarmDescription: API has 0 running tasks (service is down)
+      Namespace: AWS/ECS
+      MetricName: RunningTaskCount
+      Dimensions:
+        - Name: ClusterName
+          Value: !Ref ClusterName
+        - Name: ServiceName
+          Value: !Ref ApiServiceName
+      Statistic: Minimum
+      Period: 60
+      EvaluationPeriods: 2
+      Threshold: 1
+      ComparisonOperator: LessThanThreshold
+      AlarmActions:
+        - !Ref AlertTopic
+
+  # ─── Web Service Alarms ───────────────────────────────────────────────────
+  WebUnhealthyTaskAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: jobuler-web-unhealthy-tasks
+      AlarmDescription: Web has 0 running tasks (frontend is down)
+      Namespace: AWS/ECS
+      MetricName: RunningTaskCount
+      Dimensions:
+        - Name: ClusterName
+          Value: !Ref ClusterName
+        - Name: ServiceName
+          Value: !Ref WebServiceName
+      Statistic: Minimum
+      Period: 60
+      EvaluationPeriods: 2
+      Threshold: 1
+      ComparisonOperator: LessThanThreshold
+      AlarmActions:
+        - !Ref AlertTopic
+
+  # ─── Solver Service Alarms ───────────────────────────────────────────────
+  SolverUnhealthyTaskAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: jobuler-solver-unhealthy-tasks
+      AlarmDescription: Solver has 0 running tasks
+      Namespace: AWS/ECS
+      MetricName: RunningTaskCount
+      Dimensions:
+        - Name: ClusterName
+          Value: !Ref ClusterName
+        - Name: ServiceName
+          Value: !Ref SolverServiceName
+      Statistic: Minimum
+      Period: 60
+      EvaluationPeriods: 3
+      Threshold: 1
+      ComparisonOperator: LessThanThreshold
+      AlarmActions:
+        - !Ref AlertTopic
+
+Outputs:
+  AlertTopicArn:
+    Value: !Ref AlertTopic
+    Description: SNS topic ARN for alarm notifications

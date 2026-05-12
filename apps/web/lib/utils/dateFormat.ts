@@ -9,9 +9,12 @@
  *   "ar"    → Arabic    → dd/mm/yyyy  (ar)
  *   etc.
  *
- * All functions accept a locale string (pass useAuthStore().preferredLocale).
+ * All functions accept a locale string (pass useAuthStore().preferredLocale)
+ * and an optional hour12 flag (false = 24h, true = 12h AM/PM).
  * Falls back to "he-IL" if locale is unrecognised.
  */
+
+export type TimeFormatOption = "24h" | "12h";
 
 /** Map our app locale codes to BCP-47 locale tags */
 function toBcp47(locale: string): string {
@@ -32,8 +35,13 @@ function toBcp47(locale: string): string {
   return map[locale?.toLowerCase()] ?? "he-IL";
 }
 
+/** Convert TimeFormatOption to the hour12 boolean for Intl */
+function getHour12(timeFormat?: TimeFormatOption): boolean {
+  return timeFormat === "12h";
+}
+
 /** Format a date as a short date string: dd/mm/yyyy or mm/dd/yyyy depending on locale */
-export function formatDate(date: string | Date | null | undefined, locale: string): string {
+export function formatDate(date: string | Date | null | undefined, locale: string, _timeFormat?: TimeFormatOption): string {
   if (!date) return "—";
   try {
     const d = typeof date === "string" ? new Date(date) : date;
@@ -49,7 +57,7 @@ export function formatDate(date: string | Date | null | undefined, locale: strin
 }
 
 /** Format a date with a long month name: e.g. "27 באפריל 2026" or "April 27, 2026" */
-export function formatDateLong(date: string | Date | null | undefined, locale: string): string {
+export function formatDateLong(date: string | Date | null | undefined, locale: string, _timeFormat?: TimeFormatOption): string {
   if (!date) return "—";
   try {
     const d = typeof date === "string" ? new Date(date) : date;
@@ -64,8 +72,8 @@ export function formatDateLong(date: string | Date | null | undefined, locale: s
   }
 }
 
-/** Format a datetime: date + time, e.g. "27/04/2026, 07:15" */
-export function formatDateTime(date: string | Date | null | undefined, locale: string): string {
+/** Format a datetime: date + time, e.g. "27/04/2026, 07:15" or "27/04/2026, 7:15 AM" */
+export function formatDateTime(date: string | Date | null | undefined, locale: string, timeFormat?: TimeFormatOption): string {
   if (!date) return "—";
   try {
     const d = typeof date === "string" ? new Date(date) : date;
@@ -76,14 +84,15 @@ export function formatDateTime(date: string | Date | null | undefined, locale: s
       year: "numeric",
       hour: "2-digit",
       minute: "2-digit",
+      hour12: getHour12(timeFormat),
     });
   } catch {
     return String(date);
   }
 }
 
-/** Format just the time: "07:15" */
-export function formatTime(date: string | Date | null | undefined, locale: string): string {
+/** Format just the time: "07:15" or "7:15 AM" */
+export function formatTime(date: string | Date | null | undefined, locale: string, timeFormat?: TimeFormatOption): string {
   if (!date) return "—";
   try {
     const d = typeof date === "string" ? new Date(date) : date;
@@ -91,14 +100,15 @@ export function formatTime(date: string | Date | null | undefined, locale: strin
     return d.toLocaleTimeString(toBcp47(locale), {
       hour: "2-digit",
       minute: "2-digit",
+      hour12: getHour12(timeFormat),
     });
   } catch {
     return String(date);
   }
 }
 
-/** Format a short date+time without year: "27 Apr, 07:15" */
-export function formatDateTimeShort(date: string | Date | null | undefined, locale: string): string {
+/** Format a short date+time without year: "27 Apr, 07:15" or "27 Apr, 7:15 AM" */
+export function formatDateTimeShort(date: string | Date | null | undefined, locale: string, timeFormat?: TimeFormatOption): string {
   if (!date) return "—";
   try {
     const d = typeof date === "string" ? new Date(date) : date;
@@ -108,6 +118,7 @@ export function formatDateTimeShort(date: string | Date | null | undefined, loca
       month: "short",
       hour: "2-digit",
       minute: "2-digit",
+      hour12: getHour12(timeFormat),
     });
   } catch {
     return String(date);
@@ -118,7 +129,8 @@ export function formatDateTimeShort(date: string | Date | null | undefined, loca
 export function formatDateRange(
   from: string | Date | null | undefined,
   to: string | Date | null | undefined,
-  locale: string
+  locale: string,
+  _timeFormat?: TimeFormatOption
 ): string {
   return `${formatDate(from, locale)} – ${formatDate(to, locale)}`;
 }

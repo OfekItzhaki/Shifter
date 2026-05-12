@@ -11,7 +11,7 @@ import ImageUpload from "@/components/ImageUpload";
 import NotificationPreferences from "@/components/NotificationPreferences";
 import PushNotificationSettings from "@/components/PushNotificationSettings";
 import { useSpaceStore } from "@/lib/store/spaceStore";
-
+import { useAuthStore } from "@/lib/store/authStore";
 function getInitials(name: string): string {
   return name
     .split(" ")
@@ -247,6 +247,9 @@ export default function ProfilePage() {
           </div>
         </div>
 
+        {/* Time Format Preference */}
+        <TimeFormatToggle />
+
         {/* Notification Preferences */}
         <div style={{ ...cardStyle, marginTop: "1rem" }}>
           <NotificationPreferences />
@@ -341,6 +344,64 @@ export default function ProfilePage() {
         </form>
       </Modal>
     </AppShell>
+  );
+}
+
+
+function TimeFormatToggle() {
+  const t = useTranslations("profile");
+  const { timeFormat, setTimeFormat } = useAuthStore();
+
+  return (
+    <div style={{ ...cardStyle, marginTop: "1rem" }}>
+      <h2 style={{ fontSize: "0.875rem", fontWeight: 600, color: "#0f172a", margin: "0 0 0.75rem" }}>
+        {t("timeFormat")}
+      </h2>
+      <div style={{ display: "flex", gap: "0.5rem" }}>
+        <button
+          onClick={() => setTimeFormat("24h")}
+          style={{
+            flex: 1,
+            padding: "0.625rem 1rem",
+            borderRadius: 10,
+            border: timeFormat === "24h" ? "2px solid #3b82f6" : "1px solid #e2e8f0",
+            background: timeFormat === "24h" ? "#eff6ff" : "white",
+            color: timeFormat === "24h" ? "#1d4ed8" : "#64748b",
+            fontWeight: 600,
+            fontSize: "0.875rem",
+            cursor: "pointer",
+            transition: "all 0.15s",
+          }}
+          aria-pressed={timeFormat === "24h"}
+        >
+          24h
+          <span style={{ display: "block", fontSize: "0.75rem", fontWeight: 400, marginTop: 2 }}>
+            14:30
+          </span>
+        </button>
+        <button
+          onClick={() => setTimeFormat("12h")}
+          style={{
+            flex: 1,
+            padding: "0.625rem 1rem",
+            borderRadius: 10,
+            border: timeFormat === "12h" ? "2px solid #3b82f6" : "1px solid #e2e8f0",
+            background: timeFormat === "12h" ? "#eff6ff" : "white",
+            color: timeFormat === "12h" ? "#1d4ed8" : "#64748b",
+            fontWeight: 600,
+            fontSize: "0.875rem",
+            cursor: "pointer",
+            transition: "all 0.15s",
+          }}
+          aria-pressed={timeFormat === "12h"}
+        >
+          AM/PM
+          <span style={{ display: "block", fontSize: "0.75rem", fontWeight: 400, marginTop: 2 }}>
+            2:30 PM
+          </span>
+        </button>
+      </div>
+    </div>
   );
 }
 

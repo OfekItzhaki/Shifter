@@ -68,7 +68,7 @@ export default function PricingPage() {
                 {plan.members === Infinity ? t("unlimited") : t("upToMembers", { count: plan.members })}
               </div>
               <div style={{ fontSize: "2rem", fontWeight: 700, color: "#0f172a" }}>
-                ₪{plan.price}
+                {t("price", { amount: plan.price })}
               </div>
               <div style={{ fontSize: "0.8rem", color: "#94a3b8", marginBottom: "1rem" }}>
                 {t("perMonth")}

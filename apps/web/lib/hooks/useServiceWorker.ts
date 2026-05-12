@@ -32,9 +32,10 @@ export function useServiceWorker(): SWState {
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);
 
-    // Register service worker
+    // Register service worker with version query param to force re-download on deploy
+    const appVersion = process.env.NEXT_PUBLIC_APP_VERSION || "1.5.0";
     navigator.serviceWorker
-      .register("/sw.js", { scope: "/" })
+      .register(`/sw.js?v=${appVersion}`, { scope: "/" })
       .then((reg) => {
         setRegistration(reg);
         setIsRegistered(true);

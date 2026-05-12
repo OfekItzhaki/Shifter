@@ -7,6 +7,7 @@ interface AuthState {
   userId: string | null;
   displayName: string | null;
   preferredLocale: string;
+  timeFormat: "24h" | "12h";
   isAuthenticated: boolean;
   isPlatformAdmin: boolean;
   // Admin mode is scoped to a specific group — null means not in admin mode
@@ -16,6 +17,7 @@ interface AuthState {
   logout: () => Promise<void>;
   enterAdminMode: (groupId: string) => void;
   exitAdminMode: () => void;
+  setTimeFormat: (format: "24h" | "12h") => void;
   // Convenience: is the user in admin mode for a specific group?
   isAdminForGroup: (groupId: string) => boolean;
   // Legacy: global admin mode check (true if admin for ANY group)
@@ -28,6 +30,7 @@ export const useAuthStore = create<AuthState>()(
       userId: null,
       displayName: null,
       preferredLocale: "he",
+      timeFormat: "24h",
       isAuthenticated: false,
       isPlatformAdmin: false,
       adminGroupId: null,
@@ -69,6 +72,7 @@ export const useAuthStore = create<AuthState>()(
 
       enterAdminMode: (groupId: string) => set({ adminGroupId: groupId }),
       exitAdminMode: () => set({ adminGroupId: null }),
+      setTimeFormat: (format: "24h" | "12h") => set({ timeFormat: format }),
       isAdminForGroup: (groupId: string) => get().adminGroupId === groupId,
     }),
     {
@@ -77,6 +81,7 @@ export const useAuthStore = create<AuthState>()(
         userId: state.userId,
         displayName: state.displayName,
         preferredLocale: state.preferredLocale,
+        timeFormat: state.timeFormat,
         isAuthenticated: state.isAuthenticated,
         isPlatformAdmin: state.isPlatformAdmin,
         // Don't persist adminGroupId — always reset on page load

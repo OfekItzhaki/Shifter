@@ -64,11 +64,11 @@ Implement a frontend-only onboarding wizard as a floating checklist panel that g
     - Create test at `apps/web/__tests__/onboarding.test.ts`
     - _Requirements: 5.2, 5.3, 6.2, 6.3, 10.2_
 
-- [~] 3. Checkpoint - Ensure all tests pass
+- [x] 3. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 4. Implement detection hook and i18n keys
-  - [~] 4.1 Create useStepCompletion hook
+- [x] 4. Implement detection hook and i18n keys
+  - [x] 4.1 Create useStepCompletion hook
     - Create `apps/web/lib/hooks/useStepCompletion.ts`
     - Query existing API clients for groups, people/members, tasks, constraints, schedule-runs
     - Return `{ steps: StepCompletionMap, isLoading: boolean, refresh: () => void }`
@@ -83,8 +83,8 @@ Implement a frontend-only onboarding wizard as a floating checklist panel that g
     - Add equivalent keys to `apps/web/messages/ru.json` (Russian translations)
     - _Requirements: 7.1, 7.3_
 
-- [ ] 5. Implement UI components
-  - [~] 5.1 Create OnboardingPanel component
+- [x] 5. Implement UI components
+  - [x] 5.1 Create OnboardingPanel component
     - Create `apps/web/components/onboarding/OnboardingPanel.tsx`
     - Render as a floating panel at `inset-inline-end` using logical CSS properties
     - Display step list with completion indicators (checkmarks for done, highlight for current)
@@ -101,7 +101,7 @@ Implement a frontend-only onboarding wizard as a floating checklist panel that g
     - Use `useTranslations('onboarding')` from next-intl for all text
     - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 5.1, 7.1, 7.2, 7.4, 8.1, 8.2, 8.3, 8.4, 8.5, 9.1, 9.2, 9.3, 9.4, 9.5_
 
-  - [~] 5.2 Create OnboardingProvider component
+  - [x] 5.2 Create OnboardingProvider component
     - Create `apps/web/components/onboarding/OnboardingProvider.tsx`
     - Wrap children and manage onboarding lifecycle
     - On mount: hydrate store from localStorage using current userId
@@ -120,15 +120,15 @@ Implement a frontend-only onboarding wizard as a floating checklist panel that g
     - Test all three locales render without errors
     - _Requirements: 2.1, 2.3, 2.5, 5.1, 7.2, 7.3, 8.2_
 
-- [ ] 6. Integrate into AppShell and add restart menu item
-  - [~] 6.1 Integrate OnboardingProvider into AppShell
+- [x] 6. Integrate into AppShell and add restart menu item
+  - [x] 6.1 Integrate OnboardingProvider into AppShell
     - Modify `apps/web/components/shell/AppShell.tsx`
     - Wrap main content area with `OnboardingProvider`
     - Render `OnboardingPanel` as a sibling to the main content (not inside it)
     - Ensure panel does not interfere with existing layout
     - _Requirements: 1.1, 9.4_
 
-  - [~] 6.2 Add restart onboarding menu item to AppShell
+  - [x] 6.2 Add restart onboarding menu item to AppShell
     - Add a help/onboarding menu item in the AppShell navigation or help menu
     - On click: call `reset(userId)` on the onboarding store, then `show()`
     - Re-evaluate step completion after restart using current application state
@@ -141,7 +141,7 @@ Implement a frontend-only onboarding wizard as a floating checklist panel that g
     - Test panel does not render when user is not authenticated
     - _Requirements: 1.1, 10.1, 10.2_
 
-- [~] 7. Final checkpoint - Ensure all tests pass
+- [x] 7. Final checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 ## Notes

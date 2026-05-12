@@ -11,6 +11,10 @@ import ShifterLogo from "@/components/shell/ShifterLogo";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import DarkModeToggle from "@/components/DarkModeToggle";
 import VerificationBanner from "@/components/shell/VerificationBanner";
+import OnboardingProvider from "@/components/onboarding/OnboardingProvider";
+import OnboardingPanel from "@/components/onboarding/OnboardingPanel";
+import { useOnboardingStore } from "@/lib/store/onboardingStore";
+import { useStepCompletion } from "@/lib/hooks/useStepCompletion";
 import { getMySpaces } from "@/lib/api/spaces";
 import { getMe } from "@/lib/api/auth";
 
@@ -52,6 +56,8 @@ export default function AppShell({ children }: AppShellProps) {
   const t = useTranslations();
   const { displayName: storedDisplayName, logout, userId, isPlatformAdmin } = useAuthStore();
   const { currentSpaceId, currentSpaceName, setCurrentSpace } = useSpaceStore();
+  const { show: showOnboarding, reset: resetOnboarding } = useOnboardingStore();
+  const { refresh: refreshSteps } = useStepCompletion();
   const router = useRouter();
   const [resolvedName, setResolvedName] = useState<string | null>(storedDisplayName);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -84,6 +90,13 @@ export default function AppShell({ children }: AppShellProps) {
       }
     }).catch(() => {});
   }, [currentSpaceId]);
+
+  function handleRestartOnboarding() {
+    if (!userId) return;
+    resetOnboarding(userId);
+    showOnboarding();
+    refreshSteps();
+  }
 
   async function handleLogout() { await logout(); router.push("/login"); }
 
@@ -129,6 +142,14 @@ export default function AppShell({ children }: AppShellProps) {
           {isPlatformAdmin && (
             <NavItem href="/platform" label={t("nav.platform")} icon={ic("M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6")} onNavigate={() => setSidebarOpen(false)} />
           )}
+          <button
+            onClick={handleRestartOnboarding}
+            style={S.navLink(false, false)}
+            className="w-full text-left"
+          >
+            <span style={{ flexShrink: 0, display: "flex" }}>{ic("M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15")}</span>
+            <span>{t("onboarding.restart")}</span>
+          </button>
         </nav>
 
         <div style={S.bottom}>
@@ -186,10 +207,13 @@ export default function AppShell({ children }: AppShellProps) {
         <header style={{ ...S.topbar(false), display: "none" }} className="desktop-topbar">
           {/* desktop topbar — empty, admin mode indicator shown per-group */}
         </header>
-        <main style={S.content} className="bg-slate-50 dark:bg-slate-900">
-          <VerificationBanner />
-          {children}
-        </main>
+        <OnboardingProvider>
+          <main style={S.content} className="bg-slate-50 dark:bg-slate-900">
+            <VerificationBanner />
+            {children}
+          </main>
+          <OnboardingPanel />
+        </OnboardingProvider>
       </div>
     </div>
   );

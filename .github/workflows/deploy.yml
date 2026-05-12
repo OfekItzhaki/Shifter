@@ -182,9 +182,17 @@ jobs:
 
       - name: Health check
         run: |
-          sleep 10
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://shifter.ofeklabs.dev/health || echo "000")
-          echo "Health check status: $STATUS"
-          if [ "$STATUS" != "200" ]; then
-            echo "⚠️ Health check failed with status $STATUS"
+          sleep 15
+          RESPONSE=$(curl -s https://shifter.ofeklabs.dev/health || echo '{"status":"unreachable"}')
+          STATUS=$(echo "$RESPONSE" | jq -r '.status // "unknown"')
+          echo "Health check response: $RESPONSE"
+          echo "Status: $STATUS"
+          if [ "$STATUS" = "healthy" ]; then
+            echo "✅ All systems healthy"
+          elif [ "$STATUS" = "degraded" ]; then
+            echo "⚠️ Service is degraded — some dependencies are unhealthy"
+            echo "::warning::Post-deploy health check returned degraded status"
+          else
+            echo "❌ Health check failed"
+            echo "::warning::Post-deploy health check failed (status: $STATUS)"
           fi
