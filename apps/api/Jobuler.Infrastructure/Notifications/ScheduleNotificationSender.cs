@@ -64,26 +64,31 @@ public class ScheduleNotificationSender : IScheduleNotificationSender
     public async Task SendAssignmentNotificationAsync(
         string contact, string personName, string taskName,
         string startsAt, string endsAt, string groupName,
-        CancellationToken ct = default)
+        string locale = "he", CancellationToken ct = default)
     {
         if (IsEmail(contact))
         {
-            var subject = $"שיבוץ חדש — {groupName}";
+            var (subject, dir, greeting, body, taskLabel, startLabel, endLabel) = locale switch
+            {
+                "he" => ($"שיבוץ חדש — {groupName}", "rtl", $"שלום {personName},", $"שובצת למשימה חדשה בקבוצה <strong>{groupName}</strong>:", "משימה", "התחלה", "סיום"),
+                "ru" => ($"Новое назначение — {groupName}", "ltr", $"Здравствуйте, {personName},", $"Вам назначена новая задача в группе <strong>{groupName}</strong>:", "Задача", "Начало", "Конец"),
+                _ => ($"New assignment — {groupName}", "ltr", $"Hi {personName},", $"You've been assigned a new task in group <strong>{groupName}</strong>:", "Task", "Start", "End"),
+            };
             var html = $"""
-                <div dir="rtl" style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-                  <h2>שלום {personName},</h2>
-                  <p>שובצת למשימה חדשה בקבוצה <strong>{groupName}</strong>:</p>
+                <div dir="{dir}" style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                  <h2>{greeting}</h2>
+                  <p>{body}</p>
                   <table style="border-collapse:collapse;width:100%;margin:16px 0;">
                     <tr>
-                      <td style="padding:8px;border:1px solid #e2e8f0;font-weight:bold;">משימה</td>
+                      <td style="padding:8px;border:1px solid #e2e8f0;font-weight:bold;">{taskLabel}</td>
                       <td style="padding:8px;border:1px solid #e2e8f0;">{taskName}</td>
                     </tr>
                     <tr>
-                      <td style="padding:8px;border:1px solid #e2e8f0;font-weight:bold;">התחלה</td>
+                      <td style="padding:8px;border:1px solid #e2e8f0;font-weight:bold;">{startLabel}</td>
                       <td style="padding:8px;border:1px solid #e2e8f0;">{startsAt}</td>
                     </tr>
                     <tr>
-                      <td style="padding:8px;border:1px solid #e2e8f0;font-weight:bold;">סיום</td>
+                      <td style="padding:8px;border:1px solid #e2e8f0;font-weight:bold;">{endLabel}</td>
                       <td style="padding:8px;border:1px solid #e2e8f0;">{endsAt}</td>
                     </tr>
                   </table>
@@ -93,11 +98,12 @@ public class ScheduleNotificationSender : IScheduleNotificationSender
         }
         else
         {
-            var message = $"שלום {personName}! ✅\n\n" +
-                          $"שיבוץ חדש בקבוצה *{groupName}*:\n\n" +
-                          $"📌 משימה: {taskName}\n" +
-                          $"🕐 התחלה: {startsAt}\n" +
-                          $"🕐 סיום: {endsAt}";
+            var message = locale switch
+            {
+                "he" => $"שלום {personName}! ✅\n\nשיבוץ חדש בקבוצה *{groupName}*:\n\n📌 משימה: {taskName}\n🕐 התחלה: {startsAt}\n🕐 סיום: {endsAt}",
+                "ru" => $"Здравствуйте, {personName}! ✅\n\nНовое назначение в группе *{groupName}*:\n\n📌 Задача: {taskName}\n🕐 Начало: {startsAt}\n🕐 Конец: {endsAt}",
+                _ => $"Hi {personName}! ✅\n\nNew assignment in *{groupName}*:\n\n📌 Task: {taskName}\n🕐 Start: {startsAt}\n🕐 End: {endsAt}",
+            };
             await _whatsApp.SendRawAsync(contact, message, ct);
         }
     }

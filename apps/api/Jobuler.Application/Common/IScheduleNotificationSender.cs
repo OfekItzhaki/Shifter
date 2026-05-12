@@ -28,5 +28,6 @@ public interface IScheduleNotificationSender
         string startsAt,
         string endsAt,
         string groupName,
+        string locale = "he",
         CancellationToken ct = default);
 }

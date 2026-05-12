@@ -120,6 +120,7 @@ services:
       dockerfile: ../../infra/docker/web.Dockerfile
       args:
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:5000}
+        NEXT_PUBLIC_VAPID_PUBLIC_KEY: ${NEXT_PUBLIC_VAPID_PUBLIC_KEY:-}
     restart: unless-stopped
     environment:
       NEXT_PUBLIC_API_URL: "http://localhost:${API_PORT}"
