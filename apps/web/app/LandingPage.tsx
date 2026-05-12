@@ -19,9 +19,18 @@ export default function LandingPage() {
   }, []);
 
   useEffect(() => {
-    // Always show the landing page — no redirect even if logged in
-    setChecking(false);
-  }, []);
+    const token = localStorage.getItem("access_token");
+    if (!token) { setChecking(false); return; }
+    const controller = new AbortController();
+    fetch(`${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000"}/auth/me`, {
+      headers: { Authorization: `Bearer ${token}` },
+      signal: controller.signal,
+    }).then(res => {
+      if (res.ok) router.replace("/schedule/today");
+      else { localStorage.removeItem("access_token"); localStorage.removeItem("refresh_token"); document.cookie = "access_token=; path=/; max-age=0"; setChecking(false); }
+    }).catch(() => { setChecking(false); });
+    return () => controller.abort();
+  }, [router]);
 
   const c = LANDING_CONTENT[lang];
 
