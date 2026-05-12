@@ -149,10 +149,12 @@ public class PublishVersionCommandHandler : IRequestHandler<PublishVersionComman
                 .Where(u => userIds.Contains(u.Id))
                 .ToDictionaryAsync(u => u.Id, ct);
 
-            // Get the space name for the notification message
-            var space = await db.Spaces.AsNoTracking()
-                .FirstOrDefaultAsync(s => s.Id == req.SpaceId, ct);
-            var spaceName = space?.Name ?? "Shifter";
+            // Get the group name for the notification message (use first active group in space)
+            var group = await db.Groups.AsNoTracking()
+                .Where(g => g.SpaceId == req.SpaceId && g.IsActive && g.DeletedAt == null)
+                .OrderBy(g => g.CreatedAt)
+                .FirstOrDefaultAsync(ct);
+            var groupName = group?.Name ?? "Shifter";
 
             var scheduleUrl = $"{frontendUrl}/groups";
 
@@ -173,8 +175,9 @@ public class PublishVersionCommandHandler : IRequestHandler<PublishVersionComman
                     await notificationSender.SendSchedulePublishedAsync(
                         contact,
                         person.DisplayName ?? person.FullName,
-                        spaceName,
+                        groupName,
                         scheduleUrl,
+                        user.PreferredLocale ?? "he",
                         ct);
                 }
                 catch (Exception ex)

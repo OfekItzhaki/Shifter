@@ -15,6 +15,7 @@ public interface IScheduleNotificationSender
         string personName,
         string groupName,
         string scheduleUrl,
+        string locale = "he",
         CancellationToken ct = default);
 
     /// <summary>

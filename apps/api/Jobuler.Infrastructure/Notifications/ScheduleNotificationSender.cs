@@ -26,19 +26,24 @@ public class ScheduleNotificationSender : IScheduleNotificationSender
 
     public async Task SendSchedulePublishedAsync(
         string contact, string personName, string groupName,
-        string scheduleUrl, CancellationToken ct = default)
+        string scheduleUrl, string locale = "he", CancellationToken ct = default)
     {
         if (IsEmail(contact))
         {
-            var subject = $"סידור חדש פורסם — {groupName}";
+            var (subject, greeting, body, buttonText, dir) = locale switch
+            {
+                "he" => ($"סידור חדש פורסם — {groupName}", $"שלום {personName},", $"סידור חדש פורסם עבור הקבוצה <strong>{groupName}</strong>.", "צפה בסידור", "rtl"),
+                "ru" => ($"Новое расписание — {groupName}", $"Здравствуйте, {personName},", $"Новое расписание опубликовано для группы <strong>{groupName}</strong>.", "Посмотреть расписание", "ltr"),
+                _ => ($"New schedule published — {groupName}", $"Hi {personName},", $"A new schedule has been published for group <strong>{groupName}</strong>.", "View Schedule", "ltr"),
+            };
             var html = $"""
-                <div dir="rtl" style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-                  <h2>שלום {personName},</h2>
-                  <p>סידור חדש פורסם עבור הקבוצה <strong>{groupName}</strong>.</p>
+                <div dir="{dir}" style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                  <h2>{greeting}</h2>
+                  <p>{body}</p>
                   <a href="{scheduleUrl}"
                      style="display:inline-block;background:#3b82f6;color:white;padding:12px 24px;
                             border-radius:8px;text-decoration:none;font-weight:bold;margin:16px 0;">
-                    צפה בסידור
+                    {buttonText}
                   </a>
                 </div>
                 """;
@@ -46,9 +51,12 @@ public class ScheduleNotificationSender : IScheduleNotificationSender
         }
         else
         {
-            var message = $"שלום {personName}! 📋\n\n" +
-                          $"סידור חדש פורסם עבור הקבוצה *{groupName}*.\n\n" +
-                          $"לצפייה בסידור:\n{scheduleUrl}";
+            var message = locale switch
+            {
+                "he" => $"שלום {personName}! 📋\n\nסידור חדש פורסם עבור הקבוצה *{groupName}*.\n\nלצפייה בסידור:\n{scheduleUrl}",
+                "ru" => $"Здравствуйте, {personName}! 📋\n\nНовое расписание для группы *{groupName}*.\n\nПосмотреть:\n{scheduleUrl}",
+                _ => $"Hi {personName}! 📋\n\nA new schedule has been published for *{groupName}*.\n\nView schedule:\n{scheduleUrl}",
+            };
             await _whatsApp.SendRawAsync(contact, message, ct);
         }
     }
