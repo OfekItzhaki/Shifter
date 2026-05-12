@@ -9,7 +9,7 @@ ARG NEXT_PUBLIC_API_URL=http://localhost:5000
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-RUN npx next build --no-turbopack
+RUN npx next build
 
 FROM node:24-alpine AS runner
 WORKDIR /app
