@@ -262,6 +262,9 @@ export default function ProfilePage() {
           </div>
         )}
 
+        {/* Export My Data */}
+        <ExportDataSection />
+
         {/* Delete Account */}
         <DeleteAccountSection />
       </div>
@@ -401,6 +404,51 @@ function TimeFormatToggle() {
           </span>
         </button>
       </div>
+    </div>
+  );
+}
+
+
+function ExportDataSection() {
+  const t = useTranslations("profile");
+  const [exporting, setExporting] = useState(false);
+
+  async function handleExport() {
+    setExporting(true);
+    try {
+      const { data } = await apiClient.get("/auth/me/export", { responseType: "blob" });
+      const url = URL.createObjectURL(new Blob([data], { type: "application/json" }));
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `shifter-data-export-${new Date().toISOString().split("T")[0]}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      // silently fail
+    } finally {
+      setExporting(false);
+    }
+  }
+
+  return (
+    <div style={{ ...cardStyle, marginTop: "1rem" }}>
+      <h2 style={{ fontSize: "0.875rem", fontWeight: 600, color: "#0f172a", margin: "0 0 0.5rem" }}>
+        {t("exportData")}
+      </h2>
+      <p style={{ fontSize: "0.75rem", color: "#64748b", margin: "0 0 1rem" }}>
+        {t("exportDataDesc")}
+      </p>
+      <button
+        onClick={handleExport}
+        disabled={exporting}
+        style={{
+          background: "none", border: "1px solid #e2e8f0", borderRadius: 10,
+          padding: "0.5rem 1rem", fontSize: "0.8125rem", color: "#374151",
+          cursor: exporting ? "not-allowed" : "pointer", opacity: exporting ? 0.6 : 1,
+        }}
+      >
+        {exporting ? t("exporting") : t("exportButton")}
+      </button>
     </div>
   );
 }

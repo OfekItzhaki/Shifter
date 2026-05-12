@@ -37,4 +37,18 @@ public class StatsController : ControllerBase
         var result = await _mediator.Send(new GetBurdenStatsQuery(spaceId, groupId), ct);
         return Ok(result);
     }
+
+    /// <summary>
+    /// GET /spaces/{spaceId}/stats/historical
+    /// Returns time-series statistics (assignments per day, solver runs per day, burden trend).
+    /// Requires space.view permission.
+    /// </summary>
+    [HttpGet("historical")]
+    public async Task<IActionResult> GetHistoricalStats(
+        Guid spaceId, [FromQuery] int days = 30, CancellationToken ct = default)
+    {
+        await _permissions.RequirePermissionAsync(CurrentUserId, spaceId, Permissions.SpaceView, ct);
+        var result = await _mediator.Send(new GetHistoricalStatsQuery(spaceId, days), ct);
+        return Ok(result);
+    }
 }

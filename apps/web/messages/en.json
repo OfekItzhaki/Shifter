@@ -55,6 +55,8 @@
     "myMissions": "My Missions",
     "myProfile": "My Profile",
     "myGroups": "My Groups",
+    "changelog": "What's New",
+    "stats": "Statistics",
     "admin": "Admin",
     "logs": "Logs",
     "platform": "Platform"
@@ -432,6 +434,10 @@
     "profileImage": "Profile Image",
     "uploadImage": "Upload Image",
     "timeFormat": "Time Format",
+    "exportData": "Export My Data",
+    "exportDataDesc": "Download all your personal data as a JSON file. Includes your profile, group memberships, assignments, and notifications.",
+    "exportButton": "Download My Data",
+    "exporting": "Exporting...",
     "deleteAccount": "Delete Account",
     "deleteAccountDesc": "Permanently delete your account and all associated data. This cannot be undone.",
     "deleteAccountButton": "Delete My Account",
@@ -933,6 +939,12 @@
       }
     }
   },
+  "changelog": {
+    "title": "What's New",
+    "new": "New",
+    "fix": "Fix",
+    "improved": "Improved"
+  },
   "errorPages": {
     "notFound": {
       "heading": "Page Not Found",
@@ -962,5 +974,17 @@
       "reload": "Reload Page",
       "goHome": "Go Home"
     }
+  },
+  "stats": {
+    "title": "Statistics",
+    "assignments": "Assignments",
+    "solverRuns": "Solver Runs",
+    "versionsPublished": "Versions Published",
+    "burdenTrend": "Burden Trend",
+    "last7days": "7d",
+    "last14days": "14d",
+    "last30days": "30d",
+    "last90days": "90d",
+    "noData": "No data yet"
   }
 }

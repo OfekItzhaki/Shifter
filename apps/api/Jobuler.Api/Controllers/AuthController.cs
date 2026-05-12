@@ -1,5 +1,6 @@
 using FluentValidation;
 using Jobuler.Application.Auth.Commands;
+using Jobuler.Application.Auth.Queries;
 using Jobuler.Infrastructure.Persistence;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -52,6 +53,20 @@ public class AuthController : ControllerBase
             emailVerified = user.EmailVerified,
             isPlatformAdmin = user.IsPlatformAdmin
         });
+    }
+
+    /// <summary>Export all user data (GDPR compliance).</summary>
+    [HttpGet("me/export")]
+    [Authorize]
+    public async Task<IActionResult> ExportMyData(CancellationToken ct)
+    {
+        var result = await _mediator.Send(new ExportMyDataQuery(CurrentUserId), ct);
+        var json = System.Text.Json.JsonSerializer.Serialize(result, new System.Text.Json.JsonSerializerOptions
+        {
+            WriteIndented = true,
+            PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase,
+        });
+        return File(System.Text.Encoding.UTF8.GetBytes(json), "application/json", $"shifter-data-export-{DateTime.UtcNow:yyyy-MM-dd}.json");
     }
 
     /// <summary>Update current user's profile.</summary>

@@ -55,6 +55,8 @@
     "myMissions": "המשימות שלי",
     "myProfile": "הפרופיל שלי",
     "myGroups": "הקבוצות שלי",
+    "changelog": "מה חדש",
+    "stats": "סטטיסטיקות",
     "admin": "ניהול",
     "logs": "יומן",
     "platform": "פלטפורמה"
@@ -435,6 +437,10 @@
     "profileImage": "תמונת פרופיל",
     "uploadImage": "העלה תמונה",
     "timeFormat": "תצוגת שעון",
+    "exportData": "ייצוא המידע שלי",
+    "exportDataDesc": "הורד את כל המידע האישי שלך כקובץ JSON. כולל פרופיל, חברויות בקבוצות, שיבוצים והתראות.",
+    "exportButton": "הורד את המידע שלי",
+    "exporting": "מייצא...",
     "deleteAccount": "מחיקת חשבון",
     "deleteAccountDesc": "מחיקה לצמיתות של החשבון שלך וכל המידע המשויך אליו. לא ניתן לבטל פעולה זו.",
     "deleteAccountButton": "מחק את החשבון שלי",
@@ -944,6 +950,12 @@
       }
     }
   },
+  "changelog": {
+    "title": "מה חדש",
+    "new": "חדש",
+    "fix": "תיקון",
+    "improved": "שיפור"
+  },
   "errorPages": {
     "notFound": {
       "heading": "הדף לא נמצא",
@@ -973,5 +985,17 @@
       "reload": "טען מחדש",
       "goHome": "חזרה לדף הבית"
     }
+  },
+  "stats": {
+    "title": "סטטיסטיקות",
+    "assignments": "שיבוצים",
+    "solverRuns": "הרצות סולבר",
+    "versionsPublished": "גרסאות שפורסמו",
+    "burdenTrend": "מגמת עומס",
+    "last7days": "7 ימים",
+    "last14days": "14 ימים",
+    "last30days": "30 ימים",
+    "last90days": "90 ימים",
+    "noData": "אין נתונים עדיין"
   }
 }
