@@ -163,8 +163,8 @@ export default function TasksTab({
           <div key={task.id} className="flex items-center gap-3 bg-white border border-slate-200 rounded-xl px-4 py-3">
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-slate-900 truncate">{task.name}</p>
-              <p className="text-xs text-slate-400">
-                {task.requiredHeadcount} {t("people")} · {minutesToHM(task.shiftDurationMinutes).hours}h {minutesToHM(task.shiftDurationMinutes).mins > 0 ? `${minutesToHM(task.shiftDurationMinutes).mins}m` : ""}
+              <p className="text-xs text-slate-400" dir="ltr" style={{ textAlign: "start" }}>
+                {task.requiredHeadcount} {t("people")} · {minutesToHM(task.shiftDurationMinutes).hours}h{minutesToHM(task.shiftDurationMinutes).mins > 0 ? ` ${minutesToHM(task.shiftDurationMinutes).mins}m` : ""}
               </p>
               {task.qualificationRequirements?.length > 0 && (
                 <div className="flex flex-wrap gap-1 mt-1">

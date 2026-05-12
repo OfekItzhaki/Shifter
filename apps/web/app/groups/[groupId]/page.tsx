@@ -1117,7 +1117,7 @@ export default function GroupDetailPage() {
         <TrialBanner groupId={groupId} />
 
         {/* Tabs */}
-        <div className="flex gap-1 bg-slate-100 p-1 rounded-xl overflow-x-auto scrollbar-hide -mx-2 px-2 sm:mx-0 sm:px-1">
+        <div className="flex gap-1 bg-slate-100 p-1 rounded-xl overflow-x-auto -mx-2 px-2 sm:mx-0 sm:px-1" style={{ scrollbarWidth: "thin" }}>
           {visibleTabs.map(tab => (
             <button
               key={tab}
