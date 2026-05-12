@@ -73,15 +73,15 @@ function ToggleSwitch({
       aria-checked={checked}
       disabled={disabled}
       onClick={onChange}
-      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors flex-shrink-0 ${
+      className={`relative inline-flex h-[22px] w-[40px] items-center rounded-full transition-colors flex-shrink-0 ${
         disabled
           ? "opacity-50 cursor-not-allowed"
           : "cursor-pointer"
-      } ${checked ? "bg-blue-500" : "bg-slate-200"}`}
+      } ${checked ? "bg-blue-500" : "bg-slate-300 dark:bg-slate-500"}`}
     >
       <span
-        className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform ${
-          checked ? "translate-x-6" : "translate-x-1"
+        className={`absolute h-[16px] w-[16px] rounded-full bg-white shadow transition-all ${
+          checked ? "left-[21px]" : "left-[3px]"
         }`}
       />
     </button>

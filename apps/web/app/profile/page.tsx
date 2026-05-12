@@ -368,7 +368,7 @@ function DeleteAccountSection() {
   }
 
   return (
-    <div style={{ ...cardStyle, marginTop: "1.5rem", border: "1px solid #f87171" }}>
+    <div style={{ ...cardStyle, marginTop: "1.5rem", borderColor: "#e2a4a4" }}>
       <h2 style={{ fontSize: "0.875rem", fontWeight: 600, color: "#dc2626", margin: "0 0 0.5rem" }}>
         {t("deleteAccount") ?? "Delete Account"}
       </h2>
