@@ -19,20 +19,9 @@ export default function LandingPage() {
   }, []);
 
   useEffect(() => {
-    const token = localStorage.getItem("access_token");
-    if (!token) { setChecking(false); return; }
-    const controller = new AbortController();
-    fetch(`${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000"}/auth/me`, {
-      headers: { Authorization: `Bearer ${token}` },
-      signal: controller.signal,
-    }).then(res => {
-      if (res.ok) router.replace("/spaces");
-      else { localStorage.removeItem("access_token"); localStorage.removeItem("refresh_token"); document.cookie = "access_token=; path=/; max-age=0"; setChecking(false); }
-    }).catch(() => { localStorage.removeItem("access_token"); localStorage.removeItem("refresh_token"); document.cookie = "access_token=; path=/; max-age=0"; setChecking(false); });
-    return () => controller.abort();
-  }, [router]);
-
-  if (checking) return null;
+    // Always show the landing page — no redirect even if logged in
+    setChecking(false);
+  }, []);
 
   const c = LANDING_CONTENT[lang];
 
