@@ -5,18 +5,20 @@ import {
   useNotificationPrefsStore,
   type NotificationCategory,
 } from "@/lib/store/notificationPrefsStore";
+import { useAuthStore } from "@/lib/store/authStore";
 
 interface CategoryInfo {
   key: NotificationCategory;
   icon: string;
   color: string;
+  adminOnly?: boolean;
 }
 
 const CATEGORIES: CategoryInfo[] = [
   { key: "solver_completed", icon: "✓", color: "#10b981" },
-  { key: "solver_infeasible", icon: "⚠", color: "#f59e0b" },
-  { key: "solver_failed", icon: "✕", color: "#ef4444" },
-  { key: "solver_preflight_failed", icon: "⚡", color: "#f97316" },
+  { key: "solver_infeasible", icon: "⚠", color: "#f59e0b", adminOnly: true },
+  { key: "solver_failed", icon: "✕", color: "#ef4444", adminOnly: true },
+  { key: "solver_preflight_failed", icon: "⚡", color: "#f97316", adminOnly: true },
   { key: "schedule_published", icon: "📅", color: "#3b82f6" },
   { key: "group_alert", icon: "🔔", color: "#8b5cf6" },
 ];
@@ -25,6 +27,10 @@ export default function NotificationPreferences() {
   const t = useTranslations("profile.notificationPrefs");
   const { enabled, showBadge, toggle, toggleBadge, resetDefaults } =
     useNotificationPrefsStore();
+  const { isPlatformAdmin } = useAuthStore();
+
+  // Filter categories — admin-only ones hidden from regular users
+  const visibleCategories = CATEGORIES.filter(c => !c.adminOnly || isPlatformAdmin);
 
   return (
     <div className="space-y-4">
@@ -59,7 +65,7 @@ export default function NotificationPreferences() {
 
       {/* Category toggles */}
       <div className="space-y-0.5">
-        {CATEGORIES.map(({ key, icon, color }) => (
+        {visibleCategories.map(({ key, icon, color }) => (
           <div
             key={key}
             className="flex items-center justify-between py-2.5 border-b border-slate-50 dark:border-slate-700 last:border-0"
