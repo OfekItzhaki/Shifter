@@ -281,11 +281,13 @@ builder.Services.AddRateLimiter(options =>
 
     options.RejectionStatusCode = 429;
 });
+var frontendUrl = builder.Configuration["App:FrontendBaseUrl"]?.TrimEnd('/') ?? "https://shifter.ofeklabs.com";
 builder.Services.AddCors(options =>
     options.AddDefaultPolicy(policy =>
-        policy.WithOrigins("http://localhost:3000")
+        policy.WithOrigins("http://localhost:3000", frontendUrl)
               .AllowAnyHeader()
-              .AllowAnyMethod()));
+              .AllowAnyMethod()
+              .AllowCredentials()));
 
 var app = builder.Build();
 
