@@ -15,13 +15,12 @@ const PLANS = [
 ];
 
 export default function PricingPage() {
+  const t = useTranslations("pricing");
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
 
   function handleSelectPlan(planId: string) {
-    // TODO: Integrate with Stripe Checkout
-    // For now, show a message that payment is coming soon
     setSelectedPlan(planId);
-    alert("תשלום יהיה זמין בקרוב! צור קשר דרך הצ׳אט לפרטים.");
+    alert(t("comingSoon"));
   }
 
   return (
@@ -34,10 +33,10 @@ export default function PricingPage() {
             <span style={{ fontSize: "1.5rem", fontWeight: 700, color: "#0f172a" }}>Shifter</span>
           </div>
           <h1 style={{ fontSize: "1.75rem", fontWeight: 700, color: "#0f172a", margin: 0 }}>
-            תוכניות ומחירים
+            {t("title")}
           </h1>
           <p style={{ color: "#64748b", fontSize: "0.95rem", marginTop: "0.5rem" }}>
-            ביטול בכל עת · ללא התחייבות · תשלום חודשי
+            {t("subtitle")}
           </p>
         </div>
 
@@ -62,17 +61,17 @@ export default function PricingPage() {
                   background: "#3b82f6", color: "white", fontSize: "0.7rem", fontWeight: 600,
                   padding: "2px 10px", borderRadius: 20,
                 }}>
-                  פופולרי
+                  {t("popular")}
                 </span>
               )}
               <div style={{ fontSize: "0.8rem", fontWeight: 600, color: "#64748b", textTransform: "uppercase", marginBottom: "0.5rem" }}>
-                {plan.members === Infinity ? "ללא הגבלה" : `עד ${plan.members} חברים`}
+                {plan.members === Infinity ? t("unlimited") : t("upToMembers", { count: plan.members })}
               </div>
               <div style={{ fontSize: "2rem", fontWeight: 700, color: "#0f172a" }}>
                 ₪{plan.price}
               </div>
               <div style={{ fontSize: "0.8rem", color: "#94a3b8", marginBottom: "1rem" }}>
-                לחודש / לקבוצה
+                {t("perMonth")}
               </div>
               <button
                 onClick={() => handleSelectPlan(plan.id)}
@@ -88,7 +87,7 @@ export default function PricingPage() {
                   cursor: "pointer",
                 }}
               >
-                בחר תוכנית
+                {t("selectPlan")}
               </button>
             </div>
           ))}
@@ -97,14 +96,14 @@ export default function PricingPage() {
         {/* Features */}
         <div style={{ marginTop: "2.5rem", textAlign: "center" }}>
           <p style={{ color: "#64748b", fontSize: "0.875rem" }}>
-            כל התוכניות כוללות: סידור אוטומטי · ייבוא חכם · התראות · ניהול אילוצים · תמיכה בצ׳אט
+            {t("allPlansInclude")}
           </p>
         </div>
 
         {/* Back + Language */}
         <div style={{ marginTop: "2rem", textAlign: "center" }}>
           <Link href="/login" style={{ color: "#3b82f6", fontSize: "0.875rem", textDecoration: "none" }}>
-            ← חזרה
+            ← {t("back")}
           </Link>
           <div style={{ marginTop: "1rem" }}>
             <LanguageSwitcher variant="auth" />

@@ -885,6 +885,18 @@
       "dismiss": "Dismiss"
     }
   },
+  "pricing": {
+    "title": "Plans & Pricing",
+    "subtitle": "Cancel anytime · No commitment · Monthly billing",
+    "popular": "Popular",
+    "unlimited": "Unlimited",
+    "upToMembers": "Up to {count} members",
+    "perMonth": "per month / per group",
+    "selectPlan": "Select Plan",
+    "allPlansInclude": "All plans include: Auto-scheduling · Smart import · Notifications · Constraint management · Chat support",
+    "back": "Back",
+    "comingSoon": "Payment will be available soon! Contact us via chat for details."
+  },
   "errorPages": {
     "notFound": {
       "heading": "Page Not Found",
