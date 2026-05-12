@@ -103,13 +103,13 @@ function ToggleSwitch({
       role="switch"
       aria-checked={checked}
       onClick={onChange}
-      className={`relative inline-flex h-6 w-10 items-center rounded-full transition-colors flex-shrink-0 ${
+      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors flex-shrink-0 ${
         checked ? "bg-blue-500" : "bg-slate-200 dark:bg-slate-500"
       }`}
     >
       <span
         className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
-          checked ? "translate-x-[20px]" : "translate-x-[4px]"
+          checked ? "translate-x-6" : "translate-x-1"
         }`}
       />
     </button>
