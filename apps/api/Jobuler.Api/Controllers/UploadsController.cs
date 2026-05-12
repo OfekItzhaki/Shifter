@@ -1,16 +1,19 @@
 using Jobuler.Application.Common;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Jobuler.Api.Controllers;
 
 /// <summary>
 /// Handles image uploads for profile photos, group images, space logos, etc.
 /// Returns a public URL that can be stored on any entity's image field.
+/// AllowAnonymous to support uploads during registration flow.
+/// Rate-limited to prevent abuse.
 /// </summary>
 [ApiController]
 [Route("uploads")]
-[Authorize]
+[EnableRateLimiting("auth")]
 public class UploadsController : ControllerBase
 {
     private readonly IFileStorage _storage;
