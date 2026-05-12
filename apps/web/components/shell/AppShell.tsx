@@ -58,7 +58,13 @@ export default function AppShell({ children }: AppShellProps) {
   const [hydrated, setHydrated] = useState(false);
 
   // Wait for Zustand hydration from localStorage
-  useEffect(() => { setHydrated(true); }, []);
+  useEffect(() => {
+    // Zustand persist hydrates on the first tick after mount
+    const unsub = useAuthStore.persist.onFinishHydration(() => setHydrated(true));
+    // If already hydrated (e.g., hot reload), set immediately
+    if (useAuthStore.persist.hasHydrated()) setHydrated(true);
+    return unsub;
+  }, []);
 
   // Fetch display name from API on mount, but only if not already in store
   useEffect(() => {
