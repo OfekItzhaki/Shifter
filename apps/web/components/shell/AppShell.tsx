@@ -182,6 +182,10 @@ export default function AppShell({ children }: AppShellProps) {
           </button>
           <div style={{ padding: "4px 12px 8px", color: "#334155", fontSize: 11, opacity: 0.4, textAlign: "center" }}>
             v{process.env.NEXT_PUBLIC_APP_VERSION ?? "1.5.0"}
+            <span style={{ margin: "0 4px" }}>·</span>
+            <a href="https://ofeklabs.com" target="_blank" rel="noopener noreferrer" style={{ color: "inherit", textDecoration: "none" }}>
+              ofeklabs.com
+            </a>
           </div>
         </div>
       </aside>

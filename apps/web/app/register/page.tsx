@@ -222,6 +222,17 @@ export default function RegisterPage() {
           <div style={{ marginTop: "1.25rem", paddingTop: "1rem", borderTop: "1px solid #f1f5f9" }}>
             <LanguageSwitcher variant="auth" />
           </div>
+
+          <div style={{ textAlign: "center", marginTop: "1.5rem" }}>
+            <a
+              href="https://ofeklabs.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ fontSize: "0.6875rem", color: "#94a3b8", textDecoration: "none", letterSpacing: "0.02em" }}
+            >
+              Built by <span style={{ fontWeight: 600, color: "#64748b" }}>ofeklabs.com</span>
+            </a>
+          </div>
         </div>
       </div>
     </main>
