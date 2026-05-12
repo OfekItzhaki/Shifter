@@ -37,6 +37,11 @@
     "emailAlreadyRegistered": "האימייל הזה כבר רשום",
     "credentialsAlreadyTaken": "חשבון עם פרטים אלה כבר קיים. נסה להתחבר במקום.",
     "registerError": "שגיאה בהרשמה, נסה שוב",
+    "validationUppercase": "הסיסמה חייבת להכיל לפחות אות גדולה אחת באנגלית",
+    "validationDigit": "הסיסמה חייבת להכיל לפחות ספרה אחת",
+    "validationMinLength": "הסיסמה חייבת להכיל לפחות 8 תווים",
+    "validationInvalidEmail": "פורמט אימייל לא תקין",
+    "validationDisplayNameRequired": "שם תצוגה הוא שדה חובה",
     "registering": "נרשם...",
     "alreadyHaveAccount": "כבר יש לך חשבון?",
     "phone": "מספר טלפון",
@@ -978,9 +983,11 @@
       "goBack": "חזרה"
     },
     "serverError": {
-      "heading": "משהו השתבש",
-      "message": "אירעה שגיאה בלתי צפויה בשרת. אנא נסה שוב.",
+      "heading": "אופס! משהו השתבש",
+      "message": "יש לנו בעיה קטנה כרגע. נסה שוב בעוד רגע.",
       "tryAgain": "נסה שוב",
+      "goHome": "חזרה לדף הבית"
+    },
       "goHome": "חזרה לדף הבית"
     },
     "clientError": {

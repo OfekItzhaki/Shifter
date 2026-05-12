@@ -37,6 +37,11 @@
     "emailAlreadyRegistered": "This email is already registered",
     "credentialsAlreadyTaken": "An account with these credentials already exists. Try logging in instead.",
     "registerError": "Registration error, please try again",
+    "validationUppercase": "Password must contain at least one uppercase letter",
+    "validationDigit": "Password must contain at least one digit",
+    "validationMinLength": "Password must be at least 8 characters",
+    "validationInvalidEmail": "Invalid email format",
+    "validationDisplayNameRequired": "Display name is required",
     "registering": "Registering...",
     "alreadyHaveAccount": "Already have an account?",
     "phone": "Phone number",
@@ -967,8 +972,8 @@
       "goBack": "Go Back"
     },
     "serverError": {
-      "heading": "Something Went Wrong",
-      "message": "An unexpected error occurred on the server. Please try again.",
+      "heading": "Oops! Something went wrong",
+      "message": "We're having a little trouble right now. Please try again in a moment.",
       "tryAgain": "Try Again",
       "goHome": "Go Home"
     },

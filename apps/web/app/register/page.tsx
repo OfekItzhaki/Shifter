@@ -9,6 +9,19 @@ import ShifterLogo from "@/components/shell/ShifterLogo";
 import ImageUpload from "@/components/ImageUpload";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 
+/** Maps known backend validation errors to i18n keys */
+function translateValidationError(error: string, t: (key: string) => string): string {
+  const map: Record<string, string> = {
+    "Password must contain at least one uppercase letter.": t("validationUppercase"),
+    "Password must contain at least one digit.": t("validationDigit"),
+    "Password must be at least 8 characters.": t("validationMinLength"),
+    "Either email or phone number is required.": t("emailOrPhoneRequired"),
+    "Invalid email format.": t("validationInvalidEmail"),
+    "Display name is required.": t("validationDisplayNameRequired"),
+  };
+  return map[error] ?? error;
+}
+
 export default function RegisterPage() {
   const t = useTranslations("auth");
   const router = useRouter();
@@ -53,8 +66,11 @@ export default function RegisterPage() {
       if (msg?.toLowerCase().includes("already exists") || msg?.toLowerCase().includes("already registered")) {
         setError(t("credentialsAlreadyTaken"));
       } else if (errors.length > 0) {
-        // Show specific validation errors
-        setError(errors.join(". "));
+        // Translate known validation errors to user's language
+        const translated = errors.map(e => translateValidationError(e, t));
+        setError(translated.join(". "));
+      } else if (err?.response?.status >= 500) {
+        setError(t("registerError"));
       } else {
         setError(msg ?? t("registerError"));
       }

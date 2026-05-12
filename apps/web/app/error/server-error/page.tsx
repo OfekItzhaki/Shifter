@@ -14,7 +14,6 @@ export default function ServerErrorPage() {
 
   return (
     <ErrorPageLayout
-      statusCode={500}
       heading={t("serverError.heading")}
       message={t("serverError.message")}
     >

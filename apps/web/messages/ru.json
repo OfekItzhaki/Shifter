@@ -37,6 +37,11 @@
     "emailAlreadyRegistered": "Этот email уже зарегистрирован",
     "credentialsAlreadyTaken": "Аккаунт с такими данными уже существует. Попробуйте войти.",
     "registerError": "Ошибка регистрации, попробуйте ещё раз",
+    "validationUppercase": "Пароль должен содержать хотя бы одну заглавную букву",
+    "validationDigit": "Пароль должен содержать хотя бы одну цифру",
+    "validationMinLength": "Пароль должен быть не менее 8 символов",
+    "validationInvalidEmail": "Неверный формат email",
+    "validationDisplayNameRequired": "Имя обязательно для заполнения",
     "registering": "Регистрация...",
     "alreadyHaveAccount": "Уже есть аккаунт?",
     "phone": "Номер телефона",
@@ -966,9 +971,11 @@
       "goBack": "Назад"
     },
     "serverError": {
-      "heading": "Что-то пошло не так",
-      "message": "На сервере произошла непредвиденная ошибка. Пожалуйста, попробуйте снова.",
+      "heading": "Ой! Что-то пошло не так",
+      "message": "У нас небольшие неполадки. Попробуйте через минуту.",
       "tryAgain": "Попробовать снова",
+      "goHome": "На главную"
+    },
       "goHome": "На главную"
     },
     "clientError": {
