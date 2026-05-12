@@ -22,7 +22,7 @@ export const metadata: Metadata = {
     siteName: "Shifter",
     title: "Shifter — Smart Shift Scheduling",
     description: "Automatic, fair shift scheduling for teams. No spreadsheets, no headaches.",
-    images: [{ url: "/favicon.jpeg", width: 192, height: 192, alt: "Shifter Logo" }],
+    images: [{ url: "/shifter-favicon.png", width: 192, height: 192, alt: "Shifter Logo" }],
   },
   twitter: {
     card: "summary",
@@ -31,9 +31,9 @@ export const metadata: Metadata = {
   },
   robots: { index: true, follow: true },
   icons: {
-    icon: "/favicon.jpeg",
-    shortcut: "/favicon.jpeg",
-    apple: "/favicon.jpeg",
+    icon: "/shifter-favicon.png",
+    shortcut: "/shifter-favicon.png",
+    apple: "/shifter-favicon.png",
   },
 };
 
