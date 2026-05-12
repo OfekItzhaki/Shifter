@@ -179,3 +179,12 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git tag -f deployed-production
           git push origin deployed-production --force
+
+      - name: Health check
+        run: |
+          sleep 10
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://shifter.ofeklabs.dev/health || echo "000")
+          echo "Health check status: $STATUS"
+          if [ "$STATUS" != "200" ]; then
+            echo "⚠️ Health check failed with status $STATUS"
+          fi
