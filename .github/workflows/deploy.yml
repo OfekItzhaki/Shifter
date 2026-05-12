@@ -1,8 +1,8 @@
 name: Deploy to AWS
 
+# Disabled — deploying to VPS manually via docker compose
+# Re-enable when migrating to AWS ECS
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 env:

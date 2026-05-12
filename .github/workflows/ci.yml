@@ -1,10 +1,9 @@
 name: CI
 
+# Disabled — no CI runner configured for VPS deployment
+# Re-enable when CI environment is set up
 on:
-  push:
-    branches: [main, develop]
-  pull_request:
-    branches: [main]
+  workflow_dispatch:
 
 jobs:
   # ── .NET API ────────────────────────────────────────────────────────────────
