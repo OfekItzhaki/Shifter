@@ -2,7 +2,11 @@ using MediatR;
 
 namespace Jobuler.Application.Auth.Commands;
 
-public record LoginCommand(string Email, string Password) : IRequest<LoginResult>;
+/// <summary>
+/// Login with email or phone number + password.
+/// The Identifier field accepts either an email address or a phone number.
+/// </summary>
+public record LoginCommand(string Identifier, string Password) : IRequest<LoginResult>;
 
 public record LoginResult(
     string AccessToken,

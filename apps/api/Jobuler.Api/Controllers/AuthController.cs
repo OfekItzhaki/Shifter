@@ -29,7 +29,7 @@ public class AuthController : ControllerBase
     public async Task<IActionResult> Register([FromBody] RegisterRequest req, CancellationToken ct)
     {
         var userId = await _mediator.Send(
-            new RegisterCommand(req.Email, req.DisplayName, req.Password, req.PreferredLocale ?? "he",
+            new RegisterCommand(req.Email ?? "", req.DisplayName, req.Password, req.PreferredLocale ?? "he",
                 req.PhoneNumber, req.ProfileImageUrl, req.Birthday), ct);
         return CreatedAtAction(nameof(Register), new { userId });
     }
@@ -101,7 +101,7 @@ public class AuthController : ControllerBase
     [AllowAnonymous]
     public async Task<IActionResult> Login([FromBody] LoginRequest req, CancellationToken ct)
     {
-        var result = await _mediator.Send(new LoginCommand(req.Email, req.Password), ct);
+        var result = await _mediator.Send(new LoginCommand(req.ResolvedIdentifier, req.Password), ct);
         return Ok(result);
     }
 
@@ -195,8 +195,12 @@ public class AuthController : ControllerBase
     }
 }
 
-public record RegisterRequest(string Email, string DisplayName, string Password, string? PreferredLocale, string? PhoneNumber, string? ProfileImageUrl = null, DateOnly? Birthday = null);
-public record LoginRequest(string Email, string Password);
+public record RegisterRequest(string? Email, string DisplayName, string Password, string? PreferredLocale, string? PhoneNumber, string? ProfileImageUrl = null, DateOnly? Birthday = null);
+public record LoginRequest(string? Email, string? Identifier, string Password)
+{
+    /// <summary>Resolves the login identifier — supports both "email" (legacy) and "identifier" (new) fields.</summary>
+    public string ResolvedIdentifier => Identifier ?? Email ?? "";
+}
 public record RefreshRequest(string RefreshToken);
 public record ForgotPasswordRequest(string Email);
 public record ResetPasswordRequest(string Token, string NewPassword);

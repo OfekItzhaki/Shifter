@@ -36,10 +36,14 @@ export default function RegisterPage() {
       setError(t("passwordTooShort"));
       return;
     }
+    if (!email && !phoneNumber) {
+      setError(t("emailOrPhoneRequired"));
+      return;
+    }
 
     setLoading(true);
     try {
-      await register(email, displayName, password, "he", phoneNumber || undefined, profileImageUrl || undefined, birthday || undefined);
+      await register(displayName, password, "he", email || undefined, phoneNumber || undefined, profileImageUrl || undefined, birthday || undefined);
       router.push("/login?registered=1");
     } catch (err: any) {
       const msg = err?.response?.data?.error ?? err?.response?.data?.message;
@@ -102,16 +106,18 @@ export default function RegisterPage() {
 
             <div>
               <label style={{ display: "block", fontSize: "0.875rem", fontWeight: 500, color: "#374151", marginBottom: "0.375rem" }}>
-                {t("email")} <span style={{ color: "#ef4444" }}>*</span>
+                {t("email")} <span style={{ color: "#94a3b8", fontWeight: 400 }}>({t("optional")})</span>
               </label>
               <input
                 type="email"
-                required
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 placeholder="you@example.com"
                 style={{ width: "100%", border: "1px solid #e2e8f0", borderRadius: 10, padding: "0.625rem 0.875rem", fontSize: "0.875rem", color: "#0f172a", outline: "none", boxSizing: "border-box" }}
               />
+              <p style={{ fontSize: "0.75rem", color: "#94a3b8", marginTop: "0.25rem" }}>
+                {t("emailOrPhoneHint")}
+              </p>
             </div>
 
             <div>

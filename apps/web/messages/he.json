@@ -46,7 +46,10 @@
     "accountCreated": "החשבון נוצר בהצלחה! התחבר כדי להמשיך.",
     "passwordResetSuccess": "הסיסמה אופסה בהצלחה! התחבר עם הסיסמה החדשה.",
     "signingIn": "מתחבר...",
-    "noAccount": "אין לך חשבון?"
+    "noAccount": "אין לך חשבון?",
+    "emailOrPhone": "אימייל או מספר טלפון",
+    "emailOrPhoneRequired": "יש להזין אימייל או מספר טלפון",
+    "emailOrPhoneHint": "יש לספק לפחות אימייל או מספר טלפון"
   },
   "nav": {
     "schedule": "לוח זמנים",

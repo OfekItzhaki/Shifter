@@ -9,10 +9,18 @@ public class RegisterCommandValidator : AbstractValidator<RegisterCommand>
 
     public RegisterCommandValidator()
     {
-        RuleFor(x => x.Email)
-            .NotEmpty()
-            .EmailAddress().WithMessage("Invalid email format.")
-            .MaximumLength(256);
+        // At least one of email or phone must be provided
+        RuleFor(x => x)
+            .Must(x => !string.IsNullOrWhiteSpace(x.Email) || !string.IsNullOrWhiteSpace(x.PhoneNumber))
+            .WithMessage("Either email or phone number is required.");
+
+        // Email validation (only when provided)
+        When(x => !string.IsNullOrWhiteSpace(x.Email), () =>
+        {
+            RuleFor(x => x.Email)
+                .EmailAddress().WithMessage("Invalid email format.")
+                .MaximumLength(256);
+        });
 
         RuleFor(x => x.DisplayName)
             .NotEmpty().WithMessage("Display name is required.")

@@ -13,7 +13,7 @@ interface AuthState {
   // Admin mode is scoped to a specific group — null means not in admin mode
   adminGroupId: string | null;
 
-  login: (email: string, password: string) => Promise<void>;
+  login: (identifier: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   enterAdminMode: (groupId: string) => void;
   exitAdminMode: () => void;
@@ -37,8 +37,8 @@ export const useAuthStore = create<AuthState>()(
 
       get isAdminMode() { return get().adminGroupId !== null; },
 
-      login: async (email, password) => {
-        const result = await apiLogin(email, password);
+      login: async (identifier, password) => {
+        const result = await apiLogin(identifier, password);
         localStorage.setItem("access_token", result.accessToken);
         localStorage.setItem("refresh_token", result.refreshToken);
         localStorage.removeItem("jobuler-space");

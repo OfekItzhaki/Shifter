@@ -22,9 +22,27 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, LoginResult>
 
     public async Task<LoginResult> Handle(LoginCommand request, CancellationToken ct)
     {
-        var user = await _db.Users
-            .FirstOrDefaultAsync(u => u.Email == request.Email.ToLowerInvariant().Trim() && u.IsActive, ct)
-            ?? throw new UnauthorizedAccessException("Invalid credentials.");
+        var identifier = request.Identifier.Trim().ToLowerInvariant();
+
+        // Determine if identifier is email or phone
+        var isEmail = identifier.Contains('@');
+
+        User? user;
+        if (isEmail)
+        {
+            user = await _db.Users
+                .FirstOrDefaultAsync(u => u.Email == identifier && u.IsActive, ct);
+        }
+        else
+        {
+            // Normalize phone: strip spaces, dashes, parentheses
+            var normalizedPhone = NormalizePhone(request.Identifier.Trim());
+            user = await _db.Users
+                .FirstOrDefaultAsync(u => u.PhoneNumber != null && u.PhoneNumber == normalizedPhone && u.IsActive, ct);
+        }
+
+        if (user == null)
+            throw new UnauthorizedAccessException("Invalid credentials.");
 
         if (!BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
             throw new UnauthorizedAccessException("Invalid credentials.");
@@ -42,5 +60,11 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, LoginResult>
         var expiresAt = DateTime.UtcNow.AddMinutes(15);
 
         return new LoginResult(accessToken, rawRefresh, expiresAt, user.Id, user.DisplayName, user.PreferredLocale, user.IsPlatformAdmin);
+    }
+
+    private static string NormalizePhone(string phone)
+    {
+        // Remove common formatting characters
+        return phone.Replace(" ", "").Replace("-", "").Replace("(", "").Replace(")", "");
     }
 }

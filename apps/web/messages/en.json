@@ -46,7 +46,10 @@
     "accountCreated": "Account created successfully! Sign in to continue.",
     "passwordResetSuccess": "Password reset successfully! Sign in with your new password.",
     "signingIn": "Signing in...",
-    "noAccount": "Don't have an account?"
+    "noAccount": "Don't have an account?",
+    "emailOrPhone": "Email or Phone Number",
+    "emailOrPhoneRequired": "Either email or phone number is required",
+    "emailOrPhoneHint": "Provide at least email or phone number"
   },
   "nav": {
     "schedule": "Schedule",

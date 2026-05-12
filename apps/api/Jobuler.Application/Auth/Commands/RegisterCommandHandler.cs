@@ -31,18 +31,34 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Guid>
 
     public async Task<Guid> Handle(RegisterCommand request, CancellationToken ct)
     {
-        var exists = await _db.Users.AnyAsync(u => u.Email == request.Email.ToLowerInvariant().Trim(), ct);
-        if (exists)
-            throw new InvalidOperationException("Email already registered.");
+        // Check uniqueness by email (if provided) or phone (if provided)
+        if (!string.IsNullOrWhiteSpace(request.Email))
+        {
+            var emailExists = await _db.Users.AnyAsync(u => u.Email == request.Email.ToLowerInvariant().Trim(), ct);
+            if (emailExists)
+                throw new InvalidOperationException("Email already registered.");
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.PhoneNumber))
+        {
+            var phoneExists = await _db.Users.AnyAsync(u => u.PhoneNumber == request.PhoneNumber.Trim(), ct);
+            if (phoneExists)
+                throw new InvalidOperationException("Phone number already registered.");
+        }
+
+        // If no email provided, generate a placeholder
+        var email = string.IsNullOrWhiteSpace(request.Email)
+            ? $"phone_{request.PhoneNumber!.Replace("+", "").Replace(" ", "").Replace("-", "")}@phone.local"
+            : request.Email;
 
         var hash = BCrypt.Net.BCrypt.HashPassword(request.Password, workFactor: 12);
-        var user = User.Create(request.Email, request.DisplayName, hash, request.PreferredLocale, request.PhoneNumber, request.ProfileImageUrl, request.Birthday);
+        var user = User.Create(email, request.DisplayName, hash, request.PreferredLocale, request.PhoneNumber, request.ProfileImageUrl, request.Birthday);
 
         _db.Users.Add(user);
         await _db.SaveChangesAsync(ct);
 
         // Auto-create a personal space for the new user
-        var displayName = request.DisplayName ?? request.Email.Split('@')[0];
+        var displayName = request.DisplayName ?? (string.IsNullOrWhiteSpace(request.Email) ? request.PhoneNumber! : request.Email.Split('@')[0]);
         var spaceName = (request.PreferredLocale ?? "he") switch
         {
             "he" => $"המרחב של {displayName}",
@@ -56,26 +72,34 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Guid>
         var membership = Jobuler.Domain.Spaces.SpaceMembership.Create(space.Id, user.Id);
         _db.SpaceMemberships.Add(membership);
 
-        // Generate email verification token
-        var rawToken = Convert.ToHexString(RandomNumberGenerator.GetBytes(32)).ToLowerInvariant();
-        var tokenHash = ComputeSha256(rawToken);
-        var verificationToken = EmailVerificationToken.Create(user.Id, tokenHash);
-        _db.EmailVerificationTokens.Add(verificationToken);
-
-        await _db.SaveChangesAsync(ct);
-
-        // Send verification email — wrapped in try-catch so registration succeeds even if email fails
-        try
+        // Generate email verification token and send email only if real email provided
+        var isRealEmail = !string.IsNullOrWhiteSpace(request.Email);
+        if (isRealEmail)
         {
-            var verifyUrl = $"{_frontendBaseUrl}/verify-email?token={rawToken}";
-            var locale = request.PreferredLocale ?? "he";
-            var subject = GetSubject(locale);
-            var html = BuildVerificationEmailHtml(user.DisplayName, verifyUrl, locale);
-            await _emailSender.SendAsync(user.Email, subject, html, ct);
+            var rawToken = Convert.ToHexString(RandomNumberGenerator.GetBytes(32)).ToLowerInvariant();
+            var tokenHash = ComputeSha256(rawToken);
+            var verificationToken = EmailVerificationToken.Create(user.Id, tokenHash);
+            _db.EmailVerificationTokens.Add(verificationToken);
+
+            await _db.SaveChangesAsync(ct);
+
+            // Send verification email — wrapped in try-catch so registration succeeds even if email fails
+            try
+            {
+                var verifyUrl = $"{_frontendBaseUrl}/verify-email?token={rawToken}";
+                var locale = request.PreferredLocale ?? "he";
+                var subject = GetSubject(locale);
+                var html = BuildVerificationEmailHtml(user.DisplayName, verifyUrl, locale);
+                await _emailSender.SendAsync(user.Email, subject, html, ct);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to send verification email during registration for user {UserId}", user.Id);
+            }
         }
-        catch (Exception ex)
+        else
         {
-            _logger.LogWarning(ex, "Failed to send verification email during registration for user {UserId}", user.Id);
+            await _db.SaveChangesAsync(ct);
         }
 
         return user.Id;

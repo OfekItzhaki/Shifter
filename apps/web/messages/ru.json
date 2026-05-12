@@ -46,7 +46,10 @@
     "accountCreated": "Аккаунт создан! Войдите, чтобы продолжить.",
     "passwordResetSuccess": "Пароль сброшен! Войдите с новым паролем.",
     "signingIn": "Вход...",
-    "noAccount": "Нет аккаунта?"
+    "noAccount": "Нет аккаунта?",
+    "emailOrPhone": "Email или номер телефона",
+    "emailOrPhoneRequired": "Необходимо указать email или номер телефона",
+    "emailOrPhoneHint": "Укажите хотя бы email или номер телефона"
   },
   "nav": {
     "schedule": "Расписание",

@@ -10,22 +10,23 @@ export interface LoginResponse {
   isPlatformAdmin: boolean;
 }
 
-export async function login(email: string, password: string): Promise<LoginResponse> {
-  const { data } = await apiClient.post<LoginResponse>("/auth/login", { email, password });
+export async function login(identifier: string, password: string): Promise<LoginResponse> {
+  const { data } = await apiClient.post<LoginResponse>("/auth/login", { identifier, password });
   return data;
 }
 
 export async function register(
-  email: string,
   displayName: string,
   password: string,
   preferredLocale = "he",
+  email?: string,
   phoneNumber?: string,
   profileImageUrl?: string,
   birthday?: string
 ): Promise<{ userId: string }> {
   const { data } = await apiClient.post("/auth/register", {
-    email, displayName, password, preferredLocale,
+    displayName, password, preferredLocale,
+    ...(email ? { email } : {}),
     ...(phoneNumber ? { phoneNumber } : {}),
     ...(profileImageUrl ? { profileImageUrl } : {}),
     ...(birthday ? { birthday } : {}),

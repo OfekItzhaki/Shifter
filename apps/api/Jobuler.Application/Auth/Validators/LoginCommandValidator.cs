@@ -7,9 +7,8 @@ public class LoginCommandValidator : AbstractValidator<LoginCommand>
 {
     public LoginCommandValidator()
     {
-        RuleFor(x => x.Email)
-            .NotEmpty().WithMessage("Email is required.")
-            .EmailAddress().WithMessage("Invalid email format.")
+        RuleFor(x => x.Identifier)
+            .NotEmpty().WithMessage("Email or phone number is required.")
             .MaximumLength(256);
 
         RuleFor(x => x.Password)
