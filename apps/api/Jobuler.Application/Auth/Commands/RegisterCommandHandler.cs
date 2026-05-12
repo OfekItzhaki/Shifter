@@ -26,7 +26,7 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Guid>
         _emailSender = emailSender;
         _logger = logger;
         _frontendBaseUrl = configuration["App:FrontendBaseUrl"]?.TrimEnd('/')
-            ?? "https://jobuler.app";
+            ?? "https://shifter.ofeklabs.com";
     }
 
     public async Task<Guid> Handle(RegisterCommand request, CancellationToken ct)

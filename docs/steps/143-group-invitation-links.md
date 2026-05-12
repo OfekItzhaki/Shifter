@@ -44,7 +44,7 @@ Admins need a simple way to invite people to their group without manually adding
 
 1. Admin goes to group settings → copies the join code
 2. Shares it via WhatsApp/message/verbally
-3. Team member opens `shifter.ofeklabs.dev/groups/join?code=ABCD1234`
+3. Team member opens `shifter.ofeklabs.com/groups/join?code=ABCD1234`
 4. If not logged in → redirected to login/register with return URL
 5. If logged in → instantly joins the group
 6. Redirected to the group page

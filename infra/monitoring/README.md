@@ -56,7 +56,7 @@ Choose one (both have free tiers):
 
 #### Option A: Better Stack (recommended)
 1. Sign up at https://betterstack.com
-2. Create a monitor: `https://shifter.ofeklabs.dev/health`
+2. Create a monitor: `https://shifter.ofeklabs.com/health`
 3. Check interval: 60 seconds
 4. Alert via: Email + Telegram/Slack
 5. Expected status: 200
@@ -64,7 +64,7 @@ Choose one (both have free tiers):
 
 #### Option B: UptimeRobot
 1. Sign up at https://uptimerobot.com
-2. Add HTTP(s) monitor: `https://shifter.ofeklabs.dev/health`
+2. Add HTTP(s) monitor: `https://shifter.ofeklabs.com/health`
 3. Interval: 1 minute (free tier: 5 min)
 4. Alert contacts: your email
 

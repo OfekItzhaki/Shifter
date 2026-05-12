@@ -28,7 +28,7 @@ public class ResendVerificationCommandHandler : IRequestHandler<ResendVerificati
         _emailSender = emailSender;
         _logger = logger;
         _frontendBaseUrl = configuration["App:FrontendBaseUrl"]?.TrimEnd('/')
-            ?? "https://jobuler.app";
+            ?? "https://shifter.ofeklabs.com";
     }
 
     public async Task Handle(ResendVerificationCommand req, CancellationToken ct)

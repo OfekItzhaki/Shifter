@@ -26,7 +26,7 @@ public class RoutingNotificationSender : INotificationSender
         _whatsApp = whatsApp;
         _email = email;
         _logger = logger;
-        _frontendBaseUrl = config["App:FrontendBaseUrl"]?.TrimEnd('/') ?? "https://shifter.ofeklabs.dev";
+        _frontendBaseUrl = config["App:FrontendBaseUrl"]?.TrimEnd('/') ?? "https://shifter.ofeklabs.com";
     }
 
     public async Task SendPasswordResetAsync(string to, string token, CancellationToken ct = default)

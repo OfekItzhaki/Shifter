@@ -18,7 +18,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: "https://shifter.ofeklabs.dev",
+    url: "https://shifter.ofeklabs.com",
     siteName: "Shifter",
     title: "Shifter — Smart Shift Scheduling",
     description: "Automatic, fair shift scheduling for teams. No spreadsheets, no headaches.",

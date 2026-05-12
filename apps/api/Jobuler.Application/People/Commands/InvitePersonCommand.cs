@@ -37,7 +37,7 @@ public class InvitePersonCommandHandler : IRequestHandler<InvitePersonCommand>
         _permissions = permissions;
         _invitationSender = invitationSender;
         _frontendBaseUrl = configuration["App:FrontendBaseUrl"]?.TrimEnd('/')
-            ?? "https://jobuler.app";
+            ?? "https://shifter.ofeklabs.com";
     }
 
     public async Task Handle(InvitePersonCommand req, CancellationToken ct)

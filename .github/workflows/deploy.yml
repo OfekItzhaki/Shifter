@@ -183,7 +183,7 @@ jobs:
       - name: Health check
         run: |
           sleep 15
-          RESPONSE=$(curl -s https://shifter.ofeklabs.dev/health || echo '{"status":"unreachable"}')
+          RESPONSE=$(curl -s https://shifter.ofeklabs.com/health || echo '{"status":"unreachable"}')
           STATUS=$(echo "$RESPONSE" | jq -r '.status // "unknown"')
           echo "Health check response: $RESPONSE"
           echo "Status: $STATUS"
