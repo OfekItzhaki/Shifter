@@ -53,6 +53,9 @@ self.addEventListener("fetch", (event) => {
   // Only handle GET requests
   if (request.method !== "GET") return;
 
+  // Only handle http/https — ignore chrome-extension://, etc.
+  if (!url.protocol.startsWith("http")) return;
+
   // Never cache auth endpoints
   if (NEVER_CACHE_PATTERNS.some((p) => p.test(url.pathname))) return;
 
