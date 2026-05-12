@@ -46,9 +46,15 @@ export default function RegisterPage() {
       await register(displayName, password, "he", email || undefined, phoneNumber || undefined, profileImageUrl || undefined, birthday || undefined);
       router.push("/login?registered=1");
     } catch (err: any) {
-      const msg = err?.response?.data?.error ?? err?.response?.data?.message;
+      const data = err?.response?.data;
+      const msg = data?.error ?? data?.message;
+      const errors: string[] = data?.errors ?? [];
+      
       if (msg?.toLowerCase().includes("already exists") || msg?.toLowerCase().includes("already registered")) {
         setError(t("credentialsAlreadyTaken"));
+      } else if (errors.length > 0) {
+        // Show specific validation errors
+        setError(errors.join(". "));
       } else {
         setError(msg ?? t("registerError"));
       }
