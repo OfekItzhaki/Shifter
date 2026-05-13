@@ -266,16 +266,16 @@ export default function StatsTab({ spaceId, groupId }: Props) {
 
       {/* Leaderboards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <StatsLeaderboard title={t("mostAssignments")} entries={stats.mostAssignments} />
-        <StatsLeaderboard title={t("mostHardTasks")} entries={stats.mostHatedTasks} valueColor="#dc2626" />
-        <StatsLeaderboard title={t("highestBurdenScore")} entries={stats.highestBurdenScore} valueColor="#d97706" />
-        <StatsLeaderboard title={t("bestBurdenBalance")} entries={stats.bestBurdenBalance} valueColor="#16a34a" />
+        <StatsLeaderboard title={t("mostAssignments")} entries={stats.mostAssignments ?? []} />
+        <StatsLeaderboard title={t("mostHardTasks")} entries={stats.mostHatedTasks ?? []} valueColor="#dc2626" />
+        <StatsLeaderboard title={t("highestBurdenScore")} entries={stats.highestBurdenScore ?? []} valueColor="#d97706" />
+        <StatsLeaderboard title={t("bestBurdenBalance")} entries={stats.bestBurdenBalance ?? []} valueColor="#16a34a" />
       </div>
 
       {/* People table */}
       <div>
         <h2 className="text-sm font-semibold text-slate-700 mb-3">{t("detailByPerson")}</h2>
-        <StatsPeopleTable people={stats.people} />
+        <StatsPeopleTable people={stats.people ?? []} />
       </div>
     </div>
   );

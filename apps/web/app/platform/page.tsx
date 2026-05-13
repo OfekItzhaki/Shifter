@@ -44,7 +44,15 @@ export default function PlatformPage() {
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    setHydrated(true);
+    // Wait for Zustand persist to rehydrate from localStorage
+    const unsub = useAuthStore.persist.onFinishHydration(() => {
+      setHydrated(true);
+    });
+    // If already hydrated (fast path)
+    if (useAuthStore.persist.hasHydrated()) {
+      setHydrated(true);
+    }
+    return () => { unsub(); };
   }, []);
 
   useEffect(() => {

@@ -34,7 +34,9 @@ export default function RotationProgressCard({
       .get(`/spaces/${spaceId}/stats/rotation`, { params: { groupId } })
       .then(({ data }) => {
         if (!cancelled) {
-          setEntries(data.entries ?? data ?? []);
+          // API returns { people: [...] } — extract the array
+          const arr = Array.isArray(data) ? data : (data?.people ?? data?.entries ?? []);
+          setEntries(Array.isArray(arr) ? arr : []);
         }
       })
       .catch((err) => {
