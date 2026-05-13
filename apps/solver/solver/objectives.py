@@ -11,10 +11,13 @@ Priority order (per spec Section 18):
 
 All objectives are combined into a single weighted minimization.
 """
+import logging
 from ortools.sat.python import cp_model
 from models.solver_input import SolverInput, TaskSlot
 from solver.constraints import _to_timestamp
 from datetime import date, datetime, timezone
+
+logger = logging.getLogger(__name__)
 
 
 def build_objective(
@@ -65,12 +68,18 @@ def build_objective(
                 # Penalise adding a new assignment where none existed (lower cost)
                 penalties.append((weight_int // 10) * assign[(s_idx, p_idx)])
 
-    # ── Objective 6: fairness — penalise assigning hated/disliked to burdened people ──
+    # ── Objective 6: fairness — penalise assigning hard tasks to burdened people ──
+    # New 3-level taxonomy + legacy keys for backward compatibility during transition
     burden_map = {
+        # New taxonomy
+        "hard": 4,
+        "normal": 0,
+        "easy": -1,
+        # Legacy (backward compat during transition)
         "hated": 4,
-        "disliked": 2,
+        "disliked": 4,
         "neutral": 0,
-        "favorable": 0
+        "favorable": -1,
     }
 
     fairness_history = {
@@ -79,7 +88,13 @@ def build_objective(
     }
 
     for s_idx, slot in enumerate(slots):
-        slot_burden = burden_map.get(slot.burden_level, 0)
+        burden_level = slot.burden_level
+        if burden_level not in burden_map:
+            logger.warning(
+                "Unknown burden level '%s' for slot %s, defaulting to 'normal' (weight 0)",
+                burden_level, slot.slot_id
+            )
+        slot_burden = burden_map.get(burden_level, 0)
         if slot_burden == 0:
             continue
 

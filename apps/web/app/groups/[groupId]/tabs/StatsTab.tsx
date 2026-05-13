@@ -62,7 +62,7 @@ export default function StatsTab({ spaceId, groupId }: Props) {
   // Compute group-scoped totals from the filtered people data
   const totalAssignments = stats.people.reduce((s, p) => s + p.totalAssignmentsAllTime, 0);
   const avgPerPerson = stats.people.length > 0 ? Math.round(totalAssignments / stats.people.length) : 0;
-  const totalHated = stats.people.reduce((s, p) => s + p.hatedTasksAllTime, 0);
+  const totalHard = stats.people.reduce((s, p) => s + (p.hardTasksAllTime ?? p.hatedTasksAllTime ?? 0), 0);
 
   return (
     <div className="space-y-5">
@@ -72,7 +72,7 @@ export default function StatsTab({ spaceId, groupId }: Props) {
           { label: "Active Members", value: stats.people.length },
           { label: "Total Assignments", value: totalAssignments },
           { label: "Avg per Person", value: avgPerPerson },
-          { label: "Hated Tasks", value: totalHated },
+          { label: "Hard Tasks", value: totalHard },
         ].map(c => (
           <div key={c.label} className="bg-white border border-slate-200 rounded-xl p-4">
             <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">{c.label}</p>
@@ -84,7 +84,7 @@ export default function StatsTab({ spaceId, groupId }: Props) {
       {/* Leaderboards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <StatsLeaderboard title="Most Assignments" entries={stats.mostAssignments} />
-        <StatsLeaderboard title="Most Hated Tasks" entries={stats.mostHatedTasks} valueColor="#dc2626" />
+        <StatsLeaderboard title="Most Hard Tasks" entries={stats.mostHatedTasks} valueColor="#dc2626" />
         <StatsLeaderboard title="Highest Burden Score" entries={stats.highestBurdenScore} valueColor="#d97706" />
         <StatsLeaderboard title="Best Burden Balance" entries={stats.bestBurdenBalance} valueColor="#16a34a" />
       </div>

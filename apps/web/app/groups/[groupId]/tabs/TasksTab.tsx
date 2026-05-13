@@ -7,7 +7,7 @@ import type { GroupTaskDto } from "@/lib/api/tasks";
 import type { GroupQualificationDto } from "@/lib/api/groups";
 import { burdenLabels, burdenColors } from "../types";
 
-const BURDEN_OPTIONS = ["favorable", "neutral", "disliked", "hated"];
+const BURDEN_OPTIONS = ["easy", "normal", "hard"];
 
 export interface TaskForm {
   name: string;

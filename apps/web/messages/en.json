@@ -398,9 +398,9 @@
       "activeMembers": "Active Members",
       "totalAssignments": "Total Assignments",
       "avgPerPerson": "Avg per Person",
-      "hatedTasks": "Hated Tasks",
+      "hardTasks": "Hard Tasks",
       "mostAssignments": "Most Assignments",
-      "mostHatedTasks": "Most Hated Tasks",
+      "mostHardTasks": "Most Hard Tasks",
       "highestBurdenScore": "Highest Burden Score",
       "bestBurdenBalance": "Best Burden Balance",
       "detailByPerson": "Detail by Person",
@@ -602,10 +602,9 @@
     "tabSettings": "Settings",
     "groupMembers": "{count} members · Horizon: {days} days",
     "burden": {
-      "Favorable": "Favorable",
-      "Neutral": "Neutral",
-      "Disliked": "Disliked",
-      "Hated": "Hated"
+      "Easy": "Easy",
+      "Normal": "Normal",
+      "Hard": "Hard"
     },
     "logs": {
       "title": "Logs",
@@ -704,9 +703,9 @@
     "maxKitchenPerWeek": "Max kitchen shifts per week",
     "taskTypeName": "Task type name (optional)",
     "noConsecutiveBurden": "No consecutive burden level",
-    "hated": "Hated",
-    "disliked": "Disliked",
-    "neutral": "Neutral",
+    "hard": "Hard",
+    "normal": "Normal",
+    "easy": "Easy",
     "minPeople": "Minimum people",
     "windowHours": "Time window (hours)",
     "restrictedTaskType": "Restricted task type",

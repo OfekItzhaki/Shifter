@@ -17,19 +17,17 @@ export interface ScheduleAssignment {
 }
 
 export const burdenLabels: Record<string, string> = {
-  Favorable: "נוח", Neutral: "ניטרלי", Disliked: "לא אהוב", Hated: "שנוא",
-  favorable: "נוח", neutral: "ניטרלי", disliked: "לא אהוב", hated: "שנוא",
+  hard: "קשה", normal: "רגיל", easy: "קל",
+  Hard: "קשה", Normal: "רגיל", Easy: "קל",
 };
 
 export const burdenColors: Record<string, string> = {
-  Favorable: "bg-emerald-50 text-emerald-700 border-emerald-200",
-  Neutral: "bg-slate-100 text-slate-600 border-slate-200",
-  Disliked: "bg-amber-50 text-amber-700 border-amber-200",
-  Hated: "bg-red-50 text-red-700 border-red-200",
-  favorable: "bg-emerald-50 text-emerald-700 border-emerald-200",
-  neutral: "bg-slate-100 text-slate-600 border-slate-200",
-  disliked: "bg-amber-50 text-amber-700 border-amber-200",
-  hated: "bg-red-50 text-red-700 border-red-200",
+  hard: "bg-red-50 text-red-700 border-red-200",
+  normal: "bg-slate-100 text-slate-600 border-slate-200",
+  easy: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  Hard: "bg-red-50 text-red-700 border-red-200",
+  Normal: "bg-slate-100 text-slate-600 border-slate-200",
+  Easy: "bg-emerald-50 text-emerald-700 border-emerald-200",
 };
 
 export const SEVERITY_STYLES: Record<string, string> = {

@@ -92,7 +92,7 @@ public class AdminManagementIntegrationTests
         var task = GroupTask.Create(
             spaceId, groupId, "Test Task",
             DateTime.UtcNow, DateTime.UtcNow.AddHours(8),
-            8, 1, TaskBurdenLevel.Neutral, false, false, Guid.NewGuid());
+            8, 1, TaskBurdenLevel.Normal, false, false, Guid.NewGuid());
 
         db.GroupTasks.Add(task);
         await db.SaveChangesAsync();
@@ -128,12 +128,12 @@ public class AdminManagementIntegrationTests
         var task1 = GroupTask.Create(
             spaceId, groupId, "Duplicate Name",
             DateTime.UtcNow, DateTime.UtcNow.AddHours(8),
-            8, 1, TaskBurdenLevel.Neutral, false, false, Guid.NewGuid());
+            8, 1, TaskBurdenLevel.Normal, false, false, Guid.NewGuid());
 
         var task2 = GroupTask.Create(
             spaceId, groupId, "Duplicate Name",
             DateTime.UtcNow.AddDays(1), DateTime.UtcNow.AddDays(1).AddHours(8),
-            8, 1, TaskBurdenLevel.Neutral, false, false, Guid.NewGuid());
+            8, 1, TaskBurdenLevel.Normal, false, false, Guid.NewGuid());
 
         db.GroupTasks.AddRange(task1, task2);
 
@@ -152,10 +152,9 @@ public class AdminManagementIntegrationTests
     // Feature: admin-management-and-scheduling, Integration 33.3: burden_level CHECK constraint
 
     [Theory]
-    [InlineData("favorable")]
-    [InlineData("neutral")]
-    [InlineData("disliked")]
-    [InlineData("hated")]
+    [InlineData("easy")]
+    [InlineData("normal")]
+    [InlineData("hard")]
     public void Integration_33_3_ValidBurdenLevels_AcceptedByValidator(string burdenLevel)
     {
         // The CHECK constraint on burden_level is enforced at DB level.

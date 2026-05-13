@@ -96,7 +96,7 @@ export default function StatsPage() {
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1.5rem" }}>
               <StatsLeaderboard title={t("mostAssignments")} entries={stats.mostAssignments} />
-              <StatsLeaderboard title={t("mostHatedTasks")} entries={stats.mostHatedTasks} valueColor="#dc2626" />
+              <StatsLeaderboard title={t("mostHardTasks")} entries={stats.mostHatedTasks} valueColor="#dc2626" />
               <StatsLeaderboard title={t("highestBurdenScore")} entries={stats.highestBurdenScore} valueColor="#d97706" />
               <StatsLeaderboard title={t("bestBurdenBalance")} entries={stats.bestBurdenBalance} valueColor="#16a34a" />
             </div>

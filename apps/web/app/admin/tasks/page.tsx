@@ -90,16 +90,14 @@ export default function TasksPage() {
   const inp = "w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent";
 
   const burdenLabels: Record<string, string> = {
-    Favorable: t("burden.Favorable"),
-    Neutral: t("burden.Neutral"),
-    Disliked: t("burden.Disliked"),
-    Hated: t("burden.Hated"),
+    Easy: t("burden.Easy"),
+    Normal: t("burden.Normal"),
+    Hard: t("burden.Hard"),
   };
   const burdenColors: Record<string, string> = {
-    Favorable: "bg-emerald-50 text-emerald-700 border-emerald-200",
-    Neutral: "bg-slate-100 text-slate-600 border-slate-200",
-    Disliked: "bg-amber-50 text-amber-700 border-amber-200",
-    Hated: "bg-red-50 text-red-700 border-red-200",
+    Easy: "bg-emerald-50 text-emerald-700 border-emerald-200",
+    Normal: "bg-slate-100 text-slate-600 border-slate-200",
+    Hard: "bg-red-50 text-red-700 border-red-200",
   };
 
   return (
@@ -158,7 +156,7 @@ export default function TasksPage() {
               <div>
                 <label className="block text-xs font-medium text-slate-500 mb-1.5">{t("burdenLevel")}</label>
                 <select value={burden} onChange={e => setBurden(e.target.value)} className={inp}>
-                  {["Favorable", "Neutral", "Disliked", "Hated"].map(b => (
+                  {["Easy", "Normal", "Hard"].map(b => (
                     <option key={b} value={b}>{burdenLabels[b]}</option>
                   ))}
                 </select>

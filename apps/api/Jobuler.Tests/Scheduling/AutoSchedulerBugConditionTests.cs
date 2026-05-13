@@ -120,7 +120,7 @@ public class AutoSchedulerBugConditionTests
 
         var task = GroupTask.Create(spaceId, groupId, "Future Task",
             DateTime.UtcNow.AddDays(1), DateTime.UtcNow.AddDays(8),
-            480, 1, TaskBurdenLevel.Neutral, false, false, Guid.NewGuid());
+            480, 1, TaskBurdenLevel.Normal, false, false, Guid.NewGuid());
         db.GroupTasks.Add(task);
         await db.SaveChangesAsync();
 
@@ -166,7 +166,7 @@ public class AutoSchedulerBugConditionTests
 
         var task = GroupTask.Create(spaceId, groupId, "Future Task",
             DateTime.UtcNow.AddDays(1), DateTime.UtcNow.AddDays(8),
-            480, 1, TaskBurdenLevel.Neutral, false, false, Guid.NewGuid());
+            480, 1, TaskBurdenLevel.Normal, false, false, Guid.NewGuid());
         db.GroupTasks.Add(task);
         await db.SaveChangesAsync();
 

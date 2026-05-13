@@ -23,7 +23,7 @@ public class GroupTaskTests
         var task = GroupTask.Create(
             spaceId, groupId, "  שמירת לילה  ",
             startsAt, endsAt, 8, 2,
-            TaskBurdenLevel.Disliked, false, true, userId);
+            TaskBurdenLevel.Hard, false, true, userId);
 
         task.SpaceId.Should().Be(spaceId);
         task.GroupId.Should().Be(groupId);
@@ -32,7 +32,7 @@ public class GroupTaskTests
         task.EndsAt.Should().Be(endsAt);
         task.ShiftDurationMinutes.Should().Be(8);
         task.RequiredHeadcount.Should().Be(2);
-        task.BurdenLevel.Should().Be(TaskBurdenLevel.Disliked);
+        task.BurdenLevel.Should().Be(TaskBurdenLevel.Hard);
         task.AllowsDoubleShift.Should().BeFalse();
         task.AllowsOverlap.Should().BeTrue();
         task.IsActive.Should().BeTrue();
@@ -43,10 +43,9 @@ public class GroupTaskTests
     }
 
     [Theory]
-    [InlineData("favorable", TaskBurdenLevel.Favorable)]
-    [InlineData("neutral", TaskBurdenLevel.Neutral)]
-    [InlineData("disliked", TaskBurdenLevel.Disliked)]
-    [InlineData("hated", TaskBurdenLevel.Hated)]
+    [InlineData("easy", TaskBurdenLevel.Easy)]
+    [InlineData("normal", TaskBurdenLevel.Normal)]
+    [InlineData("hard", TaskBurdenLevel.Hard)]
     public void Create_WithAllBurdenLevels_SetsCorrectly(string _, TaskBurdenLevel level)
     {
         var task = GroupTask.Create(
@@ -65,7 +64,7 @@ public class GroupTaskTests
         var task = GroupTask.Create(
             Guid.NewGuid(), Guid.NewGuid(), "Task",
             DateTime.UtcNow, DateTime.UtcNow.AddHours(1),
-            1, 1, TaskBurdenLevel.Neutral, false, false, Guid.NewGuid());
+            1, 1, TaskBurdenLevel.Normal, false, false, Guid.NewGuid());
 
         var updaterId = Guid.NewGuid();
         task.Deactivate(updaterId);
@@ -80,7 +79,7 @@ public class GroupTaskTests
         var task = GroupTask.Create(
             Guid.NewGuid(), Guid.NewGuid(), "Task",
             DateTime.UtcNow, DateTime.UtcNow.AddHours(1),
-            1, 1, TaskBurdenLevel.Neutral, false, false, Guid.NewGuid());
+            1, 1, TaskBurdenLevel.Normal, false, false, Guid.NewGuid());
 
         var updaterId = Guid.NewGuid();
         task.Deactivate(updaterId);

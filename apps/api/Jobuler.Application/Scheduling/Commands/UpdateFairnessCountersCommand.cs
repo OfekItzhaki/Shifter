@@ -65,11 +65,11 @@ public class UpdateFairnessCountersCommandHandler
             var total14d = mine.Count(a => a.StartsAt >= cutoff14d);
             var total30d = mine.Count;
 
-            var hated7d  = mine.Count(a => a.StartsAt >= cutoff7d && a.BurdenLevel == TaskBurdenLevel.Hated);
-            var hated14d = mine.Count(a => a.StartsAt >= cutoff14d && a.BurdenLevel == TaskBurdenLevel.Hated);
+            var hated7d  = mine.Count(a => a.StartsAt >= cutoff7d && a.BurdenLevel == TaskBurdenLevel.Hard);
+            var hated14d = mine.Count(a => a.StartsAt >= cutoff14d && a.BurdenLevel == TaskBurdenLevel.Hard);
 
             var dislikedHated7d = mine.Count(a => a.StartsAt >= cutoff7d &&
-                (a.BurdenLevel == TaskBurdenLevel.Hated || a.BurdenLevel == TaskBurdenLevel.Disliked));
+                a.BurdenLevel == TaskBurdenLevel.Hard);
 
             var kitchen7d = mine.Count(a => a.StartsAt >= cutoff7d &&
                 a.Name.Contains("מטבח", StringComparison.OrdinalIgnoreCase) ||
@@ -82,7 +82,7 @@ public class UpdateFairnessCountersCommandHandler
             var consecutive = 0;
             foreach (var a in sorted)
             {
-                if (a.BurdenLevel is TaskBurdenLevel.Hated or TaskBurdenLevel.Disliked)
+                if (a.BurdenLevel is TaskBurdenLevel.Hard)
                     consecutive++;
                 else
                     break;

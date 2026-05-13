@@ -334,9 +334,9 @@
       "activeMembers": "חברים פעילים",
       "totalAssignments": "סה״כ שיבוצים",
       "avgPerPerson": "ממוצע לאדם",
-      "hatedTasks": "משימות שנואות",
+      "hardTasks": "משימות קשות",
       "mostAssignments": "הכי הרבה שיבוצים",
-      "mostHatedTasks": "הכי הרבה משימות שנואות",
+      "mostHardTasks": "הכי הרבה משימות קשות",
       "highestBurdenScore": "עומס גבוה ביותר",
       "bestBurdenBalance": "איזון עומס טוב ביותר",
       "detailByPerson": "פירוט לפי אדם",
@@ -606,10 +606,9 @@
     "tabSettings": "הגדרות",
     "groupMembers": "{count} חברים · אופק: {days} ימים",
     "burden": {
-      "Favorable": "נוח",
-      "Neutral": "ניטרלי",
-      "Disliked": "לא אהוב",
-      "Hated": "שנוא"
+      "Easy": "קל",
+      "Normal": "רגיל",
+      "Hard": "קשה"
     },
     "logs": {
       "title": "לוגים",
@@ -708,9 +707,9 @@
     "maxKitchenPerWeek": "מקסימום משמרות מטבח בשבוע",
     "taskTypeName": "שם סוג משימה (אופציונלי)",
     "noConsecutiveBurden": "ללא עומס רצוף",
-    "hated": "שנוא",
-    "disliked": "לא אהוב",
-    "neutral": "ניטרלי",
+    "hard": "קשה",
+    "normal": "רגיל",
+    "easy": "קל",
     "minPeople": "מינימום אנשים",
     "windowHours": "חלון זמן (שעות)",
     "restrictedTaskType": "סוג משימה מוגבל",

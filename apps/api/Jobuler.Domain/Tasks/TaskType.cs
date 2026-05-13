@@ -7,7 +7,7 @@ public class TaskType : AuditableEntity, ITenantScoped
     public Guid SpaceId { get; private set; }
     public string Name { get; private set; } = default!;
     public string? Description { get; private set; }
-    public TaskBurdenLevel BurdenLevel { get; private set; } = TaskBurdenLevel.Neutral;
+    public TaskBurdenLevel BurdenLevel { get; private set; } = TaskBurdenLevel.Normal;
     public int DefaultPriority { get; private set; } = 5;
     public bool AllowsOverlap { get; private set; } = false;
     public bool IsActive { get; private set; } = true;

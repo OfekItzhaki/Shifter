@@ -48,7 +48,7 @@ public record CreateGroupTaskCommand(
 
 public class CreateGroupTaskCommandValidator : AbstractValidator<CreateGroupTaskCommand>
 {
-    private static readonly string[] ValidBurdenLevels = ["favorable", "neutral", "disliked", "hated"];
+    private static readonly string[] ValidBurdenLevels = ["easy", "normal", "hard"];
 
     public CreateGroupTaskCommandValidator()
     {
@@ -56,7 +56,7 @@ public class CreateGroupTaskCommandValidator : AbstractValidator<CreateGroupTask
         RuleFor(x => x.EndsAt).GreaterThan(x => x.StartsAt).WithMessage("ends_at must be strictly after starts_at.");
         RuleFor(x => x.ShiftDurationMinutes).GreaterThanOrEqualTo(1).WithMessage("shift_duration_minutes must be at least 1 minute.");
         RuleFor(x => x.RequiredHeadcount).GreaterThanOrEqualTo(1).WithMessage("required_headcount must be at least 1.");
-        RuleFor(x => x.BurdenLevel).NotEmpty().Must(b => ValidBurdenLevels.Contains(b.ToLowerInvariant())).WithMessage("burden_level must be one of: favorable, neutral, disliked, hated.");
+        RuleFor(x => x.BurdenLevel).NotEmpty().Must(b => ValidBurdenLevels.Contains(b.ToLowerInvariant())).WithMessage("burden_level must be one of: easy, normal, hard.");
 
         // Total qualification seats cannot exceed required headcount
         RuleFor(x => x)
@@ -127,7 +127,7 @@ public record UpdateGroupTaskCommand(
 
 public class UpdateGroupTaskCommandValidator : AbstractValidator<UpdateGroupTaskCommand>
 {
-    private static readonly string[] ValidBurdenLevels = ["favorable", "neutral", "disliked", "hated"];
+    private static readonly string[] ValidBurdenLevels = ["easy", "normal", "hard"];
 
     public UpdateGroupTaskCommandValidator()
     {
@@ -135,7 +135,7 @@ public class UpdateGroupTaskCommandValidator : AbstractValidator<UpdateGroupTask
         RuleFor(x => x.EndsAt).GreaterThan(x => x.StartsAt).WithMessage("ends_at must be strictly after starts_at.");
         RuleFor(x => x.ShiftDurationMinutes).GreaterThanOrEqualTo(1).WithMessage("shift_duration_minutes must be at least 1 minute.");
         RuleFor(x => x.RequiredHeadcount).GreaterThanOrEqualTo(1).WithMessage("required_headcount must be at least 1.");
-        RuleFor(x => x.BurdenLevel).NotEmpty().Must(b => ValidBurdenLevels.Contains(b.ToLowerInvariant())).WithMessage("burden_level must be one of: favorable, neutral, disliked, hated.");
+        RuleFor(x => x.BurdenLevel).NotEmpty().Must(b => ValidBurdenLevels.Contains(b.ToLowerInvariant())).WithMessage("burden_level must be one of: easy, normal, hard.");
 
         // Total qualification seats cannot exceed required headcount
         RuleFor(x => x)

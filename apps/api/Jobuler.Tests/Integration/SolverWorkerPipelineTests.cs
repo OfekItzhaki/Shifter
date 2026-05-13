@@ -83,7 +83,7 @@ public class SolverWorkerPipelineTests
             Tomorrow(0), Tomorrow(0).AddDays(1),   // window: tomorrow full day
             shiftDurationMinutes: 480,              // 8h shifts
             requiredHeadcount: 1,
-            burdenLevel: TaskBurdenLevel.Neutral,
+            burdenLevel: TaskBurdenLevel.Normal,
             allowsOverlap: false,
             allowsDoubleShift: false,
             createdByUserId: userId);
@@ -145,7 +145,7 @@ public class SolverWorkerPipelineTests
         var task = GroupTask.Create(
             spaceId, group.Id, "Guard Duty",
             Tomorrow(0), Tomorrow(0).AddDays(1),
-            480, 1, TaskBurdenLevel.Neutral, false, false, userId);
+            480, 1, TaskBurdenLevel.Normal, false, false, userId);
         db.GroupTasks.Add(task);
 
         await db.SaveChangesAsync();
@@ -202,7 +202,7 @@ public class SolverWorkerPipelineTests
             spaceId, group.Id, "Double Guard",
             Tomorrow(0), Tomorrow(0).AddDays(1),
             480, 2,   // ← headcount=2, only 1 person available
-            TaskBurdenLevel.Neutral, false, false, userId);
+            TaskBurdenLevel.Normal, false, false, userId);
         db.GroupTasks.Add(task);
 
         await db.SaveChangesAsync();
@@ -267,7 +267,7 @@ public class SolverWorkerPipelineTests
         var task = GroupTask.Create(
             spaceId, group.Id, "Guard",
             Tomorrow(0), Tomorrow(0).AddDays(1),
-            480, 1, TaskBurdenLevel.Neutral, false, false, userId);
+            480, 1, TaskBurdenLevel.Normal, false, false, userId);
         db.GroupTasks.Add(task);
 
         await db.SaveChangesAsync();

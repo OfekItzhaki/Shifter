@@ -140,7 +140,7 @@ export default function ConstraintsPage() {
                   const defaults: Record<string, string> = {
                     min_rest_hours: '{"hours": 8}',
                     max_kitchen_per_week: '{"max": 2, "task_type_name": "kitchen"}',
-                    no_consecutive_burden: '{"burden_level": "disliked"}',
+                    no_consecutive_burden: '{"burden_level": "hard"}',
                     min_base_headcount: '{"min": 3, "window_hours": 24}',
                     no_task_type_restriction: '{"task_type_id": ""}',
                   };

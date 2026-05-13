@@ -58,16 +58,16 @@ public class GroupTaskPropertyTests
     // Feature: admin-management-and-scheduling, Property 1: task create round-trip
 
     [Theory]
-    [InlineData("Morning Shift",   "2025-06-01T06:00:00", "2025-06-01T14:00:00", 480,  2, "neutral",   false, false)]
-    [InlineData("Night Watch",     "2025-06-01T22:00:00", "2025-06-02T06:00:00", 480,  1, "disliked",  false, false)]
-    [InlineData("Emergency Duty",  "2025-07-15T00:00:00", "2025-07-15T12:00:00", 720, 3, "hated",     true,  false)]
-    [InlineData("Kitchen Duty",    "2025-08-01T08:00:00", "2025-08-01T12:00:00", 240,  1, "favorable", false, true)]
-    [InlineData("Patrol",          "2025-09-10T10:00:00", "2025-09-10T18:00:00", 480,  2, "neutral",   true,  true)]
-    [InlineData("Guard Post",      "2025-10-01T06:00:00", "2025-10-01T18:00:00", 720, 4, "disliked",  false, false)]
-    [InlineData("Logistics",       "2025-11-05T07:00:00", "2025-11-05T15:00:00", 480,  2, "favorable", false, false)]
-    [InlineData("Medical Standby", "2025-12-01T00:00:00", "2025-12-01T08:00:00", 480,  1, "neutral",   false, true)]
-    [InlineData("Training",        "2026-01-10T09:00:00", "2026-01-10T17:00:00", 480,  5, "favorable", false, false)]
-    [InlineData("Cleanup",         "2026-02-14T14:00:00", "2026-02-14T18:00:00", 240,  2, "hated",     false, false)]
+    [InlineData("Morning Shift",   "2025-06-01T06:00:00", "2025-06-01T14:00:00", 480,  2, "normal",   false, false)]
+    [InlineData("Night Watch",     "2025-06-01T22:00:00", "2025-06-02T06:00:00", 480,  1, "hard",     false, false)]
+    [InlineData("Emergency Duty",  "2025-07-15T00:00:00", "2025-07-15T12:00:00", 720, 3, "hard",     true,  false)]
+    [InlineData("Kitchen Duty",    "2025-08-01T08:00:00", "2025-08-01T12:00:00", 240,  1, "easy",    false, true)]
+    [InlineData("Patrol",          "2025-09-10T10:00:00", "2025-09-10T18:00:00", 480,  2, "normal",   true,  true)]
+    [InlineData("Guard Post",      "2025-10-01T06:00:00", "2025-10-01T18:00:00", 720, 4, "hard",     false, false)]
+    [InlineData("Logistics",       "2025-11-05T07:00:00", "2025-11-05T15:00:00", 480,  2, "easy",    false, false)]
+    [InlineData("Medical Standby", "2025-12-01T00:00:00", "2025-12-01T08:00:00", 480,  1, "normal",   false, true)]
+    [InlineData("Training",        "2026-01-10T09:00:00", "2026-01-10T17:00:00", 480,  5, "easy",    false, false)]
+    [InlineData("Cleanup",         "2026-02-14T14:00:00", "2026-02-14T18:00:00", 240,  2, "hard",     false, false)]
     public async Task Property1_CreateTask_RoundTrip_FieldsMatch(
         string name, string startsAtStr, string endsAtStr,
         int ShiftDurationMinutes, int headcount, string burdenLevel,
@@ -127,7 +127,7 @@ public class GroupTaskPropertyTests
         var cmd = new CreateGroupTaskCommand(
             Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(),
             "Valid Name", startsAt, endsAt,
-            8, 1, "neutral", false, false);
+            8, 1, "normal", false, false);
 
         // Act
         var result = validator.Validate(cmd);
@@ -147,10 +147,13 @@ public class GroupTaskPropertyTests
     [InlineData("")]
     [InlineData("medium")]
     [InlineData("bad")]
-    [InlineData("NEUTRAL")]   // case-insensitive check — actually valid, but let's test exact casing
-    [InlineData("Favorable")]
-    [InlineData("HATED")]
-    [InlineData("Disliked")]
+    [InlineData("NORMAL")]   // case-insensitive check — actually valid, but let's test exact casing
+    [InlineData("Easy")]
+    [InlineData("HARD")]
+    [InlineData("favorable")]
+    [InlineData("hated")]
+    [InlineData("disliked")]
+    [InlineData("normal")]
     [InlineData("unknown")]
     public void Property3_Validator_RejectsInvalidBurdenLevel(string burdenLevel)
     {
@@ -167,8 +170,8 @@ public class GroupTaskPropertyTests
         var result = validator.Validate(cmd);
 
         // Assert — only truly invalid values should fail; valid lowercase ones pass
-        // The validator uses ToLowerInvariant() so "NEUTRAL" etc. are actually valid
-        var validLower = new[] { "favorable", "neutral", "disliked", "hated" };
+        // The validator uses ToLowerInvariant() so "NORMAL" etc. are actually valid
+        var validLower = new[] { "easy", "normal", "hard" };
         var isActuallyValid = validLower.Contains(burdenLevel.ToLowerInvariant());
 
         if (!isActuallyValid)
@@ -221,7 +224,7 @@ public class GroupTaskPropertyTests
         // Act — create
         var taskId = await createHandler.Handle(
             new CreateGroupTaskCommand(spaceId, groupId, userId, taskName,
-                startsAt, startsAt.AddHours(8), 8, 1, "neutral", false, false),
+                startsAt, startsAt.AddHours(8), 8, 1, "normal", false, false),
             CancellationToken.None);
 
         // Act — delete
@@ -269,7 +272,7 @@ public class GroupTaskPropertyTests
             await createHandler.Handle(
                 new CreateGroupTaskCommand(spaceId, groupId, userId,
                     $"Task {i}", startsAt, startsAt.AddHours(8),
-                    8, 1, "neutral", false, false),
+                    8, 1, "normal", false, false),
                 CancellationToken.None);
         }
 

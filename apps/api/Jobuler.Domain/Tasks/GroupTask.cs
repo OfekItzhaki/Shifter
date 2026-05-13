@@ -21,7 +21,7 @@ public class GroupTask : AuditableEntity, ITenantScoped
     /// <summary>Duration of each shift in minutes (e.g. 240 = 4h, 30 = 30min).</summary>
     public int ShiftDurationMinutes { get; private set; } = 240;
     public int RequiredHeadcount { get; private set; } = 1;
-    public TaskBurdenLevel BurdenLevel { get; private set; } = TaskBurdenLevel.Neutral;
+    public TaskBurdenLevel BurdenLevel { get; private set; } = TaskBurdenLevel.Normal;
     public bool AllowsDoubleShift { get; private set; } = false;
     public bool AllowsOverlap { get; private set; } = false;
     /// <summary>

@@ -201,7 +201,7 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
                     s.Id.ToString(),
                     s.TaskTypeId.ToString(),
                     tt?.Name ?? "Unknown",
-                    (tt?.BurdenLevel ?? Domain.Tasks.TaskBurdenLevel.Neutral).ToString().ToLower(),
+                    (tt?.BurdenLevel ?? Domain.Tasks.TaskBurdenLevel.Normal).ToString().ToLower(),
                     s.StartsAt.ToString("o"),
                     s.EndsAt.ToString("o"),
                     s.RequiredHeadcount,
@@ -398,9 +398,9 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
 
         var fairnessDto = fairness.Select(f => new FairnessCountersDto(
             f.PersonId.ToString(),
-            f.TotalAssignments7d, f.HatedTasks7d,
+            f.TotalAssignments7d, f.HardTasks7d,
             f.DislikedHatedScore7d, f.KitchenCount7d,
-            f.NightMissions7d, f.ConsecutiveBurdenCount)).ToList();
+            f.NightMissions7d, f.ConsecutiveHardCount)).ToList();
 
         // ── Space locale ──────────────────────────────────────────────────────
         var space = await _db.Spaces.AsNoTracking()
