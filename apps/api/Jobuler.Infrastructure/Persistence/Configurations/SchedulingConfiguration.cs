@@ -114,6 +114,13 @@ public class FairnessCounterConfiguration : IEntityTypeConfiguration<FairnessCou
         builder.Property(f => f.TotalAssignments30d).HasColumnName("total_assignments_30d");
         builder.Property(f => f.HardTasks7d).HasColumnName("hard_tasks_7d");
         builder.Property(f => f.HardTasks14d).HasColumnName("hard_tasks_14d");
+        builder.Property(f => f.HardTasks30d).HasColumnName("hard_tasks_30d");
+        builder.Property(f => f.EasyTasks7d).HasColumnName("easy_tasks_7d");
+        builder.Property(f => f.EasyTasks14d).HasColumnName("easy_tasks_14d");
+        builder.Property(f => f.EasyTasks30d).HasColumnName("easy_tasks_30d");
+        builder.Property(f => f.BurdenScore7d).HasColumnName("burden_score_7d");
+        builder.Property(f => f.BurdenScore14d).HasColumnName("burden_score_14d");
+        builder.Property(f => f.BurdenScore30d).HasColumnName("burden_score_30d");
         builder.Property(f => f.DislikedHatedScore7d).HasColumnName("disliked_hated_score_7d");
         builder.Property(f => f.KitchenCount7d).HasColumnName("kitchen_count_7d");
         builder.Property(f => f.NightMissions7d).HasColumnName("night_missions_7d");
@@ -122,5 +129,48 @@ public class FairnessCounterConfiguration : IEntityTypeConfiguration<FairnessCou
         // fairness_counters has no created_at column — ignore the base Entity property
         builder.Ignore(f => f.CreatedAt);
         builder.HasIndex(f => new { f.SpaceId, f.PersonId, f.AsOfDate }).IsUnique();
+    }
+}
+
+public class TaskRotationProgressConfiguration : IEntityTypeConfiguration<TaskRotationProgress>
+{
+    public void Configure(EntityTypeBuilder<TaskRotationProgress> builder)
+    {
+        builder.ToTable("task_rotation_progress");
+        builder.HasKey(t => t.Id);
+        builder.Property(t => t.Id).HasColumnName("id");
+        builder.Property(t => t.SpaceId).HasColumnName("space_id");
+        builder.Property(t => t.PersonId).HasColumnName("person_id");
+        builder.Property(t => t.GroupId).HasColumnName("group_id");
+        builder.Property(t => t.CycleNumber).HasColumnName("cycle_number");
+        builder.Property(t => t.CompletedTaskTypeIds).HasColumnName("completed_task_type_ids");
+        builder.Property(t => t.TotalQualifiedTaskTypes).HasColumnName("total_qualified_task_types");
+        builder.Property(t => t.CompletionPercentage).HasColumnName("completion_percentage");
+        builder.Property(t => t.LastUpdatedAt).HasColumnName("last_updated_at");
+        // task_rotation_progress has no created_at column — ignore the base Entity property
+        builder.Ignore(t => t.CreatedAt);
+        builder.HasIndex(t => new { t.SpaceId, t.PersonId, t.GroupId }).IsUnique();
+        builder.HasIndex(t => t.GroupId).HasDatabaseName("idx_trp_group");
+    }
+}
+
+public class FairnessCounterSnapshotConfiguration : IEntityTypeConfiguration<FairnessCounterSnapshot>
+{
+    public void Configure(EntityTypeBuilder<FairnessCounterSnapshot> builder)
+    {
+        builder.ToTable("fairness_counter_snapshots");
+        builder.HasKey(f => f.Id);
+        builder.Property(f => f.Id).HasColumnName("id");
+        builder.Property(f => f.SpaceId).HasColumnName("space_id");
+        builder.Property(f => f.PersonId).HasColumnName("person_id");
+        builder.Property(f => f.SnapshotDate).HasColumnName("snapshot_date");
+        builder.Property(f => f.TotalAssignments).HasColumnName("total_assignments");
+        builder.Property(f => f.HardCount).HasColumnName("hard_count");
+        builder.Property(f => f.NormalCount).HasColumnName("normal_count");
+        builder.Property(f => f.EasyCount).HasColumnName("easy_count");
+        builder.Property(f => f.BurdenScore).HasColumnName("burden_score");
+        builder.Property(f => f.CreatedAt).HasColumnName("created_at");
+        builder.HasIndex(f => new { f.SpaceId, f.PersonId, f.SnapshotDate }).IsUnique();
+        builder.HasIndex(f => new { f.SpaceId, f.SnapshotDate }).HasDatabaseName("idx_fcs_space_date");
     }
 }

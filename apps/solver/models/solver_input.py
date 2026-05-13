@@ -101,6 +101,11 @@ class HomeLeaveConfig(BaseModel):
     leave_duration_hours: float
 
 
+class TaskRotation(BaseModel):
+    person_id: str
+    completed_task_type_ids: list[str]
+
+
 class SolverInput(BaseModel):
     space_id: str
     run_id: str
@@ -120,6 +125,7 @@ class SolverInput(BaseModel):
     fairness_counters: list[FairnessCounters]
     locked_slot_ids: Optional[list[str]] = []  # slot IDs with manual overrides — solver must not reassign these
     home_leave_config: Optional[HomeLeaveConfig] = None
+    task_rotation: Optional[list[TaskRotation]] = None  # rotation data for army-template groups
 
     @property
     def locked_slot_ids_safe(self) -> list[str]:

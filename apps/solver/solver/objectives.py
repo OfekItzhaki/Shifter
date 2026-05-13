@@ -105,6 +105,25 @@ def build_objective(
             if fairness_penalty > 0:
                 penalties.append(fairness_penalty * assign[(s_idx, p_idx)])
 
+    # ── Objective 7: task rotation — penalise assigning already-completed task types ──
+    # For army-template groups, add a soft penalty for assigning a task type that
+    # the person has already completed in the current cycle. This incentivizes the
+    # solver to assign uncompleted task types first.
+    rotation_penalty_weight = 200  # soft penalty — not a hard constraint
+    if input.task_rotation:
+        # Build lookup: person_id → set of completed task type IDs
+        rotation_completed = {
+            r.person_id: set(r.completed_task_type_ids)
+            for r in input.task_rotation
+        }
+
+        for s_idx, slot in enumerate(slots):
+            task_type_id = slot.task_type_id
+            for p_idx, person in enumerate(people):
+                completed_types = rotation_completed.get(person.person_id)
+                if completed_types and task_type_id in completed_types:
+                    penalties.append(rotation_penalty_weight * assign[(s_idx, p_idx)])
+
     return penalties
 
 

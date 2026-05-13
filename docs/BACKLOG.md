@@ -48,11 +48,11 @@ Tracked improvements and features from mobile testing session (May 2026).
 
 | # | Item | Status | Spec |
 |---|------|--------|------|
-| 15 | Statistics: track who's getting screwed, vacations, home time, sickness | ⬜ TODO | |
-| 16 | Statistics: color missions by difficulty (red=hard, gray=normal, green=easy) | ⬜ TODO | |
-| 17 | Change burden levels: Hard/Normal/Easy instead of Hated/Disliked/Neutral/Liked | ⬜ TODO | |
-| 19 | Statistics as graphs instead of tables | ⬜ TODO | |
-| 20 | Task rotation tracking (army template — iterate through all tasks in loop) | ⬜ TODO | |
+| 15 | Statistics: track who's getting screwed, vacations, home time, sickness | ✅ DONE | `statistics-overhaul` |
+| 16 | Statistics: color missions by difficulty (red=hard, gray=normal, green=easy) | ✅ DONE | `statistics-overhaul` |
+| 17 | Change burden levels: Hard/Normal/Easy instead of Hated/Disliked/Neutral/Liked | ✅ DONE | `statistics-overhaul` |
+| 19 | Statistics as graphs instead of tables | ✅ DONE | `statistics-overhaul` |
+| 20 | Task rotation tracking (army template — iterate through all tasks in loop) | ✅ DONE | `statistics-overhaul` |
 
 ## Priority 7 — Vacation/Special Occasion Workflow
 

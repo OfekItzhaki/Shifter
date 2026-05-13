@@ -24,7 +24,8 @@ public record SolverInputDto(
     List<BaselineAssignmentDto> BaselineAssignments,
     List<FairnessCountersDto> FairnessCounters,
     List<string>? LockedSlotIds = null,
-    HomeLeaveConfigDto? HomeLeaveConfig = null);
+    HomeLeaveConfigDto? HomeLeaveConfig = null,
+    List<TaskRotationDto>? TaskRotation = null);
 
 public record StabilityWeightsDto(
     [property: JsonPropertyName("today_tomorrow")] double TodayTomorrow,
@@ -102,3 +103,7 @@ public record HomeLeaveConfigDto(
     [property: JsonPropertyName("eligibility_threshold_hours")] double EligibilityThresholdHours,
     [property: JsonPropertyName("leave_capacity")]             int LeaveCapacity,
     [property: JsonPropertyName("leave_duration_hours")]       double LeaveDurationHours);
+
+public record TaskRotationDto(
+    [property: JsonPropertyName("person_id")]                  string PersonId,
+    [property: JsonPropertyName("completed_task_type_ids")]    List<string> CompletedTaskTypeIds);

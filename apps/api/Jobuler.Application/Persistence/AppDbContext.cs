@@ -70,6 +70,8 @@ public class AppDbContext : DbContext
     public DbSet<Assignment> Assignments => Set<Assignment>();
     public DbSet<AssignmentChangeSummary> AssignmentChangeSummaries => Set<AssignmentChangeSummary>();
     public DbSet<FairnessCounter> FairnessCounters => Set<FairnessCounter>();
+    public DbSet<FairnessCounterSnapshot> FairnessCounterSnapshots => Set<FairnessCounterSnapshot>();
+    public DbSet<TaskRotationProgress> TaskRotationProgress => Set<TaskRotationProgress>();
 
     // Logs
     public DbSet<SystemLog> SystemLogs => Set<SystemLog>();

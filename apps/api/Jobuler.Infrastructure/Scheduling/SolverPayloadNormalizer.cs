@@ -414,6 +414,23 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
             groupId?.ToString() ?? "all", peopleDto.Count, slotsDto.Count, hardConstraints.Count, softConstraints.Count,
             horizonStart, horizonEnd, horizonStartDt.ToString("o"));
 
+        // ── Task rotation data (for army-template groups) ─────────────────────
+        List<TaskRotationDto>? taskRotationDto = null;
+        if (groupId.HasValue)
+        {
+            var rotationRecords = await _db.TaskRotationProgress.AsNoTracking()
+                .Where(r => r.SpaceId == spaceId && r.GroupId == groupId.Value)
+                .ToListAsync(ct);
+
+            if (rotationRecords.Count > 0)
+            {
+                taskRotationDto = rotationRecords.Select(r => new TaskRotationDto(
+                    r.PersonId.ToString(),
+                    r.CompletedTaskTypeIds.Select(id => id.ToString()).ToList()
+                )).ToList();
+            }
+        }
+
         return new SolverInputDto(
             spaceId.ToString(), runId.ToString(), triggerMode,
             horizonStart.ToString("yyyy-MM-dd"),
@@ -424,7 +441,8 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
             hardConstraints, softConstraints, emergencyConstraints,
             baselineAssignments, fairnessDto,
             lockedSlotIds,
-            homeLeaveConfigDto);
+            homeLeaveConfigDto,
+            taskRotationDto);
     }
 
     private static Dictionary<string, object> DeserializePayload(string json)

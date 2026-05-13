@@ -51,4 +51,37 @@ public class StatsController : ControllerBase
         var result = await _mediator.Send(new GetHistoricalStatsQuery(spaceId, days), ct);
         return Ok(result);
     }
+
+    /// <summary>
+    /// GET /spaces/{spaceId}/stats/historical/persons
+    /// Returns daily per-person statistics for a date range (for graph rendering).
+    /// Requires space.view permission.
+    /// </summary>
+    [HttpGet("historical/persons")]
+    public async Task<IActionResult> GetHistoricalPersonStats(
+        Guid spaceId,
+        [FromQuery] DateOnly startDate,
+        [FromQuery] DateOnly endDate,
+        [FromQuery] Guid? groupId,
+        CancellationToken ct = default)
+    {
+        await _permissions.RequirePermissionAsync(CurrentUserId, spaceId, Permissions.SpaceView, ct);
+        var result = await _mediator.Send(
+            new GetHistoricalPersonStatsQuery(spaceId, startDate, endDate, groupId), ct);
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// GET /spaces/{spaceId}/stats/rotation?groupId={id}
+    /// Returns task rotation progress per person for an army-template group.
+    /// Requires space.view permission.
+    /// </summary>
+    [HttpGet("rotation")]
+    public async Task<IActionResult> GetRotationProgress(
+        Guid spaceId, [FromQuery] Guid groupId, CancellationToken ct = default)
+    {
+        await _permissions.RequirePermissionAsync(CurrentUserId, spaceId, Permissions.SpaceView, ct);
+        var result = await _mediator.Send(new GetTaskRotationQuery(spaceId, groupId), ct);
+        return Ok(result);
+    }
 }

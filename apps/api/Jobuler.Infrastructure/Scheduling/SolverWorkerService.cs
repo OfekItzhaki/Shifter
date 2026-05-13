@@ -399,6 +399,12 @@ public class SolverWorkerService : BackgroundService
                 using var fairnessScope = _scopeFactory.CreateScope();
                 var fairnessMediator = fairnessScope.ServiceProvider.GetRequiredService<IMediator>();
                 await fairnessMediator.Send(new UpdateFairnessCountersCommand(job.SpaceId, version.Id), ct);
+
+                // Compute task rotation progress for army-template groups
+                if (job.GroupId.HasValue)
+                {
+                    await fairnessMediator.Send(new ComputeTaskRotationCommand(job.SpaceId, job.GroupId.Value), ct);
+                }
             }
             else
             {
