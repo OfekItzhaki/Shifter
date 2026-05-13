@@ -93,6 +93,14 @@ class FairnessCounters(BaseModel):
     consecutive_burden_count: int = 0
 
 
+class HomeLeaveConfig(BaseModel):
+    enabled: bool
+    min_rest_hours: float
+    eligibility_threshold_hours: float
+    leave_capacity: int
+    leave_duration_hours: float
+
+
 class SolverInput(BaseModel):
     space_id: str
     run_id: str
@@ -111,6 +119,7 @@ class SolverInput(BaseModel):
     baseline_assignments: list[BaselineAssignment]
     fairness_counters: list[FairnessCounters]
     locked_slot_ids: Optional[list[str]] = []  # slot IDs with manual overrides — solver must not reassign these
+    home_leave_config: Optional[HomeLeaveConfig] = None
 
     @property
     def locked_slot_ids_safe(self) -> list[str]:

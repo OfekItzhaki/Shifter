@@ -3,6 +3,17 @@
 import { useTranslations } from "next-intl";
 import type { ScheduleAssignment } from "@/app/groups/[groupId]/types";
 
+/** Task type name used for home-leave assignments from the solver */
+const HOME_LEAVE_TASK_TYPE = "home_leave";
+
+/** Display label for home-leave assignments */
+const HOME_LEAVE_LABEL = "בבית";
+
+/** Check if a task type represents a home-leave assignment */
+function isHomeLeaveTask(taskTypeName: string): boolean {
+  return taskTypeName === HOME_LEAVE_TASK_TYPE;
+}
+
 /** Minimal shape required by the table — compatible with both ScheduleAssignment and AssignmentDto */
 type TableAssignment = Pick<ScheduleAssignment, "personName" | "taskTypeName" | "slotStartsAt" | "slotEndsAt">;
 
@@ -92,11 +103,11 @@ export default function ScheduleTable2D({
             {taskNames.map(task => (
               <th
                 key={task}
-                className={`px-2.5 sm:px-4 py-2.5 sm:py-3 text-center text-xs font-semibold text-slate-700 uppercase tracking-wider whitespace-nowrap ${
-                  task === currentUserTaskName ? "bg-blue-50" : ""
+                className={`px-2.5 sm:px-4 py-2.5 sm:py-3 text-center text-xs font-semibold uppercase tracking-wider whitespace-nowrap ${
+                  isHomeLeaveTask(task) ? "text-emerald-700 bg-emerald-50" : task === currentUserTaskName ? "bg-blue-50 text-slate-700" : "text-slate-700"
                 }`}
               >
-                {task}
+                {isHomeLeaveTask(task) ? HOME_LEAVE_LABEL : task}
               </th>
             ))}
           </tr>
@@ -115,6 +126,7 @@ export default function ScheduleTable2D({
                 {taskNames.map(task => {
                   const names = taskCell.get(task) ?? [];
                   const isUserTask = task === currentUserTaskName;
+                  const isHomeLeave = isHomeLeaveTask(task);
                   const isClickable = !!onCellClick;
                   return (
                     <td
@@ -122,19 +134,21 @@ export default function ScheduleTable2D({
                       onClick={isClickable ? () => onCellClick(key, task, names) : undefined}
                       className={[
                         "px-2.5 sm:px-4 py-2.5 sm:py-3 text-center align-top",
-                        isUserTask ? "bg-blue-50/60" : "",
+                        isHomeLeave ? "bg-emerald-50/60" : isUserTask ? "bg-blue-50/60" : "",
                         isClickable ? "cursor-pointer hover:bg-blue-50 transition-colors" : "",
                       ].filter(Boolean).join(" ")}
                     >
                       {names.length === 0 ? (
-                        <span className="text-slate-300">—</span>
+                        <span className={isHomeLeave ? "text-emerald-300" : "text-slate-300"}>—</span>
                       ) : (
                         <div className="space-y-0.5">
                           {names.map((name, i) => (
                             <div
                               key={i}
                               className={`text-sm font-medium ${
-                                name === currentUserName
+                                isHomeLeave
+                                  ? "text-emerald-700"
+                                  : name === currentUserName
                                   ? "text-blue-700"
                                   : "text-slate-800"
                               }`}

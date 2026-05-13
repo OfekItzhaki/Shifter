@@ -277,6 +277,9 @@ export default function ScheduleDiffView({ spaceId, currentVersionId, baselineVe
 function DiffEntryCard({ entry }: { entry: DiffEntry }) {
   const t = useTranslations("schedule.diff");
 
+  const isHomeLeave = entry.taskName === "home_leave";
+  const displayTaskName = isHomeLeave ? "בבית" : entry.taskName;
+
   const config = {
     added: { bg: "bg-emerald-50", border: "border-emerald-200", icon: "+", iconColor: "text-emerald-600", label: t("assignedTo") },
     removed: { bg: "bg-red-50", border: "border-red-200", icon: "−", iconColor: "text-red-600", label: t("removedFrom") },
@@ -293,7 +296,16 @@ function DiffEntryCard({ entry }: { entry: DiffEntry }) {
       {/* Content */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-sm font-semibold text-slate-900">{entry.taskName}</span>
+          {isHomeLeave ? (
+            <span className="inline-flex items-center gap-1 text-sm font-semibold text-emerald-700">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="flex-shrink-0">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+              </svg>
+              {displayTaskName}
+            </span>
+          ) : (
+            <span className="text-sm font-semibold text-slate-900">{displayTaskName}</span>
+          )}
           <span className="text-xs text-slate-400">•</span>
           <span className="text-xs text-slate-500">
             {formatDate(entry.slotStart)} {formatTime(entry.slotStart)}–{formatTime(entry.slotEnd)}

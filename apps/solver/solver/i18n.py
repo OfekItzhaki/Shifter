@@ -13,6 +13,7 @@ _STRINGS: dict[str, dict[str, str]] = {
         # Conflict descriptions
         "headcount_global":     "Not enough members: {required} total assignments needed but only {available} members.",
         "slot_eligibility":     "Shift '{task}' ({starts_at}) requires {required} people but only {eligible} are eligible ({reasons}).",
+        "min_rest_violation":   "Person {person} cannot be assigned to both '{slot1}' and '{slot2}' — minimum rest of {min_rest}h would be violated.",
         # Reason labels
         "reason_qualification": "qualification requirements",
         "reason_role":          "role requirements",
@@ -28,6 +29,7 @@ _STRINGS: dict[str, dict[str, str]] = {
         "all_staffed":          "כל המשמרות אויישו.",
         "headcount_global":     "אין מספיק חברים: נדרשים {required} שיבוצים סה\"כ אך יש רק {available} חברים.",
         "slot_eligibility":     "משמרת '{task}' ({starts_at}) דורשת {required} אנשים אך רק {eligible} כשירים ({reasons}).",
+        "min_rest_violation":   "לא ניתן לשבץ את {person} גם ל-'{slot1}' וגם ל-'{slot2}' — מנוחה מינימלית של {min_rest} שעות תופר.",
         "reason_qualification": "דרישות כישורים",
         "reason_role":          "דרישות תפקיד",
         "reason_availability":  "חלונות זמינות / נוכחות",
@@ -41,6 +43,7 @@ _STRINGS: dict[str, dict[str, str]] = {
         "all_staffed":          "Все смены укомплектованы.",
         "headcount_global":     "Недостаточно участников: требуется {required} назначений, но доступно только {available} человек.",
         "slot_eligibility":     "Смена '{task}' ({starts_at}) требует {required} человек, но только {eligible} подходят ({reasons}).",
+        "min_rest_violation":   "Нельзя назначить {person} одновременно на '{slot1}' и '{slot2}' — минимальный отдых {min_rest}ч будет нарушен.",
         "reason_qualification": "требования к квалификации",
         "reason_role":          "требования к роли",
         "reason_availability":  "окна доступности / присутствия",

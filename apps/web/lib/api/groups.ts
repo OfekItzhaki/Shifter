@@ -34,6 +34,7 @@ export interface GroupWithMemberCountDto {
   solverHorizonDays: number;
   solverStartDateTime?: string | null;
   autoPublish?: boolean;
+  isClosedBase?: boolean;
   ownerPersonId: string | null;
 }
 
@@ -97,6 +98,10 @@ export async function updateGroupSettings(spaceId: string, groupId: string, solv
 
 export async function renameGroup(spaceId: string, groupId: string, name: string): Promise<void> {
   await apiClient.patch(`/spaces/${spaceId}/groups/${groupId}/name`, { name });
+}
+
+export async function updateGroup(spaceId: string, groupId: string, payload: { isClosedBase?: boolean }): Promise<void> {
+  await apiClient.put(`/spaces/${spaceId}/groups/${groupId}`, payload);
 }
 
 export async function softDeleteGroup(spaceId: string, groupId: string): Promise<void> {

@@ -58,4 +58,39 @@ public class PresenceWindow : Entity, ITenantScoped
             EndsAt = endsAt,
             IsDerived = true
         };
+
+    /// <summary>
+    /// Creates a derived AtHome presence window from a solver home-leave assignment.
+    /// These are auto-created when a schedule version with home-leave assignments is published.
+    /// </summary>
+    public static PresenceWindow CreateDerivedAtHome(
+        Guid spaceId, Guid personId, DateTime startsAt, DateTime endsAt)
+    {
+        if (endsAt <= startsAt)
+            throw new ArgumentException("EndsAt must be after StartsAt.");
+
+        return new PresenceWindow
+        {
+            SpaceId = spaceId,
+            PersonId = personId,
+            State = PresenceState.AtHome,
+            StartsAt = startsAt,
+            EndsAt = endsAt,
+            IsDerived = true
+        };
+    }
+
+    /// <summary>
+    /// Truncates this presence window to end at the specified timestamp.
+    /// Used when cancelling an in-progress home-leave (starts_at in past, ends_at in future).
+    /// </summary>
+    public void Truncate(DateTime newEndsAt)
+    {
+        if (newEndsAt <= StartsAt)
+            throw new ArgumentException("New EndsAt must be after StartsAt.");
+        if (newEndsAt >= EndsAt)
+            throw new ArgumentException("New EndsAt must be before current EndsAt (truncation only).");
+
+        EndsAt = newEndsAt;
+    }
 }

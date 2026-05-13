@@ -5,7 +5,8 @@ Wires together all hard constraints and weighted soft objectives.
 from ortools.sat.python import cp_model
 from models.solver_input import SolverInput
 from models.solver_output import (
-    SolverOutput, AssignmentResult, StabilityMetrics, FairnessMetrics, HardConflict
+    SolverOutput, AssignmentResult, StabilityMetrics, FairnessMetrics, HardConflict,
+    HomeLeaveAssignment, HomeLeaveMetric,
 )
 from solver.constraints import (
     add_headcount_constraints,
@@ -22,8 +23,14 @@ from solver.constraints import (
     add_locked_slot_constraints,
     add_composition_constraints,
 )
+from solver.home_leave import (
+    add_home_leave_constraints,
+    add_home_leave_eligibility_preference,
+    add_home_leave_fairness_objective,
+)
 from solver.objectives import build_objective
 from solver.i18n import t
+from datetime import datetime, timezone, timedelta
 import os
 import logging
 
@@ -92,7 +99,16 @@ def solve(input: SolverInput) -> SolverOutput:
     # Extract min_rest_hours from hard constraints if configured
     rest_rules = [c for c in input.hard_constraints if c.rule_type == "min_rest_hours"]
     rest_hours = float(rest_rules[0].payload.get("hours", 8)) if rest_rules else 8.0
-    rest_soft_penalties: list = []
+
+    # For closed-base groups with home_leave_config enabled, override rest_hours
+    # with the config value and disable the long-shift soft exception (strictly hard).
+    home_leave_cfg = input.home_leave_config
+    if home_leave_cfg and home_leave_cfg.enabled:
+        rest_hours = home_leave_cfg.min_rest_hours
+        rest_soft_penalties = None  # None disables soft penalty path — all rest is hard
+    else:
+        rest_soft_penalties = []
+
     add_min_rest_constraints(model, assign, slots, people, num_people, rest_hours, emergency_person_ids, rest_soft_penalties)
 
     add_kitchen_frequency_constraints(
@@ -110,8 +126,9 @@ def solve(input: SolverInput) -> SolverOutput:
 
     # ── Soft objectives ───────────────────────────────────────────────────────
     penalties = build_objective(model, assign, input)
-    # Add soft rest penalties for 24h shifts
-    penalties.extend(rest_soft_penalties)
+    # Add soft rest penalties for 24h shifts (only when not in closed-base hard mode)
+    if rest_soft_penalties:
+        penalties.extend(rest_soft_penalties)
 
     # ── Composition constraints (mandatory/optional qualification seats per slot) ──
     # Collected as (var, weight) tuples and added to the minimisation objective.
@@ -121,6 +138,68 @@ def solve(input: SolverInput) -> SolverOutput:
         composition_penalty_vars, emergency_person_ids)
     for penalty_var, weight in composition_penalty_vars:
         penalties.append(penalty_var * weight)
+
+    # ── Home-leave constraints and objectives ─────────────────────────────────
+    home_leave_vars: dict = {}
+    if home_leave_cfg and home_leave_cfg.enabled:
+        # Compute horizon timestamps from input dates
+        horizon_start_dt = input.horizon_start
+        if isinstance(horizon_start_dt, str):
+            from datetime import date as _date
+            horizon_start_dt = _date.fromisoformat(horizon_start_dt)
+        horizon_end_dt = input.horizon_end
+        if isinstance(horizon_end_dt, str):
+            from datetime import date as _date
+            horizon_end_dt = _date.fromisoformat(horizon_end_dt)
+
+        horizon_start_ts = int(datetime(
+            horizon_start_dt.year, horizon_start_dt.month, horizon_start_dt.day,
+            tzinfo=timezone.utc
+        ).timestamp())
+        horizon_end_ts = int(datetime(
+            horizon_end_dt.year, horizon_end_dt.month, horizon_end_dt.day,
+            tzinfo=timezone.utc
+        ).timestamp())
+
+        # Generate home-leave decision variables and add hard constraints
+        home_leave_vars = add_home_leave_constraints(
+            model=model,
+            assign=assign,
+            slots=slots,
+            people=people,
+            config=home_leave_cfg,
+            horizon_start_ts=horizon_start_ts,
+            horizon_end_ts=horizon_end_ts,
+            presence_windows=input.presence_windows,
+            emergency_person_ids=emergency_person_ids,
+        )
+
+        # Add eligibility preference (soft)
+        eligibility_penalties = add_home_leave_eligibility_preference(
+            model=model,
+            home_leave_vars=home_leave_vars,
+            assign=assign,
+            slots=slots,
+            people=people,
+            config=home_leave_cfg,
+            horizon_start_ts=horizon_start_ts,
+            horizon_end_ts=horizon_end_ts,
+            presence_windows=input.presence_windows,
+        )
+        penalties.extend(eligibility_penalties)
+
+        # Add fairness objective (soft)
+        fairness_penalties = add_home_leave_fairness_objective(
+            model=model,
+            home_leave_vars=home_leave_vars,
+            assign=assign,
+            slots=slots,
+            people=people,
+            config=home_leave_cfg,
+            horizon_start_ts=horizon_start_ts,
+            horizon_end_ts=horizon_end_ts,
+        )
+        penalties.extend(fairness_penalties)
 
     model.minimize(sum(penalties))
 
@@ -149,6 +228,61 @@ def solve(input: SolverInput) -> SolverOutput:
     stability = _compute_stability(solver, assign, input, feasible)
     fairness  = _compute_fairness(solver, assign, input, feasible)
 
+    # ── Extract home-leave results ────────────────────────────────────────────
+    home_leave_assignments: list[HomeLeaveAssignment] = []
+    home_leave_metrics: list[HomeLeaveMetric] = []
+    fairness_variance: float | None = None
+
+    if home_leave_cfg and home_leave_cfg.enabled and feasible and home_leave_vars:
+        leave_duration_hours = home_leave_cfg.leave_duration_hours
+        horizon_duration_hours = (horizon_end_ts - horizon_start_ts) / 3600.0
+
+        # Count active leave slots per person
+        person_leave_counts: dict[int, int] = {}
+        for (p_idx, start_h), var in home_leave_vars.items():
+            if solver.value(var) == 1:
+                person_leave_counts[p_idx] = person_leave_counts.get(p_idx, 0) + 1
+                # Build HomeLeaveAssignment
+                leave_start_ts = horizon_start_ts + start_h * 3600
+                leave_end_ts = leave_start_ts + int(leave_duration_hours * 3600)
+                starts_at_iso = datetime.fromtimestamp(leave_start_ts, tz=timezone.utc).isoformat().replace("+00:00", "Z")
+                ends_at_iso = datetime.fromtimestamp(leave_end_ts, tz=timezone.utc).isoformat().replace("+00:00", "Z")
+                home_leave_assignments.append(HomeLeaveAssignment(
+                    person_id=people[p_idx].person_id,
+                    starts_at=starts_at_iso,
+                    ends_at=ends_at_iso,
+                ))
+
+        # Build HomeLeaveMetric for each person
+        base_time_ratios: list[float] = []
+        for p_idx, person in enumerate(people):
+            if person.person_id in emergency_person_ids:
+                continue
+            leave_slot_count = person_leave_counts.get(p_idx, 0)
+            total_home_hours = leave_slot_count * leave_duration_hours
+            available_hours = horizon_duration_hours
+            total_base_hours = available_hours - total_home_hours
+            base_time_ratio = round(total_base_hours / available_hours, 4) if available_hours > 0 else 1.0
+
+            home_leave_metrics.append(HomeLeaveMetric(
+                person_id=person.person_id,
+                total_base_hours=total_base_hours,
+                total_home_hours=total_home_hours,
+                base_time_ratio=base_time_ratio,
+                leave_slot_count=leave_slot_count,
+            ))
+            base_time_ratios.append(base_time_ratio)
+
+        # Compute fairness_variance as variance of base_time_ratios
+        if len(base_time_ratios) >= 2:
+            mean_ratio = sum(base_time_ratios) / len(base_time_ratios)
+            fairness_variance = round(
+                sum((r - mean_ratio) ** 2 for r in base_time_ratios) / len(base_time_ratios),
+                6
+            )
+        elif len(base_time_ratios) == 1:
+            fairness_variance = 0.0
+
     fragments = _build_explanation(feasible, timed_out, uncovered, input)
 
     # Build hard conflicts:
@@ -170,7 +304,10 @@ def solve(input: SolverInput) -> SolverOutput:
         soft_penalty_total=solver.objective_value if feasible else 0.0,
         stability_metrics=stability,
         fairness_metrics=fairness,
-        explanation_fragments=fragments
+        explanation_fragments=fragments,
+        home_leave_assignments=home_leave_assignments,
+        home_leave_metrics=home_leave_metrics,
+        fairness_variance=fairness_variance,
     )
 
 
@@ -324,6 +461,47 @@ def _build_hard_conflicts(input: SolverInput, people, slots) -> list[HardConflic
 
     locale = getattr(input, "locale", "en")
     conflicts: list[HardConflict] = []
+
+    # ── 0. Min-rest violations for closed-base groups ─────────────────────────
+    # When home_leave_config is enabled, min-rest is strictly hard. Detect pairs
+    # of slots that cannot both be assigned to the same person without violating
+    # the rest window.
+    home_leave_cfg = input.home_leave_config
+    if home_leave_cfg and home_leave_cfg.enabled:
+        emergency_person_ids, _ = _build_emergency_bypass(input)
+        min_rest_seconds = int(home_leave_cfg.min_rest_hours * 3600)
+
+        for p_idx, person in enumerate(people):
+            if person.person_id in emergency_person_ids:
+                continue  # emergency bypass — skip
+            for s1_idx, slot1 in enumerate(slots):
+                for s2_idx, slot2 in enumerate(slots):
+                    if s2_idx <= s1_idx:
+                        continue
+                    end1 = _to_timestamp(slot1.ends_at)
+                    start2 = _to_timestamp(slot2.starts_at)
+                    end2 = _to_timestamp(slot2.ends_at)
+                    start1 = _to_timestamp(slot1.starts_at)
+
+                    # Check if the gap between the two slots is less than min_rest
+                    violates = False
+                    if end1 <= start2 and (start2 - end1) < min_rest_seconds:
+                        violates = True
+                    elif end2 <= start1 and (start1 - end2) < min_rest_seconds:
+                        violates = True
+
+                    if violates:
+                        conflicts.append(HardConflict(
+                            constraint_id=f"min_rest_{person.person_id}_{slot1.slot_id}_{slot2.slot_id}",
+                            rule_type="min_rest_violation",
+                            description=t(locale, "min_rest_violation",
+                                          person=person.person_id,
+                                          min_rest=home_leave_cfg.min_rest_hours,
+                                          slot1=slot1.task_type_name,
+                                          slot2=slot2.task_type_name),
+                            affected_slot_ids=[slot1.slot_id, slot2.slot_id],
+                            affected_person_ids=[person.person_id],
+                        ))
 
     # ── 1. Global headcount check ─────────────────────────────────────────────
     total_required = sum(s.required_headcount for s in slots)

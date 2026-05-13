@@ -54,6 +54,19 @@ public class GroupsController : ControllerBase
         return NoContent();
     }
 
+    [HttpPut("spaces/{spaceId:guid}/groups/{groupId:guid}")]
+    public async Task<IActionResult> UpdateGroup(Guid spaceId, Guid groupId,
+        [FromBody] UpdateGroupRequest req, CancellationToken ct)
+    {
+        if (req.IsClosedBase.HasValue)
+        {
+            await _permissions.RequirePermissionAsync(CurrentUserId, spaceId, Permissions.ConstraintsManage, ct);
+            await _mediator.Send(new SetGroupClosedBaseCommand(spaceId, groupId, CurrentUserId, req.IsClosedBase.Value), ct);
+        }
+
+        return NoContent();
+    }
+
     [HttpPatch("spaces/{spaceId:guid}/groups/{groupId:guid}/name")]
     public async Task<IActionResult> RenameGroup(Guid spaceId, Guid groupId,
         [FromBody] RenameGroupRequest req, CancellationToken ct)
@@ -318,6 +331,7 @@ public record CreateGroupRequest(Guid? GroupTypeId, string Name, string? Descrip
 public record AddMemberByEmailRequest(string Email, Guid? RoleId = null);
 public record AddMemberByPhoneRequest(string PhoneNumber, Guid? RoleId = null);
 public record UpdateGroupSettingsRequest(int SolverHorizonDays, DateTime? SolverStartDateTime = null, bool? AutoPublish = null);
+public record UpdateGroupRequest(bool? IsClosedBase = null);
 public record RenameGroupRequest(string Name);
 public record InitiateGroupTransferRequest(Guid ProposedPersonId);
 public record CreateAlertRequest(string Title, string Body, string Severity);

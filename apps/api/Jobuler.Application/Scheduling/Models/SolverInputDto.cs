@@ -23,7 +23,8 @@ public record SolverInputDto(
     List<HardConstraintDto> EmergencyConstraints,
     List<BaselineAssignmentDto> BaselineAssignments,
     List<FairnessCountersDto> FairnessCounters,
-    List<string>? LockedSlotIds = null);
+    List<string>? LockedSlotIds = null,
+    HomeLeaveConfigDto? HomeLeaveConfig = null);
 
 public record StabilityWeightsDto(
     [property: JsonPropertyName("today_tomorrow")] double TodayTomorrow,
@@ -94,3 +95,10 @@ public record FairnessCountersDto(
     int KitchenCount7d,
     int NightMissions7d,
     int ConsecutiveBurdenCount);
+
+public record HomeLeaveConfigDto(
+    [property: JsonPropertyName("enabled")]                    bool Enabled,
+    [property: JsonPropertyName("min_rest_hours")]             double MinRestHours,
+    [property: JsonPropertyName("eligibility_threshold_hours")] double EligibilityThresholdHours,
+    [property: JsonPropertyName("leave_capacity")]             int LeaveCapacity,
+    [property: JsonPropertyName("leave_duration_hours")]       double LeaveDurationHours);

@@ -4,6 +4,17 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { AssignmentDto } from "@/lib/api/schedule";
 
+/** Task type name used for home-leave assignments from the solver */
+const HOME_LEAVE_TASK_TYPE = "home_leave";
+
+/** Display label for home-leave assignments */
+const HOME_LEAVE_LABEL = "בבית";
+
+/** Check if a task type represents a home-leave assignment */
+function isHomeLeaveTask(taskTypeName: string): boolean {
+  return taskTypeName === HOME_LEAVE_TASK_TYPE;
+}
+
 interface ScheduleTableProps {
   assignments: AssignmentDto[];
   filterDate?: string;
@@ -58,25 +69,39 @@ export default function ScheduleTable({ assignments, filterDate, title }: Schedu
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {filtered.map(a => (
-                <tr key={a.id} className="hover:bg-slate-50/60 transition-colors">
-                  <td className="px-4 py-3.5 font-medium text-slate-900">{a.personName}</td>
-                  <td className="px-4 py-3.5 text-slate-700">{a.taskTypeName}</td>
-                  <td className="px-4 py-3.5 tabular-nums text-slate-500 text-xs">
-                    {formatTime(a.slotStartsAt)}<span className="mx-1 text-slate-300">–</span>{formatTime(a.slotEndsAt)}
+              {filtered.map(a => {
+                const isHomeLeave = isHomeLeaveTask(a.taskTypeName);
+                return (
+                <tr key={a.id} className={`transition-colors ${isHomeLeave ? "bg-emerald-50/40 hover:bg-emerald-50/80" : "hover:bg-slate-50/60"}`}>
+                  <td className={`px-4 py-3.5 font-medium ${isHomeLeave ? "text-emerald-800" : "text-slate-900"}`}>{a.personName}</td>
+                  <td className={`px-4 py-3.5 ${isHomeLeave ? "text-emerald-700 font-medium" : "text-slate-700"}`}>
+                    {isHomeLeave ? (
+                      <span className="inline-flex items-center gap-1.5">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="flex-shrink-0">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                        </svg>
+                        {HOME_LEAVE_LABEL}
+                      </span>
+                    ) : a.taskTypeName}
+                  </td>
+                  <td className={`px-4 py-3.5 tabular-nums text-xs ${isHomeLeave ? "text-emerald-600" : "text-slate-500"}`}>
+                    {formatTime(a.slotStartsAt)}<span className={`mx-1 ${isHomeLeave ? "text-emerald-300" : "text-slate-300"}`}>–</span>{formatTime(a.slotEndsAt)}
                   </td>
                   <td className="px-4 py-3.5">
                     <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
                       a.source === "Override"
                         ? "bg-amber-50 text-amber-700 border border-amber-200"
+                        : isHomeLeave
+                        ? "bg-emerald-100 text-emerald-700 border border-emerald-200"
                         : "bg-slate-100 text-slate-600"
                     }`}>
-                      <span className={`w-1.5 h-1.5 rounded-full ${a.source === "Override" ? "bg-amber-500" : "bg-slate-400"}`} />
+                      <span className={`w-1.5 h-1.5 rounded-full ${a.source === "Override" ? "bg-amber-500" : isHomeLeave ? "bg-emerald-500" : "bg-slate-400"}`} />
                       {a.source === "Override" ? t("sourceOverride") : t("sourceSolver")}
                     </span>
                   </td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         </div>

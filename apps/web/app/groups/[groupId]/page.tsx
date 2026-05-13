@@ -29,6 +29,7 @@ import { useRefetchNotifications } from "@/lib/query/hooks/useNotifications";
 import {
   getGroups, getGroupMembers, addGroupMemberByEmail, removeGroupMember,
   updateGroupSettings, renameGroup, softDeleteGroup, restoreGroup,
+  updateGroup,
   getDeletedGroups, initiateOwnershipTransfer, cancelOwnershipTransfer,
   GroupWithMemberCountDto, GroupMemberDto, DeletedGroupDto,
   getGroupAlerts, createGroupAlert, deleteGroupAlert, updateGroupAlert, GroupAlertDto,
@@ -137,6 +138,7 @@ export default function GroupDetailPage() {
     settingsError, setSettingsError, settingsSaved, setSettingsSaved,
     solverStartDateTime, setSolverStartDateTime,
     autoPublish, setAutoPublish,
+    isClosedBase, setIsClosedBase,
     solverPolling, setSolverPolling, solverStatus, setSolverStatus, solverError, setSolverError,
     deletedGroups, setDeletedGroups, deletedGroupsLoading, setDeletedGroupsLoading,
     transferPersonId, setTransferPersonId, transferSaving, setTransferSaving,
@@ -168,6 +170,7 @@ export default function GroupDetailPage() {
         setSolverHorizon(found.solverHorizonDays ?? 14);
         setSolverHorizonDays(found.solverHorizonDays ?? 14);
         setAutoPublish(found.autoPublish ?? false);
+        setIsClosedBase(found.isClosedBase ?? false);
         // Initialise the configured auto-scheduler start date from the API
         // The API stores UTC; convert to local time for the datetime-local input
         setSolverStartDateTime(found.solverStartDateTime
@@ -898,6 +901,16 @@ export default function GroupDetailPage() {
     }
   }
 
+  async function handleClosedBaseChange(value: boolean) {
+    if (!currentSpaceId) return;
+    try {
+      await updateGroup(currentSpaceId, groupId, { isClosedBase: value });
+      setIsClosedBase(value);
+    } catch {
+      // Revert on failure — the toggle will snap back
+    }
+  }
+
   async function handleTriggerSolver(startTime?: string) {
     if (!currentSpaceId) return;
     setSolverPolling(true);
@@ -1349,6 +1362,7 @@ export default function GroupDetailPage() {
               settingsSaved={settingsSaved}
               solverStartDateTime={solverStartDateTime}
               autoPublish={autoPublish}
+              isClosedBase={isClosedBase}
               solverPolling={solverPolling}
               solverStatus={solverStatus}
               solverError={solverError}
@@ -1367,6 +1381,7 @@ export default function GroupDetailPage() {
               onSolverHorizonChange={setSolverHorizon}
               onSolverStartDateTimeChange={setSolverStartDateTime}
               onAutoPublishChange={setAutoPublish}
+              onClosedBaseChange={handleClosedBaseChange}
               onSaveSettings={handleSaveSettings}
               onTriggerSolver={handleTriggerSolver}
               onOpenDraftModal={() => setShowDraftModal(true)}

@@ -51,6 +51,8 @@ public class AppDbContext : DbContext
     public DbSet<PersonRoleAssignment> PersonRoleAssignments => Set<PersonRoleAssignment>();
     public DbSet<GroupQualification> GroupQualifications => Set<GroupQualification>();
     public DbSet<MemberQualification> MemberQualifications => Set<MemberQualification>();
+    public DbSet<HomeLeaveConfig> HomeLeaveConfigs => Set<HomeLeaveConfig>();
+    public DbSet<HomeLeaveTemplate> HomeLeaveTemplates => Set<HomeLeaveTemplate>();
 
     // Tasks
     public DbSet<TaskType> TaskTypes => Set<TaskType>();
