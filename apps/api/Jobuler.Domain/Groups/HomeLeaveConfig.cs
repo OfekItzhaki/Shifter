@@ -65,7 +65,7 @@ public class HomeLeaveConfig : AuditableEntity, ITenantScoped
     private static void ValidateMinRestHours(decimal value)
     {
         if (value < 4 || value > 16)
-            throw new InvalidOperationException("min_rest_hours must be between 4 and 16 inclusive.");
+            throw new InvalidOperationException("שעות מנוחה מינימליות חייבות להיות בין 4 ל-16.");
     }
 
     private static void ValidateEligibilityThresholdHours(decimal value, decimal minRestHours)
@@ -77,12 +77,12 @@ public class HomeLeaveConfig : AuditableEntity, ITenantScoped
     private static void ValidateLeaveCapacity(int value)
     {
         if (value < 1)
-            throw new InvalidOperationException("leave_capacity must be at least 1.");
+            throw new InvalidOperationException("מכסת היוצאים חייבת להיות לפחות 1.");
     }
 
     private static void ValidateLeaveDurationHours(decimal value)
     {
         if (value < 12 || value > 168)
-            throw new InvalidOperationException("leave_duration_hours must be between 12 and 168 inclusive.");
+            throw new InvalidOperationException("משך החופשה חייב להיות בין 12 ל-168 שעות.");
     }
 }

@@ -41,12 +41,12 @@ public class HomeLeaveTemplate : Entity, ITenantScoped
     private static void ValidateName(string name)
     {
         if (string.IsNullOrWhiteSpace(name))
-            throw new InvalidOperationException("Template name must be between 1 and 100 characters.");
+            throw new InvalidOperationException("שם התבנית חייב להיות בין 1 ל-100 תווים.");
 
         if (name.Length > 100)
-            throw new InvalidOperationException("Template name must be between 1 and 100 characters.");
+            throw new InvalidOperationException("שם התבנית חייב להיות בין 1 ל-100 תווים.");
 
         if (name != name.Trim())
-            throw new InvalidOperationException("Template name must not have leading or trailing whitespace.");
+            throw new InvalidOperationException("שם התבנית לא יכול להכיל רווחים בהתחלה או בסוף.");
     }
 }

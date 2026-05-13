@@ -140,6 +140,7 @@
   "groups": {
     "title": "My Groups",
     "subtitle": "Groups you belong to",
+    "whatsNew": "What's New",
     "newGroup": "+ New Group",
     "newGroupPlaceholder": "New group name",
     "noGroups": "You are not part of any group yet.",
@@ -163,6 +164,7 @@
       "joining": "Joining...",
       "success": "You're in!",
       "successDesc": "You've joined {name}",
+      "alreadyMember": "Already a member",
       "goToGroup": "Go to Group",
       "invalidCode": "Invalid join code. Check with your group admin.",
       "loginRequired": "Sign in to join",
@@ -395,6 +397,9 @@
       "loading": "Loading..."
     },
     "stats_tab": {
+      "loading": "Loading statistics...",
+      "connectionTimeout": "Connection timeout — try again",
+      "errorLoading": "Error loading statistics",
       "activeMembers": "Active Members",
       "totalAssignments": "Total Assignments",
       "avgPerPerson": "Avg per Person",
@@ -405,7 +410,17 @@
       "bestBurdenBalance": "Best Burden Balance",
       "detailByPerson": "Detail by Person",
       "noStats": "No statistics for this group",
-      "publishToSeeStats": "Publish a schedule to see data"
+      "publishToSeeStats": "Publish a schedule to see data",
+      "table": {
+        "name": "Name",
+        "total": "Total",
+        "hard": "Hard",
+        "normal": "Normal",
+        "easy": "Easy",
+        "burdenScore": "Burden Score",
+        "balance": "Balance",
+        "lastAssignment": "Last Assignment"
+      }
     },
     "schedule_tab": {
       "draftReady": "Draft schedule ready for review and publication",

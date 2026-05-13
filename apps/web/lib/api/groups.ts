@@ -353,7 +353,7 @@ export async function regenerateJoinCode(spaceId: string, groupId: string): Prom
   return data.joinCode;
 }
 
-export async function joinGroupByCode(code: string): Promise<{ groupId: string; spaceId: string; groupName: string }> {
+export async function joinGroupByCode(code: string): Promise<{ groupId: string; spaceId: string; groupName: string; alreadyMember: boolean }> {
   const { data } = await apiClient.post("/groups/join", { code });
   return data;
 }

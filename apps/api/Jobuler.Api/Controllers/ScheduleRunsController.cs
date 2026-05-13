@@ -51,7 +51,7 @@ public class ScheduleRunsController : ControllerBase
         // Validate trigger mode — only "standard" and "emergency" are accepted
         var mode = (req.TriggerMode ?? "standard").ToLowerInvariant();
         if (mode != "standard" && mode != "emergency")
-            return BadRequest(new { error = $"Invalid trigger_mode '{req.TriggerMode}'. Must be 'standard' or 'emergency'." });
+            return BadRequest(new { error = $"מצב הפעלה '{req.TriggerMode}' לא תקין. חייב להיות 'standard' או 'emergency'." });
 
         var runId = await _mediator.Send(
             new TriggerSolverCommand(spaceId, mode, CurrentUserId, req.GroupId, req.StartTime), ct);

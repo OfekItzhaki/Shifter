@@ -28,6 +28,6 @@ public class PermissionService : IPermissionService
     public async Task RequirePermissionAsync(Guid userId, Guid spaceId, string permissionKey, CancellationToken ct = default)
     {
         if (!await HasPermissionAsync(userId, spaceId, permissionKey, ct))
-            throw new UnauthorizedAccessException($"Permission '{permissionKey}' required.");
+            throw new UnauthorizedAccessException($"נדרשת הרשאה '{permissionKey}'.");
     }
 }

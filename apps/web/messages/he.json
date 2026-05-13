@@ -143,6 +143,7 @@
   "groups": {
     "title": "הקבוצות שלי",
     "subtitle": "הקבוצות שאתה משויך אליהן",
+    "whatsNew": "מה חדש",
     "newGroup": "+ קבוצה חדשה",
     "newGroupPlaceholder": "שם קבוצה חדשה",
     "noGroups": "אינך משויך לאף קבוצה עדיין.",
@@ -166,6 +167,7 @@
       "joining": "מצטרף...",
       "success": "הצטרפת בהצלחה!",
       "successDesc": "הצטרפת לקבוצה {name}",
+      "alreadyMember": "כבר חבר בקבוצה",
       "goToGroup": "עבור לקבוצה",
       "invalidCode": "קוד לא תקין. בדוק עם מנהל הקבוצה.",
       "loginRequired": "התחבר כדי להצטרף",
@@ -331,6 +333,9 @@
       "loading": "טוען אילוצים..."
     },
     "stats_tab": {
+      "loading": "טוען סטטיסטיקות...",
+      "connectionTimeout": "תם הזמן — נסה שוב",
+      "errorLoading": "שגיאה בטעינת הסטטיסטיקות",
       "activeMembers": "חברים פעילים",
       "totalAssignments": "סה״כ שיבוצים",
       "avgPerPerson": "ממוצע לאדם",
@@ -341,7 +346,17 @@
       "bestBurdenBalance": "איזון עומס טוב ביותר",
       "detailByPerson": "פירוט לפי אדם",
       "noStats": "אין סטטיסטיקה לקבוצה זו",
-      "publishToSeeStats": "פרסם סידור כדי לראות נתונים"
+      "publishToSeeStats": "פרסם סידור כדי לראות נתונים",
+      "table": {
+        "name": "שם",
+        "total": "סה״כ",
+        "hard": "קשה",
+        "normal": "רגיל",
+        "easy": "קל",
+        "burdenScore": "ציון עומס",
+        "balance": "איזון",
+        "lastAssignment": "שיבוץ אחרון"
+      }
     },
     "roles_tab": {
       "adminOnly": "ניהול תפקידים זמין למנהלים בלבד",

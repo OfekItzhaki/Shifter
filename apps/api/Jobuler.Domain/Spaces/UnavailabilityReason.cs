@@ -46,9 +46,9 @@ public class UnavailabilityReason : AuditableEntity, ITenantScoped
     private static void ValidateDisplayName(string displayName)
     {
         if (string.IsNullOrWhiteSpace(displayName))
-            throw new InvalidOperationException("Display name cannot be empty.");
+            throw new InvalidOperationException("שם התצוגה לא יכול להיות ריק.");
 
         if (displayName.Trim().Length > 100)
-            throw new InvalidOperationException("Display name cannot exceed 100 characters.");
+            throw new InvalidOperationException("שם התצוגה לא יכול לעלות על 100 תווים.");
     }
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, Suspense } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
@@ -20,7 +20,8 @@ function JoinContent() {
   const [code, setCode] = useState(codeFromUrl);
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState<{ groupId: string; spaceId: string; groupName: string } | null>(null);
+  const [result, setResult] = useState<{ groupId: string; spaceId: string; groupName: string; alreadyMember: boolean } | null>(null);
+  const [autoJoinDone, setAutoJoinDone] = useState(false);
 
   async function handleJoin(e?: React.FormEvent) {
     e?.preventDefault();
@@ -40,6 +41,15 @@ function JoinContent() {
       setStatus("error");
     }
   }
+
+  // Auto-join when user is authenticated and code is provided in URL
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (isAuthenticated && codeFromUrl && !autoJoinDone) {
+      setAutoJoinDone(true);
+      handleJoin();
+    }
+  }, [isAuthenticated, codeFromUrl]);
 
   if (!isAuthenticated) {
     const redirectUrl = `/groups/join?code=${encodeURIComponent(code)}`;
@@ -72,7 +82,9 @@ function JoinContent() {
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
         </div>
-        <h2 className="text-lg font-bold text-slate-900">{t("success")}</h2>
+        <h2 className="text-lg font-bold text-slate-900">
+          {result.alreadyMember ? t("alreadyMember") : t("success")}
+        </h2>
         <p className="text-sm text-slate-500">{t("successDesc", { name: result.groupName })}</p>
         <button
           onClick={() => router.push(`/groups/${result.groupId}`)}

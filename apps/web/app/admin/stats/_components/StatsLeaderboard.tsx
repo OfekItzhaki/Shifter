@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { LeaderboardEntry } from "@/lib/api/schedule";
 
 interface Props {
@@ -17,13 +18,14 @@ const card: React.CSSProperties = {
 };
 
 export default function StatsLeaderboard({ title, entries, valueColor = "#0f172a" }: Props) {
+  const t = useTranslations("admin");
   return (
     <div style={card}>
       <h3 style={{ fontSize: "0.875rem", fontWeight: 700, color: "#0f172a", margin: "0 0 0.875rem" }}>
         {title}
       </h3>
       {entries.length === 0 ? (
-        <p style={{ fontSize: "0.8125rem", color: "#94a3b8", margin: 0 }}>No data</p>
+        <p style={{ fontSize: "0.8125rem", color: "#94a3b8", margin: 0 }}>{t("noData")}</p>
       ) : (
         <ol style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 6 }}>
           {entries.map((e, i) => (

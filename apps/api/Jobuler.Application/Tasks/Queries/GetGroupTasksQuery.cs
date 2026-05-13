@@ -27,11 +27,10 @@ public class GetGroupTasksQueryHandler : IRequestHandler<GetGroupTasksQuery, Lis
     {
         await _permissions.RequirePermissionAsync(req.RequestingUserId, req.SpaceId, Permissions.SpaceView, ct);
 
-        // Verify group belongs to space
         var groupExists = await _db.Groups
             .AnyAsync(g => g.Id == req.GroupId && g.SpaceId == req.SpaceId && g.DeletedAt == null, ct);
         if (!groupExists)
-            throw new KeyNotFoundException("Group not found in this space.");
+            throw new KeyNotFoundException("הקבוצה לא נמצאה.");
 
         var tasks = await _db.GroupTasks.AsNoTracking()
             .Where(t => t.GroupId == req.GroupId && t.SpaceId == req.SpaceId && t.IsActive)

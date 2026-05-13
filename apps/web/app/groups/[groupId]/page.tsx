@@ -1103,6 +1103,16 @@ export default function GroupDetailPage() {
             <p className="text-xs sm:text-sm text-slate-400">{group.memberCount ?? 0} {tGroups("members")}</p>
           </div>
           {/* Admin mode toggle — always visible to group owner */}
+          <Link
+            href="/changelog"
+            className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium text-purple-600 bg-purple-50 border border-purple-200 hover:bg-purple-100 transition-colors flex-shrink-0"
+            title={tGroups("whatsNew")}
+          >
+            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span className="hidden sm:inline">{tGroups("whatsNew")}</span>
+          </Link>
           <button
             onClick={() => {
               if (isAdmin) {

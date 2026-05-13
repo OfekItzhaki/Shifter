@@ -50,7 +50,7 @@ public class RegenerateJoinCodeCommandHandler : IRequestHandler<RegenerateJoinCo
 
 public record JoinGroupByCodeCommand(string Code, Guid UserId) : IRequest<JoinGroupResult>;
 
-public record JoinGroupResult(Guid GroupId, Guid SpaceId, string GroupName);
+public record JoinGroupResult(Guid GroupId, Guid SpaceId, string GroupName, bool AlreadyMember);
 
 public class JoinGroupByCodeCommandHandler : IRequestHandler<JoinGroupByCodeCommand, JoinGroupResult>
 {
@@ -102,6 +102,6 @@ public class JoinGroupByCodeCommandHandler : IRequestHandler<JoinGroupByCodeComm
 
         await _db.SaveChangesAsync(ct);
 
-        return new JoinGroupResult(group.Id, group.SpaceId, group.Name);
+        return new JoinGroupResult(group.Id, group.SpaceId, group.Name, alreadyMember);
     }
 }
