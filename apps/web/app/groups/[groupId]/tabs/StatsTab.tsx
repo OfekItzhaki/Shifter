@@ -127,7 +127,7 @@ export default function StatsTab({ spaceId, groupId }: Props) {
     const dates = [...new Set(historicalData.map(dp => dp.date))].sort();
     const people = [...new Set(historicalData.map(dp => dp.displayName))];
     const data = dates.map(date => {
-      const row: Record<string, number | string> = { date };
+      const row: { date: string; [personName: string]: number | string } = { date };
       for (const person of people) {
         const dp = historicalData.find(d => d.date === date && d.displayName === person);
         row[person] = dp?.burdenScore ?? 0;
