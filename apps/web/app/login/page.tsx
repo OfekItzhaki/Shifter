@@ -1,12 +1,14 @@
 "use client";
 
-import { useState, Suspense } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useTranslations } from "next-intl";
 import { useAuthStore } from "@/lib/store/authStore";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import ShifterLogo from "@/components/shell/ShifterLogo";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
+import { isWebAuthnSupported, authenticateWithBiometric } from "@/lib/webauthn";
+import { detectBrowserLocale } from "@/lib/utils/detectLocale";
 
 function LoginForm() {
   const t = useTranslations("auth");
@@ -22,6 +24,15 @@ function LoginForm() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  // Biometric login state
+  const [webAuthnAvailable, setWebAuthnAvailable] = useState(false);
+  const [biometricLoading, setBiometricLoading] = useState(false);
+  const [biometricError, setBiometricError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setWebAuthnAvailable(isWebAuthnSupported());
+  }, []);
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
@@ -33,6 +44,29 @@ function LoginForm() {
       setError(t("invalidCredentials"));
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleBiometricLogin() {
+    setBiometricError(null);
+    setBiometricLoading(true);
+    try {
+      const tokens = await authenticateWithBiometric();
+      localStorage.setItem("access_token", tokens.accessToken);
+      localStorage.setItem("refresh_token", tokens.refreshToken);
+      localStorage.removeItem("jobuler-space");
+      document.cookie = `access_token=${tokens.accessToken}; path=/; max-age=900; SameSite=Strict`;
+      const locale = tokens.preferredLocale || detectBrowserLocale();
+      document.cookie = `locale=${locale}; path=/; max-age=31536000; SameSite=Strict`;
+      router.push(redirectTo);
+    } catch (err: any) {
+      if (err?.message === "USER_CANCELLED") {
+        // User cancelled — no error to show
+        return;
+      }
+      setBiometricError(t("biometricFailed") ?? "אימות ביומטרי נכשל. נסה שוב או השתמש בסיסמה.");
+    } finally {
+      setBiometricLoading(false);
     }
   }
 
@@ -53,6 +87,82 @@ function LoginForm() {
             <h1 className="text-xl font-semibold text-slate-900 dark:text-white m-0">{t("login")}</h1>
             <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Sign in to your workspace</p>
           </div>
+
+          {/* Biometric Login Button */}
+          {webAuthnAvailable && (
+            <div style={{ marginBottom: "1.25rem" }}>
+              <button
+                type="button"
+                onClick={handleBiometricLogin}
+                disabled={biometricLoading}
+                style={{
+                  width: "100%",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "0.625rem",
+                  background: biometricLoading
+                    ? "linear-gradient(135deg, #a78bfa, #818cf8)"
+                    : "linear-gradient(135deg, #7c3aed, #4f46e5)",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "10px",
+                  padding: "0.875rem",
+                  fontSize: "0.9375rem",
+                  fontWeight: 600,
+                  cursor: biometricLoading ? "not-allowed" : "pointer",
+                  transition: "all 0.15s",
+                  boxShadow: "0 2px 8px rgba(79, 70, 229, 0.3)",
+                }}
+                aria-label="התחבר עם ביומטרי"
+              >
+                {/* Fingerprint icon */}
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M2 12C2 6.5 6.5 2 12 2a10 10 0 0 1 8 4" />
+                  <path d="M5 19.5C5.5 18 6 15 6 12c0-3.5 2.5-6 6-6 3.5 0 6 2.5 6 6 0 1.5-.5 3-1 4" />
+                  <path d="M9 12c0-1.5 1.5-3 3-3s3 1.5 3 3-1 4-2 6" />
+                  <path d="M12 12v4" />
+                  <path d="M2 16c1 2 2.5 3.5 4.5 4.5" />
+                  <path d="M15 17c1 1.5 2 3 2.5 4.5" />
+                  <path d="M19.5 8c.5 1 .5 2 .5 4 0 2-.5 4-1 6" />
+                </svg>
+                {biometricLoading ? "מאמת..." : "התחבר עם ביומטרי"}
+              </button>
+
+              {biometricError && (
+                <div style={{
+                  marginTop: "0.625rem",
+                  background: "#fef2f2",
+                  border: "1px solid #fecaca",
+                  borderRadius: "10px",
+                  padding: "0.5rem 0.75rem",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: "0.5rem",
+                }}>
+                  <p style={{ fontSize: "0.8125rem", color: "#dc2626", margin: 0 }}>{biometricError}</p>
+                  <button
+                    type="button"
+                    onClick={() => setBiometricError(null)}
+                    style={{ background: "none", border: "none", cursor: "pointer", color: "#dc2626", padding: 0, lineHeight: 1 }}
+                    aria-label="סגור"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              )}
+
+              {/* Divider */}
+              <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginTop: "1.25rem" }}>
+                <div style={{ flex: 1, height: "1px", background: "#e2e8f0" }} />
+                <span style={{ fontSize: "0.75rem", color: "#94a3b8", fontWeight: 500 }}>או</span>
+                <div style={{ flex: 1, height: "1px", background: "#e2e8f0" }} />
+              </div>
+            </div>
+          )}
 
           {justRegistered && (
             <div style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 10, padding: "0.625rem 0.875rem", display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "1rem" }}>

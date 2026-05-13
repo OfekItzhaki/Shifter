@@ -78,7 +78,7 @@ Tracked improvements and features from mobile testing session (May 2026).
 
 | # | Item | Status | Spec |
 |---|------|--------|------|
-| 28 | Login with Biometrics (fingerprint/face) | ⬜ TODO | |
+| 28 | Login with Biometrics (fingerprint/face) | ✅ DONE | `biometric-login` |
 
 ---
 
