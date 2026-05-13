@@ -155,8 +155,8 @@ export default function ScheduleTab({
         const key = `${a.slotStartsAt}|${a.slotEndsAt}`;
         const slot = slotMap.get(key) ?? {
           date: new Date(a.slotStartsAt).toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" }),
-          startTime: new Date(a.slotStartsAt).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" }),
-          endTime: new Date(a.slotEndsAt).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" }),
+          startTime: new Date(a.slotStartsAt).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit", hour12: false }),
+          endTime: new Date(a.slotEndsAt).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit", hour12: false }),
           people: [],
         };
         slot.people.push(a.personName);
@@ -331,6 +331,7 @@ export default function ScheduleTab({
       )}
 
       {/* Week navigation */}
+      <div className="sticky top-0 z-20 bg-slate-50 dark:bg-slate-900 pb-2 -mx-2 px-2 sm:mx-0 sm:px-0 space-y-3 pt-2">
       <div className="flex items-center gap-2">
         <button onClick={prevWeek} className="p-2 rounded-lg border border-slate-200 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
           <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -354,7 +355,7 @@ export default function ScheduleTab({
       </div>
 
       {/* Day-name tabs */}
-      <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-2 px-2 sm:mx-0 sm:px-0">
+      <div className="flex gap-1.5 overflow-x-auto pb-1">
         {weekDates.map((d, i) => {
           const dayNum = new Date(d + "T00:00:00").getDate();
           const isSelected = i === selectedWeekDay;
@@ -383,6 +384,7 @@ export default function ScheduleTab({
             </button>
           );
         })}
+      </div>
       </div>
 
       {(scheduleLoading) && (

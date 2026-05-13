@@ -211,6 +211,7 @@ export interface GroupRoleDto {
   isActive: boolean;
   isDefault: boolean;
   permissionLevel: "View" | "ViewAndEdit" | "Owner";
+  color: string | null;
 }
 
 export async function getGroupRoles(spaceId: string, groupId: string): Promise<GroupRoleDto[]> {
@@ -221,7 +222,7 @@ export async function getGroupRoles(spaceId: string, groupId: string): Promise<G
 export async function createGroupRole(
   spaceId: string,
   groupId: string,
-  payload: { name: string; description?: string | null; permissionLevel?: string }
+  payload: { name: string; description?: string | null; permissionLevel?: string; color?: string | null }
 ): Promise<{ id: string }> {
   const { data } = await apiClient.post(`/spaces/${spaceId}/groups/${groupId}/roles`, payload);
   return data as { id: string };
@@ -231,7 +232,7 @@ export async function updateGroupRole(
   spaceId: string,
   groupId: string,
   roleId: string,
-  payload: { name: string; description?: string | null; permissionLevel?: string }
+  payload: { name: string; description?: string | null; permissionLevel?: string; color?: string | null }
 ): Promise<void> {
   await apiClient.put(`/spaces/${spaceId}/groups/${groupId}/roles/${roleId}`, payload);
 }

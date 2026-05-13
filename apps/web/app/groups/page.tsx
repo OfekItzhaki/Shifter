@@ -9,6 +9,9 @@ import { getAvatarColor, getAvatarLetter } from "@/lib/utils/groupAvatar";
 import { useGroups, useDeletedGroups, useCreateGroup, useRestoreGroup } from "@/lib/query/hooks/useGroups";
 import Modal from "@/components/Modal";
 import GroupTemplatePicker from "@/components/GroupTemplatePicker";
+import { ONBOARDING_STEPS } from "@/lib/onboarding/steps";
+import { useOnboardingStore } from "@/lib/store/onboardingStore";
+import { getCurrentStepIndex } from "@/lib/onboarding/decisions";
 
 export default function GroupsPage() {
   const t = useTranslations("groups");
@@ -22,6 +25,10 @@ export default function GroupsPage() {
   const [newGroupName, setNewGroupName] = useState("");
   const [createError, setCreateError] = useState<string | null>(null);
   const [templateGroupId, setTemplateGroupId] = useState<string | null>(null);
+
+  const tOnboarding = useTranslations("onboarding");
+  const { steps: onboardingSteps } = useOnboardingStore();
+  const currentStepIndex = getCurrentStepIndex(onboardingSteps);
 
   const { data: groups = [], isLoading: loading } = useGroups(currentSpaceId);
   const { data: deletedGroups = [], isLoading: deletedLoading } = useDeletedGroups(currentSpaceId);
@@ -95,11 +102,47 @@ export default function GroupsPage() {
         {loading ? (
           <p className="text-slate-400 text-sm py-8">{tCommon("loading")}</p>
         ) : groups.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 text-center bg-white rounded-xl border border-slate-200">
-            <svg className="w-10 h-10 text-slate-200 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
-            <p className="text-slate-400 text-sm">{t("noGroups")}</p>
+          <div className="bg-white rounded-xl border border-slate-200 p-6 space-y-5">
+            <div className="flex flex-col items-center text-center">
+              <svg className="w-10 h-10 text-slate-200 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              <p className="text-slate-400 text-sm">{t("noGroups")}</p>
+            </div>
+
+            {/* Inline onboarding steps */}
+            <div className="border-t border-slate-100 pt-4">
+              <h3 className="text-sm font-semibold text-slate-700 mb-3">{tOnboarding("title")}</h3>
+              <ol className="space-y-2">
+                {ONBOARDING_STEPS.map((step, index) => {
+                  const isCompleted = onboardingSteps[step.key];
+                  const isCurrent = index === currentStepIndex;
+                  return (
+                    <li key={step.key} className={`flex items-center gap-3 rounded-lg px-3 py-2.5 ${isCurrent ? "bg-blue-50 border border-blue-200" : ""}`}>
+                      <div className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                        isCompleted ? "bg-green-100 text-green-600" : isCurrent ? "bg-blue-500 text-white" : "bg-slate-100 text-slate-400"
+                      }`}>
+                        {isCompleted ? (
+                          <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                          </svg>
+                        ) : (
+                          index + 1
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className={`text-sm ${isCompleted ? "text-slate-400 line-through" : isCurrent ? "font-medium text-slate-900" : "text-slate-600"}`}>
+                          {tOnboarding(`steps.${step.key}.title`)}
+                        </p>
+                        {isCurrent && (
+                          <p className="text-xs text-slate-500 mt-0.5">{tOnboarding(`steps.${step.key}.description`)}</p>
+                        )}
+                      </div>
+                    </li>
+                  );
+                })}
+              </ol>
+            </div>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">

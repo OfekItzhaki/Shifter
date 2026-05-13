@@ -73,6 +73,7 @@ public class SpaceRoleConfiguration : IEntityTypeConfiguration<SpaceRole>
             .HasConversion(
                 v => v.ToString().ToSnakeCase(),
                 v => Enum.Parse<RolePermissionLevel>(v.ToPascalCase(), true));
+        builder.Property(r => r.Color).HasColumnName("color").HasMaxLength(7).IsRequired(false);
         builder.Property(r => r.CreatedAt).HasColumnName("created_at");
         builder.Property(r => r.UpdatedAt).HasColumnName("updated_at");
         // Unique index is now (space_id, group_id, name) — enforced at DB level via migration 027

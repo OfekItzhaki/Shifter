@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { useTranslations } from "next-intl";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { register } from "@/lib/api/auth";
 import ShifterLogo from "@/components/shell/ShifterLogo";
@@ -23,8 +23,18 @@ function translateValidationError(error: string, t: (key: string) => string): st
 }
 
 export default function RegisterPage() {
+  return (
+    <Suspense fallback={null}>
+      <RegisterForm />
+    </Suspense>
+  );
+}
+
+function RegisterForm() {
   const t = useTranslations("auth");
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirect = searchParams.get("redirect");
 
   const [email, setEmail] = useState("");
   const [displayName, setDisplayName] = useState("");
@@ -57,7 +67,10 @@ export default function RegisterPage() {
     setLoading(true);
     try {
       await register(displayName, password, "he", email || undefined, phoneNumber || undefined, profileImageUrl || undefined, birthday || undefined);
-      router.push("/login?registered=1");
+      const loginUrl = redirect
+        ? "/login?registered=1&redirect=" + encodeURIComponent(redirect)
+        : "/login?registered=1";
+      router.push(loginUrl);
     } catch (err: any) {
       const data = err?.response?.data;
       const msg = data?.error ?? data?.message;

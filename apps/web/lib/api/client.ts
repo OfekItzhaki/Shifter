@@ -53,11 +53,14 @@ apiClient.interceptors.response.use(
         original.headers.Authorization = `Bearer ${data.accessToken}`;
         return apiClient(original);
       } catch {
-        // Refresh failed — clear tokens and cookie, redirect to unauthorized page
+        // Refresh failed — clear tokens and cookie, redirect to login
         localStorage.removeItem("access_token");
         localStorage.removeItem("refresh_token");
         document.cookie = "access_token=; path=/; max-age=0";
-        redirectToErrorPage("/error/unauthorized");
+        if (!isRedirecting) {
+          isRedirecting = true;
+          window.location.href = "/login?redirect=" + encodeURIComponent(window.location.pathname + window.location.search);
+        }
         return Promise.reject(error);
       }
     }

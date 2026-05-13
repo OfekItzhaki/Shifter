@@ -20,11 +20,11 @@ public class EmailInvitationSender : IInvitationSender
     {
         if (channel != "email") return Task.CompletedTask;
 
-        var subject = $"הוזמנת להצטרף ל-Jobuler";
+        var subject = $"הוזמנת להצטרף ל-Shifter";
         var html = $"""
             <div dir="rtl" style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
               <h2>שלום {personName},</h2>
-              <p>הוזמנת להצטרף למרחב עבודה ב-Jobuler.</p>
+              <p>הוזמנת להצטרף למרחב עבודה ב-Shifter.</p>
               <p>לחץ על הכפתור למטה כדי לאשר את ההזמנה:</p>
               <a href="{inviteUrl}"
                  style="display:inline-block;background:#3b82f6;color:white;padding:12px 24px;

@@ -237,44 +237,44 @@ This plan implements home-leave scheduling for closed-base army groups across 6 
   - Ask the user if questions arise
 
 - [ ] 15. Testing — Property-Based Tests (Solver)
-  - [ ]* 15.1 Write property test for min-rest invariant (Python/Hypothesis)
+  - [-]* 15.1 Write property test for min-rest invariant (Python/Hypothesis)
     - **Property 3: Minimum rest invariant — no assignment pair violates min rest**
     - Generate random HomeLeaveConfig, PersonEligibility lists (2–8 people), TaskSlot lists (3–20 slots) within 3–7 day horizon
     - Run solver and verify: for every person, no two consecutive mission assignments have gap < min_rest_hours
     - **Validates: Requirements 3.2, 3.3**
     - File: `apps/solver/tests/test_home_leave_properties.py`
 
-  - [ ]* 15.2 Write property test for capacity invariant (Python/Hypothesis)
+  - [-]* 15.2 Write property test for capacity invariant (Python/Hypothesis)
     - **Property 4: Home-leave capacity invariant**
     - For every hour in the horizon, verify number of people on leave ≤ leave_capacity
     - **Validates: Requirements 4.5, 5.2**
     - File: `apps/solver/tests/test_home_leave_properties.py`
 
-  - [ ]* 15.3 Write property test for leave duration correctness (Python/Hypothesis)
+  - [-]* 15.3 Write property test for leave duration correctness (Python/Hypothesis)
     - **Property 5: Home-leave duration correctness**
     - For every home-leave assignment, verify (ends_at - starts_at) == leave_duration_hours
     - **Validates: Requirements 5.1**
     - File: `apps/solver/tests/test_home_leave_properties.py`
 
-  - [ ]* 15.4 Write property test for no leave-mission overlap (Python/Hypothesis)
+  - [-]* 15.4 Write property test for no leave-mission overlap (Python/Hypothesis)
     - **Property 6: No overlap between home-leave and mission assignments**
     - For every person, verify no mission assignment overlaps any home-leave assignment
     - **Validates: Requirements 5.3**
     - File: `apps/solver/tests/test_home_leave_properties.py`
 
-  - [ ]* 15.5 Write property test for no concurrent leave per person (Python/Hypothesis)
+  - [-]* 15.5 Write property test for no concurrent leave per person (Python/Hypothesis)
     - **Property 7: No concurrent home-leave for the same person**
     - For every person, verify no two home-leave assignments overlap in time
     - **Validates: Requirements 5.8**
     - File: `apps/solver/tests/test_home_leave_properties.py`
 
-  - [ ]* 15.6 Write property test for base-time ratio computation (Python/Hypothesis)
+  - [-]* 15.6 Write property test for base-time ratio computation (Python/Hypothesis)
     - **Property 8: Base-time ratio computation correctness**
     - For every person in metrics, verify base_time_ratio == total_base_hours / (total_base_hours + total_home_hours) rounded to 4 decimal places
     - **Validates: Requirements 6.1, 6.2**
     - File: `apps/solver/tests/test_home_leave_properties.py`
 
-  - [ ]* 15.7 Write property test for disabled config produces empty output (Python/Hypothesis)
+  - [-]* 15.7 Write property test for disabled config produces empty output (Python/Hypothesis)
     - **Property 9: Disabled home-leave config produces empty output**
     - When home_leave_config is absent or enabled=false, verify empty lists and null variance
     - **Validates: Requirements 7.2, 8.3**

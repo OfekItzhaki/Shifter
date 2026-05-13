@@ -15,12 +15,14 @@ function isHomeLeaveTask(taskTypeName: string): boolean {
 }
 
 /** Minimal shape required by the table — compatible with both ScheduleAssignment and AssignmentDto */
-type TableAssignment = Pick<ScheduleAssignment, "personName" | "taskTypeName" | "slotStartsAt" | "slotEndsAt">;
+type TableAssignment = Pick<ScheduleAssignment, "personName" | "taskTypeName" | "slotStartsAt" | "slotEndsAt"> & { personId?: string };
 
 interface ScheduleTable2DProps {
   assignments: TableAssignment[];
   currentUserName?: string;
   filterDate?: string;
+  /** Optional map of personId → role hex color for visual indicators */
+  roleColorMap?: Map<string, string | null>;
   /** Called when a cell is clicked — passes slotKey and taskName */
   onCellClick?: (slotKey: string, taskName: string, assignees: string[]) => void;
 }
@@ -38,13 +40,14 @@ function overlapsDate(a: TableAssignment, dateStr: string): boolean {
 }
 
 function formatTime(iso: string): string {
-  return new Date(iso).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+  return new Date(iso).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit", hour12: false });
 }
 
 export default function ScheduleTable2D({
   assignments,
   currentUserName,
   filterDate,
+  roleColorMap,
   onCellClick,
 }: ScheduleTable2DProps) {
   const t = useTranslations("schedule");
@@ -74,16 +77,16 @@ export default function ScheduleTable2D({
   const slots = Array.from(slotMap.entries())
     .sort(([, a], [, b]) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime());
 
-  // ── Build cell map: slotKey → taskName → [personName, ...] ────────────────
-  const cellMap = new Map<SlotKey, Map<string, string[]>>();
+  // ── Build cell map: slotKey → taskName → [{ name, personId }, ...] ────────────────
+  const cellMap = new Map<SlotKey, Map<string, { name: string; personId?: string }[]>>();
   for (const [key] of slots) cellMap.set(key, new Map());
   for (const a of visible) {
     const key: SlotKey = `${a.slotStartsAt}|${a.slotEndsAt}`;
     const taskCell = cellMap.get(key);
     if (!taskCell) continue;
-    const names = taskCell.get(a.taskTypeName) ?? [];
-    names.push(a.personName);
-    taskCell.set(a.taskTypeName, names);
+    const entries = taskCell.get(a.taskTypeName) ?? [];
+    entries.push({ name: a.personName, personId: a.personId });
+    taskCell.set(a.taskTypeName, entries);
   }
 
   // ── Determine which task column belongs to the current user ───────────────
@@ -124,38 +127,46 @@ export default function ScheduleTable2D({
                   {formatTime(endsAt)}
                 </td>
                 {taskNames.map(task => {
-                  const names = taskCell.get(task) ?? [];
+                  const entries = taskCell.get(task) ?? [];
                   const isUserTask = task === currentUserTaskName;
                   const isHomeLeave = isHomeLeaveTask(task);
                   const isClickable = !!onCellClick;
                   return (
                     <td
                       key={task}
-                      onClick={isClickable ? () => onCellClick(key, task, names) : undefined}
+                      onClick={isClickable ? () => onCellClick(key, task, entries.map(e => e.name)) : undefined}
                       className={[
                         "px-2.5 sm:px-4 py-2.5 sm:py-3 text-center align-top",
                         isHomeLeave ? "bg-emerald-50/60" : isUserTask ? "bg-blue-50/60" : "",
                         isClickable ? "cursor-pointer hover:bg-blue-50 transition-colors" : "",
                       ].filter(Boolean).join(" ")}
                     >
-                      {names.length === 0 ? (
+                      {entries.length === 0 ? (
                         <span className={isHomeLeave ? "text-emerald-300" : "text-slate-300"}>—</span>
                       ) : (
                         <div className="space-y-0.5">
-                          {names.map((name, i) => (
-                            <div
-                              key={i}
-                              className={`text-sm font-medium ${
-                                isHomeLeave
-                                  ? "text-emerald-700"
-                                  : name === currentUserName
-                                  ? "text-blue-700"
-                                  : "text-slate-800"
-                              }`}
-                            >
-                              {name}
-                            </div>
-                          ))}
+                          {entries.map((entry, i) => {
+                            const roleColor = entry.personId ? roleColorMap?.get(entry.personId) : undefined;
+                            return (
+                              <div
+                                key={i}
+                                className={`text-sm font-medium ${
+                                  isHomeLeave
+                                    ? "text-emerald-700"
+                                    : entry.name === currentUserName
+                                    ? "text-blue-700"
+                                    : "text-slate-800"
+                                }`}
+                                style={
+                                  roleColor
+                                    ? { borderLeft: `3px solid ${roleColor}`, paddingLeft: '6px' }
+                                    : undefined
+                                }
+                              >
+                                {entry.name}
+                              </div>
+                            );
+                          })}
                         </div>
                       )}
                     </td>

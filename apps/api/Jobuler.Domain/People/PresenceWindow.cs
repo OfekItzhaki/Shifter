@@ -23,12 +23,14 @@ public class PresenceWindow : Entity, ITenantScoped
     public DateTime EndsAt { get; private set; }
     public string? Note { get; private set; }
     public bool IsDerived { get; private set; }  // true = auto-derived from assignment
+    public Guid? UnavailabilityReasonId { get; private set; }
 
     private PresenceWindow() { }
 
     public static PresenceWindow CreateManual(
         Guid spaceId, Guid personId, PresenceState state,
-        DateTime startsAt, DateTime endsAt, string? note = null)
+        DateTime startsAt, DateTime endsAt, string? note = null,
+        Guid? unavailabilityReasonId = null)
     {
         if (state == PresenceState.OnMission)
             throw new InvalidOperationException("OnMission state must be derived, not manually set.");
@@ -43,7 +45,8 @@ public class PresenceWindow : Entity, ITenantScoped
             StartsAt = startsAt,
             EndsAt = endsAt,
             Note = note?.Trim(),
-            IsDerived = false
+            IsDerived = false,
+            UnavailabilityReasonId = unavailabilityReasonId
         };
     }
 

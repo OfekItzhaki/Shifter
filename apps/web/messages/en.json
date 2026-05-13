@@ -214,7 +214,11 @@
       "from": "From",
       "until": "Until",
       "unavailable": "Unavailable",
-      "errorAddPresence": "Error adding availability window"
+      "errorAddPresence": "Error adding availability window",
+      "reason": "Reason",
+      "selectReason": "Select reason...",
+      "customReason": "Custom",
+      "customReasonPlaceholder": "Enter custom reason..."
     },
     "qualifications_tab": {
       "title": "Qualifications",

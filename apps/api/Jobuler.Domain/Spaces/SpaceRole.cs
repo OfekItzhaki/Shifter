@@ -29,17 +29,19 @@ public class SpaceRole : AuditableEntity, ITenantScoped
     public bool IsDefault { get; private set; } = false;
     public Guid? CreatedByUserId { get; private set; }
     public RolePermissionLevel PermissionLevel { get; private set; } = RolePermissionLevel.View;
+    public string? Color { get; private set; }
 
     private SpaceRole() { }
 
     /// <summary>Creates a space-level role (not scoped to a group).</summary>
-    public static SpaceRole Create(Guid spaceId, string name, Guid createdByUserId, string? description = null) =>
+    public static SpaceRole Create(Guid spaceId, string name, Guid createdByUserId, string? description = null, string? color = null) =>
         new()
         {
             SpaceId = spaceId,
             Name = name.Trim(),
             Description = description?.Trim(),
-            CreatedByUserId = createdByUserId
+            CreatedByUserId = createdByUserId,
+            Color = color
         };
 
     /// <summary>Creates a group-scoped role visible only within that group.</summary>
@@ -47,7 +49,8 @@ public class SpaceRole : AuditableEntity, ITenantScoped
         Guid spaceId, Guid groupId, string name, Guid createdByUserId,
         string? description = null,
         RolePermissionLevel permissionLevel = RolePermissionLevel.View,
-        bool isDefault = false) =>
+        bool isDefault = false,
+        string? color = null) =>
         new()
         {
             SpaceId = spaceId,
@@ -56,14 +59,16 @@ public class SpaceRole : AuditableEntity, ITenantScoped
             Description = description?.Trim(),
             CreatedByUserId = createdByUserId,
             PermissionLevel = permissionLevel,
-            IsDefault = isDefault
+            IsDefault = isDefault,
+            Color = color
         };
 
-    public void Update(string name, string? description, RolePermissionLevel? permissionLevel = null)
+    public void Update(string name, string? description, RolePermissionLevel? permissionLevel = null, string? color = null)
     {
         Name = name.Trim();
         Description = description?.Trim();
         if (permissionLevel.HasValue) PermissionLevel = permissionLevel.Value;
+        Color = color;
         Touch();
     }
 

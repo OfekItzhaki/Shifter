@@ -2,6 +2,7 @@ using Jobuler.Application.Common;
 using Jobuler.Domain.Notifications;
 using Jobuler.Domain.People;
 using Jobuler.Domain.Scheduling;
+using Jobuler.Domain.Spaces;
 using Jobuler.Infrastructure.Persistence;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -89,13 +90,25 @@ public class PublishVersionCommandHandler : IRequestHandler<PublishVersionComman
             .Select(m => m.UserId)
             .ToListAsync(ct);
 
+        // Locale-aware notification text
+        var space = await _db.Spaces.AsNoTracking()
+            .FirstOrDefaultAsync(s => s.Id == req.SpaceId, ct);
+        var locale = space?.Locale ?? "he";
+
+        var (notifTitle, notifBody) = locale switch
+        {
+            "he" => ($"סידור חדש פורסם", $"גרסה {version.VersionNumber} פורסמה ומוכנה לצפייה."),
+            "ru" => ($"Новое расписание опубликовано", $"Версия {version.VersionNumber} опубликована и доступна для просмотра."),
+            _ => ($"New schedule published", $"Schedule version {version.VersionNumber} has been published and is ready to view.")
+        };
+
         foreach (var userId in memberUserIds)
         {
             _db.Notifications.Add(Notification.Create(
                 req.SpaceId, userId,
                 "schedule.published",
-                "New schedule published",
-                $"Schedule version {version.VersionNumber} has been published and is ready to view.",
+                notifTitle,
+                notifBody,
                 System.Text.Json.JsonSerializer.Serialize(new { versionId = req.VersionId })));
         }
         await _db.SaveChangesAsync(ct);

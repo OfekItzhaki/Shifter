@@ -33,7 +33,7 @@ export default function ScheduleTable({ assignments, filterDate, title }: Schedu
       a.taskTypeName.toLowerCase().includes(search.toLowerCase()));
 
   const formatTime = (iso: string) =>
-    new Date(iso).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+    new Date(iso).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit", hour12: false });
 
   return (
     <div className="space-y-3">

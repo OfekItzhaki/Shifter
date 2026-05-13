@@ -16,13 +16,24 @@ export default function StatsTab({ spaceId, groupId }: Props) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let cancelled = false;
     setLoading(true);
     setError(null);
+
+    const safetyTimeout = setTimeout(() => {
+      if (!cancelled) {
+        setLoading(false);
+        setError("Connection timeout — try again");
+      }
+    }, 15000);
+
     // Pass groupId so the backend only returns stats for this group's members
     getBurdenStats(spaceId, groupId)
-      .then(setStats)
-      .catch(() => setError("Error loading statistics"))
-      .finally(() => setLoading(false));
+      .then(data => { if (!cancelled) setStats(data); })
+      .catch(() => { if (!cancelled) setError("Error loading statistics"); })
+      .finally(() => { if (!cancelled) setLoading(false); clearTimeout(safetyTimeout); });
+
+    return () => { cancelled = true; clearTimeout(safetyTimeout); };
   }, [spaceId, groupId]);
 
   if (loading) {

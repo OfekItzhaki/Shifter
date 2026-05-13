@@ -807,16 +807,16 @@ export default function GroupDetailPage() {
   }
 
   // ── Group role handlers ──────────────────────────────────────────────────
-  async function handleCreateRole(name: string, description: string | null, permissionLevel = "view") {
+  async function handleCreateRole(name: string, description: string | null, permissionLevel = "view", color?: string | null) {
     if (!currentSpaceId) return;
-    await createGroupRole(currentSpaceId, groupId, { name, description, permissionLevel });
+    await createGroupRole(currentSpaceId, groupId, { name, description, permissionLevel, color });
     const updated = await getGroupRoles(currentSpaceId, groupId);
     setGroupRoles(updated);
   }
 
-  async function handleUpdateRole(roleId: string, name: string, description: string | null, permissionLevel = "view") {
+  async function handleUpdateRole(roleId: string, name: string, description: string | null, permissionLevel = "view", color?: string | null) {
     if (!currentSpaceId) return;
-    await updateGroupRole(currentSpaceId, groupId, roleId, { name, description, permissionLevel });
+    await updateGroupRole(currentSpaceId, groupId, roleId, { name, description, permissionLevel, color });
     const updated = await getGroupRoles(currentSpaceId, groupId);
     setGroupRoles(updated);
   }

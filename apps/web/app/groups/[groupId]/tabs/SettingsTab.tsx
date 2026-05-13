@@ -128,7 +128,7 @@ export default function SettingsTab({
             max={7}
             value={solverHorizon}
             onChange={e => onSolverHorizonChange(Number(e.target.value))}
-            className="w-full accent-blue-500"
+            className="w-full"
           />
           <div className="flex items-center gap-2">
             <label className="text-sm text-slate-600 whitespace-nowrap">{t("solverStartFrom")}</label>

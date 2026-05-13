@@ -1,6 +1,7 @@
 using Jobuler.Domain.People;
 using Jobuler.Infrastructure.Persistence;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 
 namespace Jobuler.Application.People.Commands;
 
@@ -8,7 +9,8 @@ public record AddPresenceWindowCommand(
     Guid SpaceId, Guid PersonId,
     string State,  // free_in_base | at_home
     DateTime StartsAt, DateTime EndsAt,
-    string? Note, Guid RequestingUserId) : IRequest<Guid>;
+    string? Note, Guid RequestingUserId,
+    Guid? ReasonId = null) : IRequest<Guid>;
 
 public class AddPresenceWindowCommandHandler
     : IRequestHandler<AddPresenceWindowCommand, Guid>
@@ -25,9 +27,23 @@ public class AddPresenceWindowCommandHandler
             _ => throw new ArgumentException($"Invalid presence state: {req.State}")
         };
 
+        // Validate ReasonId if provided
+        if (req.ReasonId.HasValue)
+        {
+            var reasonExists = await _db.UnavailabilityReasons.AsNoTracking()
+                .AnyAsync(r => r.Id == req.ReasonId.Value
+                    && r.SpaceId == req.SpaceId
+                    && r.IsActive, ct);
+
+            if (!reasonExists)
+                throw new KeyNotFoundException(
+                    $"Unavailability reason '{req.ReasonId.Value}' not found in space.");
+        }
+
         var window = PresenceWindow.CreateManual(
             req.SpaceId, req.PersonId, state,
-            req.StartsAt, req.EndsAt, req.Note);
+            req.StartsAt, req.EndsAt, req.Note,
+            req.ReasonId);
 
         _db.PresenceWindows.Add(window);
         await _db.SaveChangesAsync(ct);

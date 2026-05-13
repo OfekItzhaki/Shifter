@@ -15,6 +15,8 @@ export interface GroupTemplate {
     rulePayloadJson: string;
   }>;
   solverHorizonDays: number;
+  qualifications: Array<{ name: string; description?: string }>;
+  unavailabilityReasons: string[];
 }
 
 function futureDate(daysFromNow: number): string {
@@ -78,6 +80,14 @@ export const GROUP_TEMPLATES: GroupTemplate[] = [
       { scopeType: "group", severity: "hard", ruleType: "min_rest_hours", rulePayloadJson: '{"hours": 8}' },
       { scopeType: "group", severity: "soft", ruleType: "no_consecutive_burden", rulePayloadJson: '{"burden_level": "hated"}' },
     ],
+    qualifications: [
+      { name: "Combat Medic" },
+      { name: "Radio Operator" },
+      { name: "Driver" },
+      { name: "Commander" },
+      { name: "Sharpshooter" },
+    ],
+    unavailabilityReasons: ["חופשה", "מחלה", "אישי", "לימודים"],
   },
   {
     id: "restaurant",
@@ -128,6 +138,14 @@ export const GROUP_TEMPLATES: GroupTemplate[] = [
     constraints: [
       { scopeType: "group", severity: "hard", ruleType: "min_rest_hours", rulePayloadJson: '{"hours": 10}' },
     ],
+    qualifications: [
+      { name: "Bartender" },
+      { name: "Waiter" },
+      { name: "Cook" },
+      { name: "Shift Manager" },
+      { name: "Barista" },
+    ],
+    unavailabilityReasons: ["חופשה", "מחלה", "אישי", "לימודים"],
   },
   {
     id: "hospital",
@@ -179,6 +197,14 @@ export const GROUP_TEMPLATES: GroupTemplate[] = [
       { scopeType: "group", severity: "hard", ruleType: "min_rest_hours", rulePayloadJson: '{"hours": 12}' },
       { scopeType: "group", severity: "soft", ruleType: "no_consecutive_burden", rulePayloadJson: '{"burden_level": "hated"}' },
     ],
+    qualifications: [
+      { name: "Nurse" },
+      { name: "Doctor" },
+      { name: "Paramedic" },
+      { name: "Lab Technician" },
+      { name: "Receptionist" },
+    ],
+    unavailabilityReasons: ["חופשה", "מחלה", "אישי", "לימודים"],
   },
   {
     id: "security",
@@ -217,6 +243,14 @@ export const GROUP_TEMPLATES: GroupTemplate[] = [
     constraints: [
       { scopeType: "group", severity: "hard", ruleType: "min_rest_hours", rulePayloadJson: '{"hours": 10}' },
     ],
+    qualifications: [
+      { name: "Armed Guard" },
+      { name: "CCTV Operator" },
+      { name: "Patrol" },
+      { name: "Shift Supervisor" },
+      { name: "First Aid Certified" },
+    ],
+    unavailabilityReasons: ["חופשה", "מחלה", "אישי", "לימודים"],
   },
   {
     id: "custom",
@@ -228,5 +262,7 @@ export const GROUP_TEMPLATES: GroupTemplate[] = [
     solverHorizonDays: 7,
     tasks: [],
     constraints: [],
+    qualifications: [],
+    unavailabilityReasons: [],
   },
 ];

@@ -214,7 +214,11 @@
       "from": "С",
       "until": "До",
       "unavailable": "Недоступен",
-      "errorAddPresence": "Ошибка добавления окна доступности"
+      "errorAddPresence": "Ошибка добавления окна доступности",
+      "reason": "Причина",
+      "selectReason": "Выберите причину...",
+      "customReason": "Другое",
+      "customReasonPlaceholder": "Введите причину..."
     },
     "qualifications_tab": {
       "title": "Квалификации",

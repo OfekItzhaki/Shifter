@@ -4,4 +4,5 @@ ortools>=9.10.0
 pydantic>=2.7.0
 python-dotenv>=1.0.0
 pytest>=8.0.0
+hypothesis>=6.100.0
 ruff>=0.4.0
