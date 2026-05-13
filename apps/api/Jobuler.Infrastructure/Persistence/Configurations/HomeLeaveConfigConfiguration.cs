@@ -17,6 +17,7 @@ public class HomeLeaveConfigConfiguration : IEntityTypeConfiguration<HomeLeaveCo
         builder.Property(c => c.EligibilityThresholdHours).HasColumnName("eligibility_threshold_hours");
         builder.Property(c => c.LeaveCapacity).HasColumnName("leave_capacity");
         builder.Property(c => c.LeaveDurationHours).HasColumnName("leave_duration_hours");
+        builder.Property(c => c.BalanceValue).HasColumnName("balance_value");
         builder.Property(c => c.CreatedAt).HasColumnName("created_at");
         builder.Property(c => c.UpdatedAt).HasColumnName("updated_at");
 

@@ -17,6 +17,7 @@ public class HomeLeaveConfig : AuditableEntity, ITenantScoped
     public decimal EligibilityThresholdHours { get; private set; }
     public int LeaveCapacity { get; private set; }
     public decimal LeaveDurationHours { get; private set; }
+    public int BalanceValue { get; private set; } = 50;
 
     private HomeLeaveConfig() { }
 
@@ -26,12 +27,14 @@ public class HomeLeaveConfig : AuditableEntity, ITenantScoped
         decimal minRestHours,
         decimal eligibilityThresholdHours,
         int leaveCapacity,
-        decimal leaveDurationHours)
+        decimal leaveDurationHours,
+        int balanceValue = 50)
     {
         ValidateMinRestHours(minRestHours);
         ValidateEligibilityThresholdHours(eligibilityThresholdHours, minRestHours);
         ValidateLeaveCapacity(leaveCapacity);
         ValidateLeaveDurationHours(leaveDurationHours);
+        ValidateBalanceValue(balanceValue);
 
         return new HomeLeaveConfig
         {
@@ -40,7 +43,8 @@ public class HomeLeaveConfig : AuditableEntity, ITenantScoped
             MinRestHours = minRestHours,
             EligibilityThresholdHours = eligibilityThresholdHours,
             LeaveCapacity = leaveCapacity,
-            LeaveDurationHours = leaveDurationHours
+            LeaveDurationHours = leaveDurationHours,
+            BalanceValue = balanceValue
         };
     }
 
@@ -48,12 +52,19 @@ public class HomeLeaveConfig : AuditableEntity, ITenantScoped
         decimal minRestHours,
         decimal eligibilityThresholdHours,
         int leaveCapacity,
-        decimal leaveDurationHours)
+        decimal leaveDurationHours,
+        int? balanceValue = null)
     {
         ValidateMinRestHours(minRestHours);
         ValidateEligibilityThresholdHours(eligibilityThresholdHours, minRestHours);
         ValidateLeaveCapacity(leaveCapacity);
         ValidateLeaveDurationHours(leaveDurationHours);
+
+        if (balanceValue.HasValue)
+        {
+            ValidateBalanceValue(balanceValue.Value);
+            BalanceValue = balanceValue.Value;
+        }
 
         MinRestHours = minRestHours;
         EligibilityThresholdHours = eligibilityThresholdHours;
@@ -84,5 +95,11 @@ public class HomeLeaveConfig : AuditableEntity, ITenantScoped
     {
         if (value < 12 || value > 168)
             throw new InvalidOperationException("משך החופשה חייב להיות בין 12 ל-168 שעות.");
+    }
+
+    private static void ValidateBalanceValue(int value)
+    {
+        if (value < 0 || value > 100)
+            throw new InvalidOperationException("ערך האיזון חייב להיות בין 0 ל-100");
     }
 }

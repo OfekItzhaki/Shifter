@@ -6,37 +6,37 @@ Replace the abstract `priority_weight` concept with an intuitive 0–100 `balanc
 
 ## Tasks
 
-- [ ] 1. Database migration and domain entity update
-  - [ ] 1.1 Create database migration to add `balance_value` column
+- [x] 1. Database migration and domain entity update
+  - [x] 1.1 Create database migration to add `balance_value` column
     - Add `balance_value` integer column (NOT NULL, DEFAULT 50) to `home_leave_configs` table
     - Add CHECK constraint: `balance_value >= 0 AND balance_value <= 100`
     - Existing records receive default value 50 automatically
     - _Requirements: 9.1, 9.2, 9.3_
-  - [ ] 1.2 Update `HomeLeaveConfig` domain entity with `BalanceValue` property
+  - [x] 1.2 Update `HomeLeaveConfig` domain entity with `BalanceValue` property
     - Add `public int BalanceValue { get; private set; } = 50;` to `HomeLeaveConfig`
     - Update `Create` factory method to accept optional `int balanceValue = 50` parameter
     - Update `Update` method to accept optional `int? balanceValue` parameter
     - Add private `ValidateBalanceValue(int value)` method that throws `InvalidOperationException` if value is outside [0, 100]
     - _Requirements: 9.4, 9.5, 1.3_
-  - [ ] 1.3 Update EF Core configuration to map `BalanceValue`
+  - [x] 1.3 Update EF Core configuration to map `BalanceValue`
     - Add property mapping in `HomeLeaveConfigConfiguration` for `balance_value` column
     - _Requirements: 9.1_
 
-- [ ] 2. Backend: Update application layer commands and API
-  - [ ] 2.1 Update `UpsertHomeLeaveConfigCommand` and handler to support `balance_value`
+- [x] 2. Backend: Update application layer commands and API
+  - [x] 2.1 Update `UpsertHomeLeaveConfigCommand` and handler to support `balance_value`
     - Add optional `int? BalanceValue` parameter to the command record
     - Pass `balanceValue` to `HomeLeaveConfig.Create` / `HomeLeaveConfig.Update` in the handler
     - If `BalanceValue` is null in the request, retain the currently stored value (backward compat)
     - _Requirements: 2.2, 2.3, 2.4, 10.3_
-  - [ ] 2.2 Add FluentValidation rule for `BalanceValue`
+  - [x] 2.2 Add FluentValidation rule for `BalanceValue`
     - When not null, validate `BalanceValue` is between 0 and 100 inclusive
     - Return 400 with message "balance_value must be between 0 and 100"
     - _Requirements: 2.3_
-  - [ ] 2.3 Update `HomeLeaveConfigController` PUT endpoint to accept `balance_value`
+  - [x] 2.3 Update `HomeLeaveConfigController` PUT endpoint to accept `balance_value`
     - Add `BalanceValue` to the request DTO
     - Pass value to the command
     - _Requirements: 2.2, 2.6_
-  - [ ] 2.4 Update `HomeLeaveConfigController` GET endpoint to return `balance_value`
+  - [x] 2.4 Update `HomeLeaveConfigController` GET endpoint to return `balance_value`
     - Include `balance_value` in the response DTO
     - _Requirements: 2.5_
   - [ ]* 2.5 Write property test: balance value validation (FsCheck)
@@ -52,21 +52,21 @@ Replace the abstract `priority_weight` concept with an intuitive 0–100 `balanc
     - For any existing config with stored `balance_value` B, update without providing `balance_value`, verify stored value remains B
     - **Validates: Requirements 10.3**
 
-- [ ] 3. Checkpoint - Database and API verification
+- [x] 3. Checkpoint - Database and API verification
   - Ensure all tests pass, ask the user if questions arise.
   - Verify migration applies cleanly and GET/PUT endpoints include `balance_value`.
 
-- [ ] 4. Solver: Add `preview_mode` and `balance_value` weight mapping
-  - [ ] 4.1 Update solver Pydantic models for `balance_value` and `preview_mode`
+- [x] 4. Solver: Add `preview_mode` and `balance_value` weight mapping
+  - [x] 4.1 Update solver Pydantic models for `balance_value` and `preview_mode`
     - Add `balance_value: int = 50` to `HomeLeaveConfig` model
     - Add `preview_mode: bool = False` to `SolverInput` model
     - Add `solver_time_ms: int = 0` to `SolverOutput` model
     - _Requirements: 3.1, 8.1, 5.6_
-  - [ ] 4.2 Implement `balance_value × 4` weight mapping in home-leave preference
+  - [x] 4.2 Implement `balance_value × 4` weight mapping in home-leave preference
     - Replace hardcoded weight (200) with `balance_value * 4` in `add_home_leave_eligibility_preference`
     - When `balance_value` is absent/None, default to 50 (weight = 200) for backward compatibility
     - _Requirements: 3.2, 3.3, 3.4, 3.6_
-  - [ ] 4.3 Implement `preview_mode` solver behavior
+  - [x] 4.3 Implement `preview_mode` solver behavior
     - When `preview_mode` is `true`: set CP-SAT time limit to 3 seconds, `num_workers` to 1, disable solution logging
     - When `preview_mode` is `false` or absent: no behavioral change from current implementation
     - Record wall-clock solve time in `solver_time_ms` output field
@@ -84,31 +84,31 @@ Replace the abstract `priority_weight` concept with an intuitive 0–100 `balanc
     - Verify solver termination maps correctly to "optimal", "feasible", or "no_solution"
     - **Validates: Requirements 5.5**
 
-- [ ] 5. Checkpoint - Solver verification
+- [x] 5. Checkpoint - Solver verification
   - Ensure all tests pass, ask the user if questions arise.
   - Verify solver respects `preview_mode` and `balance_value` weight mapping.
 
-- [ ] 6. Backend: Preview endpoint and solver payload integration
-  - [ ] 6.1 Create `PreviewHomeLeaveCommand` and `HomeLeavePreviewResult` DTO
+- [x] 6. Backend: Preview endpoint and solver payload integration
+  - [x] 6.1 Create `PreviewHomeLeaveCommand` and `HomeLeavePreviewResult` DTO
     - Define command record with `SpaceId`, `GroupId`, `BalanceValue` parameters
     - Define `HomeLeavePreviewResponse` record with `Status`, `PeopleHomeCount`, `PeopleAtBaseCount`, `TotalHomeLeaveSlots`, `CoverageGaps`, `FairnessSpread`, `SolverTimeMs`
     - Define `CoverageGapDto` record with `StartsAt`, `EndsAt`, `AvailableCount`
     - _Requirements: 5.1, 5.2, 5.5, 5.6_
-  - [ ] 6.2 Implement `PreviewHomeLeaveHandler`
+  - [x] 6.2 Implement `PreviewHomeLeaveHandler`
     - Validate group exists, is closed-base, and has home-leave config
     - Build solver payload with overridden `balance_value` and `preview_mode = true`
     - Call solver synchronously via `ISolverClient.SolveAsync` with 5-second HTTP timeout
     - Transform `SolverOutput` into `HomeLeavePreviewResponse` (counts, gaps, fairness)
     - On timeout or network error, return `status: "no_solution"` with `solver_time_ms: 0`
     - _Requirements: 4.2, 4.3, 4.4, 4.5, 4.6, 4.8, 4.9_
-  - [ ] 6.3 Add `BuildPreviewAsync` method to `SolverPayloadNormalizer`
+  - [x] 6.3 Add `BuildPreviewAsync` method to `SolverPayloadNormalizer`
     - Build payload identical to normal run but override `balance_value` with provided value
     - Set `preview_mode = true` in the payload
     - _Requirements: 4.2_
-  - [ ] 6.4 Update `SolverPayloadNormalizer.BuildAsync` to include `balance_value`
+  - [x] 6.4 Update `SolverPayloadNormalizer.BuildAsync` to include `balance_value`
     - Include stored `balance_value` from `HomeLeaveConfig` in the `HomeLeaveConfigDto`
     - _Requirements: 3.1_
-  - [ ] 6.5 Create preview controller endpoint
+  - [x] 6.5 Create preview controller endpoint
     - Add `POST /spaces/{spaceId}/groups/{groupId}/home-leave-preview` to `HomeLeaveConfigController`
     - Require `constraints.manage` permission
     - Accept `HomeLeavePreviewRequest` body with `BalanceValue`
@@ -128,19 +128,19 @@ Replace the abstract `priority_weight` concept with an intuitive 0–100 `balanc
     - For any set of assignments and group config, verify gaps are reported when available people < N - C
     - **Validates: Requirements 5.2**
 
-- [ ] 7. Checkpoint - Preview endpoint verification
+- [x] 7. Checkpoint - Preview endpoint verification
   - Ensure all tests pass, ask the user if questions arise.
   - Verify preview endpoint returns correct impact data for different `balance_value` inputs.
 
-- [ ] 8. Frontend: Slider component and preview integration
-  - [ ] 8.1 Create `BalanceSlider` component
+- [x] 8. Frontend: Slider component and preview integration
+  - [x] 8.1 Create `BalanceSlider` component
     - Horizontal range input accepting values 0–100
     - Left label: "יותר אנשים בבסיס", right label: "יותר אנשים בבית"
     - Display current numeric value adjacent to the slider track
     - Keyboard accessible: arrow keys ±1, Page Up/Down ±10
     - Accept `value` and `onChange` props; default to 50 when no stored value
     - _Requirements: 1.1, 1.2, 1.3, 1.5, 1.6, 1.7_
-  - [ ] 8.2 Create `useHomeLeavePreview` custom hook
+  - [x] 8.2 Create `useHomeLeavePreview` custom hook
     - Accept `spaceId`, `groupId`, `balanceValue` parameters
     - Debounce requests with 500ms interval
     - Cancel pending requests when a new value arrives
@@ -148,7 +148,7 @@ Replace the abstract `priority_weight` concept with an intuitive 0–100 `balanc
     - Return `{ data, isLoading, error }` state
     - Call `POST /spaces/{spaceId}/groups/{groupId}/home-leave-preview`
     - _Requirements: 6.1, 6.2, 6.3, 6.7_
-  - [ ] 8.3 Create `ImpactSummary` component
+  - [x] 8.3 Create `ImpactSummary` component
     - Display metrics in Hebrew: "אנשים בבית", "אנשים בבסיס", "סה״כ חופשות", "פער הוגנות"
     - Horizontal bar visualization showing people home vs. at base ratio
     - Show "כיסוי מלא" when zero coverage gaps
@@ -159,7 +159,7 @@ Replace the abstract `priority_weight` concept with an intuitive 0–100 `balanc
     - Display loading indicator while preview is in flight
     - Show error message "לא ניתן לטעון תצוגה מקדימה" on failure, retain last result
     - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5, 7.6, 5.3, 5.4, 6.4, 6.5_
-  - [ ] 8.4 Integrate slider and impact summary into home-leave configuration panel
+  - [x] 8.4 Integrate slider and impact summary into home-leave configuration panel
     - Add `BalanceSlider` to the home-leave config section (replacing `priority_weight` input)
     - Place `ImpactSummary` directly below the slider
     - Wire slider `onChange` to `useHomeLeavePreview` hook
@@ -167,13 +167,13 @@ Replace the abstract `priority_weight` concept with an intuitive 0–100 `balanc
     - On save, include `balance_value` in the PUT request body
     - Retain existing config fields (`min_rest_hours`, `eligibility_threshold_hours`, `leave_capacity`, `leave_duration_hours`) alongside the slider
     - _Requirements: 1.4, 6.1, 6.6, 10.4_
-  - [ ] 8.5 Update API client types and functions
+  - [x] 8.5 Update API client types and functions
     - Add `balance_value` to `HomeLeaveConfigDto` interface
     - Add `createHomeLeavePreview` API function
     - Update `updateHomeLeaveConfig` payload type to include optional `balance_value`
     - _Requirements: 2.2, 2.5, 4.1_
 
-- [ ] 9. Final checkpoint - Full integration verification
+- [x] 9. Final checkpoint - Full integration verification
   - Ensure all tests pass, ask the user if questions arise.
   - Verify slider renders, preview updates on slider change, and save persists the value.
 

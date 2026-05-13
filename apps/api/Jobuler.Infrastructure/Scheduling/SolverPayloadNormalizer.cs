@@ -95,7 +95,8 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
                     MinRestHours: (double)hlConfig.MinRestHours,
                     EligibilityThresholdHours: (double)hlConfig.EligibilityThresholdHours,
                     LeaveCapacity: hlConfig.LeaveCapacity,
-                    LeaveDurationHours: (double)hlConfig.LeaveDurationHours);
+                    LeaveDurationHours: (double)hlConfig.LeaveDurationHours,
+                    BalanceValue: hlConfig.BalanceValue);
             }
             else
             {
@@ -443,6 +444,38 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
             lockedSlotIds,
             homeLeaveConfigDto,
             taskRotationDto);
+    }
+
+    public async Task<SolverInputDto> BuildPreviewAsync(
+        Guid spaceId, Guid groupId, int balanceValue, CancellationToken ct)
+    {
+        // Build the full payload using the normal path (preview uses a synthetic runId)
+        var payload = await BuildAsync(
+            spaceId,
+            runId: Guid.NewGuid(),
+            triggerMode: "preview",
+            baselineVersionId: null,
+            groupId: groupId,
+            startTime: null,
+            ct: ct);
+
+        // Override balance_value in the home-leave config
+        if (payload.HomeLeaveConfig is not null)
+        {
+            payload = payload with
+            {
+                HomeLeaveConfig = payload.HomeLeaveConfig with { BalanceValue = balanceValue },
+                PreviewMode = true
+            };
+        }
+        else
+        {
+            // Even if no config was built (shouldn't happen for a valid closed-base group),
+            // still set preview mode
+            payload = payload with { PreviewMode = true };
+        }
+
+        return payload;
     }
 
     private static Dictionary<string, object> DeserializePayload(string json)

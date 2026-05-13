@@ -325,9 +325,13 @@ def add_home_leave_eligibility_preference(
     if max_start_hour < 0:
         return []
 
-    # Weight for the eligibility preference — moderate, below coverage (1000)
-    # and below fairness (500), but meaningful enough to encourage sending people home
-    ELIGIBILITY_WEIGHT = 200
+    # Weight for the eligibility preference — derived from balance_value (0–100).
+    # Formula: weight = balance_value × 4, giving range [0, 400].
+    # Default balance_value is 50 → weight 200 (backward compatible with previous hardcoded value).
+    # When balance_value is 0, weight is 0 (preference disabled).
+    # When balance_value is 100, weight is 400 (maximum preference).
+    balance = config.balance_value if config.balance_value is not None else 50
+    ELIGIBILITY_WEIGHT = balance * 4
 
     # For each person, determine the earliest hour at which they become eligible
     # based on their last mission end (from presence windows or slot assignments).

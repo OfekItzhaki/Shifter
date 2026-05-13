@@ -9,7 +9,8 @@ public record HomeLeaveConfigDto(
     decimal MinRestHours,
     decimal EligibilityThresholdHours,
     int LeaveCapacity,
-    decimal LeaveDurationHours);
+    decimal LeaveDurationHours,
+    int BalanceValue);
 
 public record GetHomeLeaveConfigQuery(Guid SpaceId, Guid GroupId) : IRequest<HomeLeaveConfigDto>;
 
@@ -31,7 +32,8 @@ public class GetHomeLeaveConfigQueryHandler : IRequestHandler<GetHomeLeaveConfig
                 MinRestHours: 8,
                 EligibilityThresholdHours: 24,
                 LeaveCapacity: 1,
-                LeaveDurationHours: 48);
+                LeaveDurationHours: 48,
+                BalanceValue: 50);
         }
 
         return new HomeLeaveConfigDto(
@@ -39,6 +41,7 @@ public class GetHomeLeaveConfigQueryHandler : IRequestHandler<GetHomeLeaveConfig
             MinRestHours: config.MinRestHours,
             EligibilityThresholdHours: config.EligibilityThresholdHours,
             LeaveCapacity: config.LeaveCapacity,
-            LeaveDurationHours: config.LeaveDurationHours);
+            LeaveDurationHours: config.LeaveDurationHours,
+            BalanceValue: config.BalanceValue);
     }
 }

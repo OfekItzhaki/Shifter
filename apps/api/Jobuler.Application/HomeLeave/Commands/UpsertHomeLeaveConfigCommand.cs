@@ -14,7 +14,8 @@ public record UpsertHomeLeaveConfigCommand(
     decimal EligibilityThresholdHours,
     int LeaveCapacity,
     decimal LeaveDurationHours,
-    Guid RequestingUserId) : IRequest<HomeLeaveConfigResult>;
+    Guid RequestingUserId,
+    int? BalanceValue = null) : IRequest<HomeLeaveConfigResult>;
 
 public record HomeLeaveConfigResult(
     Guid Id,
@@ -23,7 +24,8 @@ public record HomeLeaveConfigResult(
     decimal MinRestHours,
     decimal EligibilityThresholdHours,
     int LeaveCapacity,
-    decimal LeaveDurationHours);
+    decimal LeaveDurationHours,
+    int BalanceValue);
 
 public class UpsertHomeLeaveConfigCommandHandler : IRequestHandler<UpsertHomeLeaveConfigCommand, HomeLeaveConfigResult>
 {
@@ -74,7 +76,8 @@ public class UpsertHomeLeaveConfigCommandHandler : IRequestHandler<UpsertHomeLea
                 req.MinRestHours,
                 req.EligibilityThresholdHours,
                 req.LeaveCapacity,
-                req.LeaveDurationHours);
+                req.LeaveDurationHours,
+                req.BalanceValue ?? 50);
 
             _db.HomeLeaveConfigs.Add(config);
         }
@@ -84,7 +87,8 @@ public class UpsertHomeLeaveConfigCommandHandler : IRequestHandler<UpsertHomeLea
                 req.MinRestHours,
                 req.EligibilityThresholdHours,
                 req.LeaveCapacity,
-                req.LeaveDurationHours);
+                req.LeaveDurationHours,
+                req.BalanceValue);
         }
 
         await _db.SaveChangesAsync(ct);
@@ -96,6 +100,7 @@ public class UpsertHomeLeaveConfigCommandHandler : IRequestHandler<UpsertHomeLea
             config.MinRestHours,
             config.EligibilityThresholdHours,
             config.LeaveCapacity,
-            config.LeaveDurationHours);
+            config.LeaveDurationHours,
+            config.BalanceValue);
     }
 }

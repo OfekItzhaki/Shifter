@@ -23,6 +23,7 @@ public class SolverOutputDto
     [JsonPropertyName("home_leave_assignments")] public List<HomeLeaveAssignmentDto> HomeLeaveAssignments { get; init; } = new();
     [JsonPropertyName("home_leave_metrics")]     public List<HomeLeaveMetricDto> HomeLeaveMetrics { get; init; } = new();
     [JsonPropertyName("fairness_variance")]      public double? FairnessVariance { get; init; }
+    [JsonPropertyName("solver_time_ms")]         public int SolverTimeMs { get; init; }
 }
 
 public class AssignmentResultDto

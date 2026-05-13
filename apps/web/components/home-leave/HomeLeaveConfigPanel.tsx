@@ -2,12 +2,16 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { apiClient } from "@/lib/api/client";
+import BalanceSlider from "./BalanceSlider";
+import ImpactSummary from "./ImpactSummary";
+import { useHomeLeavePreview } from "@/hooks/useHomeLeavePreview";
 
 export interface HomeLeaveConfigValues {
   minRestHours: number;
   eligibilityThresholdHours: number;
   leaveCapacity: number;
   leaveDurationHours: number;
+  balanceValue: number;
 }
 
 const DEFAULTS: HomeLeaveConfigValues = {
@@ -15,6 +19,7 @@ const DEFAULTS: HomeLeaveConfigValues = {
   eligibilityThresholdHours: 24,
   leaveCapacity: 1,
   leaveDurationHours: 48,
+  balanceValue: 50,
 };
 
 interface HomeLeaveConfigPanelProps {
@@ -53,6 +58,7 @@ export default function HomeLeaveConfigPanel({
         eligibilityThresholdHours: data.eligibilityThresholdHours ?? DEFAULTS.eligibilityThresholdHours,
         leaveCapacity: data.leaveCapacity ?? DEFAULTS.leaveCapacity,
         leaveDurationHours: data.leaveDurationHours ?? DEFAULTS.leaveDurationHours,
+        balanceValue: data.balanceValue ?? DEFAULTS.balanceValue,
       });
     } catch {
       // If fetch fails, use defaults
@@ -67,6 +73,14 @@ export default function HomeLeaveConfigPanel({
       fetchConfig();
     }
   }, [isClosedBase, fetchConfig]);
+
+  // Preview hook — fires when balanceValue changes (debounced 500ms)
+  // Must be called unconditionally (React hooks rules)
+  const preview = useHomeLeavePreview(
+    isClosedBase && !loading ? spaceId : null,
+    isClosedBase && !loading ? groupId : null,
+    isClosedBase && !loading ? values.balanceValue : null
+  );
 
   // Hide panel when not a closed base
   if (!isClosedBase) return null;
@@ -99,6 +113,7 @@ export default function HomeLeaveConfigPanel({
           eligibilityThresholdHours: values.eligibilityThresholdHours,
           leaveCapacity: values.leaveCapacity,
           leaveDurationHours: values.leaveDurationHours,
+          balanceValue: values.balanceValue,
         }
       );
       setSaved(true);
@@ -144,6 +159,24 @@ export default function HomeLeaveConfigPanel({
   return (
     <div className="bg-white border border-slate-200 rounded-2xl p-5 space-y-3">
       <h3 className="text-sm font-semibold text-slate-700">הגדרות חופשות</h3>
+
+      {/* Balance Slider + Impact Preview */}
+      <div className="space-y-3 pb-3 border-b border-slate-100">
+        <label className="block text-sm text-slate-600 font-medium">איזון חופשות</label>
+        <BalanceSlider
+          value={values.balanceValue}
+          onChange={(v) => {
+            setValues(prev => ({ ...prev, balanceValue: v }));
+            setSaved(false);
+          }}
+          disabled={saving}
+        />
+        <ImpactSummary
+          data={preview.data}
+          isLoading={preview.isLoading}
+          error={preview.error}
+        />
+      </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Min rest hours */}

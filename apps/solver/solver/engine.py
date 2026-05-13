@@ -32,6 +32,7 @@ from solver.objectives import build_objective
 from solver.i18n import t
 from datetime import datetime, timezone, timedelta
 import os
+import time
 import logging
 
 logger = logging.getLogger(__name__)
@@ -203,8 +204,17 @@ def solve(input: SolverInput) -> SolverOutput:
 
     model.minimize(sum(penalties))
 
+    # ── Preview mode configuration ───────────────────────────────────────────
+    if input.preview_mode:
+        solver.parameters.max_time_in_seconds = 3.0
+        solver.parameters.num_workers = 1
+        solver.parameters.log_search_progress = False
+
     # ── Solve ─────────────────────────────────────────────────────────────────
+    start_time = time.time()
     status = solver.solve(model)
+    solver_time_ms = int((time.time() - start_time) * 1000)
+
     timed_out = status == cp_model.UNKNOWN
     feasible = status in (cp_model.OPTIMAL, cp_model.FEASIBLE)
 
@@ -308,6 +318,7 @@ def solve(input: SolverInput) -> SolverOutput:
         home_leave_assignments=home_leave_assignments,
         home_leave_metrics=home_leave_metrics,
         fairness_variance=fairness_variance,
+        solver_time_ms=solver_time_ms,
     )
 
 

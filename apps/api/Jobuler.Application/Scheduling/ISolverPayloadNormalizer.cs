@@ -18,4 +18,16 @@ public interface ISolverPayloadNormalizer
         Guid? groupId = null,
         DateTime? startTime = null,
         CancellationToken ct = default);
+
+    /// <summary>
+    /// Builds a solver payload identical to a normal run but overrides the
+    /// <see cref="HomeLeaveConfigDto.BalanceValue"/> with the provided value
+    /// and sets <see cref="SolverInputDto.PreviewMode"/> to true.
+    /// Used for lightweight preview solver runs.
+    /// </summary>
+    Task<SolverInputDto> BuildPreviewAsync(
+        Guid spaceId,
+        Guid groupId,
+        int balanceValue,
+        CancellationToken ct);
 }

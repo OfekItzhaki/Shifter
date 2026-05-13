@@ -28,5 +28,10 @@ public class UpsertHomeLeaveConfigValidator : AbstractValidator<UpsertHomeLeaveC
         RuleFor(x => x.LeaveDurationHours)
             .InclusiveBetween(12, 168)
             .WithMessage("leave_duration_hours must be between 12 and 168 inclusive.");
+
+        RuleFor(x => x.BalanceValue)
+            .InclusiveBetween(0, 100)
+            .When(x => x.BalanceValue.HasValue)
+            .WithMessage("ערך האיזון חייב להיות בין 0 ל-100");
     }
 }

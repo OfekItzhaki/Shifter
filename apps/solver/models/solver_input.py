@@ -99,6 +99,7 @@ class HomeLeaveConfig(BaseModel):
     eligibility_threshold_hours: float
     leave_capacity: int
     leave_duration_hours: float
+    balance_value: int = 50  # 0–100, maps to weight 0–400
 
 
 class TaskRotation(BaseModel):
@@ -125,6 +126,7 @@ class SolverInput(BaseModel):
     fairness_counters: list[FairnessCounters]
     locked_slot_ids: Optional[list[str]] = []  # slot IDs with manual overrides — solver must not reassign these
     home_leave_config: Optional[HomeLeaveConfig] = None
+    preview_mode: bool = False  # when True, solver uses reduced time limit and single worker
     task_rotation: Optional[list[TaskRotation]] = None  # rotation data for army-template groups
 
     @property

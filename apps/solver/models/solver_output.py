@@ -62,3 +62,4 @@ class SolverOutput(BaseModel):
     home_leave_assignments: list[HomeLeaveAssignment] = []
     home_leave_metrics: list[HomeLeaveMetric] = []
     fairness_variance: Optional[float] = None
+    solver_time_ms: int = 0  # wall-clock time spent solving

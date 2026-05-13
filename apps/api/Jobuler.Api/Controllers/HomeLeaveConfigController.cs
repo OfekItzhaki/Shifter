@@ -1,5 +1,7 @@
+using Jobuler.Application.Common;
 using Jobuler.Application.HomeLeave.Commands;
 using Jobuler.Application.HomeLeave.Queries;
+using Jobuler.Domain.Spaces;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -13,10 +15,12 @@ namespace Jobuler.Api.Controllers;
 public class HomeLeaveConfigController : ControllerBase
 {
     private readonly IMediator _mediator;
+    private readonly IPermissionService _permissions;
 
-    public HomeLeaveConfigController(IMediator mediator)
+    public HomeLeaveConfigController(IMediator mediator, IPermissionService permissions)
     {
         _mediator = mediator;
+        _permissions = permissions;
     }
 
     private Guid CurrentUserId =>
@@ -44,8 +48,26 @@ public class HomeLeaveConfigController : ControllerBase
             req.EligibilityThresholdHours,
             req.LeaveCapacity,
             req.LeaveDurationHours,
-            CurrentUserId), ct);
+            CurrentUserId,
+            req.BalanceValue), ct);
 
+        return Ok(result);
+    }
+
+    /// <summary>Preview the impact of a balance_value change without persisting.</summary>
+    [HttpPost("~/spaces/{spaceId:guid}/groups/{groupId:guid}/home-leave-preview")]
+    public async Task<IActionResult> Preview(
+        Guid spaceId, Guid groupId,
+        [FromBody] HomeLeavePreviewRequest req,
+        CancellationToken ct)
+    {
+        await _permissions.RequirePermissionAsync(CurrentUserId, spaceId, Permissions.ConstraintsManage, ct);
+
+        if (req.BalanceValue < 0 || req.BalanceValue > 100)
+            return BadRequest(new { message = "balance_value must be between 0 and 100" });
+
+        var result = await _mediator.Send(new PreviewHomeLeaveCommand(
+            spaceId, groupId, req.BalanceValue, CurrentUserId), ct);
         return Ok(result);
     }
 
@@ -76,4 +98,7 @@ public record UpsertHomeLeaveConfigRequest(
     decimal MinRestHours,
     decimal EligibilityThresholdHours,
     int LeaveCapacity,
-    decimal LeaveDurationHours);
+    decimal LeaveDurationHours,
+    int? BalanceValue = null);
+
+public record HomeLeavePreviewRequest(int BalanceValue);

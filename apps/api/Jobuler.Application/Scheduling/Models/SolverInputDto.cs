@@ -25,7 +25,8 @@ public record SolverInputDto(
     List<FairnessCountersDto> FairnessCounters,
     List<string>? LockedSlotIds = null,
     HomeLeaveConfigDto? HomeLeaveConfig = null,
-    List<TaskRotationDto>? TaskRotation = null);
+    List<TaskRotationDto>? TaskRotation = null,
+    [property: JsonPropertyName("preview_mode")] bool PreviewMode = false);
 
 public record StabilityWeightsDto(
     [property: JsonPropertyName("today_tomorrow")] double TodayTomorrow,
@@ -102,7 +103,8 @@ public record HomeLeaveConfigDto(
     [property: JsonPropertyName("min_rest_hours")]             double MinRestHours,
     [property: JsonPropertyName("eligibility_threshold_hours")] double EligibilityThresholdHours,
     [property: JsonPropertyName("leave_capacity")]             int LeaveCapacity,
-    [property: JsonPropertyName("leave_duration_hours")]       double LeaveDurationHours);
+    [property: JsonPropertyName("leave_duration_hours")]       double LeaveDurationHours,
+    [property: JsonPropertyName("balance_value")]              int BalanceValue = 50);
 
 public record TaskRotationDto(
     [property: JsonPropertyName("person_id")]                  string PersonId,
