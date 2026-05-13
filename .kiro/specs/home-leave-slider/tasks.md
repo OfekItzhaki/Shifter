@@ -39,15 +39,15 @@ Replace the abstract `priority_weight` concept with an intuitive 0–100 `balanc
   - [x] 2.4 Update `HomeLeaveConfigController` GET endpoint to return `balance_value`
     - Include `balance_value` in the response DTO
     - _Requirements: 2.5_
-  - [ ]* 2.5 Write property test: balance value validation (FsCheck)
+  - [x]* 2.5 Write property test: balance value validation (FsCheck)
     - **Property 1: Balance value validation**
     - Generate random integers and verify the domain accepts only values in [0, 100]
     - **Validates: Requirements 1.3, 2.3, 9.3, 9.5**
-  - [ ]* 2.6 Write property test: persistence round-trip (FsCheck)
+  - [x]* 2.6 Write property test: persistence round-trip (FsCheck)
     - **Property 4: Balance value persistence round-trip**
     - Create a `HomeLeaveConfig` with a random valid `balance_value`, persist and read back, verify equality
     - **Validates: Requirements 2.4, 2.5**
-  - [ ]* 2.7 Write property test: backward compatibility — omit retains stored value (FsCheck)
+  - [x]* 2.7 Write property test: backward compatibility — omit retains stored value (FsCheck)
     - **Property 9: Backward compatibility — omitting balance_value preserves stored value**
     - For any existing config with stored `balance_value` B, update without providing `balance_value`, verify stored value remains B
     - **Validates: Requirements 10.3**
@@ -71,15 +71,15 @@ Replace the abstract `priority_weight` concept with an intuitive 0–100 `balanc
     - When `preview_mode` is `false` or absent: no behavioral change from current implementation
     - Record wall-clock solve time in `solver_time_ms` output field
     - _Requirements: 8.2, 8.3, 8.4, 8.5, 8.6, 8.7_
-  - [ ]* 4.4 Write property test: linear weight mapping (Hypothesis)
+  - [x]* 4.4 Write property test: linear weight mapping (Hypothesis)
     - **Property 2: Linear weight mapping**
     - For any `balance_value` in [0, 100], verify weight equals `balance_value × 4`
     - **Validates: Requirements 3.2, 3.3, 3.4**
-  - [ ]* 4.5 Write property test: hard constraints invariant (Hypothesis)
+  - [x]* 4.5 Write property test: hard constraints invariant (Hypothesis)
     - **Property 3: Hard constraints invariant under balance_value changes**
     - For any two distinct `balance_value` settings, verify the set of hard constraints is identical
     - **Validates: Requirements 3.5**
-  - [ ]* 4.6 Write property test: solver status mapping (Hypothesis)
+  - [x]* 4.6 Write property test: solver status mapping (Hypothesis)
     - **Property 8: Solver status mapping**
     - Verify solver termination maps correctly to "optimal", "feasible", or "no_solution"
     - **Validates: Requirements 5.5**
@@ -115,15 +115,15 @@ Replace the abstract `priority_weight` concept with an intuitive 0–100 `balanc
     - Validate `BalanceValue` is in [0, 100]
     - Dispatch `PreviewHomeLeaveCommand` via MediatR
     - _Requirements: 4.1, 4.7, 4.9_
-  - [ ]* 6.6 Write property test: solver payload includes correct balance_value (FsCheck)
+  - [x]* 6.6 Write property test: solver payload includes correct balance_value (FsCheck)
     - **Property 5: Solver payload includes correct balance_value**
     - For any stored `balance_value` B, verify payload contains `balance_value == B`; for preview override P, verify payload contains `balance_value == P`
     - **Validates: Requirements 3.1, 4.2**
-  - [ ]* 6.7 Write property test: preview result transformation completeness (FsCheck)
+  - [x]* 6.7 Write property test: preview result transformation completeness (FsCheck)
     - **Property 6: Preview result transformation completeness**
     - For any valid `SolverOutput`, verify `people_home_count`, `people_at_base_count`, and `total_home_leave_slots` are computed correctly
     - **Validates: Requirements 5.1**
-  - [ ]* 6.8 Write property test: coverage gap calculation (FsCheck)
+  - [x]* 6.8 Write property test: coverage gap calculation (FsCheck)
     - **Property 7: Coverage gap calculation correctness**
     - For any set of assignments and group config, verify gaps are reported when available people < N - C
     - **Validates: Requirements 5.2**
