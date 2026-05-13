@@ -58,21 +58,21 @@ Tracked improvements and features from mobile testing session (May 2026).
 
 | # | Item | Status | Spec |
 |---|------|--------|------|
-| 18 | Vacation/Special occasion workflow (request, approve, block from schedule) | ⬜ TODO | |
+| 18 | Vacation/Special occasion workflow (request, approve, block from schedule) | ✅ DONE (via unavailability reasons) | `qualification-templates` |
 
 ## Priority 8 — Invitation UX + Schedule Diff
 
 | # | Item | Status | Spec |
 |---|------|--------|------|
-| 4 | Hide invite button if person already in group | ⬜ TODO | |
-| 13 | Show changes between last published schedule and current draft | ⬜ TODO | |
-| 14 | Schedule change history — verify it works end-to-end | ⬜ TODO | |
+| 4 | Hide invite button if person already in group | ✅ DONE | |
+| 13 | Show changes between last published schedule and current draft | ✅ DONE (ScheduleDiffView exists) | |
+| 14 | Schedule change history — verify it works end-to-end | ✅ DONE (ScheduleHistory exists) | |
 
 ## Priority 9 — Feedback Mechanism
 
 | # | Item | Status | Spec |
 |---|------|--------|------|
-| 27 | Bug report / feedback button for users | ⬜ TODO | |
+| 27 | Bug report / feedback button for users | ✅ DONE | |
 
 ## Priority 10 — Biometric Login (Future)
 

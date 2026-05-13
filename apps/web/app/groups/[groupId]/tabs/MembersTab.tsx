@@ -114,7 +114,9 @@ export default function MembersTab({
                 <button onClick={() => onSelectMember(m)} className="text-xs text-blue-600 hover:underline">{t("details")}</button>
                 {isAdmin && !m.isOwner && (
                   <>
-                    <button onClick={() => onOpenInvite(m.personId)} className="text-xs text-slate-500 hover:text-slate-700 border border-slate-200 px-2 py-1 rounded-lg hover:bg-slate-50 transition-colors">{t("invite")}</button>
+                    {!m.linkedUserId && (
+                      <button onClick={() => onOpenInvite(m.personId)} className="text-xs text-slate-500 hover:text-slate-700 border border-slate-200 px-2 py-1 rounded-lg hover:bg-slate-50 transition-colors">{t("invite")}</button>
+                    )}
                     {confirmRemove === m.personId ? (
                       <>
                         <span className="text-xs text-slate-600">{t("permanentRemove")}</span>
