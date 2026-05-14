@@ -453,17 +453,16 @@ export default function GroupDetailPage() {
     try {
       await apiClient.post(`/spaces/${spaceId}/schedule-versions/${draftVersion.id}/publish`, {});
       setDraftVersion(null);
-      setScheduleData(null);
-      // Reload schedule after publish
-      const [currentRes, draftRes] = await Promise.all([
-        apiClient.get<{ version: { id: string; status: string }; assignments: ScheduleAssignment[] }>(
-          `/spaces/${spaceId}/schedule-versions/current`
-        ).catch(() => null),
+      // Small delay to ensure DB consistency after publish
+      await new Promise(r => setTimeout(r, 500));
+      // Reload schedule using the same function the schedule tab uses
+      const [groupAssignments, draftRes] = await Promise.all([
+        getGroupSchedule(spaceId, groupId).catch(() => [] as ScheduleAssignment[]),
         apiClient.get<Array<{ id: string; status: string }>>(
           `/spaces/${spaceId}/schedule-versions?status=draft`
         ).catch(() => ({ data: [] as Array<{ id: string; status: string }> })),
       ]);
-      setScheduleData(currentRes?.data?.assignments ?? []);
+      setScheduleData(groupAssignments.length > 0 ? groupAssignments : scheduleData);
       const drafts = Array.isArray(draftRes?.data) ? draftRes.data : [];
       setDraftVersion(drafts.length > 0 ? drafts[0] : null);
     } catch (err) {
