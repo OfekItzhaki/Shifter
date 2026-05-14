@@ -147,7 +147,7 @@ export default function SettingsTab({
             )}
           </div>
           {solverStartDateTime && new Date(solverStartDateTime) < new Date() && (
-            <p className="text-xs text-amber-600">⚠ This date is in the past — the solver will start from this point.</p>
+            <p className="text-xs text-amber-600">⚠ התאריך בעבר — הסולבר יתחיל מנקודה זו.</p>
           )}
           <p className="text-xs text-slate-400">{t("solverStartFromHint")}</p>
           <button onClick={onSaveSettings} disabled={savingSettings} className="bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl disabled:opacity-50 transition-colors">
@@ -252,7 +252,7 @@ export default function SettingsTab({
           </button>
           {solverStatus && (
             <p className={`text-sm ${solverStatus === "Completed" ? "text-emerald-600" : solverStatus === "Failed" ? "text-red-600" : "text-slate-600"}`}>
-              {solverStatus}
+              {solverStatus === "Completed" ? "הושלם ✓" : solverStatus === "Failed" ? "נכשל" : solverStatus === "TimedOut" ? "חרג מזמן" : solverStatus}
             </p>
           )}
           {solverError && (
