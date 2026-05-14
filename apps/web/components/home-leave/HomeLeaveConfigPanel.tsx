@@ -165,8 +165,7 @@ export default function HomeLeaveConfigPanel({
 
       {/* Balance Slider + Impact Preview */}
       <div className="space-y-3 pb-3 border-b border-slate-100">
-        <label className="block text-sm text-slate-600 font-medium">עדיפות זמן בית</label>
-        <p className="text-xs text-slate-400">0 = שמור את כולם בבסיס, 100 = שלח כמה שיותר הביתה</p>
+        <label className="block text-sm text-slate-600 font-medium">יחס בסיס / בית</label>
         <BalanceSlider
           value={values.balanceValue}
           onChange={(v) => {
@@ -174,6 +173,8 @@ export default function HomeLeaveConfigPanel({
             setSaved(false);
           }}
           disabled={saving}
+          eligibilityHours={values.eligibilityThresholdHours}
+          leaveDurationHours={values.leaveDurationHours}
         />
         <ImpactSummary
           data={preview.data}
