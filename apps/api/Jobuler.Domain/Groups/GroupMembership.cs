@@ -9,6 +9,12 @@ public class GroupMembership : Entity, ITenantScoped
     public Guid PersonId { get; private set; }
     public bool IsOwner { get; private set; }
     public DateTime JoinedAt { get; private set; } = DateTime.UtcNow;
+    /// <summary>
+    /// Home-leave priority multiplier. Default 1.0 = normal.
+    /// Higher values (1.5, 2.0, 3.0) = more home time (parents, students).
+    /// Lower values (0.5) = stays at base more (critical roles).
+    /// </summary>
+    public decimal HomeLeavePriority { get; private set; } = 1.0m;
 
     private GroupMembership() { }
 
@@ -16,4 +22,11 @@ public class GroupMembership : Entity, ITenantScoped
         new() { SpaceId = spaceId, GroupId = groupId, PersonId = personId, IsOwner = isOwner };
 
     public void SetOwner(bool isOwner) { IsOwner = isOwner; }
+
+    public void SetHomeLeavePriority(decimal priority)
+    {
+        if (priority < 0.5m || priority > 3.0m)
+            throw new InvalidOperationException("עדיפות זמן בית חייבת להיות בין 0.5 ל-3.0");
+        HomeLeavePriority = priority;
+    }
 }

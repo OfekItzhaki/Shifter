@@ -24,6 +24,7 @@ class PersonEligibility(BaseModel):
     role_ids: list[str]
     qualification_ids: list[str]
     group_ids: list[str]
+    home_leave_priority: float = 1.0  # multiplier for home-leave fairness (1.0=normal, 2.0=more home time)
 
 
 class AvailabilityWindow(BaseModel):

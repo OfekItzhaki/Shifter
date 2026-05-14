@@ -183,6 +183,20 @@ public class GroupsController : ControllerBase
         return NoContent();
     }
 
+    // ── Home-leave priority ───────────────────────────────────────────────────
+
+    [HttpPatch("spaces/{spaceId:guid}/groups/{groupId:guid}/members/{personId:guid}/home-leave-priority")]
+    public async Task<IActionResult> SetHomeLeavePriority(
+        Guid spaceId, Guid groupId, Guid personId,
+        [FromBody] SetHomeLeavePriorityRequest req, CancellationToken ct)
+    {
+        await _permissions.RequirePermissionAsync(CurrentUserId, spaceId, Permissions.PeopleManage, ct);
+
+        var membership = await _mediator.Send(
+            new Application.Groups.Commands.SetHomeLeavePriorityCommand(spaceId, groupId, personId, req.Priority), ct);
+        return Ok(new { priority = membership });
+    }
+
     // ── Group Schedule ────────────────────────────────────────────────────────
 
     [HttpGet("spaces/{spaceId:guid}/groups/{groupId:guid}/schedule")]
@@ -340,3 +354,5 @@ public record UpdateMessageRequest(string Content);
 public record PinMessageRequest(bool IsPinned);
 public record UpdateMemberRoleRequest(Guid? RoleId);
 public record JoinByCodeRequest(string Code);
+
+public record SetHomeLeavePriorityRequest(decimal Priority);

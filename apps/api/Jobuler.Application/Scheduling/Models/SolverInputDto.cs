@@ -37,7 +37,8 @@ public record PersonEligibilityDto(
     string PersonId,
     List<string> RoleIds,
     List<string> QualificationIds,
-    List<string> GroupIds);
+    List<string> GroupIds,
+    [property: JsonPropertyName("home_leave_priority")] double HomeLeavePriority = 1.0);
 
 public record AvailabilityWindowDto(
     string PersonId,

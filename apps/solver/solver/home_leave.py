@@ -374,7 +374,8 @@ def add_home_leave_eligibility_preference(
             continue
 
         # Soft preference: at least one leave slot should be active after eligibility
-        # Penalty = ELIGIBILITY_WEIGHT if NO leave slot is chosen after eligibility
+        # Penalty = ELIGIBILITY_WEIGHT * person's priority if NO leave slot is chosen after eligibility
+        # Higher priority = higher penalty for NOT sending them home = solver tries harder to send them home
         any_leave_after_eligible = model.new_bool_var(f"hl_elig_{p_idx}")
         model.add_max_equality(
             any_leave_after_eligible,
@@ -382,8 +383,11 @@ def add_home_leave_eligibility_preference(
         )
 
         # Penalty when no leave is taken after becoming eligible
+        # Multiply by person's home_leave_priority (default 1.0, parents/students get 1.5-3.0)
+        person_priority = people[p_idx].home_leave_priority if hasattr(people[p_idx], 'home_leave_priority') else 1.0
+        person_weight = int(ELIGIBILITY_WEIGHT * person_priority)
         not_on_leave = model.new_bool_var(f"hl_not_leave_{p_idx}")
         model.add(not_on_leave == 1 - any_leave_after_eligible)
-        penalties.append(not_on_leave * ELIGIBILITY_WEIGHT)
+        penalties.append(not_on_leave * person_weight)
 
     return penalties

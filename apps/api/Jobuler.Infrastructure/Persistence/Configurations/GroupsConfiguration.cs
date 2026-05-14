@@ -58,6 +58,8 @@ public class GroupMembershipConfiguration : IEntityTypeConfiguration<GroupMember
         builder.Property(m => m.PersonId).HasColumnName("person_id");
         builder.Property(m => m.IsOwner).HasColumnName("is_owner");
         builder.Property(m => m.JoinedAt).HasColumnName("joined_at");
+        builder.Property(m => m.HomeLeavePriority).HasColumnName("home_leave_priority")
+            .HasColumnType("numeric(3,1)");
         builder.Ignore(m => m.CreatedAt);  // inherited from Entity but not in this table
         builder.HasIndex(m => new { m.GroupId, m.PersonId }).IsUnique();
     }

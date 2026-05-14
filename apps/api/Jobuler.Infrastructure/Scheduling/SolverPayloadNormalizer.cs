@@ -141,7 +141,8 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
             p.Id.ToString(),
             roleAssignments.Where(r => r.PersonId == p.Id).Select(r => r.RoleId.ToString()).ToList(),
             qualifications.Where(q => q.PersonId == p.Id).Select(q => q.Qualification).ToList(),
-            groupMemberships.Where(m => m.PersonId == p.Id).Select(m => m.GroupId.ToString()).ToList()
+            groupMemberships.Where(m => m.PersonId == p.Id).Select(m => m.GroupId.ToString()).ToList(),
+            (double)(groupMemberships.FirstOrDefault(m => m.PersonId == p.Id)?.HomeLeavePriority ?? 1.0m)
         )).ToList();
 
         // ── Availability windows ──────────────────────────────────────────────
