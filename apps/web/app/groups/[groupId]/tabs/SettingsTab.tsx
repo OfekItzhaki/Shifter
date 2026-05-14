@@ -263,8 +263,6 @@ export default function SettingsTab({
               {solverStatus === "Completed" ? "הושלם ✓" : solverStatus === "Failed" ? "נכשל" : solverStatus === "TimedOut" ? "חרג מזמן" : solverStatus}
             </p>
           )}
-            </div>
-          )}
         </div>
       </Section>
 
