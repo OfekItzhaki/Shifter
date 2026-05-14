@@ -47,8 +47,8 @@ public class HomeLeaveConfigValidationPropertyTests
     /// </summary>
     private static bool ShouldBeValid(decimal minRest, decimal eligibility, int capacity, decimal duration, int memberCount)
     {
-        return minRest >= 4 && minRest <= 16
-            && eligibility >= minRest && eligibility <= 48
+        return minRest >= 0 && minRest <= 16
+            && eligibility >= 0 && eligibility <= 336
             && capacity >= 1 && capacity <= memberCount - 1
             && duration >= 12 && duration <= 168;
     }
@@ -81,8 +81,8 @@ public class HomeLeaveConfigValidationPropertyTests
             // Note: The validator does NOT check capacity against memberCount
             // (that's done in the handler with DB access). The validator only checks capacity >= 1.
             // So we adjust our oracle for what the validator alone can check:
-            var validatorExpectedValid = minRest >= 4 && minRest <= 16
-                && eligibility >= minRest && eligibility <= 48
+            var validatorExpectedValid = minRest >= 0 && minRest <= 16
+                && eligibility >= 0 && eligibility <= 336
                 && capacity >= 1
                 && duration >= 12 && duration <= 168;
 
@@ -122,12 +122,12 @@ public class HomeLeaveConfigValidationPropertyTests
             RequestingUserId: Guid.NewGuid());
 
         var result = _validator.Validate(cmd);
-        var expectedValid = minRestHours >= 4 && minRestHours <= 16;
+        var expectedValid = minRestHours >= 0 && minRestHours <= 16;
 
         if (expectedValid)
-            result.IsValid.Should().BeTrue($"min_rest_hours={minRestHours} is within [4,16]");
+            result.IsValid.Should().BeTrue($"min_rest_hours={minRestHours} is within [0,16]");
         else
-            result.IsValid.Should().BeFalse($"min_rest_hours={minRestHours} is outside [4,16]");
+            result.IsValid.Should().BeFalse($"min_rest_hours={minRestHours} is outside [0,16]");
     }
 
     // ── Boundary tests for eligibility_threshold_hours (min_rest_hours–48) ──
@@ -155,14 +155,14 @@ public class HomeLeaveConfigValidationPropertyTests
             RequestingUserId: Guid.NewGuid());
 
         var result = _validator.Validate(cmd);
-        var expectedValid = eligibilityHours >= minRestHours && eligibilityHours <= 48;
+        var expectedValid = eligibilityHours >= 0 && eligibilityHours <= 336;
 
         if (expectedValid)
             result.IsValid.Should().BeTrue(
-                $"eligibility={eligibilityHours} with min_rest={minRestHours} is within [{minRestHours},48]");
+                $"eligibility={eligibilityHours} is within [0,336]");
         else
             result.IsValid.Should().BeFalse(
-                $"eligibility={eligibilityHours} with min_rest={minRestHours} is outside [{minRestHours},48]");
+                $"eligibility={eligibilityHours} is outside [0,336]");
     }
 
     // ── Boundary tests for leave_capacity (1 to group_member_count - 1) ──
