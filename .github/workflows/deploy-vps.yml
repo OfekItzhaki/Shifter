@@ -20,7 +20,14 @@ jobs:
           script: |
             cd /opt/shifter
             git pull origin main
+
+            # Run any new migrations (idempotent — safe to re-run)
+            for f in infra/migrations/*.sql; do
+              echo "Running $f..."
+              docker exec -i compose-postgres-1 psql -U jobuler -d jobuler < "$f" 2>&1 | grep -v "already exists" | grep -v "skipping" || true
+            done
+
             cd infra/compose
             docker compose build --parallel
-            docker compose up -d
+            docker compose up -d --remove-orphans --force-recreate
             echo "✅ Deployed $(git rev-parse --short HEAD) at $(date)"
