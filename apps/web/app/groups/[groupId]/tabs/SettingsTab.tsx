@@ -211,6 +211,7 @@ export default function SettingsTab({
         spaceId={spaceId}
         groupId={groupId}
         isClosedBase={isClosedBase}
+        memberCount={members.length}
       />
 
       {/* Trigger solver */}

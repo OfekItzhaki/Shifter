@@ -26,10 +26,11 @@ interface HomeLeaveConfigPanelProps {
   spaceId: string;
   groupId: string;
   isClosedBase: boolean;
+  memberCount: number;
 }
 
 /**
- * "הגדרות חופשות" (Leave Settings) panel.
+ * "ניהול זמן בבית" (Home Time Management) panel.
  * Conditionally rendered when isClosedBase is true.
  * Fetches existing config on mount, allows editing, and saves via PUT.
  */
@@ -37,6 +38,7 @@ export default function HomeLeaveConfigPanel({
   spaceId,
   groupId,
   isClosedBase,
+  memberCount,
 }: HomeLeaveConfigPanelProps) {
   const [values, setValues] = useState<HomeLeaveConfigValues>(DEFAULTS);
   const [saving, setSaving] = useState(false);
@@ -204,13 +206,18 @@ export default function HomeLeaveConfigPanel({
           error={fieldErrors["minRestHours"]}
         />
 
-        {/* Max people on leave at same time */}
+        {/* Min people at base — admin enters how many must stay, we convert to leaveCapacity */}
         <FieldRow
-          label="מקסימום אנשים בבית בו-זמנית"
-          hint="כמה אנשים יכולים להיות בבית באותו זמן. השאר חייבים להישאר בבסיס."
-          value={values.leaveCapacity}
-          onChange={(v) => handleChange("leaveCapacity", v)}
+          label="מינימום אנשים בבסיס"
+          hint={`כמה אנשים חייבים להישאר בבסיס בכל רגע. השאר יכולים לצאת הביתה. (${memberCount} חברים בקבוצה)`}
+          value={Math.max(0, memberCount - values.leaveCapacity)}
+          onChange={(v) => {
+            const minAtBase = Number(v);
+            const maxOnLeave = Math.max(1, memberCount - minAtBase);
+            handleChange("leaveCapacity", String(maxOnLeave));
+          }}
           min={1}
+          max={memberCount - 1}
           step={1}
           error={fieldErrors["leaveCapacity"]}
         />
