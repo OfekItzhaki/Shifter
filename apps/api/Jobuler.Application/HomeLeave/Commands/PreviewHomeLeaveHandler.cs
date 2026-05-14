@@ -61,12 +61,13 @@ public class PreviewHomeLeaveHandler : IRequestHandler<PreviewHomeLeaveCommand, 
             ?? throw new InvalidOperationException("הקבוצה לא נמצאה.");
 
         if (!group.IsClosedBase)
-            throw new InvalidOperationException("הקבוצה אינה קבוצת בסיס סגור.");
+            return new HomeLeavePreviewResponse(
+                Status: "no_solution", PeopleHomeCount: 0, PeopleAtBaseCount: 0,
+                TotalHomeLeaveSlots: 0, CoverageGaps: [], FairnessSpread: 0, SolverTimeMs: 0);
 
-        // 3. Verify home-leave config exists
+        // 3. Verify home-leave config exists — if not, use defaults
         var hlConfig = await _db.HomeLeaveConfigs.AsNoTracking()
-            .FirstOrDefaultAsync(c => c.GroupId == req.GroupId && c.SpaceId == req.SpaceId, ct)
-            ?? throw new InvalidOperationException("לא נמצאה הגדרת חופשות לקבוצה זו.");
+            .FirstOrDefaultAsync(c => c.GroupId == req.GroupId && c.SpaceId == req.SpaceId, ct);
 
         // 4. Build solver payload with overridden balance_value and preview_mode
         var payload = await _normalizer.BuildPreviewAsync(req.SpaceId, req.GroupId, req.BalanceValue, ct);
@@ -124,7 +125,7 @@ public class PreviewHomeLeaveHandler : IRequestHandler<PreviewHomeLeaveCommand, 
         var coverageGaps = CalculateCoverageGaps(
             solverOutput.HomeLeaveAssignments,
             totalMembers,
-            hlConfig.LeaveCapacity);
+            hlConfig?.LeaveCapacity ?? 1);
 
         // Calculate fairness spread from home_leave_metrics
         var fairnessSpread = CalculateFairnessSpread(solverOutput.HomeLeaveMetrics);

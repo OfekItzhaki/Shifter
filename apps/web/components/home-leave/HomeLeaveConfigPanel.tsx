@@ -150,7 +150,7 @@ export default function HomeLeaveConfigPanel({
   if (loading) {
     return (
       <div className="bg-white border border-slate-200 rounded-2xl p-5 space-y-3">
-        <h3 className="text-sm font-semibold text-slate-700">הגדרות חופשות</h3>
+        <h3 className="text-sm font-semibold text-slate-700">ניהול זמן בבית</h3>
         <p className="text-sm text-slate-400">טוען...</p>
       </div>
     );
@@ -158,11 +158,13 @@ export default function HomeLeaveConfigPanel({
 
   return (
     <div className="bg-white border border-slate-200 rounded-2xl p-5 space-y-3">
-      <h3 className="text-sm font-semibold text-slate-700">הגדרות חופשות</h3>
+      <h3 className="text-sm font-semibold text-slate-700">ניהול זמן בבית</h3>
+      <p className="text-xs text-slate-400 -mt-1">הגדרות חופשות בית לחברי הקבוצה. הסולבר ישתמש בהגדרות אלו כדי לתזמן חופשות.</p>
 
       {/* Balance Slider + Impact Preview */}
       <div className="space-y-3 pb-3 border-b border-slate-100">
-        <label className="block text-sm text-slate-600 font-medium">איזון חופשות</label>
+        <label className="block text-sm text-slate-600 font-medium">עדיפות חופשות</label>
+        <p className="text-xs text-slate-400">0 = שמור את כולם בבסיס, 100 = שלח כמה שיותר הביתה</p>
         <BalanceSlider
           value={values.balanceValue}
           onChange={(v) => {
@@ -182,6 +184,7 @@ export default function HomeLeaveConfigPanel({
         {/* Min rest hours */}
         <FieldRow
           label="מנוחה מינימלית (שעות)"
+          hint="כמה שעות חייב אדם לנוח בבסיס אחרי שחזר מהבית לפני שיוכל לצאת למשימה"
           value={values.minRestHours}
           onChange={(v) => handleChange("minRestHours", v)}
           min={4}
@@ -192,6 +195,7 @@ export default function HomeLeaveConfigPanel({
         {/* Eligibility threshold hours */}
         <FieldRow
           label="סף זכאות לחופשה (שעות)"
+          hint="כמה שעות חייב אדם להיות בבסיס לפני שהוא זכאי לצאת הביתה"
           value={values.eligibilityThresholdHours}
           onChange={(v) => handleChange("eligibilityThresholdHours", v)}
           min={values.minRestHours}
@@ -202,6 +206,7 @@ export default function HomeLeaveConfigPanel({
         {/* Leave capacity */}
         <FieldRow
           label="כמות מקסימלית בחופשה"
+          hint="כמה אנשים יכולים להיות בבית בו-זמנית"
           value={values.leaveCapacity}
           onChange={(v) => handleChange("leaveCapacity", v)}
           min={1}
@@ -212,6 +217,7 @@ export default function HomeLeaveConfigPanel({
         {/* Leave duration hours */}
         <FieldRow
           label="משך חופשה (שעות)"
+          hint="כמה שעות נמשכת כל חופשת בית"
           value={values.leaveDurationHours}
           onChange={(v) => handleChange("leaveDurationHours", v)}
           min={12}
@@ -266,6 +272,7 @@ export default function HomeLeaveConfigPanel({
 
 interface FieldRowProps {
   label: string;
+  hint?: string;
   value: number;
   onChange: (value: string) => void;
   min?: number;
@@ -274,10 +281,11 @@ interface FieldRowProps {
   error?: string;
 }
 
-function FieldRow({ label, value, onChange, min, max, step, error }: FieldRowProps) {
+function FieldRow({ label, hint, value, onChange, min, max, step, error }: FieldRowProps) {
   return (
     <div className="space-y-1">
       <label className="block text-sm text-slate-600">{label}</label>
+      {hint && <p className="text-xs text-slate-400 -mt-0.5">{hint}</p>}
       <input
         type="number"
         value={value}
