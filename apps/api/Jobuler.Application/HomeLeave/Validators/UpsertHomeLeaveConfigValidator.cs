@@ -12,14 +12,12 @@ public class UpsertHomeLeaveConfigValidator : AbstractValidator<UpsertHomeLeaveC
         RuleFor(x => x.RequestingUserId).NotEmpty();
 
         RuleFor(x => x.MinRestHours)
-            .InclusiveBetween(4, 16)
-            .WithMessage("min_rest_hours must be between 4 and 16 inclusive.");
+            .InclusiveBetween(0, 16)
+            .WithMessage("min_rest_hours must be between 0 and 16 inclusive.");
 
         RuleFor(x => x.EligibilityThresholdHours)
-            .InclusiveBetween(4, 48)
-            .WithMessage("eligibility_threshold_hours must be between min_rest_hours and 48 inclusive.")
-            .Must((cmd, threshold) => threshold >= cmd.MinRestHours)
-            .WithMessage("eligibility_threshold_hours must be greater than or equal to min_rest_hours.");
+            .InclusiveBetween(0, 336)
+            .WithMessage("eligibility_threshold_hours must be between 0 and 336 (14 days) inclusive.");
 
         RuleFor(x => x.LeaveCapacity)
             .GreaterThanOrEqualTo(1)

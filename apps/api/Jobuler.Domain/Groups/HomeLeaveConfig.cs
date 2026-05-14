@@ -75,14 +75,14 @@ public class HomeLeaveConfig : AuditableEntity, ITenantScoped
 
     private static void ValidateMinRestHours(decimal value)
     {
-        if (value < 4 || value > 16)
-            throw new InvalidOperationException("שעות מנוחה מינימליות חייבות להיות בין 4 ל-16.");
+        if (value < 0 || value > 16)
+            throw new InvalidOperationException("שעות מנוחה חייבות להיות בין 0 ל-16.");
     }
 
     private static void ValidateEligibilityThresholdHours(decimal value, decimal minRestHours)
     {
-        if (value < minRestHours || value > 48)
-            throw new InvalidOperationException($"eligibility_threshold_hours must be between {minRestHours} and 48 inclusive.");
+        if (value < 0 || value > 336)
+            throw new InvalidOperationException("זמן בבסיס לפני יציאה חייב להיות בין 0 ל-336 שעות (14 ימים).");
     }
 
     private static void ValidateLeaveCapacity(int value)
