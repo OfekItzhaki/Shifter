@@ -8,7 +8,7 @@ namespace Jobuler.Application.Groups.Commands;
 
 // ── DTOs ─────────────────────────────────────────────────────────────────────
 
-public record GroupRoleDto(Guid Id, string Name, string? Description, bool IsActive, string PermissionLevel, bool IsDefault = false);
+public record GroupRoleDto(Guid Id, string Name, string? Description, bool IsActive, string PermissionLevel, bool IsDefault = false, string? Color = null);
 
 // ── Create ────────────────────────────────────────────────────────────────────
 
@@ -18,7 +18,8 @@ public record CreateGroupRoleCommand(
     string Name,
     string? Description,
     string PermissionLevel,
-    Guid RequestingUserId) : IRequest<Guid>;
+    Guid RequestingUserId,
+    string? Color = null) : IRequest<Guid>;
 
 public class CreateGroupRoleCommandHandler : IRequestHandler<CreateGroupRoleCommand, Guid>
 {
@@ -56,7 +57,7 @@ public class CreateGroupRoleCommandHandler : IRequestHandler<CreateGroupRoleComm
             // Reactivate the deactivated role with the new settings
             var permLevelReactivate = Enum.TryParse<RolePermissionLevel>(req.PermissionLevel, true, out var plr)
                 ? plr : RolePermissionLevel.View;
-            existingRole.Update(req.Name, req.Description, permLevelReactivate);
+            existingRole.Update(req.Name, req.Description, permLevelReactivate, req.Color);
             // Re-enable it by setting IsActive back to true via a new method
             existingRole.Reactivate();
             await _db.SaveChangesAsync(ct);
@@ -66,7 +67,7 @@ public class CreateGroupRoleCommandHandler : IRequestHandler<CreateGroupRoleComm
         var permLevel = Enum.TryParse<RolePermissionLevel>(req.PermissionLevel, true, out var pl)
             ? pl : RolePermissionLevel.View;
 
-        var role = SpaceRole.CreateForGroup(req.SpaceId, req.GroupId, req.Name, req.RequestingUserId, req.Description, permLevel);
+        var role = SpaceRole.CreateForGroup(req.SpaceId, req.GroupId, req.Name, req.RequestingUserId, req.Description, permLevel, color: req.Color);
         _db.SpaceRoles.Add(role);
         await _db.SaveChangesAsync(ct);
         return role.Id;
@@ -82,7 +83,8 @@ public record UpdateGroupRoleCommand(
     string Name,
     string? Description,
     string PermissionLevel,
-    Guid RequestingUserId) : IRequest;
+    Guid RequestingUserId,
+    string? Color = null) : IRequest;
 
 public class UpdateGroupRoleCommandHandler : IRequestHandler<UpdateGroupRoleCommand>
 {
@@ -107,7 +109,7 @@ public class UpdateGroupRoleCommandHandler : IRequestHandler<UpdateGroupRoleComm
 
         var permLevel = Enum.TryParse<RolePermissionLevel>(req.PermissionLevel, true, out var pl)
             ? pl : RolePermissionLevel.View;
-        role.Update(req.Name, req.Description, permLevel);
+        role.Update(req.Name, req.Description, permLevel, req.Color);
         await _db.SaveChangesAsync(ct);
     }
 }

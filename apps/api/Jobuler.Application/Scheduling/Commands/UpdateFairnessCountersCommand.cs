@@ -65,24 +65,31 @@ public class UpdateFairnessCountersCommandHandler
             var total14d = mine.Count(a => a.StartsAt >= cutoff14d);
             var total30d = mine.Count;
 
-            var hated7d  = mine.Count(a => a.StartsAt >= cutoff7d && a.BurdenLevel == TaskBurdenLevel.Hated);
-            var hated14d = mine.Count(a => a.StartsAt >= cutoff14d && a.BurdenLevel == TaskBurdenLevel.Hated);
+            var hard7d  = mine.Count(a => a.StartsAt >= cutoff7d && a.BurdenLevel == TaskBurdenLevel.Hard);
+            var hard14d = mine.Count(a => a.StartsAt >= cutoff14d && a.BurdenLevel == TaskBurdenLevel.Hard);
+            var hard30d = mine.Count(a => a.BurdenLevel == TaskBurdenLevel.Hard);
 
-            var dislikedHated7d = mine.Count(a => a.StartsAt >= cutoff7d &&
-                (a.BurdenLevel == TaskBurdenLevel.Hated || a.BurdenLevel == TaskBurdenLevel.Disliked));
+            var easy7d  = mine.Count(a => a.StartsAt >= cutoff7d && a.BurdenLevel == TaskBurdenLevel.Easy);
+            var easy14d = mine.Count(a => a.StartsAt >= cutoff14d && a.BurdenLevel == TaskBurdenLevel.Easy);
+            var easy30d = mine.Count(a => a.BurdenLevel == TaskBurdenLevel.Easy);
+
+            // Burden score: (hard×3) − (easy×1)
+            var burdenScore7d  = (hard7d * 3) - easy7d;
+            var burdenScore14d = (hard14d * 3) - easy14d;
+            var burdenScore30d = (hard30d * 3) - easy30d;
 
             var kitchen7d = mine.Count(a => a.StartsAt >= cutoff7d &&
-                a.Name.Contains("מטבח", StringComparison.OrdinalIgnoreCase) ||
-                a.Name.Contains("kitchen", StringComparison.OrdinalIgnoreCase));
+                (a.Name.Contains("מטבח", StringComparison.OrdinalIgnoreCase) ||
+                a.Name.Contains("kitchen", StringComparison.OrdinalIgnoreCase)));
 
             var night7d = mine.Count(a => a.StartsAt >= cutoff7d && a.IsNight);
 
-            // Consecutive burden: count how many of the last N assignments were burden tasks
+            // Consecutive burden: count how many of the last N assignments were hard tasks
             var sorted = mine.OrderByDescending(a => a.StartsAt).Take(5).ToList();
             var consecutive = 0;
             foreach (var a in sorted)
             {
-                if (a.BurdenLevel is TaskBurdenLevel.Hated or TaskBurdenLevel.Disliked)
+                if (a.BurdenLevel is TaskBurdenLevel.Hard)
                     consecutive++;
                 else
                     break;
@@ -96,14 +103,39 @@ public class UpdateFairnessCountersCommandHandler
             if (existing is null)
             {
                 var counter = FairnessCounter.Create(req.SpaceId, personId, today);
-                counter.Update(total7d, total14d, total30d, hated7d, hated14d,
-                    dislikedHated7d, kitchen7d, night7d, consecutive);
+                counter.Update(total7d, total14d, total30d,
+                    hard7d, hard14d, hard30d,
+                    easy7d, easy14d, easy30d,
+                    burdenScore7d, burdenScore14d, burdenScore30d,
+                    kitchen7d, night7d, consecutive);
                 _db.FairnessCounters.Add(counter);
             }
             else
             {
-                existing.Update(total7d, total14d, total30d, hated7d, hated14d,
-                    dislikedHated7d, kitchen7d, night7d, consecutive);
+                existing.Update(total7d, total14d, total30d,
+                    hard7d, hard14d, hard30d,
+                    easy7d, easy14d, easy30d,
+                    burdenScore7d, burdenScore14d, burdenScore30d,
+                    kitchen7d, night7d, consecutive);
+            }
+
+            // Upsert daily snapshot for historical graphs
+            // Use 30d window values for the snapshot (total_assignments, hard, normal, easy, burden_score)
+            var normal30d = total30d - hard30d - easy30d;
+            var existingSnapshot = await _db.FairnessCounterSnapshots
+                .FirstOrDefaultAsync(s => s.SpaceId == req.SpaceId &&
+                    s.PersonId == personId && s.SnapshotDate == today, ct);
+
+            if (existingSnapshot is null)
+            {
+                var snapshot = FairnessCounterSnapshot.Create(
+                    req.SpaceId, personId, today,
+                    total30d, hard30d, normal30d, easy30d, burdenScore30d);
+                _db.FairnessCounterSnapshots.Add(snapshot);
+            }
+            else
+            {
+                existingSnapshot.Update(total30d, hard30d, normal30d, easy30d, burdenScore30d);
             }
         }
 

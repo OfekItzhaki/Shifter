@@ -58,7 +58,7 @@ const TASK_COLUMNS = [
   { key: "Name",                    required: true,  example: "Kitchen" },
   { key: "Shift Duration (hours)",  required: true,  example: "4" },
   { key: "Headcount",               required: true,  example: "1" },
-  { key: "Burden Level",            required: false, example: "neutral / disliked / hated / favorable" },
+  { key: "Burden Level",            required: false, example: "easy / normal / hard" },
   { key: "Daily Start",             required: false, example: "08:00" },
   { key: "Daily End",               required: false, example: "22:00" },
 ];
@@ -78,10 +78,9 @@ function parseMemberSheet(rows: Record<string, string>[]): MemberRow[] {
 
 function parseTaskSheet(rows: Record<string, string>[]): TaskRow[] {
   const BURDEN_MAP: Record<string, string> = {
-    favorable: "favorable", נוח: "favorable",
-    neutral: "neutral", ניטרלי: "neutral",
-    disliked: "disliked", "לא אהוב": "disliked",
-    hated: "hated", שנוא: "hated",
+    easy: "easy", קל: "easy", favorable: "easy", נוח: "easy",
+    normal: "normal", רגיל: "normal", neutral: "normal", ניטרלי: "normal",
+    hard: "hard", קשה: "hard", disliked: "hard", "לא אהוב": "hard", hated: "hard", שנוא: "hard",
   };
 
   return rows

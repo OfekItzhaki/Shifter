@@ -60,10 +60,11 @@ public class AvailabilityController : ControllerBase
     {
         await _permissions.RequirePermissionAsync(CurrentUserId, spaceId, Permissions.PeopleManage, ct);
         var id = await _mediator.Send(new AddPresenceWindowCommand(
-            spaceId, personId, req.State, req.StartsAt, req.EndsAt, req.Note, CurrentUserId), ct);
+            spaceId, personId, req.State, req.StartsAt, req.EndsAt, req.Note, CurrentUserId,
+            req.ReasonId), ct);
         return Created("", new { id });
     }
 }
 
 public record AddAvailabilityRequest(DateTime StartsAt, DateTime EndsAt, string? Note);
-public record AddPresenceRequest(string State, DateTime StartsAt, DateTime EndsAt, string? Note);
+public record AddPresenceRequest(string State, DateTime StartsAt, DateTime EndsAt, string? Note, Guid? ReasonId = null);

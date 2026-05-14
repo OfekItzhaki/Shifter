@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { PersonBurdenStats } from "@/lib/api/schedule";
 
 type SortKey = keyof Pick<PersonBurdenStats,
@@ -27,6 +28,7 @@ const td: React.CSSProperties = {
 };
 
 export default function StatsPeopleTable({ people }: Props) {
+  const t = useTranslations("groups.stats_tab.table");
   const [sortKey, setSortKey] = useState<SortKey>("burdenScoreAllTime");
   const [sortAsc, setSortAsc] = useState(false);
 
@@ -53,14 +55,14 @@ export default function StatsPeopleTable({ people }: Props) {
         <thead>
           <tr style={{ background: "#f8fafc" }}>
             {([
-              ["displayName", "Name"],
-              ["totalAssignmentsAllTime", "Total"],
-              ["hatedTasksAllTime", "Hated"],
-              ["dislikedTasksAllTime", "Disliked"],
-              ["favorableTasksAllTime", "Favorable"],
-              ["burdenScoreAllTime", "Burden Score"],
-              ["burdenBalance", "Balance"],
-              ["lastAssignmentDate", "Last Assignment"],
+              ["displayName", t("name")],
+              ["totalAssignmentsAllTime", t("total")],
+              ["hatedTasksAllTime", t("hard")],
+              ["dislikedTasksAllTime", t("normal")],
+              ["favorableTasksAllTime", t("easy")],
+              ["burdenScoreAllTime", t("burdenScore")],
+              ["burdenBalance", t("balance")],
+              ["lastAssignmentDate", t("lastAssignment")],
             ] as [SortKey, string][]).map(([k, label]) => (
               <th key={k} style={th} onClick={() => handleSort(k)}>
                 {label}<SortIcon k={k} />

@@ -307,7 +307,22 @@ public class SolverWorkerService : BackgroundService
                     rule_type = c.RuleType,
                     description = c.Description,
                     affected_slots = c.AffectedSlotIds.Count
-                }).ToList()
+                }).ToList(),
+                home_leave_assignments = output.HomeLeaveAssignments.Select(a => new
+                {
+                    person_id = a.PersonId,
+                    starts_at = a.StartsAt,
+                    ends_at = a.EndsAt
+                }).ToList(),
+                home_leave_metrics = output.HomeLeaveMetrics.Select(m => new
+                {
+                    person_id = m.PersonId,
+                    total_base_hours = m.TotalBaseHours,
+                    total_home_hours = m.TotalHomeHours,
+                    base_time_ratio = m.BaseTimeRatio,
+                    leave_slot_count = m.LeaveSlotCount
+                }).ToList(),
+                fairness_variance = output.FairnessVariance
             });
 
             var version = ScheduleVersion.CreateDraft(
@@ -384,6 +399,12 @@ public class SolverWorkerService : BackgroundService
                 using var fairnessScope = _scopeFactory.CreateScope();
                 var fairnessMediator = fairnessScope.ServiceProvider.GetRequiredService<IMediator>();
                 await fairnessMediator.Send(new UpdateFairnessCountersCommand(job.SpaceId, version.Id), ct);
+
+                // Compute task rotation progress for army-template groups
+                if (job.GroupId.HasValue)
+                {
+                    await fairnessMediator.Send(new ComputeTaskRotationCommand(job.SpaceId, job.GroupId.Value), ct);
+                }
             }
             else
             {

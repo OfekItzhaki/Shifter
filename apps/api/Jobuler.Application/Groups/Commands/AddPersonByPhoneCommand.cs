@@ -2,6 +2,7 @@ using Jobuler.Application.Common;
 using Jobuler.Domain.Groups;
 using Jobuler.Domain.Notifications;
 using Jobuler.Domain.People;
+using Jobuler.Domain.Spaces;
 using Jobuler.Infrastructure.Persistence;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -122,7 +123,21 @@ public class AddPersonByPhoneCommandHandler : IRequestHandler<AddPersonByPhoneCo
             _db.Notifications.Add(notification);
         }
 
-        // 7. Assign role — owner uses provided roleId, non-owner gets the default role automatically
+        // 7. Ensure SpaceMembership exists for linked user (idempotent)
+        if (user is not null)
+        {
+            var hasSpaceMembership = await _db.SpaceMemberships.AnyAsync(
+                sm => sm.UserId == user.Id && sm.SpaceId == req.SpaceId, ct);
+
+            if (!hasSpaceMembership)
+            {
+                _db.SpaceMemberships.Add(SpaceMembership.Create(req.SpaceId, user.Id));
+                _db.SpacePermissionGrants.Add(
+                    SpacePermissionGrant.Grant(req.SpaceId, user.Id, Permissions.SpaceView, req.RequestingUserId));
+            }
+        }
+
+        // 8. Assign role — owner uses provided roleId, non-owner gets the default role automatically
         var effectiveRoleId = req.RoleId;
         if (!isGroupOwner)
         {

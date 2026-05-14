@@ -48,7 +48,7 @@ public record CreateGroupTaskCommand(
 
 public class CreateGroupTaskCommandValidator : AbstractValidator<CreateGroupTaskCommand>
 {
-    private static readonly string[] ValidBurdenLevels = ["favorable", "neutral", "disliked", "hated"];
+    private static readonly string[] ValidBurdenLevels = ["easy", "normal", "hard"];
 
     public CreateGroupTaskCommandValidator()
     {
@@ -56,7 +56,7 @@ public class CreateGroupTaskCommandValidator : AbstractValidator<CreateGroupTask
         RuleFor(x => x.EndsAt).GreaterThan(x => x.StartsAt).WithMessage("ends_at must be strictly after starts_at.");
         RuleFor(x => x.ShiftDurationMinutes).GreaterThanOrEqualTo(1).WithMessage("shift_duration_minutes must be at least 1 minute.");
         RuleFor(x => x.RequiredHeadcount).GreaterThanOrEqualTo(1).WithMessage("required_headcount must be at least 1.");
-        RuleFor(x => x.BurdenLevel).NotEmpty().Must(b => ValidBurdenLevels.Contains(b.ToLowerInvariant())).WithMessage("burden_level must be one of: favorable, neutral, disliked, hated.");
+        RuleFor(x => x.BurdenLevel).NotEmpty().Must(b => ValidBurdenLevels.Contains(b.ToLowerInvariant())).WithMessage("burden_level must be one of: easy, normal, hard.");
 
         // Total qualification seats cannot exceed required headcount
         RuleFor(x => x)
@@ -85,7 +85,7 @@ public class CreateGroupTaskCommandHandler : IRequestHandler<CreateGroupTaskComm
         var groupExists = await _db.Groups
             .AnyAsync(g => g.Id == req.GroupId && g.SpaceId == req.SpaceId && g.DeletedAt == null, ct);
         if (!groupExists)
-            throw new KeyNotFoundException("Group not found in this space.");
+            throw new KeyNotFoundException("הקבוצה לא נמצאה.");
 
         var task = GroupTask.Create(
             req.SpaceId, req.GroupId, req.Name,
@@ -127,7 +127,7 @@ public record UpdateGroupTaskCommand(
 
 public class UpdateGroupTaskCommandValidator : AbstractValidator<UpdateGroupTaskCommand>
 {
-    private static readonly string[] ValidBurdenLevels = ["favorable", "neutral", "disliked", "hated"];
+    private static readonly string[] ValidBurdenLevels = ["easy", "normal", "hard"];
 
     public UpdateGroupTaskCommandValidator()
     {
@@ -135,7 +135,7 @@ public class UpdateGroupTaskCommandValidator : AbstractValidator<UpdateGroupTask
         RuleFor(x => x.EndsAt).GreaterThan(x => x.StartsAt).WithMessage("ends_at must be strictly after starts_at.");
         RuleFor(x => x.ShiftDurationMinutes).GreaterThanOrEqualTo(1).WithMessage("shift_duration_minutes must be at least 1 minute.");
         RuleFor(x => x.RequiredHeadcount).GreaterThanOrEqualTo(1).WithMessage("required_headcount must be at least 1.");
-        RuleFor(x => x.BurdenLevel).NotEmpty().Must(b => ValidBurdenLevels.Contains(b.ToLowerInvariant())).WithMessage("burden_level must be one of: favorable, neutral, disliked, hated.");
+        RuleFor(x => x.BurdenLevel).NotEmpty().Must(b => ValidBurdenLevels.Contains(b.ToLowerInvariant())).WithMessage("burden_level must be one of: easy, normal, hard.");
 
         // Total qualification seats cannot exceed required headcount
         RuleFor(x => x)
@@ -165,7 +165,7 @@ public class UpdateGroupTaskCommandHandler : IRequestHandler<UpdateGroupTaskComm
                                    && t.GroupId == req.GroupId
                                    && t.SpaceId == req.SpaceId
                                    && t.IsActive, ct)
-            ?? throw new KeyNotFoundException("Task not found.");
+            ?? throw new KeyNotFoundException("המשימה לא נמצאה.");
 
         task.Update(
             req.Name, TaskTimeHelpers.RoundToHour(req.StartsAt), TaskTimeHelpers.RoundToHour(req.EndsAt),
@@ -209,7 +209,7 @@ public class DeleteGroupTaskCommandHandler : IRequestHandler<DeleteGroupTaskComm
             .FirstOrDefaultAsync(t => t.Id == req.TaskId
                                    && t.GroupId == req.GroupId
                                    && t.SpaceId == req.SpaceId, ct)
-            ?? throw new KeyNotFoundException("Task not found.");
+            ?? throw new KeyNotFoundException("המשימה לא נמצאה.");
 
         task.Deactivate(req.RequestingUserId);
         await _db.SaveChangesAsync(ct);

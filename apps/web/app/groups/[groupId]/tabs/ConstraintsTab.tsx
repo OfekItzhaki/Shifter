@@ -28,8 +28,8 @@ function formatPayload(ruleType: string, json: string, taskOptions?: TaskOption[
       case "min_rest_hours": return `${p.hours ?? 8} שעות מנוחה`;
       case "max_kitchen_per_week": return `מקסימום ${p.max ?? 2} מטבח בשבוע`;
       case "no_consecutive_burden": {
-        const burdenMap: Record<string, string> = { favorable: "נוח", neutral: "ניטרלי", disliked: "לא אהוב", hated: "שנוא" };
-        return `ללא עומס רצוף: ${burdenMap[p.burden_level] ?? p.burden_level ?? "שנוא"}`;
+        const burdenMap: Record<string, string> = { hard: "קשה", normal: "רגיל", easy: "קל", hated: "קשה", disliked: "קשה", favorable: "קל", neutral: "רגיל" };
+        return `ללא עומס רצוף: ${burdenMap[p.burden_level] ?? p.burden_level ?? "קשה"}`;
       }
       case "min_base_headcount": return `מינימום ${p.min ?? 3} אנשים כל ${p.window_hours ?? 24}ש׳`;
       case "no_task_type_restriction": {

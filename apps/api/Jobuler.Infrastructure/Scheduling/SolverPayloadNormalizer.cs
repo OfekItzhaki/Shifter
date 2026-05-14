@@ -59,12 +59,15 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
         // Use the solver horizon for the specific group (if scoped), otherwise max across all groups.
         // Capped at 7 days to keep the CP-SAT model tractable.
         int maxHorizon;
+        bool isClosedBase = false;
         if (groupId.HasValue)
         {
-            maxHorizon = await _db.Groups.AsNoTracking()
+            var groupData = await _db.Groups.AsNoTracking()
                 .Where(g => g.Id == groupId.Value && g.SpaceId == spaceId && g.DeletedAt == null)
-                .Select(g => (int?)g.SolverHorizonDays)
-                .FirstOrDefaultAsync(ct) ?? 7;
+                .Select(g => new { g.SolverHorizonDays, g.IsClosedBase })
+                .FirstOrDefaultAsync(ct);
+            maxHorizon = groupData?.SolverHorizonDays ?? 7;
+            isClosedBase = groupData?.IsClosedBase ?? false;
         }
         else
         {
@@ -73,6 +76,35 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
                 .MaxAsync(g => (int?)g.SolverHorizonDays, ct) ?? 7;
         }
         maxHorizon = Math.Max(SchedulingConstants.MinHorizonDays, maxHorizon);
+
+        // ── Home-leave config (closed-base groups only) ───────────────────────
+        HomeLeaveConfigDto? homeLeaveConfigDto = null;
+        if (groupId.HasValue && isClosedBase)
+        {
+            var hlConfig = await _db.HomeLeaveConfigs.AsNoTracking()
+                .FirstOrDefaultAsync(c => c.GroupId == groupId.Value && c.SpaceId == spaceId, ct);
+
+            if (hlConfig is not null
+                && hlConfig.MinRestHours > 0
+                && hlConfig.EligibilityThresholdHours > 0
+                && hlConfig.LeaveCapacity > 0
+                && hlConfig.LeaveDurationHours > 0)
+            {
+                homeLeaveConfigDto = new HomeLeaveConfigDto(
+                    Enabled: true,
+                    MinRestHours: (double)hlConfig.MinRestHours,
+                    EligibilityThresholdHours: (double)hlConfig.EligibilityThresholdHours,
+                    LeaveCapacity: hlConfig.LeaveCapacity,
+                    LeaveDurationHours: (double)hlConfig.LeaveDurationHours,
+                    BalanceValue: hlConfig.BalanceValue);
+            }
+            else
+            {
+                _logger.LogWarning(
+                    "Closed-base group {GroupId} has no complete home-leave configuration; omitting home_leave_config from solver payload.",
+                    groupId.Value);
+            }
+        }
 
         var horizonEnd = horizonStart.AddDays(maxHorizon - 1); // inclusive
 
@@ -170,7 +202,7 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
                     s.Id.ToString(),
                     s.TaskTypeId.ToString(),
                     tt?.Name ?? "Unknown",
-                    (tt?.BurdenLevel ?? Domain.Tasks.TaskBurdenLevel.Neutral).ToString().ToLower(),
+                    (tt?.BurdenLevel ?? Domain.Tasks.TaskBurdenLevel.Normal).ToString().ToLower(),
                     s.StartsAt.ToString("o"),
                     s.EndsAt.ToString("o"),
                     s.RequiredHeadcount,
@@ -367,9 +399,9 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
 
         var fairnessDto = fairness.Select(f => new FairnessCountersDto(
             f.PersonId.ToString(),
-            f.TotalAssignments7d, f.HatedTasks7d,
+            f.TotalAssignments7d, f.HardTasks7d,
             f.DislikedHatedScore7d, f.KitchenCount7d,
-            f.NightMissions7d, f.ConsecutiveBurdenCount)).ToList();
+            f.NightMissions7d, f.ConsecutiveHardCount)).ToList();
 
         // ── Space locale ──────────────────────────────────────────────────────
         var space = await _db.Spaces.AsNoTracking()
@@ -383,6 +415,23 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
             groupId?.ToString() ?? "all", peopleDto.Count, slotsDto.Count, hardConstraints.Count, softConstraints.Count,
             horizonStart, horizonEnd, horizonStartDt.ToString("o"));
 
+        // ── Task rotation data (for army-template groups) ─────────────────────
+        List<TaskRotationDto>? taskRotationDto = null;
+        if (groupId.HasValue)
+        {
+            var rotationRecords = await _db.TaskRotationProgress.AsNoTracking()
+                .Where(r => r.SpaceId == spaceId && r.GroupId == groupId.Value)
+                .ToListAsync(ct);
+
+            if (rotationRecords.Count > 0)
+            {
+                taskRotationDto = rotationRecords.Select(r => new TaskRotationDto(
+                    r.PersonId.ToString(),
+                    r.CompletedTaskTypeIds.Select(id => id.ToString()).ToList()
+                )).ToList();
+            }
+        }
+
         return new SolverInputDto(
             spaceId.ToString(), runId.ToString(), triggerMode,
             horizonStart.ToString("yyyy-MM-dd"),
@@ -392,7 +441,41 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
             peopleDto, availabilityDto, presenceDto, slotsDto,
             hardConstraints, softConstraints, emergencyConstraints,
             baselineAssignments, fairnessDto,
-            lockedSlotIds);
+            lockedSlotIds,
+            homeLeaveConfigDto,
+            taskRotationDto);
+    }
+
+    public async Task<SolverInputDto> BuildPreviewAsync(
+        Guid spaceId, Guid groupId, int balanceValue, CancellationToken ct)
+    {
+        // Build the full payload using the normal path (preview uses a synthetic runId)
+        var payload = await BuildAsync(
+            spaceId,
+            runId: Guid.NewGuid(),
+            triggerMode: "preview",
+            baselineVersionId: null,
+            groupId: groupId,
+            startTime: null,
+            ct: ct);
+
+        // Override balance_value in the home-leave config
+        if (payload.HomeLeaveConfig is not null)
+        {
+            payload = payload with
+            {
+                HomeLeaveConfig = payload.HomeLeaveConfig with { BalanceValue = balanceValue },
+                PreviewMode = true
+            };
+        }
+        else
+        {
+            // Even if no config was built (shouldn't happen for a valid closed-base group),
+            // still set preview mode
+            payload = payload with { PreviewMode = true };
+        }
+
+        return payload;
     }
 
     private static Dictionary<string, object> DeserializePayload(string json)

@@ -11,7 +11,7 @@ interface LiveStatusPanelProps {
 
 function formatTime(iso: string | null): string {
   if (!iso) return "";
-  return new Date(iso).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+  return new Date(iso).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit", hour12: false });
 }
 
 export default function LiveStatusPanel({ spaceId, groupId }: LiveStatusPanelProps) {

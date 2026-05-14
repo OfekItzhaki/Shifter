@@ -93,6 +93,20 @@ class FairnessCounters(BaseModel):
     consecutive_burden_count: int = 0
 
 
+class HomeLeaveConfig(BaseModel):
+    enabled: bool
+    min_rest_hours: float
+    eligibility_threshold_hours: float
+    leave_capacity: int
+    leave_duration_hours: float
+    balance_value: int = 50  # 0–100, maps to weight 0–400
+
+
+class TaskRotation(BaseModel):
+    person_id: str
+    completed_task_type_ids: list[str]
+
+
 class SolverInput(BaseModel):
     space_id: str
     run_id: str
@@ -111,6 +125,9 @@ class SolverInput(BaseModel):
     baseline_assignments: list[BaselineAssignment]
     fairness_counters: list[FairnessCounters]
     locked_slot_ids: Optional[list[str]] = []  # slot IDs with manual overrides — solver must not reassign these
+    home_leave_config: Optional[HomeLeaveConfig] = None
+    preview_mode: bool = False  # when True, solver uses reduced time limit and single worker
+    task_rotation: Optional[list[TaskRotation]] = None  # rotation data for army-template groups
 
     @property
     def locked_slot_ids_safe(self) -> list[str]:

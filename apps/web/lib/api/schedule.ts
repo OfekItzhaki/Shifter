@@ -112,12 +112,12 @@ export interface PersonBurdenStats {
   totalAssignments7d: number;
   totalAssignments14d: number;
   totalAssignments30d: number;
-  hatedTasks7d: number;
-  hatedTasks14d: number;
+  hardTasks7d: number;
+  hardTasks14d: number;
   dislikedHatedScore7d: number;
   kitchenCount7d: number;
   nightMissions7d: number;
-  consecutiveBurdenCount: number;
+  consecutiveHardCount: number;
   // All-time
   totalAssignmentsAllTime: number;
   hatedTasksAllTime: number;

@@ -17,6 +17,6 @@ public class GetGroupRolesQueryHandler : IRequestHandler<GetGroupRolesQuery, Lis
             .Where(r => r.SpaceId == req.SpaceId && r.GroupId == req.GroupId && r.IsActive)
             .OrderByDescending(r => r.IsDefault)  // default role always first
             .ThenBy(r => r.Name)
-            .Select(r => new GroupRoleDto(r.Id, r.Name, r.Description, r.IsActive, r.PermissionLevel.ToString(), r.IsDefault))
+            .Select(r => new GroupRoleDto(r.Id, r.Name, r.Description, r.IsActive, r.PermissionLevel.ToString(), r.IsDefault, r.Color))
             .ToListAsync(ct);
 }

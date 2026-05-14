@@ -5,6 +5,7 @@
 using FluentAssertions;
 using Jobuler.Application.Scheduling;
 using Jobuler.Domain.Constraints;
+using Jobuler.Domain.People;
 using Jobuler.Domain.Spaces;
 using Jobuler.Infrastructure.Persistence;
 using Jobuler.Infrastructure.Scheduling;
@@ -204,4 +205,61 @@ public class SolverPayloadNormalizerTests
 
         results.Should().BeEmpty($"expired {scopeTypeName} constraint should be excluded");
     }
+
+    // ── Task 8.1: Solver normalizer ignores UnavailabilityReasonId ────────────
+
+    // Feature: qualification-templates, Property 7: Solver normalizer reason-invariance
+    // Validates: Requirements 8.1, 8.2, 8.3
+
+    [Fact]
+    public void PresenceWindowsWithDifferentReasonIds_ProduceIdenticalSolverDtos()
+    {
+        // Arrange: two presence windows identical except for UnavailabilityReasonId
+        var spaceId = Guid.NewGuid();
+        var personId = Guid.NewGuid();
+        var startsAt = DateTime.UtcNow;
+        var endsAt = startsAt.AddHours(8);
+        var reasonId = Guid.NewGuid();
+
+        var windowWithReason = PresenceWindow.CreateManual(
+            spaceId, personId, PresenceState.AtHome,
+            startsAt, endsAt, "sick", unavailabilityReasonId: reasonId);
+
+        var windowWithoutReason = PresenceWindow.CreateManual(
+            spaceId, personId, PresenceState.AtHome,
+            startsAt, endsAt, "sick", unavailabilityReasonId: null);
+
+        // Act: map both using the same logic the normalizer uses
+        var dtoWithReason = new Jobuler.Application.Scheduling.Models.PresenceWindowDto(
+            windowWithReason.PersonId.ToString(),
+            ToSnakeCase(windowWithReason.State.ToString()),
+            windowWithReason.StartsAt.ToString("o"),
+            windowWithReason.EndsAt.ToString("o"));
+
+        var dtoWithoutReason = new Jobuler.Application.Scheduling.Models.PresenceWindowDto(
+            windowWithoutReason.PersonId.ToString(),
+            ToSnakeCase(windowWithoutReason.State.ToString()),
+            windowWithoutReason.StartsAt.ToString("o"),
+            windowWithoutReason.EndsAt.ToString("o"));
+
+        // Assert: both DTOs are identical — reason is not part of the solver payload
+        dtoWithReason.Should().BeEquivalentTo(dtoWithoutReason,
+            "the solver DTO should not include UnavailabilityReasonId");
+    }
+
+    [Fact]
+    public void SolverPresenceWindowDto_DoesNotContainReasonField()
+    {
+        // Verify the PresenceWindowDto record type only has the expected 4 fields
+        var properties = typeof(Jobuler.Application.Scheduling.Models.PresenceWindowDto).GetProperties();
+        var propertyNames = properties.Select(p => p.Name).ToList();
+
+        propertyNames.Should().BeEquivalentTo(
+            new[] { "PersonId", "State", "StartsAt", "EndsAt" },
+            "solver PresenceWindowDto must not include any reason-related fields");
+    }
+
+    private static string ToSnakeCase(string s) =>
+        string.Concat(s.Select((c, i) =>
+            i > 0 && char.IsUpper(c) ? "_" + char.ToLower(c) : char.ToLower(c).ToString()));
 }

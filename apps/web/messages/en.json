@@ -140,6 +140,7 @@
   "groups": {
     "title": "My Groups",
     "subtitle": "Groups you belong to",
+    "whatsNew": "What's New",
     "newGroup": "+ New Group",
     "newGroupPlaceholder": "New group name",
     "noGroups": "You are not part of any group yet.",
@@ -163,6 +164,7 @@
       "joining": "Joining...",
       "success": "You're in!",
       "successDesc": "You've joined {name}",
+      "alreadyMember": "Already a member",
       "goToGroup": "Go to Group",
       "invalidCode": "Invalid join code. Check with your group admin.",
       "loginRequired": "Sign in to join",
@@ -214,7 +216,11 @@
       "from": "From",
       "until": "Until",
       "unavailable": "Unavailable",
-      "errorAddPresence": "Error adding availability window"
+      "errorAddPresence": "Error adding availability window",
+      "reason": "Reason",
+      "selectReason": "Select reason...",
+      "customReason": "Custom",
+      "customReasonPlaceholder": "Enter custom reason..."
     },
     "qualifications_tab": {
       "title": "Qualifications",
@@ -391,17 +397,30 @@
       "loading": "Loading..."
     },
     "stats_tab": {
+      "loading": "Loading statistics...",
+      "connectionTimeout": "Connection timeout — try again",
+      "errorLoading": "Error loading statistics",
       "activeMembers": "Active Members",
       "totalAssignments": "Total Assignments",
       "avgPerPerson": "Avg per Person",
-      "hatedTasks": "Hated Tasks",
+      "hardTasks": "Hard Tasks",
       "mostAssignments": "Most Assignments",
-      "mostHatedTasks": "Most Hated Tasks",
+      "mostHardTasks": "Most Hard Tasks",
       "highestBurdenScore": "Highest Burden Score",
       "bestBurdenBalance": "Best Burden Balance",
       "detailByPerson": "Detail by Person",
       "noStats": "No statistics for this group",
-      "publishToSeeStats": "Publish a schedule to see data"
+      "publishToSeeStats": "Publish a schedule to see data",
+      "table": {
+        "name": "Name",
+        "total": "Total",
+        "hard": "Hard",
+        "normal": "Normal",
+        "easy": "Easy",
+        "burdenScore": "Burden Score",
+        "balance": "Balance",
+        "lastAssignment": "Last Assignment"
+      }
     },
     "schedule_tab": {
       "draftReady": "Draft schedule ready for review and publication",
@@ -447,6 +466,9 @@
     "exportDataDesc": "Download all your personal data as a JSON file. Includes your profile, group memberships, assignments, and notifications.",
     "exportButton": "Download My Data",
     "exporting": "Exporting...",
+    "feedback": "Bug Report / Feedback",
+    "feedbackDesc": "Found a bug or have an idea for improvement? Send us a message and we'll get back to you.",
+    "feedbackButton": "Send Feedback",
     "deleteAccount": "Delete Account",
     "deleteAccountDesc": "Permanently delete your account and all associated data. This cannot be undone.",
     "deleteAccountButton": "Delete My Account",
@@ -598,10 +620,9 @@
     "tabSettings": "Settings",
     "groupMembers": "{count} members · Horizon: {days} days",
     "burden": {
-      "Favorable": "Favorable",
-      "Neutral": "Neutral",
-      "Disliked": "Disliked",
-      "Hated": "Hated"
+      "Easy": "Easy",
+      "Normal": "Normal",
+      "Hard": "Hard"
     },
     "logs": {
       "title": "Logs",
@@ -700,9 +721,9 @@
     "maxKitchenPerWeek": "Max kitchen shifts per week",
     "taskTypeName": "Task type name (optional)",
     "noConsecutiveBurden": "No consecutive burden level",
-    "hated": "Hated",
-    "disliked": "Disliked",
-    "neutral": "Neutral",
+    "hard": "Hard",
+    "normal": "Normal",
+    "easy": "Easy",
     "minPeople": "Minimum people",
     "windowHours": "Time window (hours)",
     "restrictedTaskType": "Restricted task type",

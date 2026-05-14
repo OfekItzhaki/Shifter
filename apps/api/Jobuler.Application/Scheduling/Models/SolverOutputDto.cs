@@ -20,6 +20,10 @@ public class SolverOutputDto
     [JsonPropertyName("stability_metrics")]  public StabilityMetricsDto StabilityMetrics { get; init; } = new();
     [JsonPropertyName("fairness_metrics")]   public List<FairnessMetricsDto> FairnessMetrics { get; init; } = new();
     [JsonPropertyName("explanation_fragments")] public List<string> ExplanationFragments { get; init; } = new();
+    [JsonPropertyName("home_leave_assignments")] public List<HomeLeaveAssignmentDto> HomeLeaveAssignments { get; init; } = new();
+    [JsonPropertyName("home_leave_metrics")]     public List<HomeLeaveMetricDto> HomeLeaveMetrics { get; init; } = new();
+    [JsonPropertyName("fairness_variance")]      public double? FairnessVariance { get; init; }
+    [JsonPropertyName("solver_time_ms")]         public int SolverTimeMs { get; init; }
 }
 
 public class AssignmentResultDto
@@ -52,4 +56,20 @@ public class FairnessMetricsDto
     [JsonPropertyName("hated_tasks_assigned")]   public int HatedTasksAssigned { get; init; }
     [JsonPropertyName("disliked_tasks_assigned")] public int DislikedTasksAssigned { get; init; }
     [JsonPropertyName("total_assigned")]         public int TotalAssigned { get; init; }
+}
+
+public class HomeLeaveAssignmentDto
+{
+    [JsonPropertyName("person_id")] public string PersonId { get; init; } = "";
+    [JsonPropertyName("starts_at")] public string StartsAt { get; init; } = "";
+    [JsonPropertyName("ends_at")]   public string EndsAt { get; init; } = "";
+}
+
+public class HomeLeaveMetricDto
+{
+    [JsonPropertyName("person_id")]        public string PersonId { get; init; } = "";
+    [JsonPropertyName("total_base_hours")] public double TotalBaseHours { get; init; }
+    [JsonPropertyName("total_home_hours")] public double TotalHomeHours { get; init; }
+    [JsonPropertyName("base_time_ratio")]  public double BaseTimeRatio { get; init; }
+    [JsonPropertyName("leave_slot_count")] public int LeaveSlotCount { get; init; }
 }

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import type { GroupRoleDto, GroupMemberDto } from "@/lib/api/groups";
+import RoleColorPicker from "@/components/RoleColorPicker";
 
 const PERM_LEVELS = ["view", "ViewAndEdit", "Owner"] as const;
 type PermLevel = typeof PERM_LEVELS[number];
@@ -18,8 +19,8 @@ interface Props {
   groupRoles: GroupRoleDto[];
   groupRolesLoading: boolean;
   members: GroupMemberDto[];
-  onCreateRole: (name: string, description: string | null, permissionLevel: string) => Promise<void>;
-  onUpdateRole: (roleId: string, name: string, description: string | null, permissionLevel: string) => Promise<void>;
+  onCreateRole: (name: string, description: string | null, permissionLevel: string, color?: string | null) => Promise<void>;
+  onUpdateRole: (roleId: string, name: string, description: string | null, permissionLevel: string, color?: string | null) => Promise<void>;
   onDeactivateRole: (roleId: string) => Promise<void>;
   onUpdateMemberRole: (personId: string, roleId: string | null) => Promise<void>;
 }
@@ -41,6 +42,7 @@ export default function RolesTab({
   const [newRoleName, setNewRoleName] = useState("");
   const [newRoleDesc, setNewRoleDesc] = useState("");
   const [newRolePermLevel, setNewRolePermLevel] = useState<PermLevel>("view");
+  const [newRoleColor, setNewRoleColor] = useState<string | null>(null);
   const [roleFormSaving, setRoleFormSaving] = useState(false);
   const [roleFormError, setRoleFormError] = useState<string | null>(null);
 
@@ -48,6 +50,7 @@ export default function RolesTab({
   const [editRoleName, setEditRoleName] = useState("");
   const [editRoleDesc, setEditRoleDesc] = useState("");
   const [editRolePermLevel, setEditRolePermLevel] = useState<PermLevel>("view");
+  const [editRoleColor, setEditRoleColor] = useState<string | null>(null);
   const [editRoleSaving, setEditRoleSaving] = useState(false);
   const [editRoleError, setEditRoleError] = useState<string | null>(null);
   const [confirmDeactivateRole, setConfirmDeactivateRole] = useState<string | null>(null);
@@ -60,8 +63,8 @@ export default function RolesTab({
     setRoleFormSaving(true);
     setRoleFormError(null);
     try {
-      await onCreateRole(newRoleName.trim(), newRoleDesc.trim() || null, newRolePermLevel);
-      setNewRoleName(""); setNewRoleDesc(""); setNewRolePermLevel("view");
+      await onCreateRole(newRoleName.trim(), newRoleDesc.trim() || null, newRolePermLevel, newRoleColor);
+      setNewRoleName(""); setNewRoleDesc(""); setNewRolePermLevel("view"); setNewRoleColor(null);
     } catch {
       setRoleFormError(tSettings("errorCreateRole"));
     } finally {
@@ -74,7 +77,7 @@ export default function RolesTab({
     setEditRoleSaving(true);
     setEditRoleError(null);
     try {
-      await onUpdateRole(roleId, editRoleName.trim(), editRoleDesc.trim() || null, editRolePermLevel);
+      await onUpdateRole(roleId, editRoleName.trim(), editRoleDesc.trim() || null, editRolePermLevel, editRoleColor);
       setEditingRoleId(null);
     } catch {
       setEditRoleError(tSettings("errorUpdateRole"));
@@ -187,6 +190,7 @@ export default function RolesTab({
                         <option value="ViewAndEdit">{tSettings("viewAndEdit")}</option>
                         <option value="Owner">{tSettings("ownerRole")}</option>
                       </select>
+                      <RoleColorPicker value={editRoleColor} onChange={setEditRoleColor} />
                       {editRoleError && <p className="text-xs text-red-600">{editRoleError}</p>}
                       <div className="flex gap-2">
                         <button onClick={() => handleUpdateRole(role.id)} disabled={editRoleSaving}
@@ -229,6 +233,7 @@ export default function RolesTab({
                               setEditRoleName(role.name);
                               setEditRoleDesc(role.description ?? "");
                               setEditRolePermLevel(permLevel);
+                              setEditRoleColor(role.color ?? null);
                               setEditRoleError(null);
                             }}
                             className="text-xs text-slate-500 border border-slate-200 hover:bg-slate-50 px-2.5 py-1 rounded-lg transition-colors"
@@ -294,6 +299,7 @@ export default function RolesTab({
                 <option value="ViewAndEdit">{tSettings("viewAndEdit")}</option>
                 <option value="Owner">{tSettings("ownerRole")}</option>
               </select>
+              <RoleColorPicker value={newRoleColor} onChange={setNewRoleColor} />
               {roleFormError && <p className="text-xs text-red-600">{roleFormError}</p>}
             </form>
           </div>
@@ -341,9 +347,17 @@ export default function RolesTab({
                     </select>
                   )}
                   {currentRole && !m.isOwner && (
-                    <span className={`text-xs px-1.5 py-0.5 rounded-full border flex-shrink-0 ${PERM_META[(currentRole.permissionLevel?.toLowerCase() === "viewandedit" ? "ViewAndEdit" : currentRole.permissionLevel === "Owner" ? "Owner" : "view") as PermLevel]?.color ?? ""}`}>
-                      {PERM_META[(currentRole.permissionLevel?.toLowerCase() === "viewandedit" ? "ViewAndEdit" : currentRole.permissionLevel === "Owner" ? "Owner" : "view") as PermLevel]?.label}
-                    </span>
+                    <>
+                      {currentRole.color && (
+                        <span
+                          className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                          style={{ backgroundColor: currentRole.color }}
+                        />
+                      )}
+                      <span className={`text-xs px-1.5 py-0.5 rounded-full border flex-shrink-0 ${PERM_META[(currentRole.permissionLevel?.toLowerCase() === "viewandedit" ? "ViewAndEdit" : currentRole.permissionLevel === "Owner" ? "Owner" : "view") as PermLevel]?.color ?? ""}`}>
+                        {PERM_META[(currentRole.permissionLevel?.toLowerCase() === "viewandedit" ? "ViewAndEdit" : currentRole.permissionLevel === "Owner" ? "Owner" : "view") as PermLevel]?.label}
+                      </span>
+                    </>
                   )}
                 </div>
               );

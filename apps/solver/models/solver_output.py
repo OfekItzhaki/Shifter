@@ -34,6 +34,20 @@ class FairnessMetrics(BaseModel):
     total_assigned: int
 
 
+class HomeLeaveAssignment(BaseModel):
+    person_id: str
+    starts_at: str  # ISO 8601 UTC
+    ends_at: str    # ISO 8601 UTC
+
+
+class HomeLeaveMetric(BaseModel):
+    person_id: str
+    total_base_hours: float
+    total_home_hours: float
+    base_time_ratio: float
+    leave_slot_count: int
+
+
 class SolverOutput(BaseModel):
     run_id: str
     feasible: bool
@@ -45,3 +59,7 @@ class SolverOutput(BaseModel):
     stability_metrics: StabilityMetrics
     fairness_metrics: list[FairnessMetrics]
     explanation_fragments: list[str]  # human-readable notes for admin UI
+    home_leave_assignments: list[HomeLeaveAssignment] = []
+    home_leave_metrics: list[HomeLeaveMetric] = []
+    fairness_variance: Optional[float] = None
+    solver_time_ms: int = 0  # wall-clock time spent solving

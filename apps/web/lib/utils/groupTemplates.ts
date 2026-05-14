@@ -15,6 +15,8 @@ export interface GroupTemplate {
     rulePayloadJson: string;
   }>;
   solverHorizonDays: number;
+  qualifications: Array<{ name: string; description?: string }>;
+  unavailabilityReasons: string[];
 }
 
 function futureDate(daysFromNow: number): string {
@@ -47,7 +49,7 @@ export const GROUP_TEMPLATES: GroupTemplate[] = [
         endsAt: endDate(),
         shiftDurationMinutes: 1440, // 24h
         requiredHeadcount: 2,
-        burdenLevel: "disliked",
+        burdenLevel: "hard",
         allowsDoubleShift: false,
         allowsOverlap: false,
       },
@@ -57,7 +59,7 @@ export const GROUP_TEMPLATES: GroupTemplate[] = [
         endsAt: endDate(),
         shiftDurationMinutes: 480, // 8h
         requiredHeadcount: 2,
-        burdenLevel: "hated",
+        burdenLevel: "hard",
         allowsDoubleShift: false,
         allowsOverlap: false,
         dailyStartTime: "06:00",
@@ -69,15 +71,23 @@ export const GROUP_TEMPLATES: GroupTemplate[] = [
         endsAt: endDate(),
         shiftDurationMinutes: 480, // 8h
         requiredHeadcount: 2,
-        burdenLevel: "neutral",
+        burdenLevel: "normal",
         allowsDoubleShift: false,
         allowsOverlap: false,
       },
     ],
     constraints: [
       { scopeType: "group", severity: "hard", ruleType: "min_rest_hours", rulePayloadJson: '{"hours": 8}' },
-      { scopeType: "group", severity: "soft", ruleType: "no_consecutive_burden", rulePayloadJson: '{"burden_level": "hated"}' },
+      { scopeType: "group", severity: "soft", ruleType: "no_consecutive_burden", rulePayloadJson: '{"burden_level": "hard"}' },
     ],
+    qualifications: [
+      { name: "Combat Medic" },
+      { name: "Radio Operator" },
+      { name: "Driver" },
+      { name: "Commander" },
+      { name: "Sharpshooter" },
+    ],
+    unavailabilityReasons: ["חופשה", "מחלה", "אישי", "לימודים"],
   },
   {
     id: "restaurant",
@@ -118,7 +128,7 @@ export const GROUP_TEMPLATES: GroupTemplate[] = [
         endsAt: endDate(),
         shiftDurationMinutes: 180, // 3h
         requiredHeadcount: 2,
-        burdenLevel: "disliked",
+        burdenLevel: "hard",
         allowsDoubleShift: false,
         allowsOverlap: false,
         dailyStartTime: "22:00",
@@ -128,6 +138,14 @@ export const GROUP_TEMPLATES: GroupTemplate[] = [
     constraints: [
       { scopeType: "group", severity: "hard", ruleType: "min_rest_hours", rulePayloadJson: '{"hours": 10}' },
     ],
+    qualifications: [
+      { name: "Bartender" },
+      { name: "Waiter" },
+      { name: "Cook" },
+      { name: "Shift Manager" },
+      { name: "Barista" },
+    ],
+    unavailabilityReasons: ["חופשה", "מחלה", "אישי", "לימודים"],
   },
   {
     id: "hospital",
@@ -156,7 +174,7 @@ export const GROUP_TEMPLATES: GroupTemplate[] = [
         endsAt: endDate(),
         shiftDurationMinutes: 480, // 8h
         requiredHeadcount: 2,
-        burdenLevel: "disliked",
+        burdenLevel: "hard",
         allowsDoubleShift: false,
         allowsOverlap: false,
         dailyStartTime: "15:00",
@@ -168,7 +186,7 @@ export const GROUP_TEMPLATES: GroupTemplate[] = [
         endsAt: endDate(),
         shiftDurationMinutes: 480, // 8h
         requiredHeadcount: 2,
-        burdenLevel: "hated",
+        burdenLevel: "hard",
         allowsDoubleShift: false,
         allowsOverlap: false,
         dailyStartTime: "23:00",
@@ -177,8 +195,16 @@ export const GROUP_TEMPLATES: GroupTemplate[] = [
     ],
     constraints: [
       { scopeType: "group", severity: "hard", ruleType: "min_rest_hours", rulePayloadJson: '{"hours": 12}' },
-      { scopeType: "group", severity: "soft", ruleType: "no_consecutive_burden", rulePayloadJson: '{"burden_level": "hated"}' },
+      { scopeType: "group", severity: "soft", ruleType: "no_consecutive_burden", rulePayloadJson: '{"burden_level": "hard"}' },
     ],
+    qualifications: [
+      { name: "Nurse" },
+      { name: "Doctor" },
+      { name: "Paramedic" },
+      { name: "Lab Technician" },
+      { name: "Receptionist" },
+    ],
+    unavailabilityReasons: ["חופשה", "מחלה", "אישי", "לימודים"],
   },
   {
     id: "security",
@@ -207,7 +233,7 @@ export const GROUP_TEMPLATES: GroupTemplate[] = [
         endsAt: endDate(),
         shiftDurationMinutes: 720, // 12h
         requiredHeadcount: 2,
-        burdenLevel: "disliked",
+        burdenLevel: "hard",
         allowsDoubleShift: false,
         allowsOverlap: false,
         dailyStartTime: "18:00",
@@ -217,6 +243,14 @@ export const GROUP_TEMPLATES: GroupTemplate[] = [
     constraints: [
       { scopeType: "group", severity: "hard", ruleType: "min_rest_hours", rulePayloadJson: '{"hours": 10}' },
     ],
+    qualifications: [
+      { name: "Armed Guard" },
+      { name: "CCTV Operator" },
+      { name: "Patrol" },
+      { name: "Shift Supervisor" },
+      { name: "First Aid Certified" },
+    ],
+    unavailabilityReasons: ["חופשה", "מחלה", "אישי", "לימודים"],
   },
   {
     id: "custom",
@@ -228,5 +262,7 @@ export const GROUP_TEMPLATES: GroupTemplate[] = [
     solverHorizonDays: 7,
     tasks: [],
     constraints: [],
+    qualifications: [],
+    unavailabilityReasons: [],
   },
 ];

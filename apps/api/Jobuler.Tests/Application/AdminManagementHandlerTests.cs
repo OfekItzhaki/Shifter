@@ -238,7 +238,7 @@ public class AdminManagementHandlerTests
             Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(),
             name,
             DateTime.UtcNow, DateTime.UtcNow.AddHours(8),
-            8, 1, "neutral", false, false);
+            8, 1, "normal", false, false);
 
         var result = validator.Validate(cmd);
 
@@ -254,7 +254,7 @@ public class AdminManagementHandlerTests
             Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(),
             longName,
             DateTime.UtcNow, DateTime.UtcNow.AddHours(8),
-            8, 1, "neutral", false, false);
+            8, 1, "normal", false, false);
 
         var result = validator.Validate(cmd);
 
@@ -275,7 +275,7 @@ public class AdminManagementHandlerTests
             Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(),
             "Valid Name",
             startsAt, endsAt,
-            8, 1, "neutral", false, false);
+            8, 1, "normal", false, false);
 
         var result = validator.Validate(cmd);
 
@@ -293,7 +293,7 @@ public class AdminManagementHandlerTests
             Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(),
             "Valid Name",
             startsAt, startsAt.AddHours(8),
-            ShiftDurationMinutes, 1, "neutral", false, false);
+            ShiftDurationMinutes, 1, "normal", false, false);
 
         var result = validator.Validate(cmd);
 
@@ -311,7 +311,7 @@ public class AdminManagementHandlerTests
             Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(),
             "Valid Name",
             startsAt, startsAt.AddHours(8),
-            8, headcount, "neutral", false, false);
+            8, headcount, "normal", false, false);
 
         var result = validator.Validate(cmd);
 
@@ -340,10 +340,9 @@ public class AdminManagementHandlerTests
     }
 
     [Theory]
-    [InlineData("favorable")]
-    [InlineData("neutral")]
-    [InlineData("disliked")]
-    [InlineData("hated")]
+    [InlineData("easy")]
+    [InlineData("normal")]
+    [InlineData("hard")]
     public void CreateGroupTaskValidator_AcceptsValidBurdenLevels(string burdenLevel)
     {
         var validator = new CreateGroupTaskCommandValidator();

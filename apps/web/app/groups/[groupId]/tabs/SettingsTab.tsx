@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import type { GroupMemberDto } from "@/lib/api/groups";
 import { getJoinCode, regenerateJoinCode } from "@/lib/api/groups";
 import SmartImportModal from "@/components/SmartImportModal";
+import HomeLeaveConfigPanel from "@/components/home-leave/HomeLeaveConfigPanel";
 
 interface DraftVersion { id: string; status: string; }
 
@@ -21,6 +22,7 @@ interface Props {
   settingsSaved: boolean;
   solverStartDateTime: string | null;
   autoPublish: boolean;
+  isClosedBase: boolean;
   solverPolling: boolean;
   solverStatus: string | null;
   solverError: string | null;
@@ -45,6 +47,7 @@ interface Props {
   onSolverHorizonChange: (v: number) => void;
   onSolverStartDateTimeChange: (v: string | null) => void;
   onAutoPublishChange: (v: boolean) => void;
+  onClosedBaseChange: (v: boolean) => void;
   onSaveSettings: () => void;
   onTriggerSolver: (startTime?: string) => void;
   onOpenDraftModal: () => void;
@@ -59,12 +62,12 @@ interface Props {
 export default function SettingsTab({
   isAdmin, spaceId, groupId, newGroupName, renameSaving, renameError,
   solverHorizon, savingSettings, settingsError, settingsSaved,
-  solverStartDateTime, autoPublish,
+  solverStartDateTime, autoPublish, isClosedBase,
   solverPolling, solverStatus, solverError, draftVersion,
   members,
   transferPersonId, transferSaving, transferError, hasPendingTransfer, cancelTransferSaving,
   showDeleteConfirm, deleteSaving, deleteError,
-  onGroupNameChange, onRenameGroup, onSolverHorizonChange, onSolverStartDateTimeChange, onAutoPublishChange, onSaveSettings,
+  onGroupNameChange, onRenameGroup, onSolverHorizonChange, onSolverStartDateTimeChange, onAutoPublishChange, onClosedBaseChange, onSaveSettings,
   onTriggerSolver, onOpenDraftModal,
   onTransferPersonChange, onInitiateTransfer, onCancelTransfer,
   onShowDeleteConfirm, onDeleteGroup,
@@ -125,7 +128,7 @@ export default function SettingsTab({
             max={7}
             value={solverHorizon}
             onChange={e => onSolverHorizonChange(Number(e.target.value))}
-            className="w-full accent-blue-500"
+            className="w-full"
           />
           <div className="flex items-center gap-2">
             <label className="text-sm text-slate-600 whitespace-nowrap">{t("solverStartFrom")}</label>
@@ -177,6 +180,38 @@ export default function SettingsTab({
           </button>
         </div>
       </Section>
+
+      {/* Closed base toggle */}
+      <Section title="בסיס סגור">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm text-slate-600">
+              סמן קבוצה זו כבסיס סגור כדי להפעיל תכנון חופשות אוטומטי. כאשר מופעל, המערכת תתזמן חופשות הביתה עבור אנשי הצוות.
+            </p>
+          </div>
+          <button
+            role="switch"
+            aria-checked={isClosedBase}
+            onClick={() => onClosedBaseChange(!isClosedBase)}
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors flex-shrink-0 ${
+              isClosedBase ? "bg-blue-500" : "bg-slate-200"
+            }`}
+          >
+            <span
+              className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform ${
+                isClosedBase ? "translate-x-6" : "translate-x-1"
+              }`}
+            />
+          </button>
+        </div>
+      </Section>
+
+      {/* Home-leave configuration panel — visible only when closed base is enabled */}
+      <HomeLeaveConfigPanel
+        spaceId={spaceId}
+        groupId={groupId}
+        isClosedBase={isClosedBase}
+      />
 
       {/* Trigger solver */}
       <Section title={t("runSchedule")}>

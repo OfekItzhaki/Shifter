@@ -78,13 +78,13 @@ export default function ConstraintPayloadEditor({ ruleType, value, onChange, tas
         <div>
           <label className="block text-xs font-medium text-slate-500 mb-1">{t("noConsecutiveBurden")}</label>
           <select
-            value={String(payload.burden_level ?? "hated")}
+            value={String(payload.burden_level ?? "hard")}
             onChange={e => update({ burden_level: e.target.value })}
             className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
-            <option value="hated">{t("hated")}</option>
-            <option value="disliked">{t("disliked")}</option>
-            <option value="neutral">{t("neutral")}</option>
+            <option value="hard">{t("hard")}</option>
+            <option value="normal">{t("normal")}</option>
+            <option value="easy">{t("easy")}</option>
           </select>
         </div>
       );

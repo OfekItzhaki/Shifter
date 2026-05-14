@@ -5,7 +5,7 @@ namespace Jobuler.Application.Tasks.Validators;
 
 public class CreateTaskTypeCommandValidator : AbstractValidator<CreateTaskTypeCommand>
 {
-    private static readonly string[] ValidBurdenLevels = ["Favorable", "Neutral", "Disliked", "Hated"];
+    private static readonly string[] ValidBurdenLevels = ["Easy", "Normal", "Hard"];
 
     public CreateTaskTypeCommandValidator()
     {

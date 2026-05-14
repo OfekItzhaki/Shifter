@@ -1,8 +1,19 @@
 "use client";
 
 import { useState } from "react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import CantMakeItModal from "./CantMakeItModal";
+
+/** Task type name used for home-leave assignments from the solver */
+const HOME_LEAVE_TASK_TYPE = "home_leave";
+
+/** Display label for home-leave assignments */
+const HOME_LEAVE_LABEL = "בבית";
+
+/** Check if a task type represents a home-leave assignment */
+function isHomeLeaveTask(taskTypeName: string): boolean {
+  return taskTypeName === HOME_LEAVE_TASK_TYPE;
+}
 
 /** Minimal assignment shape needed by this component */
 export interface TaskAssignment {
@@ -21,15 +32,17 @@ interface Props {
   /** Admin-only: enables the "can't make it" button per person */
   isAdmin?: boolean;
   spaceId?: string;
+  /** Optional map of personId → role hex color for visual indicators */
+  roleColorMap?: Map<string, string | null>;
   /** Called after a presence window is saved — parent decides whether to re-run solver */
   onPersonBlocked?: (personId: string, triggerRerun: boolean) => void;
 }
 
 function formatTime(iso: string): string {
-  return new Date(iso).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+  return new Date(iso).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit", hour12: false });
 }
 
-function formatShiftTime(startIso: string, endIso: string): string {
+function formatShiftTime(startIso: string, endIso: string, locale?: string): string {
   const start = new Date(startIso);
   const end = new Date(endIso);
   const durationHours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
@@ -39,7 +52,9 @@ function formatShiftTime(startIso: string, endIso: string): string {
     return `${formatTime(startIso)} (24h)`;
   }
 
-  return `${formatTime(startIso)} – ${formatTime(endIso)}`;
+  // Use directional arrow: ← for RTL (Hebrew), → for LTR
+  const arrow = locale === "he" ? "←" : "→";
+  return `${formatTime(startIso)} ${arrow} ${formatTime(endIso)}`;
 }
 
 function overlapsDate(a: TaskAssignment, dateStr: string): boolean {
@@ -71,8 +86,9 @@ function overlapsDate(a: TaskAssignment, dateStr: string): boolean {
  *
  * This cleanly handles tasks with different shift times and multiple people per shift.
  */
-export default function ScheduleTaskTable({ assignments, currentUserName, filterDate, isAdmin, spaceId, onPersonBlocked }: Props) {
+export default function ScheduleTaskTable({ assignments, currentUserName, filterDate, isAdmin, spaceId, roleColorMap, onPersonBlocked }: Props) {
   const t = useTranslations("schedule");
+  const locale = useLocale();
   const [cantMakeIt, setCantMakeIt] = useState<{ personId: string; personName: string } | null>(null);
   const visible = filterDate
     ? assignments.filter(a => overlapsDate(a, filterDate))
@@ -101,6 +117,8 @@ export default function ScheduleTaskTable({ assignments, currentUserName, filter
       <div className="space-y-6">
         {taskNames.map(taskName => {
         const taskAssignments = byTask.get(taskName)!;
+        const isHomeLeave = isHomeLeaveTask(taskName);
+        const displayName = isHomeLeave ? HOME_LEAVE_LABEL : taskName;
 
         // Group by slot key → list of people assigned to that slot
         const slotMap = new Map<string, { startsAt: string; endsAt: string; people: string[]; personIds: string[] }>();
@@ -123,34 +141,41 @@ export default function ScheduleTaskTable({ assignments, currentUserName, filter
           <div key={taskName}>
             {/* Task header */}
             <div className="flex items-center gap-2 mb-2">
-              <span className="text-sm font-semibold text-slate-800 dark:text-slate-200">{taskName}</span>
-              <span className="text-xs text-slate-400 bg-slate-100 dark:bg-slate-700 dark:text-slate-300 px-2 py-0.5 rounded-full">
+              {isHomeLeave && (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="text-emerald-600 dark:text-emerald-400 flex-shrink-0">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                </svg>
+              )}
+              <span className={`text-sm font-semibold ${isHomeLeave ? "text-emerald-700 dark:text-emerald-300" : "text-slate-800 dark:text-slate-200"}`}>
+                {displayName}
+              </span>
+              <span className={`text-xs px-2 py-0.5 rounded-full ${isHomeLeave ? "text-emerald-600 bg-emerald-100 dark:bg-emerald-900/40 dark:text-emerald-300" : "text-slate-400 bg-slate-100 dark:bg-slate-700 dark:text-slate-300"}`}>
                 {slots.length} {t("shifts")}
               </span>
             </div>
 
-            <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm -mx-2 sm:mx-0">
+            <div className={`overflow-x-auto rounded-xl border shadow-sm -mx-2 sm:mx-0 ${isHomeLeave ? "border-emerald-200 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-950/30" : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"}`}>
               <table className="w-full text-sm border-collapse table-fixed min-w-[280px]">
                 <thead>
-                  <tr className="border-b border-slate-100 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-800/80">
-                    <th className="px-2.5 sm:px-4 py-2.5 sm:py-3 text-start text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider whitespace-nowrap sticky right-0 bg-slate-50/80 dark:bg-slate-800/80 z-10">
+                  <tr className={`border-b ${isHomeLeave ? "border-emerald-100 dark:border-emerald-800 bg-emerald-50/80 dark:bg-emerald-950/50" : "border-slate-100 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-800/80"}`}>
+                    <th className={`px-2.5 sm:px-4 py-2.5 sm:py-3 text-start text-xs font-semibold uppercase tracking-wider whitespace-nowrap sticky right-0 z-10 ${isHomeLeave ? "text-emerald-600 dark:text-emerald-400 bg-emerald-50/80 dark:bg-emerald-950/50" : "text-slate-500 dark:text-slate-400 bg-slate-50/80 dark:bg-slate-800/80"}`}>
                       {t("time")}
                     </th>
                     {personCols.map(i => (
-                      <th key={i} className="px-2.5 sm:px-4 py-2.5 sm:py-3 text-center text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                      <th key={i} className={`px-2.5 sm:px-4 py-2.5 sm:py-3 text-center text-xs font-semibold uppercase tracking-wider ${isHomeLeave ? "text-emerald-600 dark:text-emerald-400" : "text-slate-500 dark:text-slate-400"}`}>
                         {maxPeople === 1 ? t("assignee") : t("assigneeN", { n: i + 1 })}
                       </th>
                     ))}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
+                <tbody className={`divide-y ${isHomeLeave ? "divide-emerald-100 dark:divide-emerald-800" : "divide-slate-100 dark:divide-slate-700"}`}>
                   {slots.map(slot => {
                     const key = `${slot.startsAt}|${slot.endsAt}`;
                     return (
-                      <tr key={key} className="hover:bg-slate-50/40 dark:hover:bg-slate-700/40 transition-colors">
+                      <tr key={key} className={`transition-colors ${isHomeLeave ? "hover:bg-emerald-100/40 dark:hover:bg-emerald-900/30" : "hover:bg-slate-50/40 dark:hover:bg-slate-700/40"}`}>
                         {/* Time */}
-                        <td className="px-2.5 sm:px-4 py-2.5 sm:py-3 text-xs tabular-nums text-slate-500 dark:text-slate-400 whitespace-nowrap sticky right-0 bg-white dark:bg-slate-800 z-10 border-r border-slate-100 dark:border-slate-700">
-                          {formatShiftTime(slot.startsAt, slot.endsAt)}
+                        <td className={`px-2.5 sm:px-4 py-2.5 sm:py-3 text-xs tabular-nums whitespace-nowrap sticky right-0 z-10 border-r ${isHomeLeave ? "text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 border-emerald-100 dark:border-emerald-800" : "text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700"}`}>
+                          {formatShiftTime(slot.startsAt, slot.endsAt, locale)}
                         </td>
                         {/* Person columns */}
                         {personCols.map(i => {
@@ -158,13 +183,20 @@ export default function ScheduleTaskTable({ assignments, currentUserName, filter
                           const personId = slot.personIds[i];
                           const isCurrentUser = name === currentUserName;
                           return (
-                            <td key={i} className={`px-2.5 sm:px-4 py-2.5 sm:py-3 text-center ${isCurrentUser ? "bg-blue-50/60 dark:bg-blue-900/20" : ""}`}>
+                            <td key={i} className={`px-2.5 sm:px-4 py-2.5 sm:py-3 text-center ${isCurrentUser && !isHomeLeave ? "bg-blue-50/60 dark:bg-blue-900/20" : ""} ${isCurrentUser && isHomeLeave ? "bg-emerald-100/60 dark:bg-emerald-900/30" : ""}`}>
                               {name ? (
                                 <div className="flex items-center justify-center gap-1.5 group">
-                                  <span className={`text-xs sm:text-sm font-medium ${isCurrentUser ? "text-blue-700 dark:text-blue-300" : "text-slate-800 dark:text-slate-200"}`}>
+                                  <span
+                                    className={`text-xs sm:text-sm font-medium ${isHomeLeave ? "text-emerald-800 dark:text-emerald-200" : isCurrentUser ? "text-blue-700 dark:text-blue-300" : "text-slate-800 dark:text-slate-200"}`}
+                                    style={
+                                      personId && roleColorMap?.get(personId)
+                                        ? { borderLeft: `3px solid ${roleColorMap.get(personId)}`, paddingLeft: '6px' }
+                                        : undefined
+                                    }
+                                  >
                                     {name}
                                   </span>
-                                  {isAdmin && spaceId && personId && (
+                                  {isAdmin && spaceId && personId && !isHomeLeave && (
                                     <button
                                       onClick={() => setCantMakeIt({ personId, personName: name })}
                                       title="Can't make it"
@@ -177,7 +209,7 @@ export default function ScheduleTaskTable({ assignments, currentUserName, filter
                                   )}
                                 </div>
                               ) : (
-                                <span className="text-slate-300">—</span>
+                                <span className={isHomeLeave ? "text-emerald-300" : "text-slate-300"}>—</span>
                               )}
                             </td>
                           );

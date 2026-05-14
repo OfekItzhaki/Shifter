@@ -206,3 +206,61 @@ button:disabled, input:disabled, textarea:disabled, select:disabled {
 .dark .hover\:bg-slate-50:hover { background: #334155 !important; }
 .dark .bg-slate-50\/80, .dark .bg-slate-50 { background: #1e293b !important; }
 .dark .bg-slate-100 { background: #334155 !important; }
+
+/* ── Range slider thumb — visible on all platforms including mobile ───────── */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 8px;
+  border-radius: 9999px;
+  background: #e2e8f0; /* slate-200 */
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #3b82f6; /* blue-500 */
+  cursor: pointer;
+  border: 2px solid white;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #3b82f6; /* blue-500 */
+  cursor: pointer;
+  border: 2px solid white;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 8px;
+  border-radius: 9999px;
+}
+
+input[type="range"]::-moz-range-track {
+  height: 8px;
+  border-radius: 9999px;
+  background: #e2e8f0;
+}
+
+.dark input[type="range"] {
+  background: #334155; /* slate-700 */
+}
+
+.dark input[type="range"]::-webkit-slider-thumb {
+  border-color: #1e293b;
+}
+
+.dark input[type="range"]::-moz-range-thumb {
+  border-color: #1e293b;
+}
+
+.dark input[type="range"]::-moz-range-track {
+  background: #334155;
+}

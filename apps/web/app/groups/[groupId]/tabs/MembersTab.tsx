@@ -7,6 +7,7 @@ import ImageUpload from "@/components/ImageUpload";
 import type { GroupMemberDto, GroupRoleDto } from "@/lib/api/groups";
 import { apiClient } from "@/lib/api/client";
 import { useSpaceStore } from "@/lib/store/spaceStore";
+import { getReasons, type UnavailabilityReasonDto } from "@/lib/api/unavailabilityReasons";
 
 interface Props {
   isAdmin: boolean;
@@ -113,7 +114,9 @@ export default function MembersTab({
                 <button onClick={() => onSelectMember(m)} className="text-xs text-blue-600 hover:underline">{t("details")}</button>
                 {isAdmin && !m.isOwner && (
                   <>
-                    <button onClick={() => onOpenInvite(m.personId)} className="text-xs text-slate-500 hover:text-slate-700 border border-slate-200 px-2 py-1 rounded-lg hover:bg-slate-50 transition-colors">{t("invite")}</button>
+                    {!m.linkedUserId && (
+                      <button onClick={() => onOpenInvite(m.personId)} className="text-xs text-slate-500 hover:text-slate-700 border border-slate-200 px-2 py-1 rounded-lg hover:bg-slate-50 transition-colors">{t("invite")}</button>
+                    )}
                     {confirmRemove === m.personId ? (
                       <>
                         <span className="text-xs text-slate-600">{t("permanentRemove")}</span>
@@ -172,14 +175,25 @@ export function MemberProfileModal({ member, isAdmin, editForm, saving, error, o
   const tCommon = useTranslations("common");
   const tProfile = useTranslations("profile");
   const [availTab, setAvailTab] = useState<"info" | "availability">("info");
-  const [presenceWindows, setPresenceWindows] = useState<{ id: string; state: string; startsAt: string; endsAt: string; note: string | null }[]>([]);
+  const [presenceWindows, setPresenceWindows] = useState<{ id: string; state: string; startsAt: string; endsAt: string; note: string | null; reasonId: string | null; reasonDisplayName: string | null }[]>([]);
   const [presenceLoading, setPresenceLoading] = useState(false);
   const [newPresenceStart, setNewPresenceStart] = useState("");
   const [newPresenceEnd, setNewPresenceEnd] = useState("");
   const [newPresenceNote, setNewPresenceNote] = useState("");
+  const [selectedReasonId, setSelectedReasonId] = useState<string>("");
+  const [customReasonText, setCustomReasonText] = useState("");
+  const [reasons, setReasons] = useState<UnavailabilityReasonDto[]>([]);
   const [presenceSaving, setPresenceSaving] = useState(false);
   const [presenceError, setPresenceError] = useState<string | null>(null);
   const { currentSpaceId } = useSpaceStore();
+
+  // Fetch unavailability reasons when availability tab is opened
+  useEffect(() => {
+    if (availTab !== "availability" || !currentSpaceId) return;
+    getReasons(currentSpaceId)
+      .then(setReasons)
+      .catch(() => setReasons([]));
+  }, [availTab, currentSpaceId]);
 
   useEffect(() => {
     if (availTab !== "availability" || !currentSpaceId || !isAdmin) return;
@@ -190,19 +204,27 @@ export function MemberProfileModal({ member, isAdmin, editForm, saving, error, o
       .finally(() => setPresenceLoading(false));
   }, [availTab, currentSpaceId, member.personId, isAdmin]);
 
+  const isCustomSelected = selectedReasonId === "__custom__";
+
   async function handleAddPresence(e: React.FormEvent) {
     e.preventDefault();
     if (!currentSpaceId || !newPresenceStart || !newPresenceEnd) return;
     setPresenceSaving(true);
     setPresenceError(null);
     try {
-      await apiClient.post(`/spaces/${currentSpaceId}/people/${member.personId}/presence`, {
+      const body: Record<string, unknown> = {
         state: "at_home",
         startsAt: new Date(newPresenceStart).toISOString(),
         endsAt: new Date(newPresenceEnd).toISOString(),
-        note: newPresenceNote || null,
-      });
+        note: isCustomSelected ? (customReasonText || null) : (newPresenceNote || null),
+      };
+      // If a predefined reason is selected, send reasonId
+      if (selectedReasonId && !isCustomSelected) {
+        body.reasonId = selectedReasonId;
+      }
+      await apiClient.post(`/spaces/${currentSpaceId}/people/${member.personId}/presence`, body);
       setNewPresenceStart(""); setNewPresenceEnd(""); setNewPresenceNote("");
+      setSelectedReasonId(""); setCustomReasonText("");
       // Reload
       const r = await apiClient.get(`/spaces/${currentSpaceId}/people/${member.personId}/presence`);
       setPresenceWindows(r.data ?? []);
@@ -300,7 +322,8 @@ export function MemberProfileModal({ member, isAdmin, editForm, saving, error, o
                     <span className="font-medium text-slate-700">
                       {new Date(w.startsAt).toLocaleDateString(undefined)} – {new Date(w.endsAt).toLocaleDateString(undefined)}
                     </span>
-                    {w.note && <span className="text-slate-400 mr-2 text-xs"> · {w.note}</span>}
+                    {w.reasonDisplayName && <span className="text-slate-500 mr-2 text-xs"> · {w.reasonDisplayName}</span>}
+                    {!w.reasonDisplayName && w.note && <span className="text-slate-400 mr-2 text-xs"> · {w.note}</span>}
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">{t("unavailable")}</span>
@@ -334,7 +357,38 @@ export function MemberProfileModal({ member, isAdmin, editForm, saving, error, o
                 <input type="datetime-local" value={newPresenceEnd} onChange={e => setNewPresenceEnd(e.target.value)} required className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
             </div>
-            <input type="text" value={newPresenceNote} onChange={e => setNewPresenceNote(e.target.value)} placeholder={tCommon("optional")} className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            {/* Reason picker */}
+            {reasons.length > 0 && (
+              <div>
+                <label className="block text-xs text-slate-500 mb-1">{t("reason")}</label>
+                <select
+                  value={selectedReasonId}
+                  onChange={e => setSelectedReasonId(e.target.value)}
+                  className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                >
+                  <option value="">{t("selectReason")}</option>
+                  {reasons.map(r => (
+                    <option key={r.id} value={r.id}>{r.displayName}</option>
+                  ))}
+                  <option value="__custom__">{t("customReason")}</option>
+                </select>
+              </div>
+            )}
+            {/* Custom reason text input */}
+            {isCustomSelected && (
+              <input
+                type="text"
+                value={customReasonText}
+                onChange={e => setCustomReasonText(e.target.value.slice(0, 200))}
+                placeholder={t("customReasonPlaceholder")}
+                maxLength={200}
+                className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            )}
+            {/* Note field (shown when not using custom reason) */}
+            {!isCustomSelected && (
+              <input type="text" value={newPresenceNote} onChange={e => setNewPresenceNote(e.target.value)} placeholder={tCommon("optional")} className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            )}
             {presenceError && <p className="text-xs text-red-600">{presenceError}</p>}
             <button type="submit" disabled={presenceSaving} className="bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-4 py-2 rounded-xl disabled:opacity-50 transition-colors">
               {presenceSaving ? tCommon("loading") : tCommon("add")}

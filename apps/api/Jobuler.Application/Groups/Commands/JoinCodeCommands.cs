@@ -1,6 +1,7 @@
 using Jobuler.Domain.Groups;
 using Jobuler.Domain.People;
 using Jobuler.Domain.Identity;
+using Jobuler.Domain.Spaces;
 using Jobuler.Infrastructure.Persistence;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -49,7 +50,7 @@ public class RegenerateJoinCodeCommandHandler : IRequestHandler<RegenerateJoinCo
 
 public record JoinGroupByCodeCommand(string Code, Guid UserId) : IRequest<JoinGroupResult>;
 
-public record JoinGroupResult(Guid GroupId, Guid SpaceId, string GroupName);
+public record JoinGroupResult(Guid GroupId, Guid SpaceId, string GroupName, bool AlreadyMember);
 
 public class JoinGroupByCodeCommandHandler : IRequestHandler<JoinGroupByCodeCommand, JoinGroupResult>
 {
@@ -86,9 +87,21 @@ public class JoinGroupByCodeCommandHandler : IRequestHandler<JoinGroupByCodeComm
         if (!alreadyMember)
         {
             _db.GroupMemberships.Add(GroupMembership.Create(group.SpaceId, group.Id, person.Id));
-            await _db.SaveChangesAsync(ct);
         }
 
-        return new JoinGroupResult(group.Id, group.SpaceId, group.Name);
+        // Ensure SpaceMembership exists (idempotent — skip if already present)
+        var hasSpaceMembership = await _db.SpaceMemberships.AnyAsync(
+            sm => sm.UserId == req.UserId && sm.SpaceId == group.SpaceId, ct);
+
+        if (!hasSpaceMembership)
+        {
+            _db.SpaceMemberships.Add(SpaceMembership.Create(group.SpaceId, req.UserId));
+            _db.SpacePermissionGrants.Add(
+                SpacePermissionGrant.Grant(group.SpaceId, req.UserId, Permissions.SpaceView, req.UserId));
+        }
+
+        await _db.SaveChangesAsync(ct);
+
+        return new JoinGroupResult(group.Id, group.SpaceId, group.Name, alreadyMember);
     }
 }

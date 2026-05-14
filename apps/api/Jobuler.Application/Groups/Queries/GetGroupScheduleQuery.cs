@@ -35,6 +35,20 @@ public class GetGroupScheduleQueryHandler : IRequestHandler<GetGroupScheduleQuer
 
         if (version is null) return [];
 
+        // Also include the previous published version (now archived) so that
+        // recent past assignments (yesterday, etc.) remain visible after a new publish.
+        // This prevents the "schedule disappears after publish" bug.
+        var previousVersion = await _db.ScheduleVersions.AsNoTracking()
+            .Where(v => v.SpaceId == req.SpaceId
+                && (v.Status == ScheduleVersionStatus.Published || v.Status == ScheduleVersionStatus.Archived)
+                && v.Id != version.Id)
+            .OrderByDescending(v => v.VersionNumber)
+            .FirstOrDefaultAsync(ct);
+
+        var versionIds = new List<Guid> { version.Id };
+        if (previousVersion is not null)
+            versionIds.Add(previousVersion.Id);
+
         // Get member person IDs for this group
         var memberIds = await _db.GroupMemberships.AsNoTracking()
             .Where(m => m.GroupId == req.GroupId && m.SpaceId == req.SpaceId)
@@ -43,9 +57,9 @@ public class GetGroupScheduleQueryHandler : IRequestHandler<GetGroupScheduleQuer
 
         if (memberIds.Count == 0) return [];
 
-        // Load raw assignments for those members
+        // Load raw assignments for those members (from current + previous version)
         var rawAssignments = await _db.Assignments.AsNoTracking()
-            .Where(a => a.ScheduleVersionId == version.Id
+            .Where(a => versionIds.Contains(a.ScheduleVersionId)
                 && a.SpaceId == req.SpaceId
                 && memberIds.Contains(a.PersonId))
             .ToListAsync(ct);

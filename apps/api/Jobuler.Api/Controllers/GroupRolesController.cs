@@ -43,7 +43,7 @@ public class GroupRolesController : ControllerBase
     {
         var id = await _mediator.Send(
             new CreateGroupRoleCommand(spaceId, groupId, req.Name, req.Description,
-                req.PermissionLevel ?? "view", CurrentUserId), ct);
+                req.PermissionLevel ?? "view", CurrentUserId, req.Color), ct);
         return Created($"/spaces/{spaceId}/groups/{groupId}/roles/{id}", new { id });
     }
 
@@ -56,7 +56,7 @@ public class GroupRolesController : ControllerBase
     {
         await _mediator.Send(
             new UpdateGroupRoleCommand(spaceId, groupId, roleId, req.Name, req.Description,
-                req.PermissionLevel ?? "view", CurrentUserId), ct);
+                req.PermissionLevel ?? "view", CurrentUserId, req.Color), ct);
         return NoContent();
     }
 
@@ -72,4 +72,4 @@ public class GroupRolesController : ControllerBase
     }
 }
 
-public record GroupRoleRequest(string Name, string? Description, string? PermissionLevel);
+public record GroupRoleRequest(string Name, string? Description, string? PermissionLevel, string? Color);

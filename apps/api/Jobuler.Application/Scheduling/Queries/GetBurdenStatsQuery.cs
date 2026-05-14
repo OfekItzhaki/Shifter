@@ -18,12 +18,12 @@ public record PersonBurdenStatsDto(
     int TotalAssignments7d,
     int TotalAssignments14d,
     int TotalAssignments30d,
-    int HatedTasks7d,
-    int HatedTasks14d,
+    int HardTasks7d,
+    int HardTasks14d,
     int DislikedHatedScore7d,
     int KitchenCount7d,
     int NightMissions7d,
-    int ConsecutiveBurdenCount,
+    int ConsecutiveHardCount,
     // All-time counters (from assignments table, published versions only)
     int TotalAssignmentsAllTime,
     int HatedTasksAllTime,
@@ -176,7 +176,7 @@ public class GetBurdenStatsQueryHandler : IRequestHandler<GetBurdenStatsQuery, B
         // Build slot → burden map from the join
         var burdenMap = slotTypeIds.ToDictionary(
             s => s.SlotId,
-            s => taskTypeBurdenMap.GetValueOrDefault(s.TaskTypeId, "neutral"));
+            s => taskTypeBurdenMap.GetValueOrDefault(s.TaskTypeId, "normal"));
 
         // Also check group tasks (slot IDs may be group task IDs)
         var groupTaskBurdens = await _db.GroupTasks.AsNoTracking()
@@ -214,9 +214,9 @@ public class GetBurdenStatsQueryHandler : IRequestHandler<GetBurdenStatsQuery, B
                 g =>
                 {
                     var total = g.Count();
-                    var hated = g.Count(a => burdenMap.GetValueOrDefault(a.TaskSlotId, "neutral") == "hated");
-                    var disliked = g.Count(a => burdenMap.GetValueOrDefault(a.TaskSlotId, "neutral") == "disliked");
-                    var favorable = g.Count(a => burdenMap.GetValueOrDefault(a.TaskSlotId, "neutral") == "favorable");
+                    var hated = g.Count(a => burdenMap.GetValueOrDefault(a.TaskSlotId, "normal") == "hard");
+                    var disliked = 0; // merged into hard in new taxonomy
+                    var favorable = g.Count(a => burdenMap.GetValueOrDefault(a.TaskSlotId, "normal") == "easy");
                     var lastDate = g
                         .Where(a => slotDateMap.ContainsKey(a.TaskSlotId))
                         .Select(a => slotDateMap[a.TaskSlotId])
@@ -243,12 +243,12 @@ public class GetBurdenStatsQueryHandler : IRequestHandler<GetBurdenStatsQuery, B
                 TotalAssignments7d: c?.TotalAssignments7d ?? 0,
                 TotalAssignments14d: c?.TotalAssignments14d ?? 0,
                 TotalAssignments30d: c?.TotalAssignments30d ?? 0,
-                HatedTasks7d: c?.HatedTasks7d ?? 0,
-                HatedTasks14d: c?.HatedTasks14d ?? 0,
+                HardTasks7d: c?.HardTasks7d ?? 0,
+                HardTasks14d: c?.HardTasks14d ?? 0,
                 DislikedHatedScore7d: c?.DislikedHatedScore7d ?? 0,
                 KitchenCount7d: c?.KitchenCount7d ?? 0,
                 NightMissions7d: c?.NightMissions7d ?? 0,
-                ConsecutiveBurdenCount: c?.ConsecutiveBurdenCount ?? 0,
+                ConsecutiveHardCount: c?.ConsecutiveHardCount ?? 0,
                 TotalAssignmentsAllTime: at.Total,
                 HatedTasksAllTime: at.Hated,
                 DislikedTasksAllTime: at.Disliked,
@@ -291,7 +291,7 @@ public class GetBurdenStatsQueryHandler : IRequestHandler<GetBurdenStatsQuery, B
             MostFavorableTasks: Top5(personStats, p => p.FavorableTasksAllTime, "favorable tasks"),
             BestBurdenBalance: Top5(personStats, p => p.BurdenBalance, "burden balance"),
             WorstBurdenBalance: Top5(personStats, p => p.BurdenBalance, "burden balance", ascending: true),
-            MostConsecutiveBurden: Top5(personStats, p => p.ConsecutiveBurdenCount, "consecutive burden"),
+            MostConsecutiveBurden: Top5(personStats, p => p.ConsecutiveHardCount, "consecutive burden"),
             TotalPublishedAssignments: assignments.Count,
             TotalPeople: totalPeople,
             TotalGroups: totalGroups,

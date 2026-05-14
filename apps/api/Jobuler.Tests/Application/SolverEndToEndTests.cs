@@ -97,7 +97,7 @@ public class SolverEndToEndTests
                 SlotId: slotId,
                 TaskTypeId: taskType,
                 TaskTypeName: "Guard",
-                BurdenLevel: "neutral",
+                BurdenLevel: "normal",
                 StartsAt: Tomorrow(8),
                 EndsAt: Tomorrow(16),
                 RequiredHeadcount: 1,
@@ -146,9 +146,9 @@ public class SolverEndToEndTests
             AvailabilityWindows: [],
             PresenceWindows: [],
             TaskSlots: [
-                new TaskSlotDto(slot1, taskType, "Guard", "neutral",
+                new TaskSlotDto(slot1, taskType, "Guard", "normal",
                     Tomorrow(6), Tomorrow(14), 2, 5, [], [], false),
-                new TaskSlotDto(slot2, taskType, "Guard", "neutral",
+                new TaskSlotDto(slot2, taskType, "Guard", "normal",
                     Tomorrow(14), Tomorrow(22), 2, 5, [], [], false),
             ],
             HardConstraints: [],
@@ -189,7 +189,7 @@ public class SolverEndToEndTests
             AvailabilityWindows: [],
             PresenceWindows: [],
             TaskSlots: [new TaskSlotDto(
-                slotId, taskType, "Guard", "neutral",
+                slotId, taskType, "Guard", "normal",
                 Tomorrow(8), Tomorrow(16), 1, 5, [], [], false)],
             HardConstraints: [],
             SoftConstraints: [],
@@ -229,7 +229,7 @@ public class SolverEndToEndTests
             AvailabilityWindows: [],
             PresenceWindows: [],
             TaskSlots: [new TaskSlotDto(
-                slotId, taskType, "Guard", "neutral",
+                slotId, taskType, "Guard", "normal",
                 Tomorrow(8), Tomorrow(16),
                 RequiredHeadcount: 3,   // ← needs 3, only 1 available
                 Priority: 5, [], [], false)],
@@ -280,7 +280,7 @@ public class SolverEndToEndTests
                 new PresenceWindowDto(personId, "blocked", Tomorrow(0), Tomorrow(23))
             ],
             TaskSlots: [new TaskSlotDto(
-                slotId, taskType, "Guard", "neutral",
+                slotId, taskType, "Guard", "normal",
                 Tomorrow(8), Tomorrow(16), 1, 5, [], [], false)],
             HardConstraints: [],
             SoftConstraints: [],
@@ -330,7 +330,7 @@ public class SolverEndToEndTests
             AvailabilityWindows: [],
             PresenceWindows: [],
             TaskSlots: [new TaskSlotDto(
-                slotId, taskType, "Guard", "neutral",
+                slotId, taskType, "Guard", "normal",
                 Tomorrow(8), Tomorrow(16), 1, 5, [], [], false)],
             HardConstraints: [],
             SoftConstraints: [],

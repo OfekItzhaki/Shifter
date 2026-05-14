@@ -214,7 +214,11 @@
       "from": "С",
       "until": "До",
       "unavailable": "Недоступен",
-      "errorAddPresence": "Ошибка добавления окна доступности"
+      "errorAddPresence": "Ошибка добавления окна доступности",
+      "reason": "Причина",
+      "selectReason": "Выберите причину...",
+      "customReason": "Другое",
+      "customReasonPlaceholder": "Введите причину..."
     },
     "qualifications_tab": {
       "title": "Квалификации",
@@ -394,9 +398,9 @@
       "activeMembers": "Активные участники",
       "totalAssignments": "Всего назначений",
       "avgPerPerson": "Среднее на человека",
-      "hatedTasks": "Нежелательные задачи",
+      "hardTasks": "Тяжёлые задачи",
       "mostAssignments": "Больше всего назначений",
-      "mostHatedTasks": "Больше всего нежелательных задач",
+      "mostHardTasks": "Больше всего тяжёлых задач",
       "highestBurdenScore": "Наибольшая нагрузка",
       "bestBurdenBalance": "Лучший баланс нагрузки",
       "detailByPerson": "Детали по участникам",
@@ -598,10 +602,9 @@
     "tabSettings": "Настройки",
     "groupMembers": "{count} участников · Горизонт: {days} дней",
     "burden": {
-      "Favorable": "Удобно",
-      "Neutral": "Нейтрально",
-      "Disliked": "Нежелательно",
-      "Hated": "Ненавистно"
+      "Easy": "Лёгкое",
+      "Normal": "Обычное",
+      "Hard": "Тяжёлое"
     },
     "logs": {
       "title": "Логи",
@@ -700,9 +703,9 @@
     "maxKitchenPerWeek": "Макс. кухонных смен в неделю",
     "taskTypeName": "Название типа задачи (необязательно)",
     "noConsecutiveBurden": "Без последовательной нагрузки",
-    "hated": "Ненавистно",
-    "disliked": "Нежелательно",
-    "neutral": "Нейтрально",
+    "hard": "Тяжёлое",
+    "normal": "Обычное",
+    "easy": "Лёгкое",
     "minPeople": "Минимум людей",
     "windowHours": "Временное окно (часов)",
     "restrictedTaskType": "Ограниченный тип задачи",

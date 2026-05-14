@@ -5,7 +5,8 @@ import { useTranslations } from "next-intl";
 import { GROUP_TEMPLATES, type GroupTemplate } from "@/lib/utils/groupTemplates";
 import { createGroupTask } from "@/lib/api/tasks";
 import { createConstraint } from "@/lib/api/constraints";
-import { updateGroupSettings } from "@/lib/api/groups";
+import { updateGroupSettings, createGroupQualification } from "@/lib/api/groups";
+import { seedReasons } from "@/lib/api/unavailabilityReasons";
 
 interface Props {
   spaceId: string;
@@ -53,6 +54,22 @@ export default function GroupTemplatePicker({ spaceId, groupId, onComplete, onSk
 
       // Update solver horizon
       await updateGroupSettings(spaceId, groupId, template.solverHorizonDays, null);
+
+      // Create qualifications from template
+      for (const qualification of template.qualifications) {
+        try {
+          await createGroupQualification(spaceId, groupId, qualification.name, qualification.description ?? null);
+        } catch (err: unknown) {
+          const error = err as { response?: { status?: number } };
+          // Skip 409 (already exists) — continue with the rest
+          if (error?.response?.status !== 409) throw err;
+        }
+      }
+
+      // Seed unavailability reasons from template
+      if (template.unavailabilityReasons.length > 0) {
+        await seedReasons(spaceId, template.unavailabilityReasons);
+      }
 
       onComplete();
     } catch {

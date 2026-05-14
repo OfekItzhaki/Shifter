@@ -1,4 +1,5 @@
 using Jobuler.Domain.People;
+using Jobuler.Domain.Spaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -76,7 +77,13 @@ public class PresenceWindowConfiguration : IEntityTypeConfiguration<PresenceWind
         builder.Property(p => p.EndsAt).HasColumnName("ends_at");
         builder.Property(p => p.Note).HasColumnName("note");
         builder.Property(p => p.IsDerived).HasColumnName("is_derived");
+        builder.Property(p => p.UnavailabilityReasonId).HasColumnName("unavailability_reason_id").IsRequired(false);
         builder.Property(p => p.CreatedAt).HasColumnName("created_at");
+
+        builder.HasOne<UnavailabilityReason>()
+            .WithMany()
+            .HasForeignKey(p => p.UnavailabilityReasonId)
+            .OnDelete(DeleteBehavior.SetNull);
     }
 }
 

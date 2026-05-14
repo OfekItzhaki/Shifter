@@ -29,6 +29,7 @@ import { useRefetchNotifications } from "@/lib/query/hooks/useNotifications";
 import {
   getGroups, getGroupMembers, addGroupMemberByEmail, removeGroupMember,
   updateGroupSettings, renameGroup, softDeleteGroup, restoreGroup,
+  updateGroup,
   getDeletedGroups, initiateOwnershipTransfer, cancelOwnershipTransfer,
   GroupWithMemberCountDto, GroupMemberDto, DeletedGroupDto,
   getGroupAlerts, createGroupAlert, deleteGroupAlert, updateGroupAlert, GroupAlertDto,
@@ -137,6 +138,7 @@ export default function GroupDetailPage() {
     settingsError, setSettingsError, settingsSaved, setSettingsSaved,
     solverStartDateTime, setSolverStartDateTime,
     autoPublish, setAutoPublish,
+    isClosedBase, setIsClosedBase,
     solverPolling, setSolverPolling, solverStatus, setSolverStatus, solverError, setSolverError,
     deletedGroups, setDeletedGroups, deletedGroupsLoading, setDeletedGroupsLoading,
     transferPersonId, setTransferPersonId, transferSaving, setTransferSaving,
@@ -168,6 +170,7 @@ export default function GroupDetailPage() {
         setSolverHorizon(found.solverHorizonDays ?? 14);
         setSolverHorizonDays(found.solverHorizonDays ?? 14);
         setAutoPublish(found.autoPublish ?? false);
+        setIsClosedBase(found.isClosedBase ?? false);
         // Initialise the configured auto-scheduler start date from the API
         // The API stores UTC; convert to local time for the datetime-local input
         setSolverStartDateTime(found.solverStartDateTime
@@ -804,16 +807,16 @@ export default function GroupDetailPage() {
   }
 
   // ── Group role handlers ──────────────────────────────────────────────────
-  async function handleCreateRole(name: string, description: string | null, permissionLevel = "view") {
+  async function handleCreateRole(name: string, description: string | null, permissionLevel = "view", color?: string | null) {
     if (!currentSpaceId) return;
-    await createGroupRole(currentSpaceId, groupId, { name, description, permissionLevel });
+    await createGroupRole(currentSpaceId, groupId, { name, description, permissionLevel, color });
     const updated = await getGroupRoles(currentSpaceId, groupId);
     setGroupRoles(updated);
   }
 
-  async function handleUpdateRole(roleId: string, name: string, description: string | null, permissionLevel = "view") {
+  async function handleUpdateRole(roleId: string, name: string, description: string | null, permissionLevel = "view", color?: string | null) {
     if (!currentSpaceId) return;
-    await updateGroupRole(currentSpaceId, groupId, roleId, { name, description, permissionLevel });
+    await updateGroupRole(currentSpaceId, groupId, roleId, { name, description, permissionLevel, color });
     const updated = await getGroupRoles(currentSpaceId, groupId);
     setGroupRoles(updated);
   }
@@ -895,6 +898,16 @@ export default function GroupDetailPage() {
       setSettingsError(tErrors("generic"));
     } finally {
       setSavingSettings(false);
+    }
+  }
+
+  async function handleClosedBaseChange(value: boolean) {
+    if (!currentSpaceId) return;
+    try {
+      await updateGroup(currentSpaceId, groupId, { isClosedBase: value });
+      setIsClosedBase(value);
+    } catch {
+      // Revert on failure — the toggle will snap back
     }
   }
 
@@ -1090,6 +1103,16 @@ export default function GroupDetailPage() {
             <p className="text-xs sm:text-sm text-slate-400">{group.memberCount ?? 0} {tGroups("members")}</p>
           </div>
           {/* Admin mode toggle — always visible to group owner */}
+          <Link
+            href="/changelog"
+            className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium text-purple-600 bg-purple-50 border border-purple-200 hover:bg-purple-100 transition-colors flex-shrink-0"
+            title={tGroups("whatsNew")}
+          >
+            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span className="hidden sm:inline">{tGroups("whatsNew")}</span>
+          </Link>
           <button
             onClick={() => {
               if (isAdmin) {
@@ -1292,7 +1315,7 @@ export default function GroupDetailPage() {
               editConstraintError={editConstraintError}
               onOpenCreate={() => setShowConstraintForm(true)}
               onCloseCreate={() => { setShowConstraintForm(false); setNewConstraintFrom(""); setNewConstraintUntil(""); }}
-              onRuleTypeChange={rt => { setNewConstraintRuleType(rt); const defaults: Record<string, string> = { min_rest_hours: '{"hours": 8}', max_kitchen_per_week: '{"max": 2, "task_type_name": "kitchen"}', no_consecutive_burden: '{"burden_level": "disliked"}', min_base_headcount: '{"min": 3, "window_hours": 24}', no_task_type_restriction: '{"task_type_id": ""}' }; setNewConstraintPayload(defaults[rt] ?? "{}"); }}
+              onRuleTypeChange={rt => { setNewConstraintRuleType(rt); const defaults: Record<string, string> = { min_rest_hours: '{"hours": 8}', max_kitchen_per_week: '{"max": 2, "task_type_name": "kitchen"}', no_consecutive_burden: '{"burden_level": "hard"}', min_base_headcount: '{"min": 3, "window_hours": 24}', no_task_type_restriction: '{"task_type_id": ""}' }; setNewConstraintPayload(defaults[rt] ?? "{}"); }}
               onSeverityChange={setNewConstraintSeverity}
               onPayloadChange={setNewConstraintPayload}
               onFromChange={setNewConstraintFrom}
@@ -1349,6 +1372,7 @@ export default function GroupDetailPage() {
               settingsSaved={settingsSaved}
               solverStartDateTime={solverStartDateTime}
               autoPublish={autoPublish}
+              isClosedBase={isClosedBase}
               solverPolling={solverPolling}
               solverStatus={solverStatus}
               solverError={solverError}
@@ -1367,6 +1391,7 @@ export default function GroupDetailPage() {
               onSolverHorizonChange={setSolverHorizon}
               onSolverStartDateTimeChange={setSolverStartDateTime}
               onAutoPublishChange={setAutoPublish}
+              onClosedBaseChange={handleClosedBaseChange}
               onSaveSettings={handleSaveSettings}
               onTriggerSolver={handleTriggerSolver}
               onOpenDraftModal={() => setShowDraftModal(true)}

@@ -34,6 +34,7 @@ export interface GroupWithMemberCountDto {
   solverHorizonDays: number;
   solverStartDateTime?: string | null;
   autoPublish?: boolean;
+  isClosedBase?: boolean;
   ownerPersonId: string | null;
 }
 
@@ -97,6 +98,10 @@ export async function updateGroupSettings(spaceId: string, groupId: string, solv
 
 export async function renameGroup(spaceId: string, groupId: string, name: string): Promise<void> {
   await apiClient.patch(`/spaces/${spaceId}/groups/${groupId}/name`, { name });
+}
+
+export async function updateGroup(spaceId: string, groupId: string, payload: { isClosedBase?: boolean }): Promise<void> {
+  await apiClient.put(`/spaces/${spaceId}/groups/${groupId}`, payload);
 }
 
 export async function softDeleteGroup(spaceId: string, groupId: string): Promise<void> {
@@ -206,6 +211,7 @@ export interface GroupRoleDto {
   isActive: boolean;
   isDefault: boolean;
   permissionLevel: "View" | "ViewAndEdit" | "Owner";
+  color: string | null;
 }
 
 export async function getGroupRoles(spaceId: string, groupId: string): Promise<GroupRoleDto[]> {
@@ -216,7 +222,7 @@ export async function getGroupRoles(spaceId: string, groupId: string): Promise<G
 export async function createGroupRole(
   spaceId: string,
   groupId: string,
-  payload: { name: string; description?: string | null; permissionLevel?: string }
+  payload: { name: string; description?: string | null; permissionLevel?: string; color?: string | null }
 ): Promise<{ id: string }> {
   const { data } = await apiClient.post(`/spaces/${spaceId}/groups/${groupId}/roles`, payload);
   return data as { id: string };
@@ -226,7 +232,7 @@ export async function updateGroupRole(
   spaceId: string,
   groupId: string,
   roleId: string,
-  payload: { name: string; description?: string | null; permissionLevel?: string }
+  payload: { name: string; description?: string | null; permissionLevel?: string; color?: string | null }
 ): Promise<void> {
   await apiClient.put(`/spaces/${spaceId}/groups/${groupId}/roles/${roleId}`, payload);
 }
@@ -347,7 +353,7 @@ export async function regenerateJoinCode(spaceId: string, groupId: string): Prom
   return data.joinCode;
 }
 
-export async function joinGroupByCode(code: string): Promise<{ groupId: string; spaceId: string; groupName: string }> {
+export async function joinGroupByCode(code: string): Promise<{ groupId: string; spaceId: string; groupName: string; alreadyMember: boolean }> {
   const { data } = await apiClient.post("/groups/join", { code });
   return data;
 }

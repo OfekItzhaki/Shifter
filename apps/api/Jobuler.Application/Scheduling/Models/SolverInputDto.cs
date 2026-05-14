@@ -23,7 +23,10 @@ public record SolverInputDto(
     List<HardConstraintDto> EmergencyConstraints,
     List<BaselineAssignmentDto> BaselineAssignments,
     List<FairnessCountersDto> FairnessCounters,
-    List<string>? LockedSlotIds = null);
+    List<string>? LockedSlotIds = null,
+    HomeLeaveConfigDto? HomeLeaveConfig = null,
+    List<TaskRotationDto>? TaskRotation = null,
+    [property: JsonPropertyName("preview_mode")] bool PreviewMode = false);
 
 public record StabilityWeightsDto(
     [property: JsonPropertyName("today_tomorrow")] double TodayTomorrow,
@@ -89,8 +92,20 @@ public record BaselineAssignmentDto(
 public record FairnessCountersDto(
     string PersonId,
     int TotalAssignments7d,
-    int HatedTasks7d,
+    int HardTasks7d,
     int DislikedHatedScore7d,
     int KitchenCount7d,
     int NightMissions7d,
-    int ConsecutiveBurdenCount);
+    int ConsecutiveHardCount);
+
+public record HomeLeaveConfigDto(
+    [property: JsonPropertyName("enabled")]                    bool Enabled,
+    [property: JsonPropertyName("min_rest_hours")]             double MinRestHours,
+    [property: JsonPropertyName("eligibility_threshold_hours")] double EligibilityThresholdHours,
+    [property: JsonPropertyName("leave_capacity")]             int LeaveCapacity,
+    [property: JsonPropertyName("leave_duration_hours")]       double LeaveDurationHours,
+    [property: JsonPropertyName("balance_value")]              int BalanceValue = 50);
+
+public record TaskRotationDto(
+    [property: JsonPropertyName("person_id")]                  string PersonId,
+    [property: JsonPropertyName("completed_task_type_ids")]    List<string> CompletedTaskTypeIds);

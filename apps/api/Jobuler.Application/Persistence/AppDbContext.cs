@@ -23,6 +23,7 @@ public class AppDbContext : DbContext
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<PasswordResetToken> PasswordResetTokens => Set<PasswordResetToken>();
     public DbSet<EmailVerificationToken> EmailVerificationTokens => Set<EmailVerificationToken>();
+    public DbSet<WebAuthnCredential> WebAuthnCredentials => Set<WebAuthnCredential>();
 
     // Spaces
     public DbSet<Space> Spaces => Set<Space>();
@@ -30,6 +31,7 @@ public class AppDbContext : DbContext
     public DbSet<SpacePermissionGrant> SpacePermissionGrants => Set<SpacePermissionGrant>();
     public DbSet<SpaceRole> SpaceRoles => Set<SpaceRole>();
     public DbSet<OwnershipTransferHistory> OwnershipTransferHistory => Set<OwnershipTransferHistory>();
+    public DbSet<UnavailabilityReason> UnavailabilityReasons => Set<UnavailabilityReason>();
 
     // People
     public DbSet<Person> People => Set<Person>();
@@ -51,6 +53,8 @@ public class AppDbContext : DbContext
     public DbSet<PersonRoleAssignment> PersonRoleAssignments => Set<PersonRoleAssignment>();
     public DbSet<GroupQualification> GroupQualifications => Set<GroupQualification>();
     public DbSet<MemberQualification> MemberQualifications => Set<MemberQualification>();
+    public DbSet<HomeLeaveConfig> HomeLeaveConfigs => Set<HomeLeaveConfig>();
+    public DbSet<HomeLeaveTemplate> HomeLeaveTemplates => Set<HomeLeaveTemplate>();
 
     // Tasks
     public DbSet<TaskType> TaskTypes => Set<TaskType>();
@@ -67,6 +71,8 @@ public class AppDbContext : DbContext
     public DbSet<Assignment> Assignments => Set<Assignment>();
     public DbSet<AssignmentChangeSummary> AssignmentChangeSummaries => Set<AssignmentChangeSummary>();
     public DbSet<FairnessCounter> FairnessCounters => Set<FairnessCounter>();
+    public DbSet<FairnessCounterSnapshot> FairnessCounterSnapshots => Set<FairnessCounterSnapshot>();
+    public DbSet<TaskRotationProgress> TaskRotationProgress => Set<TaskRotationProgress>();
 
     // Logs
     public DbSet<SystemLog> SystemLogs => Set<SystemLog>();

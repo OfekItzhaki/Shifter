@@ -1,12 +1,16 @@
 using Jobuler.Application.Common;
 using Jobuler.Domain.Notifications;
+using Jobuler.Domain.People;
 using Jobuler.Domain.Scheduling;
+using Jobuler.Domain.Spaces;
 using Jobuler.Infrastructure.Persistence;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace Jobuler.Application.Scheduling.Commands;
 
@@ -75,19 +79,36 @@ public class PublishVersionCommandHandler : IRequestHandler<PublishVersionComman
         version.Publish(req.RequestingUserId);
         await _db.SaveChangesAsync(ct);
 
+        // ── Home-leave presence windows ───────────────────────────────────────
+        // If the version's SummaryJson contains home_leave_assignments, create
+        // derived AtHome presence windows for each valid entry.
+        await CreateHomeLeavePresenceWindowsAsync(req.SpaceId, version, ct);
+
         // Send in-app notifications to all space members
         var memberUserIds = await _db.SpaceMemberships.AsNoTracking()
             .Where(m => m.SpaceId == req.SpaceId)
             .Select(m => m.UserId)
             .ToListAsync(ct);
 
+        // Locale-aware notification text
+        var space = await _db.Spaces.AsNoTracking()
+            .FirstOrDefaultAsync(s => s.Id == req.SpaceId, ct);
+        var locale = space?.Locale ?? "he";
+
+        var (notifTitle, notifBody) = locale switch
+        {
+            "he" => ($"סידור חדש פורסם", $"גרסה {version.VersionNumber} פורסמה ומוכנה לצפייה."),
+            "ru" => ($"Новое расписание опубликовано", $"Версия {version.VersionNumber} опубликована и доступна для просмотра."),
+            _ => ($"New schedule published", $"Schedule version {version.VersionNumber} has been published and is ready to view.")
+        };
+
         foreach (var userId in memberUserIds)
         {
             _db.Notifications.Add(Notification.Create(
                 req.SpaceId, userId,
                 "schedule.published",
-                "New schedule published",
-                $"Schedule version {version.VersionNumber} has been published and is ready to view.",
+                notifTitle,
+                notifBody,
                 System.Text.Json.JsonSerializer.Serialize(new { versionId = req.VersionId })));
         }
         await _db.SaveChangesAsync(ct);
@@ -193,5 +214,138 @@ public class PublishVersionCommandHandler : IRequestHandler<PublishVersionComman
                 "Error sending external notifications for published schedule version {VersionId}",
                 req.VersionId);
         }
+    }
+
+    /// <summary>
+    /// Reads home-leave assignments from the version's SummaryJson and creates
+    /// derived AtHome presence windows. Validates no overlap with existing OnMission
+    /// windows. Discards entries with unknown person_id or invalid time ranges.
+    /// </summary>
+    private async Task CreateHomeLeavePresenceWindowsAsync(
+        Guid spaceId, ScheduleVersion version, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(version.SummaryJson))
+            return;
+
+        // Parse home_leave_assignments from SummaryJson
+        List<HomeLeaveEntry>? homeLeaveEntries;
+        try
+        {
+            using var doc = JsonDocument.Parse(version.SummaryJson);
+            if (!doc.RootElement.TryGetProperty("home_leave_assignments", out var hlArray)
+                || hlArray.ValueKind != JsonValueKind.Array
+                || hlArray.GetArrayLength() == 0)
+                return;
+
+            homeLeaveEntries = hlArray.Deserialize<List<HomeLeaveEntry>>(
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        }
+        catch (JsonException ex)
+        {
+            _logger.LogWarning(ex,
+                "Failed to parse home_leave_assignments from SummaryJson for version {VersionId}",
+                version.Id);
+            return;
+        }
+
+        if (homeLeaveEntries is null || homeLeaveEntries.Count == 0)
+            return;
+
+        // Load all person IDs in this space for validation
+        var spacePersonIdsList = await _db.People.AsNoTracking()
+            .Where(p => p.SpaceId == spaceId)
+            .Select(p => p.Id)
+            .ToListAsync(ct);
+        var spacePersonIds = spacePersonIdsList.ToHashSet();
+
+        // Collect valid entries
+        var validEntries = new List<(Guid PersonId, DateTime StartsAt, DateTime EndsAt)>();
+        foreach (var entry in homeLeaveEntries)
+        {
+            // Validate person_id
+            if (!Guid.TryParse(entry.PersonId, out var personId) || !spacePersonIds.Contains(personId))
+            {
+                _logger.LogWarning(
+                    "Home-leave assignment discarded: unknown person_id '{PersonId}' in version {VersionId}",
+                    entry.PersonId, version.Id);
+                continue;
+            }
+
+            // Parse and validate time range
+            if (!DateTime.TryParse(entry.StartsAt, null, System.Globalization.DateTimeStyles.RoundtripKind, out var startsAt)
+                || !DateTime.TryParse(entry.EndsAt, null, System.Globalization.DateTimeStyles.RoundtripKind, out var endsAt))
+            {
+                _logger.LogWarning(
+                    "Home-leave assignment discarded: invalid date format for person {PersonId} in version {VersionId}",
+                    entry.PersonId, version.Id);
+                continue;
+            }
+
+            if (startsAt >= endsAt)
+            {
+                _logger.LogWarning(
+                    "Home-leave assignment discarded: starts_at >= ends_at for person {PersonId} ({StartsAt} >= {EndsAt}) in version {VersionId}",
+                    entry.PersonId, startsAt, endsAt, version.Id);
+                continue;
+            }
+
+            validEntries.Add((personId, startsAt, endsAt));
+        }
+
+        if (validEntries.Count == 0)
+            return;
+
+        // Check for overlaps with existing on_mission presence windows
+        // Load all on_mission windows for the affected people within the time range
+        var affectedPersonIds = validEntries.Select(e => e.PersonId).Distinct().ToList();
+        var minStart = validEntries.Min(e => e.StartsAt);
+        var maxEnd = validEntries.Max(e => e.EndsAt);
+
+        var existingOnMissionWindows = await _db.PresenceWindows.AsNoTracking()
+            .Where(pw => pw.SpaceId == spaceId
+                && pw.State == PresenceState.OnMission
+                && affectedPersonIds.Contains(pw.PersonId)
+                && pw.StartsAt < maxEnd
+                && pw.EndsAt > minStart)
+            .ToListAsync(ct);
+
+        // Check each valid entry for overlap with on_mission windows
+        foreach (var entry in validEntries)
+        {
+            var conflicting = existingOnMissionWindows.FirstOrDefault(pw =>
+                pw.PersonId == entry.PersonId
+                && pw.StartsAt < entry.EndsAt
+                && pw.EndsAt > entry.StartsAt);
+
+            if (conflicting is not null)
+            {
+                throw new InvalidOperationException(
+                    $"Home-leave window conflicts with on_mission presence for person {entry.PersonId} " +
+                    $"at {entry.StartsAt:O} – {entry.EndsAt:O}. " +
+                    $"Conflicting on_mission window: {conflicting.StartsAt:O} – {conflicting.EndsAt:O}.");
+            }
+        }
+
+        // All validations passed — create presence windows
+        foreach (var entry in validEntries)
+        {
+            var presenceWindow = PresenceWindow.CreateDerivedAtHome(
+                spaceId, entry.PersonId, entry.StartsAt, entry.EndsAt);
+            _db.PresenceWindows.Add(presenceWindow);
+        }
+
+        await _db.SaveChangesAsync(ct);
+
+        _logger.LogInformation(
+            "Created {Count} AtHome presence windows for published version {VersionId}",
+            validEntries.Count, version.Id);
+    }
+
+    /// <summary>DTO for deserializing home-leave entries from SummaryJson.</summary>
+    private sealed class HomeLeaveEntry
+    {
+        [JsonPropertyName("person_id")] public string PersonId { get; init; } = "";
+        [JsonPropertyName("starts_at")] public string StartsAt { get; init; } = "";
+        [JsonPropertyName("ends_at")] public string EndsAt { get; init; } = "";
     }
 }

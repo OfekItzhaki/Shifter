@@ -28,5 +28,7 @@
     <PackageReference Include="AWSSDK.S3" Version="3.7.307.19" />
     <!-- Web Push (VAPID + RFC 8291 payload encryption) -->
     <PackageReference Include="WebPush" Version="1.0.12" />
+    <!-- WebAuthn / FIDO2 biometric authentication -->
+    <PackageReference Include="Fido2.AspNet" Version="3.*" />
   </ItemGroup>
 </Project>

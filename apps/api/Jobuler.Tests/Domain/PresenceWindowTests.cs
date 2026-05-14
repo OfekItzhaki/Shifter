@@ -39,4 +39,46 @@ public class PresenceWindowTests
 
         act.Should().Throw<ArgumentException>();
     }
+
+    [Fact]
+    public void Truncate_WithValidNewEndsAt_UpdatesEndsAt()
+    {
+        var startsAt = DateTime.UtcNow.AddHours(-2);
+        var endsAt = DateTime.UtcNow.AddHours(6);
+        var window = PresenceWindow.CreateDerivedAtHome(
+            Guid.NewGuid(), Guid.NewGuid(), startsAt, endsAt);
+
+        var truncateAt = DateTime.UtcNow;
+        window.Truncate(truncateAt);
+
+        window.EndsAt.Should().Be(truncateAt);
+    }
+
+    [Fact]
+    public void Truncate_WithNewEndsAtBeforeStartsAt_ThrowsArgumentException()
+    {
+        var startsAt = DateTime.UtcNow.AddHours(-2);
+        var endsAt = DateTime.UtcNow.AddHours(6);
+        var window = PresenceWindow.CreateDerivedAtHome(
+            Guid.NewGuid(), Guid.NewGuid(), startsAt, endsAt);
+
+        var act = () => window.Truncate(startsAt.AddHours(-1));
+
+        act.Should().Throw<ArgumentException>()
+            .WithMessage("*after StartsAt*");
+    }
+
+    [Fact]
+    public void Truncate_WithNewEndsAtAfterCurrentEndsAt_ThrowsArgumentException()
+    {
+        var startsAt = DateTime.UtcNow.AddHours(-2);
+        var endsAt = DateTime.UtcNow.AddHours(6);
+        var window = PresenceWindow.CreateDerivedAtHome(
+            Guid.NewGuid(), Guid.NewGuid(), startsAt, endsAt);
+
+        var act = () => window.Truncate(endsAt.AddHours(1));
+
+        act.Should().Throw<ArgumentException>()
+            .WithMessage("*before current EndsAt*");
+    }
 }

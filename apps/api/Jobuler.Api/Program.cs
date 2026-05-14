@@ -79,6 +79,21 @@ builder.Services.AddMediatR(cfg =>
 builder.Services.AddValidatorsFromAssembly(typeof(LoginCommand).Assembly);
 
 builder.Services.AddScoped<IJwtService, JwtService>();
+
+// ─── WebAuthn / FIDO2 ────────────────────────────────────────────────────────
+builder.Services.AddMemoryCache();
+builder.Services.AddSingleton<Fido2NetLib.IFido2>(sp =>
+{
+    var config = sp.GetRequiredService<IConfiguration>();
+    var fido2Config = new Fido2NetLib.Fido2Configuration
+    {
+        ServerDomain = config["WebAuthn:RelyingPartyId"] ?? "localhost",
+        ServerName = config["WebAuthn:RelyingPartyName"] ?? "Shifter",
+        Origins = new HashSet<string> { config["WebAuthn:Origin"] ?? "https://localhost" }
+    };
+    return new Fido2NetLib.Fido2(fido2Config);
+});
+builder.Services.AddScoped<IWebAuthnService, Fido2Service>();
 builder.Services.AddScoped<IPermissionService, PermissionService>();
 builder.Services.AddScoped<IAuditLogger, AuditLogger>();
 builder.Services.AddScoped<ISystemLogger, SystemLogger>();

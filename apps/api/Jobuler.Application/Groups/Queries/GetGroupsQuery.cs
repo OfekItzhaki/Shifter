@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Jobuler.Application.Groups.Queries;
 
 public record GroupTypeDto(Guid Id, string Name, string? Description, bool IsActive);
-public record GroupDto(Guid Id, Guid? GroupTypeId, string? GroupTypeName, string Name, string? Description, bool IsActive, int MemberCount, int SolverHorizonDays, Guid? OwnerPersonId, DateTime? SolverStartDateTime = null, bool AutoPublish = false);
+public record GroupDto(Guid Id, Guid? GroupTypeId, string? GroupTypeName, string Name, string? Description, bool IsActive, int MemberCount, int SolverHorizonDays, Guid? OwnerPersonId, DateTime? SolverStartDateTime = null, bool AutoPublish = false, bool IsClosedBase = false);
 public record GroupMemberDto(Guid PersonId, string FullName, string? DisplayName, bool IsOwner, string? PhoneNumber, string? InvitationStatus, string? ProfileImageUrl, string? Birthday, Guid? LinkedUserId = null, Guid? RoleId = null, string? RoleName = null);
 
 public record GetGroupTypesQuery(Guid SpaceId) : IRequest<List<GroupTypeDto>>;
@@ -69,7 +69,8 @@ public class GetGroupsQueryHandler : IRequestHandler<GetGroupsQuery, List<GroupD
             g.SolverHorizonDays,
             ownerPersonIds.GetValueOrDefault(g.Id),
             g.SolverStartDateTime,
-            g.AutoPublish
+            g.AutoPublish,
+            g.IsClosedBase
         )).ToList();
     }
 }
