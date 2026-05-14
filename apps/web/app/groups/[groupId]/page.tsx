@@ -936,7 +936,7 @@ export default function GroupDetailPage() {
           if (pollingRef.current) clearInterval(pollingRef.current);
           setSolverPolling(false);
           setSolverStatus("TimedOut");
-          setSolverError("הסולבר לא הגיב בזמן. ייתכן שהבעיה מורכבת מדי — נסה להקטין את אופק התכנון או לפשט את האילוצים.");
+          setSolverError(tErrors("solverTimeout"));
           return;
         }
 
@@ -1007,13 +1007,13 @@ export default function GroupDetailPage() {
         } catch {
           if (pollingRef.current) clearInterval(pollingRef.current);
           setSolverPolling(false);
-          setSolverError("שגיאה בבדיקת סטטוס הסולבר");
+          setSolverError(tErrors("solverCheckError"));
         }
       }, 3000);
     } catch (err: unknown) {
       setSolverPolling(false);
       const axiosErr = err as { response?: { data?: { error?: string; title?: string } } };
-      setSolverError(axiosErr?.response?.data?.error || axiosErr?.response?.data?.title || "שגיאה בהפעלת הסולבר");
+      setSolverError(axiosErr?.response?.data?.error || axiosErr?.response?.data?.title || tErrors("solverStartError"));
     }
   }
 

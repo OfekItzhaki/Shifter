@@ -75,6 +75,7 @@ export default function SettingsTab({
   const t = useTranslations("groups.settings_tab");
   const tCommon = useTranslations("common");
   const tImport = useTranslations("import");
+  const tAdmin = useTranslations("admin");
 
   const [importModalOpen, setImportModalOpen] = useState(false);
 
@@ -219,15 +220,15 @@ export default function SettingsTab({
         <div className="space-y-3">
           {members.length < 2 && (
             <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3">
-              <p className="text-sm font-medium text-red-700">⚠ לא ניתן ליצור סידור</p>
-              <p className="text-xs text-red-600 mt-1">אין מספיק חברים בקבוצה. הוסף לפחות 2 חברים כדי שהסולבר יוכל לעבוד.</p>
+              <p className="text-sm font-medium text-red-700">{tAdmin("solverCannotRun")}</p>
+              <p className="text-xs text-red-600 mt-1">{tAdmin("solverNotEnoughMembers")}</p>
             </div>
           )}
           {solverError && !solverPolling && (
             <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3">
-              <p className="text-sm font-medium text-red-700">⚠ הסידור האחרון נכשל</p>
+              <p className="text-sm font-medium text-red-700">{tAdmin("solverLastFailed")}</p>
               <p className="text-xs text-red-600 mt-1">{solverError}</p>
-              <p className="text-xs text-slate-500 mt-2">פתרונות אפשריים: הוסף חברים נוספים, שנה הגדרות זמן בית, או הקל אילוצים.</p>
+              <p className="text-xs text-slate-500 mt-2">{tAdmin("solverSolutions")}</p>
             </div>
           )}
           {draftVersion && (

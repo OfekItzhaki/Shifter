@@ -589,6 +589,10 @@
     "errorSolver": "Error starting solver.",
     "solver_uncovered_slots": "Could not fill all shifts. Missing tasks: {tasks} ({count} shifts). Try adding more members.",
     "member_limit_reached": "You've reached the member limit for your plan ({limit}). Upgrade to add more.",
+    "solverCannotRun": "⚠ Cannot create schedule",
+    "solverNotEnoughMembers": "Not enough members in the group. Add at least 2 members for the solver to work.",
+    "solverLastFailed": "⚠ Last schedule run failed",
+    "solverSolutions": "Possible solutions: add more members, change home-time settings, or relax constraints.",
     "errorEmergencySolver": "Error starting emergency solver.",
     "selectVersion": "Select a version to view details.",
     "selectGroup": "Select a group to manage",
@@ -806,7 +810,10 @@
     "errorDiscard": "Error discarding draft",
     "errorLoadSchedule": "Error loading schedule",
     "offlineWithCache": "No internet connection — showing cached schedule from {date}",
-    "offlineNoCache": "No internet connection and no cached schedule"
+    "offlineNoCache": "No internet connection and no cached schedule",
+    "solverTimeout": "The solver did not respond in time. The problem may be too complex — try reducing the planning horizon or simplifying constraints.",
+    "solverCheckError": "Error checking solver status",
+    "solverStartError": "Error starting the solver"
   },
   "common": {
     "loading": "Loading...",
