@@ -210,9 +210,9 @@ export default function HomeLeaveConfigPanel({
         <FieldRow
           label="מינימום אנשים בבסיס"
           hint={`כמה אנשים חייבים להישאר בבסיס בכל רגע. השאר יכולים לצאת הביתה. (${memberCount} חברים בקבוצה)`}
-          value={Math.max(0, memberCount - values.leaveCapacity)}
+          value={Math.max(1, Math.min(memberCount - 1, memberCount - values.leaveCapacity))}
           onChange={(v) => {
-            const minAtBase = Number(v);
+            const minAtBase = Math.min(memberCount - 1, Math.max(1, Number(v)));
             const maxOnLeave = Math.max(1, memberCount - minAtBase);
             handleChange("leaveCapacity", String(maxOnLeave));
           }}

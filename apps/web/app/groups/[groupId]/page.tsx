@@ -919,8 +919,8 @@ export default function GroupDetailPage() {
     setSolverStatus(null);
     setSolverError(null);
 
-    // Safety timeout — stop polling after 90s regardless
-    const maxPollMs = 90_000;
+    // Safety timeout — stop polling after 60s regardless
+    const maxPollMs = 60_000;
     const pollStartTime = Date.now();
 
     try {
@@ -936,7 +936,7 @@ export default function GroupDetailPage() {
           if (pollingRef.current) clearInterval(pollingRef.current);
           setSolverPolling(false);
           setSolverStatus("TimedOut");
-          setSolverError("Solver did not respond in time. Check that the service is running.");
+          setSolverError("הסולבר לא הגיב בזמן. ייתכן שהבעיה מורכבת מדי — נסה להקטין את אופק התכנון או לפשט את האילוצים.");
           return;
         }
 
@@ -1007,13 +1007,13 @@ export default function GroupDetailPage() {
         } catch {
           if (pollingRef.current) clearInterval(pollingRef.current);
           setSolverPolling(false);
-          setSolverError("Error checking status");
+          setSolverError("שגיאה בבדיקת סטטוס הסולבר");
         }
       }, 3000);
     } catch (err: unknown) {
       setSolverPolling(false);
       const axiosErr = err as { response?: { data?: { error?: string; title?: string } } };
-      setSolverError(axiosErr?.response?.data?.error || axiosErr?.response?.data?.title || "Error starting solver");
+      setSolverError(axiosErr?.response?.data?.error || axiosErr?.response?.data?.title || "שגיאה בהפעלת הסולבר");
     }
   }
 
