@@ -218,8 +218,16 @@ export default function SettingsTab({
       <Section title={t("runSchedule")}>
         <div className="space-y-3">
           {members.length < 2 && (
-            <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700">
-              לא ניתן ליצור סידור — אין מספיק חברים בקבוצה. הוסף לפחות 2 חברים.
+            <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3">
+              <p className="text-sm font-medium text-red-700">⚠ לא ניתן ליצור סידור</p>
+              <p className="text-xs text-red-600 mt-1">אין מספיק חברים בקבוצה. הוסף לפחות 2 חברים כדי שהסולבר יוכל לעבוד.</p>
+            </div>
+          )}
+          {solverError && !solverPolling && (
+            <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3">
+              <p className="text-sm font-medium text-red-700">⚠ הסידור האחרון נכשל</p>
+              <p className="text-xs text-red-600 mt-1">{solverError}</p>
+              <p className="text-xs text-slate-500 mt-2">פתרונות אפשריים: הוסף חברים נוספים, שנה הגדרות זמן בית, או הקל אילוצים.</p>
             </div>
           )}
           {draftVersion && (
@@ -250,14 +258,11 @@ export default function SettingsTab({
               </>
             ) : t("runSchedule")}
           </button>
-          {solverStatus && (
+          {solverStatus && !solverError && (
             <p className={`text-sm ${solverStatus === "Completed" ? "text-emerald-600" : solverStatus === "Failed" ? "text-red-600" : "text-slate-600"}`}>
               {solverStatus === "Completed" ? "הושלם ✓" : solverStatus === "Failed" ? "נכשל" : solverStatus === "TimedOut" ? "חרג מזמן" : solverStatus}
             </p>
           )}
-          {solverError && (
-            <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700">
-              {solverError}
             </div>
           )}
         </div>
