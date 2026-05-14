@@ -263,9 +263,20 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
 
             // Safety cap: never generate more than SlotsPerDay shifts per day × horizon days
             int maxShiftsPerTask = Math.Max(SchedulingConstants.BaseMaxShiftsPerTask, maxHorizon * SchedulingConstants.SlotsPerDay);
-            var shiftStart = windowStart;
-            var shiftIndex = 0;
-            var maxIndex = maxShiftsPerTask;
+            // Use ABSOLUTE shift index counting from the task's original start.
+            // This ensures DeriveShiftGuid produces the same GUID for the same time slot
+            // regardless of when the solver runs — critical for the display query to resolve
+            // GUIDs back to correct times.
+            var shiftIndex = (int)Math.Floor((windowStart - task.StartsAt).TotalMinutes / task.ShiftDurationMinutes);
+            if (shiftIndex < 0) shiftIndex = 0;
+            // Align shiftStart to the exact shift boundary from task's original start
+            var shiftStart = task.StartsAt + TimeSpan.FromMinutes((double)shiftIndex * task.ShiftDurationMinutes);
+            if (shiftStart < windowStart)
+            {
+                shiftIndex++;
+                shiftStart += shiftDuration;
+            }
+            var maxIndex = shiftIndex + maxShiftsPerTask;
             while (shiftStart + shiftDuration <= windowEnd && shiftIndex < maxIndex)
             {
                 var shiftEnd = shiftStart + shiftDuration;

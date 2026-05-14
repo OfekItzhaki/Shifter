@@ -99,6 +99,13 @@ public class GetGroupScheduleQueryHandler : IRequestHandler<GetGroupScheduleQuer
             {
                 if (gt.ShiftDurationMinutes < 1) continue;
                 var shiftDuration = TimeSpan.FromMinutes(gt.ShiftDurationMinutes);
+                
+                // The normalizer uses relative indices starting from windowStart.
+                // To resolve GUIDs back to times, we need to figure out what windowStart was.
+                // Since we don't know the exact horizon, we use the EARLIEST assignment time
+                // as a hint. For now, just iterate from task start — the GUIDs will match
+                // (same index = same GUID) and the times will be correct because the iteration
+                // covers the full task range.
                 var shiftStart = gt.StartsAt;
                 var shiftIndex = 0;
                 const int maxShifts = 10_000;
