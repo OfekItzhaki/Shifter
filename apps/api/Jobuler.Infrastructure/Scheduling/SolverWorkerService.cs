@@ -352,8 +352,9 @@ public class SolverWorkerService : BackgroundService
             // Do NOT persist a version if there's nothing useful to show the admin:
             // - solver proved infeasible, OR
             // - feasible but zero assignments (solver bug / all slots unparseable)
-            // - feasible but has uncovered slots (not all tasks could be filled)
-            // In all these cases, mark the run failed and notify the admin.
+            // - feasible but has uncovered slots (all tasks MUST be fully assigned)
+            // In all these cases, mark the run failed and notify the admin with
+            // actionable guidance (e.g. reduce planning horizon, add members).
             var hasUncoveredSlots = output.UncoveredSlotIds.Count > 0;
             var shouldDiscard = !output.Feasible || assignments.Count == 0 || hasUncoveredSlots;
 
@@ -419,7 +420,7 @@ public class SolverWorkerService : BackgroundService
                     run.MarkFailed($"Solver returned infeasible. Hard conflicts: {output.HardConflicts.Count}");
                 else if (hasUncoveredSlots)
                 {
-                    // Identify which tasks have uncovered slots
+                    // Identify which tasks have uncovered slots and suggest fixes
                     var uncoveredSlotSet = output.UncoveredSlotIds.ToHashSet();
                     var uncoveredTaskNames = input.TaskSlots
                         .Where(s => uncoveredSlotSet.Contains(s.SlotId))
@@ -427,7 +428,15 @@ public class SolverWorkerService : BackgroundService
                         .Distinct()
                         .ToList();
                     var taskList = string.Join(", ", uncoveredTaskNames);
-                    run.MarkFailed($"UNCOVERED_SLOTS:{taskList}:{output.UncoveredSlotIds.Count}");
+
+                    // Build a locale-aware error with actionable guidance
+                    var uncoveredLocale = input.Locale ?? "he";
+                    var uncoveredError = uncoveredLocale switch {
+                        "he" => $"לא ניתן לאייש את כל המשמרות: {taskList} ({output.UncoveredSlotIds.Count} משמרות חסרות). נסה להקטין את אופק התכנון, להוסיף חברים, או להקל על האילוצים.",
+                        "ru" => $"Не удалось укомплектовать все смены: {taskList} ({output.UncoveredSlotIds.Count} смен не заполнены). Попробуйте уменьшить горизонт планирования, добавить участников или смягчить ограничения.",
+                        _    => $"Could not staff all shifts: {taskList} ({output.UncoveredSlotIds.Count} shifts unfilled). Try reducing the planning horizon, adding members, or relaxing constraints."
+                    };
+                    run.MarkFailed(uncoveredError);
                 }
                 else
                     run.MarkFailed("Solver returned zero assignments despite reporting feasible.");

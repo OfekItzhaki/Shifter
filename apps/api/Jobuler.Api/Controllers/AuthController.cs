@@ -108,6 +108,7 @@ public class AuthController : ControllerBase
     /// <summary>Exchange a valid refresh token for a new token pair.</summary>
     [HttpPost("refresh")]
     [AllowAnonymous]
+    [DisableRateLimiting]
     public async Task<IActionResult> Refresh([FromBody] RefreshRequest req, CancellationToken ct)
     {
         var result = await _mediator.Send(new RefreshTokenCommand(req.RefreshToken), ct);

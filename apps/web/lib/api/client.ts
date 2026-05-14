@@ -11,6 +11,21 @@ export const apiClient = axios.create({
 // from triggering multiple redirects. Never reset; page navigation clears it.
 let isRedirecting = false;
 
+// Token refresh mutex — prevents multiple concurrent 401 responses from
+// triggering multiple refresh requests (which would revoke the token and
+// cause a cascade of failures leading to logout).
+let isRefreshing = false;
+let refreshSubscribers: Array<(token: string) => void> = [];
+
+function subscribeTokenRefresh(cb: (token: string) => void) {
+  refreshSubscribers.push(cb);
+}
+
+function onTokenRefreshed(token: string) {
+  refreshSubscribers.forEach(cb => cb(token));
+  refreshSubscribers = [];
+}
+
 /**
  * Redirects to an error page with a `?from=` query parameter encoding the
  * current pathname. Skips if a redirect is already in progress.
@@ -41,6 +56,20 @@ apiClient.interceptors.response.use(
     // 401: Attempt token refresh, then retry once
     if (status === 401 && !original._retry) {
       original._retry = true;
+
+      // If a refresh is already in progress, queue this request to retry
+      // once the refresh completes (avoids revoking the token multiple times).
+      if (isRefreshing) {
+        return new Promise((resolve) => {
+          subscribeTokenRefresh((newToken: string) => {
+            original.headers.Authorization = `Bearer ${newToken}`;
+            resolve(apiClient(original));
+          });
+        });
+      }
+
+      isRefreshing = true;
+
       try {
         const refreshToken = localStorage.getItem("refresh_token");
         if (!refreshToken) throw new Error("No refresh token");
@@ -50,9 +79,14 @@ apiClient.interceptors.response.use(
         localStorage.setItem("refresh_token", data.refreshToken);
         document.cookie = `access_token=${data.accessToken}; path=/; max-age=900; SameSite=Strict`;
 
+        isRefreshing = false;
+        onTokenRefreshed(data.accessToken);
+
         original.headers.Authorization = `Bearer ${data.accessToken}`;
         return apiClient(original);
       } catch {
+        isRefreshing = false;
+        refreshSubscribers = [];
         // Refresh failed — clear tokens and cookie, redirect to login
         localStorage.removeItem("access_token");
         localStorage.removeItem("refresh_token");

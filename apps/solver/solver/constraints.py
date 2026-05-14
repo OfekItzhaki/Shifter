@@ -62,19 +62,26 @@ def add_no_overlap_constraints(
     Emergency-bypassed people skip this constraint.
     """
     emergency_person_ids = emergency_person_ids or set()
+
+    # Pre-compute timestamps to avoid repeated ISO string parsing in O(n²) loop
+    slot_times = [(_to_timestamp(s.starts_at), _to_timestamp(s.ends_at)) for s in slots]
+
+    # Pre-compute which slot pairs overlap (O(n²) but only done once)
+    overlapping_pairs = []
+    for s1_idx in range(len(slots)):
+        s1_start, s1_end = slot_times[s1_idx]
+        for s2_idx in range(s1_idx + 1, len(slots)):
+            s2_start, s2_end = slot_times[s2_idx]
+            if s1_start < s2_end and s2_start < s1_end:
+                # Check if both allow overlap
+                if not (slots[s1_idx].allows_overlap and slots[s2_idx].allows_overlap):
+                    overlapping_pairs.append((s1_idx, s2_idx))
+
     for p_idx in range(num_people):
         if people[p_idx].person_id in emergency_person_ids:
-            continue  # emergency bypass — skip overlap constraints for this person
-        for s1_idx, slot1 in enumerate(slots):
-            for s2_idx, slot2 in enumerate(slots):
-                if s2_idx <= s1_idx:
-                    continue
-                if not _slots_overlap(slot1, slot2):
-                    continue
-                if not (slot1.allows_overlap and slot2.allows_overlap):
-                    model.add(
-                        assign[(s1_idx, p_idx)] + assign[(s2_idx, p_idx)] <= 1
-                    )
+            continue
+        for s1_idx, s2_idx in overlapping_pairs:
+            model.add(assign[(s1_idx, p_idx)] + assign[(s2_idx, p_idx)] <= 1)
 
 
 def add_min_rest_constraints(
@@ -97,40 +104,45 @@ def add_min_rest_constraints(
     min_rest_seconds = int(min_rest_hours * 3600)
     long_shift_threshold = 24 * 3600  # 24 hours in seconds
 
+    # Pre-compute timestamps to avoid repeated ISO string parsing in O(n²) loop
+    slot_times = [(_to_timestamp(s.starts_at), _to_timestamp(s.ends_at)) for s in slots]
+
+    # Pre-compute which slot pairs violate min rest (O(n²) but only done once)
+    # Each entry: (s1_idx, s2_idx, is_long_shift)
+    rest_violation_pairs = []
+    for s1_idx in range(len(slots)):
+        start1, end1 = slot_times[s1_idx]
+        slot1_duration = end1 - start1
+        for s2_idx in range(s1_idx + 1, len(slots)):
+            start2, end2 = slot_times[s2_idx]
+            slot2_duration = end2 - start2
+            is_long_shift = slot1_duration >= long_shift_threshold or slot2_duration >= long_shift_threshold
+
+            violates_forward = end1 <= start2 and (start2 - end1) < min_rest_seconds
+            violates_backward = end2 <= start1 and (start1 - end2) < min_rest_seconds
+
+            if violates_forward or violates_backward:
+                rest_violation_pairs.append((s1_idx, s2_idx, is_long_shift, violates_forward, violates_backward))
+
     for p_idx in range(num_people):
         if people[p_idx].person_id in emergency_person_ids:
-            continue  # emergency bypass — skip rest constraints for this person
-        for s1_idx, slot1 in enumerate(slots):
-            for s2_idx, slot2 in enumerate(slots):
-                if s2_idx <= s1_idx:
-                    continue
+            continue
+        for s1_idx, s2_idx, is_long_shift, viol_fwd, viol_bwd in rest_violation_pairs:
+            if viol_fwd:
+                if is_long_shift and soft_penalties is not None:
+                    violation = model.new_bool_var(f"rest_soft_{s1_idx}_{s2_idx}_{p_idx}")
+                    model.add(assign[(s1_idx, p_idx)] + assign[(s2_idx, p_idx)] <= 1 + violation)
+                    soft_penalties.append(violation * 50)
+                else:
+                    model.add(assign[(s1_idx, p_idx)] + assign[(s2_idx, p_idx)] <= 1)
 
-                end1   = _to_timestamp(slot1.ends_at)
-                start2 = _to_timestamp(slot2.starts_at)
-                end2   = _to_timestamp(slot2.ends_at)
-                start1 = _to_timestamp(slot1.starts_at)
-
-                # Check if either slot is a long shift (>=12h)
-                slot1_duration = end1 - start1
-                slot2_duration = end2 - start2
-                is_long_shift = slot1_duration >= long_shift_threshold or slot2_duration >= long_shift_threshold
-
-                if end1 <= start2 and (start2 - end1) < min_rest_seconds:
-                    if is_long_shift and soft_penalties is not None:
-                        # Soft constraint for long shifts — penalize but allow
-                        violation = model.new_bool_var(f"rest_soft_{s1_idx}_{s2_idx}_{p_idx}")
-                        model.add(assign[(s1_idx, p_idx)] + assign[(s2_idx, p_idx)] <= 1 + violation)
-                        soft_penalties.append(violation * 50)  # moderate penalty
-                    else:
-                        model.add(assign[(s1_idx, p_idx)] + assign[(s2_idx, p_idx)] <= 1)
-
-                if end2 <= start1 and (start1 - end2) < min_rest_seconds:
-                    if is_long_shift and soft_penalties is not None:
-                        violation = model.new_bool_var(f"rest_soft_{s2_idx}_{s1_idx}_{p_idx}")
-                        model.add(assign[(s1_idx, p_idx)] + assign[(s2_idx, p_idx)] <= 1 + violation)
-                        soft_penalties.append(violation * 50)
-                    else:
-                        model.add(assign[(s1_idx, p_idx)] + assign[(s2_idx, p_idx)] <= 1)
+            if viol_bwd:
+                if is_long_shift and soft_penalties is not None:
+                    violation = model.new_bool_var(f"rest_soft_{s2_idx}_{s1_idx}_{p_idx}")
+                    model.add(assign[(s1_idx, p_idx)] + assign[(s2_idx, p_idx)] <= 1 + violation)
+                    soft_penalties.append(violation * 50)
+                else:
+                    model.add(assign[(s1_idx, p_idx)] + assign[(s2_idx, p_idx)] <= 1)
 
 
 def add_qualification_constraints(
@@ -288,6 +300,9 @@ def add_availability_constraints(
     """
     emergency_person_ids = emergency_person_ids or set()
 
+    # Pre-compute slot timestamps once
+    slot_times = [(_to_timestamp(s.starts_at), _to_timestamp(s.ends_at)) for s in slots]
+
     # Collect all blocking presence windows per person
     # States that block assignment: blocked, at_home, on_mission
     BLOCKING_STATES = {"blocked", "at_home", "on_mission"}
@@ -309,9 +324,8 @@ def add_availability_constraints(
         if pid in emergency_person_ids:
             continue  # bypass all availability/presence checks
 
-        for s_idx, slot in enumerate(slots):
-            slot_start = _to_timestamp(slot.starts_at)
-            slot_end   = _to_timestamp(slot.ends_at)
+        for s_idx in range(len(slots)):
+            slot_start, slot_end = slot_times[s_idx]
 
             # Block if any blocking presence window overlaps this slot
             if pid in blocked_windows:
