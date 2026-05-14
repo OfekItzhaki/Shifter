@@ -443,11 +443,14 @@ export default function GroupDetailPage() {
     // wasn't set yet during the initial render (Zustand hydration lag).
     const spaceId = useSpaceStore.getState().currentSpaceId ?? currentSpaceId;
     if (!spaceId || !draftVersion) {
-      setScheduleVersionError("Cannot publish — try refreshing the page");
-      return;
+      const msg = "לא ניתן לפרסם — נסה לרענן את הדף";
+      setScheduleVersionError(msg);
+      throw new Error(msg);
     }
     // Double-submit guard — if already saving, do nothing
-    if (publishSaving) return;
+    if (publishSaving) {
+      return;
+    }
     setPublishSaving(true);
     setScheduleVersionError(null);
     try {
