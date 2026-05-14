@@ -309,7 +309,8 @@ public class PublishVersionCommandHandler : IRequestHandler<PublishVersionComman
                 && pw.EndsAt > minStart)
             .ToListAsync(ct);
 
-        // Check each valid entry for overlap with on_mission windows
+        // Check each valid entry for overlap with on_mission windows — skip conflicts instead of failing
+        var nonConflictingEntries = new List<(Guid PersonId, DateTime StartsAt, DateTime EndsAt)>();
         foreach (var entry in validEntries)
         {
             var conflicting = existingOnMissionWindows.FirstOrDefault(pw =>
@@ -319,15 +320,16 @@ public class PublishVersionCommandHandler : IRequestHandler<PublishVersionComman
 
             if (conflicting is not null)
             {
-                throw new InvalidOperationException(
-                    $"Home-leave window conflicts with on_mission presence for person {entry.PersonId} " +
-                    $"at {entry.StartsAt:O} – {entry.EndsAt:O}. " +
-                    $"Conflicting on_mission window: {conflicting.StartsAt:O} – {conflicting.EndsAt:O}.");
+                _logger.LogWarning(
+                    "Home-leave window skipped (conflicts with on_mission): person {PersonId} at {StartsAt:O} – {EndsAt:O}",
+                    entry.PersonId, entry.StartsAt, entry.EndsAt);
+                continue;
             }
+            nonConflictingEntries.Add(entry);
         }
 
-        // All validations passed — create presence windows
-        foreach (var entry in validEntries)
+        // Create presence windows for non-conflicting entries
+        foreach (var entry in nonConflictingEntries)
         {
             var presenceWindow = PresenceWindow.CreateDerivedAtHome(
                 spaceId, entry.PersonId, entry.StartsAt, entry.EndsAt);
