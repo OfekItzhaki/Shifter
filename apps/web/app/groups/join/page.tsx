@@ -22,6 +22,14 @@ function JoinContent() {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<{ groupId: string; spaceId: string; groupName: string; alreadyMember: boolean } | null>(null);
   const [autoJoinDone, setAutoJoinDone] = useState(false);
+  const [hydrated, setHydrated] = useState(false);
+
+  // Wait for Zustand to rehydrate before checking auth
+  useEffect(() => {
+    const unsub = useAuthStore.persist.onFinishHydration(() => setHydrated(true));
+    if (useAuthStore.persist.hasHydrated()) setHydrated(true);
+    return () => { unsub(); };
+  }, []);
 
   async function handleJoin(e?: React.FormEvent) {
     e?.preventDefault();
@@ -45,11 +53,13 @@ function JoinContent() {
   // Auto-join when user is authenticated and code is provided in URL
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
-    if (isAuthenticated && codeFromUrl && !autoJoinDone) {
+    if (hydrated && isAuthenticated && codeFromUrl && !autoJoinDone) {
       setAutoJoinDone(true);
       handleJoin();
     }
-  }, [isAuthenticated, codeFromUrl]);
+  }, [hydrated, isAuthenticated, codeFromUrl]);
+
+  if (!hydrated) return null;
 
   if (!isAuthenticated) {
     const redirectUrl = `/groups/join?code=${encodeURIComponent(code)}`;
