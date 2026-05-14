@@ -209,7 +209,7 @@ builder.Services.AddHttpClient<ISolverClient, SolverHttpClient>(client =>
 {
     var solverUrl = builder.Configuration["Solver:BaseUrl"] ?? "http://localhost:8000";
     client.BaseAddress = new Uri(solverUrl);
-    client.Timeout = TimeSpan.FromSeconds(120);
+    client.Timeout = TimeSpan.FromSeconds(20);
 });
 
 // ─── AI assistant (optional — only registered when API key is configured) ────

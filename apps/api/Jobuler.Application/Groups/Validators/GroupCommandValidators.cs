@@ -23,7 +23,7 @@ public class UpdateGroupSettingsCommandValidator : AbstractValidator<UpdateGroup
     public UpdateGroupSettingsCommandValidator()
     {
         RuleFor(x => x.SolverHorizonDays)
-            .InclusiveBetween(1, 90).WithMessage("Solver horizon must be between 1 and 90 days.");
+            .InclusiveBetween(1, 7).WithMessage("Solver horizon must be between 1 and 7 days.");
 
         // SolverStartDateTime is optional — null means "use now".
         // When provided, reject obviously wrong values:

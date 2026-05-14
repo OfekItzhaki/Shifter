@@ -46,7 +46,7 @@ public class Group : AuditableEntity, ITenantScoped
         Touch();
     }
 
-    public void UpdateSettings(int solverHorizonDays, DateTime? solverStartDateTime = null) { SolverHorizonDays = Math.Clamp(solverHorizonDays, 1, 90); SolverStartDateTime = solverStartDateTime; Touch(); }
+    public void UpdateSettings(int solverHorizonDays, DateTime? solverStartDateTime = null) { SolverHorizonDays = Math.Clamp(solverHorizonDays, 1, 7); SolverStartDateTime = solverStartDateTime; Touch(); }
     public void SetAutoPublish(bool autoPublish) { AutoPublish = autoPublish; Touch(); }
     public void SetClosedBase(bool value) { IsClosedBase = value; Touch(); }
     public void Deactivate() { IsActive = false; Touch(); }

@@ -919,8 +919,8 @@ export default function GroupDetailPage() {
     setSolverStatus(null);
     setSolverError(null);
 
-    // Safety timeout — stop polling after 60s regardless
-    const maxPollMs = 60_000;
+    // Safety timeout — stop polling after 30s regardless
+    const maxPollMs = 30_000;
     const pollStartTime = Date.now();
 
     try {
