@@ -346,13 +346,6 @@ def add_availability_constraints(
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
-def _slots_overlap(slot1: TaskSlot, slot2: TaskSlot) -> bool:
-    s1 = _to_timestamp(slot1.starts_at)
-    e1 = _to_timestamp(slot1.ends_at)
-    s2 = _to_timestamp(slot2.starts_at)
-    e2 = _to_timestamp(slot2.ends_at)
-    return s1 < e2 and s2 < e1
-
 
 def _to_timestamp(dt) -> int:
     """Convert datetime or ISO string to Unix timestamp (seconds)."""

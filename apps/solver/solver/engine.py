@@ -41,6 +41,7 @@ SOLVER_TIMEOUT = int(os.getenv("SOLVER_TIMEOUT_SECONDS", "15"))
 
 
 def solve(input: SolverInput) -> SolverOutput:
+    t0 = time.time()
     model = cp_model.CpModel()
     solver = cp_model.CpSolver()
     solver.parameters.max_time_in_seconds = SOLVER_TIMEOUT
@@ -211,6 +212,9 @@ def solve(input: SolverInput) -> SolverOutput:
         solver.parameters.log_search_progress = False
 
     # ── Solve ─────────────────────────────────────────────────────────────────
+    constraint_build_ms = int((time.time() - t0) * 1000)
+    logger.info("Constraint building took %dms. Starting CP-SAT solve (timeout=%ds)...",
+                constraint_build_ms, solver.parameters.max_time_in_seconds)
     start_time = time.time()
     status = solver.solve(model)
     solver_time_ms = int((time.time() - start_time) * 1000)

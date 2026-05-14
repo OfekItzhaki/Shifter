@@ -125,7 +125,7 @@ export default function SettingsTab({
           </div>
           <input
             type="range"
-            min={3}
+            min={1}
             max={7}
             value={solverHorizon}
             onChange={e => onSolverHorizonChange(Number(e.target.value))}
