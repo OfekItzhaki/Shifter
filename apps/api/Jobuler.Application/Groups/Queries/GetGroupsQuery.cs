@@ -6,7 +6,7 @@ namespace Jobuler.Application.Groups.Queries;
 
 public record GroupTypeDto(Guid Id, string Name, string? Description, bool IsActive);
 public record GroupDto(Guid Id, Guid? GroupTypeId, string? GroupTypeName, string Name, string? Description, bool IsActive, int MemberCount, int SolverHorizonDays, Guid? OwnerPersonId, DateTime? SolverStartDateTime = null, bool AutoPublish = false, bool IsClosedBase = false);
-public record GroupMemberDto(Guid PersonId, string FullName, string? DisplayName, bool IsOwner, string? PhoneNumber, string? InvitationStatus, string? ProfileImageUrl, string? Birthday, Guid? LinkedUserId = null, Guid? RoleId = null, string? RoleName = null);
+public record GroupMemberDto(Guid PersonId, string FullName, string? DisplayName, bool IsOwner, string? PhoneNumber, string? InvitationStatus, string? ProfileImageUrl, string? Birthday, Guid? LinkedUserId = null, Guid? RoleId = null, string? RoleName = null, decimal HomeLeavePriority = 1.0m);
 
 public record GetGroupTypesQuery(Guid SpaceId) : IRequest<List<GroupTypeDto>>;
 
@@ -122,7 +122,7 @@ public class GetGroupMembersQueryHandler : IRequestHandler<GetGroupMembersQuery,
                     p.Id, p.FullName, p.DisplayName, m.IsOwner, p.PhoneNumber,
                     p.InvitationStatus ?? "accepted", p.ProfileImageUrl,
                     p.Birthday?.ToString("yyyy-MM-dd"), p.LinkedUserId,
-                    assignment?.RoleId, roleName);
+                    assignment?.RoleId, roleName, m.HomeLeavePriority);
             })
             .ToList();
     }

@@ -302,6 +302,10 @@ export function MemberProfileModal({ member, isAdmin, editForm, saving, error, o
                 {t("editDetails")}
               </button>
             )}
+            {/* Home-leave priority selector */}
+            {isAdmin && (
+              <HomeLeavePrioritySelector personId={member.personId} groupId="" />
+            )}
             {/* Home-leave stats — time at base vs home */}
             <HomeLeaveStatsSection personId={member.personId} />
           </div>
@@ -469,6 +473,77 @@ function HomeLeaveStatsSection({ personId }: { personId: string }) {
         <span>בבסיס {basePercent}%</span>
         <span>בבית {homePercent}%</span>
       </div>
+    </div>
+  );
+}
+
+
+// ── Home-leave priority selector ──────────────────────────────────────────────
+const PRIORITY_OPTIONS = [
+  { value: 0.5, label: "נמוך (נשאר בבסיס יותר)", color: "text-blue-600" },
+  { value: 1.0, label: "רגיל", color: "text-slate-600" },
+  { value: 1.5, label: "גבוה", color: "text-amber-600" },
+  { value: 2.0, label: "גבוה מאוד (הורים/סטודנטים)", color: "text-emerald-600" },
+  { value: 3.0, label: "מקסימלי", color: "text-purple-600" },
+];
+
+function HomeLeavePrioritySelector({ personId, groupId }: { personId: string; groupId: string }) {
+  const { currentSpaceId } = useSpaceStore();
+  const [priority, setPriority] = useState<number>(1.0);
+  const [saving, setSaving] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+
+  // Get groupId from URL if not passed
+  const params = typeof window !== "undefined" ? window.location.pathname.match(/groups\/([^/]+)/) : null;
+  const effectiveGroupId = groupId || params?.[1] || "";
+
+  useEffect(() => {
+    if (!currentSpaceId || !effectiveGroupId) return;
+    // Load current priority from the membership
+    apiClient.get(`/spaces/${currentSpaceId}/groups/${effectiveGroupId}/members`)
+      .then(res => {
+        const members = res.data as Array<{ personId: string; homeLeavePriority?: number }>;
+        const member = members.find(m => m.personId === personId);
+        if (member?.homeLeavePriority) {
+          setPriority(member.homeLeavePriority);
+        }
+        setLoaded(true);
+      })
+      .catch(() => setLoaded(true));
+  }, [currentSpaceId, effectiveGroupId, personId]);
+
+  async function handleChange(newPriority: number) {
+    if (!currentSpaceId || !effectiveGroupId) return;
+    setPriority(newPriority);
+    setSaving(true);
+    try {
+      await apiClient.patch(
+        `/spaces/${currentSpaceId}/groups/${effectiveGroupId}/members/${personId}/home-leave-priority`,
+        { priority: newPriority }
+      );
+    } catch { /* non-fatal */ }
+    finally { setSaving(false); }
+  }
+
+  if (!loaded) return null;
+
+  return (
+    <div className="border-t border-slate-100 pt-3 mt-3">
+      <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">
+        עדיפות זמן בית
+      </label>
+      <p className="text-xs text-slate-400 mb-2">אנשים עם עדיפות גבוהה יקבלו יותר זמן בבית (הורים, סטודנטים)</p>
+      <select
+        value={priority}
+        onChange={e => handleChange(Number(e.target.value))}
+        disabled={saving}
+        className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white disabled:opacity-50"
+      >
+        {PRIORITY_OPTIONS.map(opt => (
+          <option key={opt.value} value={opt.value}>{opt.label}</option>
+        ))}
+      </select>
+      {saving && <p className="text-xs text-slate-400 mt-1">שומר...</p>}
     </div>
   );
 }
