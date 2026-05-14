@@ -141,9 +141,12 @@ public class GetGroupScheduleQueryHandler : IRequestHandler<GetGroupScheduleQuer
             }
 
             var personName = people.TryGetValue(a.PersonId, out var pn) ? pn : "Unknown";
+            // Convert UTC to Israel local time (+3h) so the frontend displays correct dates
+            var localStartsAt = DateTime.SpecifyKind(startsAt.AddHours(3), DateTimeKind.Unspecified);
+            var localEndsAt = DateTime.SpecifyKind(endsAt.AddHours(3), DateTimeKind.Unspecified);
             result.Add(new GroupScheduleAssignmentDto(
                 a.Id, a.PersonId, personName, taskName,
-                startsAt, endsAt, a.Source.ToString()));
+                localStartsAt, localEndsAt, a.Source.ToString()));
         }
 
         return result.OrderBy(r => r.SlotStartsAt).ToList();

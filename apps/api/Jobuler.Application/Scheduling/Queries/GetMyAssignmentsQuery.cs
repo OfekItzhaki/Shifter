@@ -142,9 +142,12 @@ public class GetMyAssignmentsQueryHandler : IRequestHandler<GetMyAssignmentsQuer
             // Apply date range filter
             if (startsAt < req.From || startsAt >= req.To) continue;
 
+            // Convert UTC to Israel local time (+3h) for display
+            var localStartsAt = DateTime.SpecifyKind(startsAt.AddHours(3), DateTimeKind.Unspecified);
+            var localEndsAt = DateTime.SpecifyKind(endsAt.AddHours(3), DateTimeKind.Unspecified);
             result.Add(new MyAssignmentDto(
                 a.Id, groupId, groupName, taskName,
-                startsAt, endsAt, a.Source.ToString()));
+                localStartsAt, localEndsAt, a.Source.ToString()));
         }
 
         return result.OrderBy(x => x.SlotStartsAt).ToList();
