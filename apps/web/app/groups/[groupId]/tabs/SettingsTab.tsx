@@ -216,6 +216,11 @@ export default function SettingsTab({
       {/* Trigger solver */}
       <Section title={t("runSchedule")}>
         <div className="space-y-3">
+          {members.length < 2 && (
+            <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700">
+              לא ניתן ליצור סידור — אין מספיק חברים בקבוצה. הוסף לפחות 2 חברים.
+            </div>
+          )}
           {draftVersion && (
             <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
               <span className="text-sm text-amber-800">{t("draftPending")}</span>
@@ -234,7 +239,7 @@ export default function SettingsTab({
           </div>
           <button
             onClick={() => onTriggerSolver(solverStartTime ? new Date(solverStartTime).toISOString() : undefined)}
-            disabled={solverPolling}
+            disabled={solverPolling || members.length < 2}
             className="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl disabled:opacity-50 transition-colors"
           >
             {solverPolling ? (

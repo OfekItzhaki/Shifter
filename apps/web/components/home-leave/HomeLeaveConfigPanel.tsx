@@ -15,8 +15,8 @@ export interface HomeLeaveConfigValues {
 }
 
 const DEFAULTS: HomeLeaveConfigValues = {
-  minRestHours: 8,
-  eligibilityThresholdHours: 24,
+  minRestHours: 0,
+  eligibilityThresholdHours: 168, // 7 days in hours
   leaveCapacity: 1,
   leaveDurationHours: 48,
   balanceValue: 50,
@@ -181,32 +181,33 @@ export default function HomeLeaveConfigPanel({
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Min rest hours */}
+        {/* Eligibility threshold - in days */}
         <FieldRow
-          label="מנוחה מינימלית (שעות)"
-          hint="כמה שעות חייב אדם לנוח בבסיס אחרי שחזר מהבית לפני שיוכל לצאת למשימה"
+          label="זמן בבסיס לפני יציאה (ימים)"
+          hint="כמה ימים חייב אדם להיות בבסיס לפני שהוא זכאי לצאת הביתה"
+          value={values.eligibilityThresholdHours / 24}
+          onChange={(v) => handleChange("eligibilityThresholdHours", String(Number(v) * 24))}
+          min={1}
+          max={14}
+          step={1}
+          error={fieldErrors["eligibilityThresholdHours"]}
+        />
+
+        {/* Min rest hours - defaults to 0 */}
+        <FieldRow
+          label="מנוחה אחרי חזרה (שעות)"
+          hint="כמה שעות מנוחה אחרי חזרה מהבית לפני שיוכל לצאת למשימה (0 = ללא)"
           value={values.minRestHours}
           onChange={(v) => handleChange("minRestHours", v)}
-          min={4}
+          min={0}
           max={16}
           error={fieldErrors["minRestHours"]}
         />
 
-        {/* Eligibility threshold hours */}
+        {/* Min people at base (inverted from leave capacity) */}
         <FieldRow
-          label="סף זכאות לזמן בית (שעות)"
-          hint="כמה שעות חייב אדם להיות בבסיס לפני שהוא זכאי לצאת הביתה"
-          value={values.eligibilityThresholdHours}
-          onChange={(v) => handleChange("eligibilityThresholdHours", v)}
-          min={values.minRestHours}
-          max={48}
-          error={fieldErrors["eligibilityThresholdHours"]}
-        />
-
-        {/* Leave capacity */}
-        <FieldRow
-          label="כמות מקסימלית בבית"
-          hint="כמה אנשים יכולים להיות בבית בו-זמנית"
+          label="מינימום אנשים בבסיס"
+          hint="כמה אנשים חייבים להישאר בבסיס בכל רגע נתון"
           value={values.leaveCapacity}
           onChange={(v) => handleChange("leaveCapacity", v)}
           min={1}

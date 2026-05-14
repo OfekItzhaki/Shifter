@@ -70,7 +70,18 @@ public class PreviewHomeLeaveHandler : IRequestHandler<PreviewHomeLeaveCommand, 
             .FirstOrDefaultAsync(c => c.GroupId == req.GroupId && c.SpaceId == req.SpaceId, ct);
 
         // 4. Build solver payload with overridden balance_value and preview_mode
-        var payload = await _normalizer.BuildPreviewAsync(req.SpaceId, req.GroupId, req.BalanceValue, ct);
+        SolverInputDto payload;
+        try
+        {
+            payload = await _normalizer.BuildPreviewAsync(req.SpaceId, req.GroupId, req.BalanceValue, ct);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Preview payload build failed for group {GroupId}", req.GroupId);
+            return new HomeLeavePreviewResponse(
+                Status: "no_solution", PeopleHomeCount: 0, PeopleAtBaseCount: 0,
+                TotalHomeLeaveSlots: 0, CoverageGaps: [], FairnessSpread: 0, SolverTimeMs: 0);
+        }
 
         // 5. Call solver with timeout
         SolverOutputDto solverOutput;
