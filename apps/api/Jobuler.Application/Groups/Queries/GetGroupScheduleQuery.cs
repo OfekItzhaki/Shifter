@@ -101,13 +101,16 @@ public class GetGroupScheduleQueryHandler : IRequestHandler<GetGroupScheduleQuer
                 var shiftDuration = TimeSpan.FromMinutes(gt.ShiftDurationMinutes);
                 var shiftStart = gt.StartsAt;
                 var shiftIndex = 0;
-                const int maxShifts = 10_000; // safety cap — prevents runaway loops on long horizons
+                const int maxShifts = 50_000; // increased cap for long-running tasks
                 while (shiftStart + shiftDuration <= gt.EndsAt && shiftIndex < maxShifts)
                 {
                     var shiftEnd = shiftStart + shiftDuration;
                     var shiftGuid = DeriveShiftGuid(gt.Id, shiftIndex);
                     if (missingSlotIds.Contains(shiftGuid))
                         shiftGuidToTask[shiftGuid] = (gt.Name, shiftStart, shiftEnd);
+                    // Early exit: if we've resolved all missing IDs, stop iterating
+                    if (shiftGuidToTask.Count == missingSlotIds.Count)
+                        break;
                     shiftStart = shiftEnd;
                     shiftIndex++;
                 }
