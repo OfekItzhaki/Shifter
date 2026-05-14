@@ -59,7 +59,16 @@ function JoinContent() {
     }
   }, [hydrated, isAuthenticated, codeFromUrl]);
 
-  if (!hydrated) return null;
+  if (!hydrated) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <svg className="animate-spin h-6 w-6 text-blue-400" fill="none" viewBox="0 0 24 24">
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+        </svg>
+      </div>
+    );
+  }
 
   if (!isAuthenticated) {
     const redirectUrl = `/groups/join?code=${encodeURIComponent(code)}`;
@@ -158,7 +167,14 @@ export default function JoinGroupPage() {
           </Link>
         </div>
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
-          <Suspense fallback={null}>
+          <Suspense fallback={
+            <div className="flex items-center justify-center py-8">
+              <svg className="animate-spin h-6 w-6 text-blue-400" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              </svg>
+            </div>
+          }>
             <JoinContent />
           </Suspense>
         </div>

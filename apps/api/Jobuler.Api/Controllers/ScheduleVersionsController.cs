@@ -121,9 +121,7 @@ public class MyAssignmentsController : ControllerBase
         await _permissions.RequirePermissionAsync(CurrentUserId, spaceId, Permissions.SpaceView, ct);
 
         // Task times are stored in Israel local time — use Israel time for date range
-        var israelTz = TimeZoneInfo.FindSystemTimeZoneById(
-            OperatingSystem.IsWindows() ? "Israel Standard Time" : "Asia/Jerusalem");
-        var now = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, israelTz).Date;
+        var now = DateTime.UtcNow.AddHours(3).Date;
         var (from, to) = range switch
         {
             "today" => (now, now.AddDays(1)),

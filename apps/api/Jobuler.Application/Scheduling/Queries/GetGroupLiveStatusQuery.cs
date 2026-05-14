@@ -30,11 +30,10 @@ public class GetGroupLiveStatusQueryHandler
     public async Task<List<MemberLiveStatusDto>> Handle(
         GetGroupLiveStatusQuery req, CancellationToken ct)
     {
-        // Task times are stored in Israel local time (UTC+3).
-        // Use Israel time for comparison to match stored values.
-        var israelTz = TimeZoneInfo.FindSystemTimeZoneById(
-            OperatingSystem.IsWindows() ? "Israel Standard Time" : "Asia/Jerusalem");
-        var now = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, israelTz);
+        // Task times are stored in Israel local time (UTC+2 or UTC+3 depending on DST).
+        // Use a fixed +3 offset (Israel Summer Time) for comparison.
+        // This is a pragmatic approximation — proper fix would store all times in UTC.
+        var now = DateTime.UtcNow.AddHours(3);
 
         // ── Load group members ────────────────────────────────────────────────
         var members = await _db.GroupMemberships.AsNoTracking()

@@ -164,7 +164,7 @@ export default function TasksTab({
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-slate-900 truncate">{task.name}</p>
               <p className="text-xs text-slate-400">
-                {task.requiredHeadcount} {t("people")} · {minutesToHM(task.shiftDurationMinutes).hours} שעות{minutesToHM(task.shiftDurationMinutes).mins > 0 ? ` ${minutesToHM(task.shiftDurationMinutes).mins} דק׳` : ""}
+                {task.requiredHeadcount} {t("people")} · {minutesToHM(task.shiftDurationMinutes).hours} {tCommon("hours")}{minutesToHM(task.shiftDurationMinutes).mins > 0 ? ` ${minutesToHM(task.shiftDurationMinutes).mins} ${tCommon("minutes")}` : ""}
               </p>
               {task.qualificationRequirements?.length > 0 && (
                 <div className="flex flex-wrap gap-1 mt-1">
