@@ -63,16 +63,20 @@ export default function PlatformPage() {
     }
 
     setLoading(true);
+    const timeout = setTimeout(() => {
+      setLoading(false);
+      setError("הטעינה נכשלה — נסה לרענן את הדף");
+    }, 10000);
     getPlatformStats()
       .then(setStats)
       .catch((err) => {
         if (err?.response?.status === 403) {
           setAccessDenied(true);
         } else {
-          setError(err?.message ?? "Unknown error");
+          setError(err?.response?.data?.error ?? err?.message ?? "שגיאה בטעינת נתוני הפלטפורמה");
         }
       })
-      .finally(() => setLoading(false));
+      .finally(() => { setLoading(false); clearTimeout(timeout); });
   }, [hydrated, isAuthenticated, router]);
 
   if (!hydrated || !isAuthenticated) {
