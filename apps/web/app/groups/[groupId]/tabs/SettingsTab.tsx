@@ -168,13 +168,13 @@ export default function SettingsTab({
             role="switch"
             aria-checked={autoPublish}
             onClick={() => onAutoPublishChange(!autoPublish)}
-            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors flex-shrink-0 ${
-              autoPublish ? "bg-blue-500" : "bg-slate-200"
+            className={`relative inline-flex h-[22px] w-[40px] items-center rounded-full transition-colors flex-shrink-0 ${
+              autoPublish ? "bg-blue-500" : "bg-slate-300"
             }`}
           >
             <span
-              className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform ${
-                autoPublish ? "translate-x-6" : "translate-x-1"
+              className={`absolute h-[16px] w-[16px] rounded-full bg-white shadow transition-all ${
+                autoPublish ? "left-[21px]" : "left-[3px]"
               }`}
             />
           </button>
@@ -193,13 +193,13 @@ export default function SettingsTab({
             role="switch"
             aria-checked={isClosedBase}
             onClick={() => onClosedBaseChange(!isClosedBase)}
-            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors flex-shrink-0 ${
-              isClosedBase ? "bg-blue-500" : "bg-slate-200"
+            className={`relative inline-flex h-[22px] w-[40px] items-center rounded-full transition-colors flex-shrink-0 ${
+              isClosedBase ? "bg-blue-500" : "bg-slate-300"
             }`}
           >
             <span
-              className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform ${
-                isClosedBase ? "translate-x-6" : "translate-x-1"
+              className={`absolute h-[16px] w-[16px] rounded-full bg-white shadow transition-all ${
+                isClosedBase ? "left-[21px]" : "left-[3px]"
               }`}
             />
           </button>

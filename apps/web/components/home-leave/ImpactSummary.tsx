@@ -37,12 +37,9 @@ export default function ImpactSummary({ data, isLoading, error }: ImpactSummaryP
   // No solution found
   if (data.status === "no_solution") {
     return (
-      <div className="py-4 px-4 bg-amber-50 border border-amber-200 rounded-xl text-center">
-        <p className="text-sm font-medium text-amber-700">
-          לא נמצא פתרון עם ההגדרות הנוכחיות
-        </p>
-        <p className="text-xs text-amber-500 mt-1">
-          נסה להגדיל את מספר החברים או להקטין את מכסת היוצאים
+      <div className="py-3 px-4 bg-slate-50 border border-slate-200 rounded-xl text-center">
+        <p className="text-xs text-slate-500">
+          התצוגה המקדימה לא זמינה — הפעל את הסולבר לקבלת תוצאות מלאות
         </p>
       </div>
     );
