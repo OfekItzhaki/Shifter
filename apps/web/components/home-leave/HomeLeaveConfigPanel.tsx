@@ -204,10 +204,10 @@ export default function HomeLeaveConfigPanel({
           error={fieldErrors["minRestHours"]}
         />
 
-        {/* Min people at base (inverted from leave capacity) */}
+        {/* Max people on leave at same time */}
         <FieldRow
-          label="מינימום אנשים בבסיס"
-          hint="כמה אנשים חייבים להישאר בבסיס בכל רגע נתון"
+          label="מקסימום אנשים בבית בו-זמנית"
+          hint="כמה אנשים יכולים להיות בבית באותו זמן. השאר חייבים להישאר בבסיס."
           value={values.leaveCapacity}
           onChange={(v) => handleChange("leaveCapacity", v)}
           min={1}

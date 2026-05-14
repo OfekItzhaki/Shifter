@@ -302,6 +302,8 @@ export function MemberProfileModal({ member, isAdmin, editForm, saving, error, o
                 {t("editDetails")}
               </button>
             )}
+            {/* Home-leave stats — time at base vs home */}
+            <HomeLeaveStatsSection personId={member.personId} />
           </div>
         )
       ) : (
@@ -397,5 +399,76 @@ export function MemberProfileModal({ member, isAdmin, editForm, saving, error, o
         </div>
       )}
     </Modal>
+  );
+}
+
+
+// ── Home-leave stats section (shown in member info tab) ───────────────────────
+function HomeLeaveStatsSection({ personId }: { personId: string }) {
+  const { currentSpaceId } = useSpaceStore();
+  const [stats, setStats] = useState<{ totalBaseHours: number; totalHomeHours: number; baseTimeRatio: number; leaveSlotCount: number } | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!currentSpaceId) return;
+    setLoading(true);
+    // Fetch from the published schedule's summary_json (home_leave_metrics)
+    apiClient.get(`/spaces/${currentSpaceId}/schedule-versions/current`)
+      .then(res => {
+        const summaryJson = res.data?.version?.summaryJson;
+        if (!summaryJson) { setStats(null); return; }
+        try {
+          const summary = typeof summaryJson === "string" ? JSON.parse(summaryJson) : summaryJson;
+          const metrics = summary?.home_leave_metrics ?? [];
+          const personMetric = metrics.find((m: { person_id: string }) => m.person_id === personId);
+          if (personMetric) {
+            setStats({
+              totalBaseHours: Math.round(personMetric.total_base_hours ?? 0),
+              totalHomeHours: Math.round(personMetric.total_home_hours ?? 0),
+              baseTimeRatio: personMetric.base_time_ratio ?? 1,
+              leaveSlotCount: personMetric.leave_slot_count ?? 0,
+            });
+          } else {
+            setStats(null);
+          }
+        } catch { setStats(null); }
+      })
+      .catch(() => setStats(null))
+      .finally(() => setLoading(false));
+  }, [currentSpaceId, personId]);
+
+  if (loading) return null;
+  if (!stats) return null;
+
+  const homePercent = Math.round((1 - stats.baseTimeRatio) * 100);
+  const basePercent = Math.round(stats.baseTimeRatio * 100);
+
+  return (
+    <div className="border-t border-slate-100 pt-3 mt-3">
+      <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">זמן בבית / בבסיס</p>
+      <div className="grid grid-cols-3 gap-2 text-center">
+        <div>
+          <p className="text-lg font-bold text-blue-600">{stats.totalBaseHours}h</p>
+          <p className="text-[10px] text-slate-400">בבסיס</p>
+        </div>
+        <div>
+          <p className="text-lg font-bold text-emerald-600">{stats.totalHomeHours}h</p>
+          <p className="text-[10px] text-slate-400">בבית</p>
+        </div>
+        <div>
+          <p className="text-lg font-bold text-slate-700">{stats.leaveSlotCount}</p>
+          <p className="text-[10px] text-slate-400">יציאות</p>
+        </div>
+      </div>
+      {/* Bar */}
+      <div className="flex h-2 rounded-full overflow-hidden mt-2">
+        <div className="bg-blue-400" style={{ width: `${basePercent}%` }} title={`בבסיס: ${basePercent}%`} />
+        <div className="bg-emerald-400" style={{ width: `${homePercent}%` }} title={`בבית: ${homePercent}%`} />
+      </div>
+      <div className="flex justify-between text-[10px] text-slate-400 mt-0.5">
+        <span>בבסיס {basePercent}%</span>
+        <span>בבית {homePercent}%</span>
+      </div>
+    </div>
   );
 }
