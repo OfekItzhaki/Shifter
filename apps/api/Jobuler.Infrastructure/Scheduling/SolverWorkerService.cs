@@ -519,7 +519,44 @@ public class SolverWorkerService : BackgroundService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Solver job failed: run_id={RunId}", job.RunId);
-            run.MarkFailed(ex.Message);
+
+            // Store a user-friendly error message based on the space's locale
+            var spaceLocale = input?.Locale ?? "he";
+            string userFriendlyError;
+            if (ex.Message.Contains("Timeout") || ex.Message.Contains("canceled"))
+            {
+                userFriendlyError = spaceLocale switch {
+                    "he" => "הסולבר לא הצליח למצוא פתרון בזמן הקצוב. נסה להקטין את אופק התכנון או לפשט את האילוצים.",
+                    "ru" => "Решатель не смог найти решение за отведённое время. Попробуйте уменьшить горизонт планирования.",
+                    _ => "The solver could not find a solution within the time limit. Try reducing the planning horizon or simplifying constraints."
+                };
+            }
+            else if (ex.Message.Contains("422") || ex.Message.Contains("Unprocessable"))
+            {
+                userFriendlyError = spaceLocale switch {
+                    "he" => "הסולבר דחה את הנתונים — ייתכן שיש בעיה בפורמט המשימות או האילוצים.",
+                    "ru" => "Решатель отклонил данные — возможно, проблема в формате задач или ограничений.",
+                    _ => "The solver rejected the data — there may be an issue with the task or constraint format."
+                };
+            }
+            else if (ex.Message.Contains("connect") || ex.Message.Contains("refused"))
+            {
+                userFriendlyError = spaceLocale switch {
+                    "he" => "שירות הסידור אינו זמין כרגע. ודא שהוא פועל ונסה שוב.",
+                    "ru" => "Служба планирования недоступна. Убедитесь, что она запущена.",
+                    _ => "The scheduling service is unavailable. Ensure it is running and try again."
+                };
+            }
+            else
+            {
+                userFriendlyError = spaceLocale switch {
+                    "he" => "אירעה שגיאה בעת הרצת הסידור. נסה שוב מאוחר יותר.",
+                    "ru" => "Произошла ошибка при составлении расписания. Повторите попытку позже.",
+                    _ => "An error occurred while running the scheduler. Please try again later."
+                };
+            }
+
+            run.MarkFailed(userFriendlyError);
             await db.SaveChangesAsync(ct);
 
             // System log — solver failed
@@ -532,8 +569,8 @@ public class SolverWorkerService : BackgroundService
             var notifier2 = scope.ServiceProvider.GetRequiredService<INotificationService>();
 
             // Translate technical error to a user-friendly message in the space's locale
-            var spaceLocale = input?.Locale ?? "en";
-            var friendlyError = spaceLocale switch {
+            var notifLocale = input?.Locale ?? "en";
+            var friendlyError = notifLocale switch {
                 "he" => ex.Message.Contains("422") || ex.Message.Contains("Unprocessable")
                     ? "הסולבר דחה את הנתונים — ייתכן שיש בעיה בפורמט המשימות או האילוצים."
                     : ex.Message.Contains("connect") || ex.Message.Contains("refused")
@@ -550,7 +587,7 @@ public class SolverWorkerService : BackgroundService
                         ? "The scheduling service is unavailable. Ensure it is running and try again."
                         : "An error occurred while running the scheduler. Please try again later."
             };
-            var (failTitle, _) = spaceLocale switch {
+            var (failTitle, _) = notifLocale switch {
                 "he" => ("הרצת הסידור נכשלה", ""),
                 "ru" => ("Ошибка составления расписания", ""),
                 _    => ("Scheduling run failed", "")

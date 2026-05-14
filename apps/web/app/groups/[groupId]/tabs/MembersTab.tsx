@@ -480,11 +480,11 @@ function HomeLeaveStatsSection({ personId }: { personId: string }) {
 
 // ── Home-leave priority selector ──────────────────────────────────────────────
 const PRIORITY_OPTIONS = [
-  { value: 0.5, label: "נמוך (נשאר בבסיס יותר)", color: "text-blue-600" },
-  { value: 1.0, label: "רגיל", color: "text-slate-600" },
-  { value: 1.5, label: "גבוה", color: "text-amber-600" },
-  { value: 2.0, label: "גבוה מאוד (הורים/סטודנטים)", color: "text-emerald-600" },
-  { value: 3.0, label: "מקסימלי", color: "text-purple-600" },
+  { value: 0.5, label: "נמוך — נשאר בבסיס יותר" },
+  { value: 1.0, label: "רגיל" },
+  { value: 1.5, label: "גבוה — יוצא הביתה יותר" },
+  { value: 2.0, label: "גבוה מאוד" },
+  { value: 3.0, label: "מקסימלי — עדיפות ראשונה ליציאה" },
 ];
 
 function HomeLeavePrioritySelector({ personId, groupId }: { personId: string; groupId: string }) {
@@ -532,7 +532,7 @@ function HomeLeavePrioritySelector({ personId, groupId }: { personId: string; gr
       <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">
         עדיפות זמן בית
       </label>
-      <p className="text-xs text-slate-400 mb-2">אנשים עם עדיפות גבוהה יקבלו יותר זמן בבית (הורים, סטודנטים)</p>
+      <p className="text-xs text-slate-400 mb-2">אנשים עם עדיפות גבוהה יקבלו יותר זמן בבית. ניתן להוסיף הערה למנהל.</p>
       <select
         value={priority}
         onChange={e => handleChange(Number(e.target.value))}

@@ -113,7 +113,7 @@ export default function HomeLeaveConfigPanel({
         {
           minRestHours: values.minRestHours,
           eligibilityThresholdHours: values.eligibilityThresholdHours,
-          leaveCapacity: values.leaveCapacity,
+          leaveCapacity: Math.max(1, memberCount - 1),
           leaveDurationHours: values.leaveDurationHours,
           balanceValue: values.balanceValue,
         }
@@ -206,23 +206,7 @@ export default function HomeLeaveConfigPanel({
           error={fieldErrors["minRestHours"]}
         />
 
-        {/* Min people at base — admin enters how many must stay, we convert to leaveCapacity */}
-        <FieldRow
-          label="מינימום אנשים בבסיס"
-          hint={`כמה אנשים חייבים להישאר בבסיס בכל רגע. השאר יכולים לצאת הביתה. (${memberCount} חברים בקבוצה)`}
-          value={Math.max(1, Math.min(memberCount - 1, memberCount - values.leaveCapacity))}
-          onChange={(v) => {
-            const minAtBase = Math.min(memberCount - 1, Math.max(1, Number(v)));
-            const maxOnLeave = Math.max(1, memberCount - minAtBase);
-            handleChange("leaveCapacity", String(maxOnLeave));
-          }}
-          min={1}
-          max={memberCount - 1}
-          step={1}
-          error={fieldErrors["leaveCapacity"]}
-        />
-
-        {/* Leave duration hours */}
+        {/* Leave duration */}
         <FieldRow
           label="משך זמן בית (שעות)"
           hint="כמה שעות נמשכת כל יציאה הביתה"
