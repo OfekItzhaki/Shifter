@@ -85,7 +85,6 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
                 .FirstOrDefaultAsync(c => c.GroupId == groupId.Value && c.SpaceId == spaceId, ct);
 
             if (hlConfig is not null
-                && hlConfig.MinRestHours > 0
                 && hlConfig.EligibilityThresholdHours > 0
                 && hlConfig.LeaveCapacity > 0
                 && hlConfig.LeaveDurationHours > 0)
