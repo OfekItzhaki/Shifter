@@ -176,8 +176,15 @@ public class GetScheduleVersionDetailQueryHandler
                 windowStart = solverStartDt;
             }
 
-            var shiftStart = windowStart;
-            var shiftIndex = 0;
+            // Use ABSOLUTE indexing — same as the normalizer
+            var shiftIndex = (int)Math.Floor((windowStart - gt.StartsAt).TotalMinutes / gt.ShiftDurationMinutes);
+            if (shiftIndex < 0) shiftIndex = 0;
+            var shiftStart = gt.StartsAt + TimeSpan.FromMinutes((double)shiftIndex * gt.ShiftDurationMinutes);
+            if (shiftStart < windowStart)
+            {
+                shiftIndex++;
+                shiftStart += shiftDuration;
+            }
             while (shiftStart + shiftDuration <= gt.EndsAt)
             {
                 var shiftEnd = shiftStart + shiftDuration;

@@ -74,7 +74,8 @@ export default function ScheduleTab({
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
   })();
   const maxDate = (() => {
-    const d = new Date(Date.now() + solverHorizonDays * 86400000);
+    // Allow viewing up to 30 days ahead (independent of solver horizon)
+    const d = new Date(Date.now() + 30 * 86400000);
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
   })();
 
