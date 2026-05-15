@@ -26,9 +26,10 @@ function JoinContent() {
 
   // Wait for Zustand to rehydrate before checking auth
   useEffect(() => {
+    if (useAuthStore.persist.hasHydrated()) { setHydrated(true); return; }
     const unsub = useAuthStore.persist.onFinishHydration(() => setHydrated(true));
-    if (useAuthStore.persist.hasHydrated()) setHydrated(true);
-    return () => { unsub(); };
+    const fallback = setTimeout(() => setHydrated(true), 500);
+    return () => { unsub(); clearTimeout(fallback); };
   }, []);
 
   async function handleJoin(e?: React.FormEvent) {
