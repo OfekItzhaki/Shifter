@@ -99,9 +99,9 @@ apiClient.interceptors.response.use(
       }
     }
 
-    // 403: Redirect to forbidden page
+    // 403: Let the calling code handle it — don't redirect automatically.
+    // Pages that need special 403 handling (like platform) check err.response.status themselves.
     if (status === 403) {
-      redirectToErrorPage("/error/forbidden");
       return Promise.reject(error);
     }
 
