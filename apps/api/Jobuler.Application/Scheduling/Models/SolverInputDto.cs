@@ -29,6 +29,7 @@ public record SolverInputDto(
     [property: JsonPropertyName("preview_mode")] bool PreviewMode = false,
     [property: JsonPropertyName("cumulative_tracking")] List<CumulativeTrackingDto>? CumulativeTracking = null);
 
+
 public record StabilityWeightsDto(
     [property: JsonPropertyName("today_tomorrow")] double TodayTomorrow,
     [property: JsonPropertyName("days_3_4")]       double Days3To4,

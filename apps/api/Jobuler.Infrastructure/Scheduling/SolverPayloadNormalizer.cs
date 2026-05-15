@@ -444,7 +444,7 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
         }
 
         // ── Cumulative tracking data ─────────────────────────────────────────
-        List<CumulativeTrackingDto>? cumulativeTrackingDto = null;
+        List<CumulativeTrackingDto> cumulativeTrackingDto = [];
         if (groupId.HasValue)
         {
             var cumulativeData = await _cumulativeTracker.GetForSolverPayloadAsync(spaceId, groupId.Value, ct);
@@ -473,16 +473,17 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
         Guid spaceId, Guid groupId, int balanceValue, CancellationToken ct)
     {
         // Build the full payload using the normal path (preview uses a synthetic runId)
+        // Use "standard" trigger_mode — preview_mode is a separate boolean flag
         var payload = await BuildAsync(
             spaceId,
             runId: Guid.NewGuid(),
-            triggerMode: "preview",
+            triggerMode: "standard",
             baselineVersionId: null,
             groupId: groupId,
             startTime: null,
             ct: ct);
 
-        // Override balance_value in the home-leave config
+        // Override balance_value in the home-leave config and set preview mode
         if (payload.HomeLeaveConfig is not null)
         {
             payload = payload with
