@@ -77,7 +77,7 @@ export default function BalanceSlider({
           aria-valuemin={0}
           aria-valuemax={100}
           aria-valuenow={value}
-          className="w-full h-2 appearance-none bg-gradient-to-r from-blue-400 via-slate-300 to-emerald-400 rounded-full cursor-pointer disabled:cursor-not-allowed disabled:opacity-50
+          className="w-full h-2 appearance-none bg-gradient-to-l from-blue-400 via-slate-300 to-emerald-400 rounded-full cursor-pointer disabled:cursor-not-allowed disabled:opacity-50
             [&::-webkit-slider-thumb]:appearance-none
             [&::-webkit-slider-thumb]:w-6
             [&::-webkit-slider-thumb]:h-6
@@ -100,10 +100,10 @@ export default function BalanceSlider({
         />
       </div>
 
-      {/* Only two end labels */}
+      {/* Labels: in RTL, first element is on the right */}
       <div className="flex justify-between px-1">
-        <span className="text-xs text-emerald-600 font-medium">יותר אנשים בבית</span>
         <span className="text-xs text-blue-600 font-medium">יותר אנשים בבסיס</span>
+        <span className="text-xs text-emerald-600 font-medium">יותר אנשים בבית</span>
       </div>
     </div>
   );
