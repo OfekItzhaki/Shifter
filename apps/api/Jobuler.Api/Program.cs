@@ -182,6 +182,9 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(_ =>
 });
 
 // ─── Scheduling services ─────────────────────────────────────────────────────
+builder.Services.AddScoped<IAssignmentSnapshotService, AssignmentSnapshotService>();
+builder.Services.AddScoped<ICumulativeTracker, CumulativeTracker>();
+builder.Services.AddScoped<IPeriodManager, PeriodManager>();
 builder.Services.AddScoped<ISolverPayloadNormalizer, SolverPayloadNormalizer>();
 
 // Use Redis queue if available, fall back to in-memory queue (no Redis required)

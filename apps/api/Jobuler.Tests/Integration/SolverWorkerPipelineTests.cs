@@ -97,7 +97,7 @@ public class SolverWorkerPipelineTests
         await db.SaveChangesAsync();
 
         // Build payload via normalizer
-        var normalizer = new SolverPayloadNormalizer(db, NullLogger<SolverPayloadNormalizer>.Instance);
+        var normalizer = new SolverPayloadNormalizer(db, NullLogger<SolverPayloadNormalizer>.Instance, Substitute.For<ICumulativeTracker>());
         var input = await normalizer.BuildAsync(spaceId, run.Id, "standard", null);
 
         _out.WriteLine($"Payload: people={input.People.Count} slots={input.TaskSlots.Count}");
@@ -154,7 +154,7 @@ public class SolverWorkerPipelineTests
         db.ScheduleRuns.Add(run);
         await db.SaveChangesAsync();
 
-        var normalizer = new SolverPayloadNormalizer(db, NullLogger<SolverPayloadNormalizer>.Instance);
+        var normalizer = new SolverPayloadNormalizer(db, NullLogger<SolverPayloadNormalizer>.Instance, Substitute.For<ICumulativeTracker>());
         var input = await normalizer.BuildAsync(spaceId, run.Id, "standard", null);
 
         _out.WriteLine($"Payload: people={input.People.Count} slots={input.TaskSlots.Count}");
@@ -211,7 +211,7 @@ public class SolverWorkerPipelineTests
         db.ScheduleRuns.Add(run);
         await db.SaveChangesAsync();
 
-        var normalizer = new SolverPayloadNormalizer(db, NullLogger<SolverPayloadNormalizer>.Instance);
+        var normalizer = new SolverPayloadNormalizer(db, NullLogger<SolverPayloadNormalizer>.Instance, Substitute.For<ICumulativeTracker>());
         var input = await normalizer.BuildAsync(spaceId, run.Id, "standard", null);
 
         _out.WriteLine($"Payload: people={input.People.Count} slots={input.TaskSlots.Count}");
@@ -276,7 +276,7 @@ public class SolverWorkerPipelineTests
         db.ScheduleRuns.Add(run);
         await db.SaveChangesAsync();
 
-        var normalizer = new SolverPayloadNormalizer(db, NullLogger<SolverPayloadNormalizer>.Instance);
+        var normalizer = new SolverPayloadNormalizer(db, NullLogger<SolverPayloadNormalizer>.Instance, Substitute.For<ICumulativeTracker>());
         var input = await normalizer.BuildAsync(spaceId, run.Id, "standard", null);
 
         _out.WriteLine($"Payload: people={input.People.Count} slots={input.TaskSlots.Count} presenceWindows={input.PresenceWindows.Count}");
@@ -344,7 +344,7 @@ public class SolverWorkerPipelineTests
         db.ScheduleRuns.Add(run);
         await db.SaveChangesAsync();
 
-        var normalizer = new SolverPayloadNormalizer(db, NullLogger<SolverPayloadNormalizer>.Instance);
+        var normalizer = new SolverPayloadNormalizer(db, NullLogger<SolverPayloadNormalizer>.Instance, Substitute.For<ICumulativeTracker>());
         var input = await normalizer.BuildAsync(spaceId, run.Id, "standard", null);
 
         _out.WriteLine("Presence windows in payload:");

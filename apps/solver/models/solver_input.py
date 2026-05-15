@@ -103,6 +103,15 @@ class HomeLeaveConfig(BaseModel):
     balance_value: int = 50  # 0–100, maps to weight 0–400
 
 
+class CumulativeTracking(BaseModel):
+    person_id: str
+    consecutive_hours_at_base: float = 0.0
+    last_home_leave_end: Optional[datetime] = None
+    total_assignments_in_period: int = 0
+    hard_tasks_in_period: int = 0
+    days_since_last_leave: int = 0
+
+
 class TaskRotation(BaseModel):
     person_id: str
     completed_task_type_ids: list[str]
@@ -128,6 +137,7 @@ class SolverInput(BaseModel):
     locked_slot_ids: Optional[list[str]] = []  # slot IDs with manual overrides — solver must not reassign these
     home_leave_config: Optional[HomeLeaveConfig] = None
     preview_mode: bool = False  # when True, solver uses reduced time limit and single worker
+    cumulative_tracking: list[CumulativeTracking] = []
     task_rotation: Optional[list[TaskRotation]] = None  # rotation data for army-template groups
 
     @property

@@ -27,6 +27,8 @@ public class PublishVersionCommandHandler : IRequestHandler<PublishVersionComman
     private readonly IConfiguration _config;
     private readonly ILogger<PublishVersionCommandHandler> _logger;
     private readonly IServiceScopeFactory _scopeFactory;
+    private readonly IAssignmentSnapshotService _snapshotService;
+    private readonly ICumulativeTracker _cumulativeTracker;
 
     public PublishVersionCommandHandler(
         AppDbContext db,
@@ -34,6 +36,8 @@ public class PublishVersionCommandHandler : IRequestHandler<PublishVersionComman
         IConfiguration config,
         ILogger<PublishVersionCommandHandler> logger,
         IServiceScopeFactory scopeFactory,
+        IAssignmentSnapshotService snapshotService,
+        ICumulativeTracker cumulativeTracker,
         IScheduleNotificationSender? scheduleNotifications = null)
     {
         _db = db;
@@ -41,6 +45,8 @@ public class PublishVersionCommandHandler : IRequestHandler<PublishVersionComman
         _config = config;
         _logger = logger;
         _scopeFactory = scopeFactory;
+        _snapshotService = snapshotService;
+        _cumulativeTracker = cumulativeTracker;
         _scheduleNotifications = scheduleNotifications;
     }
 
@@ -83,6 +89,10 @@ public class PublishVersionCommandHandler : IRequestHandler<PublishVersionComman
         // If the version's SummaryJson contains home_leave_assignments, create
         // derived AtHome presence windows for each valid entry.
         await CreateHomeLeavePresenceWindowsAsync(req.SpaceId, version, ct);
+
+        // ── Cumulative tracking: create snapshots and update counters ─────────
+        await _snapshotService.CreateSnapshotsAsync(req.SpaceId, req.VersionId, ct);
+        await _cumulativeTracker.UpdateOnPublishAsync(req.SpaceId, req.VersionId, ct);
 
         // Send in-app notifications to all space members
         var memberUserIds = await _db.SpaceMemberships.AsNoTracking()

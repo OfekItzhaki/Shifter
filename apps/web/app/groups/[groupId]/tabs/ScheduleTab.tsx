@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import { useDateFormat } from "@/lib/hooks/useDateFormat";
 import type { ScheduleAssignment } from "../types";
 import ScheduleTaskTable from "@/components/schedule/ScheduleTaskTable";
 import ScheduleDiffView from "@/components/schedule/ScheduleDiffView";
 import ScheduleHistory from "@/components/schedule/ScheduleHistory";
+import { getHistoricalSchedule } from "@/lib/api/stats";
 
 interface DraftVersion { id: string; status: string; summaryJson?: string | null; }
 
@@ -52,7 +53,7 @@ function getWeekDates(fromDate: string): string[] {
 }
 
 export default function ScheduleTab({
-  solverHorizonDays, scheduleData, scheduleLoading, scheduleError, scheduleIsOffline = false,
+  groupId, solverHorizonDays, scheduleData, scheduleLoading, scheduleError, scheduleIsOffline = false,
   draftVersion, lastRunSummary, isAdmin, publishSaving, discardSaving, scheduleVersionError,
   currentUserName, groupName, spaceId,
   onOpenDraftModal, onPublish, onDiscard, onTriggerSolver,
@@ -87,11 +88,55 @@ export default function ScheduleTab({
   const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
   const [showDiff, setShowDiff] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [historicalAssignments, setHistoricalAssignments] = useState<ScheduleAssignment[] | null>(null);
+  const [historicalLoading, setHistoricalLoading] = useState(false);
+  const [isViewingHistory, setIsViewingHistory] = useState(false);
 
   const { fDateShort } = useDateFormat();
 
   const weekDates = getWeekDates(weekAnchor);
   const selectedDate = weekDates[selectedWeekDay] ?? weekDates[0];
+
+  // Determine if the selected week is entirely in the past
+  const weekEndDate = weekDates[6];
+  const isPastWeek = weekEndDate < today;
+
+  // Fetch historical data when viewing a past week
+  useEffect(() => {
+    if (!isPastWeek || !spaceId || !groupId) {
+      setIsViewingHistory(false);
+      setHistoricalAssignments(null);
+      return;
+    }
+
+    let cancelled = false;
+    setHistoricalLoading(true);
+    setIsViewingHistory(true);
+
+    getHistoricalSchedule(spaceId, groupId, weekDates[0], weekDates[6])
+      .then(res => {
+        if (cancelled) return;
+        // Map snapshot DTOs to ScheduleAssignment format
+        const mapped: ScheduleAssignment[] = res.assignments.map(snap => ({
+          id: snap.id,
+          personId: snap.personId,
+          personName: "", // Will be resolved by the table component
+          taskTypeName: snap.burdenLevel ?? "",
+          slotStartsAt: snap.shiftStart ?? `${snap.snapshotDate}T00:00:00`,
+          slotEndsAt: snap.shiftEnd ?? `${snap.snapshotDate}T23:59:59`,
+          source: "history",
+        }));
+        setHistoricalAssignments(mapped);
+      })
+      .catch(() => {
+        if (!cancelled) setHistoricalAssignments([]);
+      })
+      .finally(() => {
+        if (!cancelled) setHistoricalLoading(false);
+      });
+
+    return () => { cancelled = true; };
+  }, [isPastWeek, spaceId, groupId, weekAnchor]);
 
   function prevWeek() {
     const d = new Date(weekAnchor + "T00:00:00");
@@ -121,7 +166,9 @@ export default function ScheduleTab({
   }
 
   // Data is already group-scoped from the API — just apply the optional text search filter
-  const filtered = (scheduleData ?? []).filter(a => {
+  // When viewing a past week, use historical data instead of live schedule
+  const activeData = isViewingHistory ? (historicalAssignments ?? []) : (scheduleData ?? []);
+  const filtered = activeData.filter(a => {
     if (personFilter && !a.personName.toLowerCase().includes(personFilter.toLowerCase())) return false;
     return true;
   });
@@ -385,7 +432,17 @@ export default function ScheduleTab({
       </div>
       </div>
 
-      {(scheduleLoading) && (
+      {/* Historical view banner */}
+      {isViewingHistory && !historicalLoading && (
+        <div className="flex items-center gap-2 px-4 py-3 rounded-xl text-sm border bg-blue-50 border-blue-200 text-blue-800">
+          <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span>צפייה בהיסטוריה — {weekLabel}</span>
+        </div>
+      )}
+
+      {(scheduleLoading || historicalLoading) && (
         <div className="flex items-center gap-3 text-slate-400 text-sm py-8">
           <svg className="animate-spin h-5 w-5 text-blue-400" fill="none" viewBox="0 0 24 24">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
@@ -411,7 +468,7 @@ export default function ScheduleTab({
       )}
 
       {/* Per-task schedule tables — show even when offline (cached data) */}
-      {!scheduleLoading && (
+      {!scheduleLoading && !historicalLoading && (
         <>
           {/* Diff view — shown when admin clicks "Show Changes" */}
           {showDiff && spaceId && (

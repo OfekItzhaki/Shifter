@@ -1,3 +1,4 @@
+using Jobuler.Application.Scheduling;
 using Jobuler.Domain.Groups;
 using Jobuler.Domain.People;
 using Jobuler.Domain.Spaces;
@@ -31,7 +32,13 @@ public record CreateGroupCommand(
 public class CreateGroupCommandHandler : IRequestHandler<CreateGroupCommand, Guid>
 {
     private readonly AppDbContext _db;
-    public CreateGroupCommandHandler(AppDbContext db) => _db = db;
+    private readonly IPeriodManager _periodManager;
+
+    public CreateGroupCommandHandler(AppDbContext db, IPeriodManager periodManager)
+    {
+        _db = db;
+        _periodManager = periodManager;
+    }
 
     public async Task<Guid> Handle(CreateGroupCommand req, CancellationToken ct)
     {
@@ -71,6 +78,10 @@ public class CreateGroupCommandHandler : IRequestHandler<CreateGroupCommand, Gui
         _db.GroupSubscriptions.Add(subscription);
 
         await _db.SaveChangesAsync(ct);
+
+        // Open a subscription period for the new group (trial counts as active)
+        await _periodManager.OpenPeriodAsync(req.SpaceId, group.Id, ct);
+
         return group.Id;
     }
 }

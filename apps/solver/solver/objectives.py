@@ -87,6 +87,13 @@ def build_objective(
         for f in input.fairness_counters
     }
 
+    # Build cumulative assignment bias from cumulative_tracking data
+    # Persons with higher total_assignments_in_period get a higher penalty for additional assignments
+    cumulative_assignment_bias: dict[str, int] = {}
+    if input.cumulative_tracking:
+        for ct in input.cumulative_tracking:
+            cumulative_assignment_bias[ct.person_id] = ct.total_assignments_in_period
+
     for s_idx, slot in enumerate(slots):
         burden_level = slot.burden_level
         if burden_level not in burden_map:
@@ -100,8 +107,12 @@ def build_objective(
 
         for p_idx, person in enumerate(people):
             history_score = fairness_history.get(person.person_id, 0)
+            cumulative_bias = cumulative_assignment_bias.get(person.person_id, 0)
             # Higher history score = higher penalty for assigning another burden task
-            fairness_penalty = slot_burden * max(0, history_score)
+            # Cumulative bias adds long-term fairness: persons with more total assignments
+            # in the period receive additional penalty (additive bias weighted at 1x)
+            base_penalty = slot_burden * max(0, history_score)
+            fairness_penalty = base_penalty + cumulative_bias
             if fairness_penalty > 0:
                 penalties.append(fairness_penalty * assign[(s_idx, p_idx)])
 

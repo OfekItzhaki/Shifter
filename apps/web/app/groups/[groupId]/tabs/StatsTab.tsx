@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useTranslations } from "next-intl";
 import { getBurdenStats, BurdenStats } from "@/lib/api/schedule";
 import { apiClient } from "@/lib/api/client";
+import { getCumulativeStats, CumulativePersonStats, CumulativeStatsResponse } from "@/lib/api/stats";
 import StatsLeaderboard from "@/app/admin/stats/_components/StatsLeaderboard";
 import StatsPeopleTable from "@/app/admin/stats/_components/StatsPeopleTable";
 import AssignmentsBarChart from "@/components/stats/AssignmentsBarChart";
@@ -28,13 +29,14 @@ interface HistoricalDataPoint {
   burdenScore: number;
 }
 
-type TimeRange = "7d" | "14d" | "30d" | "90d";
+type TimeRange = "7d" | "14d" | "30d" | "90d" | "period";
 
 const TIME_RANGE_OPTIONS: { value: TimeRange; label: string }[] = [
   { value: "7d", label: "7 ימים" },
   { value: "14d", label: "14 ימים" },
   { value: "30d", label: "30 ימים" },
   { value: "90d", label: "90 ימים" },
+  { value: "period", label: "כל התקופה" },
 ];
 
 function getDateRange(range: TimeRange): { startDate: string; endDate: string } {
@@ -56,6 +58,8 @@ export default function StatsTab({ spaceId, groupId }: Props) {
   const [timeRange, setTimeRange] = useState<TimeRange>("30d");
   const [historicalData, setHistoricalData] = useState<HistoricalDataPoint[]>([]);
   const [historicalLoading, setHistoricalLoading] = useState(false);
+  const [cumulativeStats, setCumulativeStats] = useState<CumulativeStatsResponse | null>(null);
+  const [cumulativeLoading, setCumulativeLoading] = useState(false);
 
   // Fetch burden stats
   useEffect(() => {
@@ -99,6 +103,17 @@ export default function StatsTab({ spaceId, groupId }: Props) {
   useEffect(() => {
     fetchHistorical();
   }, [fetchHistorical]);
+
+  // Fetch cumulative stats from the new endpoint
+  useEffect(() => {
+    let cancelled = false;
+    setCumulativeLoading(true);
+    getCumulativeStats(spaceId, groupId, timeRange)
+      .then(data => { if (!cancelled) setCumulativeStats(data); })
+      .catch(() => { if (!cancelled) setCumulativeStats(null); })
+      .finally(() => { if (!cancelled) setCumulativeLoading(false); });
+    return () => { cancelled = true; };
+  }, [spaceId, groupId, timeRange]);
 
   // Transform historical data for charts
   const assignmentsBarData = (() => {
@@ -230,7 +245,57 @@ export default function StatsTab({ spaceId, groupId }: Props) {
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
           </svg>
         )}
+        {cumulativeLoading && (
+          <svg className="animate-spin h-4 w-4 text-slate-400 mr-2" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+          </svg>
+        )}
       </div>
+
+      {/* Cumulative Stats Table */}
+      {cumulativeStats && cumulativeStats.people.length > 0 && (
+        <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+          <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-slate-700">סטטיסטיקות מצטברות</h3>
+            {cumulativeStats.periodStatus && (
+              <span className="text-xs text-slate-400">
+                תקופה: {cumulativeStats.periodStatus === "active" ? "פעילה" : "סגורה"}
+              </span>
+            )}
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-slate-50 text-slate-500 text-xs">
+                <tr>
+                  <th className="px-4 py-2 text-right font-medium">שם</th>
+                  <th className="px-3 py-2 text-center font-medium">משימות</th>
+                  <th className="px-3 py-2 text-center font-medium">קשות</th>
+                  <th className="px-3 py-2 text-center font-medium">מטבח</th>
+                  <th className="px-3 py-2 text-center font-medium">לילה</th>
+                  <th className="px-3 py-2 text-center font-medium">ציון עומס</th>
+                  <th className="px-3 py-2 text-center font-medium">שעות</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {cumulativeStats.people.map(person => (
+                  <tr key={person.personId} className="hover:bg-slate-50">
+                    <td className="px-4 py-2.5 text-right font-medium text-slate-700">
+                      {person.displayName}
+                    </td>
+                    <td className="px-3 py-2.5 text-center text-slate-600">{person.totalAssignments}</td>
+                    <td className="px-3 py-2.5 text-center text-red-600 font-medium">{person.hardTasks}</td>
+                    <td className="px-3 py-2.5 text-center text-slate-600">{person.kitchenCount}</td>
+                    <td className="px-3 py-2.5 text-center text-slate-600">{person.nightMissions}</td>
+                    <td className="px-3 py-2.5 text-center text-amber-600 font-medium">{person.dislikedHatedScore}</td>
+                    <td className="px-3 py-2.5 text-center text-slate-600">{Math.round(person.totalHoursAssigned)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {/* Graphs Section */}
       {hasHistoricalData ? (

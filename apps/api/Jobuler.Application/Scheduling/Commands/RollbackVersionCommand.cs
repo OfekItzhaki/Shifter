@@ -1,4 +1,5 @@
 using Jobuler.Application.Common;
+using Jobuler.Application.Scheduling;
 using Jobuler.Domain.Scheduling;
 using Jobuler.Infrastructure.Persistence;
 using MediatR;
@@ -15,11 +16,13 @@ public class RollbackVersionCommandHandler : IRequestHandler<RollbackVersionComm
 {
     private readonly AppDbContext _db;
     private readonly IAuditLogger _audit;
+    private readonly ICumulativeTracker _cumulativeTracker;
 
-    public RollbackVersionCommandHandler(AppDbContext db, IAuditLogger audit)
+    public RollbackVersionCommandHandler(AppDbContext db, IAuditLogger audit, ICumulativeTracker cumulativeTracker)
     {
         _db = db;
         _audit = audit;
+        _cumulativeTracker = cumulativeTracker;
     }
 
     public async Task<Guid> Handle(RollbackVersionCommand req, CancellationToken ct)
@@ -55,6 +58,13 @@ public class RollbackVersionCommandHandler : IRequestHandler<RollbackVersionComm
         _db.Assignments.AddRange(newAssignments);
         target.MarkRolledBack();
         await _db.SaveChangesAsync(ct);
+
+        // Recompute cumulative hours for all affected persons from presence_windows
+        var affectedPersonIds = sourceAssignments.Select(a => a.PersonId).Distinct().ToList();
+        foreach (var personId in affectedPersonIds)
+        {
+            await _cumulativeTracker.RecomputeForPersonAsync(req.SpaceId, personId, ct);
+        }
 
         await _audit.LogAsync(
             req.SpaceId, req.RequestingUserId,

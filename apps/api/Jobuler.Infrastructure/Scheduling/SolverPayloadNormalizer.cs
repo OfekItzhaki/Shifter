@@ -14,6 +14,7 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
 {
     private readonly AppDbContext _db;
     private readonly ILogger<SolverPayloadNormalizer> _logger;
+    private readonly ICumulativeTracker _cumulativeTracker;
 
     // Default stability weights — sent in every payload per spec Section 5.4
     private static readonly StabilityWeightsDto DefaultWeights = new(
@@ -21,10 +22,11 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
         SchedulingConstants.StabilityWeightDays3To4,
         SchedulingConstants.StabilityWeightDays5To7);
 
-    public SolverPayloadNormalizer(AppDbContext db, ILogger<SolverPayloadNormalizer> logger)
+    public SolverPayloadNormalizer(AppDbContext db, ILogger<SolverPayloadNormalizer> logger, ICumulativeTracker cumulativeTracker)
     {
         _db = db;
         _logger = logger;
+        _cumulativeTracker = cumulativeTracker;
     }
 
     public async Task<SolverInputDto> BuildAsync(
@@ -441,6 +443,17 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
             }
         }
 
+        // ── Cumulative tracking data ─────────────────────────────────────────
+        List<CumulativeTrackingDto>? cumulativeTrackingDto = null;
+        if (groupId.HasValue)
+        {
+            var cumulativeData = await _cumulativeTracker.GetForSolverPayloadAsync(spaceId, groupId.Value, ct);
+            if (cumulativeData.Count > 0)
+            {
+                cumulativeTrackingDto = cumulativeData;
+            }
+        }
+
         return new SolverInputDto(
             spaceId.ToString(), runId.ToString(), triggerMode,
             horizonStart.ToString("yyyy-MM-dd"),
@@ -452,7 +465,8 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
             baselineAssignments, fairnessDto,
             lockedSlotIds,
             homeLeaveConfigDto,
-            taskRotationDto);
+            taskRotationDto,
+            CumulativeTracking: cumulativeTrackingDto);
     }
 
     public async Task<SolverInputDto> BuildPreviewAsync(

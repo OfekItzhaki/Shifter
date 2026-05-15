@@ -26,7 +26,8 @@ public record SolverInputDto(
     List<string>? LockedSlotIds = null,
     HomeLeaveConfigDto? HomeLeaveConfig = null,
     List<TaskRotationDto>? TaskRotation = null,
-    [property: JsonPropertyName("preview_mode")] bool PreviewMode = false);
+    [property: JsonPropertyName("preview_mode")] bool PreviewMode = false,
+    [property: JsonPropertyName("cumulative_tracking")] List<CumulativeTrackingDto>? CumulativeTracking = null);
 
 public record StabilityWeightsDto(
     [property: JsonPropertyName("today_tomorrow")] double TodayTomorrow,

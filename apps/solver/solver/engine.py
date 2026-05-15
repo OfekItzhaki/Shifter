@@ -187,6 +187,7 @@ def solve(input: SolverInput) -> SolverOutput:
             horizon_start_ts=horizon_start_ts,
             horizon_end_ts=horizon_end_ts,
             presence_windows=input.presence_windows,
+            cumulative_tracking=input.cumulative_tracking or None,
         )
         penalties.extend(eligibility_penalties)
 

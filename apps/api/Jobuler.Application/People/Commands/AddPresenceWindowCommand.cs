@@ -1,3 +1,4 @@
+using Jobuler.Application.Scheduling;
 using Jobuler.Domain.People;
 using Jobuler.Infrastructure.Persistence;
 using MediatR;
@@ -16,7 +17,13 @@ public class AddPresenceWindowCommandHandler
     : IRequestHandler<AddPresenceWindowCommand, Guid>
 {
     private readonly AppDbContext _db;
-    public AddPresenceWindowCommandHandler(AppDbContext db) => _db = db;
+    private readonly ICumulativeTracker _cumulativeTracker;
+
+    public AddPresenceWindowCommandHandler(AppDbContext db, ICumulativeTracker cumulativeTracker)
+    {
+        _db = db;
+        _cumulativeTracker = cumulativeTracker;
+    }
 
     public async Task<Guid> Handle(AddPresenceWindowCommand req, CancellationToken ct)
     {
@@ -47,6 +54,13 @@ public class AddPresenceWindowCommandHandler
 
         _db.PresenceWindows.Add(window);
         await _db.SaveChangesAsync(ct);
+
+        // Recompute cumulative hours when an AtHome window is created
+        if (state == PresenceState.AtHome)
+        {
+            await _cumulativeTracker.RecomputeForPersonAsync(req.SpaceId, req.PersonId, ct);
+        }
+
         return window.Id;
     }
 }

@@ -6,6 +6,7 @@ using FluentAssertions;
 using Jobuler.Application.Common;
 using Jobuler.Application.Groups.Commands;
 using Jobuler.Application.Groups.Queries;
+using Jobuler.Application.Scheduling;
 using Jobuler.Domain.Groups;
 using Jobuler.Domain.Identity;
 using Jobuler.Domain.People;
@@ -57,7 +58,7 @@ public class GroupOwnershipPropertyTests
 
     private static async Task<Guid> CreateGroupAsync(AppDbContext db, Guid spaceId, Guid userId, string name = "Test Group")
     {
-        var handler = new CreateGroupCommandHandler(db);
+        var handler = new CreateGroupCommandHandler(db, Substitute.For<IPeriodManager>());
         return await handler.Handle(
             new CreateGroupCommand(spaceId, null, name, null, userId),
             CancellationToken.None);
@@ -289,7 +290,7 @@ public class GroupOwnershipPropertyTests_P7_P15
 
     private static async Task<Guid> CreateGroupAsync(AppDbContext db, Guid spaceId, Guid userId, string name = "Test Group")
     {
-        var handler = new CreateGroupCommandHandler(db);
+        var handler = new CreateGroupCommandHandler(db, Substitute.For<IPeriodManager>());
         return await handler.Handle(
             new CreateGroupCommand(spaceId, null, name, null, userId),
             CancellationToken.None);

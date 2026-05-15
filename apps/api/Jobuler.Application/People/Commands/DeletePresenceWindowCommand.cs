@@ -1,3 +1,5 @@
+using Jobuler.Application.Scheduling;
+using Jobuler.Domain.People;
 using Jobuler.Infrastructure.Persistence;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -10,7 +12,13 @@ public record DeletePresenceWindowCommand(
 public class DeletePresenceWindowCommandHandler : IRequestHandler<DeletePresenceWindowCommand>
 {
     private readonly AppDbContext _db;
-    public DeletePresenceWindowCommandHandler(AppDbContext db) => _db = db;
+    private readonly ICumulativeTracker _cumulativeTracker;
+
+    public DeletePresenceWindowCommandHandler(AppDbContext db, ICumulativeTracker cumulativeTracker)
+    {
+        _db = db;
+        _cumulativeTracker = cumulativeTracker;
+    }
 
     public async Task Handle(DeletePresenceWindowCommand req, CancellationToken ct)
     {
@@ -22,7 +30,15 @@ public class DeletePresenceWindowCommandHandler : IRequestHandler<DeletePresence
                 !w.IsDerived, ct)
             ?? throw new KeyNotFoundException("Presence window not found.");
 
+        var wasAtHome = window.State == PresenceState.AtHome;
+
         _db.PresenceWindows.Remove(window);
         await _db.SaveChangesAsync(ct);
+
+        // Recompute cumulative hours when an AtHome window is deleted
+        if (wasAtHome)
+        {
+            await _cumulativeTracker.RecomputeForPersonAsync(req.SpaceId, req.PersonId, ct);
+        }
     }
 }

@@ -84,4 +84,64 @@ public class StatsController : ControllerBase
         var result = await _mediator.Send(new GetTaskRotationQuery(spaceId, groupId), ct);
         return Ok(result);
     }
+
+    /// <summary>
+    /// GET /spaces/{spaceId}/stats/cumulative?time_range=7d|14d|30d|90d|period&amp;group_id=...&amp;period_id=...
+    /// Returns per-person cumulative statistics from cumulative_records.
+    /// Defaults to current active period when no period_id specified.
+    /// Requires space.view permission.
+    /// </summary>
+    [HttpGet("cumulative")]
+    public async Task<IActionResult> GetCumulativeStats(
+        Guid spaceId,
+        [FromQuery(Name = "group_id")] Guid groupId,
+        [FromQuery(Name = "time_range")] string timeRange = "period",
+        [FromQuery(Name = "period_id")] Guid? periodId = null,
+        CancellationToken ct = default)
+    {
+        await _permissions.RequirePermissionAsync(CurrentUserId, spaceId, Permissions.SpaceView, ct);
+        var result = await _mediator.Send(
+            new GetCumulativeStatsQuery(spaceId, groupId, timeRange, periodId), ct);
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// GET /spaces/{spaceId}/stats/timeseries?start_date=...&amp;end_date=...&amp;group_id=...&amp;period_id=...
+    /// Returns daily data points from daily_snapshots (date, assignment count, burden breakdown).
+    /// Requires space.view permission.
+    /// </summary>
+    [HttpGet("timeseries")]
+    public async Task<IActionResult> GetStatsTimeseries(
+        Guid spaceId,
+        [FromQuery(Name = "group_id")] Guid groupId,
+        [FromQuery(Name = "start_date")] DateOnly startDate,
+        [FromQuery(Name = "end_date")] DateOnly endDate,
+        [FromQuery(Name = "period_id")] Guid? periodId = null,
+        CancellationToken ct = default)
+    {
+        await _permissions.RequirePermissionAsync(CurrentUserId, spaceId, Permissions.SpaceView, ct);
+        var result = await _mediator.Send(
+            new GetStatsTimeseriesQuery(spaceId, groupId, startDate, endDate, periodId), ct);
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// GET /spaces/{spaceId}/schedule/history?group_id=...&amp;start_date=...&amp;end_date=...
+    /// Returns historical assignments from daily_snapshots for a date range.
+    /// Respects schedule_history_retention_days setting.
+    /// Requires space.view permission.
+    /// </summary>
+    [HttpGet("/spaces/{spaceId:guid}/schedule/history")]
+    public async Task<IActionResult> GetHistoricalSchedule(
+        Guid spaceId,
+        [FromQuery(Name = "group_id")] Guid groupId,
+        [FromQuery(Name = "start_date")] DateOnly startDate,
+        [FromQuery(Name = "end_date")] DateOnly endDate,
+        CancellationToken ct = default)
+    {
+        await _permissions.RequirePermissionAsync(CurrentUserId, spaceId, Permissions.SpaceView, ct);
+        var result = await _mediator.Send(
+            new GetHistoricalScheduleQuery(spaceId, groupId, startDate, endDate), ct);
+        return Ok(result);
+    }
 }

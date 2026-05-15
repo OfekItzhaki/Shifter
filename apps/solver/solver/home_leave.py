@@ -9,7 +9,7 @@ and rotate between missions and home-leave. It provides:
 """
 from ortools.sat.python import cp_model
 from models.solver_input import (
-    SolverInput, TaskSlot, HomeLeaveConfig, PersonEligibility, PresenceWindow
+    SolverInput, TaskSlot, HomeLeaveConfig, PersonEligibility, PresenceWindow, CumulativeTracking
 )
 from datetime import datetime, timezone, timedelta
 import logging
@@ -303,10 +303,15 @@ def add_home_leave_eligibility_preference(
     horizon_start_ts: int,
     horizon_end_ts: int,
     presence_windows: list[PresenceWindow],
+    cumulative_tracking: list[CumulativeTracking] | None = None,
 ) -> list:
     """
     Soft preference: once a person exceeds eligibility_threshold_hours of
     continuous free_in_base time, prefer sending them home.
+
+    When cumulative_tracking is provided, each person's consecutive_hours_at_base
+    is added to the hours computed within the current horizon before comparing
+    against the eligibility threshold.
 
     Returns a list of penalty terms to add to the objective (minimization).
     A penalty is incurred when a person is eligible but NOT on leave.
@@ -333,6 +338,12 @@ def add_home_leave_eligibility_preference(
     balance = config.balance_value if config.balance_value is not None else 50
     ELIGIBILITY_WEIGHT = balance * 4
 
+    # Build cumulative hours lookup: person_id → consecutive_hours_at_base (in seconds)
+    cumulative_seconds_lookup: dict[str, int] = {}
+    if cumulative_tracking:
+        for ct in cumulative_tracking:
+            cumulative_seconds_lookup[ct.person_id] = int(ct.consecutive_hours_at_base * 3600)
+
     # For each person, determine the earliest hour at which they become eligible
     # based on their last mission end (from presence windows or slot assignments).
     # Since we can't know the actual assignment at model-build time, we use a
@@ -357,8 +368,13 @@ def add_home_leave_eligibility_preference(
                 if pw_end > latest_mission_end_ts and pw_end <= horizon_end_ts:
                     latest_mission_end_ts = pw_end
 
-        # The person becomes eligible at latest_mission_end + threshold
-        eligible_ts = latest_mission_end_ts + threshold_seconds
+        # Incorporate cumulative hours: reduce the remaining threshold by hours already at base
+        # effective_threshold = max(0, threshold - cumulative_hours_already_at_base)
+        cumulative_secs = cumulative_seconds_lookup.get(pid, 0)
+        effective_threshold_seconds = max(0, threshold_seconds - cumulative_secs)
+
+        # The person becomes eligible at latest_mission_end + effective_threshold
+        eligible_ts = latest_mission_end_ts + effective_threshold_seconds
         eligible_hour = max(0, (eligible_ts - horizon_start_ts) // 3600)
 
         if eligible_hour >= horizon_duration_hours:

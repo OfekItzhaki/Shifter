@@ -73,6 +73,9 @@ public class AppDbContext : DbContext
     public DbSet<FairnessCounter> FairnessCounters => Set<FairnessCounter>();
     public DbSet<FairnessCounterSnapshot> FairnessCounterSnapshots => Set<FairnessCounterSnapshot>();
     public DbSet<TaskRotationProgress> TaskRotationProgress => Set<TaskRotationProgress>();
+    public DbSet<SubscriptionPeriod> SubscriptionPeriods => Set<SubscriptionPeriod>();
+    public DbSet<CumulativeRecord> CumulativeRecords => Set<CumulativeRecord>();
+    public DbSet<DailySnapshot> DailySnapshots => Set<DailySnapshot>();
 
     // Logs
     public DbSet<SystemLog> SystemLogs => Set<SystemLog>();
