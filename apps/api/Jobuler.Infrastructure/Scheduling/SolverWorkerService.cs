@@ -139,6 +139,10 @@ public class SolverWorkerService : BackgroundService
         SolverInputDto? input = null;
         try
         {
+            // ── Phase: building_payload ───────────────────────────────────────
+            run.SetProgressPhase("building_payload");
+            await db.SaveChangesAsync(ct);
+
             // Build solver input
             input = await normalizer.BuildAsync(
                 job.SpaceId, job.RunId, job.TriggerMode, job.BaselineVersionId, job.GroupId, job.StartTime, ct);
@@ -286,6 +290,10 @@ public class SolverWorkerService : BackgroundService
             _logger.LogInformation(
                 "Solver output: run_id={RunId} feasible={Feasible} timedOut={TimedOut} assignments={Assignments} uncovered={Uncovered}",
                 job.RunId, output.Feasible, output.TimedOut, output.Assignments.Count, output.UncoveredSlotIds.Count);
+
+            // ── Phase: storing_results ────────────────────────────────────────
+            run.SetProgressPhase("storing_results");
+            await db.SaveChangesAsync(ct);
 
             // Determine next version number for this space
             var nextVersion = await db.ScheduleVersions

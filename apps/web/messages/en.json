@@ -593,6 +593,9 @@
     "solverNotEnoughMembers": "Not enough members in the group. Add at least 2 members for the solver to work.",
     "solverLastFailed": "⚠ Last schedule run failed",
     "solverSolutions": "Possible solutions: add more members, change home-time settings, or relax constraints.",
+    "solverPhase_building_payload": "Building schedule data...",
+    "solverPhase_solving": "Finding optimal solution...",
+    "solverPhase_storing_results": "Storing results...",
     "errorEmergencySolver": "Error starting emergency solver.",
     "selectVersion": "Select a version to view details.",
     "selectGroup": "Select a group to manage",
@@ -832,7 +835,9 @@
     "members": "members",
     "shifts": "shifts",
     "hours": "hours",
-    "minutes": "minutes"
+    "minutes": "minutes",
+    "completed": "Completed",
+    "timedOut": "Timed out"
   },
   "personDetail": {
     "notFound": "Person not found.",

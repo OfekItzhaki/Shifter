@@ -1,49 +1,47 @@
-# 246 — Token Refresh Mutex & Solver Performance Fix
+# 246 — Solver Progress Visibility & Timeout Fix
 
 ## Phase
-Production Bug Fixes
+Production Bug Fixes + UX Improvement
 
 ## Purpose
-Fixes three production issues:
-1. Users getting silently logged out due to concurrent token refresh requests revoking each other
-2. Solver timing out due to O(n²) ISO string parsing in constraint-building phase
-3. Solver error messages not providing actionable guidance when tasks can't be fully staffed
+1. Fixes the solver timeout: CP-SAT was set to 60s in production but HTTP timeout was 20s — the solver was working but the API gave up
+2. Adds live progress phases so the user sees what the solver is doing (no more mystery spinner)
+3. Optimizes constraint building (pre-computed timestamps) to eliminate ~500K ISO string parses
+4. Allows 1-day planning horizon (slider min changed from 3 to 1)
+5. Removes dead code (`_slots_overlap` function)
 
 ## What was built
 
-### Files modified
+### Backend
+- **`Jobuler.Domain/Scheduling/ScheduleRun.cs`** — Added `ProgressPhase` property and `SetProgressPhase()` method
+- **`infra/migrations/051_schedule_run_progress_phase.sql`** — DB migration for the new column
+- **`Jobuler.Application/Scheduling/Queries/GetScheduleRunQuery.cs`** — Returns `progressPhase` in poll response
+- **`Jobuler.Infrastructure/Scheduling/SolverWorkerService.cs`** — Sets progress phases: `building_payload` → `solving` → `storing_results`
+- **`Jobuler.Api/Program.cs`** — HTTP timeout increased to 90s (solver can now run up to 60s)
+- **`.env` / `.env.example`** — `SOLVER_TIMEOUT_SECONDS=60` (was 60 but HTTP was 20s — now they're aligned)
 
-- **`apps/web/lib/api/client.ts`** — Added a token refresh mutex. When multiple API calls fail with 401 simultaneously, only the first triggers a refresh; others queue and retry with the new token. Prevents the race condition where concurrent refresh requests revoke each other's tokens.
+### Solver (Python)
+- **`solver/constraints.py`** — Pre-compute timestamps once before O(n²) loops. Removed dead `_slots_overlap` function.
+- **`solver/engine.py`** — Added timing instrumentation (logs constraint build time vs solve time)
 
-- **`apps/api/Jobuler.Api/Controllers/AuthController.cs`** — Added `[DisableRateLimiting]` to the `/auth/refresh` endpoint. The strict auth rate limiter (10/min in production) was blocking legitimate refresh requests.
-
-- **`apps/api/Jobuler.Infrastructure/Scheduling/SolverWorkerService.cs`** — Improved the uncovered slots error message to be locale-aware and provide actionable guidance (reduce planning horizon, add members, or relax constraints).
-
-- **`apps/solver/solver/constraints.py`** — **Critical performance fix**: Pre-compute all slot timestamps once before the O(n²) constraint loops. Previously, `_to_timestamp()` (ISO string parsing) was called inside nested loops, resulting in ~500K string parses for 133 slots × 14 people. Now timestamps are computed once (133 parses) and the loops use fast integer comparisons. Expected improvement: 15-20s → 1-3s.
+### Frontend
+- **`app/groups/[groupId]/page.tsx`** — Removed 30s hard polling timeout. Polls until terminal. Shows progress phase.
+- **`app/groups/[groupId]/tabs/SettingsTab.tsx`** — Button shows current phase ("בונה נתונים...", "מחפש פתרון...", "שומר תוצאות..."). Slider min changed to 1.
+- **`messages/he.json`** / **`messages/en.json`** — Added solver phase translations and common completed/timedOut keys
 
 ## Key decisions
-
-1. **Pre-compute timestamps**: The overlap and min-rest constraint functions now compute slot timestamps in a single pass, then iterate over pre-computed pairs. This changes the algorithm from O(people × slots² × parse_cost) to O(slots² + people × pairs).
-
-2. **Separate pair detection from constraint addition**: Overlapping pairs and rest-violation pairs are identified once, then constraints are added per-person. This avoids redundant geometric checks.
-
-3. **Refresh mutex pattern**: Uses a subscriber queue — the first 401 triggers the refresh, subsequent 401s subscribe to the result.
+- Solver can now run up to 60s because the user sees live progress — no more mystery timeout
+- HTTP timeout is 90s to give breathing room beyond the 60s CP-SAT limit
+- Frontend no longer has a hard polling timeout — it polls until the backend reports a terminal status
+- Progress phases are stored in the DB so they survive page refreshes
 
 ## How to run / verify
-
-1. Deploy the solver container (rebuild required — Python code changed)
-2. Deploy the API (C# changes)
-3. Deploy the frontend (TypeScript changes)
-4. Re-login once (current refresh token may be revoked)
-5. Trigger the solver — should complete in 1-3 seconds instead of timing out
-
-## What comes next
-
-- Verify the schedule displays correctly after the solver produces assignments
-- Monitor solver timing in production logs
+1. Run migration `051_schedule_run_progress_phase.sql`
+2. Rebuild and deploy all 3 containers (API, solver, web)
+3. Trigger the solver — button should show "בונה את הנתונים..." then "מחפש פתרון אופטימלי..." then "שומר תוצאות..."
+4. Solver should complete successfully (no more timeout)
 
 ## Git commit
-
 ```bash
-git add -A && git commit -m "fix(solver): pre-compute timestamps to fix timeout + token refresh mutex"
+git add -A && git commit -m "feat(solver): live progress phases + timeout fix + perf optimization"
 ```

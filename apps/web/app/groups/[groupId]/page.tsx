@@ -919,10 +919,6 @@ export default function GroupDetailPage() {
     setSolverStatus(null);
     setSolverError(null);
 
-    // Safety timeout — stop polling after 30s regardless
-    const maxPollMs = 30_000;
-    const pollStartTime = Date.now();
-
     try {
       const res = await apiClient.post<{ runId: string }>(
         `/spaces/${currentSpaceId}/schedule-runs/trigger`,
@@ -931,21 +927,18 @@ export default function GroupDetailPage() {
       const runId = res.data.runId;
 
       pollingRef.current = setInterval(async () => {
-        // Hard timeout guard
-        if (Date.now() - pollStartTime > maxPollMs) {
-          if (pollingRef.current) clearInterval(pollingRef.current);
-          setSolverPolling(false);
-          setSolverStatus("TimedOut");
-          setSolverError(tErrors("solverTimeout"));
-          return;
-        }
-
         try {
-          const statusRes = await apiClient.get<{ status: string; errorSummary?: string | null }>(
+          const statusRes = await apiClient.get<{ status: string; errorSummary?: string | null; progressPhase?: string | null; startedAt?: string | null }>(
             `/spaces/${currentSpaceId}/schedule-runs/${runId}`
           );
           const status = statusRes.data.status;
-          setSolverStatus(status);
+          // When running, include the progress phase for live display
+          const phase = statusRes.data.progressPhase;
+          if (status === "Running" && phase) {
+            setSolverStatus(`Running:${phase}`);
+          } else {
+            setSolverStatus(status);
+          }
 
           // Show pre-flight / solver error immediately when failed
           if (status === "Failed" && statusRes.data.errorSummary) {

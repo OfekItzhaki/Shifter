@@ -209,8 +209,9 @@ builder.Services.AddHttpClient<ISolverClient, SolverHttpClient>(client =>
 {
     var solverUrl = builder.Configuration["Solver:BaseUrl"] ?? "http://localhost:8000";
     client.BaseAddress = new Uri(solverUrl);
-    // Must be > SOLVER_TIMEOUT_SECONDS (15s) + constraint build time (~2s)
-    client.Timeout = TimeSpan.FromSeconds(25);
+    // Solver can run up to 60s (CP-SAT) + constraint build time.
+    // Progress is shown to the user via polling, so longer runs are acceptable.
+    client.Timeout = TimeSpan.FromSeconds(90);
 });
 
 // ─── AI assistant (optional — only registered when API key is configured) ────
@@ -265,16 +266,16 @@ builder.Services.AddSwaggerGen(c =>
 // ─── Rate limiting ───────────────────────────────────────────────────────────
 builder.Services.AddRateLimiter(options =>
 {
-    // Global limit per IP — 500 requests per minute (SPAs make many calls per page)
+    // Global limit per IP — 2000 requests per minute (generous for SPA + dev testing)
     options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
         RateLimitPartition.GetFixedWindowLimiter(
             partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
             factory: _ => new FixedWindowRateLimiterOptions
             {
-                PermitLimit = 500,
+                PermitLimit = 2000,
                 Window = TimeSpan.FromMinutes(1),
                 QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
-                QueueLimit = 20
+                QueueLimit = 50
             }));
 
     // Strict limit on auth endpoints — prevents brute force

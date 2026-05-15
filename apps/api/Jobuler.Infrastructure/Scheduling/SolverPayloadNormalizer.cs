@@ -106,7 +106,7 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
             }
         }
 
-        var horizonEnd = horizonStart.AddDays(maxHorizon - 1); // inclusive
+        var horizonEnd = horizonStart.AddDays(maxHorizon); // exclusive end — full N days from start
 
         // ── People eligibility ────────────────────────────────────────────────
         // When group-scoped, only include members of that group.

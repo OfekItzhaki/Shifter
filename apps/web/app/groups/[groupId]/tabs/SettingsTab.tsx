@@ -255,13 +255,17 @@ export default function SettingsTab({
             {solverPolling ? (
               <>
                 <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
-                {t("running")}
+                {(() => {
+                  const phase = solverStatus?.startsWith("Running:") ? solverStatus.split(":")[1] : null;
+                  const phaseKey = phase ? `solverPhase_${phase}` : null;
+                  return phaseKey ? tAdmin(phaseKey as never) : t("running");
+                })()}
               </>
             ) : t("runSchedule")}
           </button>
-          {solverStatus && !solverError && (
+          {solverStatus && !solverError && !solverPolling && (
             <p className={`text-sm ${solverStatus === "Completed" ? "text-emerald-600" : solverStatus === "Failed" ? "text-red-600" : "text-slate-600"}`}>
-              {solverStatus === "Completed" ? "הושלם ✓" : solverStatus === "Failed" ? "נכשל" : solverStatus === "TimedOut" ? "חרג מזמן" : solverStatus}
+              {solverStatus === "Completed" ? tCommon("completed") + " ✓" : solverStatus === "TimedOut" ? tCommon("timedOut") : ""}
             </p>
           )}
         </div>

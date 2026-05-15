@@ -597,6 +597,9 @@
     "solverNotEnoughMembers": "אין מספיק חברים בקבוצה. הוסף לפחות 2 חברים כדי שהסולבר יוכל לעבוד.",
     "solverLastFailed": "⚠ הסידור האחרון נכשל",
     "solverSolutions": "פתרונות אפשריים: הוסף חברים נוספים, שנה הגדרות זמן בית, או הקל אילוצים.",
+    "solverPhase_building_payload": "בונה את הנתונים...",
+    "solverPhase_solving": "מחפש פתרון אופטימלי...",
+    "solverPhase_storing_results": "שומר תוצאות...",
     "errorEmergencySolver": "שגיאה בהפעלת סולבר חירום.",
     "selectVersion": "בחר גרסה לצפייה בפרטים.",
     "selectGroup": "בחר קבוצה לניהול",
@@ -836,7 +839,9 @@
     "members": "חברים",
     "shifts": "משמרות",
     "hours": "שעות",
-    "minutes": "דקות"
+    "minutes": "דקות",
+    "completed": "הושלם",
+    "timedOut": "חרג מזמן"
   },
   "personDetail": {
     "notFound": "אדם לא נמצא.",

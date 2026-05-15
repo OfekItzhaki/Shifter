@@ -8,7 +8,8 @@ public record ScheduleRunDto(
     Guid Id, string TriggerType, string Status,
     Guid? BaselineVersionId, DateTime CreatedAt,
     DateTime? StartedAt, DateTime? FinishedAt,
-    int? DurationMs, string? ResultSummaryJson, string? ErrorSummary);
+    int? DurationMs, string? ResultSummaryJson, string? ErrorSummary,
+    string? ProgressPhase);
 
 public record GetScheduleRunQuery(Guid SpaceId, Guid RunId) : IRequest<ScheduleRunDto?>;
 
@@ -26,6 +27,7 @@ public class GetScheduleRunQueryHandler : IRequestHandler<GetScheduleRunQuery, S
             run.Id, run.TriggerType.ToString(), run.Status.ToString(),
             run.BaselineVersionId, run.CreatedAt,
             run.StartedAt, run.FinishedAt, run.DurationMs,
-            run.ResultSummaryJson, run.ErrorSummary);
+            run.ResultSummaryJson, run.ErrorSummary,
+            run.ProgressPhase);
     }
 }
