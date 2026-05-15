@@ -18,6 +18,19 @@ interface ChangelogEntry {
 
 const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.7.0",
+    date: "2026-06-01",
+    changes: [
+      { type: "new", text: "מעקב מצטבר — זיכרון בין הרצות סולבר" },
+      { type: "new", text: "צפייה בהיסטוריית שיבוצים לשבועות קודמים" },
+      { type: "new", text: "סטטיסטיקות מצטברות עם בחירת טווח זמן" },
+      { type: "new", text: "תקופות מנוי — חלוקת נתונים לפי מחזורי חיוב" },
+      { type: "improved", text: "זכאות חופשת בית מבוססת שעות מצטברות (לא רק אופק נוכחי)" },
+      { type: "improved", text: "הוגנות שיבוצים מתחשבת בהיסטוריה מצטברת" },
+      { type: "fix", text: "תיקון TypeScript — groupId חסר ב-ScheduleTab" },
+    ],
+  },
+  {
     version: "1.6.0",
     date: "2026-05-26",
     changes: [
