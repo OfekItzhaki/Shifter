@@ -56,8 +56,8 @@ public class ExceptionHandlingMiddleware
                 => (HttpStatusCode.BadRequest, ExtractCheckConstraintMessage(dbe2), (List<string>?)[]),
             // All other EF/DB exceptions → 500, never expose DB internals to client
             Microsoft.EntityFrameworkCore.DbUpdateException
-                => (HttpStatusCode.InternalServerError, "אירעה שגיאת מסד נתונים. נסה שוב.", (List<string>?)[]),
-            _   => (HttpStatusCode.InternalServerError, "אירעה שגיאה בלתי צפויה.", (List<string>?)[])
+                => (HttpStatusCode.InternalServerError, "אירעה שגיאה בלתי צפויה. נסה שוב מאוחר יותר.", (List<string>?)[]),
+            _   => (HttpStatusCode.InternalServerError, "אירעה שגיאה בלתי צפויה. נסה שוב מאוחר יותר.", (List<string>?)[])
         };
 
         // Always log the full exception server-side
