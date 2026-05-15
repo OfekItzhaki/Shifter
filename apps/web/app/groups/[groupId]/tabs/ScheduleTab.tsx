@@ -69,10 +69,7 @@ export default function ScheduleTab({
     const d = String(now.getDate()).padStart(2, "0");
     return `${y}-${m}-${d}`;
   })();
-  const minDate = (() => {
-    const d = new Date(Date.now() - 2 * 86400000);
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-  })();
+  const minDate = "2020-01-01"; // Allow viewing any past schedule
   const maxDate = (() => {
     // Allow viewing up to 30 days ahead (independent of solver horizon)
     const d = new Date(Date.now() + 30 * 86400000);

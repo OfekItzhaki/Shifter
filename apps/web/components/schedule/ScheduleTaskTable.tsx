@@ -125,8 +125,11 @@ export default function ScheduleTaskTable({ assignments, currentUserName, filter
         for (const a of taskAssignments) {
           const key = `${a.slotStartsAt}|${a.slotEndsAt}`;
           const slot = slotMap.get(key) ?? { startsAt: a.slotStartsAt, endsAt: a.slotEndsAt, people: [], personIds: [] };
-          slot.people.push(a.personName);
-          slot.personIds.push(a.personId ?? "");
+          // Deduplicate: don't add the same person twice to the same slot
+          if (!slot.personIds.includes(a.personId ?? "")) {
+            slot.people.push(a.personName);
+            slot.personIds.push(a.personId ?? "");
+          }
           slotMap.set(key, slot);
         }
 
