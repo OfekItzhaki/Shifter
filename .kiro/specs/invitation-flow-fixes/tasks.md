@@ -14,7 +14,7 @@
   - Run tests on UNFIXED code
   - **EXPECTED OUTCOME**: Tests FAIL (this is correct - it proves the bug exists: no SpaceMembership or permission grant is created)
   - Document counterexamples found (e.g., "After JoinGroupByCodeCommandHandler completes, SpaceMemberships table has no record for the user in the group's space")
-  - Mark task complete when tests are written, run, and failure is documented
+  - Mark task complete when tests are written, run, and failure is 
   - _Requirements: 1.1, 1.4, 2.1, 2.4_
 
 - [x] 2. Write preservation property tests (BEFORE implementing fix)

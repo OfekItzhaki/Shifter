@@ -42,7 +42,6 @@ public class BillingController : ControllerBase
 
     /// <summary>Validate a coupon code.</summary>
     [HttpPost("validate-coupon")]
-    [AllowAnonymous]
     public async Task<IActionResult> ValidateCoupon(
         Guid spaceId, [FromBody] ValidateCouponRequest req, CancellationToken ct)
     {
