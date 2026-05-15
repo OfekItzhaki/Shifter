@@ -36,6 +36,10 @@ export default function PlatformPage() {
   const { isAuthenticated } = useAuthStore();
   const router = useRouter();
 
+  // Check auth from both Zustand store AND localStorage (store may not be hydrated yet)
+  const hasToken = typeof window !== "undefined" && !!localStorage.getItem("access_token");
+  const loggedIn = isAuthenticated || hasToken;
+
   const [stats, setStats] = useState<PlatformStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [accessDenied, setAccessDenied] = useState(false);
@@ -60,7 +64,7 @@ export default function PlatformPage() {
 
   useEffect(() => {
     if (!hydrated) return;
-    if (!isAuthenticated) {
+    if (!loggedIn) {
       router.push("/login");
       return;
     }
@@ -80,9 +84,9 @@ export default function PlatformPage() {
         }
       })
       .finally(() => { setLoading(false); clearTimeout(timeout); });
-  }, [hydrated, isAuthenticated, router]);
+  }, [hydrated, loggedIn, router]);
 
-  if (!hydrated || !isAuthenticated) {
+  if (!hydrated || !loggedIn) {
     return (
       <AppShell>
         <div className="flex items-center justify-center min-h-[60vh]">

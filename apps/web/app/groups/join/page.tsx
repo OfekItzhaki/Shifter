@@ -24,6 +24,10 @@ function JoinContent() {
   const [autoJoinDone, setAutoJoinDone] = useState(false);
   const [hydrated, setHydrated] = useState(false);
 
+  // Check auth from both Zustand store AND localStorage (store may not be hydrated yet)
+  const hasToken = typeof window !== "undefined" && !!localStorage.getItem("access_token");
+  const loggedIn = isAuthenticated || hasToken;
+
   // Wait for Zustand to rehydrate before checking auth
   useEffect(() => {
     if (useAuthStore.persist.hasHydrated()) { setHydrated(true); return; }
@@ -54,11 +58,11 @@ function JoinContent() {
   // Auto-join when user is authenticated and code is provided in URL
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
-    if (hydrated && isAuthenticated && codeFromUrl && !autoJoinDone) {
+    if (hydrated && loggedIn && codeFromUrl && !autoJoinDone) {
       setAutoJoinDone(true);
       handleJoin();
     }
-  }, [hydrated, isAuthenticated, codeFromUrl]);
+  }, [hydrated, loggedIn, codeFromUrl]);
 
   if (!hydrated) {
     return (
@@ -71,7 +75,7 @@ function JoinContent() {
     );
   }
 
-  if (!isAuthenticated) {
+  if (!loggedIn) {
     const redirectUrl = `/groups/join?code=${encodeURIComponent(code)}`;
     return (
       <div className="text-center space-y-4">
