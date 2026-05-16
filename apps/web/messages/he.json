@@ -1039,5 +1039,56 @@
     "last30days": "30 ימים",
     "last90days": "90 ימים",
     "noData": "אין נתונים עדיין"
+  },
+  "homeLeave": {
+    "modeSelector": {
+      "groupLabel": "בחירת מצב זמן בית",
+      "automatic": "אוטומטי",
+      "manual": "ידני"
+    },
+    "ratioSlider": {
+      "ratioLabel": "ימים בסיס / בית",
+      "optimal": "אופטימלי",
+      "ariaLabel": "יחס זמן בסיס/בית",
+      "ariaValueText": "{baseDays} ימים בסיס : {homeDays} ימים בבית",
+      "moreBase": "יותר אנשים בבסיס",
+      "moreHome": "יותר אנשים בבית"
+    },
+    "manual": {
+      "baseDaysLabel": "ימים בבסיס",
+      "homeDaysLabel": "ימים בבית",
+      "minError": "ערך מינימלי: 1"
+    },
+    "emergencyFreeze": {
+      "activeTitle": "הקפאת חירום פעילה",
+      "useForScheduling": "השתמש באנשים שהוקפאו לשיבוץ משימות",
+      "activate": "הפעל הקפאת חירום",
+      "deactivate": "בטל הקפאת חירום",
+      "confirmTitle": "הפעלת הקפאת חירום",
+      "confirmDescription": "פעולה זו תעצור מיידית את כל יציאות הבית לקבוצה. האם להמשיך?",
+      "confirmYes": "כן, הפעל",
+      "confirmNo": "ביטול"
+    },
+    "feasibility": {
+      "checking": "בודק ישימות...",
+      "feasible": "ישים",
+      "notFeasible": "לא ישים — אין מספיק אנשים לכיסוי",
+      "maxHomeDays": "מקסימום {days} ימים בבית אפשרי"
+    },
+    "leaveDuration": {
+      "label": "משך זמן בית",
+      "hint": "כמה ימים נמשכת כל יציאה הביתה",
+      "unit": "ימים",
+      "validationError": "משך זמן בית חייב להיות בין 0.5 ל-7 ימים"
+    },
+    "panel": {
+      "title": "ניהול זמן בבית",
+      "description": "הגדרות זמן בית לחברי הקבוצה. הסולבר ישתמש בהגדרות אלו כדי לתזמן יציאות הביתה.",
+      "loading": "טוען...",
+      "save": "שמור",
+      "saving": "שומר...",
+      "saved": "נשמר ✓",
+      "permissionError": "אין הרשאה לשנות הגדרות"
+    }
   }
 }

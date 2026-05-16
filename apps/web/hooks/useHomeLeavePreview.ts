@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import {
   getHomeLeavePreview,
+  HomeLeavePreviewRequest,
   HomeLeavePreviewResponse,
 } from "@/lib/api/homeLeave";
 
@@ -19,12 +20,12 @@ interface UseHomeLeavePreviewReturn {
  *
  * @param spaceId  - The current space ID
  * @param groupId  - The group ID to preview
- * @param balanceValue - The slider balance value (0–100)
+ * @param request  - The preview request parameters (mode, baseDays, homeDays, sliderValue, leaveDurationHours)
  */
 export function useHomeLeavePreview(
   spaceId: string | null | undefined,
   groupId: string | null | undefined,
-  balanceValue: number | null | undefined
+  request: HomeLeavePreviewRequest | null | undefined
 ): UseHomeLeavePreviewReturn {
   const [data, setData] = useState<HomeLeavePreviewResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -35,9 +36,12 @@ export function useHomeLeavePreview(
   // Request counter to ignore stale responses
   const requestCounterRef = useRef(0);
 
+  // Serialize request to detect changes
+  const requestKey = request ? JSON.stringify(request) : null;
+
   useEffect(() => {
     // Only fire when all parameters are truthy
-    if (!spaceId || !groupId || balanceValue == null) {
+    if (!spaceId || !groupId || !request) {
       return;
     }
 
@@ -59,7 +63,7 @@ export function useHomeLeavePreview(
         const result = await getHomeLeavePreview(
           spaceId,
           groupId,
-          balanceValue,
+          request,
           controller.signal
         );
 
@@ -97,7 +101,8 @@ export function useHomeLeavePreview(
     return () => {
       clearTimeout(timeoutId);
     };
-  }, [spaceId, groupId, balanceValue]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [spaceId, groupId, requestKey]);
 
   return { data, isLoading, error };
 }

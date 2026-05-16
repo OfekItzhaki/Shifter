@@ -2,8 +2,10 @@ using Jobuler.Application.Common;
 using Jobuler.Application.Scheduling;
 using Jobuler.Application.Scheduling.Models;
 using Jobuler.Domain.Constraints;
+using Jobuler.Domain.Groups;
 using Jobuler.Domain.Scheduling;
-using Jobuler.Domain.Tasks;using Jobuler.Infrastructure.Persistence;
+using Jobuler.Domain.Tasks;
+using Jobuler.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
@@ -87,17 +89,10 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
                 .FirstOrDefaultAsync(c => c.GroupId == groupId.Value && c.SpaceId == spaceId, ct);
 
             if (hlConfig is not null
-                && hlConfig.EligibilityThresholdHours > 0
                 && hlConfig.LeaveCapacity > 0
                 && hlConfig.LeaveDurationHours > 0)
             {
-                homeLeaveConfigDto = new HomeLeaveConfigDto(
-                    Enabled: true,
-                    MinRestHours: (double)hlConfig.MinRestHours,
-                    EligibilityThresholdHours: (double)hlConfig.EligibilityThresholdHours,
-                    LeaveCapacity: hlConfig.LeaveCapacity,
-                    LeaveDurationHours: (double)hlConfig.LeaveDurationHours,
-                    BalanceValue: hlConfig.BalanceValue);
+                homeLeaveConfigDto = BuildHomeLeaveConfigDto(hlConfig);
             }
             else
             {
@@ -483,7 +478,8 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
             startTime: null,
             ct: ct);
 
-        // Override balance_value in the home-leave config and set preview mode
+        // For preview, always construct a valid home-leave config regardless of emergency freeze state.
+        // The preview shows what the schedule would look like with the given balance_value.
         if (payload.HomeLeaveConfig is not null)
         {
             payload = payload with
@@ -494,12 +490,77 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
         }
         else
         {
-            // Even if no config was built (shouldn't happen for a valid closed-base group),
-            // still set preview mode
-            payload = payload with { PreviewMode = true };
+            // If home-leave config was omitted (e.g. due to emergency freeze with no scheduling),
+            // rebuild it from the stored config for preview purposes.
+            var hlConfig = await _db.HomeLeaveConfigs.AsNoTracking()
+                .FirstOrDefaultAsync(c => c.GroupId == groupId && c.SpaceId == spaceId, ct);
+
+            if (hlConfig is not null && hlConfig.LeaveCapacity > 0 && hlConfig.LeaveDurationHours > 0)
+            {
+                var previewDto = new HomeLeaveConfigDto(
+                    Enabled: true,
+                    MinRestHours: 0,
+                    EligibilityThresholdHours: (double)(hlConfig.BaseDays * 24),
+                    LeaveCapacity: hlConfig.LeaveCapacity,
+                    LeaveDurationHours: (double)hlConfig.LeaveDurationHours,
+                    BalanceValue: balanceValue);
+
+                payload = payload with
+                {
+                    HomeLeaveConfig = previewDto,
+                    PreviewMode = true
+                };
+            }
+            else
+            {
+                payload = payload with { PreviewMode = true };
+            }
         }
 
         return payload;
+    }
+
+    /// <summary>
+    /// Builds the HomeLeaveConfigDto based on the mode and emergency freeze state.
+    /// - Emergency freeze + don't use for scheduling: returns null (omit from payload)
+    /// - Emergency freeze + use for scheduling: balance_value = 0, eligibility = 9999
+    /// - Automatic mode: eligibility = baseDays × 24, balance from stored slider value
+    /// - Manual mode: eligibility = baseDays × 24, balance = 50 (neutral)
+    /// Always sets min_rest_hours = 0.
+    /// </summary>
+    private static HomeLeaveConfigDto? BuildHomeLeaveConfigDto(HomeLeaveConfig hlConfig)
+    {
+        // Emergency freeze: don't use for scheduling → omit entirely
+        if (hlConfig.EmergencyFreezeActive && !hlConfig.EmergencyUseForScheduling)
+        {
+            return null;
+        }
+
+        // Emergency freeze: use for scheduling → balance=0, threshold=9999
+        if (hlConfig.EmergencyFreezeActive && hlConfig.EmergencyUseForScheduling)
+        {
+            return new HomeLeaveConfigDto(
+                Enabled: true,
+                MinRestHours: 0,
+                EligibilityThresholdHours: 9999,
+                LeaveCapacity: hlConfig.LeaveCapacity,
+                LeaveDurationHours: (double)hlConfig.LeaveDurationHours,
+                BalanceValue: 0);
+        }
+
+        // Normal operation: mode-based construction
+        var eligibilityThresholdHours = (double)(hlConfig.BaseDays * 24);
+        var balanceValue = hlConfig.Mode == HomeLeaveMode.Manual
+            ? 50
+            : hlConfig.BalanceValue;
+
+        return new HomeLeaveConfigDto(
+            Enabled: true,
+            MinRestHours: 0,
+            EligibilityThresholdHours: eligibilityThresholdHours,
+            LeaveCapacity: hlConfig.LeaveCapacity,
+            LeaveDurationHours: (double)hlConfig.LeaveDurationHours,
+            BalanceValue: balanceValue);
     }
 
     private static Dictionary<string, object> DeserializePayload(string json)

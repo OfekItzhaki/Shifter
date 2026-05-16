@@ -1028,5 +1028,56 @@
     "last30days": "30d",
     "last90days": "90d",
     "noData": "No data yet"
+  },
+  "homeLeave": {
+    "modeSelector": {
+      "groupLabel": "Home leave mode selection",
+      "automatic": "Automatic",
+      "manual": "Manual"
+    },
+    "ratioSlider": {
+      "ratioLabel": "days base / home",
+      "optimal": "Optimal",
+      "ariaLabel": "Base to home time ratio",
+      "ariaValueText": "{baseDays} days base : {homeDays} days home",
+      "moreBase": "More people at base",
+      "moreHome": "More people at home"
+    },
+    "manual": {
+      "baseDaysLabel": "Days at base",
+      "homeDaysLabel": "Days at home",
+      "minError": "Minimum value: 1"
+    },
+    "emergencyFreeze": {
+      "activeTitle": "Emergency freeze active",
+      "useForScheduling": "Use frozen personnel for task scheduling",
+      "activate": "Activate emergency freeze",
+      "deactivate": "Deactivate emergency freeze",
+      "confirmTitle": "Activate emergency freeze",
+      "confirmDescription": "This will immediately stop all home leave for the group. Continue?",
+      "confirmYes": "Yes, activate",
+      "confirmNo": "Cancel"
+    },
+    "feasibility": {
+      "checking": "Checking feasibility...",
+      "feasible": "Feasible",
+      "notFeasible": "Not feasible — not enough people for coverage",
+      "maxHomeDays": "Maximum {days} home days possible"
+    },
+    "leaveDuration": {
+      "label": "Leave duration",
+      "hint": "How many days each home visit lasts",
+      "unit": "days",
+      "validationError": "Leave duration must be between 0.5 and 7 days"
+    },
+    "panel": {
+      "title": "Home Time Management",
+      "description": "Home-leave settings for group members. The solver uses these settings to schedule home visits.",
+      "loading": "Loading...",
+      "save": "Save",
+      "saving": "Saving...",
+      "saved": "Saved ✓",
+      "permissionError": "No permission to change settings"
+    }
   }
 }

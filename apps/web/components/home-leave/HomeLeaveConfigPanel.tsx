@@ -1,26 +1,23 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { apiClient } from "@/lib/api/client";
-import BalanceSlider from "./BalanceSlider";
-import ImpactSummary from "./ImpactSummary";
+import { useTranslations } from "next-intl";
+import {
+  getHomeLeaveConfig,
+  updateHomeLeaveConfig,
+  toggleEmergencyFreeze,
+  HomeLeaveConfigDto,
+  HomeLeaveMode,
+  FeasibilityResultDto,
+  getHomeLeavePreview,
+} from "@/lib/api/homeLeave";
+import ModeSelector from "./ModeSelector";
+import RatioSlider from "./RatioSlider";
+import ManualModeSection from "./ManualModeSection";
+import EmergencyFreezeBanner from "./EmergencyFreezeBanner";
+import FeasibilityIndicator, { FeasibilityResult } from "./FeasibilityIndicator";
+import LeaveDurationInput from "./LeaveDurationInput";
 import { useHomeLeavePreview } from "@/hooks/useHomeLeavePreview";
-
-export interface HomeLeaveConfigValues {
-  minRestHours: number;
-  eligibilityThresholdHours: number;
-  leaveCapacity: number;
-  leaveDurationHours: number;
-  balanceValue: number;
-}
-
-const DEFAULTS: HomeLeaveConfigValues = {
-  minRestHours: 0,
-  eligibilityThresholdHours: 168, // 7 days in hours
-  leaveCapacity: 1,
-  leaveDurationHours: 48,
-  balanceValue: 50,
-};
 
 interface HomeLeaveConfigPanelProps {
   spaceId: string;
@@ -32,7 +29,8 @@ interface HomeLeaveConfigPanelProps {
 /**
  * "ניהול זמן בבית" (Home Time Management) panel.
  * Conditionally rendered when isClosedBase is true.
- * Fetches existing config on mount, allows editing, and saves via PUT.
+ * Integrates ModeSelector, RatioSlider, ManualModeSection,
+ * EmergencyFreezeBanner, FeasibilityIndicator, and LeaveDurationInput.
  */
 export default function HomeLeaveConfigPanel({
   spaceId,
@@ -40,31 +38,73 @@ export default function HomeLeaveConfigPanel({
   isClosedBase,
   memberCount,
 }: HomeLeaveConfigPanelProps) {
-  const [values, setValues] = useState<HomeLeaveConfigValues>(DEFAULTS);
+  const t = useTranslations("homeLeave");
+
+  // Config state
+  const [mode, setMode] = useState<HomeLeaveMode>("automatic");
+  const [baseDays, setBaseDays] = useState(7);
+  const [homeDays, setHomeDays] = useState(2);
+  const [sliderValue, setSliderValue] = useState(50);
+  const [leaveDurationHours, setLeaveDurationHours] = useState(48);
+  const [leaveCapacity, setLeaveCapacity] = useState(1);
+  const [balanceValue, setBalanceValue] = useState(50);
+
+  // Emergency freeze state
+  const [emergencyFreezeActive, setEmergencyFreezeActive] = useState(false);
+  const [emergencyUseForScheduling, setEmergencyUseForScheduling] = useState(false);
+  const [freezeStartedAt, setFreezeStartedAt] = useState<string | null>(null);
+
+  // Optimal ratio (from API)
+  const [optimalBaseDays, setOptimalBaseDays] = useState(7);
+  const [optimalHomeDays, setOptimalHomeDays] = useState(2);
+
+  // UI state
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [permissionError, setPermissionError] = useState(false);
-  const [loading, setLoading] = useState(true);
 
-  // Fetch existing config on mount (or when group/space changes)
+  // Feasibility for automatic mode (from preview hook)
+  const previewRequest = !loading && mode === "automatic"
+    ? { mode: "automatic" as const, sliderValue, leaveDurationHours }
+    : null;
+
+  const preview = useHomeLeavePreview(
+    isClosedBase && !loading ? spaceId : null,
+    isClosedBase && !loading ? groupId : null,
+    previewRequest
+  );
+
+  // Convert preview feasibility to FeasibilityResult for the indicator
+  const automaticFeasibility: FeasibilityResult | null = preview.data?.feasibility
+    ? {
+        isFeasible: preview.data.feasibility.isFeasible,
+        maxFeasibleHomeDays: preview.data.feasibility.maxFeasibleHomeDays,
+        reason: preview.data.feasibility.reason,
+      }
+    : null;
+
+  // Fetch existing config on mount
   const fetchConfig = useCallback(async () => {
     if (!spaceId || !groupId) return;
     setLoading(true);
     try {
-      const { data } = await apiClient.get(
-        `/spaces/${spaceId}/groups/${groupId}/home-leave-config`
-      );
-      setValues({
-        minRestHours: data.minRestHours ?? DEFAULTS.minRestHours,
-        eligibilityThresholdHours: data.eligibilityThresholdHours ?? DEFAULTS.eligibilityThresholdHours,
-        leaveCapacity: data.leaveCapacity ?? DEFAULTS.leaveCapacity,
-        leaveDurationHours: data.leaveDurationHours ?? DEFAULTS.leaveDurationHours,
-        balanceValue: data.balanceValue ?? DEFAULTS.balanceValue,
-      });
+      const config = await getHomeLeaveConfig(spaceId, groupId);
+      setMode((config.mode as HomeLeaveMode) ?? "automatic");
+      setBaseDays(config.baseDays ?? 7);
+      setHomeDays(config.homeDays ?? 2);
+      setLeaveDurationHours(config.leaveDurationHours ?? 48);
+      setLeaveCapacity(config.leaveCapacity ?? 1);
+      setBalanceValue(config.balanceValue ?? 50);
+      setSliderValue(config.balanceValue ?? 50);
+      setEmergencyFreezeActive(config.emergencyFreezeActive ?? false);
+      setEmergencyUseForScheduling(config.emergencyUseForScheduling ?? false);
+      setFreezeStartedAt(config.freezeStartedAt ?? null);
+      setOptimalBaseDays(config.optimalBaseDays ?? 7);
+      setOptimalHomeDays(config.optimalHomeDays ?? 2);
     } catch {
-      // If fetch fails, use defaults
-      setValues(DEFAULTS);
+      // Use defaults on error
     } finally {
       setLoading(false);
     }
@@ -76,31 +116,90 @@ export default function HomeLeaveConfigPanel({
     }
   }, [isClosedBase, fetchConfig]);
 
-  // Preview hook — fires when balanceValue changes (debounced 500ms)
-  // Must be called unconditionally (React hooks rules)
-  const preview = useHomeLeavePreview(
-    isClosedBase && !loading ? spaceId : null,
-    isClosedBase && !loading ? groupId : null,
-    isClosedBase && !loading ? values.balanceValue : null
-  );
-
   // Hide panel when not a closed base
   if (!isClosedBase) return null;
 
-  function handleChange(field: keyof HomeLeaveConfigValues, raw: string) {
-    const num = Number(raw);
-    if (isNaN(num)) return;
-    setValues((prev) => ({ ...prev, [field]: num }));
-    // Clear field error on change
-    setFieldErrors((prev) => {
-      const next = { ...prev };
-      delete next[field];
-      return next;
+  // Manual mode feasibility check callback
+  async function handleManualFeasibilityCheck(
+    base: number,
+    home: number
+  ): Promise<FeasibilityResult> {
+    const result = await getHomeLeavePreview(spaceId, groupId, {
+      mode: "manual",
+      baseDays: base,
+      homeDays: home,
+      leaveDurationHours,
     });
+    if (result.feasibility) {
+      return {
+        isFeasible: result.feasibility.isFeasible,
+        maxFeasibleHomeDays: result.feasibility.maxFeasibleHomeDays,
+        reason: result.feasibility.reason,
+      };
+    }
+    return { isFeasible: true };
+  }
+
+  // Emergency freeze toggle
+  async function handleToggleFreeze(active: boolean) {
+    try {
+      const result = await toggleEmergencyFreeze(
+        spaceId,
+        groupId,
+        active,
+        emergencyUseForScheduling
+      );
+      setEmergencyFreezeActive(result.emergencyFreezeActive);
+      setEmergencyUseForScheduling(result.emergencyUseForScheduling);
+      setFreezeStartedAt(result.freezeStartedAt);
+      // Restore mode if deactivating
+      if (!active) {
+        setMode(result.mode as HomeLeaveMode);
+        setBaseDays(result.baseDays);
+        setHomeDays(result.homeDays);
+        setBalanceValue(result.balanceValue);
+        setSliderValue(result.balanceValue);
+      }
+    } catch (err: unknown) {
+      const error = err as { response?: { status?: number } };
+      if (error?.response?.status === 403) {
+        setPermissionError(true);
+      }
+    }
+  }
+
+  // Emergency use-for-scheduling change
+  async function handleUseForSchedulingChange(useForScheduling: boolean) {
+    setEmergencyUseForScheduling(useForScheduling);
+    // Persist immediately
+    try {
+      await toggleEmergencyFreeze(spaceId, groupId, true, useForScheduling);
+    } catch {
+      // Revert on error
+      setEmergencyUseForScheduling(!useForScheduling);
+    }
+  }
+
+  // Mode change
+  function handleModeChange(newMode: HomeLeaveMode) {
+    setMode(newMode);
     setSaved(false);
   }
 
-  async function handleSubmit(e: React.FormEvent) {
+  // Slider change
+  function handleSliderChange(value: number) {
+    setSliderValue(value);
+    setSaved(false);
+  }
+
+  // Leave duration change
+  function handleLeaveDurationChange(hours: number) {
+    setLeaveDurationHours(hours);
+    setSaved(false);
+  }
+
+  // Save configuration
+  async function handleSave(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
     setSaved(false);
@@ -108,16 +207,25 @@ export default function HomeLeaveConfigPanel({
     setPermissionError(false);
 
     try {
-      await apiClient.put(
-        `/spaces/${spaceId}/groups/${groupId}/home-leave-config`,
-        {
-          minRestHours: values.minRestHours,
-          eligibilityThresholdHours: values.eligibilityThresholdHours,
-          leaveCapacity: Math.max(1, memberCount - 1),
-          leaveDurationHours: values.leaveDurationHours,
-          balanceValue: values.balanceValue,
-        }
-      );
+      const payload = {
+        mode,
+        baseDays: mode === "manual" ? baseDays : undefined,
+        homeDays: mode === "manual" ? homeDays : undefined,
+        sliderValue: mode === "automatic" ? sliderValue : undefined,
+        leaveDurationHours,
+        leaveCapacity: Math.max(1, memberCount - 1),
+        emergencyFreezeActive,
+        emergencyUseForScheduling,
+      };
+
+      const result = await updateHomeLeaveConfig(spaceId, groupId, payload);
+
+      // Update local state from response
+      setOptimalBaseDays(result.optimalBaseDays);
+      setOptimalHomeDays(result.optimalHomeDays);
+      setBaseDays(result.baseDays);
+      setHomeDays(result.homeDays);
+      setBalanceValue(result.balanceValue);
       setSaved(true);
     } catch (err: unknown) {
       const error = err as { response?: { status?: number; data?: Record<string, unknown> } };
@@ -126,20 +234,17 @@ export default function HomeLeaveConfigPanel({
       if (status === 403) {
         setPermissionError(true);
       } else if (status === 400) {
-        // Parse validation errors from response
         const data = error?.response?.data;
         if (data) {
           const errors: Record<string, string> = {};
-          // Handle FluentValidation error format
           if (data.errors && typeof data.errors === "object") {
             const validationErrors = data.errors as Record<string, string[]>;
             for (const [key, messages] of Object.entries(validationErrors)) {
               const fieldKey = key.charAt(0).toLowerCase() + key.slice(1);
               errors[fieldKey] = Array.isArray(messages) ? messages[0] : String(messages);
             }
-          } else if (data.error && typeof data.error === "string") {
-            // Single error message
-            errors["_general"] = data.error as string;
+          } else if (data.message && typeof data.message === "string") {
+            errors["_general"] = data.message as string;
           }
           setFieldErrors(errors);
         }
@@ -152,78 +257,86 @@ export default function HomeLeaveConfigPanel({
   if (loading) {
     return (
       <div className="bg-white border border-slate-200 rounded-2xl p-5 space-y-3">
-        <h3 className="text-sm font-semibold text-slate-700">ניהול זמן בבית</h3>
-        <p className="text-sm text-slate-400">טוען...</p>
+        <h3 className="text-sm font-semibold text-slate-700">{t("panel.title")}</h3>
+        <p className="text-sm text-slate-400">{t("panel.loading")}</p>
       </div>
     );
   }
 
   return (
-    <div className="bg-white border border-slate-200 rounded-2xl p-5 space-y-3">
-      <h3 className="text-sm font-semibold text-slate-700">ניהול זמן בבית</h3>
-      <p className="text-xs text-slate-400 -mt-1">הגדרות זמן בית לחברי הקבוצה. הסולבר ישתמש בהגדרות אלו כדי לתזמן יציאות הביתה.</p>
-
-      {/* Balance Slider + Impact Preview */}
-      <div className="space-y-3 pb-3 border-b border-slate-100">
-        <label className="block text-sm text-slate-600 font-medium">יחס בסיס / בית</label>
-        <BalanceSlider
-          value={values.balanceValue}
-          onChange={(v) => {
-            setValues(prev => ({ ...prev, balanceValue: v }));
-            setSaved(false);
-          }}
-          disabled={saving}
-          eligibilityHours={values.eligibilityThresholdHours}
-          leaveDurationHours={values.leaveDurationHours}
-        />
-        <ImpactSummary
-          data={preview.data}
-          isLoading={preview.isLoading}
-          error={preview.error}
-        />
+    <div className="bg-white border border-slate-200 rounded-2xl p-5 space-y-4">
+      <div>
+        <h3 className="text-sm font-semibold text-slate-700">{t("panel.title")}</h3>
+        <p className="text-xs text-slate-400 mt-0.5">{t("panel.description")}</p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Eligibility threshold - in days */}
-        <FieldRow
-          label="זמן בבסיס לפני יציאה (ימים)"
-          hint="כמה ימים חייב אדם להיות בבסיס לפני שהוא זכאי לצאת הביתה"
-          value={values.eligibilityThresholdHours / 24}
-          onChange={(v) => handleChange("eligibilityThresholdHours", String(Number(v) * 24))}
-          min={1}
-          max={14}
-          step={1}
-          error={fieldErrors["eligibilityThresholdHours"]}
-        />
+      {/* Emergency Freeze Banner — always visible at top */}
+      <EmergencyFreezeBanner
+        isActive={emergencyFreezeActive}
+        useForScheduling={emergencyUseForScheduling}
+        freezeStartedAt={freezeStartedAt}
+        onToggleFreeze={handleToggleFreeze}
+        onUseForSchedulingChange={handleUseForSchedulingChange}
+        disabled={saving}
+      />
 
-        {/* Min rest hours - defaults to 0 */}
-        <FieldRow
-          label="מנוחה אחרי חזרה (שעות)"
-          hint="כמה שעות מנוחה אחרי חזרה מהבית לפני שיוכל לצאת למשימה (0 = ללא)"
-          value={values.minRestHours}
-          onChange={(v) => handleChange("minRestHours", v)}
-          min={0}
-          max={16}
-          error={fieldErrors["minRestHours"]}
-        />
+      {/* Mode Selector */}
+      {!emergencyFreezeActive && (
+        <div className="space-y-4">
+          <ModeSelector
+            value={mode}
+            onChange={handleModeChange}
+            disabled={saving}
+          />
 
-        {/* Leave duration */}
-        <FieldRow
-          label="משך זמן בית (שעות)"
-          hint="כמה שעות נמשכת כל יציאה הביתה"
-          value={values.leaveDurationHours}
-          onChange={(v) => handleChange("leaveDurationHours", v)}
-          min={12}
-          max={168}
-          error={fieldErrors["leaveDurationHours"]}
-        />
+          {/* Automatic Mode: RatioSlider + Feasibility */}
+          {mode === "automatic" && (
+            <div className="space-y-3">
+              <RatioSlider
+                optimalBaseDays={optimalBaseDays}
+                optimalHomeDays={optimalHomeDays}
+                value={sliderValue}
+                onChange={handleSliderChange}
+                disabled={saving}
+              />
+              <FeasibilityIndicator
+                feasibilityResult={automaticFeasibility}
+                isLoading={preview.isLoading}
+              />
+            </div>
+          )}
 
+          {/* Manual Mode: ManualModeSection (includes its own FeasibilityIndicator) */}
+          {mode === "manual" && (
+            <ManualModeSection
+              baseDays={baseDays}
+              homeDays={homeDays}
+              onBaseDaysChange={(days) => { setBaseDays(days); setSaved(false); }}
+              onHomeDaysChange={(days) => { setHomeDays(days); setSaved(false); }}
+              onCheckFeasibility={handleManualFeasibilityCheck}
+              disabled={saving}
+            />
+          )}
+
+          {/* Leave Duration Input — shared between modes */}
+          <div className="pt-2 border-t border-slate-100">
+            <LeaveDurationInput
+              valueHours={leaveDurationHours}
+              onChange={handleLeaveDurationChange}
+              disabled={saving}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Save form */}
+      <form onSubmit={handleSave} className="space-y-3 pt-2 border-t border-slate-100">
         {/* General error */}
         {fieldErrors["_general"] && (
           <p className="text-sm text-red-600">{fieldErrors["_general"]}</p>
         )}
 
-        {/* Permission error toast */}
+        {/* Permission error */}
         {permissionError && (
           <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
             <svg
@@ -240,7 +353,7 @@ export default function HomeLeaveConfigPanel({
               />
             </svg>
             <span className="text-xs font-medium text-red-700">
-              אין הרשאה לשנות הגדרות
+              {t("panel.permissionError")}
             </span>
           </div>
         )}
@@ -249,48 +362,16 @@ export default function HomeLeaveConfigPanel({
         <div className="flex items-center gap-3">
           <button
             type="submit"
-            disabled={saving}
+            disabled={saving || emergencyFreezeActive}
             className="bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl disabled:opacity-50 transition-colors"
           >
-            {saving ? "שומר..." : "שמור"}
+            {saving ? t("panel.saving") : t("panel.save")}
           </button>
           {saved && (
-            <span className="text-sm text-emerald-600">שמור ✓</span>
+            <span className="text-sm text-emerald-600">{t("panel.saved")}</span>
           )}
         </div>
       </form>
-    </div>
-  );
-}
-
-interface FieldRowProps {
-  label: string;
-  hint?: string;
-  value: number;
-  onChange: (value: string) => void;
-  min?: number;
-  max?: number;
-  step?: number;
-  error?: string;
-}
-
-function FieldRow({ label, hint, value, onChange, min, max, step, error }: FieldRowProps) {
-  return (
-    <div className="space-y-1">
-      <label className="block text-sm text-slate-600">{label}</label>
-      {hint && <p className="text-xs text-slate-400 -mt-0.5">{hint}</p>}
-      <input
-        type="number"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        min={min}
-        max={max}
-        step={step ?? 1}
-        className={`w-full border rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-          error ? "border-red-300 focus:ring-red-500" : "border-slate-200"
-        }`}
-      />
-      {error && <p className="text-xs text-red-600">{error}</p>}
     </div>
   );
 }

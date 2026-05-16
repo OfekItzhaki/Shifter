@@ -3,7 +3,7 @@
 import type { HomeLeavePreviewResponse } from "@/lib/api/homeLeave";
 
 interface ImpactSummaryProps {
-  data: HomeLeavePreviewResponse | null;
+  data: HomeLeavePreviewResponse["preview"] | null;
   isLoading: boolean;
   error: string | null;
 }

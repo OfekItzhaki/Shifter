@@ -2,6 +2,7 @@ using Jobuler.Application.AI.Import;
 using FluentValidation;
 using Jobuler.Api.Middleware;
 using Jobuler.Application.Exports;
+using Jobuler.Application.HomeLeave;
 using Jobuler.Application.Notifications;
 using Jobuler.Infrastructure.Exports;
 using Jobuler.Infrastructure.Notifications;
@@ -180,6 +181,10 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(_ =>
     config.ReconnectRetryPolicy = new ExponentialRetry(500);
     return ConnectionMultiplexer.Connect(config);
 });
+
+// ─── Home-leave services ─────────────────────────────────────────────────────
+builder.Services.AddSingleton<IOptimalRatioCalculator, OptimalRatioCalculator>();
+builder.Services.AddSingleton<IFeasibilityEngine, FeasibilityEngine>();
 
 // ─── Scheduling services ─────────────────────────────────────────────────────
 builder.Services.AddScoped<IAssignmentSnapshotService, AssignmentSnapshotService>();

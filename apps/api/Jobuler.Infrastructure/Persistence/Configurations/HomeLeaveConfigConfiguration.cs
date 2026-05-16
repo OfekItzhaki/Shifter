@@ -21,6 +21,17 @@ public class HomeLeaveConfigConfiguration : IEntityTypeConfiguration<HomeLeaveCo
         builder.Property(c => c.CreatedAt).HasColumnName("created_at");
         builder.Property(c => c.UpdatedAt).HasColumnName("updated_at");
 
+        // New mode-system columns
+        builder.Property(c => c.Mode).HasColumnName("mode")
+            .HasConversion(v => v.ToString().ToLower(), v => Enum.Parse<HomeLeaveMode>(v, true));
+        builder.Property(c => c.BaseDays).HasColumnName("base_days");
+        builder.Property(c => c.HomeDays).HasColumnName("home_days");
+        builder.Property(c => c.EmergencyFreezeActive).HasColumnName("emergency_freeze_active");
+        builder.Property(c => c.EmergencyUseForScheduling).HasColumnName("emergency_use_for_scheduling");
+        builder.Property(c => c.FreezeStartedAt).HasColumnName("freeze_started_at");
+        builder.Property(c => c.PreFreezeMode).HasColumnName("pre_freeze_mode")
+            .HasConversion(v => v.ToString().ToLower(), v => Enum.Parse<HomeLeaveMode>(v, true));
+
         // One-to-one: unique constraint on group_id (Requirement 12.7)
         builder.HasIndex(c => c.GroupId).IsUnique();
     }

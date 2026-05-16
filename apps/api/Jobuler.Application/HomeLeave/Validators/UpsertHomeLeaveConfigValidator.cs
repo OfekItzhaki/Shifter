@@ -1,5 +1,6 @@
 using FluentValidation;
 using Jobuler.Application.HomeLeave.Commands;
+using Jobuler.Domain.Groups;
 
 namespace Jobuler.Application.HomeLeave.Validators;
 
@@ -16,8 +17,8 @@ public class UpsertHomeLeaveConfigValidator : AbstractValidator<UpsertHomeLeaveC
             .WithMessage("min_rest_hours must be between 0 and 16 inclusive.");
 
         RuleFor(x => x.EligibilityThresholdHours)
-            .InclusiveBetween(0, 336)
-            .WithMessage("eligibility_threshold_hours must be between 0 and 336 (14 days) inclusive.");
+            .InclusiveBetween(0, 9999)
+            .WithMessage("eligibility_threshold_hours must be between 0 and 9999 inclusive.");
 
         RuleFor(x => x.LeaveCapacity)
             .GreaterThanOrEqualTo(1)
@@ -31,5 +32,39 @@ public class UpsertHomeLeaveConfigValidator : AbstractValidator<UpsertHomeLeaveC
             .InclusiveBetween(0, 100)
             .When(x => x.BalanceValue.HasValue)
             .WithMessage("ערך האיזון חייב להיות בין 0 ל-100");
+
+        // Mode validation
+        RuleFor(x => x.Mode)
+            .IsInEnum()
+            .When(x => x.Mode.HasValue)
+            .WithMessage("Mode must be 'automatic' or 'manual'");
+
+        // BaseDays validation — required for Manual mode
+        RuleFor(x => x.BaseDays)
+            .GreaterThanOrEqualTo(1)
+            .When(x => x.BaseDays.HasValue)
+            .WithMessage("ימים בבסיס חייבים להיות לפחות 1");
+
+        RuleFor(x => x.BaseDays)
+            .NotNull()
+            .When(x => x.Mode == HomeLeaveMode.Manual)
+            .WithMessage("BaseDays is required for Manual mode.");
+
+        // HomeDays validation — required for Manual mode
+        RuleFor(x => x.HomeDays)
+            .GreaterThanOrEqualTo(1)
+            .When(x => x.HomeDays.HasValue)
+            .WithMessage("ימים בבית חייבים להיות לפחות 1");
+
+        RuleFor(x => x.HomeDays)
+            .NotNull()
+            .When(x => x.Mode == HomeLeaveMode.Manual)
+            .WithMessage("HomeDays is required for Manual mode.");
+
+        // SliderValue validation — required for Automatic mode when provided
+        RuleFor(x => x.SliderValue)
+            .InclusiveBetween(0, 100)
+            .When(x => x.SliderValue.HasValue)
+            .WithMessage("SliderValue must be between 0 and 100.");
     }
 }
