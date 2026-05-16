@@ -9,19 +9,26 @@ public class OptimalRatioCalculator : IOptimalRatioCalculator
 {
     private const int MaxIterations = 20;
 
-    public OptimalRatioResult Calculate(int memberCount, int leaveCapacity, decimal leaveDurationHours, int coverageRequirement)
+    public OptimalRatioResult Calculate(int memberCount, int minPeopleAtBase, decimal leaveDurationHours)
     {
         if (memberCount < 2)
             throw new InvalidOperationException("Group must have at least 2 members for home-leave.");
 
-        if (leaveCapacity < 1)
-            throw new InvalidOperationException("Leave capacity must be at least 1.");
+        if (minPeopleAtBase < 1)
+            throw new InvalidOperationException("Minimum people at base must be at least 1.");
 
-        if (coverageRequirement < 1)
-            throw new InvalidOperationException("Coverage requirement must be at least 1.");
+        if (minPeopleAtBase >= memberCount)
+            throw new InvalidOperationException("Minimum people at base must be less than the member count.");
 
         if (leaveDurationHours < 12 || leaveDurationHours > 168)
             throw new InvalidOperationException("Leave duration must be between 12 and 168 hours.");
+
+        // Derive leave_capacity and coverage_requirement from minPeopleAtBase
+        var leaveCapacity = memberCount - minPeopleAtBase;
+        var coverageRequirement = minPeopleAtBase;
+
+        if (leaveCapacity < 1)
+            throw new InvalidOperationException("Leave capacity must be at least 1.");
 
         var availableForRotation = memberCount - leaveCapacity;
         if (availableForRotation < coverageRequirement)

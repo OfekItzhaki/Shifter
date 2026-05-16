@@ -2,20 +2,21 @@ namespace Jobuler.Application.HomeLeave;
 
 /// <summary>
 /// Evaluates whether a given base:home configuration can satisfy coverage requirements.
-/// The core check is: (memberCount - leaveCapacity) >= coverageRequirement.
+/// The admin sets minPeopleAtBase; the engine derives leaveCapacity = memberCount - minPeopleAtBase.
+/// The core check is: memberCount - minPeopleAtBase >= 1 (at least 1 person can go home).
 /// When feasible, computes the maximum home days that would still satisfy coverage.
 /// When not feasible, returns a localized Hebrew reason string.
 /// Pure math — no DB calls, guaranteed sub-500ms.
 /// </summary>
 public class FeasibilityEngine : IFeasibilityEngine
 {
-    public FeasibilityResult Evaluate(int memberCount, int leaveCapacity, int baseDays, int homeDays, int coverageRequirement)
+    public FeasibilityResult Evaluate(int memberCount, int minPeopleAtBase, int baseDays, int homeDays)
     {
         if (memberCount < 1)
             throw new InvalidOperationException("Member count must be at least 1.");
 
-        if (leaveCapacity < 0)
-            throw new InvalidOperationException("Leave capacity cannot be negative.");
+        if (minPeopleAtBase < 1)
+            throw new InvalidOperationException("Minimum people at base must be at least 1.");
 
         if (baseDays < 1)
             throw new InvalidOperationException("Base days must be at least 1.");
@@ -23,14 +24,15 @@ public class FeasibilityEngine : IFeasibilityEngine
         if (homeDays < 1)
             throw new InvalidOperationException("Home days must be at least 1.");
 
-        if (coverageRequirement < 1)
-            throw new InvalidOperationException("Coverage requirement must be at least 1.");
+        // Derive leaveCapacity and coverageRequirement from minPeopleAtBase
+        var leaveCapacity = memberCount - minPeopleAtBase;
+        var coverageRequirement = minPeopleAtBase;
 
         // Core feasibility check:
-        // At any point in the cycle, the number of people remaining at base must be >= coverageRequirement.
-        // The worst case is when leaveCapacity people are simultaneously on leave.
+        // At least 1 person must be able to go home (leaveCapacity >= 1)
+        // and the remaining people at base must satisfy coverage (memberCount - leaveCapacity >= coverageRequirement).
         var availableAtBase = memberCount - leaveCapacity;
-        var isFeasible = availableAtBase >= coverageRequirement;
+        var isFeasible = leaveCapacity >= 1 && availableAtBase >= coverageRequirement;
 
         if (!isFeasible)
         {
@@ -42,30 +44,20 @@ public class FeasibilityEngine : IFeasibilityEngine
         }
 
         // When feasible, compute the maximum home days that would still be feasible.
-        // The constraint is that we need at least coverageRequirement people at base.
-        // With the current memberCount and leaveCapacity, the configuration is feasible
-        // as long as (memberCount - leaveCapacity) >= coverageRequirement holds.
-        // Since this doesn't depend on homeDays directly (it depends on leaveCapacity),
-        // the max feasible home days is bounded by practical limits.
-        // However, longer home days means fewer rotation cycles, so we compute:
-        // maxHomeDays = floor((availableAtBase - coverageRequirement) * baseDays / coverageRequirement) + homeDays
-        // This represents how many extra home days could be added while still maintaining coverage.
-        // Simplified: maxHomeDays is the largest value where the cycle still works.
-        var surplus = availableAtBase - coverageRequirement;
+        // With the new semantics, leaveCapacity people can go home simultaneously.
+        // The max home days is bounded by practical rotation limits.
+        // With more people available for rotation (higher leaveCapacity), longer home periods are possible.
+        // maxHomeDays = baseDays × leaveCapacity / minPeopleAtBase (how long each batch can stay home)
         int maxFeasibleHomeDays;
 
-        if (surplus == 0)
+        if (leaveCapacity <= coverageRequirement)
         {
-            // Exactly at the limit — current homeDays is the max
+            // Tight rotation — current homeDays is the practical max
             maxFeasibleHomeDays = homeDays;
         }
         else
         {
-            // With surplus people, we can afford more generous home days.
-            // The max home days is limited by the ratio: we can have at most
-            // (surplus / coverageRequirement) * cycleLength worth of extra home time.
-            // A practical upper bound: maxHomeDays = baseDays * surplus / coverageRequirement + homeDays
-            // But we cap at a reasonable maximum (e.g., baseDays itself, since home > base is unusual).
+            // More people can go home than need to stay — more generous rotation possible
             maxFeasibleHomeDays = Math.Max(homeDays, baseDays);
         }
 

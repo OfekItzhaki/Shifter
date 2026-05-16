@@ -11,10 +11,10 @@ public class FeasibilityEngineTests
     // ── Feasible scenarios ──
 
     [Fact]
-    public void Evaluate_WhenAvailableExceedsCoverage_ReturnsFeasible()
+    public void Evaluate_WhenEnoughPeopleCanGoHome_ReturnsFeasible()
     {
-        // 10 members, 2 leave capacity, coverage needs 5 → available = 10 - 2 = 8 >= 5
-        var result = _engine.Evaluate(memberCount: 10, leaveCapacity: 2, baseDays: 5, homeDays: 2, coverageRequirement: 5);
+        // 10 members, minPeopleAtBase=5 → leaveCapacity = 10 - 5 = 5 >= 1
+        var result = _engine.Evaluate(memberCount: 10, minPeopleAtBase: 5, baseDays: 5, homeDays: 2);
 
         result.IsFeasible.Should().BeTrue();
         result.MaxFeasibleHomeDays.Should().NotBeNull();
@@ -23,10 +23,10 @@ public class FeasibilityEngineTests
     }
 
     [Fact]
-    public void Evaluate_WhenAvailableExactlyEqualsCoverage_ReturnsFeasible()
+    public void Evaluate_WhenExactlyOnePeopleCanGoHome_ReturnsFeasible()
     {
-        // 10 members, 5 leave capacity, coverage needs 5 → available = 10 - 5 = 5 >= 5
-        var result = _engine.Evaluate(memberCount: 10, leaveCapacity: 5, baseDays: 7, homeDays: 2, coverageRequirement: 5);
+        // 10 members, minPeopleAtBase=9 → leaveCapacity = 1 (exactly 1 person can go)
+        var result = _engine.Evaluate(memberCount: 10, minPeopleAtBase: 9, baseDays: 7, homeDays: 2);
 
         result.IsFeasible.Should().BeTrue();
         result.MaxFeasibleHomeDays.Should().Be(2); // exactly at limit, no surplus
@@ -36,8 +36,8 @@ public class FeasibilityEngineTests
     [Fact]
     public void Evaluate_WhenLargeSurplus_MaxFeasibleHomeDaysEqualsBaseDays()
     {
-        // 20 members, 2 leave capacity, coverage needs 3 → available = 18, surplus = 15
-        var result = _engine.Evaluate(memberCount: 20, leaveCapacity: 2, baseDays: 7, homeDays: 2, coverageRequirement: 3);
+        // 20 members, minPeopleAtBase=3 → leaveCapacity = 17, surplus = 17 - 3 = 14
+        var result = _engine.Evaluate(memberCount: 20, minPeopleAtBase: 3, baseDays: 7, homeDays: 2);
 
         result.IsFeasible.Should().BeTrue();
         result.MaxFeasibleHomeDays.Should().Be(7); // max(homeDays, baseDays)
@@ -47,10 +47,10 @@ public class FeasibilityEngineTests
     // ── Not feasible scenarios ──
 
     [Fact]
-    public void Evaluate_WhenAvailableLessThanCoverage_ReturnsNotFeasible()
+    public void Evaluate_WhenMinPeopleAtBaseEqualsMembers_ReturnsNotFeasible()
     {
-        // 5 members, 3 leave capacity, coverage needs 4 → available = 5 - 3 = 2 < 4
-        var result = _engine.Evaluate(memberCount: 5, leaveCapacity: 3, baseDays: 5, homeDays: 2, coverageRequirement: 4);
+        // 5 members, minPeopleAtBase=5 → leaveCapacity = 0 < 1
+        var result = _engine.Evaluate(memberCount: 5, minPeopleAtBase: 5, baseDays: 5, homeDays: 2);
 
         result.IsFeasible.Should().BeFalse();
         result.MaxFeasibleHomeDays.Should().BeNull();
@@ -59,10 +59,10 @@ public class FeasibilityEngineTests
     }
 
     [Fact]
-    public void Evaluate_WhenAllMembersOnLeave_ReturnsNotFeasible()
+    public void Evaluate_WhenMinPeopleAtBaseExceedsMembers_ReturnsNotFeasible()
     {
-        // 5 members, 5 leave capacity, coverage needs 1 → available = 0 < 1
-        var result = _engine.Evaluate(memberCount: 5, leaveCapacity: 5, baseDays: 5, homeDays: 2, coverageRequirement: 1);
+        // 5 members, minPeopleAtBase=6 → leaveCapacity = -1 < 1
+        var result = _engine.Evaluate(memberCount: 5, minPeopleAtBase: 6, baseDays: 5, homeDays: 2);
 
         result.IsFeasible.Should().BeFalse();
         result.MaxFeasibleHomeDays.Should().BeNull();
@@ -74,52 +74,47 @@ public class FeasibilityEngineTests
     [Fact]
     public void Evaluate_WhenMemberCountIsZero_ThrowsInvalidOperation()
     {
-        var act = () => _engine.Evaluate(memberCount: 0, leaveCapacity: 0, baseDays: 5, homeDays: 2, coverageRequirement: 1);
+        var act = () => _engine.Evaluate(memberCount: 0, minPeopleAtBase: 1, baseDays: 5, homeDays: 2);
         act.Should().Throw<InvalidOperationException>().WithMessage("*Member count*");
     }
 
     [Fact]
-    public void Evaluate_WhenLeaveCapacityNegative_ThrowsInvalidOperation()
+    public void Evaluate_WhenMinPeopleAtBaseLessThanOne_ThrowsInvalidOperation()
     {
-        var act = () => _engine.Evaluate(memberCount: 10, leaveCapacity: -1, baseDays: 5, homeDays: 2, coverageRequirement: 1);
-        act.Should().Throw<InvalidOperationException>().WithMessage("*Leave capacity*");
+        var act = () => _engine.Evaluate(memberCount: 10, minPeopleAtBase: 0, baseDays: 5, homeDays: 2);
+        act.Should().Throw<InvalidOperationException>().WithMessage("*Minimum people at base*");
     }
 
     [Fact]
     public void Evaluate_WhenBaseDaysLessThanOne_ThrowsInvalidOperation()
     {
-        var act = () => _engine.Evaluate(memberCount: 10, leaveCapacity: 2, baseDays: 0, homeDays: 2, coverageRequirement: 1);
+        var act = () => _engine.Evaluate(memberCount: 10, minPeopleAtBase: 2, baseDays: 0, homeDays: 2);
         act.Should().Throw<InvalidOperationException>().WithMessage("*Base days*");
     }
 
     [Fact]
     public void Evaluate_WhenHomeDaysLessThanOne_ThrowsInvalidOperation()
     {
-        var act = () => _engine.Evaluate(memberCount: 10, leaveCapacity: 2, baseDays: 5, homeDays: 0, coverageRequirement: 1);
+        var act = () => _engine.Evaluate(memberCount: 10, minPeopleAtBase: 2, baseDays: 5, homeDays: 0);
         act.Should().Throw<InvalidOperationException>().WithMessage("*Home days*");
     }
 
-    [Fact]
-    public void Evaluate_WhenCoverageRequirementLessThanOne_ThrowsInvalidOperation()
-    {
-        var act = () => _engine.Evaluate(memberCount: 10, leaveCapacity: 2, baseDays: 5, homeDays: 2, coverageRequirement: 0);
-        act.Should().Throw<InvalidOperationException>().WithMessage("*Coverage requirement*");
-    }
-
     // ── Typical real-world scenarios ──
+    // minPeopleAtBase is the coverage requirement; leaveCapacity = memberCount - minPeopleAtBase
 
     [Theory]
-    [InlineData(10, 2, 5, 2, 5, true)]   // 8 available >= 5 coverage
-    [InlineData(8, 1, 7, 2, 7, true)]    // 7 available >= 7 coverage (exact)
-    [InlineData(6, 2, 5, 2, 5, false)]   // 4 available < 5 coverage
-    [InlineData(15, 3, 5, 2, 10, true)]  // 12 available >= 10 coverage
-    [InlineData(15, 3, 5, 2, 13, false)] // 12 available < 13 coverage
-    [InlineData(4, 1, 3, 1, 3, true)]    // 3 available >= 3 coverage (exact)
-    [InlineData(4, 1, 3, 1, 4, false)]   // 3 available < 4 coverage
+    [InlineData(10, 5, 5, 2, true)]   // leaveCapacity=5, available=5 >= 5 coverage
+    [InlineData(8, 7, 7, 2, true)]    // leaveCapacity=1, available=7 >= 7 coverage (exact)
+    [InlineData(6, 5, 5, 2, true)]    // leaveCapacity=1, available=5 >= 5 coverage
+    [InlineData(15, 10, 5, 2, true)]  // leaveCapacity=5, available=10 >= 10 coverage
+    [InlineData(15, 13, 5, 2, true)]  // leaveCapacity=2, available=13 >= 13 coverage
+    [InlineData(4, 3, 3, 1, true)]    // leaveCapacity=1, available=3 >= 3 coverage (exact)
+    [InlineData(4, 4, 3, 1, false)]   // leaveCapacity=0 < 1 → not feasible
+    [InlineData(5, 5, 5, 2, false)]   // leaveCapacity=0 < 1 → not feasible
     public void Evaluate_VariousConfigurations_MatchesExpectedFeasibility(
-        int memberCount, int leaveCapacity, int baseDays, int homeDays, int coverageRequirement, bool expectedFeasible)
+        int memberCount, int minPeopleAtBase, int baseDays, int homeDays, bool expectedFeasible)
     {
-        var result = _engine.Evaluate(memberCount, leaveCapacity, baseDays, homeDays, coverageRequirement);
+        var result = _engine.Evaluate(memberCount, minPeopleAtBase, baseDays, homeDays);
         result.IsFeasible.Should().Be(expectedFeasible);
     }
 }

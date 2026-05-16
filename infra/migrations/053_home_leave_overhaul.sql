@@ -196,5 +196,47 @@ SET base_days = GREATEST(1, ROUND(eligibility_threshold_hours / 24))::INTEGER,
     home_days = GREATEST(1, ROUND(leave_duration_hours / 24))::INTEGER,
     min_rest_hours = 0;
 
+-- ─── 10. Add min_people_at_base column ────────────────────────────────────────
+-- Semantic rename: instead of "max people that can be home simultaneously" (leave_capacity),
+-- the admin sets "minimum people that must stay at base at all times".
+-- The solver derives leave_capacity = memberCount - min_people_at_base.
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'home_leave_configs' AND column_name = 'min_people_at_base'
+    ) THEN
+        ALTER TABLE home_leave_configs
+            ADD COLUMN min_people_at_base INTEGER NOT NULL DEFAULT 8;
+
+        RAISE NOTICE 'Added min_people_at_base column to home_leave_configs';
+    ELSE
+        RAISE NOTICE 'Column min_people_at_base already exists on home_leave_configs — skipping';
+    END IF;
+END $$;
+
+-- chk_min_people_at_base: must be at least 1
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.constraint_column_usage
+        WHERE table_name = 'home_leave_configs' AND constraint_name = 'chk_min_people_at_base'
+    ) THEN
+        ALTER TABLE home_leave_configs
+            ADD CONSTRAINT chk_min_people_at_base
+            CHECK (min_people_at_base >= 1);
+
+        RAISE NOTICE 'Added chk_min_people_at_base constraint';
+    ELSE
+        RAISE NOTICE 'Constraint chk_min_people_at_base already exists — skipping';
+    END IF;
+END $$;
+
+-- Data migration: set min_people_at_base from existing leave_capacity.
+-- Safe default: use GREATEST(1, leave_capacity) — admin will configure properly in the UI.
+UPDATE home_leave_configs
+SET min_people_at_base = GREATEST(1, leave_capacity)
+WHERE min_people_at_base = 8;
+
 -- ─── Track migration ─────────────────────────────────────────────────────────
 INSERT INTO schema_migrations (version) VALUES ('053') ON CONFLICT DO NOTHING;

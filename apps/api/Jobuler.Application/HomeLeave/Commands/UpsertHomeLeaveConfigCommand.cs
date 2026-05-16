@@ -21,7 +21,8 @@ public record UpsertHomeLeaveConfigCommand(
     int? HomeDays = null,
     int? SliderValue = null,
     bool? EmergencyFreezeActive = null,
-    bool? EmergencyUseForScheduling = null) : IRequest<HomeLeaveConfigResult>;
+    bool? EmergencyUseForScheduling = null,
+    int MinPeopleAtBase = 8) : IRequest<HomeLeaveConfigResult>;
 
 public record HomeLeaveConfigResult(
     Guid Id,
@@ -32,6 +33,7 @@ public record HomeLeaveConfigResult(
     int LeaveCapacity,
     decimal LeaveDurationHours,
     int BalanceValue,
+    int MinPeopleAtBase,
     string Mode,
     int BaseDays,
     int HomeDays,
@@ -84,15 +86,16 @@ public class UpsertHomeLeaveConfigCommandHandler : IRequestHandler<UpsertHomeLea
         var memberCount = await _db.GroupMemberships.AsNoTracking()
             .CountAsync(m => m.GroupId == req.GroupId && m.SpaceId == req.SpaceId, ct);
 
-        if (memberCount > 0 && req.LeaveCapacity > memberCount - 1)
+        // Derive leaveCapacity from minPeopleAtBase: leaveCapacity = memberCount - minPeopleAtBase
+        var minPeopleAtBase = req.MinPeopleAtBase;
+        if (minPeopleAtBase >= memberCount && memberCount > 1)
             throw new InvalidOperationException(
-                $"leave_capacity must be between 1 and {memberCount - 1} (group member count minus 1).");
+                $"min_people_at_base must be less than the group member count ({memberCount}).");
+
+        var leaveCapacity = Math.Max(1, memberCount - minPeopleAtBase);
 
         // Determine the effective mode (default to Automatic for backward compatibility)
         var effectiveMode = req.Mode ?? HomeLeaveMode.Automatic;
-
-        // Compute coverage requirement: minimum people needed at base = memberCount - leaveCapacity
-        var coverageRequirement = Math.Max(1, memberCount - req.LeaveCapacity);
 
         // Compute optimal ratio when in Automatic mode
         OptimalRatioResult? optimalRatio = null;
@@ -100,9 +103,8 @@ public class UpsertHomeLeaveConfigCommandHandler : IRequestHandler<UpsertHomeLea
         {
             optimalRatio = _optimalRatioCalculator.Calculate(
                 memberCount,
-                req.LeaveCapacity,
-                req.LeaveDurationHours,
-                coverageRequirement);
+                minPeopleAtBase,
+                req.LeaveDurationHours);
         }
 
         // Load existing config or create new one
@@ -116,12 +118,13 @@ public class UpsertHomeLeaveConfigCommandHandler : IRequestHandler<UpsertHomeLea
                 req.GroupId,
                 req.MinRestHours,
                 req.EligibilityThresholdHours,
-                req.LeaveCapacity,
+                leaveCapacity,
                 req.LeaveDurationHours,
                 req.BalanceValue ?? 50,
                 effectiveMode,
                 req.BaseDays ?? optimalRatio?.BaseDays ?? 7,
-                req.HomeDays ?? optimalRatio?.HomeDays ?? 2);
+                req.HomeDays ?? optimalRatio?.HomeDays ?? 2,
+                minPeopleAtBase);
 
             _db.HomeLeaveConfigs.Add(config);
         }
@@ -131,9 +134,10 @@ public class UpsertHomeLeaveConfigCommandHandler : IRequestHandler<UpsertHomeLea
             config.Update(
                 req.MinRestHours,
                 req.EligibilityThresholdHours,
-                req.LeaveCapacity,
+                leaveCapacity,
                 req.LeaveDurationHours,
-                req.BalanceValue);
+                req.BalanceValue,
+                minPeopleAtBase: minPeopleAtBase);
 
             // Handle mode change
             if (config.Mode != effectiveMode)
@@ -170,10 +174,9 @@ public class UpsertHomeLeaveConfigCommandHandler : IRequestHandler<UpsertHomeLea
         {
             feasibility = _feasibilityEngine.Evaluate(
                 memberCount,
-                config.LeaveCapacity,
+                config.MinPeopleAtBase,
                 config.BaseDays,
-                config.HomeDays,
-                coverageRequirement);
+                config.HomeDays);
         }
 
         return new HomeLeaveConfigResult(
@@ -185,6 +188,7 @@ public class UpsertHomeLeaveConfigCommandHandler : IRequestHandler<UpsertHomeLea
             config.LeaveCapacity,
             config.LeaveDurationHours,
             config.BalanceValue,
+            config.MinPeopleAtBase,
             config.Mode.ToString().ToLowerInvariant(),
             config.BaseDays,
             config.HomeDays,

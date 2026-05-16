@@ -2,13 +2,14 @@ namespace Jobuler.Application.HomeLeave;
 
 /// <summary>
 /// Evaluates whether a given base:home day configuration can satisfy
-/// the group's coverage requirements. Returns feasibility status,
-/// maximum feasible home days when applicable, and a localized reason
-/// when the configuration is not feasible.
+/// the group's coverage requirements. The admin sets minPeopleAtBase,
+/// and the engine derives leaveCapacity = memberCount - minPeopleAtBase.
+/// Returns feasibility status, maximum feasible home days when applicable,
+/// and a localized reason when the configuration is not feasible.
 /// </summary>
 public interface IFeasibilityEngine
 {
-    FeasibilityResult Evaluate(int memberCount, int leaveCapacity, int baseDays, int homeDays, int coverageRequirement);
+    FeasibilityResult Evaluate(int memberCount, int minPeopleAtBase, int baseDays, int homeDays);
 }
 
 /// <summary>

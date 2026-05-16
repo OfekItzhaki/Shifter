@@ -2,12 +2,13 @@ namespace Jobuler.Application.HomeLeave;
 
 /// <summary>
 /// Computes the optimal base:home day ratio for a group based on member count,
-/// leave capacity, leave duration, and coverage requirements.
+/// minimum people at base, and leave duration.
 /// Uses an iterative formula that converges in 2-3 iterations.
+/// The solver derives leave_capacity = memberCount - minPeopleAtBase.
 /// </summary>
 public interface IOptimalRatioCalculator
 {
-    OptimalRatioResult Calculate(int memberCount, int leaveCapacity, decimal leaveDurationHours, int coverageRequirement);
+    OptimalRatioResult Calculate(int memberCount, int minPeopleAtBase, decimal leaveDurationHours);
 }
 
 /// <summary>

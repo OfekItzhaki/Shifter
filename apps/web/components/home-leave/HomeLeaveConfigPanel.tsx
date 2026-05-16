@@ -46,7 +46,8 @@ export default function HomeLeaveConfigPanel({
   const [homeDays, setHomeDays] = useState(2);
   const [sliderValue, setSliderValue] = useState(50);
   const [leaveDurationHours, setLeaveDurationHours] = useState(48);
-  const [leaveCapacity, setLeaveCapacity] = useState(1);
+  const [minPeopleAtBase, setMinPeopleAtBase] = useState(8);
+  const [restHoursAfterReturn, setRestHoursAfterReturn] = useState(0);
   const [balanceValue, setBalanceValue] = useState(50);
 
   // Emergency freeze state
@@ -95,7 +96,8 @@ export default function HomeLeaveConfigPanel({
       setBaseDays(config.baseDays ?? 7);
       setHomeDays(config.homeDays ?? 2);
       setLeaveDurationHours(config.leaveDurationHours ?? 48);
-      setLeaveCapacity(config.leaveCapacity ?? 1);
+      setMinPeopleAtBase(config.minPeopleAtBase ?? 8);
+      setRestHoursAfterReturn(config.restHoursAfterReturn ?? 0);
       setBalanceValue(config.balanceValue ?? 50);
       setSliderValue(config.balanceValue ?? 50);
       setEmergencyFreezeActive(config.emergencyFreezeActive ?? false);
@@ -213,7 +215,7 @@ export default function HomeLeaveConfigPanel({
         homeDays: mode === "manual" ? homeDays : undefined,
         sliderValue: mode === "automatic" ? sliderValue : undefined,
         leaveDurationHours,
-        leaveCapacity: Math.max(1, memberCount - 1),
+        minPeopleAtBase,
         emergencyFreezeActive,
         emergencyUseForScheduling,
       };
@@ -283,6 +285,31 @@ export default function HomeLeaveConfigPanel({
       {/* Mode Selector */}
       {!emergencyFreezeActive && (
         <div className="space-y-4">
+          {/* Minimum people at base input */}
+          <div className="space-y-1">
+            <label htmlFor="minPeopleAtBase" className="text-sm font-medium text-slate-700">
+              {t("minPeopleAtBase.label")}
+            </label>
+            <p className="text-xs text-slate-400">{t("minPeopleAtBase.hint")}</p>
+            <input
+              id="minPeopleAtBase"
+              type="number"
+              min={1}
+              max={memberCount - 1}
+              value={minPeopleAtBase}
+              onChange={(e) => {
+                const val = Math.max(1, Math.min(memberCount - 1, parseInt(e.target.value) || 1));
+                setMinPeopleAtBase(val);
+                setSaved(false);
+              }}
+              disabled={saving}
+              className="w-24 rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 focus:border-blue-400 focus:ring-1 focus:ring-blue-400 disabled:opacity-50"
+            />
+            {minPeopleAtBase >= memberCount && (
+              <p className="text-xs text-red-500">{t("minPeopleAtBase.maxError")}</p>
+            )}
+          </div>
+
           <ModeSelector
             value={mode}
             onChange={handleModeChange}

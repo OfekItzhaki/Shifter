@@ -51,12 +51,10 @@ public class HomeLeaveConfigController : ControllerBase
 
         if (memberCount >= 2)
         {
-            var coverageRequirement = Math.Max(1, memberCount - result.LeaveCapacity);
             optimalRatio = _optimalRatioCalculator.Calculate(
                 memberCount,
-                result.LeaveCapacity,
-                result.LeaveDurationHours,
-                coverageRequirement);
+                result.MinPeopleAtBase,
+                result.LeaveDurationHours);
         }
 
         return Ok(new HomeLeaveConfigResponse(
@@ -68,6 +66,8 @@ public class HomeLeaveConfigController : ControllerBase
             HomeDays: result.HomeDays,
             LeaveDurationHours: result.LeaveDurationHours,
             LeaveCapacity: result.LeaveCapacity,
+            MinPeopleAtBase: result.MinPeopleAtBase,
+            RestHoursAfterReturn: result.MinRestHours,
             BalanceValue: result.BalanceValue,
             EmergencyFreezeActive: result.EmergencyFreezeActive,
             EmergencyUseForScheduling: result.EmergencyUseForScheduling,
@@ -89,9 +89,9 @@ public class HomeLeaveConfigController : ControllerBase
         var result = await _mediator.Send(new UpsertHomeLeaveConfigCommand(
             spaceId,
             groupId,
-            MinRestHours: 0, // New mode system always uses 0
+            MinRestHours: req.RestHoursAfterReturn ?? 0,
             EligibilityThresholdHours: (req.BaseDays ?? 7) * 24,
-            req.LeaveCapacity,
+            LeaveCapacity: 1, // Derived server-side from MinPeopleAtBase in handler
             req.LeaveDurationHours,
             CurrentUserId,
             BalanceValue: null,
@@ -100,7 +100,8 @@ public class HomeLeaveConfigController : ControllerBase
             req.HomeDays,
             req.SliderValue,
             req.EmergencyFreezeActive,
-            req.EmergencyUseForScheduling), ct);
+            req.EmergencyUseForScheduling,
+            MinPeopleAtBase: req.MinPeopleAtBase), ct);
 
         return Ok(result);
     }
@@ -117,20 +118,17 @@ public class HomeLeaveConfigController : ControllerBase
         if (memberCount < 2)
             return BadRequest(new { message = "Group must have at least 2 members for home-leave" });
 
-        var coverageRequirement = Math.Max(1, memberCount - config.LeaveCapacity);
-
         var optimalRatio = _optimalRatioCalculator.Calculate(
             memberCount,
-            config.LeaveCapacity,
-            config.LeaveDurationHours,
-            coverageRequirement);
+            config.MinPeopleAtBase,
+            config.LeaveDurationHours);
 
         return Ok(new OptimalRatioResponse(
             BaseDays: optimalRatio.BaseDays,
             HomeDays: optimalRatio.HomeDays,
             IsReduced: optimalRatio.IsReduced,
             MemberCount: memberCount,
-            CoverageRequirement: coverageRequirement));
+            CoverageRequirement: config.MinPeopleAtBase));
     }
 
     /// <summary>Preview the impact of a ratio/mode change without persisting.
@@ -170,14 +168,12 @@ public class HomeLeaveConfigController : ControllerBase
             var config = await _mediator.Send(new GetHomeLeaveConfigQuery(spaceId, groupId), ct);
             var effectiveBaseDays = req.BaseDays ?? config.BaseDays;
             var effectiveHomeDays = req.HomeDays ?? config.HomeDays;
-            var coverageRequirement = Math.Max(1, memberCount - config.LeaveCapacity);
 
             feasibility = _feasibilityEngine.Evaluate(
                 memberCount,
-                config.LeaveCapacity,
+                config.MinPeopleAtBase,
                 effectiveBaseDays,
-                effectiveHomeDays,
-                coverageRequirement);
+                effectiveHomeDays);
         }
 
         // Call solver preview
@@ -220,7 +216,8 @@ public record UpsertHomeLeaveConfigRequest(
     int? HomeDays,
     int? SliderValue,
     decimal LeaveDurationHours,
-    int LeaveCapacity,
+    int MinPeopleAtBase,
+    decimal? RestHoursAfterReturn,
     bool? EmergencyFreezeActive,
     bool? EmergencyUseForScheduling);
 
@@ -242,6 +239,8 @@ public record HomeLeaveConfigResponse(
     int HomeDays,
     decimal LeaveDurationHours,
     int LeaveCapacity,
+    int MinPeopleAtBase,
+    decimal RestHoursAfterReturn,
     int BalanceValue,
     bool EmergencyFreezeActive,
     bool EmergencyUseForScheduling,

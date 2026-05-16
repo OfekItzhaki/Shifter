@@ -13,6 +13,8 @@ export interface HomeLeaveConfigDto {
   homeDays: number;
   leaveDurationHours: number;
   leaveCapacity: number;
+  minPeopleAtBase: number;
+  restHoursAfterReturn: number;
   balanceValue: number;
   emergencyFreezeActive: boolean;
   emergencyUseForScheduling: boolean;
@@ -29,7 +31,8 @@ export interface UpdateHomeLeaveConfigPayload {
   homeDays?: number | null;
   sliderValue?: number | null;
   leaveDurationHours: number;
-  leaveCapacity: number;
+  minPeopleAtBase: number;
+  restHoursAfterReturn?: number | null;
   emergencyFreezeActive?: boolean | null;
   emergencyUseForScheduling?: boolean | null;
 }
@@ -99,7 +102,7 @@ export async function toggleEmergencyFreeze(
       emergencyFreezeActive: active,
       emergencyUseForScheduling: useForScheduling,
       leaveDurationHours: 48, // placeholder — server uses existing value
-      leaveCapacity: 1, // placeholder — server uses existing value
+      minPeopleAtBase: 1, // placeholder — server uses existing value
     }
   );
   return data;

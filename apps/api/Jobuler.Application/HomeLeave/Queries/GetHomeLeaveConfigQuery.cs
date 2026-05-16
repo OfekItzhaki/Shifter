@@ -16,6 +16,7 @@ public record HomeLeaveConfigDto(
     int LeaveCapacity,
     decimal LeaveDurationHours,
     int BalanceValue,
+    int MinPeopleAtBase,
     bool EmergencyFreezeActive,
     bool EmergencyUseForScheduling,
     DateTime? FreezeStartedAt);
@@ -47,6 +48,7 @@ public class GetHomeLeaveConfigQueryHandler : IRequestHandler<GetHomeLeaveConfig
                 LeaveCapacity: 1,
                 LeaveDurationHours: 48,
                 BalanceValue: 50,
+                MinPeopleAtBase: 8,
                 EmergencyFreezeActive: false,
                 EmergencyUseForScheduling: false,
                 FreezeStartedAt: null);
@@ -64,6 +66,7 @@ public class GetHomeLeaveConfigQueryHandler : IRequestHandler<GetHomeLeaveConfig
             LeaveCapacity: config.LeaveCapacity,
             LeaveDurationHours: config.LeaveDurationHours,
             BalanceValue: config.BalanceValue,
+            MinPeopleAtBase: config.MinPeopleAtBase,
             EmergencyFreezeActive: config.EmergencyFreezeActive,
             EmergencyUseForScheduling: config.EmergencyUseForScheduling,
             FreezeStartedAt: config.FreezeStartedAt);

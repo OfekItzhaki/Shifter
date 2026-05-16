@@ -89,10 +89,12 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
                 .FirstOrDefaultAsync(c => c.GroupId == groupId.Value && c.SpaceId == spaceId, ct);
 
             if (hlConfig is not null
-                && hlConfig.LeaveCapacity > 0
                 && hlConfig.LeaveDurationHours > 0)
             {
-                homeLeaveConfigDto = BuildHomeLeaveConfigDto(hlConfig);
+                // Compute member count for deriving leave_capacity from min_people_at_base
+                var hlMemberCount = await _db.GroupMemberships.AsNoTracking()
+                    .CountAsync(m => m.GroupId == groupId.Value && m.SpaceId == spaceId, ct);
+                homeLeaveConfigDto = BuildHomeLeaveConfigDto(hlConfig, hlMemberCount);
             }
             else
             {
@@ -495,13 +497,17 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
             var hlConfig = await _db.HomeLeaveConfigs.AsNoTracking()
                 .FirstOrDefaultAsync(c => c.GroupId == groupId && c.SpaceId == spaceId, ct);
 
-            if (hlConfig is not null && hlConfig.LeaveCapacity > 0 && hlConfig.LeaveDurationHours > 0)
+            if (hlConfig is not null && hlConfig.LeaveDurationHours > 0)
             {
+                var previewMemberCount = await _db.GroupMemberships.AsNoTracking()
+                    .CountAsync(m => m.GroupId == groupId && m.SpaceId == spaceId, ct);
+                var previewLeaveCapacity = Math.Max(1, previewMemberCount - hlConfig.MinPeopleAtBase);
+
                 var previewDto = new HomeLeaveConfigDto(
                     Enabled: true,
                     MinRestHours: 0,
                     EligibilityThresholdHours: (double)(hlConfig.BaseDays * 24),
-                    LeaveCapacity: hlConfig.LeaveCapacity,
+                    LeaveCapacity: previewLeaveCapacity,
                     LeaveDurationHours: (double)hlConfig.LeaveDurationHours,
                     BalanceValue: balanceValue);
 
@@ -522,14 +528,18 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
 
     /// <summary>
     /// Builds the HomeLeaveConfigDto based on the mode and emergency freeze state.
+    /// Computes leave_capacity = memberCount - minPeopleAtBase.
     /// - Emergency freeze + don't use for scheduling: returns null (omit from payload)
     /// - Emergency freeze + use for scheduling: balance_value = 0, eligibility = 9999
     /// - Automatic mode: eligibility = baseDays × 24, balance from stored slider value
     /// - Manual mode: eligibility = baseDays × 24, balance = 50 (neutral)
     /// Always sets min_rest_hours = 0.
     /// </summary>
-    private static HomeLeaveConfigDto? BuildHomeLeaveConfigDto(HomeLeaveConfig hlConfig)
+    private static HomeLeaveConfigDto? BuildHomeLeaveConfigDto(HomeLeaveConfig hlConfig, int memberCount)
     {
+        // Derive leave_capacity from min_people_at_base
+        var leaveCapacity = Math.Max(1, memberCount - hlConfig.MinPeopleAtBase);
+
         // Emergency freeze: don't use for scheduling → omit entirely
         if (hlConfig.EmergencyFreezeActive && !hlConfig.EmergencyUseForScheduling)
         {
@@ -543,7 +553,7 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
                 Enabled: true,
                 MinRestHours: 0,
                 EligibilityThresholdHours: 9999,
-                LeaveCapacity: hlConfig.LeaveCapacity,
+                LeaveCapacity: leaveCapacity,
                 LeaveDurationHours: (double)hlConfig.LeaveDurationHours,
                 BalanceValue: 0);
         }
@@ -558,7 +568,7 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
             Enabled: true,
             MinRestHours: 0,
             EligibilityThresholdHours: eligibilityThresholdHours,
-            LeaveCapacity: hlConfig.LeaveCapacity,
+            LeaveCapacity: leaveCapacity,
             LeaveDurationHours: (double)hlConfig.LeaveDurationHours,
             BalanceValue: balanceValue);
     }

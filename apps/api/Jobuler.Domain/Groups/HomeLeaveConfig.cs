@@ -20,6 +20,7 @@ public class HomeLeaveConfig : AuditableEntity, ITenantScoped
     public int LeaveCapacity { get; private set; }
     public decimal LeaveDurationHours { get; private set; }
     public int BalanceValue { get; private set; } = 50;
+    public int MinPeopleAtBase { get; private set; } = 8;
 
     // New fields — mode system
     public HomeLeaveMode Mode { get; private set; } = HomeLeaveMode.Automatic;
@@ -44,7 +45,8 @@ public class HomeLeaveConfig : AuditableEntity, ITenantScoped
         int balanceValue = 50,
         HomeLeaveMode mode = HomeLeaveMode.Automatic,
         int baseDays = 7,
-        int homeDays = 2)
+        int homeDays = 2,
+        int minPeopleAtBase = 8)
     {
         ValidateMinRestHours(minRestHours);
         ValidateEligibilityThresholdHours(eligibilityThresholdHours);
@@ -53,6 +55,7 @@ public class HomeLeaveConfig : AuditableEntity, ITenantScoped
         ValidateBalanceValue(balanceValue);
         ValidateBaseDays(baseDays);
         ValidateHomeDays(homeDays);
+        ValidateMinPeopleAtBase(minPeopleAtBase);
 
         return new HomeLeaveConfig
         {
@@ -65,7 +68,8 @@ public class HomeLeaveConfig : AuditableEntity, ITenantScoped
             BalanceValue = balanceValue,
             Mode = mode,
             BaseDays = baseDays,
-            HomeDays = homeDays
+            HomeDays = homeDays,
+            MinPeopleAtBase = minPeopleAtBase
         };
     }
 
@@ -77,7 +81,8 @@ public class HomeLeaveConfig : AuditableEntity, ITenantScoped
         int? balanceValue = null,
         HomeLeaveMode? mode = null,
         int? baseDays = null,
-        int? homeDays = null)
+        int? homeDays = null,
+        int? minPeopleAtBase = null)
     {
         ValidateMinRestHours(minRestHours);
         ValidateEligibilityThresholdHours(eligibilityThresholdHours);
@@ -100,6 +105,12 @@ public class HomeLeaveConfig : AuditableEntity, ITenantScoped
         {
             ValidateHomeDays(homeDays.Value);
             HomeDays = homeDays.Value;
+        }
+
+        if (minPeopleAtBase.HasValue)
+        {
+            ValidateMinPeopleAtBase(minPeopleAtBase.Value);
+            MinPeopleAtBase = minPeopleAtBase.Value;
         }
 
         if (mode.HasValue)
@@ -272,5 +283,11 @@ public class HomeLeaveConfig : AuditableEntity, ITenantScoped
     {
         if (value < 1)
             throw new InvalidOperationException("ימים בבית חייבים להיות לפחות 1");
+    }
+
+    private static void ValidateMinPeopleAtBase(int value)
+    {
+        if (value < 1)
+            throw new InvalidOperationException("מינימום אנשים בבסיס חייב להיות לפחות 1.");
     }
 }
