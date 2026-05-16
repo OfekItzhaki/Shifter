@@ -9,7 +9,6 @@ import type { GroupRoleDto, GroupMemberDto } from "@/lib/api/groups";
 import { SEVERITY_STYLES, SEVERITY_DOTS } from "../types";
 
 const RULE_TYPES = [
-  { value: "min_rest_hours", label: "מנוחה מינימלית" },
   { value: "max_kitchen_per_week", label: "מקסימום מטבח בשבוע" },
   { value: "no_consecutive_burden", label: "ללא עומס רצוף" },
   { value: "min_base_headcount", label: "מינימום אנשים" },
@@ -234,7 +233,7 @@ function SectionCreateForm({
   const t = useTranslations("groups.constraints_tab");
   const tCommon = useTranslations("common");
   const [open, setOpen] = useState(false);
-  const [ruleType, setRuleType] = useState("min_rest_hours");
+  const [ruleType, setRuleType] = useState("max_kitchen_per_week");
   const [severity, setSeverity] = useState("hard");
   const [payload, setPayload] = useState('{"hours": 8}');
   const [from, setFrom] = useState("");
@@ -255,9 +254,9 @@ function SectionCreateForm({
     try {
       await onSubmit({ ruleType, severity, payload, from, until, scopeType, scopeId: resolvedScopeId });
       setOpen(false);
-      setRuleType("min_rest_hours");
+      setRuleType("max_kitchen_per_week");
       setSeverity("hard");
-      setPayload('{"hours": 8}');
+      setPayload('{"max": 2, "task_type_name": "kitchen"}');
       setFrom(""); setUntil(""); setScopeId("");
     } catch (err: unknown) {
       const msg = (err as { message?: string })?.message || t("loading");

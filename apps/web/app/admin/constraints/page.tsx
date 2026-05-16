@@ -30,7 +30,7 @@ export default function ConstraintsPage() {
 
   const [scopeType, setScopeType] = useState("space");
   const [severity, setSeverity] = useState("hard");
-  const [ruleType, setRuleType] = useState("min_rest_hours");
+  const [ruleType, setRuleType] = useState("max_kitchen_per_week");
   const [payload, setPayload] = useState('{"hours": 8}');
   const [saving, setSaving] = useState(false);
 
@@ -138,7 +138,6 @@ export default function ConstraintsPage() {
                 <select value={ruleType} onChange={e => {
                   setRuleType(e.target.value);
                   const defaults: Record<string, string> = {
-                    min_rest_hours: '{"hours": 8}',
                     max_kitchen_per_week: '{"max": 2, "task_type_name": "kitchen"}',
                     no_consecutive_burden: '{"burden_level": "hard"}',
                     min_base_headcount: '{"min": 3, "window_hours": 24}',
@@ -146,7 +145,6 @@ export default function ConstraintsPage() {
                   };
                   setPayload(defaults[e.target.value] ?? "{}");
                 }} className={inputClass}>
-                  <option value="min_rest_hours">min_rest_hours</option>
                   <option value="max_kitchen_per_week">max_kitchen_per_week</option>
                   <option value="no_consecutive_burden">no_consecutive_burden</option>
                   <option value="min_base_headcount">min_base_headcount</option>
