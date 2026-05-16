@@ -18,6 +18,19 @@ interface ChangelogEntry {
 
 const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.8.0",
+    date: "2026-06-01",
+    changes: [
+      { type: "new", text: "מערכת חופשות בית חדשה — מצב אוטומטי, ידני, וחירום" },
+      { type: "new", text: "מחוון חכם — מרכז על היחס האופטימלי בסיס/בית" },
+      { type: "new", text: "מצב ידני — הגדרת ימים מדויקת עם משוב ישיר" },
+      { type: "new", text: "הקפאת חירום — עצירת כל החופשות מיידית" },
+      { type: "new", text: "בדיקת היתכנות בזמן אמת לכל שינוי הגדרות" },
+      { type: "improved", text: "תמיכה מלאה ב-RTL/LTR למחוון ולכל הרכיבים" },
+      { type: "fix", text: "תיקון בדיקות — הודעות שגיאה בעברית" },
+    ],
+  },
+  {
     version: "1.7.0",
     date: "2026-06-01",
     changes: [

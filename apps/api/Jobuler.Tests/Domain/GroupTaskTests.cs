@@ -111,7 +111,7 @@ public class GroupTaskTests
         var act = () => version.Discard();
 
         act.Should().Throw<InvalidOperationException>()
-            .WithMessage("*draft*");
+            .WithMessage("*טיוטה*");
     }
 
     [Fact]

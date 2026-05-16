@@ -126,7 +126,7 @@ public class ScheduleVersionDiscardPropertyTests
 
         // Assert — must throw InvalidOperationException
         await act.Should().ThrowAsync<InvalidOperationException>()
-            .WithMessage("*draft*");
+            .WithMessage("*טיוטה*");
 
         // Version must still be Published
         var unchanged = await db.ScheduleVersions.FindAsync(version.Id);
