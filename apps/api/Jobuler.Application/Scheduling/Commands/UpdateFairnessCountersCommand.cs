@@ -95,6 +95,15 @@ public class UpdateFairnessCountersCommandHandler
                     break;
             }
 
+            // Compute generic task-type counts (7d window)
+            var taskTypeCounts7d = mine
+                .Where(a => a.StartsAt >= cutoff7d)
+                .GroupBy(a => a.Name.ToLowerInvariant())
+                .ToDictionary(g => g.Key, g => g.Count());
+            var taskTypeCountsJson = taskTypeCounts7d.Count > 0
+                ? System.Text.Json.JsonSerializer.Serialize(taskTypeCounts7d)
+                : "{}";
+
             // Upsert fairness counter
             var existing = await _db.FairnessCounters
                 .FirstOrDefaultAsync(f => f.SpaceId == req.SpaceId &&
@@ -107,7 +116,8 @@ public class UpdateFairnessCountersCommandHandler
                     hard7d, hard14d, hard30d,
                     easy7d, easy14d, easy30d,
                     burdenScore7d, burdenScore14d, burdenScore30d,
-                    kitchen7d, night7d, consecutive);
+                    night7d, consecutive,
+                    taskTypeCountsJson);
                 _db.FairnessCounters.Add(counter);
             }
             else
@@ -116,7 +126,8 @@ public class UpdateFairnessCountersCommandHandler
                     hard7d, hard14d, hard30d,
                     easy7d, easy14d, easy30d,
                     burdenScore7d, burdenScore14d, burdenScore30d,
-                    kitchen7d, night7d, consecutive);
+                    night7d, consecutive,
+                    taskTypeCountsJson);
             }
 
             // Upsert daily snapshot for historical graphs

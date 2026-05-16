@@ -347,8 +347,8 @@ class TestFairness:
         people = [person("p1"), person("p2")]
         slots = [slot("s1", burden="hated")]
         fairness = [
-            FairnessCounters(person_id="p1", disliked_hated_score_7d=10),
-            FairnessCounters(person_id="p2", disliked_hated_score_7d=0),
+            FairnessCounters(person_id="p1", hated_tasks_7d=10),
+            FairnessCounters(person_id="p2", hated_tasks_7d=0),
         ]
         result = solve(make_input(slots, people, fairness=fairness))
         assert result.feasible

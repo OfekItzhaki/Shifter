@@ -16,7 +16,7 @@ from solver.constraints import (
     add_qualification_constraints,
     add_role_constraints,
     add_restriction_constraints,
-    add_kitchen_frequency_constraints,
+    add_max_task_type_per_period_constraints,
     add_availability_constraints,
     expand_role_constraints,
     expand_group_constraints,
@@ -113,7 +113,7 @@ def solve(input: SolverInput) -> SolverOutput:
 
     add_min_rest_constraints(model, assign, slots, people, num_people, rest_hours, emergency_person_ids, rest_soft_penalties)
 
-    add_kitchen_frequency_constraints(
+    add_max_task_type_per_period_constraints(
         model, assign, slots, people, num_people,
         input.hard_constraints, input.fairness_counters)
 

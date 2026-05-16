@@ -17,10 +17,11 @@ public class Group : AuditableEntity, ITenantScoped
     public int MinRestBetweenShiftsHours { get; private set; } = 8;
     public string? JoinCode { get; private set; }
     public DateTime? DeletedAt { get; private set; }
+    public GroupTemplateType TemplateType { get; private set; } = GroupTemplateType.Custom;
 
     private Group() { }
 
-    public static Group Create(Guid spaceId, Guid? groupTypeId, string name, string? description = null, Guid? createdByUserId = null) =>
+    public static Group Create(Guid spaceId, Guid? groupTypeId, string name, string? description = null, Guid? createdByUserId = null, GroupTemplateType templateType = GroupTemplateType.Custom) =>
         new()
         {
             SpaceId = spaceId,
@@ -28,7 +29,8 @@ public class Group : AuditableEntity, ITenantScoped
             Name = name.Trim(),
             Description = description?.Trim(),
             CreatedByUserId = createdByUserId,
-            JoinCode = GenerateJoinCode()
+            JoinCode = GenerateJoinCode(),
+            TemplateType = templateType
         };
 
     public string RegenerateJoinCode() { JoinCode = GenerateJoinCode(); Touch(); return JoinCode; }
@@ -50,6 +52,7 @@ public class Group : AuditableEntity, ITenantScoped
     public void UpdateSettings(int solverHorizonDays, DateTime? solverStartDateTime = null) { SolverHorizonDays = Math.Clamp(solverHorizonDays, 1, 7); SolverStartDateTime = solverStartDateTime; Touch(); }
     public void SetAutoPublish(bool autoPublish) { AutoPublish = autoPublish; Touch(); }
     public void SetClosedBase(bool value) { IsClosedBase = value; Touch(); }
+    public void SetTemplateType(GroupTemplateType templateType) { TemplateType = templateType; Touch(); }
 
     public void SetMinRestBetweenShifts(int hours)
     {

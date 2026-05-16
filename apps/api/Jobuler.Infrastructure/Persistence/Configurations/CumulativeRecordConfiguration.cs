@@ -35,26 +35,17 @@ public class CumulativeRecordConfiguration : IEntityTypeConfiguration<Cumulative
         builder.Property(r => r.HardTasks90d).HasColumnName("hard_tasks_90d");
         builder.Property(r => r.HardTasksPeriod).HasColumnName("hard_tasks_period");
 
-        // Multi-window counters: disliked/hated score
-        builder.Property(r => r.DislikedHatedScore7d).HasColumnName("disliked_hated_score_7d");
-        builder.Property(r => r.DislikedHatedScore14d).HasColumnName("disliked_hated_score_14d");
-        builder.Property(r => r.DislikedHatedScore30d).HasColumnName("disliked_hated_score_30d");
-        builder.Property(r => r.DislikedHatedScore90d).HasColumnName("disliked_hated_score_90d");
-        builder.Property(r => r.DislikedHatedScorePeriod).HasColumnName("disliked_hated_score_period");
-
-        // Multi-window counters: kitchen count
-        builder.Property(r => r.KitchenCount7d).HasColumnName("kitchen_count_7d");
-        builder.Property(r => r.KitchenCount14d).HasColumnName("kitchen_count_14d");
-        builder.Property(r => r.KitchenCount30d).HasColumnName("kitchen_count_30d");
-        builder.Property(r => r.KitchenCount90d).HasColumnName("kitchen_count_90d");
-        builder.Property(r => r.KitchenCountPeriod).HasColumnName("kitchen_count_period");
-
         // Multi-window counters: night missions
         builder.Property(r => r.NightMissions7d).HasColumnName("night_missions_7d");
         builder.Property(r => r.NightMissions14d).HasColumnName("night_missions_14d");
         builder.Property(r => r.NightMissions30d).HasColumnName("night_missions_30d");
         builder.Property(r => r.NightMissions90d).HasColumnName("night_missions_90d");
         builder.Property(r => r.NightMissionsPeriod).HasColumnName("night_missions_period");
+
+        // Generic task-type counts (JSONB)
+        builder.Property(r => r.TaskTypeCountsJson).HasColumnName("task_type_counts")
+            .HasColumnType("jsonb")
+            .HasDefaultValue("{}");
 
         builder.Property(r => r.TotalHoursAssignedPeriod).HasColumnName("total_hours_assigned_period")
             .HasColumnType("numeric(10,2)");

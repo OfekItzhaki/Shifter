@@ -1360,6 +1360,7 @@ export default function GroupDetailPage() {
               isAdmin={isAdmin}
               spaceId={currentSpaceId ?? ""}
               groupId={groupId}
+              templateType={group?.templateType}
               newGroupName={newGroupName}
               renameSaving={renameSaving}
               renameError={renameError}

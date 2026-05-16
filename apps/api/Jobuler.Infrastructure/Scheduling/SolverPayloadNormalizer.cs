@@ -421,8 +421,8 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
         var fairnessDto = fairness.Select(f => new FairnessCountersDto(
             f.PersonId.ToString(),
             f.TotalAssignments7d, f.HardTasks7d,
-            f.DislikedHatedScore7d, f.KitchenCount7d,
-            f.NightMissions7d, f.ConsecutiveHardCount)).ToList();
+            f.NightMissions7d, f.ConsecutiveHardCount,
+            DeserializeTaskTypeCounts7d(f.TaskTypeCountsJson))).ToList();
 
         // ── Space locale ──────────────────────────────────────────────────────
         var space = await _db.Spaces.AsNoTracking()
@@ -596,6 +596,25 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
         catch
         {
             return new Dictionary<string, object>();
+        }
+    }
+
+    /// <summary>
+    /// Deserializes the FairnessCounter's TaskTypeCountsJson into a flat dictionary for the solver DTO.
+    /// The stored format is {"taskType": count, ...} for 7d window.
+    /// </summary>
+    private static Dictionary<string, int>? DeserializeTaskTypeCounts7d(string? json)
+    {
+        if (string.IsNullOrWhiteSpace(json) || json == "{}")
+            return null;
+
+        try
+        {
+            return JsonSerializer.Deserialize<Dictionary<string, int>>(json);
+        }
+        catch
+        {
+            return null;
         }
     }
 

@@ -1,5 +1,6 @@
 using FluentValidation;
 using Jobuler.Application.Groups.Commands;
+using Jobuler.Domain.Groups;
 
 namespace Jobuler.Application.Groups.Validators;
 
@@ -15,6 +16,9 @@ public class CreateGroupCommandValidator : AbstractValidator<CreateGroupCommand>
         RuleFor(x => x.Description)
             .MaximumLength(500).WithMessage("Description must be 500 characters or fewer.")
             .When(x => x.Description is not null);
+
+        RuleFor(x => x.TemplateType)
+            .IsInEnum().WithMessage("Invalid template type. Must be one of: Army, Restaurant, Hospital, Security, Custom.");
     }
 }
 

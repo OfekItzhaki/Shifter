@@ -77,7 +77,6 @@ export const GROUP_TEMPLATES: GroupTemplate[] = [
       },
     ],
     constraints: [
-      { scopeType: "group", severity: "hard", ruleType: "min_rest_hours", rulePayloadJson: '{"hours": 8}' },
       { scopeType: "group", severity: "soft", ruleType: "no_consecutive_burden", rulePayloadJson: '{"burden_level": "hard"}' },
     ],
     qualifications: [
@@ -135,9 +134,7 @@ export const GROUP_TEMPLATES: GroupTemplate[] = [
         dailyEndTime: "01:00",
       },
     ],
-    constraints: [
-      { scopeType: "group", severity: "hard", ruleType: "min_rest_hours", rulePayloadJson: '{"hours": 10}' },
-    ],
+    constraints: [],
     qualifications: [
       { name: "Bartender" },
       { name: "Waiter" },
@@ -194,7 +191,6 @@ export const GROUP_TEMPLATES: GroupTemplate[] = [
       },
     ],
     constraints: [
-      { scopeType: "group", severity: "hard", ruleType: "min_rest_hours", rulePayloadJson: '{"hours": 12}' },
       { scopeType: "group", severity: "soft", ruleType: "no_consecutive_burden", rulePayloadJson: '{"burden_level": "hard"}' },
     ],
     qualifications: [
@@ -240,9 +236,7 @@ export const GROUP_TEMPLATES: GroupTemplate[] = [
         dailyEndTime: "06:00",
       },
     ],
-    constraints: [
-      { scopeType: "group", severity: "hard", ruleType: "min_rest_hours", rulePayloadJson: '{"hours": 10}' },
-    ],
+    constraints: [],
     qualifications: [
       { name: "Armed Guard" },
       { name: "CCTV Operator" },

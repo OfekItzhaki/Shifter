@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 import { GROUP_TEMPLATES, type GroupTemplate } from "@/lib/utils/groupTemplates";
 import { createGroupTask } from "@/lib/api/tasks";
 import { createConstraint } from "@/lib/api/constraints";
-import { updateGroupSettings, createGroupQualification } from "@/lib/api/groups";
+import { updateGroupSettings, createGroupQualification, updateGroup } from "@/lib/api/groups";
 import { seedReasons } from "@/lib/api/unavailabilityReasons";
 
 interface Props {
@@ -25,6 +25,8 @@ export default function GroupTemplatePicker({ spaceId, groupId, onComplete, onSk
     if (!selected) return;
     const template = GROUP_TEMPLATES.find(t => t.id === selected);
     if (!template || template.id === "custom") {
+      // For custom template, still set the templateType
+      await updateGroup(spaceId, groupId, { templateType: "Custom" });
       onComplete();
       return;
     }
@@ -32,7 +34,20 @@ export default function GroupTemplatePicker({ spaceId, groupId, onComplete, onSk
     setApplying(true);
     setError(null);
 
+    // Map template id to the API template type string
+    const templateTypeMap: Record<string, string> = {
+      "army-base": "Army",
+      "restaurant": "Restaurant",
+      "hospital": "Hospital",
+      "security": "Security",
+      "custom": "Custom",
+    };
+    const templateType = templateTypeMap[template.id] ?? "Custom";
+
     try {
+      // Set the template type on the group
+      await updateGroup(spaceId, groupId, { templateType });
+
       // Create tasks
       for (const task of template.tasks) {
         await createGroupTask(spaceId, groupId, task);

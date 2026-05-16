@@ -66,10 +66,12 @@ export default function ConstraintPayloadEditor({ ruleType, value, onChange, tas
       );
 
     case "max_kitchen_per_week":
+    case "max_task_type_per_period":
       return (
         <div className="space-y-3">
-          {field(t("maxKitchenPerWeek"), "max", payload, update)}
           {field(t("taskTypeName"), "task_type_name", payload, update, "text")}
+          {field(t("maxKitchenPerWeek"), "max", payload, update)}
+          {field(t("periodDays"), "period_days", payload, update)}
         </div>
       );
 

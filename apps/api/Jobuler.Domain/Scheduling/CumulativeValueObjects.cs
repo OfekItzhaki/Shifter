@@ -1,3 +1,5 @@
+using System.Text.Json;
+
 namespace Jobuler.Domain.Scheduling;
 
 /// <summary>
@@ -6,10 +8,9 @@ namespace Jobuler.Domain.Scheduling;
 public record AssignmentCountsDelta(
     int TotalAssignments,
     int HardTasks,
-    int DislikedHatedScore,
-    int KitchenCount,
     int NightMissions,
-    decimal TotalHours);
+    decimal TotalHours,
+    Dictionary<string, int>? TaskTypeCounts = null);
 
 /// <summary>
 /// Snapshot diff returned after creating/replacing snapshots.

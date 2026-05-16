@@ -37,6 +37,7 @@ export interface GroupWithMemberCountDto {
   isClosedBase?: boolean;
   minRestBetweenShiftsHours?: number;
   ownerPersonId: string | null;
+  templateType?: string | null;
 }
 
 export interface GroupMemberDto {
@@ -101,7 +102,7 @@ export async function renameGroup(spaceId: string, groupId: string, name: string
   await apiClient.patch(`/spaces/${spaceId}/groups/${groupId}/name`, { name });
 }
 
-export async function updateGroup(spaceId: string, groupId: string, payload: { isClosedBase?: boolean }): Promise<void> {
+export async function updateGroup(spaceId: string, groupId: string, payload: { isClosedBase?: boolean; templateType?: string }): Promise<void> {
   await apiClient.put(`/spaces/${spaceId}/groups/${groupId}`, payload);
 }
 

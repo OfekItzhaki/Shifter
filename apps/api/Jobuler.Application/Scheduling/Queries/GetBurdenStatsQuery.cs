@@ -20,8 +20,6 @@ public record PersonBurdenStatsDto(
     int TotalAssignments30d,
     int HardTasks7d,
     int HardTasks14d,
-    int DislikedHatedScore7d,
-    int KitchenCount7d,
     int NightMissions7d,
     int ConsecutiveHardCount,
     // All-time counters (from assignments table, published versions only)
@@ -46,7 +44,6 @@ public record BurdenStatsDto(
     List<LeaderboardEntryDto> MostAssignments,
     List<LeaderboardEntryDto> MostHatedTasks,
     List<LeaderboardEntryDto> HighestBurdenScore,
-    List<LeaderboardEntryDto> MostKitchenDuty,
     List<LeaderboardEntryDto> MostNightMissions,
     List<LeaderboardEntryDto> MostFavorableTasks,
     List<LeaderboardEntryDto> BestBurdenBalance,
@@ -104,7 +101,7 @@ public class GetBurdenStatsQueryHandler : IRequestHandler<GetBurdenStatsQuery, B
         var totalPeople = people.Count;
 
         if (totalPeople == 0)
-            return new BurdenStatsDto([], [], [], [], [], [], [], [], [], [], 0, 0, 0, 0, 0f, null, null, null);
+            return new BurdenStatsDto([], [], [], [], [], [], [], [], [], 0, 0, 0, 0, 0f, null, null, null);
 
         var personIds = people.Select(p => p.Id).ToHashSet();
 
@@ -245,8 +242,6 @@ public class GetBurdenStatsQueryHandler : IRequestHandler<GetBurdenStatsQuery, B
                 TotalAssignments30d: c?.TotalAssignments30d ?? 0,
                 HardTasks7d: c?.HardTasks7d ?? 0,
                 HardTasks14d: c?.HardTasks14d ?? 0,
-                DislikedHatedScore7d: c?.DislikedHatedScore7d ?? 0,
-                KitchenCount7d: c?.KitchenCount7d ?? 0,
                 NightMissions7d: c?.NightMissions7d ?? 0,
                 ConsecutiveHardCount: c?.ConsecutiveHardCount ?? 0,
                 TotalAssignmentsAllTime: at.Total,
@@ -286,7 +281,6 @@ public class GetBurdenStatsQueryHandler : IRequestHandler<GetBurdenStatsQuery, B
             MostAssignments: Top5(personStats, p => p.TotalAssignmentsAllTime, "assignments"),
             MostHatedTasks: Top5(personStats, p => p.HatedTasksAllTime, "hated tasks"),
             HighestBurdenScore: Top5(personStats, p => p.BurdenScoreAllTime, "burden score"),
-            MostKitchenDuty: Top5(personStats, p => p.KitchenCount7d, "kitchen (7d)"),
             MostNightMissions: Top5(personStats, p => p.NightMissions7d, "night missions (7d)"),
             MostFavorableTasks: Top5(personStats, p => p.FavorableTasksAllTime, "favorable tasks"),
             BestBurdenBalance: Top5(personStats, p => p.BurdenBalance, "burden balance"),

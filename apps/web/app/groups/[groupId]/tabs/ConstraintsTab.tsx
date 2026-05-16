@@ -9,7 +9,7 @@ import type { GroupRoleDto, GroupMemberDto } from "@/lib/api/groups";
 import { SEVERITY_STYLES, SEVERITY_DOTS } from "../types";
 
 const RULE_TYPES = [
-  { value: "max_kitchen_per_week", label: "מקסימום מטבח בשבוע" },
+  { value: "max_task_type_per_period", label: "מקסימום משימה בתקופה" },
   { value: "no_consecutive_burden", label: "ללא עומס רצוף" },
   { value: "no_task_type_restriction", label: "הגבלת משימה" },
   { value: "emergency_person_bypass", label: "🚨 חירום — אדם" },
@@ -22,7 +22,12 @@ function formatPayload(ruleType: string, json: string, taskOptions?: TaskOption[
     const p = JSON.parse(json);
     switch (ruleType) {
       case "min_rest_hours": return `${p.hours ?? 8} שעות מנוחה`;
-      case "max_kitchen_per_week": return `מקסימום ${p.max ?? 2} מטבח בשבוע`;
+      case "max_task_type_per_period": {
+        const taskName = p.task_type_name ?? "—";
+        const max = p.max ?? 2;
+        const period = p.period_days ?? 7;
+        return `מקסימום ${max} × ${taskName} כל ${period} ימים`;
+      }
       case "no_consecutive_burden": {
         const burdenMap: Record<string, string> = { hard: "קשה", normal: "רגיל", easy: "קל", hated: "קשה", disliked: "קשה", favorable: "קל", neutral: "רגיל" };
         return `ללא עומס רצוף: ${burdenMap[p.burden_level] ?? p.burden_level ?? "קשה"}`;
@@ -230,9 +235,9 @@ function SectionCreateForm({
   const t = useTranslations("groups.constraints_tab");
   const tCommon = useTranslations("common");
   const [open, setOpen] = useState(false);
-  const [ruleType, setRuleType] = useState("max_kitchen_per_week");
+  const [ruleType, setRuleType] = useState("max_task_type_per_period");
   const [severity, setSeverity] = useState("hard");
-  const [payload, setPayload] = useState('{"hours": 8}');
+  const [payload, setPayload] = useState('{"task_type_name": "", "max": 2, "period_days": 7}');
   const [from, setFrom] = useState("");
   const [until, setUntil] = useState("");
   const [scopeId, setScopeId] = useState("");
@@ -251,9 +256,9 @@ function SectionCreateForm({
     try {
       await onSubmit({ ruleType, severity, payload, from, until, scopeType, scopeId: resolvedScopeId });
       setOpen(false);
-      setRuleType("max_kitchen_per_week");
+      setRuleType("max_task_type_per_period");
       setSeverity("hard");
-      setPayload('{"max": 2, "task_type_name": "kitchen"}');
+      setPayload('{"task_type_name": "", "max": 2, "period_days": 7}');
       setFrom(""); setUntil(""); setScopeId("");
     } catch (err: unknown) {
       const msg = (err as { message?: string })?.message || t("loading");

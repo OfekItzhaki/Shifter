@@ -142,8 +142,6 @@ public class AssignmentSnapshotService : IAssignmentSnapshotService
                     replacedDeltas.Add(new AssignmentCountsDelta(
                         TotalAssignments: 1,
                         HardTasks: existing.BurdenLevel == "hard" ? 1 : 0,
-                        DislikedHatedScore: 0, // Cannot determine from snapshot alone
-                        KitchenCount: 0, // Cannot determine from snapshot alone
                         NightMissions: IsNightShift(existing.ShiftStart) ? 1 : 0,
                         TotalHours: existing.ShiftStart.HasValue && existing.ShiftEnd.HasValue
                             ? (decimal)(existing.ShiftEnd.Value - existing.ShiftStart.Value).TotalHours

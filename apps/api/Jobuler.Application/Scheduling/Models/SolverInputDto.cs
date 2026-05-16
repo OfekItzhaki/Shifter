@@ -96,10 +96,9 @@ public record FairnessCountersDto(
     string PersonId,
     int TotalAssignments7d,
     int HardTasks7d,
-    int DislikedHatedScore7d,
-    int KitchenCount7d,
     int NightMissions7d,
-    int ConsecutiveHardCount);
+    int ConsecutiveHardCount,
+    Dictionary<string, int>? TaskTypeCounts7d = null);
 
 public record HomeLeaveConfigDto(
     [property: JsonPropertyName("enabled")]                    bool Enabled,

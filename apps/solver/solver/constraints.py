@@ -228,7 +228,7 @@ def add_restriction_constraints(
                     model.add(assign[(s_idx, p_idx)] == 0)
 
 
-def add_kitchen_frequency_constraints(
+def add_max_task_type_per_period_constraints(
     model: cp_model.CpModel,
     assign: dict,
     slots: list[TaskSlot],
@@ -238,41 +238,41 @@ def add_kitchen_frequency_constraints(
     fairness_counters
 ):
     """
-    Kitchen cannot exceed max assignments per rolling 7-day window.
-    rule_type: max_kitchen_per_week
-    payload: { "max": 2, "task_type_name": "kitchen" }
+    Generic: no person exceeds max assignments for a named task type within period_days.
+    rule_type: max_task_type_per_period
+    payload: { "task_type_name": "Kitchen", "max": 2, "period_days": 7 }
     """
-    kitchen_rules = [
+    rules = [
         c for c in hard_constraints
-        if c.rule_type == "max_kitchen_per_week"
+        if c.rule_type == "max_task_type_per_period"
     ]
 
-    for rule in kitchen_rules:
-        max_allowed = int(rule.payload.get("max", 2))
+    for rule in rules:
         task_type_name = str(rule.payload.get("task_type_name", "")).lower()
+        max_allowed = int(rule.payload.get("max", 2))
+        # period_days used for historical lookup; within a single solver horizon all matching slots count
 
-        kitchen_slot_indices = [
+        matching_slots = [
             s_idx for s_idx, slot in enumerate(slots)
-            if slot.task_type_name.lower() == task_type_name or
-               slot.task_type_id == rule.payload.get("task_type_id", "")
+            if slot.task_type_name.lower() == task_type_name
         ]
 
-        if not kitchen_slot_indices:
+        if not matching_slots:
             continue
 
-        # Build a counter map from fairness history
-        kitchen_history = {
-            f.person_id: f.kitchen_count_7d
+        # Historical count from fairness counters
+        history = {
+            f.person_id: f.task_type_counts_7d.get(task_type_name, 0)
             for f in fairness_counters
         }
 
         for p_idx, person in enumerate(people):
-            already_done = kitchen_history.get(person.person_id, 0)
-            remaining_allowed = max(0, max_allowed - already_done)
+            already_done = history.get(person.person_id, 0)
+            remaining = max(0, max_allowed - already_done)
 
             model.add(
-                sum(assign[(s_idx, p_idx)] for s_idx in kitchen_slot_indices)
-                <= remaining_allowed
+                sum(assign[(s_idx, p_idx)] for s_idx in matching_slots)
+                <= remaining
             )
 
 

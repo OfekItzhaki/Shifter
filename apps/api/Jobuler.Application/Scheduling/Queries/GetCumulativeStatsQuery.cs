@@ -13,12 +13,11 @@ public record CumulativePersonStatsDto(
     string? ProfileImageUrl,
     int TotalAssignments,
     int HardTasks,
-    int KitchenCount,
     int NightMissions,
-    int DislikedHatedScore,
     decimal TotalHoursAssigned,
     decimal ConsecutiveHoursAtBase,
-    DateTime? LastHomeLeaveEnd);
+    DateTime? LastHomeLeaveEnd,
+    Dictionary<string, int>? TaskTypeCounts = null);
 
 public record CumulativeStatsResponseDto(
     List<CumulativePersonStatsDto> People,
@@ -102,14 +101,37 @@ public class GetCumulativeStatsQueryHandler : IRequestHandler<GetCumulativeStats
             var profileImage = person?.ProfileImageUrl;
 
             // Select the appropriate time-window counters
-            var (totalAssignments, hardTasks, kitchenCount, nightMissions, dislikedHatedScore) = req.TimeRange switch
+            var (totalAssignments, hardTasks, nightMissions) = req.TimeRange switch
             {
-                "7d" => (r.TotalAssignments7d, r.HardTasks7d, r.KitchenCount7d, r.NightMissions7d, r.DislikedHatedScore7d),
-                "14d" => (r.TotalAssignments14d, r.HardTasks14d, r.KitchenCount14d, r.NightMissions14d, r.DislikedHatedScore14d),
-                "30d" => (r.TotalAssignments30d, r.HardTasks30d, r.KitchenCount30d, r.NightMissions30d, r.DislikedHatedScore30d),
-                "90d" => (r.TotalAssignments90d, r.HardTasks90d, r.KitchenCount90d, r.NightMissions90d, r.DislikedHatedScore90d),
-                _ => (r.TotalAssignmentsPeriod, r.HardTasksPeriod, r.KitchenCountPeriod, r.NightMissionsPeriod, r.DislikedHatedScorePeriod),
+                "7d" => (r.TotalAssignments7d, r.HardTasks7d, r.NightMissions7d),
+                "14d" => (r.TotalAssignments14d, r.HardTasks14d, r.NightMissions14d),
+                "30d" => (r.TotalAssignments30d, r.HardTasks30d, r.NightMissions30d),
+                "90d" => (r.TotalAssignments90d, r.HardTasks90d, r.NightMissions90d),
+                _ => (r.TotalAssignmentsPeriod, r.HardTasksPeriod, r.NightMissionsPeriod),
             };
+
+            // Extract task-type counts for the requested time range
+            Dictionary<string, int>? taskTypeCounts = null;
+            if (!string.IsNullOrWhiteSpace(r.TaskTypeCountsJson) && r.TaskTypeCountsJson != "{}")
+            {
+                try
+                {
+                    var allCounts = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, Dictionary<string, int>>>(r.TaskTypeCountsJson);
+                    if (allCounts is { Count: > 0 })
+                    {
+                        var windowKey = req.TimeRange switch
+                        {
+                            "7d" or "14d" or "30d" or "90d" => req.TimeRange,
+                            _ => "period"
+                        };
+                        taskTypeCounts = allCounts
+                            .Where(kv => kv.Value.ContainsKey(windowKey) && kv.Value[windowKey] > 0)
+                            .ToDictionary(kv => kv.Key, kv => kv.Value[windowKey]);
+                        if (taskTypeCounts.Count == 0) taskTypeCounts = null;
+                    }
+                }
+                catch (System.Text.Json.JsonException) { /* graceful fallback */ }
+            }
 
             return new CumulativePersonStatsDto(
                 PersonId: r.PersonId,
@@ -117,12 +139,11 @@ public class GetCumulativeStatsQueryHandler : IRequestHandler<GetCumulativeStats
                 ProfileImageUrl: profileImage,
                 TotalAssignments: totalAssignments,
                 HardTasks: hardTasks,
-                KitchenCount: kitchenCount,
                 NightMissions: nightMissions,
-                DislikedHatedScore: dislikedHatedScore,
                 TotalHoursAssigned: r.TotalHoursAssignedPeriod,
                 ConsecutiveHoursAtBase: r.ConsecutiveHoursAtBase,
-                LastHomeLeaveEnd: r.LastHomeLeaveEnd);
+                LastHomeLeaveEnd: r.LastHomeLeaveEnd,
+                TaskTypeCounts: taskTypeCounts);
         }).ToList();
 
         return new CumulativeStatsResponseDto(

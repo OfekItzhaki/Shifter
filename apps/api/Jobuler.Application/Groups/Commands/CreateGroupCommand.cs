@@ -27,7 +27,7 @@ public class CreateGroupTypeCommandHandler : IRequestHandler<CreateGroupTypeComm
 
 public record CreateGroupCommand(
     Guid SpaceId, Guid? GroupTypeId, string Name, string? Description,
-    Guid CreatedByUserId) : IRequest<Guid>;
+    Guid CreatedByUserId, GroupTemplateType TemplateType = GroupTemplateType.Custom) : IRequest<Guid>;
 
 public class CreateGroupCommandHandler : IRequestHandler<CreateGroupCommand, Guid>
 {
@@ -56,7 +56,7 @@ public class CreateGroupCommandHandler : IRequestHandler<CreateGroupCommand, Gui
             _db.People.Add(person);
         }
 
-        var group = Group.Create(req.SpaceId, req.GroupTypeId, req.Name, req.Description, createdByUserId: req.CreatedByUserId);
+        var group = Group.Create(req.SpaceId, req.GroupTypeId, req.Name, req.Description, createdByUserId: req.CreatedByUserId, templateType: req.TemplateType);
         _db.Groups.Add(group);
         // Save group first so the FK constraint on group_memberships is satisfied
         await _db.SaveChangesAsync(ct);

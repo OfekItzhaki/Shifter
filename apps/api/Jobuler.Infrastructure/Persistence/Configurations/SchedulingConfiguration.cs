@@ -121,10 +121,11 @@ public class FairnessCounterConfiguration : IEntityTypeConfiguration<FairnessCou
         builder.Property(f => f.BurdenScore7d).HasColumnName("burden_score_7d");
         builder.Property(f => f.BurdenScore14d).HasColumnName("burden_score_14d");
         builder.Property(f => f.BurdenScore30d).HasColumnName("burden_score_30d");
-        builder.Property(f => f.DislikedHatedScore7d).HasColumnName("disliked_hated_score_7d");
-        builder.Property(f => f.KitchenCount7d).HasColumnName("kitchen_count_7d");
         builder.Property(f => f.NightMissions7d).HasColumnName("night_missions_7d");
         builder.Property(f => f.ConsecutiveHardCount).HasColumnName("consecutive_hard_count");
+        builder.Property(f => f.TaskTypeCountsJson).HasColumnName("task_type_counts")
+            .HasColumnType("jsonb")
+            .HasDefaultValue("{}");
         builder.Property(f => f.UpdatedAt).HasColumnName("updated_at");
         // fairness_counters has no created_at column — ignore the base Entity property
         builder.Ignore(f => f.CreatedAt);

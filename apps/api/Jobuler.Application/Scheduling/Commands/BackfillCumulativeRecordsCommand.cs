@@ -85,10 +85,6 @@ public class BackfillCumulativeRecordsCommandHandler
         var existingRecordMap = existingRecords
             .ToDictionary(cr => $"{cr.GroupId}|{cr.PersonId}|{cr.PeriodId}");
 
-        // Load task types for kitchen detection
-        var taskTypes = await _db.TaskTypes.AsNoTracking()
-            .ToDictionaryAsync(t => t.Id, ct);
-
         int created = 0;
         int updated = 0;
         int skipped = 0;
@@ -131,17 +127,7 @@ public class BackfillCumulativeRecordsCommandHandler
                 var hard90d = personSnapshots.Count(s => s.SnapshotDate >= cutoff90d && s.BurdenLevel == "hard");
                 var hardPeriod = personSnapshots.Count(s => s.BurdenLevel == "hard");
 
-                // Kitchen detection: check task type name
-                bool IsKitchen(Guid? taskTypeId) =>
-                    taskTypeId.HasValue && taskTypes.TryGetValue(taskTypeId.Value, out var tt) &&
-                    (tt.Name.Contains("מטבח", StringComparison.OrdinalIgnoreCase) ||
-                     tt.Name.Contains("kitchen", StringComparison.OrdinalIgnoreCase));
-
-                var kitchen7d = personSnapshots.Count(s => s.SnapshotDate >= cutoff7d && IsKitchen(s.TaskTypeId));
-                var kitchen14d = personSnapshots.Count(s => s.SnapshotDate >= cutoff14d && IsKitchen(s.TaskTypeId));
-                var kitchen30d = personSnapshots.Count(s => s.SnapshotDate >= cutoff30d && IsKitchen(s.TaskTypeId));
-                var kitchen90d = personSnapshots.Count(s => s.SnapshotDate >= cutoff90d && IsKitchen(s.TaskTypeId));
-                var kitchenPeriod = personSnapshots.Count(s => IsKitchen(s.TaskTypeId));
+                // Kitchen detection: replaced by generic task-type counting (handled elsewhere)
 
                 // Night detection: shift starts between 22:00 and 06:00
                 bool IsNight(DateTime? shiftStart) =>
@@ -152,14 +138,6 @@ public class BackfillCumulativeRecordsCommandHandler
                 var night30d = personSnapshots.Count(s => s.SnapshotDate >= cutoff30d && IsNight(s.ShiftStart));
                 var night90d = personSnapshots.Count(s => s.SnapshotDate >= cutoff90d && IsNight(s.ShiftStart));
                 var nightPeriod = personSnapshots.Count(s => IsNight(s.ShiftStart));
-
-                // Disliked/hated score: hard tasks count as disliked for now
-                // (In a full implementation, this would check person-specific preferences)
-                var disliked7d = hard7d;
-                var disliked14d = hard14d;
-                var disliked30d = hard30d;
-                var disliked90d = hard90d;
-                var dislikedPeriod = hardPeriod;
 
                 // Compute total hours assigned in period
                 var totalHoursPeriod = personSnapshots
@@ -191,21 +169,11 @@ public class BackfillCumulativeRecordsCommandHandler
                     entry.Property(nameof(CumulativeRecord.HardTasks30d)).CurrentValue = hard30d;
                     entry.Property(nameof(CumulativeRecord.HardTasks90d)).CurrentValue = hard90d;
                     entry.Property(nameof(CumulativeRecord.HardTasksPeriod)).CurrentValue = hardPeriod;
-                    entry.Property(nameof(CumulativeRecord.KitchenCount7d)).CurrentValue = kitchen7d;
-                    entry.Property(nameof(CumulativeRecord.KitchenCount14d)).CurrentValue = kitchen14d;
-                    entry.Property(nameof(CumulativeRecord.KitchenCount30d)).CurrentValue = kitchen30d;
-                    entry.Property(nameof(CumulativeRecord.KitchenCount90d)).CurrentValue = kitchen90d;
-                    entry.Property(nameof(CumulativeRecord.KitchenCountPeriod)).CurrentValue = kitchenPeriod;
                     entry.Property(nameof(CumulativeRecord.NightMissions7d)).CurrentValue = night7d;
                     entry.Property(nameof(CumulativeRecord.NightMissions14d)).CurrentValue = night14d;
                     entry.Property(nameof(CumulativeRecord.NightMissions30d)).CurrentValue = night30d;
                     entry.Property(nameof(CumulativeRecord.NightMissions90d)).CurrentValue = night90d;
                     entry.Property(nameof(CumulativeRecord.NightMissionsPeriod)).CurrentValue = nightPeriod;
-                    entry.Property(nameof(CumulativeRecord.DislikedHatedScore7d)).CurrentValue = disliked7d;
-                    entry.Property(nameof(CumulativeRecord.DislikedHatedScore14d)).CurrentValue = disliked14d;
-                    entry.Property(nameof(CumulativeRecord.DislikedHatedScore30d)).CurrentValue = disliked30d;
-                    entry.Property(nameof(CumulativeRecord.DislikedHatedScore90d)).CurrentValue = disliked90d;
-                    entry.Property(nameof(CumulativeRecord.DislikedHatedScorePeriod)).CurrentValue = dislikedPeriod;
                     entry.Property(nameof(CumulativeRecord.TotalHoursAssignedPeriod)).CurrentValue = totalHoursPeriod;
                     entry.Property(nameof(CumulativeRecord.ConsecutiveHoursAtBase)).CurrentValue = consecutiveHours;
                     entry.Property(nameof(CumulativeRecord.LastHomeLeaveEnd)).CurrentValue = lastHomeLeaveEnd;
@@ -219,9 +187,7 @@ public class BackfillCumulativeRecordsCommandHandler
                         spaceId, groupId, personId, period.Id,
                         total7d, total14d, total30d, total90d, totalPeriod,
                         hard7d, hard14d, hard30d, hard90d, hardPeriod,
-                        kitchen7d, kitchen14d, kitchen30d, kitchen90d, kitchenPeriod,
                         night7d, night14d, night30d, night90d, nightPeriod,
-                        disliked7d, disliked14d, disliked30d, disliked90d, dislikedPeriod,
                         totalHoursPeriod, consecutiveHours, lastHomeLeaveEnd);
                     created++;
                 }
@@ -302,9 +268,7 @@ public class BackfillCumulativeRecordsCommandHandler
         Guid spaceId, Guid groupId, Guid personId, Guid periodId,
         int total7d, int total14d, int total30d, int total90d, int totalPeriod,
         int hard7d, int hard14d, int hard30d, int hard90d, int hardPeriod,
-        int kitchen7d, int kitchen14d, int kitchen30d, int kitchen90d, int kitchenPeriod,
         int night7d, int night14d, int night30d, int night90d, int nightPeriod,
-        int disliked7d, int disliked14d, int disliked30d, int disliked90d, int dislikedPeriod,
         decimal totalHoursPeriod, decimal consecutiveHours, DateTime? lastHomeLeaveEnd)
     {
         var record = CumulativeRecord.Create(spaceId, groupId, personId, periodId);
@@ -320,21 +284,11 @@ public class BackfillCumulativeRecordsCommandHandler
         entry.Property(nameof(CumulativeRecord.HardTasks30d)).CurrentValue = hard30d;
         entry.Property(nameof(CumulativeRecord.HardTasks90d)).CurrentValue = hard90d;
         entry.Property(nameof(CumulativeRecord.HardTasksPeriod)).CurrentValue = hardPeriod;
-        entry.Property(nameof(CumulativeRecord.KitchenCount7d)).CurrentValue = kitchen7d;
-        entry.Property(nameof(CumulativeRecord.KitchenCount14d)).CurrentValue = kitchen14d;
-        entry.Property(nameof(CumulativeRecord.KitchenCount30d)).CurrentValue = kitchen30d;
-        entry.Property(nameof(CumulativeRecord.KitchenCount90d)).CurrentValue = kitchen90d;
-        entry.Property(nameof(CumulativeRecord.KitchenCountPeriod)).CurrentValue = kitchenPeriod;
         entry.Property(nameof(CumulativeRecord.NightMissions7d)).CurrentValue = night7d;
         entry.Property(nameof(CumulativeRecord.NightMissions14d)).CurrentValue = night14d;
         entry.Property(nameof(CumulativeRecord.NightMissions30d)).CurrentValue = night30d;
         entry.Property(nameof(CumulativeRecord.NightMissions90d)).CurrentValue = night90d;
         entry.Property(nameof(CumulativeRecord.NightMissionsPeriod)).CurrentValue = nightPeriod;
-        entry.Property(nameof(CumulativeRecord.DislikedHatedScore7d)).CurrentValue = disliked7d;
-        entry.Property(nameof(CumulativeRecord.DislikedHatedScore14d)).CurrentValue = disliked14d;
-        entry.Property(nameof(CumulativeRecord.DislikedHatedScore30d)).CurrentValue = disliked30d;
-        entry.Property(nameof(CumulativeRecord.DislikedHatedScore90d)).CurrentValue = disliked90d;
-        entry.Property(nameof(CumulativeRecord.DislikedHatedScorePeriod)).CurrentValue = dislikedPeriod;
         entry.Property(nameof(CumulativeRecord.TotalHoursAssignedPeriod)).CurrentValue = totalHoursPeriod;
         entry.Property(nameof(CumulativeRecord.ConsecutiveHoursAtBase)).CurrentValue = consecutiveHours;
         entry.Property(nameof(CumulativeRecord.LastHomeLeaveEnd)).CurrentValue = lastHomeLeaveEnd;

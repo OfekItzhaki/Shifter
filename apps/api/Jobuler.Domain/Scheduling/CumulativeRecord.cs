@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Jobuler.Domain.Common;
 
 namespace Jobuler.Domain.Scheduling;
@@ -32,26 +33,15 @@ public class CumulativeRecord : Entity, ITenantScoped
     public int HardTasks90d { get; private set; }
     public int HardTasksPeriod { get; private set; }
 
-    // Multi-window counters: disliked/hated score
-    public int DislikedHatedScore7d { get; private set; }
-    public int DislikedHatedScore14d { get; private set; }
-    public int DislikedHatedScore30d { get; private set; }
-    public int DislikedHatedScore90d { get; private set; }
-    public int DislikedHatedScorePeriod { get; private set; }
-
-    // Multi-window counters: kitchen count
-    public int KitchenCount7d { get; private set; }
-    public int KitchenCount14d { get; private set; }
-    public int KitchenCount30d { get; private set; }
-    public int KitchenCount90d { get; private set; }
-    public int KitchenCountPeriod { get; private set; }
-
     // Multi-window counters: night missions
     public int NightMissions7d { get; private set; }
     public int NightMissions14d { get; private set; }
     public int NightMissions30d { get; private set; }
     public int NightMissions90d { get; private set; }
     public int NightMissionsPeriod { get; private set; }
+
+    // Generic task-type counts stored as JSONB (e.g., {"kitchen": {"7d": 2, "14d": 5, ...}})
+    public string? TaskTypeCountsJson { get; private set; }
 
     public decimal TotalHoursAssignedPeriod { get; private set; }
     public DateTime UpdatedAt { get; private set; } = DateTime.UtcNow;
@@ -67,6 +57,7 @@ public class CumulativeRecord : Entity, ITenantScoped
         GroupId = groupId,
         PersonId = personId,
         PeriodId = periodId,
+        TaskTypeCountsJson = "{}",
         UpdatedAt = DateTime.UtcNow
     };
 
@@ -77,12 +68,11 @@ public class CumulativeRecord : Entity, ITenantScoped
     {
         TotalAssignmentsPeriod = 0;
         HardTasksPeriod = 0;
-        DislikedHatedScorePeriod = 0;
-        KitchenCountPeriod = 0;
         NightMissionsPeriod = 0;
         TotalHoursAssignedPeriod = 0;
         ConsecutiveHoursAtBase = 0;
         LastHomeLeaveEnd = null;
+        TaskTypeCountsJson = "{}";
         UpdatedAt = DateTime.UtcNow;
     }
 
@@ -115,18 +105,6 @@ public class CumulativeRecord : Entity, ITenantScoped
         HardTasks90d += delta.HardTasks;
         HardTasksPeriod += delta.HardTasks;
 
-        DislikedHatedScore7d += delta.DislikedHatedScore;
-        DislikedHatedScore14d += delta.DislikedHatedScore;
-        DislikedHatedScore30d += delta.DislikedHatedScore;
-        DislikedHatedScore90d += delta.DislikedHatedScore;
-        DislikedHatedScorePeriod += delta.DislikedHatedScore;
-
-        KitchenCount7d += delta.KitchenCount;
-        KitchenCount14d += delta.KitchenCount;
-        KitchenCount30d += delta.KitchenCount;
-        KitchenCount90d += delta.KitchenCount;
-        KitchenCountPeriod += delta.KitchenCount;
-
         NightMissions7d += delta.NightMissions;
         NightMissions14d += delta.NightMissions;
         NightMissions30d += delta.NightMissions;
@@ -134,6 +112,62 @@ public class CumulativeRecord : Entity, ITenantScoped
         NightMissionsPeriod += delta.NightMissions;
 
         TotalHoursAssignedPeriod += delta.TotalHours;
+
+        // Merge task-type counts into the JSONB structure
+        if (delta.TaskTypeCounts is { Count: > 0 })
+        {
+            MergeTaskTypeCounts(delta.TaskTypeCounts);
+        }
+
         UpdatedAt = DateTime.UtcNow;
+    }
+
+    /// <summary>
+    /// Merges incoming task-type counts into the existing JSONB structure.
+    /// Each task type has per-window counters: 7d, 14d, 30d, 90d, period.
+    /// On increment, all windows are incremented (decay is handled externally).
+    /// </summary>
+    private void MergeTaskTypeCounts(Dictionary<string, int> incoming)
+    {
+        var existing = DeserializeTaskTypeCounts();
+
+        foreach (var (taskType, count) in incoming)
+        {
+            if (!existing.TryGetValue(taskType, out var windows))
+            {
+                windows = new Dictionary<string, int>
+                {
+                    ["7d"] = 0, ["14d"] = 0, ["30d"] = 0, ["90d"] = 0, ["period"] = 0
+                };
+                existing[taskType] = windows;
+            }
+
+            windows["7d"] = windows.GetValueOrDefault("7d") + count;
+            windows["14d"] = windows.GetValueOrDefault("14d") + count;
+            windows["30d"] = windows.GetValueOrDefault("30d") + count;
+            windows["90d"] = windows.GetValueOrDefault("90d") + count;
+            windows["period"] = windows.GetValueOrDefault("period") + count;
+        }
+
+        TaskTypeCountsJson = JsonSerializer.Serialize(existing);
+    }
+
+    /// <summary>
+    /// Deserializes the TaskTypeCountsJson into a nested dictionary structure.
+    /// </summary>
+    private Dictionary<string, Dictionary<string, int>> DeserializeTaskTypeCounts()
+    {
+        if (string.IsNullOrWhiteSpace(TaskTypeCountsJson) || TaskTypeCountsJson == "{}")
+            return new Dictionary<string, Dictionary<string, int>>();
+
+        try
+        {
+            return JsonSerializer.Deserialize<Dictionary<string, Dictionary<string, int>>>(TaskTypeCountsJson)
+                ?? new Dictionary<string, Dictionary<string, int>>();
+        }
+        catch (JsonException)
+        {
+            return new Dictionary<string, Dictionary<string, int>>();
+        }
     }
 }

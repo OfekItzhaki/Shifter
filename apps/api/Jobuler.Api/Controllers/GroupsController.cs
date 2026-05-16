@@ -40,8 +40,16 @@ public class GroupsController : ControllerBase
         [FromBody] CreateGroupRequest req, CancellationToken ct)
     {
         await _permissions.RequirePermissionAsync(CurrentUserId, spaceId, Permissions.PeopleManage, ct);
+
+        var templateType = Domain.Groups.GroupTemplateType.Custom;
+        if (!string.IsNullOrEmpty(req.TemplateType))
+        {
+            if (!Enum.TryParse<Domain.Groups.GroupTemplateType>(req.TemplateType, true, out templateType))
+                throw new InvalidOperationException("Invalid template type.");
+        }
+
         var id = await _mediator.Send(
-            new CreateGroupCommand(spaceId, req.GroupTypeId, req.Name, req.Description, CurrentUserId), ct);
+            new CreateGroupCommand(spaceId, req.GroupTypeId, req.Name, req.Description, CurrentUserId, templateType), ct);
         return Created("", new { id });
     }
 
@@ -62,6 +70,14 @@ public class GroupsController : ControllerBase
         {
             await _permissions.RequirePermissionAsync(CurrentUserId, spaceId, Permissions.ConstraintsManage, ct);
             await _mediator.Send(new SetGroupClosedBaseCommand(spaceId, groupId, CurrentUserId, req.IsClosedBase.Value), ct);
+        }
+
+        if (!string.IsNullOrEmpty(req.TemplateType))
+        {
+            await _permissions.RequirePermissionAsync(CurrentUserId, spaceId, Permissions.PeopleManage, ct);
+            if (!Enum.TryParse<Domain.Groups.GroupTemplateType>(req.TemplateType, true, out var templateType))
+                throw new InvalidOperationException("Invalid template type.");
+            await _mediator.Send(new SetGroupTemplateTypeCommand(spaceId, groupId, CurrentUserId, templateType), ct);
         }
 
         return NoContent();
@@ -341,11 +357,11 @@ public class GroupsController : ControllerBase
 public record AddMemberByIdRequest(Guid PersonId, Guid? RoleId = null);
 public record CreateGroupMessageRequest(string Content, bool IsPinned = false);
 public record CreateGroupTypeRequest(string Name, string? Description);
-public record CreateGroupRequest(Guid? GroupTypeId, string Name, string? Description);
+public record CreateGroupRequest(Guid? GroupTypeId, string Name, string? Description, string? TemplateType = null);
 public record AddMemberByEmailRequest(string Email, Guid? RoleId = null);
 public record AddMemberByPhoneRequest(string PhoneNumber, Guid? RoleId = null);
 public record UpdateGroupSettingsRequest(int SolverHorizonDays, DateTime? SolverStartDateTime = null, bool? AutoPublish = null, int? MinRestBetweenShiftsHours = null);
-public record UpdateGroupRequest(bool? IsClosedBase = null);
+public record UpdateGroupRequest(bool? IsClosedBase = null, string? TemplateType = null);
 public record RenameGroupRequest(string Name);
 public record InitiateGroupTransferRequest(Guid ProposedPersonId);
 public record CreateAlertRequest(string Title, string Body, string Severity);

@@ -86,27 +86,39 @@ public class CumulativeTracker : ICumulativeTracker
             var (shiftStart, shiftEnd, taskTypeId, burdenLevel, taskName) = resolved.Value;
 
             int isHard = burdenLevel == "hard" ? 1 : 0;
-            int isKitchen = IsKitchenTask(taskName) ? 1 : 0;
             int isNight = IsNightShift(shiftStart) ? 1 : 0;
             decimal hours = (decimal)(shiftEnd - shiftStart).TotalHours;
+
+            // Build task-type counts for this assignment
+            var taskTypeCounts = new Dictionary<string, int>();
+            if (!string.IsNullOrEmpty(taskName))
+            {
+                taskTypeCounts[taskName.ToLowerInvariant()] = 1;
+            }
 
             var newDelta = new AssignmentCountsDelta(
                 TotalAssignments: 1,
                 HardTasks: isHard,
-                DislikedHatedScore: 0, // Requires person-specific preference data; not available here
-                KitchenCount: isKitchen,
                 NightMissions: isNight,
-                TotalHours: hours);
+                TotalHours: hours,
+                TaskTypeCounts: taskTypeCounts);
 
             if (deltasByPerson.TryGetValue(assignment.PersonId, out var existing))
             {
+                // Merge task-type counts
+                var mergedTaskTypeCounts = new Dictionary<string, int>(existing.TaskTypeCounts ?? new());
+                if (newDelta.TaskTypeCounts != null)
+                {
+                    foreach (var (key, val) in newDelta.TaskTypeCounts)
+                        mergedTaskTypeCounts[key] = mergedTaskTypeCounts.GetValueOrDefault(key) + val;
+                }
+
                 deltasByPerson[assignment.PersonId] = new AssignmentCountsDelta(
                     TotalAssignments: existing.TotalAssignments + newDelta.TotalAssignments,
                     HardTasks: existing.HardTasks + newDelta.HardTasks,
-                    DislikedHatedScore: existing.DislikedHatedScore + newDelta.DislikedHatedScore,
-                    KitchenCount: existing.KitchenCount + newDelta.KitchenCount,
                     NightMissions: existing.NightMissions + newDelta.NightMissions,
-                    TotalHours: existing.TotalHours + newDelta.TotalHours);
+                    TotalHours: existing.TotalHours + newDelta.TotalHours,
+                    TaskTypeCounts: mergedTaskTypeCounts);
             }
             else
             {
@@ -450,16 +462,6 @@ public class CumulativeTracker : ICumulativeTracker
         }
 
         return null;
-    }
-
-    /// <summary>
-    /// Determines if a task is a kitchen task by checking its name.
-    /// </summary>
-    private static bool IsKitchenTask(string? taskName)
-    {
-        if (string.IsNullOrEmpty(taskName)) return false;
-        return taskName.Contains("מטבח", StringComparison.OrdinalIgnoreCase)
-            || taskName.Contains("kitchen", StringComparison.OrdinalIgnoreCase);
     }
 
     /// <summary>

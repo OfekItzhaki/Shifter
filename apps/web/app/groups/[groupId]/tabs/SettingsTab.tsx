@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import type { GroupMemberDto } from "@/lib/api/groups";
 import { getJoinCode, regenerateJoinCode } from "@/lib/api/groups";
 import SmartImportModal from "@/components/SmartImportModal";
 import HomeLeaveConfigPanel from "@/components/home-leave/HomeLeaveConfigPanel";
+import { FEATURE_VISIBILITY_MAP, type GroupTemplateType } from "@/lib/utils/templateFeatureConfig";
 
 interface DraftVersion { id: string; status: string; }
 
@@ -13,6 +14,7 @@ interface Props {
   isAdmin: boolean;
   spaceId: string;
   groupId: string;
+  templateType?: string | null;
   newGroupName: string;
   renameSaving: boolean;
   renameError: string | null;
@@ -62,7 +64,7 @@ interface Props {
 }
 
 export default function SettingsTab({
-  isAdmin, spaceId, groupId, newGroupName, renameSaving, renameError,
+  isAdmin, spaceId, groupId, templateType, newGroupName, renameSaving, renameError,
   solverHorizon, savingSettings, settingsError, settingsSaved,
   solverStartDateTime, autoPublish, isClosedBase, minRestBetweenShiftsHours,
   solverPolling, solverStatus, solverError, draftVersion,
@@ -78,8 +80,18 @@ export default function SettingsTab({
   const tCommon = useTranslations("common");
   const tImport = useTranslations("import");
   const tAdmin = useTranslations("admin");
+  const locale = useLocale();
 
   const [importModalOpen, setImportModalOpen] = useState(false);
+
+  // Resolve feature visibility from template type
+  const resolvedTemplateType: GroupTemplateType = (
+    templateType && templateType in FEATURE_VISIBILITY_MAP
+      ? templateType as GroupTemplateType
+      : "Custom"
+  );
+  const visibility = FEATURE_VISIBILITY_MAP[resolvedTemplateType];
+  const stayoverLabel = visibility.stayoverLabel[locale as keyof typeof visibility.stayoverLabel] ?? visibility.stayoverLabel.en;
 
   // Solver start time — defaults to midnight (00:00) of today.
   // Shifts always start from day boundaries for cleaner schedules.
@@ -185,6 +197,7 @@ export default function SettingsTab({
       </Section>
 
       {/* Minimum rest between shifts */}
+      {visibility.minRestBetweenShifts && (
       <Section title={t("minRestBetweenShifts")}>
         <div className="space-y-2">
           <p className="text-sm text-slate-600">{t("minRestBetweenShiftsDesc")}</p>
@@ -207,13 +220,15 @@ export default function SettingsTab({
           )}
         </div>
       </Section>
+      )}
 
       {/* Closed base toggle */}
-      <Section title="בסיס סגור">
+      {visibility.closedBase && (
+      <Section title={stayoverLabel}>
         <div className="flex items-center justify-between">
           <div>
             <p className="text-sm text-slate-600">
-              סמן קבוצה זו כבסיס סגור כדי להפעיל תכנון חופשות אוטומטי. כאשר מופעל, המערכת תתזמן חופשות הביתה עבור אנשי הצוות.
+              סמן קבוצה זו כדי להפעיל תכנון חופשות אוטומטי. כאשר מופעל, המערכת תתזמן חופשות הביתה עבור אנשי הצוות.
             </p>
           </div>
           <button
@@ -232,14 +247,17 @@ export default function SettingsTab({
           </button>
         </div>
       </Section>
+      )}
 
       {/* Home-leave configuration panel — visible only when closed base is enabled */}
+      {visibility.homeLeave && (
       <HomeLeaveConfigPanel
         spaceId={spaceId}
         groupId={groupId}
         isClosedBase={isClosedBase}
         memberCount={members.length}
       />
+      )}
 
       {/* Trigger solver */}
       <Section title={t("runSchedule")}>

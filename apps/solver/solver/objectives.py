@@ -83,7 +83,7 @@ def build_objective(
     }
 
     fairness_history = {
-        f.person_id: f.disliked_hated_score_7d
+        f.person_id: f.hated_tasks_7d
         for f in input.fairness_counters
     }
 

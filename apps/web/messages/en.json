@@ -729,8 +729,9 @@
   "constraintEditor": {
     "minRestHours": "Minimum rest hours between shifts",
     "hours": "hours",
-    "maxKitchenPerWeek": "Max kitchen shifts per week",
-    "taskTypeName": "Task type name (optional)",
+    "maxKitchenPerWeek": "Max assignments",
+    "taskTypeName": "Task type name",
+    "periodDays": "Period (days)",
     "noConsecutiveBurden": "No consecutive burden level",
     "hard": "Hard",
     "normal": "Normal",

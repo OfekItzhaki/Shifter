@@ -12,7 +12,7 @@ from solver.constraints import (
     add_min_rest_constraints,
     add_qualification_constraints,
     add_role_constraints,
-    add_kitchen_frequency_constraints,
+    add_max_task_type_per_period_constraints,
 )
 
 

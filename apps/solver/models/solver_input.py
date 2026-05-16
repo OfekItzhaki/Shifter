@@ -88,10 +88,9 @@ class FairnessCounters(BaseModel):
     person_id: str
     total_assignments_7d: int = 0
     hated_tasks_7d: int = 0
-    disliked_hated_score_7d: int = 0
-    kitchen_count_7d: int = 0
     night_missions_7d: int = 0
     consecutive_burden_count: int = 0
+    task_type_counts_7d: dict[str, int] = {}
 
 
 class HomeLeaveConfig(BaseModel):

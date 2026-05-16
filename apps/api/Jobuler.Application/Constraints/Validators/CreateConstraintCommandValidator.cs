@@ -17,6 +17,15 @@ public class CreateConstraintCommandValidator : AbstractValidator<CreateConstrai
         RuleFor(x => x.EffectiveUntil)
             .Must((cmd, until) => until == null || cmd.EffectiveFrom == null || until >= cmd.EffectiveFrom)
             .WithMessage("EffectiveUntil must be on or after EffectiveFrom.");
+
+        // max_task_type_per_period payload validation
+        When(x => x.RuleType == "max_task_type_per_period", () =>
+        {
+            RuleFor(x => x.RulePayloadJson)
+                .Must(HaveValidTaskTypeName).WithMessage("Payload must contain a non-empty 'task_type_name' string.")
+                .Must(HavePositiveMax).WithMessage("Payload 'max' must be a positive integer.")
+                .Must(HavePositivePeriodDays).WithMessage("Payload 'period_days' must be a positive integer.");
+        });
     }
 
     private static bool BeValidJson(string json)
@@ -30,5 +39,41 @@ public class CreateConstraintCommandValidator : AbstractValidator<CreateConstrai
         {
             return false;
         }
+    }
+
+    private static bool HaveValidTaskTypeName(string json)
+    {
+        try
+        {
+            using var doc = System.Text.Json.JsonDocument.Parse(json);
+            if (doc.RootElement.TryGetProperty("task_type_name", out var prop))
+                return prop.ValueKind == System.Text.Json.JsonValueKind.String && !string.IsNullOrWhiteSpace(prop.GetString());
+            return false;
+        }
+        catch { return false; }
+    }
+
+    private static bool HavePositiveMax(string json)
+    {
+        try
+        {
+            using var doc = System.Text.Json.JsonDocument.Parse(json);
+            if (doc.RootElement.TryGetProperty("max", out var prop) && prop.TryGetInt32(out var val))
+                return val > 0;
+            return false;
+        }
+        catch { return false; }
+    }
+
+    private static bool HavePositivePeriodDays(string json)
+    {
+        try
+        {
+            using var doc = System.Text.Json.JsonDocument.Parse(json);
+            if (doc.RootElement.TryGetProperty("period_days", out var prop) && prop.TryGetInt32(out var val))
+                return val > 0;
+            return false;
+        }
+        catch { return false; }
     }
 }

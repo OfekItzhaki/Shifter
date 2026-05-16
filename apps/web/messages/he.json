@@ -733,8 +733,9 @@
   "constraintEditor": {
     "minRestHours": "מינימום שעות מנוחה בין משמרות",
     "hours": "שעות",
-    "maxKitchenPerWeek": "מקסימום משמרות מטבח בשבוע",
-    "taskTypeName": "שם סוג משימה (אופציונלי)",
+    "maxKitchenPerWeek": "מקסימום משימות",
+    "taskTypeName": "שם סוג משימה",
+    "periodDays": "תקופה (ימים)",
     "noConsecutiveBurden": "ללא עומס רצוף",
     "hard": "קשה",
     "normal": "רגיל",

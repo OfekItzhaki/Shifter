@@ -24,10 +24,12 @@ public class FairnessCounter : Entity, ITenantScoped
     public int BurdenScore7d { get; private set; }
     public int BurdenScore14d { get; private set; }
     public int BurdenScore30d { get; private set; }
-    public int DislikedHatedScore7d { get; private set; }
-    public int KitchenCount7d { get; private set; }
     public int NightMissions7d { get; private set; }
     public int ConsecutiveHardCount { get; private set; }
+
+    // Generic task-type counts stored as JSONB (e.g., {"kitchen": 2, "guard": 3})
+    public string? TaskTypeCountsJson { get; private set; }
+
     public DateTime UpdatedAt { get; private set; }
 
     private FairnessCounter() { }
@@ -38,6 +40,7 @@ public class FairnessCounter : Entity, ITenantScoped
             SpaceId = spaceId,
             PersonId = personId,
             AsOfDate = asOfDate,
+            TaskTypeCountsJson = "{}",
             UpdatedAt = DateTime.UtcNow
         };
 
@@ -46,7 +49,8 @@ public class FairnessCounter : Entity, ITenantScoped
         int hard7d, int hard14d, int hard30d,
         int easy7d, int easy14d, int easy30d,
         int burdenScore7d, int burdenScore14d, int burdenScore30d,
-        int kitchen7d, int night7d, int consecutiveHard)
+        int night7d, int consecutiveHard,
+        string? taskTypeCountsJson = null)
     {
         if (total7d < 0 || total14d < 0 || total30d < 0)
             throw new InvalidOperationException("Total assignment counts must be non-negative.");
@@ -54,8 +58,6 @@ public class FairnessCounter : Entity, ITenantScoped
             throw new InvalidOperationException("Hard task counts must be non-negative.");
         if (easy7d < 0 || easy14d < 0 || easy30d < 0)
             throw new InvalidOperationException("Easy task counts must be non-negative.");
-        if (kitchen7d < 0)
-            throw new InvalidOperationException("Kitchen count must be non-negative.");
         if (night7d < 0)
             throw new InvalidOperationException("Night missions count must be non-negative.");
         if (consecutiveHard < 0)
@@ -73,9 +75,9 @@ public class FairnessCounter : Entity, ITenantScoped
         BurdenScore7d = burdenScore7d;
         BurdenScore14d = burdenScore14d;
         BurdenScore30d = burdenScore30d;
-        KitchenCount7d = kitchen7d;
         NightMissions7d = night7d;
         ConsecutiveHardCount = consecutiveHard;
+        TaskTypeCountsJson = taskTypeCountsJson ?? "{}";
         UpdatedAt = DateTime.UtcNow;
     }
 }
