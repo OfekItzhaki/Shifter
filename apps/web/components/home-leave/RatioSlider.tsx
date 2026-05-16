@@ -19,9 +19,11 @@ interface RatioSliderProps {
 /**
  * Calculates the displayed base:home ratio from the slider position.
  * At value=50 (center): optimal ratio (e.g. 4:3).
- * At value > 50 (right): baseDays increases (from optimal up to 2×), homeDays stays at optimal.
- * At value < 50 (left): homeDays decreases (from optimal down to 1), baseDays stays at optimal.
- * Both directions are "conservative" — right adds base time, left reduces home time.
+ * At value < 50 (left in LTR / right in RTL): baseDays increases, homeDays stays at optimal.
+ * At value > 50 (right in LTR / left in RTL): homeDays decreases, baseDays stays at optimal.
+ * 
+ * NOTE: In RTL, the HTML range input natively flips — value 0 is on the right, 100 on the left.
+ * So we swap the semantics: < 50 = more base (right side in RTL), > 50 = less home (left side in RTL).
  */
 function calculateDisplayRatio(
   value: number,
@@ -32,14 +34,14 @@ function calculateDisplayRatio(
     return { baseDays: optimalBaseDays, homeDays: optimalHomeDays };
   }
 
-  if (value > 50) {
-    // Moving RIGHT from center: increase base days (up to 2× optimal), homeDays stays at optimal
-    const baseDays = Math.round(optimalBaseDays * (1 + (value - 50) / 50));
+  if (value < 50) {
+    // Slider moved toward "more base" — increase base days, homeDays stays at optimal
+    const baseDays = Math.round(optimalBaseDays * (1 + (50 - value) / 50));
     return { baseDays, homeDays: optimalHomeDays };
   }
 
-  // Moving LEFT from center: decrease home days (down to 1), baseDays stays at optimal
-  const homeDays = Math.max(1, Math.round(optimalHomeDays * (value / 50)));
+  // Slider moved toward "less home" — decrease home days, baseDays stays at optimal
+  const homeDays = Math.max(1, Math.round(optimalHomeDays * (1 - (value - 50) / 50)));
   return { baseDays: optimalBaseDays, homeDays };
 }
 
