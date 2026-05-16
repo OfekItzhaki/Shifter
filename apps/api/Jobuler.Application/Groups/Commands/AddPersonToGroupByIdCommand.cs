@@ -66,6 +66,18 @@ public class AddPersonToGroupByIdCommandHandler : IRequestHandler<AddPersonToGro
 
         if (!alreadyMember)
         {
+            // Check for duplicate name within the group (case-insensitive)
+            var personName = person.FullName.Trim().ToLowerInvariant();
+            var existingMemberIds = await _db.GroupMemberships.AsNoTracking()
+                .Where(m => m.GroupId == req.GroupId && m.SpaceId == req.SpaceId)
+                .Select(m => m.PersonId)
+                .ToListAsync(ct);
+            var duplicateNameInGroup = await _db.People.AsNoTracking()
+                .AnyAsync(p => existingMemberIds.Contains(p.Id) && p.IsActive
+                    && p.FullName.ToLower() == personName, ct);
+            if (duplicateNameInGroup)
+                throw new InvalidOperationException($"אדם בשם '{person.FullName}' כבר קיים בקבוצה זו.");
+
             // Check member limit based on subscription tier
             var sub = await _db.GroupSubscriptions
                 .FirstOrDefaultAsync(s => s.GroupId == req.GroupId && s.SpaceId == req.SpaceId, ct);

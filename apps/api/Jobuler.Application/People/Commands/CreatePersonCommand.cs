@@ -29,13 +29,9 @@ public class CreatePersonCommandHandler : IRequestHandler<CreatePersonCommand, G
     {
         await _permissions.RequirePermissionAsync(req.RequestingUserId, req.SpaceId, Permissions.PeopleManage, ct);
 
-        // Duplicate name check (case-insensitive)
-        var nameLower = req.FullName.Trim().ToLowerInvariant();
-        var duplicate = await _db.People
-            .AnyAsync(p => p.SpaceId == req.SpaceId && p.IsActive &&
-                           p.FullName.ToLower() == nameLower, ct);
-        if (duplicate)
-            throw new ConflictException($"A person named '{req.FullName.Trim()}' already exists in this space.");
+        // No duplicate name check at space level — same name is allowed in a space
+        // (e.g., two "דניאל" in different groups). Duplicate check happens at group level
+        // when adding a person to a group.
 
         // If no LinkedUserId, create as pending invitation
         var status = req.LinkedUserId.HasValue ? "accepted" : "pending";
