@@ -141,21 +141,19 @@ def add_home_leave_constraints(
                         assign[(s_idx, p_idx)] + leave_var <= 1
                     )
 
-    # ── Constraint 4: One-at-a-time per person ────────────────────────────────
-    # A person cannot have two overlapping leave slots.
+    # ── Constraint 4: At most one leave per person per horizon ───────────────
+    # A person can only go on leave ONCE per solver run. This ensures they
+    # must accumulate enough base time again before the next leave.
     for p_idx in range(num_people):
         if people[p_idx].person_id in emergency_person_ids:
             continue
-        person_start_hours = [
-            h for h in possible_start_hours if (p_idx, h) in home_leave_vars
+        person_vars = [
+            home_leave_vars[(p_idx, h)]
+            for h in possible_start_hours
+            if (p_idx, h) in home_leave_vars
         ]
-        for i, h1 in enumerate(person_start_hours):
-            for h2 in person_start_hours[i + 1:]:
-                # Two leave slots overlap if h1 < h2 + duration AND h2 < h1 + duration
-                if h1 < h2 + leave_duration_hours_int and h2 < h1 + leave_duration_hours_int:
-                    model.add(
-                        home_leave_vars[(p_idx, h1)] + home_leave_vars[(p_idx, h2)] <= 1
-                    )
+        if len(person_vars) > 1:
+            model.add(sum(person_vars) <= 1)
 
     return home_leave_vars
 

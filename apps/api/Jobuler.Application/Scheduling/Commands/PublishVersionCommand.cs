@@ -319,22 +319,46 @@ public class PublishVersionCommandHandler : IRequestHandler<PublishVersionComman
                 && pw.EndsAt > minStart)
             .ToListAsync(ct);
 
-        // Check each valid entry for overlap with on_mission windows — skip conflicts instead of failing
+        // Also check for existing AtHome windows to prevent duplicates
+        var existingAtHomeWindows = await _db.PresenceWindows.AsNoTracking()
+            .Where(pw => pw.SpaceId == spaceId
+                && pw.State == PresenceState.AtHome
+                && affectedPersonIds.Contains(pw.PersonId)
+                && pw.StartsAt < maxEnd
+                && pw.EndsAt > minStart)
+            .ToListAsync(ct);
+
+        // Check each valid entry for overlap with on_mission OR existing at_home windows
         var nonConflictingEntries = new List<(Guid PersonId, DateTime StartsAt, DateTime EndsAt)>();
         foreach (var entry in validEntries)
         {
-            var conflicting = existingOnMissionWindows.FirstOrDefault(pw =>
+            var conflictingMission = existingOnMissionWindows.FirstOrDefault(pw =>
                 pw.PersonId == entry.PersonId
                 && pw.StartsAt < entry.EndsAt
                 && pw.EndsAt > entry.StartsAt);
 
-            if (conflicting is not null)
+            if (conflictingMission is not null)
             {
                 _logger.LogWarning(
                     "Home-leave window skipped (conflicts with on_mission): person {PersonId} at {StartsAt:O} – {EndsAt:O}",
                     entry.PersonId, entry.StartsAt, entry.EndsAt);
                 continue;
             }
+
+            // Skip if an AtHome window already exists for this person overlapping this time
+            var duplicateAtHome = existingAtHomeWindows.FirstOrDefault(pw =>
+                pw.PersonId == entry.PersonId
+                && pw.StartsAt < entry.EndsAt
+                && pw.EndsAt > entry.StartsAt);
+
+            if (duplicateAtHome is not null)
+            {
+                _logger.LogInformation(
+                    "Home-leave window skipped (duplicate): person {PersonId} already has AtHome at {StartsAt:O} – {EndsAt:O}",
+                    entry.PersonId, entry.StartsAt, entry.EndsAt);
+                continue;
+            }
+
             nonConflictingEntries.Add(entry);
         }
 
