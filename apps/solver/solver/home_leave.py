@@ -331,14 +331,14 @@ def add_home_leave_eligibility_preference(
         return []
 
     # Weight for the eligibility preference — derived from balance_value (0–100).
-    # Formula: weight = balance_value × 40, giving range [0, 4000].
-    # Default balance_value is 50 → weight 2000.
-    # This must be higher than task assignment penalties (1000) to ensure
-    # the solver actually sends eligible people home rather than keeping them for tasks.
+    # Formula: weight = balance_value × 20, giving range [0, 2000].
+    # Default balance_value is 50 → weight 1000.
+    # This is on the SAME level as task assignment penalties (1000), so the solver
+    # treats home-leave and task coverage as equally important and finds the best balance.
     # When balance_value is 0, weight is 0 (preference disabled).
-    # When balance_value is 100, weight is 4000 (maximum preference).
+    # When balance_value is 100, weight is 2000 (home-leave prioritized over tasks).
     balance = config.balance_value if config.balance_value is not None else 50
-    ELIGIBILITY_WEIGHT = balance * 40
+    ELIGIBILITY_WEIGHT = balance * 20
 
     # Build cumulative hours lookup: person_id → consecutive_hours_at_base (in seconds)
     cumulative_seconds_lookup: dict[str, int] = {}
