@@ -31,20 +31,32 @@ public class OptimalRatioCalculator : IOptimalRatioCalculator
         // Step 1: home_days = ceil(leave_duration_hours / 24)
         var homeDays = (int)Math.Ceiling((double)leaveDurationHours / 24.0);
 
-        // Step 2: Iteratively compute base_days until convergence
-        // Start with an initial guess: base_days = home_days (1:1 ratio)
-        var baseDays = homeDays;
-
-        for (var i = 0; i < MaxIterations; i++)
+        // Step 2: Compute base_days
+        // When availableForRotation == coverageRequirement, the iterative formula diverges.
+        // Use direct formula: base_days = ceil(homeDays × coverageRequirement / leaveCapacity)
+        // This represents the minimum time each person must wait at base between leave rotations.
+        int baseDays;
+        if (availableForRotation == coverageRequirement)
         {
-            var cycleLength = baseDays + homeDays;
-            var newBaseDays = (int)Math.Ceiling(
-                (double)(coverageRequirement * cycleLength) / availableForRotation);
+            // Edge case: exactly enough people to cover. Each person's base time is
+            // proportional to how many others need to rotate through home leave.
+            baseDays = Math.Max(1, (int)Math.Ceiling((double)(homeDays * coverageRequirement) / leaveCapacity));
+        }
+        else
+        {
+            // General case: iteratively compute base_days until convergence
+            baseDays = homeDays;
+            for (var i = 0; i < MaxIterations; i++)
+            {
+                var cycleLength = baseDays + homeDays;
+                var newBaseDays = (int)Math.Ceiling(
+                    (double)(coverageRequirement * cycleLength) / availableForRotation);
 
-            if (newBaseDays == baseDays)
-                break;
+                if (newBaseDays == baseDays)
+                    break;
 
-            baseDays = newBaseDays;
+                baseDays = newBaseDays;
+            }
         }
 
         // Ensure minimum of 1 day for both
