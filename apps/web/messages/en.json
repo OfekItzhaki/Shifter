@@ -394,7 +394,11 @@
       "copyLink": "Copy Link",
       "copied": "Copied!",
       "regenerateCode": "Generate new code (invalidates old link)",
-      "loading": "Loading..."
+      "loading": "Loading...",
+      "minRestBetweenShifts": "Minimum Rest Between Shifts",
+      "minRestBetweenShiftsDesc": "Minimum hours of rest between two consecutive shifts. The solver enforces this automatically.",
+      "hours": "hours",
+      "minRestZeroWarning": "⚠ No minimum rest — suitable for restaurants etc."
     },
     "stats_tab": {
       "loading": "Loading statistics...",

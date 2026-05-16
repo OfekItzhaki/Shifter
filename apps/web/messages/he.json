@@ -423,7 +423,11 @@
       "copyLink": "העתק קישור",
       "copied": "הועתק!",
       "regenerateCode": "צור קוד חדש (מבטל את הקודם)",
-      "loading": "טוען..."
+      "loading": "טוען...",
+      "minRestBetweenShifts": "מנוחה מינימלית בין משמרות",
+      "minRestBetweenShiftsDesc": "מספר שעות מנוחה מינימלי בין שתי משמרות עוקבות. הסולבר יאכוף זאת אוטומטית.",
+      "hours": "שעות",
+      "minRestZeroWarning": "⚠ ללא מנוחה מינימלית — מתאים למסעדות וכד׳"
     },
     "schedule_tab": {
       "draftReady": "סידור טיוטה מוכן לעיון ופרסום",

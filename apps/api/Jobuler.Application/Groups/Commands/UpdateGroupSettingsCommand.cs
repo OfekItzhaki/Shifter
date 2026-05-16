@@ -9,7 +9,8 @@ public record UpdateGroupSettingsCommand(
     Guid GroupId,
     int SolverHorizonDays,
     DateTime? SolverStartDateTime = null,
-    bool? AutoPublish = null) : IRequest;
+    bool? AutoPublish = null,
+    int? MinRestBetweenShiftsHours = null) : IRequest;
 
 public class UpdateGroupSettingsCommandHandler : IRequestHandler<UpdateGroupSettingsCommand>
 {
@@ -35,6 +36,8 @@ public class UpdateGroupSettingsCommandHandler : IRequestHandler<UpdateGroupSett
         group.UpdateSettings(req.SolverHorizonDays, req.SolverStartDateTime);
         if (req.AutoPublish.HasValue)
             group.SetAutoPublish(req.AutoPublish.Value);
+        if (req.MinRestBetweenShiftsHours.HasValue)
+            group.SetMinRestBetweenShifts(req.MinRestBetweenShiftsHours.Value);
         await _db.SaveChangesAsync(ct);
     }
 }

@@ -37,6 +37,7 @@ public class GroupConfiguration : IEntityTypeConfiguration<Group>
         builder.Property(g => g.SolverStartDateTime).HasColumnName("solver_start_date_time").IsRequired(false);
         builder.Property(g => g.AutoPublish).HasColumnName("auto_publish").HasDefaultValue(false);
         builder.Property(g => g.IsClosedBase).HasColumnName("is_closed_base").HasDefaultValue(false);
+        builder.Property(g => g.MinRestBetweenShiftsHours).HasColumnName("min_rest_between_shifts_hours").HasDefaultValue(8);
         builder.Property(g => g.JoinCode).HasColumnName("join_code").HasMaxLength(8).IsRequired(false);
         builder.HasIndex(g => g.JoinCode).IsUnique().HasFilter("join_code IS NOT NULL");
         builder.Property(g => g.DeletedAt).HasColumnName("deleted_at");

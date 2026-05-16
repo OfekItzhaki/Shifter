@@ -14,6 +14,7 @@ public class Group : AuditableEntity, ITenantScoped
     public DateTime? SolverStartDateTime { get; private set; }
     public bool AutoPublish { get; private set; } = false;
     public bool IsClosedBase { get; private set; } = false;
+    public int MinRestBetweenShiftsHours { get; private set; } = 8;
     public string? JoinCode { get; private set; }
     public DateTime? DeletedAt { get; private set; }
 
@@ -49,6 +50,15 @@ public class Group : AuditableEntity, ITenantScoped
     public void UpdateSettings(int solverHorizonDays, DateTime? solverStartDateTime = null) { SolverHorizonDays = Math.Clamp(solverHorizonDays, 1, 7); SolverStartDateTime = solverStartDateTime; Touch(); }
     public void SetAutoPublish(bool autoPublish) { AutoPublish = autoPublish; Touch(); }
     public void SetClosedBase(bool value) { IsClosedBase = value; Touch(); }
+
+    public void SetMinRestBetweenShifts(int hours)
+    {
+        if (hours < 0 || hours > 24)
+            throw new InvalidOperationException("שעות מנוחה מינימלית בין משמרות חייבות להיות בין 0 ל-24.");
+        MinRestBetweenShiftsHours = hours;
+        Touch();
+    }
+
     public void Deactivate() { IsActive = false; Touch(); }
 
     public void SoftDelete() { DeletedAt = DateTime.UtcNow; Touch(); }

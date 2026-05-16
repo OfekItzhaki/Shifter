@@ -23,6 +23,7 @@ interface Props {
   solverStartDateTime: string | null;
   autoPublish: boolean;
   isClosedBase: boolean;
+  minRestBetweenShiftsHours: number;
   solverPolling: boolean;
   solverStatus: string | null;
   solverError: string | null;
@@ -48,6 +49,7 @@ interface Props {
   onSolverStartDateTimeChange: (v: string | null) => void;
   onAutoPublishChange: (v: boolean) => void;
   onClosedBaseChange: (v: boolean) => void;
+  onMinRestBetweenShiftsChange: (v: number) => void;
   onSaveSettings: () => void;
   onTriggerSolver: (startTime?: string) => void;
   onOpenDraftModal: () => void;
@@ -62,12 +64,12 @@ interface Props {
 export default function SettingsTab({
   isAdmin, spaceId, groupId, newGroupName, renameSaving, renameError,
   solverHorizon, savingSettings, settingsError, settingsSaved,
-  solverStartDateTime, autoPublish, isClosedBase,
+  solverStartDateTime, autoPublish, isClosedBase, minRestBetweenShiftsHours,
   solverPolling, solverStatus, solverError, draftVersion,
   members,
   transferPersonId, transferSaving, transferError, hasPendingTransfer, cancelTransferSaving,
   showDeleteConfirm, deleteSaving, deleteError,
-  onGroupNameChange, onRenameGroup, onSolverHorizonChange, onSolverStartDateTimeChange, onAutoPublishChange, onClosedBaseChange, onSaveSettings,
+  onGroupNameChange, onRenameGroup, onSolverHorizonChange, onSolverStartDateTimeChange, onAutoPublishChange, onClosedBaseChange, onMinRestBetweenShiftsChange, onSaveSettings,
   onTriggerSolver, onOpenDraftModal,
   onTransferPersonChange, onInitiateTransfer, onCancelTransfer,
   onShowDeleteConfirm, onDeleteGroup,
@@ -179,6 +181,30 @@ export default function SettingsTab({
               }`}
             />
           </button>
+        </div>
+      </Section>
+
+      {/* Minimum rest between shifts */}
+      <Section title={t("minRestBetweenShifts")}>
+        <div className="space-y-2">
+          <p className="text-sm text-slate-600">{t("minRestBetweenShiftsDesc")}</p>
+          <div className="flex items-center gap-3">
+            <input
+              type="number"
+              min={0}
+              max={24}
+              value={minRestBetweenShiftsHours}
+              onChange={e => {
+                const val = Math.max(0, Math.min(24, parseInt(e.target.value) || 0));
+                onMinRestBetweenShiftsChange(val);
+              }}
+              className="w-20 border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-center focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <span className="text-sm text-slate-500">{t("hours")}</span>
+          </div>
+          {minRestBetweenShiftsHours === 0 && (
+            <p className="text-xs text-amber-600">{t("minRestZeroWarning")}</p>
+          )}
         </div>
       </Section>
 

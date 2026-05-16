@@ -146,6 +146,7 @@ export function useGroupPageState() {
   const [solverStartDateTime, setSolverStartDateTime] = useState<string | null>(null);
   const [autoPublish, setAutoPublish] = useState(false);
   const [isClosedBase, setIsClosedBase_] = useState(false);
+  const [minRestBetweenShiftsHours, setMinRestBetweenShiftsHours] = useState(8);
   const [savingSettings, setSavingSettings] = useState(false);
   const [settingsError, setSettingsError] = useState<string | null>(null);
   const [settingsSaved, setSettingsSaved] = useState(false);
@@ -287,6 +288,7 @@ export function useGroupPageState() {
     solverStartDateTime, setSolverStartDateTime,
     autoPublish, setAutoPublish,
     isClosedBase, setIsClosedBase: setIsClosedBase_,
+    minRestBetweenShiftsHours, setMinRestBetweenShiftsHours,
     savingSettings, setSavingSettings,
     settingsError, setSettingsError,
     settingsSaved, setSettingsSaved,

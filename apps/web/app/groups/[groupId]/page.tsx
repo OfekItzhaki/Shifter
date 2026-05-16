@@ -139,6 +139,7 @@ export default function GroupDetailPage() {
     solverStartDateTime, setSolverStartDateTime,
     autoPublish, setAutoPublish,
     isClosedBase, setIsClosedBase,
+    minRestBetweenShiftsHours, setMinRestBetweenShiftsHours,
     solverPolling, setSolverPolling, solverStatus, setSolverStatus, solverError, setSolverError,
     deletedGroups, setDeletedGroups, deletedGroupsLoading, setDeletedGroupsLoading,
     transferPersonId, setTransferPersonId, transferSaving, setTransferSaving,
@@ -171,6 +172,7 @@ export default function GroupDetailPage() {
         setSolverHorizonDays(found.solverHorizonDays ?? 14);
         setAutoPublish(found.autoPublish ?? false);
         setIsClosedBase(found.isClosedBase ?? false);
+        setMinRestBetweenShiftsHours(found.minRestBetweenShiftsHours ?? 8);
         // Initialise the configured auto-scheduler start date from the API
         // The API stores UTC; convert to local time for the datetime-local input
         setSolverStartDateTime(found.solverStartDateTime
@@ -892,7 +894,7 @@ export default function GroupDetailPage() {
       const startDateTimeIso = solverStartDateTime
         ? new Date(solverStartDateTime).toISOString()
         : null;
-      await updateGroupSettings(currentSpaceId, groupId, solverHorizon, startDateTimeIso, autoPublish);
+      await updateGroupSettings(currentSpaceId, groupId, solverHorizon, startDateTimeIso, autoPublish, minRestBetweenShiftsHours);
       setSolverHorizonDays(solverHorizon);
       setSettingsSaved(true);
       setTimeout(() => setSettingsSaved(false), 3000);
@@ -1368,6 +1370,7 @@ export default function GroupDetailPage() {
               solverStartDateTime={solverStartDateTime}
               autoPublish={autoPublish}
               isClosedBase={isClosedBase}
+              minRestBetweenShiftsHours={minRestBetweenShiftsHours}
               solverPolling={solverPolling}
               solverStatus={solverStatus}
               solverError={solverError}
@@ -1387,6 +1390,7 @@ export default function GroupDetailPage() {
               onSolverStartDateTimeChange={setSolverStartDateTime}
               onAutoPublishChange={setAutoPublish}
               onClosedBaseChange={handleClosedBaseChange}
+              onMinRestBetweenShiftsChange={setMinRestBetweenShiftsHours}
               onSaveSettings={handleSaveSettings}
               onTriggerSolver={handleTriggerSolver}
               onOpenDraftModal={() => setShowDraftModal(true)}

@@ -64,14 +64,16 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
         // Capped at 7 days to keep the CP-SAT model tractable.
         int maxHorizon;
         bool isClosedBase = false;
+        int minRestBetweenShiftsHours = 8;
         if (groupId.HasValue)
         {
             var groupData = await _db.Groups.AsNoTracking()
                 .Where(g => g.Id == groupId.Value && g.SpaceId == spaceId && g.DeletedAt == null)
-                .Select(g => new { g.SolverHorizonDays, g.IsClosedBase })
+                .Select(g => new { g.SolverHorizonDays, g.IsClosedBase, g.MinRestBetweenShiftsHours })
                 .FirstOrDefaultAsync(ct);
             maxHorizon = groupData?.SolverHorizonDays ?? 7;
             isClosedBase = groupData?.IsClosedBase ?? false;
+            minRestBetweenShiftsHours = groupData?.MinRestBetweenShiftsHours ?? 8;
         }
         else
         {
@@ -351,6 +353,17 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
                 c.ScopeId?.ToString(),
                 DeserializePayload(c.RulePayloadJson)))
             .ToList();
+
+        // System constraint: minimum rest between shifts (always included if > 0)
+        if (minRestBetweenShiftsHours > 0 && groupId.HasValue)
+        {
+            hardConstraints.Add(new HardConstraintDto(
+                "system_min_rest",
+                "min_rest_between_assignments",
+                "group",
+                groupId.Value.ToString(),
+                new Dictionary<string, object> { ["min_hours"] = minRestBetweenShiftsHours }));
+        }
 
         var softConstraints = constraints
             .Where(c => c.Severity == ConstraintSeverity.Soft)
