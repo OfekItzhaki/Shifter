@@ -32,6 +32,10 @@ ALTER TABLE fairness_counters
     DROP COLUMN IF EXISTS disliked_hated_score_7d,
     DROP COLUMN IF EXISTS kitchen_count_7d;
 
+-- ─── 5b. Add task_type_counts JSONB column to fairness_counters ───────────────
+ALTER TABLE fairness_counters
+    ADD COLUMN IF NOT EXISTS task_type_counts JSONB NOT NULL DEFAULT '{}';
+
 -- ─── 6. Convert max_kitchen_per_week constraints to max_task_type_per_period ──
 UPDATE constraint_rules
 SET rule_type = 'max_task_type_per_period',
