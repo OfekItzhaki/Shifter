@@ -18,8 +18,10 @@ interface RatioSliderProps {
 
 /**
  * Calculates the displayed base:home ratio from the slider position.
- * At value=50: optimal ratio. Below 50: more conservative (more base days).
- * Above 50: more generous (more home days).
+ * At value=50 (center): optimal ratio (e.g. 4:3).
+ * At value > 50 (right): baseDays increases (from optimal up to 2×), homeDays stays at optimal.
+ * At value < 50 (left): homeDays decreases (from optimal down to 1), baseDays stays at optimal.
+ * Both directions are "conservative" — right adds base time, left reduces home time.
  */
 function calculateDisplayRatio(
   value: number,
@@ -30,19 +32,15 @@ function calculateDisplayRatio(
     return { baseDays: optimalBaseDays, homeDays: optimalHomeDays };
   }
 
-  if (value < 50) {
-    // More conservative: increase base days, keep home days
-    const factor = 1 + ((50 - value) / 50) * 1.5; // 1.0 at 50, up to 2.5 at 0
-    const baseDays = Math.max(1, Math.round(optimalBaseDays * factor));
-    const homeDays = Math.max(1, optimalHomeDays);
-    return { baseDays, homeDays };
+  if (value > 50) {
+    // Moving RIGHT from center: increase base days (up to 2× optimal), homeDays stays at optimal
+    const baseDays = Math.round(optimalBaseDays * (1 + (value - 50) / 50));
+    return { baseDays, homeDays: optimalHomeDays };
   }
 
-  // More generous: decrease base days (min 1), keep home days
-  const factor = 1 - ((value - 50) / 50) * 0.6; // 1.0 at 50, down to 0.4 at 100
-  const baseDays = Math.max(1, Math.round(optimalBaseDays * factor));
-  const homeDays = Math.max(1, optimalHomeDays);
-  return { baseDays, homeDays };
+  // Moving LEFT from center: decrease home days (down to 1), baseDays stays at optimal
+  const homeDays = Math.max(1, Math.round(optimalHomeDays * (value / 50)));
+  return { baseDays: optimalBaseDays, homeDays };
 }
 
 /**

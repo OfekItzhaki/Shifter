@@ -6,9 +6,7 @@ import {
   getHomeLeaveConfig,
   updateHomeLeaveConfig,
   toggleEmergencyFreeze,
-  HomeLeaveConfigDto,
   HomeLeaveMode,
-  FeasibilityResultDto,
   getHomeLeavePreview,
 } from "@/lib/api/homeLeave";
 import ModeSelector from "./ModeSelector";
@@ -16,7 +14,6 @@ import RatioSlider from "./RatioSlider";
 import ManualModeSection from "./ManualModeSection";
 import EmergencyFreezeBanner from "./EmergencyFreezeBanner";
 import FeasibilityIndicator, { FeasibilityResult } from "./FeasibilityIndicator";
-import LeaveDurationInput from "./LeaveDurationInput";
 import { useHomeLeavePreview } from "@/hooks/useHomeLeavePreview";
 
 interface HomeLeaveConfigPanelProps {
@@ -30,7 +27,7 @@ interface HomeLeaveConfigPanelProps {
  * "ניהול זמן בבית" (Home Time Management) panel.
  * Conditionally rendered when isClosedBase is true.
  * Integrates ModeSelector, RatioSlider, ManualModeSection,
- * EmergencyFreezeBanner, FeasibilityIndicator, and LeaveDurationInput.
+ * EmergencyFreezeBanner, and FeasibilityIndicator.
  */
 export default function HomeLeaveConfigPanel({
   spaceId,
@@ -45,9 +42,7 @@ export default function HomeLeaveConfigPanel({
   const [baseDays, setBaseDays] = useState(7);
   const [homeDays, setHomeDays] = useState(2);
   const [sliderValue, setSliderValue] = useState(50);
-  const [leaveDurationHours, setLeaveDurationHours] = useState(48);
   const [minPeopleAtBase, setMinPeopleAtBase] = useState(8);
-  const [restHoursAfterReturn, setRestHoursAfterReturn] = useState(0);
   const [balanceValue, setBalanceValue] = useState(50);
 
   // Emergency freeze state
@@ -68,7 +63,7 @@ export default function HomeLeaveConfigPanel({
 
   // Feasibility for automatic mode (from preview hook)
   const previewRequest = !loading && mode === "automatic"
-    ? { mode: "automatic" as const, sliderValue, leaveDurationHours }
+    ? { mode: "automatic" as const, sliderValue, leaveDurationHours: homeDays * 24 }
     : null;
 
   const preview = useHomeLeavePreview(
@@ -95,9 +90,7 @@ export default function HomeLeaveConfigPanel({
       setMode((config.mode as HomeLeaveMode) ?? "automatic");
       setBaseDays(config.baseDays ?? 7);
       setHomeDays(config.homeDays ?? 2);
-      setLeaveDurationHours(config.leaveDurationHours ?? 48);
       setMinPeopleAtBase(config.minPeopleAtBase ?? 8);
-      setRestHoursAfterReturn(config.restHoursAfterReturn ?? 0);
       setBalanceValue(config.balanceValue ?? 50);
       setSliderValue(config.balanceValue ?? 50);
       setEmergencyFreezeActive(config.emergencyFreezeActive ?? false);
@@ -130,7 +123,7 @@ export default function HomeLeaveConfigPanel({
       mode: "manual",
       baseDays: base,
       homeDays: home,
-      leaveDurationHours,
+      leaveDurationHours: home * 24,
     });
     if (result.feasibility) {
       return {
@@ -194,12 +187,6 @@ export default function HomeLeaveConfigPanel({
     setSaved(false);
   }
 
-  // Leave duration change
-  function handleLeaveDurationChange(hours: number) {
-    setLeaveDurationHours(hours);
-    setSaved(false);
-  }
-
   // Save configuration
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
@@ -214,7 +201,7 @@ export default function HomeLeaveConfigPanel({
         baseDays: mode === "manual" ? baseDays : undefined,
         homeDays: mode === "manual" ? homeDays : undefined,
         sliderValue: mode === "automatic" ? sliderValue : undefined,
-        leaveDurationHours,
+        leaveDurationHours: homeDays * 24,
         minPeopleAtBase,
         emergencyFreezeActive,
         emergencyUseForScheduling,
@@ -345,14 +332,7 @@ export default function HomeLeaveConfigPanel({
             />
           )}
 
-          {/* Leave Duration Input — shared between modes */}
-          <div className="pt-2 border-t border-slate-100">
-            <LeaveDurationInput
-              valueHours={leaveDurationHours}
-              onChange={handleLeaveDurationChange}
-              disabled={saving}
-            />
-          </div>
+
         </div>
       )}
 
