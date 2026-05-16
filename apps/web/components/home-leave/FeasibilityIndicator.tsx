@@ -56,11 +56,16 @@ export default function FeasibilityIndicator({
   }
 
   return (
-    <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-red-50 border border-red-200">
-      <div className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0" />
-      <span className="text-xs text-red-700 font-medium">
-        {feasibilityResult.reason || t("notFeasible")}
-      </span>
+    <div className="space-y-2">
+      <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-red-50 border border-red-200">
+        <div className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0" />
+        <span className="text-xs text-red-700 font-medium">
+          {feasibilityResult.reason || t("notFeasible")}
+        </span>
+      </div>
+      <p className="text-xs text-slate-500 px-1">
+        {t("suggestions")}
+      </p>
     </div>
   );
 }

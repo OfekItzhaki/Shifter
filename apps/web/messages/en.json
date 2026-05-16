@@ -1062,7 +1062,8 @@
       "checking": "Checking feasibility...",
       "feasible": "Feasible",
       "notFeasible": "Not feasible — not enough people for coverage",
-      "maxHomeDays": "Maximum {days} home days possible"
+      "maxHomeDays": "Maximum {days} home days possible",
+      "suggestions": "To allow more home days: add members to the group, reduce tasks, or change existing constraints."
     },
     "leaveDuration": {
       "label": "Leave duration",
