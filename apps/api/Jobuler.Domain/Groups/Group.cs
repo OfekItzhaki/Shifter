@@ -18,6 +18,7 @@ public class Group : AuditableEntity, ITenantScoped
     public string? JoinCode { get; private set; }
     public DateTime? DeletedAt { get; private set; }
     public GroupTemplateType TemplateType { get; private set; } = GroupTemplateType.Custom;
+    public bool AllowMembersViewHistory { get; private set; } = true;
 
     private Group() { }
 
@@ -61,6 +62,8 @@ public class Group : AuditableEntity, ITenantScoped
         MinRestBetweenShiftsHours = hours;
         Touch();
     }
+
+    public void SetAllowMembersViewHistory(bool value) { AllowMembersViewHistory = value; Touch(); }
 
     public void Deactivate() { IsActive = false; Touch(); }
 

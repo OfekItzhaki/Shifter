@@ -398,7 +398,9 @@
       "minRestBetweenShifts": "Minimum Rest Between Shifts",
       "minRestBetweenShiftsDesc": "Minimum hours of rest between two consecutive shifts. The solver enforces this automatically.",
       "hours": "hours",
-      "minRestZeroWarning": "⚠ No minimum rest — suitable for restaurants etc."
+      "minRestZeroWarning": "⚠ No minimum rest — suitable for restaurants etc.",
+      "allowMembersViewHistory": "History viewing permission",
+      "allowMembersViewHistoryDesc": "Allow group members to view past schedules"
     },
     "stats_tab": {
       "loading": "Loading statistics...",
@@ -446,6 +448,19 @@
       "infeasibleDesc": "The solver could not build a schedule with the current constraints.",
       "infeasibleSolution": "Solutions: add more members, extend the time horizon, or relax constraints.",
       "noMissionsToday": "No missions on this day"
+    },
+    "home_leave_schedule": {
+      "title": "Home Leave Schedule",
+      "loading": "Loading...",
+      "loadError": "Error loading home leave schedule",
+      "noEntries": "No scheduled home leaves",
+      "name": "Name",
+      "leaveStart": "Leave Start",
+      "returnDate": "Return",
+      "status": "Status",
+      "statusActive": "At Home",
+      "statusUpcoming": "Planned",
+      "statusCompleted": "Completed"
     }
   },
   "profile": {

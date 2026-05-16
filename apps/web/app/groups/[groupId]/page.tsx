@@ -915,6 +915,16 @@ export default function GroupDetailPage() {
     }
   }
 
+  async function handleAllowMembersViewHistoryChange(value: boolean) {
+    if (!currentSpaceId) return;
+    try {
+      await updateGroupSettings(currentSpaceId, groupId, solverHorizon, solverStartDateTime ? new Date(solverStartDateTime).toISOString() : null, autoPublish, minRestBetweenShiftsHours, value);
+      setGroup(prev => prev ? { ...prev, allowMembersViewHistory: value } : prev);
+    } catch {
+      // Revert on failure — the toggle will snap back
+    }
+  }
+
   async function handleTriggerSolver(startTime?: string) {
     if (!currentSpaceId) return;
     setSolverPolling(true);
@@ -1173,6 +1183,8 @@ export default function GroupDetailPage() {
               currentUserName={displayName ?? undefined}
               groupName={group?.name}
               spaceId={currentSpaceId ?? undefined}
+              isClosedBase={isClosedBase}
+              allowMembersViewHistory={group?.allowMembersViewHistory ?? true}
               onOpenDraftModal={() => setShowDraftModal(true)}
               onPublish={handlePublish}
               onDiscard={handleDiscard}
@@ -1372,6 +1384,7 @@ export default function GroupDetailPage() {
               autoPublish={autoPublish}
               isClosedBase={isClosedBase}
               minRestBetweenShiftsHours={minRestBetweenShiftsHours}
+              allowMembersViewHistory={group?.allowMembersViewHistory ?? true}
               solverPolling={solverPolling}
               solverStatus={solverStatus}
               solverError={solverError}
@@ -1392,6 +1405,7 @@ export default function GroupDetailPage() {
               onAutoPublishChange={setAutoPublish}
               onClosedBaseChange={handleClosedBaseChange}
               onMinRestBetweenShiftsChange={setMinRestBetweenShiftsHours}
+              onAllowMembersViewHistoryChange={handleAllowMembersViewHistoryChange}
               onSaveSettings={handleSaveSettings}
               onTriggerSolver={handleTriggerSolver}
               onOpenDraftModal={() => setShowDraftModal(true)}

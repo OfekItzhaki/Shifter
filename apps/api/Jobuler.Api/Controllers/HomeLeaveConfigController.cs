@@ -185,6 +185,15 @@ public class HomeLeaveConfigController : ControllerBase
             Feasibility: feasibility));
     }
 
+    /// <summary>Get home-leave schedule (all AtHome presence windows) for a group.</summary>
+    [HttpGet("~/spaces/{spaceId:guid}/groups/{groupId:guid}/home-leave-schedule")]
+    public async Task<IActionResult> GetHomeLeaveSchedule(Guid spaceId, Guid groupId, CancellationToken ct)
+    {
+        await _permissions.RequirePermissionAsync(CurrentUserId, spaceId, Permissions.SpaceView, ct);
+        var result = await _mediator.Send(new GetHomeLeaveScheduleQuery(spaceId, groupId), ct);
+        return Ok(result);
+    }
+
     /// <summary>
     /// Cancel a home-leave presence window for a person.
     /// If starts_at is in the future: deletes the window entirely.

@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Jobuler.Application.Groups.Queries;
 
 public record GroupTypeDto(Guid Id, string Name, string? Description, bool IsActive);
-public record GroupDto(Guid Id, Guid? GroupTypeId, string? GroupTypeName, string Name, string? Description, bool IsActive, int MemberCount, int SolverHorizonDays, Guid? OwnerPersonId, DateTime? SolverStartDateTime = null, bool AutoPublish = false, bool IsClosedBase = false, int MinRestBetweenShiftsHours = 8, string TemplateType = "Custom");
+public record GroupDto(Guid Id, Guid? GroupTypeId, string? GroupTypeName, string Name, string? Description, bool IsActive, int MemberCount, int SolverHorizonDays, Guid? OwnerPersonId, DateTime? SolverStartDateTime = null, bool AutoPublish = false, bool IsClosedBase = false, int MinRestBetweenShiftsHours = 8, string TemplateType = "Custom", bool AllowMembersViewHistory = true);
 public record GroupMemberDto(Guid PersonId, string FullName, string? DisplayName, bool IsOwner, string? PhoneNumber, string? InvitationStatus, string? ProfileImageUrl, string? Birthday, Guid? LinkedUserId = null, Guid? RoleId = null, string? RoleName = null, decimal HomeLeavePriority = 1.0m);
 
 public record GetGroupTypesQuery(Guid SpaceId) : IRequest<List<GroupTypeDto>>;
@@ -72,7 +72,8 @@ public class GetGroupsQueryHandler : IRequestHandler<GetGroupsQuery, List<GroupD
             g.AutoPublish,
             g.IsClosedBase,
             g.MinRestBetweenShiftsHours,
-            g.TemplateType.ToString()
+            g.TemplateType.ToString(),
+            g.AllowMembersViewHistory
         )).ToList();
     }
 }

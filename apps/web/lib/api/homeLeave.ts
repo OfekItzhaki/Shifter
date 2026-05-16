@@ -110,6 +110,26 @@ export async function toggleEmergencyFreeze(
 
 // ── Home-Leave Preview ───────────────────────────────────────────────────────
 
+export interface HomeLeaveScheduleEntry {
+  personId: string;
+  personName: string;
+  startsAt: string;
+  endsAt: string;
+  status: "active" | "upcoming" | "completed";
+}
+
+export async function getHomeLeaveSchedule(
+  spaceId: string,
+  groupId: string
+): Promise<HomeLeaveScheduleEntry[]> {
+  const { data } = await apiClient.get(
+    `/spaces/${spaceId}/groups/${groupId}/home-leave-schedule`
+  );
+  return data;
+}
+
+// ── Home-Leave Preview (Solver) ──────────────────────────────────────────────
+
 export interface HomeLeavePreviewRequest {
   mode: HomeLeaveMode;
   baseDays?: number | null;

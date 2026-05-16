@@ -427,7 +427,9 @@
       "minRestBetweenShifts": "מנוחה מינימלית בין משמרות",
       "minRestBetweenShiftsDesc": "מספר שעות מנוחה מינימלי בין שתי משמרות עוקבות. הסולבר יאכוף זאת אוטומטית.",
       "hours": "שעות",
-      "minRestZeroWarning": "⚠ ללא מנוחה מינימלית — מתאים למסעדות וכד׳"
+      "minRestZeroWarning": "⚠ ללא מנוחה מינימלית — מתאים למסעדות וכד׳",
+      "allowMembersViewHistory": "הרשאת צפייה בהיסטוריה",
+      "allowMembersViewHistoryDesc": "אפשר לחברי הקבוצה לצפות בסידורים ישנים"
     },
     "schedule_tab": {
       "draftReady": "סידור טיוטה מוכן לעיון ופרסום",
@@ -449,6 +451,19 @@
       "infeasibleDesc": "הסולבר לא הצליח לבנות סידור עם האילוצים הנוכחיים.",
       "infeasibleSolution": "ניתן לפתור על ידי: הוספת חברים נוספים, הרחבת אופק הזמן, או הקלת אילוצים.",
       "noMissionsToday": "אין משימות ביום זה"
+    },
+    "home_leave_schedule": {
+      "title": "לוח חופשות הביתה",
+      "loading": "טוען...",
+      "loadError": "שגיאה בטעינת לוח חופשות",
+      "noEntries": "אין חופשות מתוכננות",
+      "name": "שם",
+      "leaveStart": "יציאה",
+      "returnDate": "חזרה",
+      "status": "סטטוס",
+      "statusActive": "בבית",
+      "statusUpcoming": "מתוכנן",
+      "statusCompleted": "הושלם"
     }
   },
   "profile": {

@@ -7,6 +7,7 @@ import type { ScheduleAssignment } from "../types";
 import ScheduleTaskTable from "@/components/schedule/ScheduleTaskTable";
 import ScheduleDiffView from "@/components/schedule/ScheduleDiffView";
 import ScheduleHistory from "@/components/schedule/ScheduleHistory";
+import HomeLeaveScheduleTable from "@/components/home-leave/HomeLeaveScheduleTable";
 import { getHistoricalSchedule } from "@/lib/api/stats";
 
 interface DraftVersion { id: string; status: string; summaryJson?: string | null; }
@@ -27,6 +28,8 @@ interface Props {
   currentUserName?: string;
   groupName?: string;
   spaceId?: string;
+  isClosedBase?: boolean;
+  allowMembersViewHistory?: boolean;
   onOpenDraftModal: () => void;
   onPublish: () => Promise<void>;
   onDiscard: () => Promise<void>;
@@ -55,7 +58,7 @@ function getWeekDates(fromDate: string): string[] {
 export default function ScheduleTab({
   groupId, solverHorizonDays, scheduleData, scheduleLoading, scheduleError, scheduleIsOffline = false,
   draftVersion, lastRunSummary, isAdmin, publishSaving, discardSaving, scheduleVersionError,
-  currentUserName, groupName, spaceId,
+  currentUserName, groupName, spaceId, isClosedBase = false, allowMembersViewHistory = true,
   onOpenDraftModal, onPublish, onDiscard, onTriggerSolver,
 }: Props) {
   const t = useTranslations("groups.schedule_tab");
@@ -142,6 +145,12 @@ export default function ScheduleTab({
     const d = new Date(weekAnchor + "T00:00:00");
     d.setDate(d.getDate() - 7);
     const next = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    // If history viewing is disabled for non-admins, prevent navigating to past weeks
+    if (!allowMembersViewHistory && !isAdmin) {
+      const nextWeekDates = getWeekDates(next);
+      const nextWeekEnd = nextWeekDates[6];
+      if (nextWeekEnd < today) return;
+    }
     if (next >= minDate) setWeekAnchor(next);
   }
 
@@ -504,6 +513,10 @@ export default function ScheduleTab({
               if (triggerRerun && onTriggerSolver) onTriggerSolver();
             }}
           />
+          {/* Home-leave schedule table — only for closed-base groups */}
+          {isClosedBase && spaceId && (
+            <HomeLeaveScheduleTable spaceId={spaceId} groupId={groupId} />
+          )}
         </>
       )}
     </div>
