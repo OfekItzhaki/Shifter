@@ -11,10 +11,7 @@ import { SEVERITY_STYLES, SEVERITY_DOTS } from "../types";
 const RULE_TYPES = [
   { value: "max_kitchen_per_week", label: "מקסימום מטבח בשבוע" },
   { value: "no_consecutive_burden", label: "ללא עומס רצוף" },
-  { value: "min_base_headcount", label: "מינימום אנשים" },
   { value: "no_task_type_restriction", label: "הגבלת משימה" },
-  { value: "required_qualification_per_shift", label: "כישור נדרש במשמרת" },
-  { value: "preferred_qualification_per_shift", label: "כישור מועדף במשמרת" },
   { value: "emergency_person_bypass", label: "🚨 חירום — אדם" },
   { value: "emergency_slot_bypass", label: "🚨 חירום — משמרת" },
   { value: "emergency_space_bypass", label: "🚨 חירום — מרחב" },

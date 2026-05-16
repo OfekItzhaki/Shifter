@@ -140,14 +140,12 @@ export default function ConstraintsPage() {
                   const defaults: Record<string, string> = {
                     max_kitchen_per_week: '{"max": 2, "task_type_name": "kitchen"}',
                     no_consecutive_burden: '{"burden_level": "hard"}',
-                    min_base_headcount: '{"min": 3, "window_hours": 24}',
                     no_task_type_restriction: '{"task_type_id": ""}',
                   };
                   setPayload(defaults[e.target.value] ?? "{}");
                 }} className={inputClass}>
                   <option value="max_kitchen_per_week">max_kitchen_per_week</option>
                   <option value="no_consecutive_burden">no_consecutive_burden</option>
-                  <option value="min_base_headcount">min_base_headcount</option>
                   <option value="no_task_type_restriction">no_task_type_restriction</option>
                 </select>
               </div>
