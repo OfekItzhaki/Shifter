@@ -98,6 +98,32 @@ export default function ScheduleTab({
   const { fDateShort } = useDateFormat();
 
   const weekDates = getWeekDates(weekAnchor);
+
+  // Auto-navigate to the first day with assignments when data loads
+  // This handles the case where today has no assignments but tomorrow does (timezone offset)
+  useEffect(() => {
+    if (!scheduleData || scheduleData.length === 0) return;
+    const currentDate = weekDates[selectedWeekDay];
+    const hasAssignmentsToday = scheduleData.some(a => a.slotStartsAt.startsWith(currentDate));
+    if (!hasAssignmentsToday) {
+      // Find the first day in the current week that has assignments
+      for (let i = 0; i < 7; i++) {
+        const date = weekDates[i];
+        if (scheduleData.some(a => a.slotStartsAt.startsWith(date))) {
+          setSelectedWeekDay(i);
+          return;
+        }
+      }
+      // No assignments in this week — try next week
+      const nextWeekStart = new Date(weekAnchor + "T00:00:00");
+      nextWeekStart.setDate(nextWeekStart.getDate() + 7);
+      const nextAnchor = `${nextWeekStart.getFullYear()}-${String(nextWeekStart.getMonth() + 1).padStart(2, "0")}-${String(nextWeekStart.getDate()).padStart(2, "0")}`;
+      if (nextAnchor <= maxDate) {
+        setWeekAnchor(nextAnchor);
+        setSelectedWeekDay(0);
+      }
+    }
+  }, [scheduleData]); // eslint-disable-line react-hooks/exhaustive-deps
   const selectedDate = weekDates[selectedWeekDay] ?? weekDates[0];
 
   // Determine if the selected week is entirely in the past
