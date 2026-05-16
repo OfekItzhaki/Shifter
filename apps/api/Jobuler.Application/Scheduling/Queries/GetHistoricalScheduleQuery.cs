@@ -85,6 +85,11 @@ public class GetHistoricalScheduleQueryHandler : IRequestHandler<GetHistoricalSc
         if (groupMemberPersonIds.Count == 0)
             return [];
 
+        // Load person names for the response
+        var personNames = await _db.People.AsNoTracking()
+            .Where(p => groupMemberPersonIds.Contains(p.Id))
+            .ToDictionaryAsync(p => p.Id, p => p.DisplayName ?? p.FullName, ct);
+
         // Find the most recent published version for this space that has assignments
         // overlapping with the requested date range (via task slots or group tasks)
         var publishedVersions = await _db.ScheduleVersions.AsNoTracking()
@@ -177,7 +182,8 @@ public class GetHistoricalScheduleQueryHandler : IRequestHandler<GetHistoricalSc
                     BurdenLevel: burdenLevel,
                     VersionId: versionId,
                     PeriodId: periodId,
-                    TaskTypeName: taskTypeName));
+                    TaskTypeName: taskTypeName,
+                    PersonName: personNames.GetValueOrDefault(assignment.PersonId, "")));
             }
 
             if (results.Count > 0)

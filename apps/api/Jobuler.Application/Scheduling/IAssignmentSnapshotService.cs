@@ -38,4 +38,6 @@ public record DailySnapshotDto(
     string? BurdenLevel,
     Guid VersionId,
     Guid PeriodId,
+    string? TaskTypeName = null,
+    string? PersonName = null);
     string? TaskTypeName = null);

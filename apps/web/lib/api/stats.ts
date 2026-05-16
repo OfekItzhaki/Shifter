@@ -39,6 +39,7 @@ export interface HistoricalSnapshotDto {
   versionId: string;
   periodId: string;
   taskTypeName: string | null;
+  personName: string | null;
 }
 
 export interface HistoricalScheduleResponse {

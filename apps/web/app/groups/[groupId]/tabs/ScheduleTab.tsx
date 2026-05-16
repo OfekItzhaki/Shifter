@@ -149,7 +149,7 @@ export default function ScheduleTab({
         const mapped: ScheduleAssignment[] = res.assignments.map(snap => ({
           id: snap.id,
           personId: snap.personId,
-          personName: "", // Will be resolved by the table component
+          personName: snap.personName || "",
           taskTypeName: snap.taskTypeName ?? snap.burdenLevel ?? "",
           slotStartsAt: snap.shiftStart ?? `${snap.snapshotDate}T00:00:00`,
           slotEndsAt: snap.shiftEnd ?? `${snap.snapshotDate}T23:59:59`,
