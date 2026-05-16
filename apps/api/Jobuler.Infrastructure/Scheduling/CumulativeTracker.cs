@@ -254,17 +254,21 @@ public class CumulativeTracker : ICumulativeTracker
     {
         var now = DateTime.UtcNow;
 
-        // Find the active period for the group
-        var period = await _db.SubscriptionPeriods.AsNoTracking()
+        // Find the active period for the group (use tracking so we can create if needed)
+        var period = await _db.SubscriptionPeriods
             .FirstOrDefaultAsync(sp =>
                 sp.SpaceId == spaceId && sp.GroupId == groupId && sp.Status == "active", ct);
 
         if (period == null)
         {
-            _logger.LogWarning(
-                "No active period for group {GroupId} in space {SpaceId}. Returning empty cumulative data.",
-                groupId, spaceId);
-            return new List<CumulativeTrackingDto>();
+            // Auto-create a period for groups that don't have one yet (trial, legacy, etc.)
+            _logger.LogInformation(
+                "No active period for group {GroupId} — auto-creating one for cumulative tracking.",
+                groupId);
+
+            period = SubscriptionPeriod.Create(spaceId, groupId);
+            _db.SubscriptionPeriods.Add(period);
+            await _db.SaveChangesAsync(ct);
         }
 
         // Load cumulative records for this group's current period
