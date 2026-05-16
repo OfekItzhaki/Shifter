@@ -331,12 +331,14 @@ def add_home_leave_eligibility_preference(
         return []
 
     # Weight for the eligibility preference — derived from balance_value (0–100).
-    # Formula: weight = balance_value × 4, giving range [0, 400].
-    # Default balance_value is 50 → weight 200 (backward compatible with previous hardcoded value).
+    # Formula: weight = balance_value × 40, giving range [0, 4000].
+    # Default balance_value is 50 → weight 2000.
+    # This must be higher than task assignment penalties (1000) to ensure
+    # the solver actually sends eligible people home rather than keeping them for tasks.
     # When balance_value is 0, weight is 0 (preference disabled).
-    # When balance_value is 100, weight is 400 (maximum preference).
+    # When balance_value is 100, weight is 4000 (maximum preference).
     balance = config.balance_value if config.balance_value is not None else 50
-    ELIGIBILITY_WEIGHT = balance * 4
+    ELIGIBILITY_WEIGHT = balance * 40
 
     # Build cumulative hours lookup: person_id → consecutive_hours_at_base (in seconds)
     cumulative_seconds_lookup: dict[str, int] = {}
@@ -405,5 +407,18 @@ def add_home_leave_eligibility_preference(
         not_on_leave = model.new_bool_var(f"hl_not_leave_{p_idx}")
         model.add(not_on_leave == 1 - any_leave_after_eligible)
         penalties.append(not_on_leave * person_weight)
+
+    # Hard constraint: if ANY person is eligible, at least 1 person MUST go on leave.
+    # This prevents the solver from ignoring home-leave entirely.
+    # Collect all "any_leave_after_eligible" vars — if at least one exists, sum must be >= 1.
+    all_eligible_vars = [
+        home_leave_vars[(p_idx, h)]
+        for p_idx in range(num_people)
+        for h in range(0, max_start_hour + 1)
+        if (p_idx, h) in home_leave_vars
+    ]
+    if all_eligible_vars and len(penalties) > 0:
+        # At least one leave slot must be active across all eligible people
+        model.add(sum(all_eligible_vars) >= 1)
 
     return penalties
