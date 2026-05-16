@@ -66,7 +66,7 @@ def add_home_leave_constraints(
         )
         return {}
 
-    possible_start_hours = list(range(0, max_start_hour + 1))
+    possible_start_hours = list(range(0, max_start_hour + 1, 4))  # every 4 hours to reduce search space
 
     # ── Create boolean decision variables ─────────────────────────────────────
     # home_leave_vars[(p_idx, start_hour)] = 1 if person p_idx goes on leave
@@ -407,18 +407,5 @@ def add_home_leave_eligibility_preference(
         not_on_leave = model.new_bool_var(f"hl_not_leave_{p_idx}")
         model.add(not_on_leave == 1 - any_leave_after_eligible)
         penalties.append(not_on_leave * person_weight)
-
-    # Hard constraint: if ANY person is eligible, at least 1 person MUST go on leave.
-    # This prevents the solver from ignoring home-leave entirely.
-    # Collect all "any_leave_after_eligible" vars — if at least one exists, sum must be >= 1.
-    all_eligible_vars = [
-        home_leave_vars[(p_idx, h)]
-        for p_idx in range(num_people)
-        for h in range(0, max_start_hour + 1)
-        if (p_idx, h) in home_leave_vars
-    ]
-    if all_eligible_vars and len(penalties) > 0:
-        # At least one leave slot must be active across all eligible people
-        model.add(sum(all_eligible_vars) >= 1)
 
     return penalties
