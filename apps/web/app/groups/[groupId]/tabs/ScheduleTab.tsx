@@ -121,7 +121,7 @@ export default function ScheduleTab({
           id: snap.id,
           personId: snap.personId,
           personName: "", // Will be resolved by the table component
-          taskTypeName: snap.burdenLevel ?? "",
+          taskTypeName: snap.taskTypeName ?? snap.burdenLevel ?? "",
           slotStartsAt: snap.shiftStart ?? `${snap.snapshotDate}T00:00:00`,
           slotEndsAt: snap.shiftEnd ?? `${snap.snapshotDate}T23:59:59`,
           source: "history",

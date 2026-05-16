@@ -38,6 +38,7 @@ export interface HistoricalSnapshotDto {
   burdenLevel: string | null;
   versionId: string;
   periodId: string;
+  taskTypeName: string | null;
 }
 
 export interface HistoricalScheduleResponse {

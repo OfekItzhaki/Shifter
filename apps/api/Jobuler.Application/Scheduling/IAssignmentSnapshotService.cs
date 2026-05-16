@@ -37,4 +37,5 @@ public record DailySnapshotDto(
     DateTime? ShiftEnd,
     string? BurdenLevel,
     Guid VersionId,
-    Guid PeriodId);
+    Guid PeriodId,
+    string? TaskTypeName = null);
