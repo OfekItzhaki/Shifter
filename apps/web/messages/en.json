@@ -409,7 +409,9 @@
       "hours": "hours",
       "minRestZeroWarning": "⚠ No minimum rest — suitable for restaurants etc.",
       "allowMembersViewHistory": "History viewing permission",
-      "allowMembersViewHistoryDesc": "Allow group members to view past schedules"
+      "allowMembersViewHistoryDesc": "Allow group members to view past schedules",
+      "allowMembersViewStats": "Statistics viewing permission",
+      "allowMembersViewStatsDesc": "Allow members to view statistics"
     },
     "stats_tab": {
       "loading": "Loading statistics...",

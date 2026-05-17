@@ -1,9 +1,11 @@
 using Jobuler.Application.Common;
 using Jobuler.Application.Scheduling.Queries;
 using Jobuler.Domain.Spaces;
+using Jobuler.Infrastructure.Persistence;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 
 namespace Jobuler.Api.Controllers;
@@ -15,15 +17,50 @@ public class StatsController : ControllerBase
 {
     private readonly IMediator _mediator;
     private readonly IPermissionService _permissions;
+    private readonly AppDbContext _db;
 
-    public StatsController(IMediator mediator, IPermissionService permissions)
+    public StatsController(IMediator mediator, IPermissionService permissions, AppDbContext db)
     {
         _mediator = mediator;
         _permissions = permissions;
+        _db = db;
     }
 
     private Guid CurrentUserId =>
         Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+
+    /// <summary>
+    /// Checks whether the current user is allowed to view stats for the given group.
+    /// Space owners and group owners always have access.
+    /// Regular members only have access if group.AllowMembersViewStats is true.
+    /// </summary>
+    private async Task RequireStatsAccessAsync(Guid spaceId, Guid groupId, CancellationToken ct)
+    {
+        // Space owner always has access (checked via permission service)
+        var isSpaceOwner = await _permissions.HasPermissionAsync(CurrentUserId, spaceId, Permissions.PeopleManage, ct);
+        if (isSpaceOwner) return;
+
+        // Group owner always has access
+        var person = await _db.People
+            .Where(p => p.SpaceId == spaceId && p.LinkedUserId == CurrentUserId)
+            .Select(p => p.Id)
+            .FirstOrDefaultAsync(ct);
+
+        if (person != Guid.Empty)
+        {
+            var isGroupOwner = await _db.GroupMemberships
+                .AnyAsync(m => m.GroupId == groupId && m.PersonId == person && m.IsOwner, ct);
+            if (isGroupOwner) return;
+        }
+
+        // Check group setting
+        var group = await _db.Groups
+            .Where(g => g.Id == groupId && g.SpaceId == spaceId)
+            .FirstOrDefaultAsync(ct);
+
+        if (group is null || !group.AllowMembersViewStats)
+            throw new UnauthorizedAccessException("Stats viewing is not enabled for members of this group.");
+    }
 
     /// <summary>
     /// GET /spaces/{spaceId}/stats/burden
@@ -34,6 +71,8 @@ public class StatsController : ControllerBase
     public async Task<IActionResult> GetBurdenStats(Guid spaceId, [FromQuery] Guid? groupId, CancellationToken ct)
     {
         await _permissions.RequirePermissionAsync(CurrentUserId, spaceId, Permissions.SpaceView, ct);
+        if (groupId.HasValue)
+            await RequireStatsAccessAsync(spaceId, groupId.Value, ct);
         var result = await _mediator.Send(new GetBurdenStatsQuery(spaceId, groupId), ct);
         return Ok(result);
     }
@@ -66,6 +105,8 @@ public class StatsController : ControllerBase
         CancellationToken ct = default)
     {
         await _permissions.RequirePermissionAsync(CurrentUserId, spaceId, Permissions.SpaceView, ct);
+        if (groupId.HasValue)
+            await RequireStatsAccessAsync(spaceId, groupId.Value, ct);
         var result = await _mediator.Send(
             new GetHistoricalPersonStatsQuery(spaceId, startDate, endDate, groupId), ct);
         return Ok(result);
@@ -81,6 +122,7 @@ public class StatsController : ControllerBase
         Guid spaceId, [FromQuery] Guid groupId, CancellationToken ct = default)
     {
         await _permissions.RequirePermissionAsync(CurrentUserId, spaceId, Permissions.SpaceView, ct);
+        await RequireStatsAccessAsync(spaceId, groupId, ct);
         var result = await _mediator.Send(new GetTaskRotationQuery(spaceId, groupId), ct);
         return Ok(result);
     }
@@ -100,6 +142,7 @@ public class StatsController : ControllerBase
         CancellationToken ct = default)
     {
         await _permissions.RequirePermissionAsync(CurrentUserId, spaceId, Permissions.SpaceView, ct);
+        await RequireStatsAccessAsync(spaceId, groupId, ct);
         var result = await _mediator.Send(
             new GetCumulativeStatsQuery(spaceId, groupId, timeRange, periodId), ct);
         return Ok(result);
@@ -120,6 +163,7 @@ public class StatsController : ControllerBase
         CancellationToken ct = default)
     {
         await _permissions.RequirePermissionAsync(CurrentUserId, spaceId, Permissions.SpaceView, ct);
+        await RequireStatsAccessAsync(spaceId, groupId, ct);
         var result = await _mediator.Send(
             new GetStatsTimeseriesQuery(spaceId, groupId, startDate, endDate, periodId), ct);
         return Ok(result);

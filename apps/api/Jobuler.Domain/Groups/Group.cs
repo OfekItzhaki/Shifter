@@ -19,6 +19,7 @@ public class Group : AuditableEntity, ITenantScoped
     public DateTime? DeletedAt { get; private set; }
     public GroupTemplateType TemplateType { get; private set; } = GroupTemplateType.Custom;
     public bool AllowMembersViewHistory { get; private set; } = true;
+    public bool AllowMembersViewStats { get; private set; } = false;
 
     private Group() { }
 
@@ -64,6 +65,7 @@ public class Group : AuditableEntity, ITenantScoped
     }
 
     public void SetAllowMembersViewHistory(bool value) { AllowMembersViewHistory = value; Touch(); }
+    public void SetAllowMembersViewStats(bool value) { AllowMembersViewStats = value; Touch(); }
 
     public void Deactivate() { IsActive = false; Touch(); }
 

@@ -438,7 +438,9 @@
       "hours": "שעות",
       "minRestZeroWarning": "⚠ ללא מנוחה מינימלית — מתאים למסעדות וכד׳",
       "allowMembersViewHistory": "הרשאת צפייה בהיסטוריה",
-      "allowMembersViewHistoryDesc": "אפשר לחברי הקבוצה לצפות בסידורים ישנים"
+      "allowMembersViewHistoryDesc": "אפשר לחברי הקבוצה לצפות בסידורים ישנים",
+      "allowMembersViewStats": "הרשאת צפייה בסטטיסטיקות",
+      "allowMembersViewStatsDesc": "אפשר לחברים לצפות בסטטיסטיקות"
     },
     "schedule_tab": {
       "draftReady": "סידור טיוטה מוכן לעיון ופרסום",

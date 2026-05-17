@@ -925,6 +925,16 @@ export default function GroupDetailPage() {
     }
   }
 
+  async function handleAllowMembersViewStatsChange(value: boolean) {
+    if (!currentSpaceId) return;
+    try {
+      await updateGroupSettings(currentSpaceId, groupId, solverHorizon, solverStartDateTime ? new Date(solverStartDateTime).toISOString() : null, autoPublish, minRestBetweenShiftsHours, undefined, value);
+      setGroup(prev => prev ? { ...prev, allowMembersViewStats: value } : prev);
+    } catch {
+      // Revert on failure — the toggle will snap back
+    }
+  }
+
   async function handleTriggerSolver(startTime?: string) {
     if (!currentSpaceId) return;
     setSolverPolling(true);
@@ -1085,7 +1095,12 @@ export default function GroupDetailPage() {
 
   if (!group) return null;
 
-  const visibleTabs = ALL_TABS.filter(t => isAdmin || !ADMIN_ONLY_TABS.includes(t));
+  const visibleTabs = ALL_TABS.filter(t => {
+    if (isAdmin) return true;
+    if (ADMIN_ONLY_TABS.includes(t)) return false;
+    if (t === "stats" && !group.allowMembersViewStats) return false;
+    return true;
+  });
   const avatarColor = getAvatarColor(group.name);
   const avatarLetter = getAvatarLetter(group.name);
 
@@ -1406,6 +1421,8 @@ export default function GroupDetailPage() {
               onClosedBaseChange={handleClosedBaseChange}
               onMinRestBetweenShiftsChange={setMinRestBetweenShiftsHours}
               onAllowMembersViewHistoryChange={handleAllowMembersViewHistoryChange}
+              allowMembersViewStats={group?.allowMembersViewStats ?? false}
+              onAllowMembersViewStatsChange={handleAllowMembersViewStatsChange}
               onSaveSettings={handleSaveSettings}
               onTriggerSolver={handleTriggerSolver}
               onOpenDraftModal={() => setShowDraftModal(true)}

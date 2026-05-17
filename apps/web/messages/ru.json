@@ -407,7 +407,9 @@
       "hours": "часов",
       "minRestZeroWarning": "⚠ Без минимального отдыха — подходит для ресторанов и т.д.",
       "allowMembersViewHistory": "Разрешение на просмотр истории",
-      "allowMembersViewHistoryDesc": "Разрешить участникам группы просматривать прошлые расписания"
+      "allowMembersViewHistoryDesc": "Разрешить участникам группы просматривать прошлые расписания",
+      "allowMembersViewStats": "Разрешение на просмотр статистики",
+      "allowMembersViewStatsDesc": "Разрешить участникам просматривать статистику"
     },
     "stats_tab": {
       "activeMembers": "Активные участники",

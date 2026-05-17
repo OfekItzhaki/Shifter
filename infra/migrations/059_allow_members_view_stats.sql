@@ -1,0 +1,2 @@
+ALTER TABLE groups ADD COLUMN IF NOT EXISTS allow_members_view_stats BOOLEAN NOT NULL DEFAULT FALSE;
+INSERT INTO schema_migrations (version) VALUES ('059') ON CONFLICT DO NOTHING;

@@ -27,6 +27,7 @@ interface Props {
   isClosedBase: boolean;
   minRestBetweenShiftsHours: number;
   allowMembersViewHistory: boolean;
+  allowMembersViewStats: boolean;
   solverPolling: boolean;
   solverStatus: string | null;
   solverError: string | null;
@@ -54,6 +55,7 @@ interface Props {
   onClosedBaseChange: (v: boolean) => void;
   onMinRestBetweenShiftsChange: (v: number) => void;
   onAllowMembersViewHistoryChange: (v: boolean) => void;
+  onAllowMembersViewStatsChange: (v: boolean) => void;
   onSaveSettings: () => void;
   onTriggerSolver: (startTime?: string) => void;
   onOpenDraftModal: () => void;
@@ -68,12 +70,12 @@ interface Props {
 export default function SettingsTab({
   isAdmin, spaceId, groupId, templateType, newGroupName, renameSaving, renameError,
   solverHorizon, savingSettings, settingsError, settingsSaved,
-  solverStartDateTime, autoPublish, isClosedBase, minRestBetweenShiftsHours, allowMembersViewHistory,
+  solverStartDateTime, autoPublish, isClosedBase, minRestBetweenShiftsHours, allowMembersViewHistory, allowMembersViewStats,
   solverPolling, solverStatus, solverError, draftVersion,
   members,
   transferPersonId, transferSaving, transferError, hasPendingTransfer, cancelTransferSaving,
   showDeleteConfirm, deleteSaving, deleteError,
-  onGroupNameChange, onRenameGroup, onSolverHorizonChange, onSolverStartDateTimeChange, onAutoPublishChange, onClosedBaseChange, onMinRestBetweenShiftsChange, onAllowMembersViewHistoryChange, onSaveSettings,
+  onGroupNameChange, onRenameGroup, onSolverHorizonChange, onSolverStartDateTimeChange, onAutoPublishChange, onClosedBaseChange, onMinRestBetweenShiftsChange, onAllowMembersViewHistoryChange, onAllowMembersViewStatsChange, onSaveSettings,
   onTriggerSolver, onOpenDraftModal,
   onTransferPersonChange, onInitiateTransfer, onCancelTransfer,
   onShowDeleteConfirm, onDeleteGroup,
@@ -215,6 +217,29 @@ export default function SettingsTab({
             <span
               className={`absolute h-[16px] w-[16px] rounded-full bg-white shadow transition-all ${
                 allowMembersViewHistory ? "left-[21px]" : "left-[3px]"
+              }`}
+            />
+          </button>
+        </div>
+      </Section>
+
+      {/* Allow members to view stats toggle */}
+      <Section title={t("allowMembersViewStats")}>
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm text-slate-600">{t("allowMembersViewStatsDesc")}</p>
+          </div>
+          <button
+            role="switch"
+            aria-checked={allowMembersViewStats}
+            onClick={() => onAllowMembersViewStatsChange(!allowMembersViewStats)}
+            className={`relative inline-flex h-[22px] w-[40px] items-center rounded-full transition-colors flex-shrink-0 ${
+              allowMembersViewStats ? "bg-blue-500" : "bg-slate-300"
+            }`}
+          >
+            <span
+              className={`absolute h-[16px] w-[16px] rounded-full bg-white shadow transition-all ${
+                allowMembersViewStats ? "left-[21px]" : "left-[3px]"
               }`}
             />
           </button>
