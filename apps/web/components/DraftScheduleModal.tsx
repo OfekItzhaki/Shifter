@@ -6,6 +6,7 @@ import { apiClient } from "@/lib/api/client";
 import { useDateFormat } from "@/lib/hooks/useDateFormat";
 import ScheduleTaskTable from "@/components/schedule/ScheduleTaskTable";
 import ScheduleDiffView from "@/components/schedule/ScheduleDiffView";
+import { useSandboxStore } from "@/lib/store/sandboxStore";
 
 interface Assignment {
   id: string;
@@ -20,6 +21,7 @@ interface Props {
   open: boolean;
   onClose: () => void;
   spaceId: string;
+  groupId: string;
   draftVersionId: string;
   /** Set of personIds belonging to this group — filters out cross-group assignments */
   groupMemberIds: Set<string>;
@@ -47,7 +49,7 @@ function getWeekDates(anchor: string): string[] {
 }
 
 export default function DraftScheduleModal({
-  open, onClose, spaceId, draftVersionId, groupMemberIds,
+  open, onClose, spaceId, groupId, draftVersionId, groupMemberIds,
   isAdmin, onPublish, onDiscard, onRunAgain,
 }: Props) {
   const t = useTranslations("draftModal");
@@ -63,6 +65,9 @@ export default function DraftScheduleModal({
   const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
   const [viewMode, setViewMode] = useState<"schedule" | "diff">("schedule");
   const { fDateShort } = useDateFormat();
+
+  const enterSandbox = useSandboxStore((s) => s.enterSandbox);
+  const [enteringSimulation, setEnteringSimulation] = useState(false);
 
   const today = new Date().toISOString().split("T")[0];
   const [weekAnchor, setWeekAnchor] = useState(today);
@@ -122,6 +127,22 @@ export default function DraftScheduleModal({
     try { await onDiscard(); onClose(); }
     catch (e: any) { setError(e?.response?.data?.error ?? t("errorDiscard")); }
     finally { setDiscarding(false); setShowDiscardConfirm(false); }
+  }
+
+  async function handleEnterSimulation() {
+    setEnteringSimulation(true);
+    setError(null);
+    try {
+      const { data: baseline } = await apiClient.get(
+        `/spaces/${spaceId}/groups/${groupId}/solver-baseline`
+      );
+      enterSandbox(groupId, draftVersionId, baseline);
+      onClose();
+    } catch (e: any) {
+      setError(e?.response?.data?.error ?? t("errorEnterSimulation"));
+    } finally {
+      setEnteringSimulation(false);
+    }
   }
 
   if (!open) return null;
@@ -370,6 +391,10 @@ export default function DraftScheduleModal({
                 <button onClick={handlePublish} disabled={publishing || discarding || loading}
                   style={{ background: "#10b981", color: "white", border: "none", borderRadius: 10, padding: "9px 20px", fontSize: 13, fontWeight: 600, cursor: "pointer", opacity: publishing ? 0.6 : 1 }}>
                   {publishing ? t("publishing") : `✓ ${t("publish")}`}
+                </button>
+                <button onClick={handleEnterSimulation} disabled={publishing || discarding || enteringSimulation}
+                  style={{ background: "#8b5cf6", color: "white", border: "none", borderRadius: 10, padding: "9px 20px", fontSize: 13, fontWeight: 600, cursor: "pointer", opacity: enteringSimulation ? 0.6 : 1 }}>
+                  {enteringSimulation ? t("enteringSimulation") : `🧪 ${t("enterSimulation")}`}
                 </button>
                 <button onClick={() => { onClose(); onRunAgain(); }} disabled={publishing || discarding}
                   style={{ background: "#3b82f6", color: "white", border: "none", borderRadius: 10, padding: "9px 20px", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>

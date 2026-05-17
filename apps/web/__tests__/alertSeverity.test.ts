@@ -16,21 +16,21 @@ test("info severity returns blue classes", () => {
   const badge = getSeverityBadge("info");
   assert.ok(badge.bg.includes("blue"), `info bg should contain 'blue', got: ${badge.bg}`);
   assert.ok(badge.text.includes("blue"), `info text should contain 'blue', got: ${badge.text}`);
-  assert.strictEqual(badge.label, "מידע");
+  assert.strictEqual(badge.labelKey, "info");
 });
 
 test("warning severity returns amber classes", () => {
   const badge = getSeverityBadge("warning");
   assert.ok(badge.bg.includes("amber"), `warning bg should contain 'amber', got: ${badge.bg}`);
   assert.ok(badge.text.includes("amber"), `warning text should contain 'amber', got: ${badge.text}`);
-  assert.strictEqual(badge.label, "אזהרה");
+  assert.strictEqual(badge.labelKey, "warning");
 });
 
 test("critical severity returns red classes", () => {
   const badge = getSeverityBadge("critical");
   assert.ok(badge.bg.includes("red"), `critical bg should contain 'red', got: ${badge.bg}`);
   assert.ok(badge.text.includes("red"), `critical text should contain 'red', got: ${badge.text}`);
-  assert.strictEqual(badge.label, "קריטי");
+  assert.strictEqual(badge.labelKey, "critical");
 });
 
 test("case-insensitive: INFO, WARNING, CRITICAL all resolve correctly", () => {

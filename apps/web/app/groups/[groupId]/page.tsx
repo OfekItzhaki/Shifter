@@ -7,6 +7,7 @@ import { useTranslations } from "next-intl";
 import AppShell from "@/components/shell/AppShell";
 import Modal from "@/components/Modal";
 import DraftScheduleModal from "@/components/DraftScheduleModal";
+import SandboxView from "@/components/sandbox/SandboxView";
 import ImportModal from "@/components/ImportModal";
 import TrialBanner from "@/components/billing/TrialBanner";
 import ScheduleTab from "./tabs/ScheduleTab";
@@ -1478,6 +1479,7 @@ export default function GroupDetailPage() {
           open={showDraftModal}
           onClose={() => setShowDraftModal(false)}
           spaceId={currentSpaceId}
+          groupId={groupId}
           draftVersionId={draftVersion.id}
           groupMemberIds={new Set(members.map(m => m.personId))}
           isAdmin={isAdmin}
@@ -1571,6 +1573,9 @@ export default function GroupDetailPage() {
           onSave={handleSaveMemberEdit}
         />
       )}
+
+      {/* Sandbox split view — renders as full-screen overlay when sandbox is active */}
+      <SandboxView />
 
     </AppShell>
   );

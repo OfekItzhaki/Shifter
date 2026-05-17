@@ -28,7 +28,7 @@ public class ScheduleVersionTests
         var act = () => version.Publish(Guid.NewGuid());
 
         act.Should().Throw<InvalidOperationException>()
-            .WithMessage("*טיוטה*");
+            .WithMessage("*Only draft versions can be published*");
     }
 
     [Fact]
