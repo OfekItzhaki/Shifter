@@ -10,6 +10,7 @@ public class Notification : Entity, ITenantScoped
     public string Title { get; private set; } = default!;
     public string Body { get; private set; } = default!;
     public string? MetadataJson { get; private set; }
+    public string? DeduplicationHash { get; private set; }
     public bool IsRead { get; private set; }
     public DateTime? ReadAt { get; private set; }
 
@@ -26,6 +27,21 @@ public class Notification : Entity, ITenantScoped
             Title = title,
             Body = body,
             MetadataJson = metadataJson
+        };
+
+    public static Notification CreateWithDedup(
+        Guid spaceId, Guid userId, string eventType,
+        string title, string body, string? metadataJson,
+        string? deduplicationHash) =>
+        new()
+        {
+            SpaceId = spaceId,
+            UserId = userId,
+            EventType = eventType,
+            Title = title,
+            Body = body,
+            MetadataJson = metadataJson,
+            DeduplicationHash = deduplicationHash
         };
 
     public void MarkRead()

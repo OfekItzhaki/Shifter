@@ -1,4 +1,5 @@
 using Jobuler.Application.Common;
+using Jobuler.Application.Conflicts;
 using Jobuler.Domain.Notifications;
 using Jobuler.Domain.People;
 using Jobuler.Domain.Scheduling;
@@ -153,6 +154,23 @@ public class PublishVersionCommandHandler : IRequestHandler<PublishVersionComman
                 await SendExternalNotificationsAsync(req, versionNumber, db, notificationSender, CancellationToken.None);
             });
         }
+
+        // Fire-and-forget: cross-group conflict detection
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                using var scope = _scopeFactory.CreateScope();
+                var conflictService = scope.ServiceProvider.GetRequiredService<IConflictDetectionService>();
+                await conflictService.DetectOnPublishAsync(req.SpaceId, req.VersionId, CancellationToken.None);
+            }
+            catch (Exception ex)
+            {
+                using var scope = _scopeFactory.CreateScope();
+                scope.ServiceProvider.GetRequiredService<ILogger<PublishVersionCommandHandler>>()
+                    .LogError(ex, "Conflict detection failed for version {VersionId}", req.VersionId);
+            }
+        });
     }
 
     /// <summary>

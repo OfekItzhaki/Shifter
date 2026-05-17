@@ -1,9 +1,12 @@
 using Jobuler.Application.Auth;
+using Jobuler.Application.Conflicts;
 using Jobuler.Domain.Identity;
 using Jobuler.Infrastructure.Persistence;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace Jobuler.Application.Auth.Commands;
 
@@ -12,12 +15,21 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, LoginResult>
     private readonly AppDbContext _db;
     private readonly IJwtService _jwt;
     private readonly int _refreshTokenExpiryDays;
+    private readonly IServiceScopeFactory _scopeFactory;
+    private readonly ILogger<LoginCommandHandler> _logger;
 
-    public LoginCommandHandler(AppDbContext db, IJwtService jwt, IConfiguration config)
+    public LoginCommandHandler(
+        AppDbContext db,
+        IJwtService jwt,
+        IConfiguration config,
+        IServiceScopeFactory scopeFactory,
+        ILogger<LoginCommandHandler> logger)
     {
         _db = db;
         _jwt = jwt;
         _refreshTokenExpiryDays = int.Parse(config["Jwt:RefreshTokenExpiryDays"] ?? "7");
+        _scopeFactory = scopeFactory;
+        _logger = logger;
     }
 
     public async Task<LoginResult> Handle(LoginCommand request, CancellationToken ct)
@@ -55,6 +67,24 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, LoginResult>
 
         _db.RefreshTokens.Add(refreshToken);
         await _db.SaveChangesAsync(ct);
+
+        // Fire-and-forget: cross-group conflict detection
+        var userId = user.Id;
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                using var scope = _scopeFactory.CreateScope();
+                var conflictService = scope.ServiceProvider.GetRequiredService<IConflictDetectionService>();
+                await conflictService.DetectOnLoginAsync(userId, CancellationToken.None);
+            }
+            catch (Exception ex)
+            {
+                using var scope = _scopeFactory.CreateScope();
+                scope.ServiceProvider.GetRequiredService<ILogger<LoginCommandHandler>>()
+                    .LogError(ex, "Conflict detection failed on login for user {UserId}", userId);
+            }
+        });
 
         var accessToken = _jwt.GenerateAccessToken(user.Id, user.Email, user.DisplayName);
         var expiresAt = DateTime.UtcNow.AddMinutes(15);

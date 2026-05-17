@@ -196,6 +196,14 @@ builder.Services.AddScoped<ICumulativeTracker, CumulativeTracker>();
 builder.Services.AddScoped<IPeriodManager, PeriodManager>();
 builder.Services.AddScoped<ISolverPayloadNormalizer, SolverPayloadNormalizer>();
 
+// ─── Conflict detection ──────────────────────────────────────────────────────
+// ConflictDetectionDbContext uses the same connection string but WITHOUT the RLS
+// session variable interceptor — it needs cross-space read access for LinkedUserId resolution.
+builder.Services.AddDbContext<ConflictDetectionDbContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddScoped<Jobuler.Application.Conflicts.IConflictDetectionService,
+    Jobuler.Infrastructure.Conflicts.ConflictDetectionService>();
+
 // Use Redis queue if available, fall back to in-memory queue (no Redis required)
 builder.Services.AddSingleton<ISolverJobQueue>(sp =>
 {
