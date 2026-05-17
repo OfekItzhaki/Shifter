@@ -12,6 +12,7 @@ using Jobuler.Application.Common;
 using Jobuler.Application.Scheduling;
 using Jobuler.Infrastructure.AI;
 using Jobuler.Infrastructure.Auth;
+using Jobuler.Infrastructure.Caching;
 using Jobuler.Infrastructure.Email;
 using Jobuler.Application.Auth;
 using Jobuler.Infrastructure.Logging;
@@ -181,6 +182,9 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(_ =>
     config.ReconnectRetryPolicy = new ExponentialRetry(500);
     return ConnectionMultiplexer.Connect(config);
 });
+
+// ─── Caching ─────────────────────────────────────────────────────────────────
+builder.Services.AddSingleton<Jobuler.Application.Common.ICacheService, Jobuler.Infrastructure.Caching.RedisCacheService>();
 
 // ─── Home-leave services ─────────────────────────────────────────────────────
 builder.Services.AddSingleton<IOptimalRatioCalculator, OptimalRatioCalculator>();

@@ -26,8 +26,13 @@ public record AddPersonToGroupByIdCommand(
 public class AddPersonToGroupByIdCommandHandler : IRequestHandler<AddPersonToGroupByIdCommand>
 {
     private readonly AppDbContext _db;
+    private readonly ICacheService _cache;
 
-    public AddPersonToGroupByIdCommandHandler(AppDbContext db) => _db = db;
+    public AddPersonToGroupByIdCommandHandler(AppDbContext db, ICacheService cache)
+    {
+        _db = db;
+        _cache = cache;
+    }
 
     public async Task Handle(AddPersonToGroupByIdCommand req, CancellationToken ct)
     {
@@ -150,5 +155,8 @@ public class AddPersonToGroupByIdCommandHandler : IRequestHandler<AddPersonToGro
             subForPeak.UpdatePeakMemberCount(memberCount);
             await _db.SaveChangesAsync(ct);
         }
+
+        // Invalidate cached members list for this group
+        await _cache.RemoveAsync($"members:{req.SpaceId}:{req.GroupId}", ct);
     }
 }

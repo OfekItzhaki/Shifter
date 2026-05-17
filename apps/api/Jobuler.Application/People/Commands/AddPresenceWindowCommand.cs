@@ -1,3 +1,4 @@
+using Jobuler.Application.Common;
 using Jobuler.Application.Scheduling;
 using Jobuler.Domain.People;
 using Jobuler.Infrastructure.Persistence;
@@ -18,11 +19,13 @@ public class AddPresenceWindowCommandHandler
 {
     private readonly AppDbContext _db;
     private readonly ICumulativeTracker _cumulativeTracker;
+    private readonly ICacheService _cache;
 
-    public AddPresenceWindowCommandHandler(AppDbContext db, ICumulativeTracker cumulativeTracker)
+    public AddPresenceWindowCommandHandler(AppDbContext db, ICumulativeTracker cumulativeTracker, ICacheService cache)
     {
         _db = db;
         _cumulativeTracker = cumulativeTracker;
+        _cache = cache;
     }
 
     public async Task<Guid> Handle(AddPresenceWindowCommand req, CancellationToken ct)
@@ -60,6 +63,10 @@ public class AddPresenceWindowCommandHandler
         {
             await _cumulativeTracker.RecomputeForPersonAsync(req.SpaceId, req.PersonId, ct);
         }
+
+        // Invalidate live status cache for all groups in this space
+        // (presence windows affect live status across groups)
+        await _cache.RemoveByPatternAsync($"status:{req.SpaceId}:*", ct);
 
         return window.Id;
     }

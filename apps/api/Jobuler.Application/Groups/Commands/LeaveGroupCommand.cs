@@ -1,3 +1,4 @@
+using Jobuler.Application.Common;
 using Jobuler.Infrastructure.Persistence;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -48,7 +49,13 @@ public class LeaveGroupByTokenCommandHandler : IRequestHandler<LeaveGroupByToken
 public class RemovePersonFromGroupCommandHandler : IRequestHandler<RemovePersonFromGroupCommand>
 {
     private readonly AppDbContext _db;
-    public RemovePersonFromGroupCommandHandler(AppDbContext db) => _db = db;
+    private readonly ICacheService _cache;
+
+    public RemovePersonFromGroupCommandHandler(AppDbContext db, ICacheService cache)
+    {
+        _db = db;
+        _cache = cache;
+    }
 
     public async Task Handle(RemovePersonFromGroupCommand req, CancellationToken ct)
     {
@@ -69,5 +76,8 @@ public class RemovePersonFromGroupCommandHandler : IRequestHandler<RemovePersonF
         foreach (var inv in invitations) inv.OptOut();
 
         await _db.SaveChangesAsync(ct);
+
+        // Invalidate cached members list for this group
+        await _cache.RemoveAsync($"members:{req.SpaceId}:{req.GroupId}", ct);
     }
 }

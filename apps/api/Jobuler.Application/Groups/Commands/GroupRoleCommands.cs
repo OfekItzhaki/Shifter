@@ -166,11 +166,13 @@ public class UpdateMemberRoleCommandHandler : IRequestHandler<UpdateMemberRoleCo
 {
     private readonly AppDbContext _db;
     private readonly IPermissionService _permissions;
+    private readonly ICacheService _cache;
 
-    public UpdateMemberRoleCommandHandler(AppDbContext db, IPermissionService permissions)
+    public UpdateMemberRoleCommandHandler(AppDbContext db, IPermissionService permissions, ICacheService cache)
     {
         _db = db;
         _permissions = permissions;
+        _cache = cache;
     }
 
     public async Task Handle(UpdateMemberRoleCommand req, CancellationToken ct)
@@ -217,5 +219,8 @@ public class UpdateMemberRoleCommandHandler : IRequestHandler<UpdateMemberRoleCo
                 PersonRoleAssignment.Create(req.SpaceId, req.PersonId, req.RoleId.Value, req.GroupId));
 
         await _db.SaveChangesAsync(ct);
+
+        // Invalidate cached members list for this group
+        await _cache.RemoveAsync($"members:{req.SpaceId}:{req.GroupId}", ct);
     }
 }

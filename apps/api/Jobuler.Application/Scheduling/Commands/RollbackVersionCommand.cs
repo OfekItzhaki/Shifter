@@ -17,12 +17,14 @@ public class RollbackVersionCommandHandler : IRequestHandler<RollbackVersionComm
     private readonly AppDbContext _db;
     private readonly IAuditLogger _audit;
     private readonly ICumulativeTracker _cumulativeTracker;
+    private readonly ICacheService _cache;
 
-    public RollbackVersionCommandHandler(AppDbContext db, IAuditLogger audit, ICumulativeTracker cumulativeTracker)
+    public RollbackVersionCommandHandler(AppDbContext db, IAuditLogger audit, ICumulativeTracker cumulativeTracker, ICacheService cache)
     {
         _db = db;
         _audit = audit;
         _cumulativeTracker = cumulativeTracker;
+        _cache = cache;
     }
 
     public async Task<Guid> Handle(RollbackVersionCommand req, CancellationToken ct)
@@ -65,6 +67,10 @@ public class RollbackVersionCommandHandler : IRequestHandler<RollbackVersionComm
         {
             await _cumulativeTracker.RecomputeForPersonAsync(req.SpaceId, personId, ct);
         }
+
+        // Invalidate cached schedule and status for all groups in this space
+        await _cache.RemoveByPatternAsync($"schedule:{req.SpaceId}:*", ct);
+        await _cache.RemoveByPatternAsync($"status:{req.SpaceId}:*", ct);
 
         await _audit.LogAsync(
             req.SpaceId, req.RequestingUserId,

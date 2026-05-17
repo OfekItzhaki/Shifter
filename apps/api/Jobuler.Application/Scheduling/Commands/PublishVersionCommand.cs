@@ -29,6 +29,7 @@ public class PublishVersionCommandHandler : IRequestHandler<PublishVersionComman
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly IAssignmentSnapshotService _snapshotService;
     private readonly ICumulativeTracker _cumulativeTracker;
+    private readonly ICacheService _cache;
 
     public PublishVersionCommandHandler(
         AppDbContext db,
@@ -38,6 +39,7 @@ public class PublishVersionCommandHandler : IRequestHandler<PublishVersionComman
         IServiceScopeFactory scopeFactory,
         IAssignmentSnapshotService snapshotService,
         ICumulativeTracker cumulativeTracker,
+        ICacheService cache,
         IScheduleNotificationSender? scheduleNotifications = null)
     {
         _db = db;
@@ -47,6 +49,7 @@ public class PublishVersionCommandHandler : IRequestHandler<PublishVersionComman
         _scopeFactory = scopeFactory;
         _snapshotService = snapshotService;
         _cumulativeTracker = cumulativeTracker;
+        _cache = cache;
         _scheduleNotifications = scheduleNotifications;
     }
 
@@ -84,6 +87,10 @@ public class PublishVersionCommandHandler : IRequestHandler<PublishVersionComman
         // Publish enforces draft-only rule inside the domain entity
         version.Publish(req.RequestingUserId);
         await _db.SaveChangesAsync(ct);
+
+        // ── Invalidate cached schedule and status for all groups in this space ──
+        await _cache.RemoveByPatternAsync($"schedule:{req.SpaceId}:*", ct);
+        await _cache.RemoveByPatternAsync($"status:{req.SpaceId}:*", ct);
 
         // ── Home-leave presence windows ───────────────────────────────────────
         // If the version's SummaryJson contains home_leave_assignments, create

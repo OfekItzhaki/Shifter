@@ -40,4 +40,3 @@ public record DailySnapshotDto(
     Guid PeriodId,
     string? TaskTypeName = null,
     string? PersonName = null);
-    string? TaskTypeName = null);

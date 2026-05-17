@@ -107,7 +107,7 @@ public class GroupOwnershipPropertyTests
 
         var groupId = await CreateGroupAsync(db, spaceId, userId);
 
-        var handler = new RemovePersonFromGroupCommandHandler(db);
+        var handler = new RemovePersonFromGroupCommandHandler(db, new Helpers.NoOpCacheService());
 
         var act = () => handler.Handle(
             new RemovePersonFromGroupCommand(spaceId, groupId, personId),

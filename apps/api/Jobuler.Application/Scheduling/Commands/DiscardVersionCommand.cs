@@ -15,11 +15,13 @@ public class DiscardVersionCommandHandler : IRequestHandler<DiscardVersionComman
 {
     private readonly AppDbContext _db;
     private readonly IPermissionService _permissions;
+    private readonly ICacheService _cache;
 
-    public DiscardVersionCommandHandler(AppDbContext db, IPermissionService permissions)
+    public DiscardVersionCommandHandler(AppDbContext db, IPermissionService permissions, ICacheService cache)
     {
         _db = db;
         _permissions = permissions;
+        _cache = cache;
     }
 
     public async Task Handle(DiscardVersionCommand req, CancellationToken ct)
@@ -32,5 +34,8 @@ public class DiscardVersionCommandHandler : IRequestHandler<DiscardVersionComman
 
         version.Discard(); // throws InvalidOperationException if not Draft
         await _db.SaveChangesAsync(ct);
+
+        // Invalidate cached schedule for all groups in this space
+        await _cache.RemoveByPatternAsync($"schedule:{req.SpaceId}:*", ct);
     }
 }

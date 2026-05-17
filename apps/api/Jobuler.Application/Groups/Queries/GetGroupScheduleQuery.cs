@@ -1,3 +1,4 @@
+using Jobuler.Application.Common;
 using Jobuler.Domain.Scheduling;
 using Jobuler.Infrastructure.Persistence;
 using MediatR;
@@ -23,10 +24,21 @@ public record GetGroupScheduleQuery(Guid SpaceId, Guid GroupId) : IRequest<List<
 public class GetGroupScheduleQueryHandler : IRequestHandler<GetGroupScheduleQuery, List<GroupScheduleAssignmentDto>>
 {
     private readonly AppDbContext _db;
-    public GetGroupScheduleQueryHandler(AppDbContext db) => _db = db;
+    private readonly ICacheService _cache;
+
+    public GetGroupScheduleQueryHandler(AppDbContext db, ICacheService cache)
+    {
+        _db = db;
+        _cache = cache;
+    }
 
     public async Task<List<GroupScheduleAssignmentDto>> Handle(GetGroupScheduleQuery req, CancellationToken ct)
     {
+        var cacheKey = $"schedule:{req.SpaceId}:{req.GroupId}";
+        var cached = await _cache.GetAsync<List<GroupScheduleAssignmentDto>>(cacheKey, ct);
+        if (cached is not null)
+            return cached;
+
         // Get the latest published version
         var version = await _db.ScheduleVersions.AsNoTracking()
             .Where(v => v.SpaceId == req.SpaceId && v.Status == ScheduleVersionStatus.Published)
@@ -156,7 +168,9 @@ public class GetGroupScheduleQueryHandler : IRequestHandler<GetGroupScheduleQuer
                 localStartsAt, localEndsAt, a.Source.ToString()));
         }
 
-        return result.OrderBy(r => r.SlotStartsAt).ToList();
+        var ordered = result.OrderBy(r => r.SlotStartsAt).ToList();
+        await _cache.SetAsync(cacheKey, ordered, TimeSpan.FromSeconds(30), ct);
+        return ordered;
     }
 
     private static Guid DeriveShiftGuid(Guid taskId, int shiftIndex)

@@ -75,7 +75,7 @@ public class GroupAlertPropertyTests
         var normalised = string.IsNullOrWhiteSpace(phoneNumber) ? null : phoneNumber.Trim();
         await SeedPersonAndMembership(db, spaceId, groupId, userId, normalised);
 
-        var handler = new GetGroupMembersQueryHandler(db);
+        var handler = new GetGroupMembersQueryHandler(db, new Helpers.NoOpCacheService());
 
         // Act
         var members = await handler.Handle(new GetGroupMembersQuery(spaceId, groupId), CancellationToken.None);

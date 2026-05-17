@@ -1,3 +1,4 @@
+using Jobuler.Application.Common;
 using Jobuler.Infrastructure.Persistence;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -83,10 +84,21 @@ public record GetGroupMembersQuery(Guid SpaceId, Guid GroupId) : IRequest<List<G
 public class GetGroupMembersQueryHandler : IRequestHandler<GetGroupMembersQuery, List<GroupMemberDto>>
 {
     private readonly AppDbContext _db;
-    public GetGroupMembersQueryHandler(AppDbContext db) => _db = db;
+    private readonly ICacheService _cache;
+
+    public GetGroupMembersQueryHandler(AppDbContext db, ICacheService cache)
+    {
+        _db = db;
+        _cache = cache;
+    }
 
     public async Task<List<GroupMemberDto>> Handle(GetGroupMembersQuery req, CancellationToken ct)
     {
+        var cacheKey = $"members:{req.SpaceId}:{req.GroupId}";
+        var cached = await _cache.GetAsync<List<GroupMemberDto>>(cacheKey, ct);
+        if (cached is not null)
+            return cached;
+
         var memberships = await _db.GroupMemberships.AsNoTracking()
             .Where(m => m.GroupId == req.GroupId && m.SpaceId == req.SpaceId)
             .ToListAsync(ct);
@@ -114,7 +126,7 @@ public class GetGroupMembersQueryHandler : IRequestHandler<GetGroupMembersQuery,
             .GroupBy(a => a.PersonId)
             .ToDictionary(g => g.Key, g => g.First());
 
-        return memberships
+        var result = memberships
             .Where(m => people.ContainsKey(m.PersonId))
             .OrderBy(m => people[m.PersonId].FullName)
             .Select(m => {
@@ -128,5 +140,8 @@ public class GetGroupMembersQueryHandler : IRequestHandler<GetGroupMembersQuery,
                     assignment?.RoleId, roleName, m.HomeLeavePriority);
             })
             .ToList();
+
+        await _cache.SetAsync(cacheKey, result, TimeSpan.FromSeconds(60), ct);
+        return result;
     }
 }

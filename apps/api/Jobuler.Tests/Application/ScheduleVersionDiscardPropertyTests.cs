@@ -54,7 +54,7 @@ public class ScheduleVersionDiscardPropertyTests
         db.ScheduleVersions.Add(version);
         await db.SaveChangesAsync();
 
-        var handler = new DiscardVersionCommandHandler(db, AllowAllPermissions());
+        var handler = new DiscardVersionCommandHandler(db, AllowAllPermissions(), new Helpers.NoOpCacheService());
 
         // Act
         await handler.Handle(
@@ -83,7 +83,7 @@ public class ScheduleVersionDiscardPropertyTests
         db.ScheduleVersions.Add(version);
         await db.SaveChangesAsync();
 
-        var handler = new DiscardVersionCommandHandler(db, AllowAllPermissions());
+        var handler = new DiscardVersionCommandHandler(db, AllowAllPermissions(), new Helpers.NoOpCacheService());
 
         // Act
         await handler.Handle(
@@ -117,7 +117,7 @@ public class ScheduleVersionDiscardPropertyTests
         db.ScheduleVersions.Add(version);
         await db.SaveChangesAsync();
 
-        var handler = new DiscardVersionCommandHandler(db, AllowAllPermissions());
+        var handler = new DiscardVersionCommandHandler(db, AllowAllPermissions(), new Helpers.NoOpCacheService());
 
         // Act — try to discard a Published version
         var act = async () => await handler.Handle(

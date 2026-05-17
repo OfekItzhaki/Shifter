@@ -1,3 +1,4 @@
+using Jobuler.Application.Common;
 using Jobuler.Domain.Scheduling;
 using Jobuler.Infrastructure.Persistence;
 using MediatR;
@@ -25,11 +26,22 @@ public class GetGroupLiveStatusQueryHandler
     : IRequestHandler<GetGroupLiveStatusQuery, List<MemberLiveStatusDto>>
 {
     private readonly AppDbContext _db;
-    public GetGroupLiveStatusQueryHandler(AppDbContext db) => _db = db;
+    private readonly ICacheService _cache;
+
+    public GetGroupLiveStatusQueryHandler(AppDbContext db, ICacheService cache)
+    {
+        _db = db;
+        _cache = cache;
+    }
 
     public async Task<List<MemberLiveStatusDto>> Handle(
         GetGroupLiveStatusQuery req, CancellationToken ct)
     {
+        var cacheKey = $"status:{req.SpaceId}:{req.GroupId}";
+        var cached = await _cache.GetAsync<List<MemberLiveStatusDto>>(cacheKey, ct);
+        if (cached is not null)
+            return cached;
+
         // Task times are stored in Israel local time (UTC+2 or UTC+3 depending on DST).
         // Use a fixed +3 offset (Israel Summer Time) for comparison.
         // This is a pragmatic approximation — proper fix would store all times in UTC.
@@ -185,7 +197,9 @@ public class GetGroupLiveStatusQueryHandler
                 location));
         }
 
-        return result.OrderBy(r => r.DisplayName).ToList();
+        var ordered = result.OrderBy(r => r.DisplayName).ToList();
+        await _cache.SetAsync(cacheKey, ordered, TimeSpan.FromSeconds(30), ct);
+        return ordered;
     }
 
     private static Guid DeriveShiftGuid(Guid taskId, int shiftIndex)

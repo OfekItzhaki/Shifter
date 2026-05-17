@@ -63,7 +63,7 @@ public class AdminManagementIntegrationTests
         var scopeFactory = Substitute.For<Microsoft.Extensions.DependencyInjection.IServiceScopeFactory>();
         var snapshotService = Substitute.For<IAssignmentSnapshotService>();
         var cumulativeTracker = Substitute.For<ICumulativeTracker>();
-        return new PublishVersionCommandHandler(db, NoOpAuditLogger(), config, logger, scopeFactory, snapshotService, cumulativeTracker, scheduleNotifications: null);
+        return new PublishVersionCommandHandler(db, NoOpAuditLogger(), config, logger, scopeFactory, snapshotService, cumulativeTracker, new Helpers.NoOpCacheService(), scheduleNotifications: null);
     }
 
     private static async Task<(Guid spaceId, Guid groupId)> SeedGroup(AppDbContext db)
