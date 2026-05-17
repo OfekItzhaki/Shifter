@@ -1,6 +1,8 @@
 using FluentAssertions;
 using Jobuler.Application.Notifications;
+using Jobuler.Domain.Groups;
 using Jobuler.Domain.Notifications;
+using Jobuler.Domain.People;
 using Jobuler.Domain.Spaces;
 using Jobuler.Infrastructure.Notifications;
 using Jobuler.Infrastructure.Persistence;
@@ -66,32 +68,50 @@ public class NotificationTests
     // ── NotificationService ───────────────────────────────────────────────────
 
     [Fact]
-    public async Task NotifySpaceAdmins_CreatesOneNotificationPerMember()
+    public async Task NotifySpaceAdmins_CreatesOneNotificationPerAdmin()
     {
         var db = CreateDb();
         var spaceId = Guid.NewGuid();
-        var user1 = Guid.NewGuid();
-        var user2 = Guid.NewGuid();
+        var ownerId = Guid.NewGuid();
+        var regularUser = Guid.NewGuid();
 
+        // Create space with owner
+        var space = Space.Create("Test Space", ownerId);
+        typeof(Jobuler.Domain.Common.Entity).GetProperty("Id")!.SetValue(space, spaceId);
+        db.Spaces.Add(space);
+
+        // Create space memberships for both users
         db.SpaceMemberships.AddRange(
-            SpaceMembership.Create(spaceId, user1),
-            SpaceMembership.Create(spaceId, user2));
+            SpaceMembership.Create(spaceId, ownerId),
+            SpaceMembership.Create(spaceId, regularUser));
+
+        // Create a group with a group owner (different from space owner)
+        var groupId = Guid.NewGuid();
+        var group = Group.Create(spaceId, null, "Test Group");
+        typeof(Jobuler.Domain.Common.Entity).GetProperty("Id")!.SetValue(group, groupId);
+        db.Groups.Add(group);
+
+        // Create person records linked to users
+        var ownerPerson = Person.Create(spaceId, "Owner", linkedUserId: ownerId);
+        db.People.Add(ownerPerson);
+
+        // Owner membership in the group
+        db.GroupMemberships.Add(GroupMembership.Create(spaceId, groupId, ownerPerson.Id, isOwner: true));
+
         await db.SaveChangesAsync();
 
         var service = new NotificationService(db, Substitute.For<IPushNotificationSender>(), NullLogger<NotificationService>.Instance);
         await service.NotifySpaceAdminsAsync(
-            spaceId, "solver_completed", "Ready", "Draft created.");
+            spaceId, "solver_completed", "Ready", "Draft created.", groupId: groupId);
 
         var notifications = await db.Notifications
             .Where(n => n.SpaceId == spaceId).ToListAsync();
 
-        notifications.Should().HaveCount(2);
-        notifications.Select(n => n.UserId).Should().BeEquivalentTo(new[] { user1, user2 });
-        notifications.Should().AllSatisfy(n =>
-        {
-            n.EventType.Should().Be("solver_completed");
-            n.IsRead.Should().BeFalse();
-        });
+        // Only space owner + group owner (same person in this case) = 1 notification
+        notifications.Should().HaveCount(1);
+        notifications[0].UserId.Should().Be(ownerId);
+        notifications[0].EventType.Should().Be("solver_completed");
+        notifications[0].IsRead.Should().BeFalse();
     }
 
     [Fact]

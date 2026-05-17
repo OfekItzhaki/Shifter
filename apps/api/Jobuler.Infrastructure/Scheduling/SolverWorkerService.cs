@@ -158,7 +158,7 @@ public class SolverWorkerService : BackgroundService
                 run.MarkFailed(noTasksBody);
                 await db.SaveChangesAsync(ct);
                 await notifier.NotifySpaceAdminsAsync(
-                    job.SpaceId, "solver_no_tasks", noTasksTitle, noTasksBody, ct: ct);
+                    job.SpaceId, "solver_no_tasks", noTasksTitle, noTasksBody, groupId: job.GroupId, ct: ct);
                 return;
             }
 
@@ -172,7 +172,7 @@ public class SolverWorkerService : BackgroundService
                 run.MarkFailed(noPeopleBody);
                 await db.SaveChangesAsync(ct);
                 await notifier.NotifySpaceAdminsAsync(
-                    job.SpaceId, "solver_no_people", noPeopleTitle, noPeopleBody, ct: ct);
+                    job.SpaceId, "solver_no_people", noPeopleTitle, noPeopleBody, groupId: job.GroupId, ct: ct);
                 return;
             }
 
@@ -277,7 +277,7 @@ public class SolverWorkerService : BackgroundService
                 run.MarkFailed(reason);
                 await db.SaveChangesAsync(ct);
                 await notifier.NotifySpaceAdminsAsync(
-                    job.SpaceId, "solver_preflight_failed", preflightTitle, reason, ct: ct);
+                    job.SpaceId, "solver_preflight_failed", preflightTitle, reason, groupId: job.GroupId, ct: ct);
                 return;
             }
 
@@ -517,7 +517,7 @@ public class SolverWorkerService : BackgroundService
             }
             await notifier.NotifySpaceAdminsAsync(
                 job.SpaceId, evt, notifTitle, notifBody,
-                metadataJson: summaryJson, ct: ct);
+                metadataJson: summaryJson, groupId: job.GroupId, ct: ct);
 
             // Auto-publish: if the group has auto_publish enabled and the schedule is feasible,
             // publish the draft immediately without admin review.
@@ -620,7 +620,7 @@ public class SolverWorkerService : BackgroundService
                 job.SpaceId, "solver_failed",
                 failTitle,
                 friendlyError,
-                ct: ct);
+                groupId: job.GroupId, ct: ct);
         }
     }
 

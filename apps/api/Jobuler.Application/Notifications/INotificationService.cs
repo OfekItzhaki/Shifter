@@ -3,10 +3,11 @@ namespace Jobuler.Application.Notifications;
 public interface INotificationService
 {
     /// <summary>
-    /// Creates a notification for every space member who has the SpaceView permission.
-    /// Called by the solver worker after a run completes or fails.
+    /// Creates a notification for space owner and group owners/admins.
+    /// When groupId is provided, only notifies owners of that specific group + space owner.
+    /// When groupId is null, notifies space owner + all group owners in the space.
     /// </summary>
     Task NotifySpaceAdminsAsync(
         Guid spaceId, string eventType, string title, string body,
-        string? metadataJson = null, CancellationToken ct = default);
+        string? metadataJson = null, Guid? groupId = null, CancellationToken ct = default);
 }

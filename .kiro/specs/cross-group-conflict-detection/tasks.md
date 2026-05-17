@@ -31,19 +31,19 @@ Implement post-facto cross-group conflict detection that identifies overlapping 
     - Classify overlaps (A.StartsAt < B.EndsAt AND B.StartsAt < A.EndsAt)
     - Classify rest violations (gap < max(restA, restB) hours, only when max > 0, only for non-overlapping pairs)
     - _Requirements: 3.1, 3.2, 3.3, 4.1, 4.2, 4.3, 4.4_
-  - [ ]* 2.3 Write property test: Overlap detection is symmetric and complete
+  - [x]* 2.3 Write property test: Overlap detection is symmetric and complete
     - **Property 1: Overlap detection is symmetric and complete**
     - Generate random FlatAssignment sets, verify overlap classification matches interval intersection formula
     - **Validates: Requirements 1.2, 3.1**
-  - [ ]* 2.4 Write property test: Rest violation uses the stricter threshold
+  - [x]* 2.4 Write property test: Rest violation uses the stricter threshold
     - **Property 2: Rest violation uses the stricter threshold**
     - Generate non-overlapping assignment pairs with varying MinRestBetweenShiftsHours, verify max() is used
     - **Validates: Requirements 4.1, 4.2, 4.4**
-  - [ ]* 2.5 Write property test: Overlap and rest violation are mutually exclusive
+  - [x]* 2.5 Write property test: Overlap and rest violation are mutually exclusive
     - **Property 3: Overlap and rest violation are mutually exclusive**
     - Generate assignment pairs, verify no pair is classified as both Overlap and RestViolation
     - **Validates: Requirements 4.3**
-  - [ ]* 2.6 Write property test: Same-group assignments never produce conflicts
+  - [x]* 2.6 Write property test: Same-group assignments never produce conflicts
     - **Property 4: Same-group assignments never produce conflicts**
     - Generate assignments all sharing the same GroupId, verify zero conflicts returned
     - **Validates: Requirements 3.2**
@@ -87,7 +87,7 @@ Implement post-facto cross-group conflict detection that identifies overlapping 
     - ru: "Конфликт смен" / "У вас пересечение смен — сообщите менеджеру"
     - Default to "en" for unknown locales
     - _Requirements: 5.2, 5.3, 5.4, 5.5_
-  - [ ]* 5.6 Write property test: Deduplication fingerprint is order-independent
+  - [x]* 5.6 Write property test: Deduplication fingerprint is order-independent
     - **Property 5: Deduplication fingerprint is order-independent**
     - Generate conflict pair sets in random order, verify hash is identical regardless of input order
     - **Validates: Requirements 8.1**

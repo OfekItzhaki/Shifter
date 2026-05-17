@@ -25,13 +25,36 @@ public class NotificationService : INotificationService
 
     public async Task NotifySpaceAdminsAsync(
         Guid spaceId, string eventType, string title, string body,
-        string? metadataJson = null, CancellationToken ct = default)
+        string? metadataJson = null, Guid? groupId = null, CancellationToken ct = default)
     {
-        // Notify all members who have at least SpaceView — i.e. everyone in the space
-        var memberIds = await _db.SpaceMemberships.AsNoTracking()
-            .Where(m => m.SpaceId == spaceId)
-            .Select(m => m.UserId)
+        // Notify only admins: space owner + group owners
+        var spaceOwnerIds = await _db.Spaces.AsNoTracking()
+            .Where(s => s.Id == spaceId)
+            .Select(s => s.OwnerUserId)
             .ToListAsync(ct);
+
+        // If groupId is specified, only get owners of that specific group
+        // Otherwise, get all group owners in the space
+        var groupOwnerQuery = _db.GroupMemberships.AsNoTracking()
+            .Where(gm => gm.SpaceId == spaceId && gm.IsOwner);
+
+        if (groupId.HasValue)
+            groupOwnerQuery = groupOwnerQuery.Where(gm => gm.GroupId == groupId.Value);
+
+        var groupOwnerPersonIds = await groupOwnerQuery
+            .Select(gm => gm.PersonId)
+            .Distinct()
+            .ToListAsync(ct);
+
+        var groupOwnerUserIds = await _db.People.AsNoTracking()
+            .Where(p => groupOwnerPersonIds.Contains(p.Id) && p.LinkedUserId != null)
+            .Select(p => p.LinkedUserId!.Value)
+            .ToListAsync(ct);
+
+        var memberIds = spaceOwnerIds
+            .Concat(groupOwnerUserIds)
+            .Distinct()
+            .ToList();
 
         var notifications = memberIds.Select(userId =>
             Notification.Create(spaceId, userId, eventType, title, body, metadataJson))
