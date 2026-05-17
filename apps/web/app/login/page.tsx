@@ -7,7 +7,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import ShifterLogo from "@/components/shell/ShifterLogo";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
-import { isWebAuthnSupported, authenticateWithBiometric } from "@/lib/webauthn";
+import { isWebAuthnSupported, authenticateWithBiometric, listCredentials, registerCredential } from "@/lib/webauthn";
 import { detectBrowserLocale } from "@/lib/utils/detectLocale";
 
 function LoginForm() {
@@ -29,6 +29,10 @@ function LoginForm() {
   const [biometricLoading, setBiometricLoading] = useState(false);
   const [biometricError, setBiometricError] = useState<string | null>(null);
 
+  // Biometric registration prompt state
+  const [showBiometricPrompt, setShowBiometricPrompt] = useState(false);
+  const [biometricRegistering, setBiometricRegistering] = useState(false);
+
   useEffect(() => {
     setWebAuthnAvailable(isWebAuthnSupported());
   }, []);
@@ -39,12 +43,46 @@ function LoginForm() {
     setLoading(true);
     try {
       await login(email, password);
+
+      // After successful login, check if we should offer biometric registration
+      if (isWebAuthnSupported() && !localStorage.getItem("biometric_prompt_dismissed")) {
+        try {
+          const creds = await listCredentials();
+          if (creds.length === 0) {
+            setLoading(false);
+            setShowBiometricPrompt(true);
+            return; // Don't redirect yet — show the prompt
+          }
+        } catch {
+          // If listing fails, just continue to redirect
+        }
+      }
+
       router.push(redirectTo);
     } catch {
       setError(t("invalidCredentials"));
     } finally {
       setLoading(false);
     }
+  }
+
+  async function handleBiometricRegister() {
+    setBiometricRegistering(true);
+    try {
+      await registerCredential("המכשיר שלי");
+    } catch {
+      // Registration failed or cancelled — just continue
+    } finally {
+      setBiometricRegistering(false);
+      setShowBiometricPrompt(false);
+      router.push(redirectTo);
+    }
+  }
+
+  function handleBiometricPromptDismiss() {
+    localStorage.setItem("biometric_prompt_dismissed", "1");
+    setShowBiometricPrompt(false);
+    router.push(redirectTo);
   }
 
   async function handleBiometricLogin() {
@@ -64,7 +102,7 @@ function LoginForm() {
         // User cancelled — no error to show
         return;
       }
-      setBiometricError(t("biometricFailed") ?? "אימות ביומטרי נכשל. נסה שוב או השתמש בסיסמה.");
+      setBiometricError(t("noCredentialFound"));
     } finally {
       setBiometricLoading(false);
     }
@@ -114,7 +152,7 @@ function LoginForm() {
                   transition: "all 0.15s",
                   boxShadow: "0 2px 8px rgba(79, 70, 229, 0.3)",
                 }}
-                aria-label="התחבר עם ביומטרי"
+                aria-label={t("biometricLogin")}
               >
                 {/* Fingerprint icon */}
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -126,7 +164,7 @@ function LoginForm() {
                   <path d="M15 17c1 1.5 2 3 2.5 4.5" />
                   <path d="M19.5 8c.5 1 .5 2 .5 4 0 2-.5 4-1 6" />
                 </svg>
-                {biometricLoading ? "מאמת..." : "התחבר עם ביומטרי"}
+                {biometricLoading ? t("authenticating") : t("biometricLogin")}
               </button>
 
               {biometricError && (
@@ -158,7 +196,7 @@ function LoginForm() {
               {/* Divider */}
               <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginTop: "1.25rem" }}>
                 <div style={{ flex: 1, height: "1px", background: "#e2e8f0" }} />
-                <span style={{ fontSize: "0.75rem", color: "#94a3b8", fontWeight: 500 }}>או</span>
+                <span style={{ fontSize: "0.75rem", color: "#94a3b8", fontWeight: 500 }}>{t("or")}</span>
                 <div style={{ flex: 1, height: "1px", background: "#e2e8f0" }} />
               </div>
             </div>
@@ -277,6 +315,89 @@ function LoginForm() {
           </div>
         </div>
       </div>
+
+      {/* Biometric Registration Prompt Modal */}
+      {showBiometricPrompt && (
+        <div style={{
+          position: "fixed",
+          inset: 0,
+          background: "rgba(0, 0, 0, 0.5)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          zIndex: 50,
+          padding: "1rem",
+        }}>
+          <div style={{
+            background: "white",
+            borderRadius: "16px",
+            padding: "2rem",
+            maxWidth: "340px",
+            width: "100%",
+            textAlign: "center",
+            boxShadow: "0 20px 60px rgba(0, 0, 0, 0.3)",
+          }}>
+            {/* Fingerprint icon */}
+            <div style={{ marginBottom: "1rem" }}>
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ margin: "0 auto" }}>
+                <path d="M2 12C2 6.5 6.5 2 12 2a10 10 0 0 1 8 4" />
+                <path d="M5 19.5C5.5 18 6 15 6 12c0-3.5 2.5-6 6-6 3.5 0 6 2.5 6 6 0 1.5-.5 3-1 4" />
+                <path d="M9 12c0-1.5 1.5-3 3-3s3 1.5 3 3-1 4-2 6" />
+                <path d="M12 12v4" />
+                <path d="M2 16c1 2 2.5 3.5 4.5 4.5" />
+                <path d="M15 17c1 1.5 2 3 2.5 4.5" />
+                <path d="M19.5 8c.5 1 .5 2 .5 4 0 2-.5 4-1 6" />
+              </svg>
+            </div>
+            <h2 style={{ fontSize: "1.125rem", fontWeight: 600, color: "#1e293b", margin: "0 0 0.5rem" }}>
+              {t("enableBiometric")}
+            </h2>
+            <p style={{ fontSize: "0.875rem", color: "#64748b", margin: "0 0 1.5rem" }}>
+              {t("enableBiometricDesc")}
+            </p>
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+              <button
+                onClick={handleBiometricRegister}
+                disabled={biometricRegistering}
+                style={{
+                  width: "100%",
+                  background: biometricRegistering
+                    ? "linear-gradient(135deg, #a78bfa, #818cf8)"
+                    : "linear-gradient(135deg, #7c3aed, #4f46e5)",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "10px",
+                  padding: "0.75rem",
+                  fontSize: "0.875rem",
+                  fontWeight: 600,
+                  cursor: biometricRegistering ? "not-allowed" : "pointer",
+                  transition: "all 0.15s",
+                }}
+              >
+                {biometricRegistering ? t("authenticating") : t("enableBiometricYes")}
+              </button>
+              <button
+                onClick={handleBiometricPromptDismiss}
+                disabled={biometricRegistering}
+                style={{
+                  width: "100%",
+                  background: "transparent",
+                  color: "#64748b",
+                  border: "1px solid #e2e8f0",
+                  borderRadius: "10px",
+                  padding: "0.75rem",
+                  fontSize: "0.875rem",
+                  fontWeight: 500,
+                  cursor: "pointer",
+                  transition: "all 0.15s",
+                }}
+              >
+                {t("enableBiometricSkip")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

@@ -55,7 +55,16 @@
     "noAccount": "Нет аккаунта?",
     "emailOrPhone": "Email или номер телефона",
     "emailOrPhoneRequired": "Необходимо указать email или номер телефона",
-    "emailOrPhoneHint": "Необходимо хотя бы одно — email или телефон"
+    "emailOrPhoneHint": "Необходимо хотя бы одно — email или телефон",
+    "biometricLogin": "Биометрический вход",
+    "authenticating": "Аутентификация...",
+    "or": "или",
+    "biometricFailed": "Биометрическая аутентификация не удалась",
+    "enableBiometric": "Включить биометрический вход?",
+    "enableBiometricDesc": "В следующий раз вы сможете войти по отпечатку пальца или распознаванию лица",
+    "enableBiometricYes": "Да, включить",
+    "enableBiometricSkip": "Не сейчас",
+    "noCredentialFound": "Зарегистрированное устройство не найдено. Войдите с паролем, чтобы включить биометрический вход."
   },
   "nav": {
     "schedule": "Расписание",

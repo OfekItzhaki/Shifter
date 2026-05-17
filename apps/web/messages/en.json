@@ -55,7 +55,16 @@
     "noAccount": "Don't have an account?",
     "emailOrPhone": "Email or Phone Number",
     "emailOrPhoneRequired": "Either email or phone number is required",
-    "emailOrPhoneHint": "At least one is required — email or phone"
+    "emailOrPhoneHint": "At least one is required — email or phone",
+    "biometricLogin": "Biometric Login",
+    "authenticating": "Authenticating...",
+    "or": "or",
+    "biometricFailed": "Biometric authentication failed",
+    "enableBiometric": "Enable biometric login?",
+    "enableBiometricDesc": "Next time you can log in with fingerprint or face recognition",
+    "enableBiometricYes": "Yes, enable",
+    "enableBiometricSkip": "Not now",
+    "noCredentialFound": "No registered device found. Log in with password to enable biometric login."
   },
   "nav": {
     "schedule": "Schedule",

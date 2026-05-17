@@ -55,7 +55,16 @@
     "noAccount": "אין לך חשבון?",
     "emailOrPhone": "אימייל או מספר טלפון",
     "emailOrPhoneRequired": "יש להזין אימייל או מספר טלפון",
-    "emailOrPhoneHint": "נדרש לפחות אחד מהם — אימייל או טלפון"
+    "emailOrPhoneHint": "נדרש לפחות אחד מהם — אימייל או טלפון",
+    "biometricLogin": "כניסה ביומטרית",
+    "authenticating": "מאמת...",
+    "or": "או",
+    "biometricFailed": "אימות ביומטרי נכשל",
+    "enableBiometric": "רוצה להפעיל כניסה ביומטרית?",
+    "enableBiometricDesc": "בפעם הבאה תוכל להתחבר עם טביעת אצבע או זיהוי פנים",
+    "enableBiometricYes": "כן, הפעל",
+    "enableBiometricSkip": "לא עכשיו",
+    "noCredentialFound": "לא נמצא מכשיר רשום. התחבר עם סיסמה ותוכל להפעיל כניסה ביומטרית."
   },
   "nav": {
     "schedule": "לוח זמנים",
