@@ -295,13 +295,7 @@ public class SolverWorkerService : BackgroundService
             run.SetProgressPhase("storing_results");
             await db.SaveChangesAsync(ct);
 
-            // Determine next version number for this space
-            var nextVersion = await db.ScheduleVersions
-                .Where(v => v.SpaceId == job.SpaceId)
-                .MaxAsync(v => (int?)v.VersionNumber, ct) ?? 0;
-            nextVersion++;
-
-            // Create draft version
+            // Build summary JSON for logging/notifications regardless of outcome
             var summaryJson = JsonSerializer.Serialize(new
             {
                 feasible = output.Feasible,
@@ -333,29 +327,17 @@ public class SolverWorkerService : BackgroundService
                 fairness_variance = output.FairnessVariance
             });
 
-            var version = ScheduleVersion.CreateDraft(
-                job.SpaceId, nextVersion, job.BaselineVersionId,
-                job.RunId, job.RequestedByUserId, summaryJson);
+            // Count parseable assignments to decide whether to create a version
+            var parsedAssignmentDtos = output.Feasible
+                ? output.Assignments.Where(a => Guid.TryParse(a.SlotId, out _)).ToList()
+                : new List<AssignmentResultDto>();
 
-            // Build assignments list first so we can decide whether to keep the draft
-            var assignments = output.Feasible
-                ? output.Assignments.Select(a =>
-                {
-                    if (!Guid.TryParse(a.SlotId, out var slotGuid))
-                    {
-                        _logger.LogWarning("Cannot parse slot_id as GUID: '{SlotId}' — skipping assignment for person {PersonId}", a.SlotId, a.PersonId);
-                        return null;
-                    }
-                    return Assignment.Create(
-                        job.SpaceId, version.Id,
-                        slotGuid, Guid.Parse(a.PersonId),
-                        a.Source == "override" ? AssignmentSource.Override : AssignmentSource.Solver);
-                }).Where(a => a != null).Cast<Assignment>().ToList()
-                : new List<Assignment>();
+            foreach (var a in output.Assignments.Where(a => !Guid.TryParse(a.SlotId, out _)))
+                _logger.LogWarning("Cannot parse slot_id as GUID: '{SlotId}' — skipping assignment for person {PersonId}", a.SlotId, a.PersonId);
 
             _logger.LogInformation(
                 "Solver output: feasible={Feasible} timedOut={TimedOut} rawAssignments={Raw} parsedAssignments={Parsed}",
-                output.Feasible, output.TimedOut, output.Assignments.Count, assignments.Count);
+                output.Feasible, output.TimedOut, output.Assignments.Count, parsedAssignmentDtos.Count);
 
             // Do NOT persist a version if there's nothing useful to show the admin:
             // - solver proved infeasible, OR
@@ -364,12 +346,34 @@ public class SolverWorkerService : BackgroundService
             // In all these cases, mark the run failed and notify the admin with
             // actionable guidance (e.g. reduce planning horizon, add members).
             var hasUncoveredSlots = output.UncoveredSlotIds.Count > 0;
-            var shouldDiscard = !output.Feasible || assignments.Count == 0 || hasUncoveredSlots;
+            var shouldDiscard = !output.Feasible || parsedAssignmentDtos.Count == 0 || hasUncoveredSlots;
+
+            // Only create the ScheduleVersion AFTER confirming the solver succeeded
+            // with valid assignments. This prevents empty drafts from lingering in the DB.
+            ScheduleVersion? version = null;
+            List<Assignment> assignments;
+            int nextVersion = 0;
 
             if (!shouldDiscard)
             {
+                // Determine next version number for this space
+                nextVersion = (await db.ScheduleVersions
+                    .Where(v => v.SpaceId == job.SpaceId)
+                    .MaxAsync(v => (int?)v.VersionNumber, ct) ?? 0) + 1;
+
+                version = ScheduleVersion.CreateDraft(
+                    job.SpaceId, nextVersion, job.BaselineVersionId,
+                    job.RunId, job.RequestedByUserId, summaryJson);
+
                 db.ScheduleVersions.Add(version);
                 await db.SaveChangesAsync(ct); // get version.Id
+
+                assignments = parsedAssignmentDtos.Select(a =>
+                    Assignment.Create(
+                        job.SpaceId, version.Id,
+                        Guid.Parse(a.SlotId), Guid.Parse(a.PersonId),
+                        a.Source == "override" ? AssignmentSource.Override : AssignmentSource.Solver)
+                ).ToList();
 
                 db.Assignments.AddRange(assignments);
 
@@ -417,10 +421,12 @@ public class SolverWorkerService : BackgroundService
             }
             else
             {
+                assignments = new List<Assignment>();
+
                 // No version created — just update the run status
                 _logger.LogWarning(
                     "Skipping version creation: feasible={Feasible} assignments={Count} uncovered={Uncovered}",
-                    output.Feasible, assignments.Count, output.UncoveredSlotIds.Count);
+                    output.Feasible, parsedAssignmentDtos.Count, output.UncoveredSlotIds.Count);
 
                 if (output.TimedOut)
                     run.MarkTimedOut(summaryJson);
@@ -515,7 +521,7 @@ public class SolverWorkerService : BackgroundService
 
             // Auto-publish: if the group has auto_publish enabled and the schedule is feasible,
             // publish the draft immediately without admin review.
-            if (!shouldDiscard && output.Feasible && job.GroupId.HasValue)
+            if (!shouldDiscard && output.Feasible && job.GroupId.HasValue && version is not null)
             {
                 var autoPublishGroup = await db.Groups.AsNoTracking()
                     .FirstOrDefaultAsync(g => g.Id == job.GroupId.Value, ct);

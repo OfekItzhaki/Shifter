@@ -104,12 +104,19 @@ export default function ScheduleTab({
   useEffect(() => {
     if (!scheduleData || scheduleData.length === 0) return;
     const currentDate = weekDates[selectedWeekDay];
-    const hasAssignmentsToday = scheduleData.some(a => a.slotStartsAt.startsWith(currentDate));
+    // Convert UTC slot timestamps to local dates before comparing
+    const hasAssignmentsToday = scheduleData.some(a => {
+      const localDate = new Date(a.slotStartsAt).toLocaleDateString("sv");
+      return localDate === currentDate;
+    });
     if (!hasAssignmentsToday) {
       // Find the first day in the current week that has assignments
       for (let i = 0; i < 7; i++) {
         const date = weekDates[i];
-        if (scheduleData.some(a => a.slotStartsAt.startsWith(date))) {
+        if (scheduleData.some(a => {
+          const localDate = new Date(a.slotStartsAt).toLocaleDateString("sv");
+          return localDate === date;
+        })) {
           setSelectedWeekDay(i);
           return;
         }
