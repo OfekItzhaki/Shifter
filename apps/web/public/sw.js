@@ -9,7 +9,7 @@
  * - Auth endpoints: Never cache.
  */
 
-const CACHE_VERSION = "2.0.0";
+const CACHE_VERSION = "1.9.0";
 const CACHE_NAME = "shifter-" + CACHE_VERSION;
 const STATIC_CACHE = "shifter-static-" + CACHE_VERSION;
 
@@ -18,6 +18,9 @@ const SCHEDULE_PATTERNS = [
   /\/spaces\/[^/]+\/schedule-versions\/current/,
   /\/spaces\/[^/]+\/my-assignments/,
   /\/spaces\/[^/]+\/groups\/[^/]+\/schedule/,
+  /\/spaces\/[^/]+\/groups\/[^/]+\/home-leave-schedule/,
+  /\/schedule\/my-missions/,
+  /\/schedule\/today/,
 ];
 
 // Patterns to never cache

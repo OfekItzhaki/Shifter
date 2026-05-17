@@ -33,7 +33,7 @@ export function useServiceWorker(): SWState {
     window.addEventListener("offline", handleOffline);
 
     // Register service worker with version query param to force re-download on deploy
-    const appVersion = process.env.NEXT_PUBLIC_APP_VERSION || "1.5.0";
+    const appVersion = process.env.NEXT_PUBLIC_APP_VERSION || "1.9.0";
     navigator.serviceWorker
       .register(`/sw.js?v=${appVersion}`, { scope: "/" })
       .then((reg) => {
