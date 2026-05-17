@@ -45,7 +45,7 @@ public class Group : AuditableEntity, ITenantScoped
     {
         var trimmed = name?.Trim() ?? string.Empty;
         if (string.IsNullOrWhiteSpace(trimmed) || trimmed.Length > 100)
-            throw new InvalidOperationException("שם הקבוצה חייב להיות בין 1 ל-100 תווים.");
+            throw new InvalidOperationException("Group name must be between 1 and 100 characters.");
         Name = trimmed;
         Touch();
     }
@@ -58,7 +58,7 @@ public class Group : AuditableEntity, ITenantScoped
     public void SetMinRestBetweenShifts(int hours)
     {
         if (hours < 0 || hours > 24)
-            throw new InvalidOperationException("שעות מנוחה מינימלית בין משמרות חייבות להיות בין 0 ל-24.");
+            throw new InvalidOperationException("Minimum rest hours between shifts must be between 0 and 24.");
         MinRestBetweenShiftsHours = hours;
         Touch();
     }

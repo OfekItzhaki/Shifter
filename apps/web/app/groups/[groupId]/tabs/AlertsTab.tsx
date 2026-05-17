@@ -78,7 +78,7 @@ export default function AlertsTab({
             <div className="flex items-start justify-between gap-2">
               <div className="flex items-center gap-2">
                 <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${getSeverityBadge(a.severity).bg} ${getSeverityBadge(a.severity).text} ${getSeverityBadge(a.severity).border}`}>
-                  {getSeverityBadge(a.severity).label}
+                  {t(getSeverityBadge(a.severity).labelKey)}
                 </span>
                 <h4 className="text-sm font-semibold text-slate-900">{a.title}</h4>
               </div>

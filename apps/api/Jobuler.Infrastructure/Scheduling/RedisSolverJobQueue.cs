@@ -36,7 +36,7 @@ public class RedisSolverJobQueue : ISolverJobQueue
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to enqueue solver job run_id={RunId}. Is Redis/Memurai running?", job.RunId);
-            throw new InvalidOperationException("שירות התור אינו זמין. ודא ש-Memurai פועל.", ex);
+            throw new InvalidOperationException("Queue service unavailable. Ensure Redis/Memurai is running.", ex);
         }
     }
 

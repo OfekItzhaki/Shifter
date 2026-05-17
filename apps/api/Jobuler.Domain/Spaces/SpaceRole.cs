@@ -75,7 +75,7 @@ public class SpaceRole : AuditableEntity, ITenantScoped
     public void Deactivate()
     {
         if (IsDefault)
-            throw new InvalidOperationException("לא ניתן למחוק את תפקיד ברירת המחדל. ניתן לשנות את שמו.");
+            throw new InvalidOperationException("Cannot delete the default role. You can rename it instead.");
         IsActive = false;
         Touch();
     }

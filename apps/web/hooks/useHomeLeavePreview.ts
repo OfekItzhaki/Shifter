@@ -89,7 +89,7 @@ export function useHomeLeavePreview(
           return;
         }
 
-        setError("לא ניתן לטעון תצוגה מקדימה");
+        setError("PREVIEW_LOAD_FAILED");
       } finally {
         // Only clear loading if this is still the latest request
         if (currentRequest === requestCounterRef.current) {

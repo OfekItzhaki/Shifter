@@ -1069,7 +1069,25 @@
     "last90days": "90 ימים",
     "noData": "אין נתונים עדיין"
   },
+  "unavailabilityReasons": {
+    "title": "סיבות אי-זמינות",
+    "loading": "טוען...",
+    "save": "שמור",
+    "cancel": "ביטול",
+    "edit": "ערוך",
+    "delete": "מחק",
+    "empty": "אין סיבות מוגדרות",
+    "placeholder": "שם הסיבה...",
+    "adding": "מוסיף...",
+    "addReason": "הוסף סיבה",
+    "errorAdd": "שגיאה בהוספת סיבה",
+    "errorUpdate": "שגיאה בעדכון סיבה",
+    "errorDelete": "שגיאה במחיקת סיבה",
+    "nameTooLong": "שם הסיבה לא יכול לעלות על {max} תווים",
+    "maxReached": "לא ניתן להוסיף יותר מ-{max} סיבות"
+  },
   "homeLeave": {
+    "previewLoadFailed": "לא ניתן לטעון תצוגה מקדימה",
     "modeSelector": {
       "groupLabel": "בחירת מצב זמן בית",
       "automatic": "אוטומטי",

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useTranslations } from "next-intl";
 import {
   getReasons,
   createReason,
@@ -17,10 +18,11 @@ const MAX_REASONS = 50;
 const MAX_DISPLAY_NAME_LENGTH = 100;
 
 /**
- * "סיבות אי-זמינות" (Unavailability Reasons) settings panel.
+ * Unavailability Reasons settings panel.
  * Allows managing the list of structured unavailability reasons for a space.
  */
 export default function UnavailabilityReasonsPanel({ spaceId }: UnavailabilityReasonsPanelProps) {
+  const t = useTranslations("unavailabilityReasons");
   const [reasons, setReasons] = useState<UnavailabilityReasonDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [newReasonName, setNewReasonName] = useState("");
@@ -50,11 +52,11 @@ export default function UnavailabilityReasonsPanel({ spaceId }: UnavailabilityRe
     const trimmed = newReasonName.trim();
     if (!trimmed) return;
     if (trimmed.length > MAX_DISPLAY_NAME_LENGTH) {
-      setError(`שם הסיבה לא יכול לעלות על ${MAX_DISPLAY_NAME_LENGTH} תווים`);
+      setError(t("nameTooLong", { max: MAX_DISPLAY_NAME_LENGTH }));
       return;
     }
     if (reasons.length >= MAX_REASONS) {
-      setError(`לא ניתן להוסיף יותר מ-${MAX_REASONS} סיבות`);
+      setError(t("maxReached", { max: MAX_REASONS }));
       return;
     }
 
@@ -66,7 +68,7 @@ export default function UnavailabilityReasonsPanel({ spaceId }: UnavailabilityRe
       setNewReasonName("");
       await fetchReasons();
     } catch {
-      setError("שגיאה בהוספת סיבה");
+      setError(t("errorAdd"));
     } finally {
       setAdding(false);
     }
@@ -83,7 +85,7 @@ export default function UnavailabilityReasonsPanel({ spaceId }: UnavailabilityRe
     const trimmed = editingName.trim();
     if (!trimmed) return;
     if (trimmed.length > MAX_DISPLAY_NAME_LENGTH) {
-      setError(`שם הסיבה לא יכול לעלות על ${MAX_DISPLAY_NAME_LENGTH} תווים`);
+      setError(t("nameTooLong", { max: MAX_DISPLAY_NAME_LENGTH }));
       return;
     }
 
@@ -96,7 +98,7 @@ export default function UnavailabilityReasonsPanel({ spaceId }: UnavailabilityRe
       setEditingName("");
       await fetchReasons();
     } catch {
-      setError("שגיאה בעדכון סיבה");
+      setError(t("errorUpdate"));
     }
   }
 
@@ -111,15 +113,15 @@ export default function UnavailabilityReasonsPanel({ spaceId }: UnavailabilityRe
       await deleteReason(spaceId, reasonId);
       await fetchReasons();
     } catch {
-      setError("שגיאה במחיקת סיבה");
+      setError(t("errorDelete"));
     }
   }
 
   if (loading) {
     return (
       <div className="bg-white border border-slate-200 rounded-2xl p-5 space-y-3">
-        <h3 className="text-sm font-semibold text-slate-700">סיבות אי-זמינות</h3>
-        <p className="text-sm text-slate-400">טוען...</p>
+        <h3 className="text-sm font-semibold text-slate-700">{t("title")}</h3>
+        <p className="text-sm text-slate-400">{t("loading")}</p>
       </div>
     );
   }
@@ -127,7 +129,7 @@ export default function UnavailabilityReasonsPanel({ spaceId }: UnavailabilityRe
   return (
     <div className="bg-white border border-slate-200 rounded-2xl p-5 space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-slate-700">סיבות אי-זמינות</h3>
+        <h3 className="text-sm font-semibold text-slate-700">{t("title")}</h3>
         <span className="text-xs text-slate-400">
           {reasons.length}/{MAX_REASONS}
         </span>
@@ -158,13 +160,13 @@ export default function UnavailabilityReasonsPanel({ spaceId }: UnavailabilityRe
                   onClick={handleSaveEdit}
                   className="text-xs text-blue-600 hover:text-blue-700 font-medium"
                 >
-                  שמור
+                  {t("save")}
                 </button>
                 <button
                   onClick={cancelEditing}
                   className="text-xs text-slate-400 hover:text-slate-600"
                 >
-                  ביטול
+                  {t("cancel")}
                 </button>
               </>
             ) : (
@@ -173,7 +175,7 @@ export default function UnavailabilityReasonsPanel({ spaceId }: UnavailabilityRe
                 <button
                   onClick={() => startEditing(reason)}
                   className="text-xs text-slate-400 hover:text-blue-600 transition-colors"
-                  title="ערוך"
+                  title={t("edit")}
                 >
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
@@ -182,7 +184,7 @@ export default function UnavailabilityReasonsPanel({ spaceId }: UnavailabilityRe
                 <button
                   onClick={() => handleDeactivate(reason.id)}
                   className="text-xs text-slate-400 hover:text-red-600 transition-colors"
-                  title="מחק"
+                  title={t("delete")}
                 >
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
@@ -194,7 +196,7 @@ export default function UnavailabilityReasonsPanel({ spaceId }: UnavailabilityRe
         ))}
 
         {reasons.length === 0 && (
-          <p className="text-sm text-slate-400 text-center py-2">אין סיבות מוגדרות</p>
+          <p className="text-sm text-slate-400 text-center py-2">{t("empty")}</p>
         )}
       </div>
 
@@ -204,7 +206,7 @@ export default function UnavailabilityReasonsPanel({ spaceId }: UnavailabilityRe
           type="text"
           value={newReasonName}
           onChange={(e) => setNewReasonName(e.target.value)}
-          placeholder="שם הסיבה..."
+          placeholder={t("placeholder")}
           maxLength={MAX_DISPLAY_NAME_LENGTH}
           className="flex-1 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           onKeyDown={(e) => {
@@ -216,7 +218,7 @@ export default function UnavailabilityReasonsPanel({ spaceId }: UnavailabilityRe
           disabled={adding || !newReasonName.trim() || reasons.length >= MAX_REASONS}
           className="bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl disabled:opacity-50 transition-colors whitespace-nowrap"
         >
-          {adding ? "מוסיף..." : "הוסף סיבה"}
+          {adding ? t("adding") : t("addReason")}
         </button>
       </div>
 

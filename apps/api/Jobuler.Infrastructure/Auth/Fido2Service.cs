@@ -88,13 +88,13 @@ public class Fido2Service : IWebAuthnService
         var cacheKey = CacheKeyPrefix + challengeId;
         if (!_cache.TryGetValue(cacheKey, out StoredChallenge? storedChallenge) || storedChallenge is null)
         {
-            throw new KeyNotFoundException("האתגר לא נמצא או שפג תוקפו.");
+            throw new KeyNotFoundException("Challenge not found or expired.");
         }
         _cache.Remove(cacheKey);
 
         // Deserialize the attestation response
         var attestationResponse = JsonSerializer.Deserialize<AuthenticatorAttestationRawResponse>(attestationResponseJson)
-            ?? throw new InvalidOperationException("פורמט תגובת האימות לא תקין.");
+            ?? throw new InvalidOperationException("Invalid attestation response format.");
 
         // Reconstruct the original options from stored JSON
         var options = CredentialCreateOptions.FromJson(storedChallenge.OptionsJson);
@@ -107,7 +107,7 @@ public class Fido2Service : IWebAuthnService
             cancellationToken: ct);
 
         if (credentialMakeResult.Result is null)
-            throw new InvalidOperationException("אימות האישור נכשל.");
+            throw new InvalidOperationException("Credential verification failed.");
 
         var result = credentialMakeResult.Result;
 
@@ -152,13 +152,13 @@ public class Fido2Service : IWebAuthnService
         var cacheKey = CacheKeyPrefix + challengeId;
         if (!_cache.TryGetValue(cacheKey, out StoredChallenge? storedChallenge) || storedChallenge is null)
         {
-            throw new KeyNotFoundException("האתגר לא נמצא או שפג תוקפו.");
+            throw new KeyNotFoundException("Challenge not found or expired.");
         }
         _cache.Remove(cacheKey);
 
         // Deserialize the assertion response
         var assertionResponse = JsonSerializer.Deserialize<AuthenticatorAssertionRawResponse>(assertionResponseJson)
-            ?? throw new InvalidOperationException("פורמט תגובת האימות לא תקין.");
+            ?? throw new InvalidOperationException("Invalid attestation response format.");
 
         // Reconstruct assertion options from stored JSON
         var options = AssertionOptions.FromJson(storedChallenge.OptionsJson);

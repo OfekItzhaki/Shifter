@@ -39,7 +39,7 @@ public class FeasibilityEngine : IFeasibilityEngine
             return new FeasibilityResult(
                 IsFeasible: false,
                 MaxFeasibleHomeDays: null,
-                Reason: "אין מספיק אנשים לכיסוי המשימות — יש להוסיף חברים או להקטין את מספר ימי הבית"
+                Reason: "Not enough people to cover tasks — add members or reduce home days"
             );
         }
 

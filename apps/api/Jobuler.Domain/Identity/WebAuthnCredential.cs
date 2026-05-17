@@ -22,11 +22,11 @@ public class WebAuthnCredential : Entity
     {
         ArgumentNullException.ThrowIfNull(credentialId);
         ArgumentNullException.ThrowIfNull(publicKey);
-        if (credentialId.Length == 0) throw new ArgumentException("מזהה האישור לא יכול להיות ריק.");
-        if (publicKey.Length == 0) throw new ArgumentException("המפתח הציבורי לא יכול להיות ריק.");
+        if (credentialId.Length == 0) throw new ArgumentException("Credential ID cannot be empty.");
+        if (publicKey.Length == 0) throw new ArgumentException("Public key cannot be empty.");
 
         if (nickname?.Length > 100)
-            throw new ArgumentException("הכינוי חייב להיות עד 100 תווים.");
+            throw new ArgumentException("Nickname must be 100 characters or fewer.");
 
         return new WebAuthnCredential
         {
@@ -45,7 +45,7 @@ public class WebAuthnCredential : Entity
         if (newSignCount <= SignCount)
         {
             IsDisabled = true;
-            throw new InvalidOperationException("זוהתה רגרסיה במונה החתימות — ייתכן שהאישור שוכפל.");
+            throw new InvalidOperationException("Sign count regression detected — credential may have been cloned.");
         }
 
         SignCount = newSignCount;
@@ -55,7 +55,7 @@ public class WebAuthnCredential : Entity
     public void UpdateNickname(string? nickname)
     {
         if (nickname?.Length > 100)
-            throw new ArgumentException("הכינוי חייב להיות עד 100 תווים.");
+            throw new ArgumentException("Nickname must be 100 characters or fewer.");
         Nickname = nickname;
     }
 

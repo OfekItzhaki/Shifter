@@ -55,7 +55,7 @@ public class FeasibilityEngineTests
         result.IsFeasible.Should().BeFalse();
         result.MaxFeasibleHomeDays.Should().BeNull();
         result.Reason.Should().NotBeNullOrEmpty();
-        result.Reason.Should().Contain("אין מספיק אנשים");
+        result.Reason.Should().Contain("Not enough people");
     }
 
     [Fact]

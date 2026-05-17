@@ -1058,7 +1058,25 @@
     "last90days": "90d",
     "noData": "No data yet"
   },
+  "unavailabilityReasons": {
+    "title": "Unavailability Reasons",
+    "loading": "Loading...",
+    "save": "Save",
+    "cancel": "Cancel",
+    "edit": "Edit",
+    "delete": "Delete",
+    "empty": "No reasons defined",
+    "placeholder": "Reason name...",
+    "adding": "Adding...",
+    "addReason": "Add reason",
+    "errorAdd": "Error adding reason",
+    "errorUpdate": "Error updating reason",
+    "errorDelete": "Error deleting reason",
+    "nameTooLong": "Reason name cannot exceed {max} characters",
+    "maxReached": "Cannot add more than {max} reasons"
+  },
   "homeLeave": {
+    "previewLoadFailed": "Unable to load preview",
     "modeSelector": {
       "groupLabel": "Home leave mode selection",
       "automatic": "Automatic",

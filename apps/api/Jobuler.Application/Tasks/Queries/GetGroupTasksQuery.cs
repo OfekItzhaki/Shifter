@@ -30,7 +30,7 @@ public class GetGroupTasksQueryHandler : IRequestHandler<GetGroupTasksQuery, Lis
         var groupExists = await _db.Groups
             .AnyAsync(g => g.Id == req.GroupId && g.SpaceId == req.SpaceId && g.DeletedAt == null, ct);
         if (!groupExists)
-            throw new KeyNotFoundException("הקבוצה לא נמצאה.");
+            throw new KeyNotFoundException("Group not found.");
 
         var tasks = await _db.GroupTasks.AsNoTracking()
             .Where(t => t.GroupId == req.GroupId && t.SpaceId == req.SpaceId && t.IsActive)

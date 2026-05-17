@@ -53,7 +53,7 @@ public class ScheduleVersion : Entity, ITenantScoped
     public void Publish(Guid publishedByUserId)
     {
         if (Status != ScheduleVersionStatus.Draft)
-            throw new InvalidOperationException("ניתן לפרסם רק גרסאות טיוטה.");
+            throw new InvalidOperationException("Only draft versions can be published.");
 
         Status = ScheduleVersionStatus.Published;
         PublishedByUserId = publishedByUserId;
@@ -66,7 +66,7 @@ public class ScheduleVersion : Entity, ITenantScoped
     public void Discard()
     {
         if (Status != ScheduleVersionStatus.Draft)
-            throw new InvalidOperationException("ניתן למחוק רק גרסאות טיוטה.");
+            throw new InvalidOperationException("Only draft versions can be discarded.");
         Status = ScheduleVersionStatus.Discarded;
     }
 }

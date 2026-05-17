@@ -22,7 +22,7 @@ public class SetHomeLeavePriorityCommandHandler : IRequestHandler<SetHomeLeavePr
             .FirstOrDefaultAsync(m => m.GroupId == req.GroupId
                 && m.PersonId == req.PersonId
                 && m.SpaceId == req.SpaceId, ct)
-            ?? throw new KeyNotFoundException("החבר לא נמצא בקבוצה.");
+            ?? throw new KeyNotFoundException("Member not found in group.");
 
         membership.SetHomeLeavePriority(req.Priority);
         await _db.SaveChangesAsync(ct);

@@ -85,7 +85,7 @@ public class CreateGroupTaskCommandHandler : IRequestHandler<CreateGroupTaskComm
         var groupExists = await _db.Groups
             .AnyAsync(g => g.Id == req.GroupId && g.SpaceId == req.SpaceId && g.DeletedAt == null, ct);
         if (!groupExists)
-            throw new KeyNotFoundException("הקבוצה לא נמצאה.");
+            throw new KeyNotFoundException("Group not found.");
 
         var task = GroupTask.Create(
             req.SpaceId, req.GroupId, req.Name,
@@ -165,7 +165,7 @@ public class UpdateGroupTaskCommandHandler : IRequestHandler<UpdateGroupTaskComm
                                    && t.GroupId == req.GroupId
                                    && t.SpaceId == req.SpaceId
                                    && t.IsActive, ct)
-            ?? throw new KeyNotFoundException("המשימה לא נמצאה.");
+            ?? throw new KeyNotFoundException("Task not found.");
 
         task.Update(
             req.Name, TaskTimeHelpers.RoundToHour(req.StartsAt), TaskTimeHelpers.RoundToHour(req.EndsAt),
@@ -209,7 +209,7 @@ public class DeleteGroupTaskCommandHandler : IRequestHandler<DeleteGroupTaskComm
             .FirstOrDefaultAsync(t => t.Id == req.TaskId
                                    && t.GroupId == req.GroupId
                                    && t.SpaceId == req.SpaceId, ct)
-            ?? throw new KeyNotFoundException("המשימה לא נמצאה.");
+            ?? throw new KeyNotFoundException("Task not found.");
 
         task.Deactivate(req.RequestingUserId);
         await _db.SaveChangesAsync(ct);

@@ -26,7 +26,7 @@ public class GroupMembership : Entity, ITenantScoped
     public void SetHomeLeavePriority(decimal priority)
     {
         if (priority < 0.5m || priority > 3.0m)
-            throw new InvalidOperationException("עדיפות זמן בית חייבת להיות בין 0.5 ל-3.0");
+            throw new InvalidOperationException("Home leave priority must be between 0.5 and 3.0.");
         HomeLeavePriority = priority;
     }
 }
