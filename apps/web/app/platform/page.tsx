@@ -1,12 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import AppShell from "@/components/shell/AppShell";
 import { useAuthStore } from "@/lib/store/authStore";
 import { getPlatformStats, PlatformStats } from "@/lib/api/platform";
+import { apiClient } from "@/lib/api/client";
 import CouponManager from "@/components/platform/CouponManager";
+import PlatformSettings from "@/components/platform/PlatformSettings";
+import ReAuthDialog from "@/components/admin/ReAuthDialog";
+import { useAdminSessionStore } from "@/lib/store/adminSessionStore";
 
 const card: React.CSSProperties = {
   background: "white",
@@ -35,6 +39,9 @@ export default function PlatformPage() {
   const t = useTranslations("platform");
   const { isAuthenticated } = useAuthStore();
   const router = useRouter();
+  const enterElevatedMode = useAdminSessionStore((s) => s.enterElevatedMode);
+  const isElevated = useAdminSessionStore((s) => s.isElevated);
+  const elevatedMode = useAdminSessionStore((s) => s.elevatedMode);
 
   // Check auth from both Zustand store AND localStorage (store may not be hydrated yet)
   const hasToken = typeof window !== "undefined" && !!localStorage.getItem("access_token");
@@ -44,6 +51,11 @@ export default function PlatformPage() {
   const [loading, setLoading] = useState(true);
   const [accessDenied, setAccessDenied] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Re-authentication gate state
+  const [showReAuth, setShowReAuth] = useState(false);
+  const [platformAuthenticated, setPlatformAuthenticated] = useState(false);
+  const [platformTimeoutMinutes, setPlatformTimeoutMinutes] = useState<number>(15);
 
   const [hydrated, setHydrated] = useState(false);
 
@@ -69,6 +81,24 @@ export default function PlatformPage() {
       return;
     }
 
+    // If already in elevated platform mode (e.g. from another tab sync), skip re-auth
+    if (isElevated && elevatedMode === "platform") {
+      setPlatformAuthenticated(true);
+    } else if (!platformAuthenticated) {
+      // Show re-auth dialog before granting platform access
+      setShowReAuth(true);
+      // Fetch platform timeout setting
+      apiClient.get<{ platformTimeoutMinutes: number }>("/platform/settings")
+        .then(({ data }) => {
+          setPlatformTimeoutMinutes(data.platformTimeoutMinutes ?? 15);
+        })
+        .catch(() => {
+          // Use default if settings fetch fails
+          setPlatformTimeoutMinutes(15);
+        });
+      return; // Don't load stats until re-authenticated
+    }
+
     setLoading(true);
     const timeout = setTimeout(() => {
       setLoading(false);
@@ -84,7 +114,21 @@ export default function PlatformPage() {
         }
       })
       .finally(() => { setLoading(false); clearTimeout(timeout); });
-  }, [hydrated, loggedIn, router]);
+  }, [hydrated, loggedIn, router, platformAuthenticated, isElevated, elevatedMode]);
+
+  // ── Re-auth handlers ─────────────────────────────────────────────────────
+
+  const handleReAuthSuccess = useCallback(() => {
+    setShowReAuth(false);
+    setPlatformAuthenticated(true);
+    enterElevatedMode("platform", undefined, platformTimeoutMinutes);
+  }, [enterElevatedMode, platformTimeoutMinutes]);
+
+  const handleReAuthCancel = useCallback(() => {
+    setShowReAuth(false);
+    // Remain in standard view — navigate away from platform page
+    router.push("/");
+  }, [router]);
 
   if (!hydrated || !loggedIn) {
     return (
@@ -95,6 +139,20 @@ export default function PlatformPage() {
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
           </svg>
         </div>
+      </AppShell>
+    );
+  }
+
+  // Show re-auth dialog gate before platform content
+  if (showReAuth) {
+    return (
+      <AppShell>
+        <ReAuthDialog
+          open={showReAuth}
+          onSuccess={handleReAuthSuccess}
+          onCancel={handleReAuthCancel}
+          mode="platform"
+        />
       </AppShell>
     );
   }
@@ -166,6 +224,11 @@ export default function PlatformPage() {
 
             {/* Coupon Management */}
             <CouponManager />
+
+            {/* Platform Settings */}
+            <div style={{ marginTop: "1.25rem" }}>
+              <PlatformSettings />
+            </div>
           </>
         )}
       </div>

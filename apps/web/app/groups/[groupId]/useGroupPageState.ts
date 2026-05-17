@@ -147,6 +147,7 @@ export function useGroupPageState() {
   const [autoPublish, setAutoPublish] = useState(false);
   const [isClosedBase, setIsClosedBase_] = useState(false);
   const [minRestBetweenShiftsHours, setMinRestBetweenShiftsHours] = useState(8);
+  const [managementTimeoutMinutes, setManagementTimeoutMinutes] = useState(15);
   const [savingSettings, setSavingSettings] = useState(false);
   const [settingsError, setSettingsError] = useState<string | null>(null);
   const [settingsSaved, setSettingsSaved] = useState(false);
@@ -289,6 +290,7 @@ export function useGroupPageState() {
     autoPublish, setAutoPublish,
     isClosedBase, setIsClosedBase: setIsClosedBase_,
     minRestBetweenShiftsHours, setMinRestBetweenShiftsHours,
+    managementTimeoutMinutes, setManagementTimeoutMinutes,
     savingSettings, setSavingSettings,
     settingsError, setSettingsError,
     settingsSaved, setSettingsSaved,

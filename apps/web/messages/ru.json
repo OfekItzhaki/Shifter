@@ -181,6 +181,7 @@
     },
     "enterAdminMode": "Войти в режим администратора",
     "exitAdminMode": "Выйти из режима администратора",
+    "noCredentialsTooltip": "Необходимо настроить пароль или отпечаток пальца перед использованием режима администратора",
     "tabs": {
       "schedule": "Расписание",
       "liveStatus": "Статус",
@@ -409,7 +410,11 @@
       "allowMembersViewHistory": "Разрешение на просмотр истории",
       "allowMembersViewHistoryDesc": "Разрешить участникам группы просматривать прошлые расписания",
       "allowMembersViewStats": "Разрешение на просмотр статистики",
-      "allowMembersViewStatsDesc": "Разрешить участникам просматривать статистику"
+      "allowMembersViewStatsDesc": "Разрешить участникам просматривать статистику",
+      "managementTimeout": "Тайм-аут режима управления",
+      "managementTimeoutDesc": "Минуты бездействия до запроса подтверждения продолжения работы в режиме управления.",
+      "managementTimeoutError": "Тайм-аут должен быть целым числом от 5 до 120 минут.",
+      "minutes": "минут"
     },
     "stats_tab": {
       "activeMembers": "Активные участники",
@@ -821,7 +826,8 @@
     "errorDiscard": "Ошибка отмены черновика",
     "errorLoadSchedule": "Ошибка загрузки расписания",
     "offlineWithCache": "Нет подключения к интернету — показывается кэшированное расписание от {date}",
-    "offlineNoCache": "Нет подключения к интернету и нет кэшированного расписания"
+    "offlineNoCache": "Нет подключения к интернету и нет кэшированного расписания",
+    "timeoutOutOfRange": "Тайм-аут должен быть целым числом от 5 до 120 минут."
   },
   "common": {
     "loading": "Загрузка...",
@@ -920,7 +926,19 @@
     "totalConstraints": "Ограничения",
     "totalTasks": "Задачи",
     "accessDenied": "Доступ запрещён — только для владельца платформы",
-    "ms": "мс"
+    "ms": "мс",
+    "platformSettings": "Настройки платформы",
+    "sessionTimeoutLabel": "Тайм-аут сессии",
+    "sessionTimeoutDescription": "Время бездействия до запроса подтверждения активности суперадмина.",
+    "minutes": "минут",
+    "timeoutRangeHint": "Значение должно быть от {min} до {max} минут.",
+    "timeoutValidationRequired": "Необходимо указать значение тайм-аута.",
+    "timeoutValidationInteger": "Тайм-аут должен быть целым числом.",
+    "timeoutValidationRange": "Тайм-аут должен быть от {min} до {max} минут.",
+    "saveSettings": "Сохранить",
+    "saved": "Сохранено",
+    "settingsSaveError": "Не удалось сохранить настройки.",
+    "loading": "Загрузка..."
   },
   "verifyEmail": {
     "loading": "Подтверждение вашей почты...",

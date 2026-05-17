@@ -162,6 +162,36 @@ public class AuthController : ControllerBase
         return NoContent();
     }
 
+    /// <summary>Re-authenticate the current user before entering an elevated privilege mode.</summary>
+    [HttpPost("re-authenticate")]
+    [Authorize]
+    public async Task<IActionResult> ReAuthenticate([FromBody] ReAuthenticateRequest req, CancellationToken ct)
+    {
+        var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
+
+        var result = await _mediator.Send(new ReAuthenticateCommand(
+            CurrentUserId,
+            req.Password,
+            req.WebAuthnChallengeId,
+            req.WebAuthnAssertionJson,
+            req.SpaceId,
+            ipAddress), ct);
+
+        if (result.Success)
+            return Ok(new { success = true });
+
+        return Unauthorized(new { error = "Authentication failed." });
+    }
+
+    /// <summary>Record a session timeout event for audit purposes.</summary>
+    [HttpPost("session-timeout-event")]
+    [Authorize]
+    public async Task<IActionResult> SessionTimeoutEvent([FromBody] SessionTimeoutEventRequest req, CancellationToken ct)
+    {
+        await _mediator.Send(new RecordSessionTimeoutCommand(CurrentUserId, req.SpaceId, req.Mode), ct);
+        return NoContent();
+    }
+
     /// <summary>Delete the current user's account and all associated data.</summary>
     [HttpDelete("me")]
     [Authorize]
@@ -207,3 +237,5 @@ public record ForgotPasswordRequest(string Email);
 public record ResetPasswordRequest(string Token, string NewPassword);
 public record UpdateMeRequest(string DisplayName, string? PhoneNumber, string? ProfileImageUrl, DateOnly? Birthday);
 public record VerifyEmailRequest(string Token);
+public record SessionTimeoutEventRequest(Guid? SpaceId, string Mode);
+public record ReAuthenticateRequest(string? Password, string? WebAuthnChallengeId, string? WebAuthnAssertionJson, Guid? SpaceId);

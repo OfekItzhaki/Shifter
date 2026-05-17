@@ -12,7 +12,8 @@ public record UpdateGroupSettingsCommand(
     bool? AutoPublish = null,
     int? MinRestBetweenShiftsHours = null,
     bool? AllowMembersViewHistory = null,
-    bool? AllowMembersViewStats = null) : IRequest;
+    bool? AllowMembersViewStats = null,
+    int? ManagementTimeoutMinutes = null) : IRequest;
 
 public class UpdateGroupSettingsCommandHandler : IRequestHandler<UpdateGroupSettingsCommand>
 {
@@ -44,6 +45,8 @@ public class UpdateGroupSettingsCommandHandler : IRequestHandler<UpdateGroupSett
             group.SetAllowMembersViewHistory(req.AllowMembersViewHistory.Value);
         if (req.AllowMembersViewStats.HasValue)
             group.SetAllowMembersViewStats(req.AllowMembersViewStats.Value);
+        if (req.ManagementTimeoutMinutes.HasValue)
+            group.SetManagementTimeout(req.ManagementTimeoutMinutes.Value);
         await _db.SaveChangesAsync(ct);
     }
 }

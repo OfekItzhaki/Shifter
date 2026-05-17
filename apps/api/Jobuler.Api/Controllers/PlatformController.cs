@@ -1,3 +1,4 @@
+using Jobuler.Application.Platform.Commands;
 using Jobuler.Application.Platform.Queries;
 using Jobuler.Application.Scheduling.Commands;
 using Jobuler.Infrastructure.Persistence;
@@ -92,4 +93,55 @@ public class PlatformController : ControllerBase
         var result = await _mediator.Send(new BackfillCumulativeRecordsCommand(), ct);
         return Ok(result);
     }
+
+    /// <summary>
+    /// GET /platform/settings
+    /// Returns current platform settings including platformTimeoutMinutes.
+    /// Platform admin only.
+    /// </summary>
+    [HttpGet("settings")]
+    public async Task<IActionResult> GetSettings(CancellationToken ct)
+    {
+        var user = await _db.Users.AsNoTracking()
+            .FirstOrDefaultAsync(u => u.Id == CurrentUserId, ct);
+        if (user?.IsPlatformAdmin != true)
+            return Forbid();
+
+        var timeoutSetting = await _db.PlatformSettings
+            .AsNoTracking()
+            .FirstOrDefaultAsync(s => s.Key == "platform_timeout_minutes", ct);
+
+        var timeoutMinutes = timeoutSetting is not null
+            ? int.Parse(timeoutSetting.Value)
+            : 15;
+
+        return Ok(new PlatformSettingsResponse(timeoutMinutes));
+    }
+
+    /// <summary>
+    /// PATCH /platform/settings
+    /// Updates platform settings. Currently supports platformTimeoutMinutes.
+    /// Platform admin only.
+    /// </summary>
+    [HttpPatch("settings")]
+    public async Task<IActionResult> UpdateSettings(
+        [FromBody] UpdatePlatformSettingsRequest request,
+        CancellationToken ct)
+    {
+        var user = await _db.Users.AsNoTracking()
+            .FirstOrDefaultAsync(u => u.Id == CurrentUserId, ct);
+        if (user?.IsPlatformAdmin != true)
+            return Forbid();
+
+        await _mediator.Send(new UpdatePlatformSettingsCommand(
+            CurrentUserId,
+            request.PlatformTimeoutMinutes
+        ), ct);
+
+        return NoContent();
+    }
 }
+
+public record PlatformSettingsResponse(int PlatformTimeoutMinutes);
+
+public record UpdatePlatformSettingsRequest(int PlatformTimeoutMinutes);

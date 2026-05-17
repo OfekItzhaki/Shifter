@@ -3,6 +3,7 @@ using Jobuler.Domain.Groups;using Jobuler.Domain.Identity;
 using Jobuler.Domain.Logs;
 using Jobuler.Domain.Notifications;
 using Jobuler.Domain.People;
+using Jobuler.Domain.Platform;
 using Jobuler.Domain.Scheduling;using Jobuler.Domain.Spaces;
 using Jobuler.Domain.Tasks;
 using Microsoft.EntityFrameworkCore;
@@ -84,6 +85,9 @@ public class AppDbContext : DbContext
     // Notifications
     public DbSet<Notification> Notifications => Set<Notification>();
     public DbSet<PushSubscription> PushSubscriptions => Set<PushSubscription>();
+
+    // Platform
+    public DbSet<PlatformSettings> PlatformSettings => Set<PlatformSettings>();
 
     // Billing
     public DbSet<Jobuler.Domain.Billing.GroupSubscription> GroupSubscriptions => Set<Jobuler.Domain.Billing.GroupSubscription>();

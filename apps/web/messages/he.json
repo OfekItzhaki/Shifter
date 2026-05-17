@@ -1,4 +1,4 @@
-{
+﻿{
   "app": {
     "name": "Shifter",
     "tagline": "מערכת ניהול משמרות"
@@ -186,6 +186,7 @@
     },
     "enterAdminMode": "כניסה למצב ניהול",
     "exitAdminMode": "יציאה ממצב ניהול",
+    "noCredentialsTooltip": "יש להגדיר סיסמה או טביעת אצבע לפני שימוש במצב ניהול",
     "tabs": {
       "schedule": "סידור",
       "liveStatus": "סטטוס חברים",
@@ -440,7 +441,11 @@
       "allowMembersViewHistory": "הרשאת צפייה בהיסטוריה",
       "allowMembersViewHistoryDesc": "אפשר לחברי הקבוצה לצפות בסידורים ישנים",
       "allowMembersViewStats": "הרשאת צפייה בסטטיסטיקות",
-      "allowMembersViewStatsDesc": "אפשר לחברים לצפות בסטטיסטיקות"
+      "allowMembersViewStatsDesc": "אפשר לחברים לצפות בסטטיסטיקות",
+      "managementTimeout": "זמן קצוב למצב ניהול",
+      "managementTimeoutDesc": "דקות חוסר פעילות לפני שהמנהל יתבקש לאשר המשך פעילות במצב ניהול.",
+      "managementTimeoutError": "הזמן הקצוב חייב להיות מספר שלם בין 5 ל-120 דקות.",
+      "minutes": "דקות"
     },
     "schedule_tab": {
       "draftReady": "סידור טיוטה מוכן לעיון ופרסום",
@@ -854,7 +859,8 @@
     "offlineNoCache": "אין חיבור לאינטרנט ואין סידור שמור",
     "solverTimeout": "הסולבר לא הגיב בזמן. ייתכן שהבעיה מורכבת מדי — נסה להקטין את אופק התכנון או לפשט את האילוצים.",
     "solverCheckError": "שגיאה בבדיקת סטטוס הסולבר",
-    "solverStartError": "שגיאה בהפעלת הסולבר"
+    "solverStartError": "שגיאה בהפעלת הסולבר",
+    "timeoutOutOfRange": "הזמן הקצוב חייב להיות מספר שלם בין 5 ל-120 דקות."
   },
   "common": {
     "loading": "טוען...",
@@ -963,7 +969,19 @@
     "totalConstraints": "אילוצים",
     "totalTasks": "משימות",
     "accessDenied": "גישה מוגבלת — בעלי הפלטפורמה בלבד",
-    "ms": "מ״ש"
+    "ms": "מ״ש",
+    "platformSettings": "הגדרות פלטפורמה",
+    "sessionTimeoutLabel": "זמן קצוב לסשן",
+    "sessionTimeoutDescription": "כמה זמן חוסר פעילות לפני שמנהל-על יתבקש לאשר שהוא עדיין פעיל.",
+    "minutes": "דקות",
+    "timeoutRangeHint": "הערך חייב להיות בין {min} ל-{max} דקות.",
+    "timeoutValidationRequired": "יש להזין ערך זמן קצוב.",
+    "timeoutValidationInteger": "הזמן הקצוב חייב להיות מספר שלם.",
+    "timeoutValidationRange": "הזמן הקצוב חייב להיות בין {min} ל-{max} דקות.",
+    "saveSettings": "שמור",
+    "saved": "נשמר",
+    "settingsSaveError": "שמירת ההגדרות נכשלה.",
+    "loading": "טוען..."
   },
   "verifyEmail": {
     "loading": "מאמת את האימייל שלך...",
@@ -1286,5 +1304,31 @@
       "mandatory": "חובה",
       "optional": "אופציונלי"
     }
+  }
+,
+  "reAuth": {
+    "title": "אימות זהות",
+    "description": "לצורכי אבטחה, אנא אמת/י את זהותך לפני גישה להרשאות מוגברות.",
+    "close": "סגור",
+    "passwordLabel": "סיסמה",
+    "passwordPlaceholder": "הזן/י את הסיסמה",
+    "confirm": "אימות זהות",
+    "verifying": "מאמת...",
+    "or": "או",
+    "webAuthnButton": "שימוש בטביעת אצבע / מפתח אבטחה",
+    "webAuthnLabel": "אימות באמצעות טביעת אצבע או מפתח אבטחה",
+    "webAuthnCancelled": "האימות בוטל. נסה/י שוב.",
+    "authFailed": "האימות נכשל. נסה/י שוב.",
+    "rateLimited": "יותר מדי ניסיונות. נסה/י שוב מאוחר יותר.",
+    "networkError": "שגיאת חיבור. נסה/י שוב.",
+    "noCredentials": "לא הוגדרו אמצעי אימות. הגדר/י סיסמה או אימות ביומטרי בפרופיל לפני שימוש במצב ניהול.",
+    "loadingCredentials": "טוען...",
+    "cancel": "ביטול"
+  },
+  "activityPrompt": {
+    "title": "האם את/ה עדיין פעיל/ה?",
+    "description": "הפגישה שלך תפוג בגלל חוסר פעילות. בחר/י להמשיך או לצאת.",
+    "yes": "כן",
+    "no": "לא"
   }
 }

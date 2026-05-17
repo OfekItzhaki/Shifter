@@ -20,6 +20,7 @@ public class Group : AuditableEntity, ITenantScoped
     public GroupTemplateType TemplateType { get; private set; } = GroupTemplateType.Custom;
     public bool AllowMembersViewHistory { get; private set; } = true;
     public bool AllowMembersViewStats { get; private set; } = false;
+    public int ManagementTimeoutMinutes { get; private set; } = 15;
 
     private Group() { }
 
@@ -66,6 +67,15 @@ public class Group : AuditableEntity, ITenantScoped
 
     public void SetAllowMembersViewHistory(bool value) { AllowMembersViewHistory = value; Touch(); }
     public void SetAllowMembersViewStats(bool value) { AllowMembersViewStats = value; Touch(); }
+
+    public void SetManagementTimeout(int minutes)
+    {
+        if (minutes < 5 || minutes > 120)
+            throw new InvalidOperationException(
+                "Management timeout must be between 5 and 120 minutes.");
+        ManagementTimeoutMinutes = minutes;
+        Touch();
+    }
 
     public void Deactivate() { IsActive = false; Touch(); }
 

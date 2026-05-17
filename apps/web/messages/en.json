@@ -183,6 +183,7 @@
     },
     "enterAdminMode": "Enter Admin Mode",
     "exitAdminMode": "Exit Admin Mode",
+    "noCredentialsTooltip": "You must configure a password or fingerprint before using management mode",
     "tabs": {
       "schedule": "Schedule",
       "liveStatus": "Live Status",
@@ -411,7 +412,11 @@
       "allowMembersViewHistory": "History viewing permission",
       "allowMembersViewHistoryDesc": "Allow group members to view past schedules",
       "allowMembersViewStats": "Statistics viewing permission",
-      "allowMembersViewStatsDesc": "Allow members to view statistics"
+      "allowMembersViewStatsDesc": "Allow members to view statistics",
+      "managementTimeout": "Management Mode Timeout",
+      "managementTimeoutDesc": "Minutes of inactivity before the admin is prompted to confirm continued activity in management mode.",
+      "managementTimeoutError": "Timeout must be a whole number between 5 and 120 minutes.",
+      "minutes": "minutes"
     },
     "stats_tab": {
       "loading": "Loading statistics...",
@@ -850,7 +855,8 @@
     "offlineNoCache": "No internet connection and no cached schedule",
     "solverTimeout": "The solver did not respond in time. The problem may be too complex — try reducing the planning horizon or simplifying constraints.",
     "solverCheckError": "Error checking solver status",
-    "solverStartError": "Error starting the solver"
+    "solverStartError": "Error starting the solver",
+    "timeoutOutOfRange": "Timeout must be a whole number between 5 and 120 minutes."
   },
   "common": {
     "loading": "Loading...",
@@ -952,7 +958,19 @@
     "totalConstraints": "Constraints",
     "totalTasks": "Tasks",
     "accessDenied": "Access denied — platform owner only",
-    "ms": "ms"
+    "ms": "ms",
+    "platformSettings": "Platform Settings",
+    "sessionTimeoutLabel": "Session Timeout",
+    "sessionTimeoutDescription": "How long before an inactive super-admin session is prompted for activity confirmation.",
+    "minutes": "minutes",
+    "timeoutRangeHint": "Value must be between {min} and {max} minutes.",
+    "timeoutValidationRequired": "Timeout value is required.",
+    "timeoutValidationInteger": "Timeout must be a whole number.",
+    "timeoutValidationRange": "Timeout must be between {min} and {max} minutes.",
+    "saveSettings": "Save",
+    "saved": "Saved",
+    "settingsSaveError": "Failed to save settings.",
+    "loading": "Loading..."
   },
   "verifyEmail": {
     "loading": "Verifying your email...",
@@ -1275,5 +1293,30 @@
       "mandatory": "Required",
       "optional": "Optional"
     }
+  },
+  "reAuth": {
+    "title": "Identity Confirmation",
+    "description": "For security, please confirm your identity before accessing elevated privileges.",
+    "close": "Close",
+    "passwordLabel": "Password",
+    "passwordPlaceholder": "Enter your password",
+    "confirm": "Confirm Identity",
+    "verifying": "Verifying...",
+    "or": "or",
+    "webAuthnButton": "Use Fingerprint / Security Key",
+    "webAuthnLabel": "Authenticate with fingerprint or security key",
+    "webAuthnCancelled": "Verification cancelled. Please try again.",
+    "authFailed": "Authentication failed. Please try again.",
+    "rateLimited": "Too many attempts. Please try again later.",
+    "networkError": "Connection error. Please try again.",
+    "noCredentials": "No credentials configured. Please set up a password or biometric authentication in your profile before using admin mode.",
+    "loadingCredentials": "Loading...",
+    "cancel": "Cancel"
+  },
+  "activityPrompt": {
+    "title": "Are you still active?",
+    "description": "Your session will expire due to inactivity. Choose to continue or exit.",
+    "yes": "Yes",
+    "no": "No"
   }
 }

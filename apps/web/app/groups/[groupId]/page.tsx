@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, lazy, Suspense } from "react";
+import React, { useEffect, useRef, useState, lazy, Suspense } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
@@ -10,6 +10,7 @@ import DraftScheduleModal from "@/components/DraftScheduleModal";
 import SandboxView from "@/components/sandbox/SandboxView";
 import ImportModal from "@/components/ImportModal";
 import TrialBanner from "@/components/billing/TrialBanner";
+import ReAuthDialog from "@/components/admin/ReAuthDialog";
 import ScheduleTab from "./tabs/ScheduleTab";
 import MembersTab, { MemberProfileModal } from "./tabs/MembersTab";
 
@@ -26,6 +27,8 @@ const LiveStatusPanel = lazy(() => import("@/components/schedule/LiveStatusPanel
 import { ActiveTab, ADMIN_ONLY_TABS, ScheduleAssignment } from "./types";
 import { useSpaceStore } from "@/lib/store/spaceStore";
 import { useAuthStore } from "@/lib/store/authStore";
+import { useAdminSessionStore } from "@/lib/store/adminSessionStore";
+import { isWebAuthnSupported, listCredentials } from "@/lib/webauthn";
 import { useRefetchNotifications } from "@/lib/query/hooks/useNotifications";
 import {
   getGroups, getGroupMembers, addGroupMemberByEmail, removeGroupMember,
@@ -141,6 +144,7 @@ export default function GroupDetailPage() {
     autoPublish, setAutoPublish,
     isClosedBase, setIsClosedBase,
     minRestBetweenShiftsHours, setMinRestBetweenShiftsHours,
+    managementTimeoutMinutes, setManagementTimeoutMinutes,
     solverPolling, setSolverPolling, solverStatus, setSolverStatus, solverError, setSolverError,
     deletedGroups, setDeletedGroups, deletedGroupsLoading, setDeletedGroupsLoading,
     transferPersonId, setTransferPersonId, transferSaving, setTransferSaving,
@@ -159,6 +163,62 @@ export default function GroupDetailPage() {
     setIsAdmin(adminGroupId === groupId);
   }, [adminGroupId, groupId]);
 
+  // ── Re-authentication dialog state for management mode entry ────────────
+  const [showReAuthDialog, setShowReAuthDialog] = useState(false);
+  const [hasCredentials, setHasCredentials] = useState<boolean | null>(null); // null = loading
+  const { enterElevatedMode } = useAdminSessionStore();
+
+  // Check if user has credentials configured (password or WebAuthn)
+  useEffect(() => {
+    let cancelled = false;
+
+    async function checkCredentials() {
+      // All registered users have a password in this system
+      let hasWebAuthn = false;
+      if (isWebAuthnSupported()) {
+        try {
+          const creds = await listCredentials();
+          hasWebAuthn = creds.length > 0;
+        } catch {
+          hasWebAuthn = false;
+        }
+      }
+      // User always has a password (system invariant), so credentials are always available
+      if (!cancelled) {
+        setHasCredentials(true || hasWebAuthn);
+      }
+    }
+
+    checkCredentials();
+    return () => { cancelled = true; };
+  }, []);
+
+  // Handle management mode toggle with re-authentication
+  const handleAdminModeToggle = () => {
+    if (isAdmin) {
+      // Exiting admin mode — no re-auth needed
+      exitAdminMode();
+      setIsAdmin(false);
+    } else {
+      // Entering admin mode — require re-authentication
+      if (hasCredentials === false) return; // Button should be disabled, but guard anyway
+      setShowReAuthDialog(true);
+    }
+  };
+
+  const handleReAuthSuccess = () => {
+    setShowReAuthDialog(false);
+    const timeoutMinutes = group?.managementTimeoutMinutes ?? 15;
+    enterAdminMode(groupId);
+    enterElevatedMode("management", groupId, timeoutMinutes);
+    setIsAdmin(true);
+  };
+
+  const handleReAuthCancel = () => {
+    setShowReAuthDialog(false);
+    // Remain in standard view — do nothing
+  };
+
   // ── Load group ───────────────────────────────────────────────────────────
   useEffect(() => {
     if (!currentSpaceId || !groupId) return;
@@ -174,6 +234,7 @@ export default function GroupDetailPage() {
         setAutoPublish(found.autoPublish ?? false);
         setIsClosedBase(found.isClosedBase ?? false);
         setMinRestBetweenShiftsHours(found.minRestBetweenShiftsHours ?? 8);
+        setManagementTimeoutMinutes(found.managementTimeoutMinutes ?? 15);
         // Initialise the configured auto-scheduler start date from the API
         // The API stores UTC; convert to local time for the datetime-local input
         setSolverStartDateTime(found.solverStartDateTime
@@ -887,6 +948,11 @@ export default function GroupDetailPage() {
 
   async function handleSaveSettings() {
     if (!currentSpaceId) return;
+    // Client-side validation for management timeout
+    if (!Number.isInteger(managementTimeoutMinutes) || managementTimeoutMinutes < 5 || managementTimeoutMinutes > 120) {
+      setSettingsError(tErrors("timeoutOutOfRange"));
+      return;
+    }
     setSavingSettings(true);
     setSettingsError(null);
     setSettingsSaved(false);
@@ -895,7 +961,7 @@ export default function GroupDetailPage() {
       const startDateTimeIso = solverStartDateTime
         ? new Date(solverStartDateTime).toISOString()
         : null;
-      await updateGroupSettings(currentSpaceId, groupId, solverHorizon, startDateTimeIso, autoPublish, minRestBetweenShiftsHours);
+      await updateGroupSettings(currentSpaceId, groupId, solverHorizon, startDateTimeIso, autoPublish, minRestBetweenShiftsHours, undefined, undefined, managementTimeoutMinutes);
       setSolverHorizonDays(solverHorizon);
       setSettingsSaved(true);
       setTimeout(() => setSettingsSaved(false), 3000);
@@ -1137,19 +1203,15 @@ export default function GroupDetailPage() {
             <span className="hidden sm:inline">{tGroups("whatsNew")}</span>
           </Link>
           <button
-            onClick={() => {
-              if (isAdmin) {
-                exitAdminMode();
-                setIsAdmin(false);
-              } else {
-                enterAdminMode(groupId);
-                setIsAdmin(true);
-              }
-            }}
+            onClick={handleAdminModeToggle}
+            disabled={!isAdmin && hasCredentials === false}
+            title={!isAdmin && hasCredentials === false ? tGroups("noCredentialsTooltip") : undefined}
             className={`flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-medium border transition-colors flex-shrink-0 ${
               isAdmin
                 ? "bg-amber-50 border-amber-300 text-amber-700 hover:bg-amber-100"
-                : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
+                : hasCredentials === false
+                  ? "bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed"
+                  : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
             }`}
           >
             <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -1400,6 +1462,7 @@ export default function GroupDetailPage() {
               autoPublish={autoPublish}
               isClosedBase={isClosedBase}
               minRestBetweenShiftsHours={minRestBetweenShiftsHours}
+              managementTimeoutMinutes={managementTimeoutMinutes}
               allowMembersViewHistory={group?.allowMembersViewHistory ?? true}
               solverPolling={solverPolling}
               solverStatus={solverStatus}
@@ -1421,6 +1484,7 @@ export default function GroupDetailPage() {
               onAutoPublishChange={setAutoPublish}
               onClosedBaseChange={handleClosedBaseChange}
               onMinRestBetweenShiftsChange={setMinRestBetweenShiftsHours}
+              onManagementTimeoutChange={setManagementTimeoutMinutes}
               onAllowMembersViewHistoryChange={handleAllowMembersViewHistoryChange}
               allowMembersViewStats={group?.allowMembersViewStats ?? false}
               onAllowMembersViewStatsChange={handleAllowMembersViewStatsChange}
@@ -1576,6 +1640,15 @@ export default function GroupDetailPage() {
 
       {/* Sandbox split view — renders as full-screen overlay when sandbox is active */}
       <SandboxView />
+
+      {/* Re-authentication dialog for management mode entry */}
+      <ReAuthDialog
+        open={showReAuthDialog}
+        onSuccess={handleReAuthSuccess}
+        onCancel={handleReAuthCancel}
+        mode="management"
+        spaceId={currentSpaceId ?? undefined}
+      />
 
     </AppShell>
   );

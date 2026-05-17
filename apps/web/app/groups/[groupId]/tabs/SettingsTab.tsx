@@ -26,6 +26,7 @@ interface Props {
   autoPublish: boolean;
   isClosedBase: boolean;
   minRestBetweenShiftsHours: number;
+  managementTimeoutMinutes: number;
   allowMembersViewHistory: boolean;
   allowMembersViewStats: boolean;
   solverPolling: boolean;
@@ -54,6 +55,7 @@ interface Props {
   onAutoPublishChange: (v: boolean) => void;
   onClosedBaseChange: (v: boolean) => void;
   onMinRestBetweenShiftsChange: (v: number) => void;
+  onManagementTimeoutChange: (v: number) => void;
   onAllowMembersViewHistoryChange: (v: boolean) => void;
   onAllowMembersViewStatsChange: (v: boolean) => void;
   onSaveSettings: () => void;
@@ -70,12 +72,12 @@ interface Props {
 export default function SettingsTab({
   isAdmin, spaceId, groupId, templateType, newGroupName, renameSaving, renameError,
   solverHorizon, savingSettings, settingsError, settingsSaved,
-  solverStartDateTime, autoPublish, isClosedBase, minRestBetweenShiftsHours, allowMembersViewHistory, allowMembersViewStats,
+  solverStartDateTime, autoPublish, isClosedBase, minRestBetweenShiftsHours, managementTimeoutMinutes, allowMembersViewHistory, allowMembersViewStats,
   solverPolling, solverStatus, solverError, draftVersion,
   members,
   transferPersonId, transferSaving, transferError, hasPendingTransfer, cancelTransferSaving,
   showDeleteConfirm, deleteSaving, deleteError,
-  onGroupNameChange, onRenameGroup, onSolverHorizonChange, onSolverStartDateTimeChange, onAutoPublishChange, onClosedBaseChange, onMinRestBetweenShiftsChange, onAllowMembersViewHistoryChange, onAllowMembersViewStatsChange, onSaveSettings,
+  onGroupNameChange, onRenameGroup, onSolverHorizonChange, onSolverStartDateTimeChange, onAutoPublishChange, onClosedBaseChange, onMinRestBetweenShiftsChange, onManagementTimeoutChange, onAllowMembersViewHistoryChange, onAllowMembersViewStatsChange, onSaveSettings,
   onTriggerSolver, onOpenDraftModal,
   onTransferPersonChange, onInitiateTransfer, onCancelTransfer,
   onShowDeleteConfirm, onDeleteGroup,
@@ -271,6 +273,32 @@ export default function SettingsTab({
         </div>
       </Section>
       )}
+
+      {/* Management mode timeout */}
+      <Section title={t("managementTimeout")}>
+        <div className="space-y-2">
+          <p className="text-sm text-slate-600">{t("managementTimeoutDesc")}</p>
+          <div className="flex items-center gap-3">
+            <input
+              type="number"
+              min={5}
+              max={120}
+              value={managementTimeoutMinutes}
+              onChange={e => {
+                const raw = parseInt(e.target.value);
+                if (!isNaN(raw)) {
+                  onManagementTimeoutChange(raw);
+                }
+              }}
+              className="w-20 border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-center focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <span className="text-sm text-slate-500">{t("minutes")}</span>
+          </div>
+          {(managementTimeoutMinutes < 5 || managementTimeoutMinutes > 120 || !Number.isInteger(managementTimeoutMinutes)) && (
+            <p className="text-sm text-red-600">{t("managementTimeoutError")}</p>
+          )}
+        </div>
+      </Section>
 
       {/* Closed base toggle */}
       {visibility.closedBase && (

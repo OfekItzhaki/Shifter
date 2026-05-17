@@ -45,6 +45,7 @@ public class GroupConfiguration : IEntityTypeConfiguration<Group>
             .HasDefaultValue(GroupTemplateType.Custom);
         builder.Property(g => g.AllowMembersViewHistory).HasColumnName("allow_members_view_history").HasDefaultValue(true);
         builder.Property(g => g.AllowMembersViewStats).HasColumnName("allow_members_view_stats").HasDefaultValue(false);
+        builder.Property(g => g.ManagementTimeoutMinutes).HasColumnName("management_timeout_minutes").HasDefaultValue(15);
         builder.Property(g => g.DeletedAt).HasColumnName("deleted_at");
         builder.Property(g => g.CreatedAt).HasColumnName("created_at");
         builder.Property(g => g.UpdatedAt).HasColumnName("updated_at");
