@@ -174,6 +174,7 @@ def solve(input: SolverInput) -> SolverOutput:
             horizon_end_ts=horizon_end_ts,
             presence_windows=input.presence_windows,
             emergency_person_ids=emergency_person_ids,
+            cumulative_tracking=input.cumulative_tracking,
         )
 
         # Add eligibility preference (soft)

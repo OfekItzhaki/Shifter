@@ -38,6 +38,7 @@ def add_home_leave_constraints(
     horizon_end_ts: int,
     presence_windows: list[PresenceWindow],
     emergency_person_ids: set[str] | None = None,
+    cumulative_tracking: list[CumulativeTracking] | None = None,
 ) -> dict[tuple[int, int], "cp_model.IntVar"]:
     """
     Creates home-leave decision variables and adds hard constraints.
@@ -68,13 +69,42 @@ def add_home_leave_constraints(
 
     possible_start_hours = list(range(0, max_start_hour + 1, 4))  # every 4 hours to reduce search space
 
+    # ── Pre-filter: only create leave vars for people who could be eligible ───
+    # A person is potentially eligible if their cumulative hours + horizon time >= threshold.
+    # This dramatically reduces the search space for groups where most people aren't eligible yet.
+    threshold_seconds = int(config.eligibility_threshold_hours * 3600)
+    
+    # Build cumulative hours lookup
+    cumulative_seconds_lookup: dict[str, int] = {}
+    if cumulative_tracking:
+        for ct in cumulative_tracking:
+            cumulative_seconds_lookup[ct.person_id] = int(ct.consecutive_hours_at_base * 3600)
+
+    eligible_person_indices: set[int] = set()
+    for p_idx, person in enumerate(people):
+        if person.person_id in emergency_person_ids:
+            continue
+        # Check if this person could become eligible within the horizon
+        cumulative_secs = cumulative_seconds_lookup.get(person.person_id, 0)
+        # Even without cumulative data, if threshold is low enough they might qualify
+        # from presence windows alone (horizon provides up to horizon_duration_seconds of base time)
+        max_possible_base_time = cumulative_secs + horizon_duration_seconds
+        if max_possible_base_time >= threshold_seconds:
+            eligible_person_indices.add(p_idx)
+
+    if not eligible_person_indices:
+        logger.info("No people are potentially eligible for home-leave within this horizon.")
+        return {}
+
+    logger.info(
+        "Home-leave pre-filter: %d/%d people potentially eligible (threshold=%dh)",
+        len(eligible_person_indices), num_people, int(config.eligibility_threshold_hours))
+
     # ── Create boolean decision variables ─────────────────────────────────────
     # home_leave_vars[(p_idx, start_hour)] = 1 if person p_idx goes on leave
     # starting at that hour offset from horizon_start.
     home_leave_vars: dict[tuple[int, int], cp_model.IntVar] = {}
-    for p_idx in range(num_people):
-        if people[p_idx].person_id in emergency_person_ids:
-            continue  # emergency-bypassed people don't get leave slots
+    for p_idx in eligible_person_indices:
         for h in possible_start_hours:
             var = model.new_bool_var(f"hl_{p_idx}_{h}")
             home_leave_vars[(p_idx, h)] = var
