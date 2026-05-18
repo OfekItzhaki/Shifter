@@ -1,5 +1,6 @@
 using System.Text.Json;
 using FluentValidation;
+using Jobuler.Application.Common;
 using Jobuler.Domain.Identity;
 using Jobuler.Infrastructure.Persistence;
 using MediatR;
@@ -32,17 +33,20 @@ public class WebAuthnLoginCompleteCommandHandler
     private readonly AppDbContext _db;
     private readonly IWebAuthnService _webAuthn;
     private readonly IJwtService _jwt;
+    private readonly ITimezoneResolver _timezoneResolver;
     private readonly int _refreshTokenExpiryDays;
 
     public WebAuthnLoginCompleteCommandHandler(
         AppDbContext db,
         IWebAuthnService webAuthn,
         IJwtService jwt,
+        ITimezoneResolver timezoneResolver,
         IConfiguration config)
     {
         _db = db;
         _webAuthn = webAuthn;
         _jwt = jwt;
+        _timezoneResolver = timezoneResolver;
         _refreshTokenExpiryDays = int.Parse(config["Jwt:RefreshTokenExpiryDays"] ?? "7");
     }
 
@@ -91,6 +95,9 @@ public class WebAuthnLoginCompleteCommandHandler
             credential.User.DisplayName);
         var expiresAt = DateTime.UtcNow.AddMinutes(15);
 
+        // Resolve timezone from user's geographic location
+        var timezone = _timezoneResolver.Resolve(credential.User.CountryCode, credential.User.StateCode);
+
         return new LoginResult(
             accessToken,
             rawRefresh,
@@ -98,7 +105,9 @@ public class WebAuthnLoginCompleteCommandHandler
             credential.User.Id,
             credential.User.DisplayName,
             credential.User.PreferredLocale,
-            credential.User.IsPlatformAdmin);
+            credential.User.IsPlatformAdmin,
+            timezone.IanaTimezoneId,
+            timezone.OffsetMinutes);
     }
 
     /// <summary>

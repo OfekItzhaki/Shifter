@@ -85,6 +85,8 @@ export interface GroupTaskDto {
   shiftDurationMinutes: number;
   requiredHeadcount: number;
   burdenLevel: string;
+  effectiveBurdenLevel: string;
+  splitCount: number;
   allowsDoubleShift: boolean;
   allowsOverlap: boolean;
   dailyStartTime: string | null;
@@ -99,6 +101,7 @@ export interface GroupTaskPayload {
   startsAt: string;
   endsAt: string;
   shiftDurationMinutes: number;
+  splitCount?: number;
   requiredHeadcount: number;
   burdenLevel: string;
   allowsDoubleShift: boolean;

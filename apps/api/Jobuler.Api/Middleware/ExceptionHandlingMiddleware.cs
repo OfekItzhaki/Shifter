@@ -1,4 +1,5 @@
 using FluentValidation;
+using Jobuler.Application.Feedback.Exceptions;
 using System.Net;
 using System.Text.Json;
 
@@ -33,12 +34,50 @@ public class ExceptionHandlingMiddleware
 
     private async Task HandleExceptionAsync(HttpContext context, Exception ex)
     {
+        // ── Special case: ValidationException → 400 with field-keyed errors ──
+        if (ex is ValidationException ve)
+        {
+            _logger.LogWarning(ex, "Handled exception: {Message}", ex.Message);
+
+            context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
+            context.Response.ContentType = "application/json";
+
+            // Group errors by property name for field-level display
+            var fieldErrors = ve.Errors
+                .GroupBy(e => e.PropertyName ?? "")
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.Select(e => e.ErrorMessage).ToArray());
+
+            var body = JsonSerializer.Serialize(new
+            {
+                message = "אימות הנתונים נכשל.",
+                errors = fieldErrors
+            });
+            await context.Response.WriteAsync(body);
+            return;
+        }
+
+        // ── Special case: RateLimitExceededException → 429 with Retry-After ──
+        if (ex is RateLimitExceededException rle)
+        {
+            _logger.LogWarning(ex, "Handled exception: {Message}", ex.Message);
+
+            context.Response.StatusCode = 429;
+            context.Response.ContentType = "application/json";
+            context.Response.Headers.Append("Retry-After", rle.RetryAfterSeconds.ToString());
+
+            var body = JsonSerializer.Serialize(new
+            {
+                message = "Rate limit exceeded. Try again later."
+            });
+            await context.Response.WriteAsync(body);
+            return;
+        }
+
+        // ── All other exceptions ─────────────────────────────────────────────
         var (statusCode, message, errors) = ex switch
         {
-            ValidationException ve => (
-                HttpStatusCode.BadRequest,
-                "אימות הנתונים נכשל.",
-                ve.Errors.Select(e => e.ErrorMessage).ToList()),
             UnauthorizedAccessException => (HttpStatusCode.Forbidden, "אין לך הרשאה לבצע פעולה זו.", (List<string>?)[]),
             KeyNotFoundException        => (HttpStatusCode.NotFound, "הפריט המבוקש לא נמצא.", (List<string>?)[]),
             Jobuler.Application.Common.ConflictException => (HttpStatusCode.Conflict, ex.Message, (List<string>?)[]),
@@ -69,12 +108,12 @@ public class ExceptionHandlingMiddleware
         context.Response.StatusCode = (int)statusCode;
         context.Response.ContentType = "application/json";
 
-        var body = JsonSerializer.Serialize(new
+        var responseBody = JsonSerializer.Serialize(new
         {
             error = message,
             errors = errors?.Count > 0 ? errors : null
         });
-        await context.Response.WriteAsync(body);
+        await context.Response.WriteAsync(responseBody);
     }
 
     private static string ExtractCheckConstraintMessage(Microsoft.EntityFrameworkCore.DbUpdateException ex)

@@ -3,11 +3,12 @@
 import { useState, useEffect } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import { useDateFormat } from "@/lib/hooks/useDateFormat";
+import { useAuthStore } from "@/lib/store/authStore";
+import { formatLocalTime, formatLocalDate } from "@/lib/utils/formatTime";
 import type { ScheduleAssignment } from "../types";
 import ScheduleTaskTable from "@/components/schedule/ScheduleTaskTable";
 import ScheduleDiffView from "@/components/schedule/ScheduleDiffView";
 import ScheduleHistory from "@/components/schedule/ScheduleHistory";
-import HomeLeaveScheduleTable from "@/components/home-leave/HomeLeaveScheduleTable";
 import { getHistoricalSchedule } from "@/lib/api/stats";
 
 interface DraftVersion { id: string; status: string; summaryJson?: string | null; }
@@ -28,7 +29,6 @@ interface Props {
   currentUserName?: string;
   groupName?: string;
   spaceId?: string;
-  isClosedBase?: boolean;
   allowMembersViewHistory?: boolean;
   onOpenDraftModal: () => void;
   onPublish: () => Promise<void>;
@@ -58,7 +58,7 @@ function getWeekDates(fromDate: string): string[] {
 export default function ScheduleTab({
   groupId, solverHorizonDays, scheduleData, scheduleLoading, scheduleError, scheduleIsOffline = false,
   draftVersion, lastRunSummary, isAdmin, publishSaving, discardSaving, scheduleVersionError,
-  currentUserName, groupName, spaceId, isClosedBase = false, allowMembersViewHistory = true,
+  currentUserName, groupName, spaceId, allowMembersViewHistory = true,
   onOpenDraftModal, onPublish, onDiscard, onTriggerSolver,
 }: Props) {
   const t = useTranslations("groups.schedule_tab");
@@ -96,6 +96,7 @@ export default function ScheduleTab({
   const [isViewingHistory, setIsViewingHistory] = useState(false);
 
   const { fDateShort } = useDateFormat();
+  const timezoneId = useAuthStore(s => s.timezoneId);
 
   const weekDates = getWeekDates(weekAnchor);
 
@@ -106,7 +107,7 @@ export default function ScheduleTab({
     const currentDate = weekDates[selectedWeekDay];
     // Convert UTC slot timestamps to local dates before comparing
     const hasAssignmentsToday = scheduleData.some(a => {
-      const localDate = new Date(a.slotStartsAt).toLocaleDateString("sv");
+      const localDate = new Date(a.slotStartsAt).toLocaleDateString("sv", { timeZone: timezoneId || "Asia/Jerusalem" });
       return localDate === currentDate;
     });
     if (!hasAssignmentsToday) {
@@ -114,7 +115,7 @@ export default function ScheduleTab({
       for (let i = 0; i < 7; i++) {
         const date = weekDates[i];
         if (scheduleData.some(a => {
-          const localDate = new Date(a.slotStartsAt).toLocaleDateString("sv");
+          const localDate = new Date(a.slotStartsAt).toLocaleDateString("sv", { timeZone: timezoneId || "Asia/Jerusalem" });
           return localDate === date;
         })) {
           setSelectedWeekDay(i);
@@ -241,9 +242,9 @@ export default function ScheduleTab({
       for (const a of taskAssignments) {
         const key = `${a.slotStartsAt}|${a.slotEndsAt}`;
         const slot = slotMap.get(key) ?? {
-          date: new Date(a.slotStartsAt).toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" }),
-          startTime: new Date(a.slotStartsAt).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit", hour12: false }),
-          endTime: new Date(a.slotEndsAt).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit", hour12: false }),
+          date: formatLocalDate(a.slotStartsAt, timezoneId),
+          startTime: formatLocalTime(a.slotStartsAt, timezoneId, "24h"),
+          endTime: formatLocalTime(a.slotEndsAt, timezoneId, "24h"),
           people: [],
         };
         slot.people.push(a.personName);
@@ -527,7 +528,7 @@ export default function ScheduleTab({
             <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">
               {new Date(selectedDate + "T00:00:00").toLocaleDateString(
                 locale === "he" ? "he-IL" : locale === "ru" ? "ru-RU" : "en-US",
-                { weekday: "long", day: "numeric", month: "long" }
+                { weekday: "long", day: "numeric", month: "long", timeZone: timezoneId || "Asia/Jerusalem" }
               )}
             </span>
             {selectedDate === today && (
@@ -546,10 +547,6 @@ export default function ScheduleTab({
               if (triggerRerun && onTriggerSolver) onTriggerSolver();
             }}
           />
-          {/* Home-leave schedule table — only for closed-base groups */}
-          {isClosedBase && spaceId && (
-            <HomeLeaveScheduleTable spaceId={spaceId} groupId={groupId} />
-          )}
         </>
       )}
     </div>

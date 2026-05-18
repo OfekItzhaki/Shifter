@@ -1,4 +1,5 @@
 using Jobuler.Domain.Constraints;
+using Jobuler.Domain.Feedback;
 using Jobuler.Domain.Groups;using Jobuler.Domain.Identity;
 using Jobuler.Domain.Logs;
 using Jobuler.Domain.Notifications;
@@ -92,6 +93,9 @@ public class AppDbContext : DbContext
     // Billing
     public DbSet<Jobuler.Domain.Billing.GroupSubscription> GroupSubscriptions => Set<Jobuler.Domain.Billing.GroupSubscription>();
     public DbSet<Jobuler.Domain.Billing.Coupon> Coupons => Set<Jobuler.Domain.Billing.Coupon>();
+
+    // Feedback
+    public DbSet<FeedbackSubmission> FeedbackSubmissions => Set<FeedbackSubmission>();
 
     /// <summary>
     /// Set by Infrastructure at startup so OnModelCreating can apply EF configurations

@@ -308,9 +308,11 @@ public class AssignmentSnapshotService : IAssignmentSnapshotService
             // Validate the shift is within the task's time window
             if (shiftStart >= task.StartsAt && shiftEnd <= task.EndsAt.AddMinutes(1))
             {
+                var effectiveBurden = BurdenScalingService.ComputeEffectiveBurden(
+                    task.BurdenLevel, task.SplitCount, task.ShiftDurationMinutes);
                 return new ResolvedSlot(
                     shiftStart, shiftEnd, task.Id,
-                    task.BurdenLevel.ToString().ToLower());
+                    effectiveBurden.ToString().ToLower());
             }
         }
 

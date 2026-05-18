@@ -1,4 +1,5 @@
 using Jobuler.Application.Auth;
+using Jobuler.Application.Common;
 using Jobuler.Application.Conflicts;
 using Jobuler.Domain.Identity;
 using Jobuler.Infrastructure.Persistence;
@@ -14,6 +15,7 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, LoginResult>
 {
     private readonly AppDbContext _db;
     private readonly IJwtService _jwt;
+    private readonly ITimezoneResolver _timezoneResolver;
     private readonly int _refreshTokenExpiryDays;
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<LoginCommandHandler> _logger;
@@ -21,12 +23,14 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, LoginResult>
     public LoginCommandHandler(
         AppDbContext db,
         IJwtService jwt,
+        ITimezoneResolver timezoneResolver,
         IConfiguration config,
         IServiceScopeFactory scopeFactory,
         ILogger<LoginCommandHandler> logger)
     {
         _db = db;
         _jwt = jwt;
+        _timezoneResolver = timezoneResolver;
         _refreshTokenExpiryDays = int.Parse(config["Jwt:RefreshTokenExpiryDays"] ?? "7");
         _scopeFactory = scopeFactory;
         _logger = logger;
@@ -89,7 +93,11 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, LoginResult>
         var accessToken = _jwt.GenerateAccessToken(user.Id, user.Email, user.DisplayName);
         var expiresAt = DateTime.UtcNow.AddMinutes(15);
 
-        return new LoginResult(accessToken, rawRefresh, expiresAt, user.Id, user.DisplayName, user.PreferredLocale, user.IsPlatformAdmin);
+        // Resolve timezone from user's geographic location
+        var timezone = _timezoneResolver.Resolve(user.CountryCode, user.StateCode);
+
+        return new LoginResult(accessToken, rawRefresh, expiresAt, user.Id, user.DisplayName, user.PreferredLocale, user.IsPlatformAdmin,
+            timezone.IanaTimezoneId, timezone.OffsetMinutes);
     }
 
     private static string NormalizePhone(string phone)

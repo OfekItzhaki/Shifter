@@ -2,6 +2,7 @@ using Jobuler.Application.AI.Import;
 using FluentValidation;
 using Jobuler.Api.Middleware;
 using Jobuler.Application.Exports;
+using Jobuler.Application.Feedback;
 using Jobuler.Application.HomeLeave;
 using Jobuler.Application.Notifications;
 using Jobuler.Infrastructure.Exports;
@@ -19,6 +20,7 @@ using Jobuler.Infrastructure.Logging;
 using Jobuler.Infrastructure.Persistence;
 using Jobuler.Infrastructure.Scheduling;
 using Jobuler.Infrastructure.Storage;
+using Jobuler.Infrastructure.Timezone;
 using MediatR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.RateLimiting;
@@ -102,6 +104,8 @@ builder.Services.AddScoped<ISystemLogger, SystemLogger>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IPushNotificationSender, PushNotificationSender>();
 builder.Services.AddScoped<IPdfRenderer, QuestPdfRenderer>();
+builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddSingleton<ITimezoneResolver, TimezoneResolver>();
 
 // ─── VAPID configuration (Web Push) ──────────────────────────────────────────
 builder.Services.Configure<VapidSettings>(options =>
@@ -122,6 +126,9 @@ builder.Services.AddHttpClient("WebPush", client =>
 {
     client.Timeout = TimeSpan.FromSeconds(30);
 });
+
+// ─── Feedback options ─────────────────────────────────────────────────────────
+builder.Services.Configure<FeedbackOptions>(builder.Configuration.GetSection("Feedback"));
 
 // ─── Email: SendGrid (real) or NoOp (dev fallback) ────────────────────────────
 if (!string.IsNullOrWhiteSpace(builder.Configuration["SendGrid:ApiKey"]))
@@ -159,6 +166,9 @@ builder.Services.AddScoped<IInvitationSender, CompositeInvitationSender>();
 
 // ─── Schedule notifications ───────────────────────────────────────────────────
 builder.Services.AddScoped<IScheduleNotificationSender, ScheduleNotificationSender>();
+
+// ─── Recall notifications ─────────────────────────────────────────────────────
+builder.Services.AddScoped<Jobuler.Application.HomeLeave.Services.IRecallNotificationService, RecallNotificationService>();
 // ─── File storage ─────────────────────────────────────────────────────────────
 // Use S3-compatible storage when Storage:S3:BucketName is configured, otherwise local disk.
 if (!string.IsNullOrWhiteSpace(builder.Configuration["Storage:S3:BucketName"]))

@@ -55,6 +55,8 @@ export interface LoginTokens {
   displayName: string;
   preferredLocale: string;
   isPlatformAdmin: boolean;
+  timezoneId: string | null;
+  timezoneOffsetMinutes: number | null;
 }
 
 // ─── Registration ────────────────────────────────────────────────────────────

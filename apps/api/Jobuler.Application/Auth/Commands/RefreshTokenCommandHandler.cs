@@ -1,4 +1,5 @@
 using Jobuler.Application.Auth;
+using Jobuler.Application.Common;
 using Jobuler.Domain.Identity;
 using Jobuler.Infrastructure.Persistence;
 using MediatR;
@@ -11,12 +12,14 @@ public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, L
 {
     private readonly AppDbContext _db;
     private readonly IJwtService _jwt;
+    private readonly ITimezoneResolver _timezoneResolver;
     private readonly int _refreshTokenExpiryDays;
 
-    public RefreshTokenCommandHandler(AppDbContext db, IJwtService jwt, IConfiguration config)
+    public RefreshTokenCommandHandler(AppDbContext db, IJwtService jwt, ITimezoneResolver timezoneResolver, IConfiguration config)
     {
         _db = db;
         _jwt = jwt;
+        _timezoneResolver = timezoneResolver;
         _refreshTokenExpiryDays = int.Parse(config["Jwt:RefreshTokenExpiryDays"] ?? "7");
     }
 
@@ -44,9 +47,13 @@ public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, L
         var accessToken = _jwt.GenerateAccessToken(
             existing.User.Id, existing.User.Email, existing.User.DisplayName);
 
+        // Recalculate timezone on refresh to handle DST changes between sessions
+        var timezone = _timezoneResolver.Resolve(existing.User.CountryCode, existing.User.StateCode);
+
         return new LoginResult(
             accessToken, rawRefresh,
             DateTime.UtcNow.AddMinutes(15),
-            existing.User.Id, existing.User.DisplayName, existing.User.PreferredLocale, existing.User.IsPlatformAdmin);
+            existing.User.Id, existing.User.DisplayName, existing.User.PreferredLocale, existing.User.IsPlatformAdmin,
+            timezone.IanaTimezoneId, timezone.OffsetMinutes);
     }
 }

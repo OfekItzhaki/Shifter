@@ -195,10 +195,49 @@ public class HomeLeaveConfigController : ControllerBase
     }
 
     /// <summary>
-    /// Cancel a home-leave presence window for a person.
+    /// Cancel (recall) a home-leave presence window for a person.
     /// If starts_at is in the future: deletes the window entirely.
     /// If starts_at is in the past and ends_at is in the future: truncates to current timestamp.
     /// Requires schedule.publish permission.
+    ///
+    /// When Confirmed is false and the person has an active (in-progress) AtHome window,
+    /// returns a warning about travel time without executing the recall.
+    /// </summary>
+    [HttpPost("~/spaces/{spaceId:guid}/home-leave-presence/{presenceWindowId:guid}/recall")]
+    public async Task<IActionResult> RecallHomeLeave(
+        Guid spaceId,
+        Guid presenceWindowId,
+        [FromBody] RecallHomeLeaveRequest req,
+        CancellationToken ct)
+    {
+        await _permissions.RequirePermissionAsync(CurrentUserId, spaceId, Permissions.SchedulePublish, ct);
+
+        // If not confirmed, check whether the window is currently active and return a warning
+        if (!req.Confirmed)
+        {
+            var warning = await _mediator.Send(
+                new GetRecallWarningQuery(spaceId, req.PersonId, presenceWindowId), ct);
+
+            return Ok(new RecallWarningResponse(
+                RequiresConfirmation: true,
+                Warning: warning.Message));
+        }
+
+        var result = await _mediator.Send(new CancelHomeLeaveCommand(
+            spaceId,
+            req.PersonId,
+            presenceWindowId,
+            CurrentUserId,
+            Confirmed: req.Confirmed,
+            Reason: req.Reason,
+            ExpectedReturnAt: req.ExpectedReturnAt), ct);
+
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Cancel a home-leave presence window for a person (legacy DELETE endpoint).
+    /// Kept for backward compatibility. Use POST .../recall for the full recall flow.
     /// </summary>
     [HttpDelete("~/spaces/{spaceId:guid}/home-leave-presence/{presenceWindowId:guid}")]
     public async Task<IActionResult> CancelHomeLeave(
@@ -211,7 +250,8 @@ public class HomeLeaveConfigController : ControllerBase
             spaceId,
             personId,
             presenceWindowId,
-            CurrentUserId), ct);
+            CurrentUserId,
+            Confirmed: true), ct);
 
         return Ok(result);
     }
@@ -268,3 +308,13 @@ public record OptimalRatioResponse(
 public record HomeLeavePreviewResponse(
     Application.HomeLeave.Commands.HomeLeavePreviewResponse Preview,
     FeasibilityResult? Feasibility);
+
+public record RecallHomeLeaveRequest(
+    Guid PersonId,
+    bool Confirmed,
+    string? Reason = null,
+    DateTime? ExpectedReturnAt = null);
+
+public record RecallWarningResponse(
+    bool RequiresConfirmation,
+    string Warning);

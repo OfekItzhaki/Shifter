@@ -1,6 +1,7 @@
 using Jobuler.Application.Common;
 using Jobuler.Application.Tasks.Commands;
 using Jobuler.Domain.Spaces;
+using Jobuler.Domain.Tasks;
 using Jobuler.Infrastructure.Persistence;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -45,6 +46,8 @@ public class GetGroupTasksQueryHandler : IRequestHandler<GetGroupTasksQuery, Lis
             t.ShiftDurationMinutes,
             t.RequiredHeadcount,
             t.BurdenLevel.ToString().ToLowerInvariant(),
+            BurdenScalingService.ComputeEffectiveBurden(t.BurdenLevel, t.SplitCount, t.ShiftDurationMinutes).ToString().ToLowerInvariant(),
+            t.SplitCount,
             t.AllowsDoubleShift,
             t.AllowsOverlap,
             t.DailyStartTime.HasValue ? t.DailyStartTime.Value.ToString("HH:mm") : null,

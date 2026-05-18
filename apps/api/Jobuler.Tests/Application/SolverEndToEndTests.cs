@@ -3,6 +3,8 @@
 //
 // Run with:   dotnet test --filter "SolverEndToEnd" --logger "console;verbosity=detailed"
 // Requires:   Python solver running on localhost:8000
+//
+// These tests are automatically SKIPPED when the solver is not reachable.
 
 using FluentAssertions;
 using Jobuler.Application.Scheduling.Models;
@@ -19,11 +21,13 @@ namespace Jobuler.Tests.Application;
 /// <summary>
 /// Hits the live Python solver directly (no API, no DB, no queue).
 /// Tests the exact JSON contract between the .NET worker and the solver.
+/// Automatically skipped when the solver is not running on localhost:8000.
 /// </summary>
-public class SolverEndToEndTests
+public class SolverEndToEndTests : IAsyncLifetime
 {
     private readonly ITestOutputHelper _out;
     private readonly HttpClient _http;
+    private bool _solverAvailable;
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -36,7 +40,30 @@ public class SolverEndToEndTests
     public SolverEndToEndTests(ITestOutputHelper output)
     {
         _out = output;
-        _http = new HttpClient { BaseAddress = new Uri("http://localhost:8000") };
+        _http = new HttpClient { BaseAddress = new Uri("http://localhost:8000"), Timeout = TimeSpan.FromSeconds(5) };
+    }
+
+    public async Task InitializeAsync()
+    {
+        try
+        {
+            var response = await _http.GetAsync("/health");
+            _solverAvailable = response.IsSuccessStatusCode;
+        }
+        catch
+        {
+            _solverAvailable = false;
+        }
+
+        if (!_solverAvailable)
+            _out.WriteLine("⚠ Solver not reachable at localhost:8000 — tests will be skipped.");
+    }
+
+    public Task DisposeAsync() => Task.CompletedTask;
+
+    private void SkipIfSolverUnavailable()
+    {
+        Skip.If(!_solverAvailable, "Solver is not running on localhost:8000. Start it to run these tests.");
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
@@ -62,9 +89,10 @@ public class SolverEndToEndTests
 
     // ── Test 1: Solver health ─────────────────────────────────────────────────
 
-    [Fact]
+    [SkippableFact]
     public async Task Solver_HealthEndpoint_Returns200()
     {
+        SkipIfSolverUnavailable();
         var r = await _http.GetAsync("/health");
         _out.WriteLine($"Health: {(int)r.StatusCode}");
         r.IsSuccessStatusCode.Should().BeTrue("solver health endpoint must be reachable");
@@ -73,9 +101,10 @@ public class SolverEndToEndTests
     // ── Test 2: Feasible — 3 people, 1 slot needing 1 person ─────────────────
     // Should produce: feasible=true, assignments.Count >= 1
 
-    [Fact]
+    [SkippableFact]
     public async Task Solver_SimpleFeasible_OnePerson_OneSlot_ReturnsAssignment()
     {
+        SkipIfSolverUnavailable();
         var spaceId  = Guid.NewGuid().ToString();
         var runId    = Guid.NewGuid().ToString();
         var personId = Guid.NewGuid().ToString();
@@ -124,9 +153,10 @@ public class SolverEndToEndTests
     // ── Test 3: Feasible — multiple people, multiple slots ───────────────────
     // 4 people, 2 slots each needing 2 people → should fill both slots
 
-    [Fact]
+    [SkippableFact]
     public async Task Solver_FourPeople_TwoSlots_TwoHeadcount_ReturnsFullCoverage()
     {
+        SkipIfSolverUnavailable();
         var spaceId  = Guid.NewGuid().ToString();
         var runId    = Guid.NewGuid().ToString();
         var taskType = Guid.NewGuid().ToString();
@@ -169,9 +199,10 @@ public class SolverEndToEndTests
     // ── Test 4: Infeasible — 0 people, 1 slot ────────────────────────────────
     // Should produce: feasible=false OR assignments empty
 
-    [Fact]
+    [SkippableFact]
     public async Task Solver_ZeroPeople_OneSlot_ReturnsInfeasible()
     {
+        SkipIfSolverUnavailable();
         var spaceId  = Guid.NewGuid().ToString();
         var runId    = Guid.NewGuid().ToString();
         var slotId   = Guid.NewGuid().ToString();
@@ -208,9 +239,10 @@ public class SolverEndToEndTests
 
     // ── Test 5: Infeasible — 1 person, slot requires 3 ───────────────────────
 
-    [Fact]
+    [SkippableFact]
     public async Task Solver_OnePerson_SlotRequiresThree_ReturnsInfeasibleOrUncovered()
     {
+        SkipIfSolverUnavailable();
         var spaceId  = Guid.NewGuid().ToString();
         var runId    = Guid.NewGuid().ToString();
         var personId = Guid.NewGuid().ToString();
@@ -252,9 +284,10 @@ public class SolverEndToEndTests
     // Person has a presence window of type "blocked" covering the slot.
     // Solver must not assign them.
 
-    [Fact]
+    [SkippableFact]
     public async Task Solver_PersonBlocked_NotAssignedToSlot()
     {
+        SkipIfSolverUnavailable();
         var spaceId   = Guid.NewGuid().ToString();
         var runId     = Guid.NewGuid().ToString();
         var personId  = Guid.NewGuid().ToString();
@@ -309,9 +342,10 @@ public class SolverEndToEndTests
 
     // ── Test 7: Response shape — all required fields present ─────────────────
 
-    [Fact]
+    [SkippableFact]
     public async Task Solver_Response_AlwaysHasRequiredFields()
     {
+        SkipIfSolverUnavailable();
         var spaceId  = Guid.NewGuid().ToString();
         var runId    = Guid.NewGuid().ToString();
         var personId = Guid.NewGuid().ToString();
@@ -351,9 +385,10 @@ public class SolverEndToEndTests
     // ── Test 8: Empty input — no slots, no people ─────────────────────────────
     // Solver should return gracefully (not crash with 500)
 
-    [Fact]
+    [SkippableFact]
     public async Task Solver_EmptyInput_NoSlotsNoPeople_ReturnsGracefully()
     {
+        SkipIfSolverUnavailable();
         var input = new SolverInputDto(
             SpaceId: Guid.NewGuid().ToString(),
             RunId: Guid.NewGuid().ToString(),

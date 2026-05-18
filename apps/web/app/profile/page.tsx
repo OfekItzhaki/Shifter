@@ -8,10 +8,8 @@ import Modal from "@/components/Modal";
 import { getMe, updateMe, MeDto } from "@/lib/api/auth";
 import { apiClient } from "@/lib/api/client";
 import ImageUpload from "@/components/ImageUpload";
-import NotificationPreferences from "@/components/NotificationPreferences";
-import PushNotificationSettings from "@/components/PushNotificationSettings";
-import { useSpaceStore } from "@/lib/store/spaceStore";
 import { useAuthStore } from "@/lib/store/authStore";
+import { formatLocalDate } from "@/lib/utils/formatTime";
 import {
   isWebAuthnSupported,
   registerCredential,
@@ -29,23 +27,13 @@ function getInitials(name: string): string {
     .toUpperCase();
 }
 
-function formatBirthday(dateStr: string | null): string {
+function formatBirthday(dateStr: string | null, timezoneId: string | null): string {
   if (!dateStr) return "—";
-  try {
-    const d = new Date(dateStr);
-    return d.toLocaleDateString(undefined, { day: "numeric", month: "long", year: "numeric" });
-  } catch {
-    return dateStr;
-  }
+  return formatLocalDate(dateStr, timezoneId);
 }
 
-function formatMemberSince(dateStr: string): string {
-  try {
-    const d = new Date(dateStr);
-    return d.toLocaleDateString(undefined, { day: "numeric", month: "long", year: "numeric" });
-  } catch {
-    return dateStr;
-  }
+function formatMemberSince(dateStr: string, timezoneId: string | null): string {
+  return formatLocalDate(dateStr, timezoneId);
 }
 
 const cardStyle: React.CSSProperties = {
@@ -88,11 +76,10 @@ const inputStyle: React.CSSProperties = {
 
 export default function ProfilePage() {
   const t = useTranslations("profile");
+  const timezoneId = useAuthStore(s => s.timezoneId);
   const [me, setMe] = useState<MeDto | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  const currentSpaceId = useSpaceStore((s) => s.currentSpaceId);
 
   const [editOpen, setEditOpen] = useState(false);
   const [form, setForm] = useState({ displayName: "", phoneNumber: "", profileImageUrl: "", birthday: "" });
@@ -110,7 +97,7 @@ export default function ProfilePage() {
           birthday: data.birthday ? data.birthday.split("T")[0] : "",
         });
       })
-      .catch(() => setError("Error loading profile"))
+      .catch(() => setError("load"))
       .finally(() => setLoading(false));
   }, []);
 
@@ -146,7 +133,7 @@ export default function ProfilePage() {
       } : prev);
       setEditOpen(false);
     } catch (err: any) {
-      setSaveError(err?.response?.data?.message ?? "Error saving profile");
+      setSaveError(err?.response?.data?.message ?? t("saveError"));
     } finally {
       setSaving(false);
     }
@@ -160,7 +147,6 @@ export default function ProfilePage() {
             <circle style={{ opacity: 0.25 }} cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
             <path style={{ opacity: 0.75 }} fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
           </svg>
-          Loading...
         </div>
       </AppShell>
     );
@@ -169,7 +155,54 @@ export default function ProfilePage() {
   if (error || !me) {
     return (
       <AppShell>
-        <p style={{ color: "#dc2626", fontSize: "0.875rem" }}>{error ?? "Error loading profile"}</p>
+        <div style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "4rem 1rem",
+          textAlign: "center",
+          direction: "rtl",
+        }}>
+          {/* Error icon */}
+          <div style={{
+            width: 64,
+            height: 64,
+            borderRadius: "50%",
+            background: "#fef2f2",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            marginBottom: "1.25rem",
+          }}>
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="12" />
+              <line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+          </div>
+          <h2 style={{ fontSize: "1.125rem", fontWeight: 600, color: "#0f172a", margin: "0 0 0.5rem" }}>
+            {t("loadError")}
+          </h2>
+          <p style={{ fontSize: "0.875rem", color: "#64748b", margin: "0 0 1.5rem", maxWidth: 320 }}>
+            {t("loadErrorDesc")}
+          </p>
+          <button
+            onClick={() => window.location.reload()}
+            style={{
+              padding: "0.625rem 1.5rem",
+              borderRadius: 10,
+              border: "none",
+              background: "#3b82f6",
+              color: "white",
+              fontWeight: 600,
+              fontSize: "0.875rem",
+              cursor: "pointer",
+            }}
+          >
+            {t("retry")}
+          </button>
+        </div>
       </AppShell>
     );
   }
@@ -245,30 +278,15 @@ export default function ProfilePage() {
             <div style={{ display: "flex", flexDirection: "column", gap: "0.875rem" }}>
               <div>
                 <p style={labelStyle}>{t("birthday")}</p>
-                <p style={valueStyle}>{formatBirthday(me.birthday)}</p>
+                <p style={valueStyle}>{formatBirthday(me.birthday, timezoneId)}</p>
               </div>
               <div>
                 <p style={labelStyle}>{t("memberSince")}</p>
-                <p style={valueStyle}>{formatMemberSince(me.createdAt)}</p>
+                <p style={valueStyle}>{formatMemberSince(me.createdAt, timezoneId)}</p>
               </div>
             </div>
           </div>
         </div>
-
-        {/* Time Format Preference */}
-        <TimeFormatToggle />
-
-        {/* Notification Preferences */}
-        <div style={{ ...cardStyle, marginTop: "1rem" }}>
-          <NotificationPreferences />
-        </div>
-
-        {/* Push Notification Settings */}
-        {currentSpaceId && (
-          <div style={{ ...cardStyle, marginTop: "1rem" }}>
-            <PushNotificationSettings spaceId={currentSpaceId} />
-          </div>
-        )}
 
         {/* Biometric Login Management */}
         <BiometricSection />
@@ -361,64 +379,6 @@ export default function ProfilePage() {
         </form>
       </Modal>
     </AppShell>
-  );
-}
-
-
-function TimeFormatToggle() {
-  const t = useTranslations("profile");
-  const { timeFormat, setTimeFormat } = useAuthStore();
-
-  return (
-    <div style={{ ...cardStyle, marginTop: "1rem" }}>
-      <h2 style={{ fontSize: "0.875rem", fontWeight: 600, color: "#0f172a", margin: "0 0 0.75rem" }}>
-        {t("timeFormat")}
-      </h2>
-      <div style={{ display: "flex", gap: "0.5rem" }}>
-        <button
-          onClick={() => setTimeFormat("24h")}
-          style={{
-            flex: 1,
-            padding: "0.625rem 1rem",
-            borderRadius: 10,
-            border: timeFormat === "24h" ? "2px solid #3b82f6" : "1px solid #e2e8f0",
-            background: timeFormat === "24h" ? "#eff6ff" : "white",
-            color: timeFormat === "24h" ? "#1d4ed8" : "#64748b",
-            fontWeight: 600,
-            fontSize: "0.875rem",
-            cursor: "pointer",
-            transition: "all 0.15s",
-          }}
-          aria-pressed={timeFormat === "24h"}
-        >
-          24h
-          <span style={{ display: "block", fontSize: "0.75rem", fontWeight: 400, marginTop: 2 }}>
-            14:30
-          </span>
-        </button>
-        <button
-          onClick={() => setTimeFormat("12h")}
-          style={{
-            flex: 1,
-            padding: "0.625rem 1rem",
-            borderRadius: 10,
-            border: timeFormat === "12h" ? "2px solid #3b82f6" : "1px solid #e2e8f0",
-            background: timeFormat === "12h" ? "#eff6ff" : "white",
-            color: timeFormat === "12h" ? "#1d4ed8" : "#64748b",
-            fontWeight: 600,
-            fontSize: "0.875rem",
-            cursor: "pointer",
-            transition: "all 0.15s",
-          }}
-          aria-pressed={timeFormat === "12h"}
-        >
-          AM/PM
-          <span style={{ display: "block", fontSize: "0.75rem", fontWeight: 400, marginTop: 2 }}>
-            2:30 PM
-          </span>
-        </button>
-      </div>
-    </div>
   );
 }
 
@@ -521,7 +481,7 @@ function DeleteAccountSection() {
       localStorage.removeItem("refresh_token");
       router.push("/login");
     } catch {
-      setError("Error deleting account");
+      setError(t("deleteError"));
     } finally {
       setDeleting(false);
     }
@@ -583,6 +543,7 @@ function DeleteAccountSection() {
 
 
 function BiometricSection() {
+  const timezoneId = useAuthStore(s => s.timezoneId);
   const [supported, setSupported] = useState(false);
   const [credentials, setCredentials] = useState<WebAuthnCredential[]>([]);
   const [loading, setLoading] = useState(true);
@@ -867,8 +828,8 @@ function BiometricSection() {
                         {cred.isDisabled && " (מושבת)"}
                       </p>
                       <p style={{ fontSize: "0.6875rem", color: "#94a3b8", margin: "2px 0 0" }}>
-                        נרשם: {new Date(cred.createdAt).toLocaleDateString("he-IL")}
-                        {cred.lastUsedAt && ` · שימוש אחרון: ${new Date(cred.lastUsedAt).toLocaleDateString("he-IL")}`}
+                        נרשם: {formatLocalDate(cred.createdAt, timezoneId)}
+                        {cred.lastUsedAt && ` · שימוש אחרון: ${formatLocalDate(cred.lastUsedAt, timezoneId)}`}
                       </p>
                     </div>
                   )}

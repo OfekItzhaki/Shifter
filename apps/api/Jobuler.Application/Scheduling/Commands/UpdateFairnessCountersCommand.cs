@@ -27,30 +27,44 @@ public class UpdateFairnessCountersCommandHandler
         var cutoff7d  = DateTime.UtcNow.AddDays(-7);
         var cutoff14d = DateTime.UtcNow.AddDays(-14);
         var cutoff30d = DateTime.UtcNow.AddDays(-30);
+        var cutoffDate30d = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-30));
 
-        // Load all published assignments for this space within the 30-day window
+        // Load all published version IDs for this space
         var publishedVersionIds = await _db.ScheduleVersions.AsNoTracking()
             .Where(v => v.SpaceId == req.SpaceId && v.Status == ScheduleVersionStatus.Published)
             .Select(v => v.Id)
             .ToListAsync(ct);
 
-        var recentAssignments = await _db.Assignments.AsNoTracking()
-            .Where(a => a.SpaceId == req.SpaceId &&
-                        publishedVersionIds.Contains(a.ScheduleVersionId))
-            .Join(_db.TaskSlots.AsNoTracking(), a => a.TaskSlotId, s => s.Id,
-                (a, s) => new { a.PersonId, s.StartsAt, s.EndsAt, s.TaskTypeId })
-            .Join(_db.TaskTypes.AsNoTracking(), x => x.TaskTypeId, t => t.Id,
-                (x, t) => new
+        // Read from DailySnapshots which store the effective (split-adjusted) burden level.
+        // Join to TaskTypes only for the task name (needed for kitchen counting).
+        var rawSnapshots = await _db.DailySnapshots.AsNoTracking()
+            .Where(ds => ds.SpaceId == req.SpaceId &&
+                         publishedVersionIds.Contains(ds.VersionId) &&
+                         ds.SnapshotDate >= cutoffDate30d &&
+                         ds.TaskTypeId != null &&
+                         ds.ShiftStart != null)
+            .Join(_db.TaskTypes.AsNoTracking(), ds => ds.TaskTypeId, t => t.Id,
+                (ds, t) => new
                 {
-                    x.PersonId,
-                    x.StartsAt,
-                    x.EndsAt,
-                    t.BurdenLevel,
-                    t.Name,
-                    IsNight = x.StartsAt.Hour >= 22 || x.StartsAt.Hour < 6
+                    ds.PersonId,
+                    StartsAt = ds.ShiftStart!.Value,
+                    EndsAt = ds.ShiftEnd,
+                    BurdenLevelRaw = ds.BurdenLevel,
+                    t.Name
                 })
-            .Where(x => x.StartsAt >= cutoff30d)
             .ToListAsync(ct);
+
+        var recentAssignments = rawSnapshots.Select(x => new
+        {
+            x.PersonId,
+            x.StartsAt,
+            x.EndsAt,
+            BurdenLevel = Enum.TryParse<TaskBurdenLevel>(x.BurdenLevelRaw, true, out var parsed)
+                ? parsed
+                : TaskBurdenLevel.Normal,
+            x.Name,
+            IsNight = x.StartsAt.Hour >= 22 || x.StartsAt.Hour < 6
+        }).ToList();
 
         var people = await _db.People.AsNoTracking()
             .Where(p => p.SpaceId == req.SpaceId && p.IsActive)

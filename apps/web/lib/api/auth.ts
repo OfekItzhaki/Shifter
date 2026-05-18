@@ -8,6 +8,8 @@ export interface LoginResponse {
   displayName: string;
   preferredLocale: string;
   isPlatformAdmin: boolean;
+  timezoneId: string | null;
+  timezoneOffsetMinutes: number | null;
 }
 
 export async function login(identifier: string, password: string): Promise<LoginResponse> {

@@ -2,6 +2,8 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useTranslations } from "next-intl";
+import { useAuthStore } from "@/lib/store/authStore";
+import { formatLocalTime } from "@/lib/utils/formatTime";
 import { getGroupLiveStatus, MemberLiveStatusDto } from "@/lib/api/groups";
 
 interface LiveStatusPanelProps {
@@ -9,13 +11,14 @@ interface LiveStatusPanelProps {
   groupId: string;
 }
 
-function formatTime(iso: string | null): string {
+function formatTime(iso: string | null, timezoneId: string | null): string {
   if (!iso) return "";
-  return new Date(iso).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit", hour12: false });
+  return formatLocalTime(iso, timezoneId, "24h");
 }
 
 export default function LiveStatusPanel({ spaceId, groupId }: LiveStatusPanelProps) {
   const t = useTranslations("liveStatus");
+  const timezoneId = useAuthStore(s => s.timezoneId);
   const [statuses, setStatuses] = useState<MemberLiveStatusDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -93,7 +96,7 @@ export default function LiveStatusPanel({ spaceId, groupId }: LiveStatusPanelPro
         <div className="flex items-center gap-2">
           {lastUpdated && (
             <span className="text-xs text-slate-400">
-              {t("updated")}: {lastUpdated.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+              {t("updated")}: {lastUpdated.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit", second: "2-digit", timeZone: timezoneId || "Asia/Jerusalem" })}
             </span>
           )}
           <button
@@ -140,7 +143,7 @@ export default function LiveStatusPanel({ spaceId, groupId }: LiveStatusPanelPro
                             <p className="text-xs text-slate-500 truncate">
                               {m.taskName}
                               {m.slotEndsAt && (
-                                <span className="text-slate-400"> · {t("until")} {formatTime(m.slotEndsAt)}</span>
+                                <span className="text-slate-400"> · {t("until")} {formatTime(m.slotEndsAt, timezoneId)}</span>
                               )}
                             </p>
                           )}

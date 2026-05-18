@@ -9,11 +9,12 @@ import {
 } from "@/lib/api/tasks";
 import { useSpaceStore } from "@/lib/store/spaceStore";
 import { useAuthStore } from "@/lib/store/authStore";
+import { formatLocalDateTime } from "@/lib/utils/formatTime";
 
 export default function TasksPage() {
   const t = useTranslations("admin");
   const { currentSpaceId } = useSpaceStore();
-  const { isAdminMode } = useAuthStore();
+  const { isAdminMode, timezoneId } = useAuthStore();
 
   const [taskTypes, setTaskTypes] = useState<TaskTypeDto[]>([]);
   const [slots, setSlots] = useState<TaskSlotDto[]>([]);
@@ -281,8 +282,8 @@ export default function TasksPage() {
                 {slots.map(s => (
                   <tr key={s.id} className="hover:bg-slate-50/60">
                     <td className="px-4 py-3.5 font-medium text-slate-900">{s.taskTypeName}</td>
-                    <td className="px-4 py-3.5 text-slate-500 text-xs">{new Date(s.startsAt).toLocaleString(undefined)}</td>
-                    <td className="px-4 py-3.5 text-slate-500 text-xs">{new Date(s.endsAt).toLocaleString(undefined)}</td>
+                    <td className="px-4 py-3.5 text-slate-500 text-xs">{formatLocalDateTime(s.startsAt, timezoneId)}</td>
+                    <td className="px-4 py-3.5 text-slate-500 text-xs">{formatLocalDateTime(s.endsAt, timezoneId)}</td>
                     <td className="px-4 py-3.5 text-slate-500">{s.requiredHeadcount}</td>
                     <td className="px-4 py-3.5 text-slate-500">{s.status}</td>
                   </tr>

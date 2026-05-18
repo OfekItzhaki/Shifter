@@ -13,7 +13,7 @@ export default function TomorrowPage() {
   const t = useTranslations("schedule");
   const tNav = useTranslations("nav");
   const { currentSpaceId } = useSpaceStore();
-  const { displayName } = useAuthStore();
+  const { displayName, timezoneId } = useAuthStore();
   const [selectedGroupId, setSelectedGroupId] = useState("");
   const [tomorrowLabel, setTomorrowLabel] = useState("");
 
@@ -27,8 +27,9 @@ export default function TomorrowPage() {
     d.setDate(d.getDate() + 1);
     setTomorrowLabel(d.toLocaleDateString(undefined, {
       weekday: "long", year: "numeric", month: "long", day: "numeric",
+      timeZone: timezoneId || "Asia/Jerusalem",
     }));
-  }, []);
+  }, [timezoneId]);
 
   // React Query — groups list
   const { data: groups = [], isLoading: groupsLoading } = useGroups(currentSpaceId);

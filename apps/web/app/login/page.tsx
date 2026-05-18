@@ -96,6 +96,17 @@ function LoginForm() {
       document.cookie = `access_token=${tokens.accessToken}; path=/; max-age=900; SameSite=Strict`;
       const locale = tokens.preferredLocale || detectBrowserLocale();
       document.cookie = `locale=${locale}; path=/; max-age=31536000; SameSite=Strict`;
+      // Update auth store with session data including timezone
+      useAuthStore.setState({
+        userId: tokens.userId,
+        displayName: tokens.displayName,
+        preferredLocale: locale,
+        isAuthenticated: true,
+        isPlatformAdmin: tokens.isPlatformAdmin ?? false,
+        adminGroupId: null,
+        timezoneId: tokens.timezoneId ?? "Asia/Jerusalem",
+        timezoneOffsetMinutes: tokens.timezoneOffsetMinutes ?? 120,
+      });
       router.push(redirectTo);
     } catch (err: any) {
       if (err?.message === "USER_CANCELLED") {

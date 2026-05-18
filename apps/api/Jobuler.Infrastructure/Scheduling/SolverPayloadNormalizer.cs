@@ -3,6 +3,7 @@ using Jobuler.Application.Scheduling;
 using Jobuler.Application.Scheduling.Models;
 using Jobuler.Domain.Constraints;
 using Jobuler.Domain.Groups;
+using Jobuler.Domain.People;
 using Jobuler.Domain.Scheduling;
 using Jobuler.Domain.Tasks;
 using Jobuler.Infrastructure.Persistence;
@@ -85,6 +86,7 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
 
         // ── Home-leave config (closed-base groups only) ───────────────────────
         HomeLeaveConfigDto? homeLeaveConfigDto = null;
+        bool emergencyBypass = false;
         if (groupId.HasValue && isClosedBase)
         {
             var hlConfig = await _db.HomeLeaveConfigs.AsNoTracking()
@@ -97,6 +99,10 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
                 var hlMemberCount = await _db.GroupMemberships.AsNoTracking()
                     .CountAsync(m => m.GroupId == groupId.Value && m.SpaceId == spaceId, ct);
                 homeLeaveConfigDto = BuildHomeLeaveConfigDto(hlConfig, hlMemberCount);
+
+                // Emergency bypass: when freeze is active AND use-for-scheduling is true,
+                // all people remain in the solver pool regardless of AtHome windows.
+                emergencyBypass = hlConfig.EmergencyFreezeActive && hlConfig.EmergencyUseForScheduling;
             }
             else
             {
@@ -145,9 +151,27 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
             (double)(groupMemberships.FirstOrDefault(m => m.PersonId == p.Id)?.HomeLeavePriority ?? 1.0m)
         )).ToList();
 
-        // ── Availability windows ──────────────────────────────────────────────
+        // ── Home-leave exclusion ──────────────────────────────────────────────
+        // Exclude people with AtHome windows overlapping the solver horizon.
+        // When emergency bypass is active, all people remain in the pool.
         var horizonStartDt = nowUtc; // start from NOW, not midnight
         var horizonEndDt   = horizonEnd.ToDateTime(TimeOnly.MaxValue, DateTimeKind.Utc);
+
+        var excludedPersonIds = await GetExcludedPersonIdsAsync(
+            spaceId, horizonStartDt, horizonEndDt, emergencyBypass, ct);
+
+        if (excludedPersonIds.Count > 0)
+        {
+            peopleDto = peopleDto
+                .Where(p => !excludedPersonIds.Contains(Guid.Parse(p.PersonId)))
+                .ToList();
+
+            _logger.LogInformation(
+                "Home-leave exclusion: removed {Count} people from solver payload for space {SpaceId}",
+                excludedPersonIds.Count, spaceId);
+        }
+
+        // ── Availability windows ──────────────────────────────────────────────
 
         var availability = await _db.AvailabilityWindows.AsNoTracking()
             .Where(a => a.SpaceId == spaceId
@@ -161,6 +185,11 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
             a.EndsAt.ToString("o"))).ToList();
 
         // ── Presence windows ──────────────────────────────────────────────────
+        // Include ALL presence windows (including AtHome) overlapping the horizon.
+        // AtHome windows are included for both excluded and non-excluded people so
+        // the solver is aware of home leave as a constraint. In emergency bypass mode,
+        // people with AtHome windows remain in the pool and the solver uses these
+        // windows to avoid assigning them during their leave periods (Req 7.1, 7.2, 7.4).
         var presence = await _db.PresenceWindows.AsNoTracking()
             .Where(p => p.SpaceId == spaceId
                 && p.EndsAt >= horizonStartDt
@@ -401,13 +430,16 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
 
             baselineAssignments = baselineRows
                 .Where(a => currentSlotIds.Contains(a.TaskSlotId.ToString()))
+                .Where(a => !excludedPersonIds.Contains(a.PersonId))
                 .Select(a => new BaselineAssignmentDto(a.TaskSlotId.ToString(), a.PersonId.ToString()))
                 .ToList();
 
             // Slots with manual overrides are locked — solver must not reassign them
+            // Exclude locked slots that reference excluded people (they can't be assigned anyway)
             lockedSlotIds = baselineRows
                 .Where(a => a.Source == AssignmentSource.Override
-                         && currentSlotIds.Contains(a.TaskSlotId.ToString()))
+                         && currentSlotIds.Contains(a.TaskSlotId.ToString())
+                         && !excludedPersonIds.Contains(a.PersonId))
                 .Select(a => a.TaskSlotId.ToString())
                 .Distinct()
                 .ToList();
@@ -537,6 +569,29 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
         }
 
         return payload;
+    }
+
+    /// <summary>
+    /// Queries PresenceWindows for AtHome windows overlapping the solver horizon
+    /// and returns the set of person IDs that should be excluded from the solver payload.
+    /// When emergency bypass is active, returns an empty set so all people remain available.
+    /// </summary>
+    private async Task<HashSet<Guid>> GetExcludedPersonIdsAsync(
+        Guid spaceId, DateTime horizonStartDt, DateTime horizonEndDt,
+        bool emergencyBypass, CancellationToken ct)
+    {
+        if (emergencyBypass) return new HashSet<Guid>();
+
+        var excludedIds = await _db.PresenceWindows.AsNoTracking()
+            .Where(pw => pw.SpaceId == spaceId
+                && pw.State == PresenceState.AtHome
+                && pw.StartsAt < horizonEndDt
+                && pw.EndsAt > horizonStartDt)
+            .Select(pw => pw.PersonId)
+            .Distinct()
+            .ToListAsync(ct);
+
+        return excludedIds.ToHashSet();
     }
 
     /// <summary>

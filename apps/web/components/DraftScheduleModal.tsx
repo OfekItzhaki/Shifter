@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import { apiClient } from "@/lib/api/client";
 import { useDateFormat } from "@/lib/hooks/useDateFormat";
+import { useAuthStore } from "@/lib/store/authStore";
 import ScheduleTaskTable from "@/components/schedule/ScheduleTaskTable";
 import ScheduleDiffView from "@/components/schedule/ScheduleDiffView";
 import { useSandboxStore } from "@/lib/store/sandboxStore";
@@ -65,6 +66,7 @@ export default function DraftScheduleModal({
   const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
   const [viewMode, setViewMode] = useState<"schedule" | "diff">("schedule");
   const { fDateShort } = useDateFormat();
+  const timezoneId = useAuthStore(s => s.timezoneId);
 
   const enterSandbox = useSandboxStore((s) => s.enterSandbox);
   const [enteringSimulation, setEnteringSimulation] = useState(false);
@@ -343,7 +345,7 @@ export default function DraftScheduleModal({
                 <span className="text-sm font-semibold text-slate-700">
                   {new Date(selectedDate + "T00:00:00").toLocaleDateString(
                     locale === "he" ? "he-IL" : locale === "ru" ? "ru-RU" : "en-US",
-                    { weekday: "long", day: "numeric", month: "long" }
+                    { weekday: "long", day: "numeric", month: "long", timeZone: timezoneId || "Asia/Jerusalem" }
                   )}
                 </span>
                 {selectedDate === today && (

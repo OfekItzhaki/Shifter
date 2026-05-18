@@ -15,14 +15,17 @@ import {
   AvailabilityWindowDto, PresenceWindowDto,
 } from "@/lib/api/availability";
 import { useSpaceStore } from "@/lib/store/spaceStore";
+import { useAuthStore } from "@/lib/store/authStore";
+import { formatLocalDateTime } from "@/lib/utils/formatTime";
 
-function fmt(dt: string) {
-  return new Date(dt).toLocaleString([], { dateStyle: "short", timeStyle: "short" });
+function fmt(dt: string, timezoneId: string | null) {
+  return formatLocalDateTime(dt, timezoneId);
 }
 
 export default function PersonDetailPage() {
   const { personId } = useParams<{ personId: string }>();
   const { currentSpaceId } = useSpaceStore();
+  const timezoneId = useAuthStore(s => s.timezoneId);
   const t = useTranslations("personDetail");
   const tCommon = useTranslations("common");
   const [person, setPerson] = useState<PersonDetailDto | null>(null);
@@ -286,9 +289,9 @@ export default function PersonDetailPage() {
             ? <p className="text-xs text-gray-400">{t("noAvailabilityWindows")}</p>
             : availability.map(a => (
               <div key={a.id} className="text-sm border-t pt-2">
-                <span className="font-medium">{fmt(a.startsAt)}</span>
+                <span className="font-medium">{fmt(a.startsAt, timezoneId)}</span>
                 <span className="text-gray-400 text-xs mx-1">→</span>
-                <span className="font-medium">{fmt(a.endsAt)}</span>
+                <span className="font-medium">{fmt(a.endsAt, timezoneId)}</span>
                 {a.note && <p className="text-xs text-gray-500 mt-0.5">{a.note}</p>}
               </div>
             ))}
@@ -345,7 +348,7 @@ export default function PersonDetailPage() {
                 <span className="inline-block bg-purple-50 text-purple-700 text-xs px-2 py-0.5 rounded-full me-2">
                   {p.state === "at_home" ? t("atHome") : t("freeInBase")}
                 </span>
-                <span className="text-gray-500 text-xs">{fmt(p.startsAt)} → {fmt(p.endsAt)}</span>
+                <span className="text-gray-500 text-xs">{fmt(p.startsAt, timezoneId)} → {fmt(p.endsAt, timezoneId)}</span>
                 {p.isDerived && <span className="text-xs text-gray-400 ms-2">({t("derived")})</span>}
                 {p.note && <p className="text-xs text-gray-500 mt-0.5">{p.note}</p>}
               </div>

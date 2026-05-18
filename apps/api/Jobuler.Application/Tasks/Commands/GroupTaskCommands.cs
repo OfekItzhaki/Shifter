@@ -20,6 +20,8 @@ public record GroupTaskDto(
     int ShiftDurationMinutes,
     int RequiredHeadcount,
     string BurdenLevel,
+    string EffectiveBurdenLevel,
+    int SplitCount,
     bool AllowsDoubleShift,
     bool AllowsOverlap,
     string? DailyStartTime,
@@ -44,7 +46,8 @@ public record CreateGroupTaskCommand(
     bool AllowsOverlap,
     TimeOnly? DailyStartTime = null,
     TimeOnly? DailyEndTime = null,
-    List<QualificationRequirementDto>? QualificationRequirements = null) : IRequest<Guid>;
+    List<QualificationRequirementDto>? QualificationRequirements = null,
+    int SplitCount = 1) : IRequest<Guid>;
 
 public class CreateGroupTaskCommandValidator : AbstractValidator<CreateGroupTaskCommand>
 {
@@ -57,6 +60,7 @@ public class CreateGroupTaskCommandValidator : AbstractValidator<CreateGroupTask
         RuleFor(x => x.ShiftDurationMinutes).GreaterThanOrEqualTo(1).WithMessage("shift_duration_minutes must be at least 1 minute.");
         RuleFor(x => x.RequiredHeadcount).GreaterThanOrEqualTo(1).WithMessage("required_headcount must be at least 1.");
         RuleFor(x => x.BurdenLevel).NotEmpty().Must(b => ValidBurdenLevels.Contains(b.ToLowerInvariant())).WithMessage("burden_level must be one of: easy, normal, hard.");
+        RuleFor(x => x.SplitCount).GreaterThanOrEqualTo(1).WithMessage("split_count must be at least 1.");
 
         // Total qualification seats cannot exceed required headcount
         RuleFor(x => x)
@@ -98,7 +102,8 @@ public class CreateGroupTaskCommandHandler : IRequestHandler<CreateGroupTaskComm
             req.DailyStartTime, req.DailyEndTime,
             req.QualificationRequirements?
                 .Select(r => new QualificationRequirement(r.QualificationName, r.Count, r.Mandatory))
-                .ToList());
+                .ToList(),
+            req.SplitCount);
 
         _db.GroupTasks.Add(task);
         await _db.SaveChangesAsync(ct);
@@ -123,7 +128,8 @@ public record UpdateGroupTaskCommand(
     bool AllowsOverlap,
     TimeOnly? DailyStartTime = null,
     TimeOnly? DailyEndTime = null,
-    List<QualificationRequirementDto>? QualificationRequirements = null) : IRequest;
+    List<QualificationRequirementDto>? QualificationRequirements = null,
+    int SplitCount = 1) : IRequest;
 
 public class UpdateGroupTaskCommandValidator : AbstractValidator<UpdateGroupTaskCommand>
 {
@@ -136,6 +142,7 @@ public class UpdateGroupTaskCommandValidator : AbstractValidator<UpdateGroupTask
         RuleFor(x => x.ShiftDurationMinutes).GreaterThanOrEqualTo(1).WithMessage("shift_duration_minutes must be at least 1 minute.");
         RuleFor(x => x.RequiredHeadcount).GreaterThanOrEqualTo(1).WithMessage("required_headcount must be at least 1.");
         RuleFor(x => x.BurdenLevel).NotEmpty().Must(b => ValidBurdenLevels.Contains(b.ToLowerInvariant())).WithMessage("burden_level must be one of: easy, normal, hard.");
+        RuleFor(x => x.SplitCount).GreaterThanOrEqualTo(1).WithMessage("split_count must be at least 1.");
 
         // Total qualification seats cannot exceed required headcount
         RuleFor(x => x)
@@ -176,7 +183,8 @@ public class UpdateGroupTaskCommandHandler : IRequestHandler<UpdateGroupTaskComm
             req.DailyStartTime, req.DailyEndTime,
             req.QualificationRequirements?
                 .Select(r => new QualificationRequirement(r.QualificationName, r.Count, r.Mandatory))
-                .ToList());
+                .ToList(),
+            req.SplitCount);
 
         await _db.SaveChangesAsync(ct);
     }

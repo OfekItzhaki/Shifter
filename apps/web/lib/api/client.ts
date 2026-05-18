@@ -1,4 +1,5 @@
 import axios from "axios";
+import { useAuthStore } from "@/lib/store/authStore";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000";
 
@@ -78,6 +79,14 @@ apiClient.interceptors.response.use(
         localStorage.setItem("access_token", data.accessToken);
         localStorage.setItem("refresh_token", data.refreshToken);
         document.cookie = `access_token=${data.accessToken}; path=/; max-age=900; SameSite=Strict`;
+
+        // Update timezone from refresh response (handles DST changes between sessions)
+        if (data.timezoneId !== undefined || data.timezoneOffsetMinutes !== undefined) {
+          useAuthStore.getState().setTimezone(
+            data.timezoneId ?? null,
+            data.timezoneOffsetMinutes ?? 120
+          );
+        }
 
         isRefreshing = false;
         onTokenRefreshed(data.accessToken);

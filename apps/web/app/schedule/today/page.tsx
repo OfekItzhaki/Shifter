@@ -13,7 +13,7 @@ export default function TodayPage() {
   const t = useTranslations("schedule");
   const tNav = useTranslations("nav");
   const { currentSpaceId } = useSpaceStore();
-  const { displayName } = useAuthStore();
+  const { displayName, timezoneId } = useAuthStore();
   const [selectedGroupId, setSelectedGroupId] = useState("");
   const [todayLabel, setTodayLabel] = useState("");
 
@@ -23,8 +23,9 @@ export default function TodayPage() {
   useEffect(() => {
     setTodayLabel(new Date().toLocaleDateString(undefined, {
       weekday: "long", year: "numeric", month: "long", day: "numeric",
+      timeZone: timezoneId || "Asia/Jerusalem",
     }));
-  }, []);
+  }, [timezoneId]);
 
   // React Query — groups list
   const { data: groups = [], isLoading: groupsLoading } = useGroups(currentSpaceId);

@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
+import { useAuthStore } from "@/lib/store/authStore";
+import { formatLocalTime } from "@/lib/utils/formatTime";
 import Modal from "@/components/Modal";
 
 export interface OverridePerson {
@@ -28,13 +30,13 @@ export default function OverrideModal({
 }: OverrideModalProps) {
   const t = useTranslations("schedule.override");
   const tCommon = useTranslations("common");
+  const timezoneId = useAuthStore(s => s.timezoneId);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [showConfirmClear, setShowConfirmClear] = useState(false);
 
   // Parse time from slotKey for display
   const [startsAt, endsAt] = slotKey.split("|");
-  const fmt = (iso: string) =>
-    new Date(iso).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+  const fmt = (iso: string) => formatLocalTime(iso, timezoneId, "24h");
   const timeLabel = startsAt && endsAt ? `${fmt(startsAt)} – ${fmt(endsAt)}` : "";
 
   function togglePerson(personId: string) {

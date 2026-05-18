@@ -1,4 +1,5 @@
 using Jobuler.Application.Common;
+using Jobuler.Domain.People;
 using Jobuler.Domain.Scheduling;
 using Jobuler.Infrastructure.Persistence;
 using MediatR;
@@ -168,13 +169,12 @@ public class GetGroupLiveStatusQueryHandler
 
             if (presenceByPerson.TryGetValue(member.Id, out var pw))
             {
-                // Manual presence window overrides assignment-based status
-                status = pw.State.ToString().ToLower() switch
+                // Presence window overrides assignment-based status (priority hierarchy)
+                status = pw.State switch
                 {
-                    "blocked"      => "blocked",
-                    "at_home"      => "at_home",
-                    "on_mission"   => "on_mission",
-                    _              => "free_in_base"
+                    PresenceState.AtHome    => "at_home",
+                    PresenceState.OnMission => "on_mission",
+                    _                       => "free_in_base"
                 };
             }
             else if (activeAssignments.TryGetValue(member.Id, out var assignment))

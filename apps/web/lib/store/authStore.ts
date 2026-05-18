@@ -12,12 +12,16 @@ interface AuthState {
   isPlatformAdmin: boolean;
   // Admin mode is scoped to a specific group — null means not in admin mode
   adminGroupId: string | null;
+  // Timezone fields — resolved from user's Country/State at login/refresh
+  timezoneId: string | null;
+  timezoneOffsetMinutes: number;
 
   login: (identifier: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   enterAdminMode: (groupId: string) => void;
   exitAdminMode: () => void;
   setTimeFormat: (format: "24h" | "12h") => void;
+  setTimezone: (timezoneId: string | null, offsetMinutes: number) => void;
   // Convenience: is the user in admin mode for a specific group?
   isAdminForGroup: (groupId: string) => boolean;
   // Legacy: global admin mode check (true if admin for ANY group)
@@ -34,6 +38,8 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
       isPlatformAdmin: false,
       adminGroupId: null,
+      timezoneId: "Asia/Jerusalem",
+      timezoneOffsetMinutes: 120,
 
       get isAdminMode() { return get().adminGroupId !== null; },
 
@@ -53,6 +59,8 @@ export const useAuthStore = create<AuthState>()(
           isAuthenticated: true,
           isPlatformAdmin: result.isPlatformAdmin ?? false,
           adminGroupId: null,
+          timezoneId: result.timezoneId ?? "Asia/Jerusalem",
+          timezoneOffsetMinutes: result.timezoneOffsetMinutes ?? 120,
         });
       },
 
@@ -73,6 +81,10 @@ export const useAuthStore = create<AuthState>()(
       enterAdminMode: (groupId: string) => set({ adminGroupId: groupId }),
       exitAdminMode: () => set({ adminGroupId: null }),
       setTimeFormat: (format: "24h" | "12h") => set({ timeFormat: format }),
+      setTimezone: (timezoneId: string | null, offsetMinutes: number) => set({
+        timezoneId: timezoneId ?? "Asia/Jerusalem",
+        timezoneOffsetMinutes: offsetMinutes ?? 120,
+      }),
       isAdminForGroup: (groupId: string) => get().adminGroupId === groupId,
     }),
     {
@@ -84,6 +96,8 @@ export const useAuthStore = create<AuthState>()(
         timeFormat: state.timeFormat,
         isAuthenticated: state.isAuthenticated,
         isPlatformAdmin: state.isPlatformAdmin,
+        timezoneId: state.timezoneId,
+        timezoneOffsetMinutes: state.timezoneOffsetMinutes,
         // Don't persist adminGroupId — always reset on page load
       }),
     }

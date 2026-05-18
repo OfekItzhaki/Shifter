@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { apiClient } from "@/lib/api/client";
+import { useAuthStore } from "@/lib/store/authStore";
+import { formatLocalTime, formatLocalDate } from "@/lib/utils/formatTime";
 import type { AssignmentDto, DiffSummaryDto } from "@/lib/api/schedule";
 
 interface Props {
@@ -23,16 +25,17 @@ interface DiffEntry {
   previousPersonName?: string;
 }
 
-function formatTime(iso: string): string {
-  return new Date(iso).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit", hour12: false });
+function formatTime(iso: string, timezoneId: string | null): string {
+  return formatLocalTime(iso, timezoneId, "24h");
 }
 
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" });
+function formatDate(iso: string, timezoneId: string | null): string {
+  return formatLocalDate(iso, timezoneId);
 }
 
 export default function ScheduleDiffView({ spaceId, currentVersionId, baselineVersionId, onClose }: Props) {
   const t = useTranslations("schedule.diff");
+  const timezoneId = useAuthStore(s => s.timezoneId);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [diffEntries, setDiffEntries] = useState<DiffEntry[]>([]);
@@ -276,6 +279,7 @@ export default function ScheduleDiffView({ spaceId, currentVersionId, baselineVe
 
 function DiffEntryCard({ entry }: { entry: DiffEntry }) {
   const t = useTranslations("schedule.diff");
+  const timezoneId = useAuthStore(s => s.timezoneId);
 
   const isHomeLeave = entry.taskName === "home_leave";
   const displayTaskName = isHomeLeave ? "בבית" : entry.taskName;
@@ -308,7 +312,7 @@ function DiffEntryCard({ entry }: { entry: DiffEntry }) {
           )}
           <span className="text-xs text-slate-400">•</span>
           <span className="text-xs text-slate-500">
-            {formatDate(entry.slotStart)} {formatTime(entry.slotStart)}–{formatTime(entry.slotEnd)}
+            {formatDate(entry.slotStart, timezoneId)} {formatTime(entry.slotStart, timezoneId)}–{formatTime(entry.slotEnd, timezoneId)}
           </span>
         </div>
 

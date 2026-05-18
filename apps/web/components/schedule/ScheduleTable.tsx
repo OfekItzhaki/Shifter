@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
+import { useAuthStore } from "@/lib/store/authStore";
+import { formatLocalTime } from "@/lib/utils/formatTime";
 import { AssignmentDto } from "@/lib/api/schedule";
 
 /** Task type name used for home-leave assignments from the solver */
@@ -24,6 +26,7 @@ interface ScheduleTableProps {
 export default function ScheduleTable({ assignments, filterDate, title }: ScheduleTableProps) {
   const t = useTranslations("schedule");
   const tCommon = useTranslations("common");
+  const timezoneId = useAuthStore(s => s.timezoneId);
   const [search, setSearch] = useState("");
 
   const filtered = assignments
@@ -32,8 +35,7 @@ export default function ScheduleTable({ assignments, filterDate, title }: Schedu
       a.personName.toLowerCase().includes(search.toLowerCase()) ||
       a.taskTypeName.toLowerCase().includes(search.toLowerCase()));
 
-  const formatTime = (iso: string) =>
-    new Date(iso).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit", hour12: false });
+  const formatTime = (iso: string) => formatLocalTime(iso, timezoneId, "24h");
 
   return (
     <div className="space-y-3">

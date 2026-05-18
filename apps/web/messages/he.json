@@ -73,6 +73,7 @@
     "myMissions": "המשימות שלי",
     "myProfile": "הפרופיל שלי",
     "myGroups": "הקבוצות שלי",
+    "settings": "הגדרות",
     "changelog": "מה חדש",
     "stats": "סטטיסטיקות",
     "admin": "ניהול",
@@ -279,7 +280,8 @@
       "taskNamePlaceholder": "שם משימה",
       "editTask": "ערוך משימה",
       "newTaskTitle": "משימה חדשה",
-      "cancel": "ביטול"
+      "cancel": "ביטול",
+      "effectiveBurden": "בפועל: {level}"
     },
     "alerts_tab": {
       "newAlert": "+ צור התראה חדשה",
@@ -484,6 +486,11 @@
   },
   "profile": {
     "title": "הפרופיל שלי",
+    "loadError": "לא הצלחנו לטעון את הפרופיל",
+    "loadErrorDesc": "משהו השתבש. נסה לרענן את הדף.",
+    "saveError": "לא הצלחנו לשמור את השינויים",
+    "deleteError": "לא הצלחנו למחוק את החשבון",
+    "retry": "נסה שוב",
     "memberSince": "חבר מאז",
     "personalInfo": "פרטים אישיים",
     "contactInfo": "פרטי קשר",
@@ -541,6 +548,35 @@
         "schedule_published": "כשסידור חדש מפורסם לקבוצה",
         "group_alert": "כשמנהל הקבוצה שולח התראה"
       }
+    }
+  },
+  "userSettings": {
+    "title": "הגדרות",
+    "subtitle": "ניהול ההעדפות שלך",
+    "location": {
+      "title": "מיקום",
+      "description": "הגדר מדינה ואזור כדי לקבוע את אזור הזמן שלך אוטומטית",
+      "country": "מדינה",
+      "countryPlaceholder": "בחר מדינה...",
+      "state": "מחוז / אזור",
+      "statePlaceholder": "בחר מחוז...",
+      "timezone": "אזור זמן",
+      "timezoneResolved": "אזור הזמן שלך: {timezone}",
+      "save": "שמור מיקום",
+      "saving": "שומר...",
+      "saved": "המיקום נשמר"
+    },
+    "timeFormat": {
+      "title": "פורמט שעה",
+      "description": "בחר כיצד שעות מוצגות באפליקציה"
+    },
+    "notifications": {
+      "title": "העדפות התראות",
+      "description": "בחר אילו התראות תרצה לקבל"
+    },
+    "push": {
+      "title": "התראות דחיפה",
+      "description": "ניהול הגדרות התראות דחיפה בדפדפן"
     }
   },
   "admin": {

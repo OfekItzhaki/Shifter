@@ -21,6 +21,7 @@ const DEFAULT_TASK_FORM: TaskForm = {
   startsAt: "",
   endsAt: "",
   shiftDurationMinutes: 60,
+  splitCount: 1,
   requiredHeadcount: 1,
   burdenLevel: "neutral",
   allowsDoubleShift: false,

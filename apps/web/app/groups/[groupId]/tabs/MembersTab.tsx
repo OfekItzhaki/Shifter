@@ -7,6 +7,8 @@ import ImageUpload from "@/components/ImageUpload";
 import type { GroupMemberDto, GroupRoleDto } from "@/lib/api/groups";
 import { apiClient } from "@/lib/api/client";
 import { useSpaceStore } from "@/lib/store/spaceStore";
+import { useAuthStore } from "@/lib/store/authStore";
+import { formatLocalDate } from "@/lib/utils/formatTime";
 import { getReasons, type UnavailabilityReasonDto } from "@/lib/api/unavailabilityReasons";
 
 interface Props {
@@ -35,6 +37,7 @@ export default function MembersTab({
 }: Props) {
   const t = useTranslations("groups.members_tab");
   const tCommon = useTranslations("common");
+  const timezoneId = useAuthStore(s => s.timezoneId);
   const [confirmRemove, setConfirmRemove] = useState<string | null>(null);
 
   const filtered = members.filter(m =>
@@ -174,6 +177,7 @@ export function MemberProfileModal({ member, isAdmin, editForm, saving, error, o
   const t = useTranslations("groups.members_tab");
   const tCommon = useTranslations("common");
   const tProfile = useTranslations("profile");
+  const timezoneId = useAuthStore(s => s.timezoneId);
   const [availTab, setAvailTab] = useState<"info" | "availability">("info");
   const [presenceWindows, setPresenceWindows] = useState<{ id: string; state: string; startsAt: string; endsAt: string; note: string | null; reasonId: string | null; reasonDisplayName: string | null }[]>([]);
   const [presenceLoading, setPresenceLoading] = useState(false);
@@ -326,7 +330,7 @@ export function MemberProfileModal({ member, isAdmin, editForm, saving, error, o
                 <div key={w.id ?? i} className="flex items-center justify-between bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm">
                   <div>
                     <span className="font-medium text-slate-700">
-                      {new Date(w.startsAt).toLocaleDateString(undefined)} – {new Date(w.endsAt).toLocaleDateString(undefined)}
+                      {formatLocalDate(w.startsAt, timezoneId)} – {formatLocalDate(w.endsAt, timezoneId)}
                     </span>
                     {w.reasonDisplayName && <span className="text-slate-500 mr-2 text-xs"> · {w.reasonDisplayName}</span>}
                     {!w.reasonDisplayName && w.note && <span className="text-slate-400 mr-2 text-xs"> · {w.note}</span>}

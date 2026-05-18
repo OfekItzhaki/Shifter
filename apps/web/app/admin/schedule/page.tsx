@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import AppShell from "@/components/shell/AppShell";
+import { useAuthStore } from "@/lib/store/authStore";
+import { formatLocalTime, formatLocalDate } from "@/lib/utils/formatTime";
 import ScheduleTable2D from "@/components/schedule/ScheduleTable2D";
 import OverrideModal, { OverridePerson } from "@/components/schedule/OverrideModal";
 import DiffSummaryCard from "@/components/schedule/DiffSummaryCard";
@@ -14,7 +16,6 @@ import {
 } from "@/lib/api/schedule";
 import { getGroupMembers } from "@/lib/api/groups";
 import { useSpaceStore } from "@/lib/store/spaceStore";
-import { useAuthStore } from "@/lib/store/authStore";
 import { clsx } from "clsx";
 
 // ── StatusBadge ──────────────────────────────────────────────────────────────
@@ -50,24 +51,19 @@ interface VersionListSidebarProps {
   onSelect: (v: ScheduleVersionDto) => void;
 }
 
-function formatVersionTime(dateStr: string | null | undefined): string {
+function formatVersionTime(dateStr: string | null | undefined, timezoneId: string | null): string {
   if (!dateStr) return "";
-  const d = new Date(dateStr);
-  return d.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+  return formatLocalTime(dateStr, timezoneId, "24h");
 }
 
-function formatVersionDay(dateStr: string | null | undefined): string {
+function formatVersionDay(dateStr: string | null | undefined, timezoneId: string | null): string {
   if (!dateStr) return "";
-  const d = new Date(dateStr);
-  const today = new Date();
-  const yesterday = new Date(Date.now() - 86400000);
-  if (d.toDateString() === today.toDateString()) return "Today";
-  if (d.toDateString() === yesterday.toDateString()) return "Yesterday";
-  return d.toLocaleDateString(undefined, { day: "numeric", month: "short" });
+  return formatLocalDate(dateStr, timezoneId);
 }
 
 function VersionListSidebar({ versions, selectedId, loading, onSelect }: VersionListSidebarProps) {
   const t = useTranslations("admin");
+  const timezoneId = useAuthStore(s => s.timezoneId);
   const [showHistory, setShowHistory] = useState(false);
 
   // Separate active (draft/published) from history (archived/rolled_back/discarded)
@@ -80,7 +76,7 @@ function VersionListSidebar({ versions, selectedId, loading, onSelect }: Version
 
   // Group history by publish day
   const historyByDay = historyVersions.reduce<Record<string, ScheduleVersionDto[]>>((acc, v) => {
-    const dayKey = formatVersionDay(v.publishedAt ?? v.createdAt);
+    const dayKey = formatVersionDay(v.publishedAt ?? v.createdAt, timezoneId);
     if (!acc[dayKey]) acc[dayKey] = [];
     acc[dayKey].push(v);
     return acc;
@@ -115,7 +111,7 @@ function VersionListSidebar({ versions, selectedId, loading, onSelect }: Version
             <div className="flex items-center justify-between">
               <span className="font-semibold text-slate-900">v{v.versionNumber}</span>
               {v.publishedAt && (
-                <span className="text-xs text-slate-400">{formatVersionTime(v.publishedAt)}</span>
+                <span className="text-xs text-slate-400">{formatVersionTime(v.publishedAt, timezoneId)}</span>
               )}
             </div>
             <div className="mt-1.5">
@@ -161,7 +157,7 @@ function VersionListSidebar({ versions, selectedId, loading, onSelect }: Version
                         <div className="flex items-center justify-between">
                           <span className="font-medium text-slate-700">v{v.versionNumber}</span>
                           {(v.publishedAt ?? v.createdAt) && (
-                            <span className="text-slate-400">{formatVersionTime(v.publishedAt ?? v.createdAt)}</span>
+                            <span className="text-slate-400">{formatVersionTime(v.publishedAt ?? v.createdAt, timezoneId)}</span>
                           )}
                         </div>
                         <div className="mt-1">
@@ -245,6 +241,7 @@ interface VersionDetailPanelProps {
 
 function VersionDetailPanel({ selected, actionLoading, spaceId, onPublish, onRollback, onDiscard, onCellClick }: VersionDetailPanelProps) {
   const t = useTranslations("admin");
+  const timezoneId = useAuthStore(s => s.timezoneId);
   const today = new Date().toISOString().split("T")[0];
   const [selectedDate, setSelectedDate] = useState(today);
 
@@ -266,7 +263,7 @@ function VersionDetailPanel({ selected, actionLoading, spaceId, onPublish, onRol
     const tomorrow = new Date(Date.now() + 86400000).toISOString().split("T")[0];
     if (dateStr === yesterday) return t("yesterday");
     if (dateStr === tomorrow) return t("tomorrow");
-    return new Date(dateStr + "T00:00:00").toLocaleDateString(undefined, { day: "numeric", month: "short" });
+    return formatLocalDate(dateStr + "T12:00:00Z", timezoneId);
   }
 
   return (

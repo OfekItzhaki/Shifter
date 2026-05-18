@@ -1,6 +1,8 @@
 "use client";
 
 import { useTranslations } from "next-intl";
+import { useAuthStore } from "@/lib/store/authStore";
+import { formatLocalTime } from "@/lib/utils/formatTime";
 import type { ScheduleAssignment } from "@/app/groups/[groupId]/types";
 
 /** Task type name used for home-leave assignments from the solver */
@@ -39,8 +41,8 @@ function overlapsDate(a: TableAssignment, dateStr: string): boolean {
   return slotStart <= dayEnd && slotEnd > dayStart;
 }
 
-function formatTime(iso: string): string {
-  return new Date(iso).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit", hour12: false });
+function formatTime(iso: string, timezoneId: string | null): string {
+  return formatLocalTime(iso, timezoneId, "24h");
 }
 
 export default function ScheduleTable2D({
@@ -51,6 +53,7 @@ export default function ScheduleTable2D({
   onCellClick,
 }: ScheduleTable2DProps) {
   const t = useTranslations("schedule");
+  const timezoneId = useAuthStore(s => s.timezoneId);
   // Filter to the requested date if provided
   const visible = filterDate
     ? assignments.filter(a => overlapsDate(a, filterDate))
@@ -122,9 +125,9 @@ export default function ScheduleTable2D({
               <tr key={key} className="hover:bg-slate-50/40 transition-colors">
                 {/* Time slot row header */}
                 <td className="px-2.5 sm:px-4 py-2.5 sm:py-3 text-xs tabular-nums text-slate-500 whitespace-nowrap sticky right-0 bg-white z-10 border-r border-slate-100">
-                  {formatTime(startsAt)}
+                  {formatTime(startsAt, timezoneId)}
                   <span className="mx-1 text-slate-300">–</span>
-                  {formatTime(endsAt)}
+                  {formatTime(endsAt, timezoneId)}
                 </td>
                 {taskNames.map(task => {
                   const entries = taskCell.get(task) ?? [];

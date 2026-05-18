@@ -15,4 +15,6 @@ public record LoginResult(
     Guid UserId,
     string DisplayName,
     string PreferredLocale,
-    bool IsPlatformAdmin);
+    bool IsPlatformAdmin,
+    string TimezoneId,
+    int TimezoneOffsetMinutes);

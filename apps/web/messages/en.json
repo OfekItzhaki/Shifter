@@ -73,6 +73,7 @@
     "myMissions": "My Missions",
     "myProfile": "My Profile",
     "myGroups": "My Groups",
+    "settings": "Settings",
     "changelog": "What's New",
     "stats": "Statistics",
     "admin": "Admin",
@@ -276,7 +277,8 @@
       "taskNamePlaceholder": "Task name",
       "editTask": "Edit Task",
       "newTaskTitle": "New Task",
-      "cancel": "Cancel"
+      "cancel": "Cancel",
+      "effectiveBurden": "Effective: {level}"
     },
     "alerts_tab": {
       "newAlert": "+ Create New Alert",
@@ -481,6 +483,11 @@
   },
   "profile": {
     "title": "My Profile",
+    "loadError": "Couldn't load your profile",
+    "loadErrorDesc": "Something went wrong. Try refreshing the page.",
+    "saveError": "Couldn't save changes",
+    "deleteError": "Couldn't delete account",
+    "retry": "Try again",
     "memberSince": "Member since",
     "personalInfo": "Personal Info",
     "contactInfo": "Contact Info",
@@ -538,6 +545,35 @@
         "schedule_published": "When a new schedule is published to the group",
         "group_alert": "When a group admin sends an alert"
       }
+    }
+  },
+  "userSettings": {
+    "title": "Settings",
+    "subtitle": "Manage your preferences",
+    "location": {
+      "title": "Location",
+      "description": "Set your country and region to determine your timezone automatically",
+      "country": "Country",
+      "countryPlaceholder": "Select country...",
+      "state": "State / Region",
+      "statePlaceholder": "Select state...",
+      "timezone": "Timezone",
+      "timezoneResolved": "Your timezone: {timezone}",
+      "save": "Save Location",
+      "saving": "Saving...",
+      "saved": "Location saved"
+    },
+    "timeFormat": {
+      "title": "Time Format",
+      "description": "Choose how times are displayed throughout the app"
+    },
+    "notifications": {
+      "title": "Notification Preferences",
+      "description": "Choose which notifications you want to receive"
+    },
+    "push": {
+      "title": "Push Notifications",
+      "description": "Manage browser push notification settings"
     }
   },
   "admin": {

@@ -2,6 +2,8 @@
 
 import { useState, useMemo, useCallback } from "react";
 import { useTranslations } from "next-intl";
+import { useAuthStore } from "@/lib/store/authStore";
+import { formatLocalDateTime } from "@/lib/utils/formatTime";
 import { useSandboxStore, TaskSlotDto, TaskOverrideMap, SolverInputDto } from "@/lib/store/sandboxStore";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -84,6 +86,7 @@ interface SandboxTasksTabProps {
 
 export default function SandboxTasksTab({ taskOverrides, baseline }: SandboxTasksTabProps) {
   const t = useTranslations("sandbox");
+  const timezoneId = useAuthStore(s => s.timezoneId);
   const addTask = useSandboxStore((s) => s.addTask);
   const editTask = useSandboxStore((s) => s.editTask);
   const removeTask = useSandboxStore((s) => s.removeTask);
@@ -476,9 +479,9 @@ export default function SandboxTasksTab({ taskOverrides, baseline }: SandboxTask
               </div>
               <div className="flex items-center gap-3 mt-0.5">
                 <span className="text-[11px] text-slate-500 dark:text-slate-400">
-                  {new Date(task.startsAt).toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+                  {formatLocalDateTime(task.startsAt, timezoneId)}
                   {" – "}
-                  {new Date(task.endsAt).toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+                  {formatLocalDateTime(task.endsAt, timezoneId)}
                 </span>
                 <span className="text-[11px] text-slate-400 dark:text-slate-500">
                   👥 {task.requiredHeadcount}

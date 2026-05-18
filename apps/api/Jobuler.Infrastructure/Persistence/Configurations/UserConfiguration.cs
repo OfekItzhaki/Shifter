@@ -24,6 +24,8 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(u => u.Birthday).HasColumnName("birthday");
         builder.Property(u => u.IsPlatformAdmin).HasColumnName("is_platform_admin");
         builder.Property(u => u.EmailVerified).HasColumnName("email_verified").HasDefaultValue(false);
+        builder.Property(u => u.CountryCode).HasColumnName("country_code").HasMaxLength(2).IsRequired(false);
+        builder.Property(u => u.StateCode).HasColumnName("state_code").HasMaxLength(6).IsRequired(false);
         builder.HasIndex(u => u.Email).IsUnique();
     }
 }

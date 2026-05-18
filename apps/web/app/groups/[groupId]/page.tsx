@@ -24,10 +24,12 @@ const StatsTab = lazy(() => import("./tabs/StatsTab"));
 const QualificationsTab = lazy(() => import("./tabs/QualificationsTab"));
 const RolesTab = lazy(() => import("./tabs/RolesTab"));
 const LiveStatusPanel = lazy(() => import("@/components/schedule/LiveStatusPanel"));
+const HomeLeaveScheduleTable = lazy(() => import("@/components/home-leave/HomeLeaveScheduleTable"));
 import { ActiveTab, ADMIN_ONLY_TABS, ScheduleAssignment } from "./types";
 import { useSpaceStore } from "@/lib/store/spaceStore";
 import { useAuthStore } from "@/lib/store/authStore";
 import { useAdminSessionStore } from "@/lib/store/adminSessionStore";
+import { formatLocalDateTime } from "@/lib/utils/formatTime";
 import { isWebAuthnSupported, listCredentials } from "@/lib/webauthn";
 import { useRefetchNotifications } from "@/lib/query/hooks/useNotifications";
 import {
@@ -80,7 +82,7 @@ export default function GroupDetailPage() {
   const router = useRouter();
   const groupId = params?.groupId as string;
   const { currentSpaceId } = useSpaceStore();
-  const { userId, displayName, isAdminForGroup, adminGroupId, enterAdminMode, exitAdminMode } = useAuthStore();
+  const { userId, displayName, isAdminForGroup, adminGroupId, enterAdminMode, exitAdminMode, timezoneId } = useAuthStore();
   const refetchNotifications = useRefetchNotifications(currentSpaceId);
   const tGroups = useTranslations("groups");
   const tErrors = useTranslations("errors");
@@ -301,7 +303,7 @@ export default function GroupDetailPage() {
               if (Array.isArray(cachedAssignments)) {
                 setScheduleData(cachedAssignments);
                 const cachedDate = cachedAt
-                  ? new Date(cachedAt).toLocaleDateString(undefined, { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" })
+                  ? formatLocalDateTime(cachedAt, timezoneId)
                   : "";
                 setScheduleIsOffline(true);
                 setScheduleError(tErrors("offlineWithCache", { date: cachedDate }));
@@ -337,7 +339,7 @@ export default function GroupDetailPage() {
           if (Array.isArray(cachedAssignments)) {
             setScheduleData(cachedAssignments);
             const cachedDate = cachedAt
-              ? new Date(cachedAt).toLocaleDateString(undefined, { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" })
+              ? formatLocalDateTime(cachedAt, timezoneId)
               : "";
             setScheduleIsOffline(true);
             setScheduleError(tErrors("offlineWithCache", { date: cachedDate }));
@@ -777,6 +779,7 @@ export default function GroupDetailPage() {
         startsAt,
         endsAt: endsAtRaw,
         shiftDurationMinutes: Math.max(1, taskForm.shiftDurationMinutes),
+        splitCount: taskForm.splitCount,
         requiredHeadcount: taskForm.requiredHeadcount,
         burdenLevel: taskForm.burdenLevel,
         allowsDoubleShift: taskForm.allowsDoubleShift,
@@ -1261,7 +1264,6 @@ export default function GroupDetailPage() {
               currentUserName={displayName ?? undefined}
               groupName={group?.name}
               spaceId={currentSpaceId ?? undefined}
-              isClosedBase={isClosedBase}
               allowMembersViewHistory={group?.allowMembersViewHistory ?? true}
               onOpenDraftModal={() => setShowDraftModal(true)}
               onPublish={handlePublish}
@@ -1374,7 +1376,7 @@ export default function GroupDetailPage() {
               onCloseForm={() => { setShowTaskForm(false); setEditingTask(null); }}
               onFormChange={setTaskForm}
               onFormSubmit={handleTaskSubmit}
-              onEditTask={t => { setEditingTask(t); setTaskForm({ name: t.name, startsAt: t.startsAt?.slice(0, 16) ?? "", endsAt: t.endsAt?.slice(0, 16) ?? "", shiftDurationMinutes: t.shiftDurationMinutes, requiredHeadcount: t.requiredHeadcount, burdenLevel: t.burdenLevel, allowsDoubleShift: t.allowsDoubleShift, allowsOverlap: t.allowsOverlap, concurrentTaskIds: [], dailyStartTime: t.dailyStartTime ?? "", dailyEndTime: t.dailyEndTime ?? "", qualificationRequirements: t.qualificationRequirements ?? [] }); setShowTaskForm(true); }}
+              onEditTask={t => { setEditingTask(t); setTaskForm({ name: t.name, startsAt: t.startsAt?.slice(0, 16) ?? "", endsAt: t.endsAt?.slice(0, 16) ?? "", shiftDurationMinutes: t.shiftDurationMinutes, splitCount: t.splitCount ?? 1, requiredHeadcount: t.requiredHeadcount, burdenLevel: t.burdenLevel, allowsDoubleShift: t.allowsDoubleShift, allowsOverlap: t.allowsOverlap, concurrentTaskIds: [], dailyStartTime: t.dailyStartTime ?? "", dailyEndTime: t.dailyEndTime ?? "", qualificationRequirements: t.qualificationRequirements ?? [] }); setShowTaskForm(true); }}
               onDeleteTask={handleDeleteTask}
             />
           )}
@@ -1531,7 +1533,12 @@ export default function GroupDetailPage() {
           )}
 
           {activeTab === "live-status" && currentSpaceId && (
-            <LiveStatusPanel spaceId={currentSpaceId} groupId={groupId} />
+            <>
+              <LiveStatusPanel spaceId={currentSpaceId} groupId={groupId} />
+              {isClosedBase && (
+                <HomeLeaveScheduleTable spaceId={currentSpaceId} groupId={groupId} />
+              )}
+            </>
           )}
         </div>
         </Suspense>

@@ -3,6 +3,8 @@
 //
 // Run with:   dotnet test --filter "SolverWorkerPipeline" --logger "console;verbosity=detailed"
 // Requires:   Python solver running on localhost:8000
+//
+// These tests are automatically SKIPPED when the solver is not reachable.
 
 using FluentAssertions;
 using Jobuler.Application.Notifications;
@@ -29,12 +31,38 @@ namespace Jobuler.Tests.Integration;
 /// Full pipeline tests: seeds an in-memory DB with real domain entities,
 /// runs the SolverPayloadNormalizer to build the input, calls the live solver,
 /// and verifies the worker correctly creates/skips versions.
+/// Automatically skipped when the solver is not running on localhost:8000.
 /// </summary>
-public class SolverWorkerPipelineTests
+public class SolverWorkerPipelineTests : IAsyncLifetime
 {
     private readonly ITestOutputHelper _out;
+    private bool _solverAvailable;
 
     public SolverWorkerPipelineTests(ITestOutputHelper output) => _out = output;
+
+    public async Task InitializeAsync()
+    {
+        try
+        {
+            using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(5) };
+            var response = await http.GetAsync("http://localhost:8000/health");
+            _solverAvailable = response.IsSuccessStatusCode;
+        }
+        catch
+        {
+            _solverAvailable = false;
+        }
+
+        if (!_solverAvailable)
+            _out.WriteLine("⚠ Solver not reachable at localhost:8000 — tests will be skipped.");
+    }
+
+    public Task DisposeAsync() => Task.CompletedTask;
+
+    private void SkipIfSolverUnavailable()
+    {
+        Skip.If(!_solverAvailable, "Solver is not running on localhost:8000. Start it to run these tests.");
+    }
 
     private static AppDbContext CreateDb()
     {
@@ -51,9 +79,10 @@ public class SolverWorkerPipelineTests
     // Seeds: 3 people, 1 group task (8h shift, headcount=1)
     // Expects: run=Completed, version=Draft, assignments.Count >= 1
 
-    [Fact]
+    [SkippableFact]
     public async Task Pipeline_FeasibleScenario_CreatesVersionWithAssignments()
     {
+        SkipIfSolverUnavailable();
         var db = CreateDb();
         var spaceId = Guid.NewGuid();
         var userId  = Guid.NewGuid();
@@ -125,9 +154,10 @@ public class SolverWorkerPipelineTests
     // ── Test 2: Infeasible scenario — 0 people, task exists ──────────────────
     // Expects: solver returns feasible=false OR assignments=0, run=Failed, NO version created
 
-    [Fact]
+    [SkippableFact]
     public async Task Pipeline_NoPeople_SolverReturnsFeasibleFalseOrEmpty_NoVersionCreated()
     {
+        SkipIfSolverUnavailable();
         var db = CreateDb();
         var spaceId = Guid.NewGuid();
         var userId  = Guid.NewGuid();
@@ -177,9 +207,10 @@ public class SolverWorkerPipelineTests
     // Expects: feasible=true (partial), assignments=1, uncovered slot flagged
     // This is the KEY regression test — previously this returned INFEASIBLE (empty draft)
 
-    [Fact]
+    [SkippableFact]
     public async Task Pipeline_PartialCoverage_ReturnsFeasibleWithPartialAssignments()
     {
+        SkipIfSolverUnavailable();
         var db = CreateDb();
         var spaceId = Guid.NewGuid();
         var userId  = Guid.NewGuid();
@@ -235,9 +266,10 @@ public class SolverWorkerPipelineTests
     // Seeds: 2 people, person1 blocked for the slot window, person2 free
     // Expects: only person2 assigned
 
-    [Fact]
+    [SkippableFact]
     public async Task Pipeline_BlockedPerson_NotAssigned_OtherPersonCoversSlot()
     {
+        SkipIfSolverUnavailable();
         var db = CreateDb();
         var spaceId = Guid.NewGuid();
         var userId  = Guid.NewGuid();
@@ -306,7 +338,7 @@ public class SolverWorkerPipelineTests
 
     // ── Test 5: Normalizer correctly maps PresenceState.Blocked to "blocked" ──
 
-    [Fact]
+    [SkippableFact]
     public async Task Normalizer_BlockedPresenceWindow_MappedToCorrectStateString()
     {
         var db = CreateDb();

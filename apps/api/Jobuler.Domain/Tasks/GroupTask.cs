@@ -46,6 +46,12 @@ public class GroupTask : AuditableEntity, ITenantScoped
     public List<string> RequiredQualificationNames =>
         QualificationRequirements.Where(r => r.Mandatory).Select(r => r.QualificationName).ToList();
 
+    /// <summary>
+    /// Number of sub-shifts the task is divided into.
+    /// A value of 1 means no split. Used for burden scaling computation.
+    /// </summary>
+    public int SplitCount { get; private set; } = 1;
+
     public bool IsActive { get; private set; } = true;
     public Guid? CreatedByUserId { get; private set; }
     public Guid? UpdatedByUserId { get; private set; }
@@ -66,8 +72,13 @@ public class GroupTask : AuditableEntity, ITenantScoped
         Guid createdByUserId,
         TimeOnly? dailyStartTime = null,
         TimeOnly? dailyEndTime = null,
-        List<QualificationRequirement>? qualificationRequirements = null) =>
-        new()
+        List<QualificationRequirement>? qualificationRequirements = null,
+        int splitCount = 1)
+    {
+        if (splitCount < 1)
+            throw new ArgumentOutOfRangeException(nameof(splitCount), "Split count must be at least 1.");
+
+        return new()
         {
             SpaceId = spaceId,
             GroupId = groupId,
@@ -82,8 +93,10 @@ public class GroupTask : AuditableEntity, ITenantScoped
             DailyStartTime = dailyStartTime,
             DailyEndTime = dailyEndTime,
             QualificationRequirements = qualificationRequirements ?? new(),
+            SplitCount = splitCount,
             CreatedByUserId = createdByUserId
         };
+    }
 
     public void Update(
         string name,
@@ -97,8 +110,12 @@ public class GroupTask : AuditableEntity, ITenantScoped
         Guid updatedByUserId,
         TimeOnly? dailyStartTime = null,
         TimeOnly? dailyEndTime = null,
-        List<QualificationRequirement>? qualificationRequirements = null)
+        List<QualificationRequirement>? qualificationRequirements = null,
+        int splitCount = 1)
     {
+        if (splitCount < 1)
+            throw new ArgumentOutOfRangeException(nameof(splitCount), "Split count must be at least 1.");
+
         Name = name.Trim();
         StartsAt = startsAt;
         EndsAt = endsAt;
@@ -110,6 +127,7 @@ public class GroupTask : AuditableEntity, ITenantScoped
         DailyStartTime = dailyStartTime;
         DailyEndTime = dailyEndTime;
         QualificationRequirements = qualificationRequirements ?? new();
+        SplitCount = splitCount;
         UpdatedByUserId = updatedByUserId;
         Touch();
     }

@@ -26,7 +26,7 @@ export default function LandingPage() {
       headers: { Authorization: `Bearer ${token}` },
       signal: controller.signal,
     }).then(res => {
-      if (res.ok) router.replace("/schedule/today");
+      if (res.ok) router.replace("/schedule/my-missions");
       else { localStorage.removeItem("access_token"); localStorage.removeItem("refresh_token"); document.cookie = "access_token=; path=/; max-age=0"; setChecking(false); }
     }).catch(() => { setChecking(false); });
     return () => controller.abort();

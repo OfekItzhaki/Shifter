@@ -14,6 +14,8 @@ public class User : AuditableEntity
     public string? PhoneNumber { get; private set; }
     public bool IsPlatformAdmin { get; private set; }
     public bool EmailVerified { get; private set; } = false;
+    public string? CountryCode { get; private set; }  // ISO 3166-1 alpha-2
+    public string? StateCode { get; private set; }    // ISO 3166-2 subdivision
 
     // EF Core constructor
     private User() { }
@@ -66,6 +68,13 @@ public class User : AuditableEntity
     public void MarkEmailVerified()
     {
         EmailVerified = true;
+        Touch();
+    }
+
+    public void UpdateLocation(string? countryCode, string? stateCode)
+    {
+        CountryCode = countryCode?.ToUpperInvariant().Trim();
+        StateCode = stateCode?.ToUpperInvariant().Trim();
         Touch();
     }
 }

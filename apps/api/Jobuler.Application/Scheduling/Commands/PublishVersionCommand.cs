@@ -330,24 +330,64 @@ public class PublishVersionCommandHandler : IRequestHandler<PublishVersionComman
         if (validEntries.Count == 0)
             return;
 
-        // Check for overlaps with existing on_mission presence windows
-        // Load all on_mission windows for the affected people within the time range
         var affectedPersonIds = validEntries.Select(e => e.PersonId).Distinct().ToList();
+
+        // ── Protection: only remove stale DERIVED AtHome windows for people who
+        // appear in this version's home_leave_assignments. Manual windows (IsDerived = false)
+        // are NEVER touched. Windows for people NOT in affectedPersonIds are NEVER touched.
+        // Scoping per-person ensures we only remove derived windows that overlap with
+        // that specific person's new entries — not a global time range across all people.
+        // We never modify StartsAt or EndsAt of any existing window.
+        var staleAtHomeWindows = new List<PresenceWindow>();
+        foreach (var personId in affectedPersonIds)
+        {
+            var personEntries = validEntries.Where(e => e.PersonId == personId).ToList();
+            var personMinStart = personEntries.Min(e => e.StartsAt);
+            var personMaxEnd = personEntries.Max(e => e.EndsAt);
+
+            var personStaleWindows = await _db.PresenceWindows
+                .Where(pw => pw.SpaceId == spaceId
+                    && pw.State == PresenceState.AtHome
+                    && pw.IsDerived == true
+                    && pw.PersonId == personId
+                    && pw.StartsAt < personMaxEnd
+                    && pw.EndsAt > personMinStart)
+                .ToListAsync(ct);
+
+            staleAtHomeWindows.AddRange(personStaleWindows);
+        }
+
+        if (staleAtHomeWindows.Count > 0)
+        {
+            _db.PresenceWindows.RemoveRange(staleAtHomeWindows);
+            _logger.LogInformation(
+                "Removed {Count} stale derived AtHome windows for version {VersionId}",
+                staleAtHomeWindows.Count, version.Id);
+        }
+
         var minStart = validEntries.Min(e => e.StartsAt);
         var maxEnd = validEntries.Max(e => e.EndsAt);
+
+        // Check for overlaps with existing on_mission presence windows.
+        // Only check MANUAL (non-derived) on_mission windows — derived ones from
+        // previous schedule versions should not block new home-leave assignments,
+        // since the new schedule supersedes the old one.
 
         var existingOnMissionWindows = await _db.PresenceWindows.AsNoTracking()
             .Where(pw => pw.SpaceId == spaceId
                 && pw.State == PresenceState.OnMission
+                && !pw.IsDerived
                 && affectedPersonIds.Contains(pw.PersonId)
                 && pw.StartsAt < maxEnd
                 && pw.EndsAt > minStart)
             .ToListAsync(ct);
 
-        // Also check for existing AtHome windows to prevent duplicates
+        // Also check for existing MANUAL AtHome windows to prevent duplicates
+        // (derived ones were already cleaned up above)
         var existingAtHomeWindows = await _db.PresenceWindows.AsNoTracking()
             .Where(pw => pw.SpaceId == spaceId
                 && pw.State == PresenceState.AtHome
+                && !pw.IsDerived
                 && affectedPersonIds.Contains(pw.PersonId)
                 && pw.StartsAt < maxEnd
                 && pw.EndsAt > minStart)

@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
+import { useAuthStore } from "@/lib/store/authStore";
+import { formatLocalDate } from "@/lib/utils/formatTime";
 import { PersonBurdenStats } from "@/lib/api/schedule";
 
 type SortKey = keyof Pick<PersonBurdenStats,
@@ -10,12 +12,6 @@ type SortKey = keyof Pick<PersonBurdenStats,
   "burdenBalance" | "lastAssignmentDate">;
 
 interface Props { people: PersonBurdenStats[]; }
-
-function formatDate(d: string | null): string {
-  if (!d) return "—";
-  try { return new Date(d).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" }); }
-  catch { return d; }
-}
 
 const th: React.CSSProperties = {
   padding: "10px 12px", fontSize: "0.75rem", fontWeight: 700,
@@ -29,8 +25,14 @@ const td: React.CSSProperties = {
 
 export default function StatsPeopleTable({ people }: Props) {
   const t = useTranslations("groups.stats_tab.table");
+  const timezoneId = useAuthStore(s => s.timezoneId);
   const [sortKey, setSortKey] = useState<SortKey>("burdenScoreAllTime");
   const [sortAsc, setSortAsc] = useState(false);
+
+  function formatDate(d: string | null): string {
+    if (!d) return "—";
+    return formatLocalDate(d, timezoneId);
+  }
 
   function handleSort(key: SortKey) {
     if (sortKey === key) setSortAsc(a => !a);

@@ -94,6 +94,7 @@ public class GroupTaskConfiguration : IEntityTypeConfiguration<GroupTask>
         builder.Property(t => t.StartsAt).HasColumnName("starts_at");
         builder.Property(t => t.EndsAt).HasColumnName("ends_at");
         builder.Property(t => t.ShiftDurationMinutes).HasColumnName("shift_duration_minutes");
+        builder.Property(t => t.SplitCount).HasColumnName("split_count");
         builder.Property(t => t.RequiredHeadcount).HasColumnName("required_headcount");
         builder.Property(t => t.BurdenLevel).HasColumnName("burden_level")
             .HasConversion(v => v.ToString().ToLower(), v => Enum.Parse<TaskBurdenLevel>(v, true));

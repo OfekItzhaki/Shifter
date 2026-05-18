@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { useTranslations, useLocale } from "next-intl";
+import { useAuthStore } from "@/lib/store/authStore";
+import { formatLocalTime } from "@/lib/utils/formatTime";
 import CantMakeItModal from "./CantMakeItModal";
 
 /** Task type name used for home-leave assignments from the solver */
@@ -38,23 +40,23 @@ interface Props {
   onPersonBlocked?: (personId: string, triggerRerun: boolean) => void;
 }
 
-function formatTime(iso: string): string {
-  return new Date(iso).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit", hour12: false });
+function formatTime(iso: string, timezoneId: string | null): string {
+  return formatLocalTime(iso, timezoneId, "24h");
 }
 
-function formatShiftTime(startIso: string, endIso: string, locale?: string): string {
+function formatShiftTime(startIso: string, endIso: string, locale?: string, timezoneId?: string | null): string {
   const start = new Date(startIso);
   const end = new Date(endIso);
   const durationHours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
 
   // For 24h shifts, show "24 שעות" with the start time
   if (durationHours >= 23.5) {
-    return `${formatTime(startIso)} (24h)`;
+    return `${formatTime(startIso, timezoneId ?? null)} (24h)`;
   }
 
   // Use directional arrow: ← for RTL (Hebrew), → for LTR
   const arrow = locale === "he" ? "←" : "→";
-  return `${formatTime(startIso)} ${arrow} ${formatTime(endIso)}`;
+  return `${formatTime(startIso, timezoneId ?? null)} ${arrow} ${formatTime(endIso, timezoneId ?? null)}`;
 }
 
 function overlapsDate(a: TaskAssignment, dateStr: string): boolean {
@@ -89,6 +91,7 @@ function overlapsDate(a: TaskAssignment, dateStr: string): boolean {
 export default function ScheduleTaskTable({ assignments, currentUserName, filterDate, isAdmin, spaceId, roleColorMap, onPersonBlocked }: Props) {
   const t = useTranslations("schedule");
   const locale = useLocale();
+  const timezoneId = useAuthStore(s => s.timezoneId);
   const [cantMakeIt, setCantMakeIt] = useState<{ personId: string; personName: string } | null>(null);
   const visible = filterDate
     ? assignments.filter(a => overlapsDate(a, filterDate))
@@ -178,7 +181,7 @@ export default function ScheduleTaskTable({ assignments, currentUserName, filter
                       <tr key={key} className={`transition-colors ${isHomeLeave ? "hover:bg-emerald-100/40 dark:hover:bg-emerald-900/30" : "hover:bg-slate-50/40 dark:hover:bg-slate-700/40"}`}>
                         {/* Time */}
                         <td className={`px-2.5 sm:px-4 py-2.5 sm:py-3 text-xs tabular-nums whitespace-nowrap sticky right-0 z-10 border-r ${isHomeLeave ? "text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 border-emerald-100 dark:border-emerald-800" : "text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700"}`}>
-                          {formatShiftTime(slot.startsAt, slot.endsAt, locale)}
+                          {formatShiftTime(slot.startsAt, slot.endsAt, locale, timezoneId)}
                         </td>
                         {/* Person columns */}
                         {personCols.map(i => {

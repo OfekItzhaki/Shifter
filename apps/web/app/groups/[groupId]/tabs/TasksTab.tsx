@@ -14,6 +14,7 @@ export interface TaskForm {
   startsAt: string;
   endsAt: string;
   shiftDurationMinutes: number;
+  splitCount: number;
   requiredHeadcount: number;
   burdenLevel: string;
   allowsDoubleShift: boolean;
@@ -56,20 +57,27 @@ function formatDuration(mins: number): string {
 }
 
 /** Sub-shift editor: lets admin split a shift into N equal parts */
-function SubShiftEditor({ totalMinutes, onChange }: { totalMinutes: number; onChange: (mins: number) => void }) {
+function SubShiftEditor({ totalMinutes, splitCount: initialSplitCount, onChange, onSplitCountChange }: { totalMinutes: number; splitCount: number; onChange: (mins: number) => void; onSplitCountChange: (count: number) => void }) {
   const t = useTranslations("groups.tasks_tab");
   const [originalMinutes, setOriginalMinutes] = useState(totalMinutes);
-  const [numSubShifts, setNumSubShifts] = useState(1);
+  const [numSubShifts, setNumSubShifts] = useState(initialSplitCount);
 
   useEffect(() => {
-    setOriginalMinutes(totalMinutes);
-    setNumSubShifts(1);
+    if (initialSplitCount > 1) {
+      // When editing, compute original from current duration * split count
+      setOriginalMinutes(totalMinutes * initialSplitCount);
+      setNumSubShifts(initialSplitCount);
+    } else {
+      setOriginalMinutes(totalMinutes);
+      setNumSubShifts(1);
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // only on mount
 
   function addSubShift() {
     const next = numSubShifts + 1;
     setNumSubShifts(next);
+    onSplitCountChange(next);
     onChange(Math.max(1, Math.round(originalMinutes / next)));
   }
 
@@ -77,6 +85,7 @@ function SubShiftEditor({ totalMinutes, onChange }: { totalMinutes: number; onCh
     if (numSubShifts <= 1) return;
     const next = numSubShifts - 1;
     setNumSubShifts(next);
+    onSplitCountChange(next);
     if (next === 1) {
       onChange(originalMinutes);
     } else {
@@ -180,9 +189,21 @@ export default function TasksTab({
                 </div>
               )}
             </div>
-            <span className={`text-xs font-medium px-2 py-0.5 rounded-full border ${burdenColors[task.burdenLevel] ?? "bg-slate-100 text-slate-500 border-slate-200"}`}>
-              {burdenLabels[task.burdenLevel] ?? task.burdenLevel}
-            </span>
+            {task.splitCount > 1 && task.effectiveBurdenLevel && task.effectiveBurdenLevel !== task.burdenLevel ? (
+              <span className="inline-flex items-center gap-1 text-xs font-medium">
+                <span className={`px-2 py-0.5 rounded-full border ${burdenColors[task.burdenLevel] ?? "bg-slate-100 text-slate-500 border-slate-200"}`}>
+                  {burdenLabels[task.burdenLevel] ?? task.burdenLevel}
+                </span>
+                <span className="text-slate-400">→</span>
+                <span className={`px-2 py-0.5 rounded-full border ${burdenColors[task.effectiveBurdenLevel] ?? "bg-slate-100 text-slate-500 border-slate-200"}`}>
+                  {burdenLabels[task.effectiveBurdenLevel] ?? task.effectiveBurdenLevel}
+                </span>
+              </span>
+            ) : (
+              <span className={`text-xs font-medium px-2 py-0.5 rounded-full border ${burdenColors[task.burdenLevel] ?? "bg-slate-100 text-slate-500 border-slate-200"}`}>
+                {burdenLabels[task.burdenLevel] ?? task.burdenLevel}
+              </span>
+            )}
             {isAdmin && (
               <div className="flex gap-1.5 flex-shrink-0">
                 <button onClick={() => onEditTask(task)} className="text-xs text-slate-500 hover:text-slate-700 border border-slate-200 px-2 py-1 rounded-lg hover:bg-slate-50 transition-colors">{t("edit")}</button>
@@ -287,7 +308,9 @@ export default function TasksTab({
                   {/* Sub-shifts */}
                   <SubShiftEditor
                     totalMinutes={taskForm.shiftDurationMinutes}
+                    splitCount={taskForm.splitCount}
                     onChange={mins => onFormChange({ ...taskForm, shiftDurationMinutes: mins })}
+                    onSplitCountChange={count => onFormChange({ ...taskForm, splitCount: count })}
                   />
                 </>
               )}

@@ -43,13 +43,22 @@ public class ExportSchedulePdfCommandHandler
             .Join(_db.TaskSlots.AsNoTracking(), x => x.a.TaskSlotId, s => s.Id,
                 (x, s) => new { x.a, x.PersonName, Slot = s })
             .Join(_db.TaskTypes.AsNoTracking(), x => x.Slot.TaskTypeId, t => t.Id,
-                (x, t) => new ScheduleRowDto(
-                    x.PersonName,
-                    t.Name,
-                    t.BurdenLevel.ToString(),
-                    x.Slot.StartsAt,
-                    x.Slot.EndsAt,
-                    x.Slot.Location))
+                (x, t) => new { x.a, x.PersonName, x.Slot, TaskName = t.Name, OriginalBurden = t.BurdenLevel.ToString() })
+            .GroupJoin(
+                _db.DailySnapshots.AsNoTracking()
+                    .Where(ds => ds.VersionId == req.VersionId && ds.SpaceId == req.SpaceId),
+                x => new { PersonId = x.a.PersonId, SlotId = (Guid?)x.Slot.Id },
+                ds => new { ds.PersonId, ds.SlotId },
+                (x, snapshots) => new { x, snapshots })
+            .SelectMany(
+                g => g.snapshots.DefaultIfEmpty(),
+                (g, ds) => new ScheduleRowDto(
+                    g.x.PersonName,
+                    g.x.TaskName,
+                    ds != null && ds.BurdenLevel != null ? ds.BurdenLevel : g.x.OriginalBurden,
+                    g.x.Slot.StartsAt,
+                    g.x.Slot.EndsAt,
+                    g.x.Slot.Location))
             .OrderBy(r => r.StartsAt)
             .ToListAsync(ct);
 
