@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import type { GroupTaskDto } from "@/lib/api/tasks";
 import type { GroupQualificationDto } from "@/lib/api/groups";
 import { burdenLabels, burdenColors } from "../types";
+import TaskDoubleShiftSuggestion from "@/components/recommendations/TaskDoubleShiftSuggestion";
 
 const BURDEN_OPTIONS = ["easy", "normal", "hard"];
 
@@ -27,6 +28,7 @@ export interface TaskForm {
 
 interface Props {
   isAdmin: boolean;
+  spaceId: string | null;
   groupTasks: GroupTaskDto[];
   groupTasksLoading: boolean;
   groupQualifications: GroupQualificationDto[];
@@ -134,7 +136,7 @@ function SubShiftEditor({ totalMinutes, splitCount: initialSplitCount, onChange,
 }
 
 export default function TasksTab({
-  isAdmin, groupTasks, groupTasksLoading, groupQualifications, showTaskForm, editingTask, taskForm,
+  isAdmin, spaceId, groupTasks, groupTasksLoading, groupQualifications, showTaskForm, editingTask, taskForm,
   taskSaving, taskError, onOpenCreate, onOpenImport, onCloseForm, onFormChange, onFormSubmit, onEditTask, onDeleteTask,
 }: Props) {
   const t = useTranslations("groups.tasks_tab");
@@ -483,6 +485,10 @@ export default function TasksTab({
               {t("overlapAllowed")}
             </label>
           </div>
+          {/* Double-shift recommendation suggestion (Req 3.3, 6.2) */}
+          {editingTask && !taskForm.allowsDoubleShift && spaceId && (
+            <TaskDoubleShiftSuggestion spaceId={spaceId} taskId={editingTask.id} />
+          )}
 
           {/* Daily time window */}
           <div>

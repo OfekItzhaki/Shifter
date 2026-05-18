@@ -78,6 +78,7 @@ public class AppDbContext : DbContext
     public DbSet<SubscriptionPeriod> SubscriptionPeriods => Set<SubscriptionPeriod>();
     public DbSet<CumulativeRecord> CumulativeRecords => Set<CumulativeRecord>();
     public DbSet<DailySnapshot> DailySnapshots => Set<DailySnapshot>();
+    public DbSet<DoubleShiftRecommendation> DoubleShiftRecommendations => Set<DoubleShiftRecommendation>();
 
     // Logs
     public DbSet<SystemLog> SystemLogs => Set<SystemLog>();

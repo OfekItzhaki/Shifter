@@ -1354,5 +1354,11 @@
     "description": "Your session will expire due to inactivity. Choose to continue or exit.",
     "yes": "Yes",
     "no": "No"
+  },
+  "recommendations": {
+    "bannerTitle": "{count} uncovered slots detected",
+    "andMore": "+{count} more",
+    "affectedRange": "Affected: {range}",
+    "viewTasks": "View Task Settings"
   }
 }

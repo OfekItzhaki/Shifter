@@ -270,9 +270,9 @@ export default function GroupDetailPage() {
     let scheduleError: unknown = null;
     Promise.all([
       getGroupSchedule(currentSpaceId, groupId).catch(e => { scheduleError = e; return null; }),
-      apiClient.get<Array<{ id: string; status: string; summaryJson?: string | null }>>(
+      apiClient.get<Array<{ id: string; status: string; summaryJson?: string | null; sourceRunId?: string | null }>>(
         `/spaces/${currentSpaceId}/schedule-versions?status=draft`
-      ).catch(() => ({ data: [] as Array<{ id: string; status: string; summaryJson?: string | null }> })),
+      ).catch(() => ({ data: [] as Array<{ id: string; status: string; summaryJson?: string | null; sourceRunId?: string | null }> })),
       apiClient.get<Array<{ id: string; status: string; summaryJson?: string | null }>>(
         `/spaces/${currentSpaceId}/schedule-versions?status=discarded`
       ).catch(() => ({ data: [] as Array<{ id: string; status: string; summaryJson?: string | null }> })),
@@ -1062,9 +1062,9 @@ export default function GroupDetailPage() {
               apiClient.get<{ version: { id: string; status: string }; assignments: ScheduleAssignment[] }>(
                 `/spaces/${currentSpaceId}/schedule-versions/current`
               ).catch(() => null),
-              apiClient.get<Array<{ id: string; status: string; summaryJson?: string | null }>>(
+              apiClient.get<Array<{ id: string; status: string; summaryJson?: string | null; sourceRunId?: string | null }>>(
                 `/spaces/${currentSpaceId}/schedule-versions?status=draft`
-              ).catch(() => ({ data: [] as Array<{ id: string; status: string; summaryJson?: string | null }> })),
+              ).catch(() => ({ data: [] as Array<{ id: string; status: string; summaryJson?: string | null; sourceRunId?: string | null }> })),
               apiClient.get<Array<{ id: string; status: string; summaryJson?: string | null }>>(
                 `/spaces/${currentSpaceId}/schedule-versions?status=discarded`
               ).catch(() => ({ data: [] as Array<{ id: string; status: string; summaryJson?: string | null }> })),
@@ -1368,6 +1368,7 @@ export default function GroupDetailPage() {
           {activeTab === "tasks" && (
             <TasksTab
               isAdmin={isAdmin}
+              spaceId={currentSpaceId}
               groupTasks={groupTasks}
               groupTasksLoading={groupTasksLoading}
               groupQualifications={groupQualifications}
@@ -1565,6 +1566,7 @@ export default function GroupDetailPage() {
           spaceId={currentSpaceId}
           groupId={groupId}
           draftVersionId={draftVersion.id}
+          sourceRunId={draftVersion.sourceRunId}
           groupMemberIds={new Set(members.map(m => m.personId))}
           isAdmin={isAdmin}
           onPublish={async () => { await handlePublish(); setShowDraftModal(false); }}

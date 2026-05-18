@@ -1366,5 +1366,11 @@
     "description": "הפגישה שלך תפוג בגלל חוסר פעילות. בחר/י להמשיך או לצאת.",
     "yes": "כן",
     "no": "לא"
+  },
+  "recommendations": {
+    "bannerTitle": "{count} משבצות לא מכוסות",
+    "andMore": "+{count} נוספים",
+    "affectedRange": "תאריכים מושפעים: {range}",
+    "viewTasks": "הגדרות משימות"
   }
 }

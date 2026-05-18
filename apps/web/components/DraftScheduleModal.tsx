@@ -8,6 +8,7 @@ import { useAuthStore } from "@/lib/store/authStore";
 import ScheduleTaskTable from "@/components/schedule/ScheduleTaskTable";
 import ScheduleDiffView from "@/components/schedule/ScheduleDiffView";
 import { useSandboxStore } from "@/lib/store/sandboxStore";
+import RecommendationBanner from "@/components/recommendations/RecommendationBanner";
 
 interface Assignment {
   id: string;
@@ -24,6 +25,8 @@ interface Props {
   spaceId: string;
   groupId: string;
   draftVersionId: string;
+  /** The solver run ID that produced this draft — used for recommendation banner */
+  sourceRunId?: string | null;
   /** Set of personIds belonging to this group — filters out cross-group assignments */
   groupMemberIds: Set<string>;
   isAdmin: boolean;
@@ -50,7 +53,7 @@ function getWeekDates(anchor: string): string[] {
 }
 
 export default function DraftScheduleModal({
-  open, onClose, spaceId, groupId, draftVersionId, groupMemberIds,
+  open, onClose, spaceId, groupId, draftVersionId, sourceRunId, groupMemberIds,
   isAdmin, onPublish, onDiscard, onRunAgain,
 }: Props) {
   const t = useTranslations("draftModal");
@@ -261,6 +264,15 @@ export default function DraftScheduleModal({
             </div>
           ) : (
             <div className="space-y-4">
+              {/* Double-shift recommendation banner */}
+              {sourceRunId && (
+                <RecommendationBanner
+                  spaceId={spaceId}
+                  runId={sourceRunId}
+                  groupId={groupId}
+                />
+              )}
+
               {/* View toggle: Schedule vs Changes */}
               <div className="flex gap-1 bg-slate-100 dark:bg-slate-700 p-1 rounded-xl w-fit">
                 <button

@@ -132,6 +132,17 @@ public class GroupTask : AuditableEntity, ITenantScoped
         Touch();
     }
 
+    /// <summary>
+    /// Enables double shift on this task without requiring a full update.
+    /// Used by the recommendation accept flow.
+    /// </summary>
+    public void EnableDoubleShift(Guid updatedByUserId)
+    {
+        AllowsDoubleShift = true;
+        UpdatedByUserId = updatedByUserId;
+        Touch();
+    }
+
     public void Deactivate(Guid updatedByUserId)
     {
         IsActive = false;

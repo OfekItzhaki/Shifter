@@ -46,7 +46,7 @@ export function useGroupPageState() {
   const [scheduleLoading, setScheduleLoading] = useState(false);
   const [scheduleError, setScheduleError] = useState<string | null>(null);
   const [scheduleIsOffline, setScheduleIsOffline] = useState(false);
-  const [draftVersion, setDraftVersion] = useState<{ id: string; status: string; summaryJson?: string | null } | null>(null);
+  const [draftVersion, setDraftVersion] = useState<{ id: string; status: string; summaryJson?: string | null; sourceRunId?: string | null } | null>(null);
   const [lastRunSummary, setLastRunSummary] = useState<string | null>(null);
   const [showDraftModal, setShowDraftModal] = useState(false);
   const [publishSaving, setPublishSaving] = useState(false);

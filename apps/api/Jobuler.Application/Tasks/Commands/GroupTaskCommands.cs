@@ -1,5 +1,6 @@
 using FluentValidation;
 using Jobuler.Application.Common;
+using Jobuler.Domain.Scheduling;
 using Jobuler.Domain.Spaces;
 using Jobuler.Domain.Tasks;
 using Jobuler.Infrastructure.Persistence;
@@ -174,6 +175,8 @@ public class UpdateGroupTaskCommandHandler : IRequestHandler<UpdateGroupTaskComm
                                    && t.IsActive, ct)
             ?? throw new KeyNotFoundException("Task not found.");
 
+        var previousAllowsDoubleShift = task.AllowsDoubleShift;
+
         task.Update(
             req.Name, TaskTimeHelpers.RoundToHour(req.StartsAt), TaskTimeHelpers.RoundToHour(req.EndsAt),
             req.ShiftDurationMinutes, req.RequiredHeadcount,
@@ -185,6 +188,21 @@ public class UpdateGroupTaskCommandHandler : IRequestHandler<UpdateGroupTaskComm
                 .Select(r => new QualificationRequirement(r.QualificationName, r.Count, r.Mandatory))
                 .ToList(),
             req.SplitCount);
+
+        // Auto-resolve active recommendations when AllowsDoubleShift changes from false to true (Req 5.2)
+        if (!previousAllowsDoubleShift && req.AllowsDoubleShift)
+        {
+            var activeRecommendations = await _db.DoubleShiftRecommendations
+                .Where(r => r.GroupTaskId == req.TaskId
+                         && r.SpaceId == req.SpaceId
+                         && r.Status == RecommendationStatus.Active)
+                .ToListAsync(ct);
+
+            foreach (var recommendation in activeRecommendations)
+            {
+                recommendation.Resolve();
+            }
+        }
 
         await _db.SaveChangesAsync(ct);
     }

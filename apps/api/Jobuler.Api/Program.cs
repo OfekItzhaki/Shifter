@@ -205,6 +205,7 @@ builder.Services.AddScoped<IAssignmentSnapshotService, AssignmentSnapshotService
 builder.Services.AddScoped<ICumulativeTracker, CumulativeTracker>();
 builder.Services.AddScoped<IPeriodManager, PeriodManager>();
 builder.Services.AddScoped<ISolverPayloadNormalizer, SolverPayloadNormalizer>();
+builder.Services.AddScoped<IRecommendationEngine, RecommendationEngine>();
 
 // ─── Conflict detection ──────────────────────────────────────────────────────
 // ConflictDetectionDbContext uses the same connection string but WITHOUT the RLS

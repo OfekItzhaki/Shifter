@@ -9,9 +9,10 @@ import type { ScheduleAssignment } from "../types";
 import ScheduleTaskTable from "@/components/schedule/ScheduleTaskTable";
 import ScheduleDiffView from "@/components/schedule/ScheduleDiffView";
 import ScheduleHistory from "@/components/schedule/ScheduleHistory";
+import RecommendationBanner from "@/components/recommendations/RecommendationBanner";
 import { getHistoricalSchedule } from "@/lib/api/stats";
 
-interface DraftVersion { id: string; status: string; summaryJson?: string | null; }
+interface DraftVersion { id: string; status: string; summaryJson?: string | null; sourceRunId?: string | null; }
 
 interface Props {
   groupId: string;
@@ -359,6 +360,15 @@ export default function ScheduleTab({
             </div>
           )}
         </div>
+      )}
+
+      {/* Double-shift recommendation banner — shown when a solver run has recommendations */}
+      {isAdmin && spaceId && draftVersion?.sourceRunId && (
+        <RecommendationBanner
+          spaceId={spaceId}
+          runId={draftVersion.sourceRunId}
+          groupId={groupId}
+        />
       )}
 
       {/* Search filter + export */}

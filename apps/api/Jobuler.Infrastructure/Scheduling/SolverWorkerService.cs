@@ -458,6 +458,56 @@ public class SolverWorkerService : BackgroundService
                 await db.SaveChangesAsync(ct);
             }
 
+            // ── Recommendation engine (best-effort, never disrupts solver flow) ──
+            // The engine analyzes solver output for staffing shortfalls and produces
+            // double-shift recommendations. It runs after the run status is persisted
+            // and before the main notification dispatch. Failures are logged but never
+            // disrupt the solver flow.
+            if (input is not null && output.Feasible)
+            {
+                try
+                {
+                    var recommendationEngine = scope.ServiceProvider.GetRequiredService<IRecommendationEngine>();
+                    var recommendationResult = await recommendationEngine.AnalyzeAsync(
+                        job.SpaceId, job.GroupId ?? Guid.Empty, job.RunId, input, output, ct);
+
+                    if (recommendationResult.Recommendations.Count > 0)
+                    {
+                        var totalUncoveredSlots = output.UncoveredSlotIds.Count;
+                        var recommendationMetadata = JsonSerializer.Serialize(new
+                        {
+                            run_id = job.RunId,
+                            total_uncovered_slots = totalUncoveredSlots
+                        });
+
+                        var recLocale = input.Locale ?? "en";
+                        await notifier.NotifySpaceAdminsAsync(
+                            job.SpaceId,
+                            "double_shift_recommendation",
+                            recLocale switch
+                            {
+                                "he" => "המלצה: הפעלת משמרת כפולה",
+                                "ru" => "Рекомендация: включить двойную смену",
+                                _ => "Recommendation: enable double shift"
+                            },
+                            recLocale switch
+                            {
+                                "he" => $"זוהו {totalUncoveredSlots} משמרות לא מאוישות. הפעלת משמרת כפולה על {recommendationResult.Recommendations.Count} משימות עשויה לשפר את הכיסוי.",
+                                "ru" => $"Обнаружено {totalUncoveredSlots} незаполненных смен. Включение двойной смены для {recommendationResult.Recommendations.Count} задач может улучшить покрытие.",
+                                _ => $"{totalUncoveredSlots} uncovered slot(s) detected. Enabling double shift on {recommendationResult.Recommendations.Count} task(s) may improve coverage."
+                            },
+                            metadataJson: recommendationMetadata,
+                            groupId: job.GroupId,
+                            ct: ct);
+                    }
+                }
+                catch (Exception recEx)
+                {
+                    _logger.LogWarning(recEx,
+                        "Recommendation engine failed for run {RunId} — continuing without recommendations.", job.RunId);
+                }
+            }
+
             // System log — solver completed
             var sev = output.TimedOut ? "warning" : (output.Feasible && !shouldDiscard ? "info" : "error");
             var evt = output.Feasible && !shouldDiscard ? "solver_completed" : "solver_infeasible";
