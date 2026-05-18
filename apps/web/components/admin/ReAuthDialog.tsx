@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback, FormEvent, KeyboardEvent } from "react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { apiClient } from "@/lib/api/client";
 import { isWebAuthnSupported, listCredentials } from "@/lib/webauthn";
 
@@ -25,6 +25,8 @@ interface CredentialState {
 
 export default function ReAuthDialog({ open, onSuccess, onCancel, mode, spaceId }: ReAuthDialogProps) {
   const t = useTranslations("reAuth");
+  const locale = useLocale();
+  const isRtl = locale === "he";
 
   // Credential availability
   const [credentials, setCredentials] = useState<CredentialState>({
@@ -42,6 +44,7 @@ export default function ReAuthDialog({ open, onSuccess, onCancel, mode, spaceId 
   const dialogRef = useRef<HTMLDivElement>(null);
   const submitButtonRef = useRef<HTMLButtonElement>(null);
   const passwordInputRef = useRef<HTMLInputElement>(null);
+  const webAuthnButtonRef = useRef<HTMLButtonElement>(null);
   const firstFocusableRef = useRef<HTMLElement | null>(null);
 
   // ── Fetch credential availability ────────────────────────────────────────
@@ -97,17 +100,19 @@ export default function ReAuthDialog({ open, onSuccess, onCancel, mode, spaceId 
   useEffect(() => {
     if (!open || credentials.loading) return;
 
-    // Focus the submit button initially (or password input if available)
+    // Focus the password input initially (or WebAuthn button if password unavailable)
     const timer = setTimeout(() => {
-      if (submitButtonRef.current) {
-        submitButtonRef.current.focus();
-      } else if (passwordInputRef.current) {
+      if (credentials.hasPassword && passwordInputRef.current) {
         passwordInputRef.current.focus();
+      } else if (credentials.hasWebAuthn && webAuthnButtonRef.current) {
+        webAuthnButtonRef.current.focus();
+      } else if (submitButtonRef.current) {
+        submitButtonRef.current.focus();
       }
     }, 50);
 
     return () => clearTimeout(timer);
-  }, [open, credentials.loading]);
+  }, [open, credentials.loading, credentials.hasPassword, credentials.hasWebAuthn]);
 
   // ── Focus trap ───────────────────────────────────────────────────────────
 
@@ -294,7 +299,7 @@ export default function ReAuthDialog({ open, onSuccess, onCancel, mode, spaceId 
           boxShadow: "0 20px 60px rgba(0,0,0,0.15)",
           width: "100%",
           maxWidth: 400,
-          direction: "rtl",
+          direction: isRtl ? "rtl" : "ltr",
           position: "relative",
           overflow: "hidden",
         }}
@@ -463,6 +468,7 @@ export default function ReAuthDialog({ open, onSuccess, onCancel, mode, spaceId 
               {/* WebAuthn button */}
               {hasWebAuthn && (
                 <button
+                  ref={webAuthnButtonRef}
                   type="button"
                   onClick={handleWebAuthnSubmit}
                   disabled={isSubmitting}

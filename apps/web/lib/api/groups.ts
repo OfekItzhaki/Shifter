@@ -49,6 +49,7 @@ export interface GroupMemberDto {
   displayName: string | null;
   isOwner: boolean;
   phoneNumber: string | null;
+  email: string | null;
   invitationStatus: string;
   profileImageUrl: string | null;
   birthday: string | null;
@@ -84,7 +85,7 @@ export async function addGroupMemberById(spaceId: string, groupId: string, perso
 export async function updatePersonInfo(
   spaceId: string,
   personId: string,
-  payload: { fullName?: string; displayName?: string; phoneNumber?: string; profileImageUrl?: string; birthday?: string }
+  payload: { fullName?: string; displayName?: string; phoneNumber?: string; profileImageUrl?: string; birthday?: string; email?: string }
 ): Promise<void> {
   await apiClient.put(`/spaces/${spaceId}/people/${personId}/info`, payload);
 }

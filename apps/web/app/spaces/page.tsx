@@ -33,7 +33,7 @@ export default function SpacesPage() {
         setSpaces(s);
         if (s.length === 1) {
           setCurrentSpace(s[0].id, s[0].name);
-          router.push("/schedule/today");
+          router.push("/groups");
         }
       })
       .catch(() => {
@@ -46,7 +46,7 @@ export default function SpacesPage() {
 
   function handleSelect(space: SpaceDto) {
     setCurrentSpace(space.id, space.name);
-    router.push("/schedule/today");
+    router.push("/groups");
   }
 
   async function handleCreate(e: React.FormEvent) {

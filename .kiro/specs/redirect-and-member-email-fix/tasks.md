@@ -1,0 +1,133 @@
+# Implementation Plan
+
+- [x] 1. Write bug condition exploration test
+  - **Property 1: Bug Condition** - Navigation and Email Display Defects
+  - **CRITICAL**: This test MUST FAIL on unfixed code - failure confirms the bugs exist
+  - **DO NOT attempt to fix the test or the code when it fails**
+  - **NOTE**: This test encodes the expected behavior - it will validate the fix when it passes after implementation
+  - **GOAL**: Surface counterexamples that demonstrate the three bugs exist
+  - **Scoped PBT Approach**: Scope the property to the concrete failing cases:
+    - Pricing page back link navigates to `/login` instead of using browser history
+    - Space selection redirects to `/schedule/today` instead of `/groups`
+    - Member modal does not render email in info view
+    - Member edit form does not contain email input field
+  - Test that pricing page back element triggers `router.back()` or navigates to `/` as fallback (from Bug Condition: `input.type = "pricing_back_click"`)
+  - Test that `handleSelect` on spaces page calls `router.push("/groups")` (from Bug Condition: `input.type = "space_selection" AND input.hasNoRedirectParam`)
+  - Test that member modal info view renders email when present in DTO (from Bug Condition: `input.type = "member_modal_open"`)
+  - Test that member edit form includes an email input field (from Bug Condition: `input.type = "member_edit_start"`)
+  - Run tests on UNFIXED code
+  - **EXPECTED OUTCOME**: Tests FAIL (this is correct - it proves the bugs exist)
+  - Document counterexamples found:
+    - Pricing back link resolves to `<Link href="/login">` instead of calling `history.back()`
+    - Space selection pushes `/schedule/today` instead of `/groups`
+    - Member modal does not render any email-related DOM elements
+    - Edit form state shape omits email field
+  - Mark task complete when tests are written, run, and failures are documented
+  - _Requirements: 1.1, 1.2, 1.3, 1.4_
+
+- [x] 2. Write preservation property tests (BEFORE implementing fix)
+  - **Property 2: Preservation** - Existing Navigation and Edit Behavior
+  - **IMPORTANT**: Follow observation-first methodology
+  - Observe behavior on UNFIXED code for non-buggy inputs:
+    - Observe: login with `?redirect=/dashboard` redirects to `/dashboard`
+    - Observe: login without `?redirect=` redirects to `/schedule/my-missions`
+    - Observe: editing member name/phone/birthday/displayName/profileImage saves correctly
+    - Observe: non-admin user sees read-only modal without edit controls
+    - Observe: pricing page renders without requiring authentication
+    - Observe: group owner can edit admin member details
+  - Write property-based tests capturing observed behavior patterns:
+    - For all login requests with `?redirect=` param, system redirects to the specified path
+    - For all login requests without `?redirect=`, system redirects to `/schedule/my-missions`
+    - For all member edit payloads containing name/phone/birthday/displayName/profileImage, all fields are correctly passed to `updatePersonInfo` API
+    - For all non-admin users opening member modal, no edit controls are rendered
+    - For all group owners editing admin members, edit is permitted
+  - Verify tests PASS on UNFIXED code
+  - **EXPECTED OUTCOME**: Tests PASS (this confirms baseline behavior to preserve)
+  - Mark task complete when tests are written, run, and passing on unfixed code
+  - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6_
+
+- [x] 3. Fix for redirect and member email display issues
+
+  - [x] 3.1 Replace hardcoded pricing page back link with history navigation
+    - In `apps/web/app/pricing/page.tsx`, remove `<Link href="/login">` back link
+    - Replace with a `<button>` (or clickable element) that calls `router.back()` using Next.js `useRouter`
+    - Add fallback: if `window.history.length <= 1`, navigate to `/` instead
+    - _Bug_Condition: isBugCondition(input) where input.type = "pricing_back_click"_
+    - _Expected_Behavior: navigate to previous page in browser history, or `/` if no history_
+    - _Preservation: pricing page continues to render without requiring authentication (3.1)_
+    - _Requirements: 2.1, 3.1_
+
+  - [x] 3.2 Update space selection redirect target from `/schedule/today` to `/groups`
+    - In `apps/web/app/spaces/page.tsx`, replace `router.push("/schedule/today")` with `router.push("/groups")` on line ~37 (auto-redirect for single space)
+    - Replace `router.push("/schedule/today")` with `router.push("/groups")` on line ~50 (manual space selection)
+    - _Bug_Condition: isBugCondition(input) where input.type = "space_selection" AND input.hasNoRedirectParam_
+    - _Expected_Behavior: redirect to `/groups` after space selection_
+    - _Preservation: login with `?redirect=` param continues to override destination (3.2); default post-login redirect remains `/schedule/my-missions` (3.3)_
+    - _Requirements: 2.2, 3.2, 3.3_
+
+  - [x] 3.3 Add email field to GroupMemberDto and updatePersonInfo payload
+    - In `apps/web/lib/api/groups.ts`, add `email: string | null;` to `GroupMemberDto` interface
+    - In `apps/web/lib/api/groups.ts`, add `email?: string` to the `updatePersonInfo` payload type
+    - _Bug_Condition: isBugCondition(input) where input.type = "member_modal_open" OR "member_edit_start"_
+    - _Expected_Behavior: email field available in DTO and included in PUT payload_
+    - _Preservation: existing fields (name, phone, birthday, displayName, profileImage) continue to work (3.4)_
+    - _Requirements: 2.3, 2.4, 3.4_
+
+  - [x] 3.4 Add email display and edit to MemberProfileModal
+    - In `apps/web/app/groups/[groupId]/tabs/MembersTab.tsx`:
+      - Display `member.email` in the info view (read-only) below phone number
+      - Handle null email gracefully (show nothing or placeholder)
+      - Add email input field in the edit form between phone and profile image
+      - Update `editForm` type to include `email: string`
+      - Update `onChangeForm` type to include `email`
+    - In `apps/web/app/groups/[groupId]/page.tsx`:
+      - Update `onStartEdit` to include `email: selectedMember.email ?? ""` in form initialization
+    - In `apps/web/app/groups/[groupId]/useGroupPageState.ts`:
+      - Add `email: string` to the `memberEditForm` state type
+    - _Bug_Condition: isBugCondition(input) where input.type = "member_modal_open" OR "member_edit_start"_
+    - _Expected_Behavior: email displayed in info view; email editable in edit form_
+    - _Preservation: non-admin users see read-only modal without edit controls (3.5); owner can edit admin members (3.6)_
+    - _Requirements: 2.3, 2.4, 2.5, 3.5, 3.6_
+
+  - [x] 3.5 Add Email to backend UpdatePersonInfoRequest and project email in GetGroupMembers query
+    - In `apps/api/Jobuler.Api/Controllers/PeopleController.cs`:
+      - Add `string? Email` to the `UpdatePersonInfoRequest` record
+      - Pass email through to the `UpdatePersonInfoCommand`
+    - In the backend query for group members (Application/Groups):
+      - Include the person's email in the group members query result so it appears in the API response
+    - _Bug_Condition: isBugCondition(input) where input.type = "member_modal_open" OR "member_edit_start"_
+    - _Expected_Behavior: API returns email in member data; API accepts email in update payload_
+    - _Preservation: existing field updates continue to save correctly (3.4)_
+    - _Requirements: 2.3, 2.4, 3.4_
+
+  - [x] 3.6 Verify bug condition exploration test now passes
+    - **Property 1: Expected Behavior** - Navigation and Email Display Corrections
+    - **IMPORTANT**: Re-run the SAME test from task 1 - do NOT write a new test
+    - The test from task 1 encodes the expected behavior
+    - When this test passes, it confirms the expected behavior is satisfied:
+      - Pricing back link uses browser history navigation
+      - Space selection redirects to `/groups`
+      - Member modal displays email
+      - Member edit form includes email field
+    - Run bug condition exploration test from step 1
+    - **EXPECTED OUTCOME**: Test PASSES (confirms bugs are fixed)
+    - _Requirements: 2.1, 2.2, 2.3, 2.4_
+
+  - [x] 3.7 Verify preservation tests still pass
+    - **Property 2: Preservation** - Existing Navigation and Edit Behavior
+    - **IMPORTANT**: Re-run the SAME tests from task 2 - do NOT write new tests
+    - Run preservation property tests from step 2
+    - **EXPECTED OUTCOME**: Tests PASS (confirms no regressions)
+    - Confirm all preservation tests still pass after fix:
+      - Login redirect with `?redirect=` param works
+      - Default login redirect to `/schedule/my-missions` works
+      - Member field editing (name, phone, birthday, etc.) works
+      - Permission enforcement unchanged
+    - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6_
+
+- [x] 4. Checkpoint - Ensure all tests pass
+  - Run full test suite to confirm no regressions
+  - Verify bug condition tests (Property 1) pass on fixed code
+  - Verify preservation tests (Property 2) pass on fixed code
+  - Ensure all existing tests in the project continue to pass
+  - Ask the user if questions arise

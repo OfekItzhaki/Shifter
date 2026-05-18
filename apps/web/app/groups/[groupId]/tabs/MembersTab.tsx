@@ -163,13 +163,13 @@ export default function MembersTab({
 interface MemberProfileModalProps {
   member: GroupMemberDto;
   isAdmin: boolean;
-  editForm: { fullName: string; displayName: string; phoneNumber: string; profileImageUrl: string; birthday: string } | null;
+  editForm: { fullName: string; displayName: string; phoneNumber: string; email: string; profileImageUrl: string; birthday: string } | null;
   saving: boolean;
   error: string | null;
   onClose: () => void;
   onStartEdit: () => void;
   onCancelEdit: () => void;
-  onChangeForm: (f: { fullName: string; displayName: string; phoneNumber: string; profileImageUrl: string; birthday: string }) => void;
+  onChangeForm: (f: { fullName: string; displayName: string; phoneNumber: string; email: string; profileImageUrl: string; birthday: string }) => void;
   onSave: (personId: string) => void;
 }
 
@@ -265,6 +265,10 @@ export function MemberProfileModal({ member, isAdmin, editForm, saving, error, o
               <input type="tel" value={editForm.phoneNumber} onChange={e => onChangeForm({ ...editForm, phoneNumber: e.target.value })} dir="ltr" className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
             </div>
             <div>
+              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">{tProfile("email")}</label>
+              <input type="email" value={editForm.email} onChange={e => onChangeForm({ ...editForm, email: e.target.value })} dir="ltr" className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            </div>
+            <div>
               <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">{tProfile("profileImage")}</label>
               <ImageUpload value={editForm.profileImageUrl || null} onChange={url => onChangeForm({ ...editForm, profileImageUrl: url })} shape="circle" size={64} label={tProfile("uploadImage")} disabled={saving} />
             </div>
@@ -299,6 +303,7 @@ export function MemberProfileModal({ member, isAdmin, editForm, saving, error, o
                 <p className="text-lg font-semibold text-slate-900">{member.displayName ?? member.fullName}</p>
                 {member.roleName && <p className="text-sm text-slate-500">{member.roleName}</p>}
                 {member.phoneNumber && <p className="text-sm text-slate-500 tabular-nums" dir="ltr">{member.phoneNumber}</p>}
+                {member.email && <p className="text-sm text-slate-500">{member.email}</p>}
               </div>
             </div>
             {isAdmin && (

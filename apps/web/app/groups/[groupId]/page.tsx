@@ -87,6 +87,7 @@ export default function GroupDetailPage() {
   const tGroups = useTranslations("groups");
   const tErrors = useTranslations("errors");
   const tAdmin = useTranslations("admin");
+  const tReAuth = useTranslations("reAuth");
   const TAB_LABELS = getTabLabels(tGroups);
 
   // ── All state via hook ───────────────────────────────────────────────────
@@ -1205,23 +1206,35 @@ export default function GroupDetailPage() {
             </svg>
             <span className="hidden sm:inline">{tGroups("whatsNew")}</span>
           </Link>
-          <button
-            onClick={handleAdminModeToggle}
-            disabled={!isAdmin && hasCredentials === false}
-            title={!isAdmin && hasCredentials === false ? tGroups("noCredentialsTooltip") : undefined}
-            className={`flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-medium border transition-colors flex-shrink-0 ${
-              isAdmin
-                ? "bg-amber-50 border-amber-300 text-amber-700 hover:bg-amber-100"
-                : hasCredentials === false
-                  ? "bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed"
-                  : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
-            }`}
-          >
-            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-            </svg>
-            <span className="hidden sm:inline">{isAdmin ? tGroups("exitAdminMode") : tGroups("enterAdminMode")}</span>
-          </button>
+          <div className="relative group/admin-btn flex-shrink-0">
+            <button
+              onClick={handleAdminModeToggle}
+              disabled={!isAdmin && hasCredentials === false}
+              aria-describedby={!isAdmin && hasCredentials === false ? "admin-btn-tooltip" : undefined}
+              className={`flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-medium border transition-colors ${
+                isAdmin
+                  ? "bg-amber-50 border-amber-300 text-amber-700 hover:bg-amber-100"
+                  : hasCredentials === false
+                    ? "bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed opacity-60"
+                    : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
+              }`}
+            >
+              <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+              </svg>
+              <span className="hidden sm:inline">{isAdmin ? tGroups("exitAdminMode") : tGroups("enterAdminMode")}</span>
+            </button>
+            {!isAdmin && hasCredentials === false && (
+              <div
+                id="admin-btn-tooltip"
+                role="tooltip"
+                className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 text-xs text-white bg-slate-800 rounded-lg shadow-lg whitespace-normal max-w-[220px] text-center opacity-0 pointer-events-none group-hover/admin-btn:opacity-100 transition-opacity z-50"
+              >
+                {tReAuth("noCredentials")}
+                <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-800" />
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Trial/subscription banner */}
@@ -1636,6 +1649,7 @@ export default function GroupDetailPage() {
             fullName: selectedMember.fullName,
             displayName: selectedMember.displayName ?? "",
             phoneNumber: selectedMember.phoneNumber ?? "",
+            email: selectedMember.email ?? "",
             profileImageUrl: selectedMember.profileImageUrl ?? "",
             birthday: selectedMember.birthday ?? "",
           })}

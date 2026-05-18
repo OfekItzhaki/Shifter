@@ -19,7 +19,8 @@ public record UpdatePersonInfoCommand(
     string? DisplayName,
     string? PhoneNumber,
     string? ProfileImageUrl,
-    DateOnly? Birthday) : IRequest;
+    DateOnly? Birthday,
+    string? Email = null) : IRequest;
 
 public class UpdatePersonInfoCommandHandler : IRequestHandler<UpdatePersonInfoCommand>
 {
@@ -45,7 +46,7 @@ public class UpdatePersonInfoCommandHandler : IRequestHandler<UpdatePersonInfoCo
         if (!isAdmin && !isOwn)
             throw new UnauthorizedAccessException("You can only edit your own profile.");
 
-        person.UpdateFull(req.FullName, req.DisplayName, req.ProfileImageUrl, req.PhoneNumber, req.Birthday);
+        person.UpdateFull(req.FullName, req.DisplayName, req.ProfileImageUrl, req.PhoneNumber, req.Birthday, req.Email);
         await _db.SaveChangesAsync(ct);
     }
 }

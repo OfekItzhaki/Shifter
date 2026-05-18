@@ -11,6 +11,7 @@ public class Person : AuditableEntity, ITenantScoped
     public string? ProfileImageUrl { get; private set; }
     public bool IsActive { get; private set; } = true;
     public string? PhoneNumber { get; private set; }
+    public string? Email { get; private set; }
     public string? InvitationStatus { get; private set; } = "accepted"; // "pending" | "accepted"
     public DateOnly? Birthday { get; private set; }
 
@@ -34,13 +35,14 @@ public class Person : AuditableEntity, ITenantScoped
     public void LinkUser(Guid userId) { LinkedUserId = userId; InvitationStatus = "accepted"; Touch(); }
     public void SetPhoneNumber(string phone) { PhoneNumber = phone?.Trim(); Touch(); }
 
-    public void UpdateFull(string fullName, string? displayName, string? profileImageUrl, string? phoneNumber, DateOnly? birthday)
+    public void UpdateFull(string fullName, string? displayName, string? profileImageUrl, string? phoneNumber, DateOnly? birthday, string? email = null)
     {
         FullName = fullName.Trim();
         DisplayName = displayName?.Trim();
         ProfileImageUrl = profileImageUrl;
         PhoneNumber = phoneNumber?.Trim();
         Birthday = birthday;
+        Email = email?.Trim();
         Touch();
     }
 

@@ -79,7 +79,7 @@ public class PeopleController : ControllerBase
     {
         await _mediator.Send(new Jobuler.Application.People.Commands.UpdatePersonInfoCommand(
             spaceId, personId, CurrentUserId,
-            req.FullName, req.DisplayName, req.PhoneNumber, req.ProfileImageUrl, req.Birthday), ct);
+            req.FullName, req.DisplayName, req.PhoneNumber, req.ProfileImageUrl, req.Birthday, req.Email), ct);
         return NoContent();
     }
 
@@ -176,7 +176,7 @@ public class InvitationsController : ControllerBase
 
 public record CreatePersonRequest(string FullName, string? DisplayName, Guid? LinkedUserId);
 public record UpdatePersonRequest(string FullName, string? DisplayName, string? ProfileImageUrl);
-public record UpdatePersonInfoRequest(string FullName, string? DisplayName, string? PhoneNumber, string? ProfileImageUrl, DateOnly? Birthday);
+public record UpdatePersonInfoRequest(string FullName, string? DisplayName, string? PhoneNumber, string? ProfileImageUrl, DateOnly? Birthday, string? Email = null);
 public record AssignRoleRequest(Guid RoleId);
 public record AddQualificationRequest(string Qualification, DateOnly? IssuedAt, DateOnly? ExpiresAt);
 public record InvitePersonRequest(string Contact, string Channel);

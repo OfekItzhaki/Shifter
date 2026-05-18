@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import ShifterLogo from "@/components/shell/ShifterLogo";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 
@@ -16,7 +16,16 @@ const PLANS = [
 
 export default function PricingPage() {
   const t = useTranslations("pricing");
+  const router = useRouter();
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
+
+  function handleBack() {
+    if (typeof window !== "undefined" && window.history.length <= 1) {
+      router.push("/");
+    } else {
+      router.back();
+    }
+  }
 
   function handleSelectPlan(planId: string) {
     setSelectedPlan(planId);
@@ -102,9 +111,20 @@ export default function PricingPage() {
 
         {/* Back + Language */}
         <div style={{ marginTop: "2rem", textAlign: "center" }}>
-          <Link href="/login" style={{ color: "#3b82f6", fontSize: "0.875rem", textDecoration: "none" }}>
+          <button
+            onClick={handleBack}
+            style={{
+              color: "#3b82f6",
+              fontSize: "0.875rem",
+              textDecoration: "none",
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              padding: 0,
+            }}
+          >
             ← {t("back")}
-          </Link>
+          </button>
           <div style={{ marginTop: "1rem" }}>
             <LanguageSwitcher variant="auth" />
           </div>

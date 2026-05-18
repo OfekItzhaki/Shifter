@@ -62,7 +62,7 @@ export function useGroupPageState() {
   const [removeErrors, setRemoveErrors] = useState<Record<string, string>>({});
   const [selectedMember, setSelectedMember] = useState<GroupMemberDto | null>(null);
   const [memberEditForm, setMemberEditForm] = useState<{
-    fullName: string; displayName: string; phoneNumber: string; profileImageUrl: string; birthday: string;
+    fullName: string; displayName: string; phoneNumber: string; email: string; profileImageUrl: string; birthday: string;
   } | null>(null);
   const [memberEditSaving, setMemberEditSaving] = useState(false);
   const [memberEditError, setMemberEditError] = useState<string | null>(null);
