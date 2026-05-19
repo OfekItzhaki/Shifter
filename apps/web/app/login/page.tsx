@@ -7,7 +7,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import ShifterLogo from "@/components/shell/ShifterLogo";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
-import { isWebAuthnSupported, authenticateWithBiometric, listCredentials, registerCredential } from "@/lib/webauthn";
+import { isWebAuthnSupported, isConditionalMediationAvailable, authenticateWithBiometric, listCredentials, registerCredential } from "@/lib/webauthn";
 import { detectBrowserLocale } from "@/lib/utils/detectLocale";
 
 function LoginForm() {
@@ -25,16 +25,48 @@ function LoginForm() {
   const [loading, setLoading] = useState(false);
 
   // Biometric login state
-  const [webAuthnAvailable, setWebAuthnAvailable] = useState(false);
-  const [biometricLoading, setBiometricLoading] = useState(false);
   const [biometricError, setBiometricError] = useState<string | null>(null);
 
   // Biometric registration prompt state
   const [showBiometricPrompt, setShowBiometricPrompt] = useState(false);
   const [biometricRegistering, setBiometricRegistering] = useState(false);
 
+  // Start conditional mediation (passkey autofill) on mount
   useEffect(() => {
-    setWebAuthnAvailable(isWebAuthnSupported());
+    if (!isWebAuthnSupported()) return;
+    let cancelled = false;
+
+    async function startConditionalMediation() {
+      const available = await isConditionalMediationAvailable();
+      if (!available || cancelled) return;
+
+      try {
+        const tokens = await authenticateWithBiometric({ mediation: "conditional" });
+        if (cancelled) return;
+        localStorage.setItem("access_token", tokens.accessToken);
+        localStorage.setItem("refresh_token", tokens.refreshToken);
+        localStorage.removeItem("jobuler-space");
+        document.cookie = `access_token=${tokens.accessToken}; path=/; max-age=900; SameSite=Strict`;
+        const locale = tokens.preferredLocale || detectBrowserLocale();
+        document.cookie = `locale=${locale}; path=/; max-age=31536000; SameSite=Strict`;
+        useAuthStore.setState({
+          userId: tokens.userId,
+          displayName: tokens.displayName,
+          preferredLocale: locale,
+          isAuthenticated: true,
+          isPlatformAdmin: tokens.isPlatformAdmin ?? false,
+          adminGroupId: null,
+          timezoneId: tokens.timezoneId ?? "Asia/Jerusalem",
+          timezoneOffsetMinutes: tokens.timezoneOffsetMinutes ?? 120,
+        });
+        router.push(redirectTo);
+      } catch {
+        // Conditional mediation not supported or user didn't select a passkey — silent fail
+      }
+    }
+
+    startConditionalMediation();
+    return () => { cancelled = true; };
   }, []);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -85,40 +117,6 @@ function LoginForm() {
     router.push(redirectTo);
   }
 
-  async function handleBiometricLogin() {
-    setBiometricError(null);
-    setBiometricLoading(true);
-    try {
-      const tokens = await authenticateWithBiometric();
-      localStorage.setItem("access_token", tokens.accessToken);
-      localStorage.setItem("refresh_token", tokens.refreshToken);
-      localStorage.removeItem("jobuler-space");
-      document.cookie = `access_token=${tokens.accessToken}; path=/; max-age=900; SameSite=Strict`;
-      const locale = tokens.preferredLocale || detectBrowserLocale();
-      document.cookie = `locale=${locale}; path=/; max-age=31536000; SameSite=Strict`;
-      // Update auth store with session data including timezone
-      useAuthStore.setState({
-        userId: tokens.userId,
-        displayName: tokens.displayName,
-        preferredLocale: locale,
-        isAuthenticated: true,
-        isPlatformAdmin: tokens.isPlatformAdmin ?? false,
-        adminGroupId: null,
-        timezoneId: tokens.timezoneId ?? "Asia/Jerusalem",
-        timezoneOffsetMinutes: tokens.timezoneOffsetMinutes ?? 120,
-      });
-      router.push(redirectTo);
-    } catch (err: any) {
-      if (err?.message === "USER_CANCELLED") {
-        // User cancelled — no error to show
-        return;
-      }
-      setBiometricError(t("noCredentialFound"));
-    } finally {
-      setBiometricLoading(false);
-    }
-  }
-
   return (
     <main className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900 p-4">
       <div style={{ width: "100%", maxWidth: "380px" }}>
@@ -137,79 +135,30 @@ function LoginForm() {
             <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Sign in to your workspace</p>
           </div>
 
-          {/* Biometric Login Button */}
-          {webAuthnAvailable && (
-            <div style={{ marginBottom: "1.25rem" }}>
+          {/* Biometric error (shown if conditional mediation fails silently) */}
+          {biometricError && (
+            <div style={{
+              marginBottom: "1rem",
+              background: "#fef2f2",
+              border: "1px solid #fecaca",
+              borderRadius: "10px",
+              padding: "0.5rem 0.75rem",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: "0.5rem",
+            }}>
+              <p style={{ fontSize: "0.8125rem", color: "#dc2626", margin: 0 }}>{biometricError}</p>
               <button
                 type="button"
-                onClick={handleBiometricLogin}
-                disabled={biometricLoading}
-                style={{
-                  width: "100%",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: "0.625rem",
-                  background: biometricLoading
-                    ? "linear-gradient(135deg, #a78bfa, #818cf8)"
-                    : "linear-gradient(135deg, #7c3aed, #4f46e5)",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "10px",
-                  padding: "0.875rem",
-                  fontSize: "0.9375rem",
-                  fontWeight: 600,
-                  cursor: biometricLoading ? "not-allowed" : "pointer",
-                  transition: "all 0.15s",
-                  boxShadow: "0 2px 8px rgba(79, 70, 229, 0.3)",
-                }}
-                aria-label={t("biometricLogin")}
+                onClick={() => setBiometricError(null)}
+                style={{ background: "none", border: "none", cursor: "pointer", color: "#dc2626", padding: 0, lineHeight: 1 }}
+                aria-label="סגור"
               >
-                {/* Fingerprint icon */}
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M2 12C2 6.5 6.5 2 12 2a10 10 0 0 1 8 4" />
-                  <path d="M5 19.5C5.5 18 6 15 6 12c0-3.5 2.5-6 6-6 3.5 0 6 2.5 6 6 0 1.5-.5 3-1 4" />
-                  <path d="M9 12c0-1.5 1.5-3 3-3s3 1.5 3 3-1 4-2 6" />
-                  <path d="M12 12v4" />
-                  <path d="M2 16c1 2 2.5 3.5 4.5 4.5" />
-                  <path d="M15 17c1 1.5 2 3 2.5 4.5" />
-                  <path d="M19.5 8c.5 1 .5 2 .5 4 0 2-.5 4-1 6" />
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
-                {biometricLoading ? t("authenticating") : t("biometricLogin")}
               </button>
-
-              {biometricError && (
-                <div style={{
-                  marginTop: "0.625rem",
-                  background: "#fef2f2",
-                  border: "1px solid #fecaca",
-                  borderRadius: "10px",
-                  padding: "0.5rem 0.75rem",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  gap: "0.5rem",
-                }}>
-                  <p style={{ fontSize: "0.8125rem", color: "#dc2626", margin: 0 }}>{biometricError}</p>
-                  <button
-                    type="button"
-                    onClick={() => setBiometricError(null)}
-                    style={{ background: "none", border: "none", cursor: "pointer", color: "#dc2626", padding: 0, lineHeight: 1 }}
-                    aria-label="סגור"
-                  >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
-              )}
-
-              {/* Divider */}
-              <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginTop: "1.25rem" }}>
-                <div style={{ flex: 1, height: "1px", background: "#e2e8f0" }} />
-                <span style={{ fontSize: "0.75rem", color: "#94a3b8", fontWeight: 500 }}>{t("or")}</span>
-                <div style={{ flex: 1, height: "1px", background: "#e2e8f0" }} />
-              </div>
             </div>
           )}
 
@@ -242,6 +191,7 @@ function LoginForm() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="email@example.com / 0501234567"
+                autoComplete="username webauthn"
                 style={{ width: "100%", border: "1px solid #e2e8f0", borderRadius: "10px", padding: "0.625rem 0.875rem", fontSize: "0.875rem", color: "#0f172a", outline: "none", boxSizing: "border-box" }}
               />
             </div>
@@ -257,6 +207,7 @@ function LoginForm() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
+                  autoComplete="current-password webauthn"
                   style={{ width: "100%", border: "1px solid #e2e8f0", borderRadius: "10px", padding: "0.625rem 2.5rem 0.625rem 0.875rem", fontSize: "0.875rem", color: "#0f172a", outline: "none", boxSizing: "border-box" }}
                 />
                 <button

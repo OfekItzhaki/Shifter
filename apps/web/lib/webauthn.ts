@@ -125,7 +125,21 @@ export async function registerCredential(nickname?: string): Promise<string> {
   return completeData.credentialId;
 }
 
+/**
+ * Check if the browser supports conditional mediation (passkey autofill).
+ */
+export async function isConditionalMediationAvailable(): Promise<boolean> {
+  if (!isWebAuthnSupported()) return false;
+  if (typeof PublicKeyCredential.isConditionalMediationAvailable !== "function") return false;
+  return PublicKeyCredential.isConditionalMediationAvailable();
+}
+
 // ─── Authentication ──────────────────────────────────────────────────────────
+
+export interface AuthenticateOptions {
+  /** Use "conditional" for passkey autofill (triggered by autocomplete). Default is undefined (modal). */
+  mediation?: "conditional" | "optional" | "required" | "silent";
+}
 
 /**
  * Full WebAuthn authentication flow:
@@ -134,10 +148,11 @@ export async function registerCredential(nickname?: string): Promise<string> {
  * 3. Send the assertion response back to the server
  * 4. Receive JWT tokens
  *
+ * @param opts Optional settings (e.g. mediation: "conditional" for passkey autofill)
  * @returns Login tokens (same format as email+password login)
  * @throws Error with message "USER_CANCELLED" if user cancels the authenticator prompt
  */
-export async function authenticateWithBiometric(): Promise<LoginTokens> {
+export async function authenticateWithBiometric(opts?: AuthenticateOptions): Promise<LoginTokens> {
   // Step 1: Get authentication options from server
   const { data: optionsData } = await apiClient.post("/auth/webauthn/login/options");
   const options = JSON.parse(optionsData.optionsJson);
@@ -157,9 +172,11 @@ export async function authenticateWithBiometric(): Promise<LoginTokens> {
   // Step 2: Call navigator.credentials.get()
   let credential: PublicKeyCredential;
   try {
-    const result = await navigator.credentials.get({
-      publicKey: options,
-    });
+    const getOptions: CredentialRequestOptions = { publicKey: options };
+    if (opts?.mediation) {
+      (getOptions as any).mediation = opts.mediation;
+    }
+    const result = await navigator.credentials.get(getOptions);
     if (!result) throw new Error("USER_CANCELLED");
     credential = result as PublicKeyCredential;
   } catch (err: any) {

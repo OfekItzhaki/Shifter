@@ -1,5 +1,6 @@
 using FluentValidation;
 using Jobuler.Application.Scheduling;
+using Jobuler.Domain.Groups;
 using Jobuler.Domain.Scheduling;
 using Jobuler.Infrastructure.Persistence;
 using MediatR;
@@ -48,6 +49,16 @@ public class TriggerSolverCommandHandler : IRequestHandler<TriggerSolverCommand,
                 "SELECT set_config('app.current_space_id', {0}, TRUE), set_config('app.current_user_id', {1}, TRUE)",
                 request.SpaceId.ToString(),
                 request.RequestedByUserId?.ToString() ?? "");
+        }
+
+        // ── Limited_Mode guard ────────────────────────────────────────────────
+        if (request.GroupId.HasValue)
+        {
+            var group = await _db.Groups
+                .AsNoTracking()
+                .FirstOrDefaultAsync(g => g.Id == request.GroupId.Value && g.SpaceId == request.SpaceId, ct);
+
+            group?.EnsureActive();
         }
 
         // ── Stale-task guard ──────────────────────────────────────────────────

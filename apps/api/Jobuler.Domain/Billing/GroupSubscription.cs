@@ -2,7 +2,7 @@ using Jobuler.Domain.Common;
 
 namespace Jobuler.Domain.Billing;
 
-public enum SubscriptionStatus { Trialing, Active, PastDue, Canceled }
+public enum SubscriptionStatus { Trialing, Active, PastDue, Canceled, Expired }
 
 public class GroupSubscription : Entity, ITenantScoped
 {
@@ -64,8 +64,27 @@ public class GroupSubscription : Entity, ITenantScoped
 
     public void Cancel()
     {
+        if (Status == SubscriptionStatus.Canceled || Status == SubscriptionStatus.Expired)
+            throw new InvalidOperationException("Subscription is already canceled.");
         Status = SubscriptionStatus.Canceled;
         CanceledAt = DateTime.UtcNow;
+    }
+
+    public void Expire()
+    {
+        if (Status != SubscriptionStatus.Canceled)
+            throw new InvalidOperationException("Only canceled subscriptions can expire.");
+        Status = SubscriptionStatus.Expired;
+    }
+
+    public void Renew(DateTime periodStart, DateTime periodEnd)
+    {
+        if (Status == SubscriptionStatus.Active)
+            throw new InvalidOperationException("Subscription is already active and does not need renewal.");
+        Status = SubscriptionStatus.Active;
+        CanceledAt = null;
+        CurrentPeriodStart = periodStart;
+        CurrentPeriodEnd = periodEnd;
     }
 
     public bool IsTrialExpired => Status == SubscriptionStatus.Trialing

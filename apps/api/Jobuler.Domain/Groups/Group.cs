@@ -78,6 +78,18 @@ public class Group : AuditableEntity, ITenantScoped
     }
 
     public void Deactivate() { IsActive = false; Touch(); }
+    public void Reactivate() { IsActive = true; Touch(); }
+
+    /// <summary>
+    /// Guards write operations on this group. Throws if the group is in Limited Mode
+    /// (deactivated due to expired subscription).
+    /// </summary>
+    public void EnsureActive()
+    {
+        if (!IsActive)
+            throw new InvalidOperationException(
+                "This group is in limited mode. Please renew your subscription to perform this action.");
+    }
 
     public void SoftDelete() { DeletedAt = DateTime.UtcNow; Touch(); }
     public void Restore() { DeletedAt = null; Touch(); }

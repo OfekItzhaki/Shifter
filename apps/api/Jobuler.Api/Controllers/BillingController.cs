@@ -40,6 +40,24 @@ public class BillingController : ControllerBase
         return Ok(result);
     }
 
+    /// <summary>Cancel a group subscription.</summary>
+    [HttpPost("groups/{groupId:guid}/cancel")]
+    public async Task<IActionResult> CancelSubscription(
+        Guid spaceId, Guid groupId, CancellationToken ct)
+    {
+        await _mediator.Send(new CancelSubscriptionCommand(spaceId, groupId, CurrentUserId), ct);
+        return Ok();
+    }
+
+    /// <summary>Renew a group subscription.</summary>
+    [HttpPost("groups/{groupId:guid}/renew")]
+    public async Task<IActionResult> RenewSubscription(
+        Guid spaceId, Guid groupId, CancellationToken ct)
+    {
+        await _mediator.Send(new RenewSubscriptionCommand(spaceId, groupId, CurrentUserId), ct);
+        return Ok();
+    }
+
     /// <summary>Validate a coupon code.</summary>
     [HttpPost("validate-coupon")]
     public async Task<IActionResult> ValidateCoupon(

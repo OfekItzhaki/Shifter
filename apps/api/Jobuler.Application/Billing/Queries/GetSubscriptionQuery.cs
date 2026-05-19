@@ -11,5 +11,7 @@ public record SubscriptionDto(
     int PeakMemberCount,
     int DiscountPercent,
     string? CouponCode,
-    bool IsActive
+    bool IsActive,
+    DateTime? CanceledAt,
+    DateTime? PeriodEndsAt
 );

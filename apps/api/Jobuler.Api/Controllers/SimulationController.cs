@@ -82,7 +82,7 @@ public class SimulationController : ControllerBase
             await _mediator.Send(new PublishSandboxCommand(
                 spaceId, groupId, CurrentUserId, request), ct);
         }
-        catch (InvalidOperationException ex)
+        catch (InvalidOperationException ex) when (ex.Message.Contains("already published") || ex.Message.Contains("Cannot publish a version"))
         {
             throw new ConflictException(ex.Message);
         }

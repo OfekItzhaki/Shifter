@@ -23,7 +23,9 @@ public class GetSubscriptionHandler : IRequestHandler<GetSubscriptionQuery, Subs
             sub.PeakMemberCount,
             sub.DiscountPercent,
             sub.CouponCode,
-            sub.IsActive
+            sub.IsActive,
+            sub.CanceledAt,
+            sub.CurrentPeriodEnd
         );
     }
 }

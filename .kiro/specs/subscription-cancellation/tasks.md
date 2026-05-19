@@ -6,49 +6,49 @@ This plan extends the existing billing system with a full subscription lifecycle
 
 ## Tasks
 
-- [ ] 1. Domain layer extensions
-  - [ ] 1.1 Add `Expired` status to `SubscriptionStatus` enum and add `Expire()` / `Renew()` methods to `GroupSubscription`
+- [x] 1. Domain layer extensions
+  - [x] 1.1 Add `Expired` status to `SubscriptionStatus` enum and add `Expire()` / `Renew()` methods to `GroupSubscription`
     - Add `Expired` to `SubscriptionStatus` enum in `Jobuler.Domain/Billing/GroupSubscription.cs`
     - Implement `Expire()` method: only transitions from `Canceled`, throws `InvalidOperationException` otherwise
     - Implement `Renew(DateTime periodStart, DateTime periodEnd)` method: transitions from `Canceled` or `Expired` to `Active`, clears `CanceledAt`, sets period dates; throws if already `Active`
     - Add `Reactivate()` method to `Group` entity (sets `IsActive = true`, calls `Touch()`)
     - _Requirements: 1.1, 2.1, 3.1, 3.2, 3.5_
 
-  - [ ] 1.2 Add `BillingManage` permission constant
+  - [x] 1.2 Add `BillingManage` permission constant
     - Add `public const string BillingManage = "billing.manage";` to `Permissions` class in `Jobuler.Domain/Spaces/SpacePermissionGrant.cs`
     - _Requirements: 5.1, 5.2_
 
-  - [ ]* 1.3 Write property test: Cancel transitions to Canceled with timestamp (Property 1)
+  - [x]* 1.3 Write property test: Cancel transitions to Canceled with timestamp (Property 1)
     - **Property 1: Cancel transitions subscription to Canceled with timestamp**
     - Generate `GroupSubscription` instances in `Active` status with random period dates; verify `Cancel()` sets `Status == Canceled` and `CanceledAt != null`
     - Use xUnit + FsCheck
     - **Validates: Requirements 1.1**
 
-  - [ ]* 1.4 Write property test: Already-canceled subscription rejects cancellation (Property 2)
+  - [x]* 1.4 Write property test: Already-canceled subscription rejects cancellation (Property 2)
     - **Property 2: Already-canceled subscription rejects cancellation**
     - Generate `GroupSubscription` in `Canceled` or `Expired` status; verify calling `Cancel()` throws `InvalidOperationException`
     - **Validates: Requirements 1.3**
 
-  - [ ]* 1.5 Write property test: Active subscription rejects renewal (Property 11)
+  - [x]* 1.5 Write property test: Active subscription rejects renewal (Property 11)
     - **Property 11: Active subscription rejects renewal**
     - Generate `GroupSubscription` in `Active` status; verify calling `Renew()` throws `InvalidOperationException`
     - **Validates: Requirements 3.5**
 
-  - [ ]* 1.6 Write property test: Renew canceled subscription within period reverts to active (Property 8)
+  - [x]* 1.6 Write property test: Renew canceled subscription within period reverts to active (Property 8)
     - **Property 8: Renew canceled subscription within period reverts to active**
     - Generate `GroupSubscription` in `Canceled` status with `CurrentPeriodEnd > DateTime.UtcNow`; verify `Renew()` sets `Status == Active`, `CanceledAt == null`, and preserves existing period dates
     - **Validates: Requirements 3.1**
 
-  - [ ]* 1.7 Write property test: Renew expired subscription creates new billing period (Property 9)
+  - [x]* 1.7 Write property test: Renew expired subscription creates new billing period (Property 9)
     - **Property 9: Renew expired subscription creates new billing period**
     - Generate `GroupSubscription` in `Expired` status; verify `Renew(periodStart, periodEnd)` sets `Status == Active`, `CanceledAt == null`, and updates period dates to provided values
     - **Validates: Requirements 3.2**
 
-- [ ] 2. Checkpoint - Ensure domain tests pass
+- [x] 2. Checkpoint - Ensure domain tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 3. Application layer commands and validators
-  - [ ] 3.1 Refactor `CancelSubscriptionCommand` with authorization, audit logging, and trialing handling
+- [x] 3. Application layer commands and validators
+  - [x] 3.1 Refactor `CancelSubscriptionCommand` with authorization, audit logging, and trialing handling
     - Add `ActorUserId` parameter to the command record
     - Add permission check via `IPermissionService.RequirePermissionAsync` for `BillingManage` (space owners pass implicitly)
     - Add guard: throw `InvalidOperationException` if subscription is already `Canceled` or `Expired`
@@ -58,7 +58,7 @@ This plan extends the existing billing system with a full subscription lifecycle
     - Add `CancelSubscriptionValidator` with FluentValidation (SpaceId, GroupId, ActorUserId not empty)
     - _Requirements: 1.1, 1.3, 1.4, 1.5, 5.1_
 
-  - [ ] 3.2 Implement `RenewSubscriptionCommand` handler
+  - [x] 3.2 Implement `RenewSubscriptionCommand` handler
     - Create `RenewSubscriptionCommand(Guid SpaceId, Guid GroupId, Guid ActorUserId) : IRequest`
     - Add permission check for `BillingManage`
     - Load subscription; throw `KeyNotFoundException` if not found
@@ -70,7 +70,7 @@ This plan extends the existing billing system with a full subscription lifecycle
     - Add `RenewSubscriptionValidator` with FluentValidation
     - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 5.2_
 
-  - [ ] 3.3 Implement `ExpireSubscriptionsCommand` handler (batch expiry)
+  - [x] 3.3 Implement `ExpireSubscriptionsCommand` handler (batch expiry)
     - Create `ExpireSubscriptionsCommand() : IRequest`
     - Query all subscriptions where `Status == Canceled` and `CurrentPeriodEnd < DateTime.UtcNow`
     - Also query trialing subscriptions where `Status == Trialing` and `TrialEndsAt < DateTime.UtcNow` (already canceled ones)
@@ -79,85 +79,85 @@ This plan extends the existing billing system with a full subscription lifecycle
     - Save all changes in a single transaction
     - _Requirements: 2.1, 2.2, 2.5_
 
-  - [ ] 3.4 Extend `GetSubscriptionQuery` response with cancellation and expiry fields
+  - [x] 3.4 Extend `GetSubscriptionQuery` response with cancellation and expiry fields
     - Add `CanceledAt` (DateTime?) and `PeriodEndsAt` (DateTime?) fields to `SubscriptionDto`
     - Update the query handler to map these fields from the subscription entity
     - _Requirements: 4.1, 4.2, 4.3_
 
-  - [ ]* 3.5 Write property test: Trialing subscription cancel causes immediate group deactivation (Property 3)
+  - [x]* 3.5 Write property test: Trialing subscription cancel causes immediate group deactivation (Property 3)
     - **Property 3: Trialing subscription cancel causes immediate group deactivation**
     - Generate `GroupSubscription` in `Trialing` status; verify canceling sets subscription to `Canceled` and group `IsActive` to `false`
     - **Validates: Requirements 1.4**
 
-  - [ ]* 3.6 Write property test: Expired subscription deactivates group (Property 5)
+  - [x]* 3.6 Write property test: Expired subscription deactivates group (Property 5)
     - **Property 5: Expired subscription deactivates group**
     - Generate `GroupSubscription` in `Canceled` status with `CurrentPeriodEnd <= DateTime.UtcNow`; verify expiry logic transitions to `Expired` and sets group `IsActive = false`
     - **Validates: Requirements 2.1, 2.2**
 
-  - [ ]* 3.7 Write property test: Active subscriptions are not expired by the expiry job (Property 6)
+  - [x]* 3.7 Write property test: Active subscriptions are not expired by the expiry job (Property 6)
     - **Property 6: Active subscriptions are not expired by the expiry job**
     - Generate `GroupSubscription` in `Active` status with various `CurrentPeriodEnd` values; verify the expiry job does NOT change status and group remains active
     - **Validates: Requirements 2.5**
 
-  - [ ]* 3.8 Write property test: Renewal reactivates group from Limited_Mode (Property 10)
+  - [x]* 3.8 Write property test: Renewal reactivates group from Limited_Mode (Property 10)
     - **Property 10: Renewal reactivates group from Limited_Mode**
     - Generate a group with `IsActive == false` and associated expired/canceled subscription; verify renewal sets `group.IsActive = true`
     - **Validates: Requirements 3.3**
 
-  - [ ]* 3.9 Write property test: Unauthorized users are rejected (Property 13)
+  - [x]* 3.9 Write property test: Unauthorized users are rejected (Property 13)
     - **Property 13: Unauthorized users are rejected for cancel and renew**
     - Generate random user IDs without `SpaceOwner` role or `BillingManage` permission; verify both cancel and renew throw `UnauthorizedAccessException`
     - **Validates: Requirements 5.1, 5.2, 5.3**
 
-- [ ] 4. Checkpoint - Ensure application layer tests pass
+- [x] 4. Checkpoint - Ensure application layer tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 5. API layer and background job
-  - [ ] 5.1 Add cancel and renew endpoints to `BillingController`
+- [x] 5. API layer and background job
+  - [x] 5.1 Add cancel and renew endpoints to `BillingController`
     - Add `POST /spaces/{spaceId}/billing/groups/{groupId}/cancel` endpoint
     - Add `POST /spaces/{spaceId}/billing/groups/{groupId}/renew` endpoint
     - Both endpoints extract `CurrentUserId` from claims, dispatch respective commands via MediatR
     - Permission checks happen in command handlers (per architecture rules)
     - _Requirements: 1.1, 3.1, 5.1, 5.2, 5.3_
 
-  - [ ] 5.2 Implement `ExpireSubscriptionsJob` as a recurring hosted service
+  - [x] 5.2 Implement `ExpireSubscriptionsJob` as a recurring hosted service
     - Create `ExpireSubscriptionsJob` in `Jobuler.Infrastructure` (or as a Hangfire recurring job if Hangfire is configured)
     - Schedule to run daily (or every few hours)
     - Dispatches `ExpireSubscriptionsCommand` via MediatR
     - Add logging for number of subscriptions expired per run
     - _Requirements: 2.1, 2.2, 2.5_
 
-  - [ ] 5.3 Extend `GetSubscription` endpoint response mapping
+  - [x] 5.3 Extend `GetSubscription` endpoint response mapping
     - Update the existing `GET /spaces/{spaceId}/billing/groups/{groupId}/subscription` endpoint to return the extended `SubscriptionDto` with `canceledAt` and `periodEndsAt`
     - _Requirements: 4.1, 4.2, 4.3_
 
-  - [ ]* 5.4 Write property test: Status query returns correct fields per subscription state (Property 12)
+  - [x]* 5.4 Write property test: Status query returns correct fields per subscription state (Property 12)
     - **Property 12: Status query returns correct fields per subscription state**
     - Generate `GroupSubscription` in various states; verify the DTO includes `canceledAt` (non-null) when `Canceled`, and `status == "expired"` when `Expired`
     - **Validates: Requirements 4.1, 4.2**
 
-- [ ] 6. Checkpoint - Ensure all tests pass
+- [x] 6. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 7. Limited_Mode enforcement and integration wiring
-  - [ ] 7.1 Add Limited_Mode guards to write operations
+- [x] 7. Limited_Mode enforcement and integration wiring
+  - [x] 7.1 Add Limited_Mode guards to write operations
     - Identify controllers/commands that create schedules, assignments, and solver runs
     - Add a check: if `group.IsActive == false`, throw `InvalidOperationException` with message indicating the group is in limited mode
     - This can be a shared guard method or middleware-level check on group-scoped write endpoints
     - _Requirements: 2.3, 2.4_
 
-  - [ ]* 7.2 Write property test: Limited_Mode blocks write operations (Property 7)
+  - [x]* 7.2 Write property test: Limited_Mode blocks write operations (Property 7)
     - **Property 7: Limited_Mode blocks write operations**
     - Generate groups with `IsActive == false`; verify attempts to create schedules, assignments, or solver runs are rejected
     - **Validates: Requirements 2.4**
 
-  - [ ]* 7.3 Write integration tests for full lifecycle
+  - [x]* 7.3 Write integration tests for full lifecycle
     - Test cancel → expire → renew lifecycle via command handlers
     - Verify read-only access in Limited_Mode (read queries succeed, write commands throw)
     - Verify audit log entries are created at each step
     - _Requirements: 1.1, 1.5, 2.1, 2.3, 2.4, 3.1, 3.3, 3.4_
 
-- [ ] 8. Final checkpoint - Ensure all tests pass
+- [x] 8. Final checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 ## Notes

@@ -1,4 +1,5 @@
 using Jobuler.Application.Common;
+using Jobuler.Domain.Groups;
 using Jobuler.Domain.Scheduling;
 using Jobuler.Domain.Spaces;
 using Jobuler.Infrastructure.Persistence;
@@ -37,6 +38,21 @@ public class ApplyManualOverrideCommandHandler : IRequestHandler<ApplyManualOver
     {
         // ── Permission check ──────────────────────────────────────────────────
         // Handled at the controller level via IPermissionService.
+
+        // ── Limited_Mode guard ────────────────────────────────────────────────
+        // The SlotId may correspond to a GroupTask; look up the owning group.
+        var groupTask = await _db.GroupTasks
+            .AsNoTracking()
+            .FirstOrDefaultAsync(t => t.Id == req.SlotId && t.SpaceId == req.SpaceId, ct);
+
+        if (groupTask is not null)
+        {
+            var group = await _db.Groups
+                .AsNoTracking()
+                .FirstOrDefaultAsync(g => g.Id == groupTask.GroupId && g.SpaceId == req.SpaceId, ct);
+
+            group?.EnsureActive();
+        }
 
         // ── Find or create a draft version ───────────────────────────────────
         var draft = await _db.ScheduleVersions

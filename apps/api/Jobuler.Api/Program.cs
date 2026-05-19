@@ -267,6 +267,9 @@ builder.Services.AddHostedService<AutoSchedulerService>();
 // Subscription cleanup — auto-deletes groups 6 months after subscription cancellation
 builder.Services.AddHostedService<SubscriptionCleanupService>();
 
+// Subscription expiry — transitions canceled subscriptions past their billing period to Expired
+builder.Services.AddHostedService<ExpireSubscriptionsJob>();
+
 // ─── API ─────────────────────────────────────────────────────────────────────
 builder.Services.AddControllers()
     .AddJsonOptions(o =>

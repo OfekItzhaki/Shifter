@@ -20,6 +20,7 @@ public static class Permissions
     public const string PermissionsManage      = "permissions.manage";
     public const string OwnershipTransfer      = "ownership.transfer";
     public const string LogsViewSensitive      = "logs.view_sensitive";
+    public const string BillingManage           = "billing.manage";
 }
 
 public class SpacePermissionGrant : Entity, ITenantScoped

@@ -65,6 +65,9 @@ public class PublishSandboxCommandHandler : IRequestHandler<PublishSandboxComman
             .FirstOrDefaultAsync(g => g.Id == cmd.GroupId && g.SpaceId == cmd.SpaceId && g.DeletedAt == null, ct)
             ?? throw new KeyNotFoundException("Group not found.");
 
+        // ── Limited_Mode guard ────────────────────────────────────────────────
+        group.EnsureActive();
+
         // ── Capture before-snapshot for audit ────────────────────────────────
         var beforeSnapshot = await CaptureSnapshotAsync(cmd.SpaceId, cmd.GroupId, ct);
 
