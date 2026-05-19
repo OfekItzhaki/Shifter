@@ -93,10 +93,10 @@ button:disabled, input:disabled, textarea:disabled, select:disabled {
 /* ── Global content centering ────────────────────────────────────────────────
    Centers direct children of the main content area that have a max-width constraint.
    This ensures page content is horizontally centered in both LTR and RTL layouts.
+   Children without max-width will still stretch to full width.
 */
 .main-content main > * {
-  margin-inline-start: auto;
-  margin-inline-end: auto;
+  width: 100%;
 }
 
 /* ── Sidebar responsive layout ───────────────────────────────────────────────
