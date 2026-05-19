@@ -103,7 +103,7 @@ public class ApplyManualOverrideCommandHandler : IRequestHandler<ApplyManualOver
             _db.Assignments.Add(Assignment.Create(
                 req.SpaceId, draft.Id, req.SlotId, personId,
                 AssignmentSource.Override,
-                $"Manual override by user {req.RequestingUserId}"));
+                $"{AssignmentReasons.ManualOverride} by user {req.RequestingUserId}"));
         }
 
         await _db.SaveChangesAsync(ct);

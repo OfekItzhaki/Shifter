@@ -92,7 +92,7 @@ public class GetFreezePeriodChangesCountQueryHandler
 
         var manualAssignmentCount = nonSwapOverrides
             .Count(a => a.ChangeReasonSummary != null
-                && a.ChangeReasonSummary.Contains("Manual override"));
+                && a.ChangeReasonSummary.Contains(AssignmentReasons.ManualOverride));
 
         // Pure overrides: remaining non-swap overrides without manual assignment markers
         var overrideCount = nonSwapOverrides.Count - manualAssignmentCount;

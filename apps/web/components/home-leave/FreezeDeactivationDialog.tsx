@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useTranslations } from "next-intl";
 import {
   getFreezePeriodChangesCount,
@@ -68,6 +68,24 @@ export default function FreezeDeactivationDialog({
     }
   }, [open, fetchCounts]);
 
+  // Close on Escape key press
+  useEffect(() => {
+    if (!open) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onCancel();
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [open, onCancel]);
+
+  // Focus the dialog container when opened for accessibility
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (open && dialogRef.current) {
+      dialogRef.current.focus();
+    }
+  }, [open]);
+
   if (!open) return null;
 
   const hasChanges = counts !== null && counts.totalCount > 0;
@@ -90,8 +108,14 @@ export default function FreezeDeactivationDialog({
       role="dialog"
       aria-modal="true"
       aria-labelledby="freeze-deactivation-title"
+      onClick={onCancel}
     >
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 p-6 space-y-4">
+      <div
+        ref={dialogRef}
+        tabIndex={-1}
+        className="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 p-6 space-y-4 outline-none"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Title */}
         <h2
           id="freeze-deactivation-title"

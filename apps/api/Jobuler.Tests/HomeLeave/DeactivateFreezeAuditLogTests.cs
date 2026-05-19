@@ -1,6 +1,10 @@
 // Feature: freeze-period-discard
 // Unit tests for audit log entries produced by DeactivateFreezeWithDiscardCommandHandler (Task 5.2)
 // Validates: Requirements 3.4, 4.3, 4.4, 5.4
+//
+// NOTE: These tests provide focused coverage for audit log concerns.
+// Some scenarios overlap with DeactivateFreezeWithDiscardCommandTests by design
+// to ensure these critical behaviors are independently verified.
 
 using System.Text.Json;
 using FluentAssertions;

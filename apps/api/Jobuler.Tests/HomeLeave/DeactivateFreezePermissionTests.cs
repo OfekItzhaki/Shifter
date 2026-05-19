@@ -1,6 +1,10 @@
 // Feature: freeze-period-discard
 // Unit tests for API endpoint permission enforcement (Task 4.3)
 // Validates: Requirements 5.1, 5.2, 5.3, 5.4, 6.5
+//
+// NOTE: These tests provide focused coverage for permission concerns.
+// Some scenarios overlap with DeactivateFreezeWithDiscardCommandTests by design
+// to ensure these critical behaviors are independently verified.
 
 using FluentAssertions;
 using Jobuler.Application.Common;

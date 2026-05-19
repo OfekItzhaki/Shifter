@@ -215,19 +215,10 @@ public class HomeLeaveConfigController : ControllerBase
         var result = await _mediator.Send(new DeactivateFreezeWithDiscardCommand(
             spaceId, groupId, CurrentUserId, req.DiscardFreezeChanges), ct);
 
-        if (result.DiscardPerformed)
-        {
-            return Ok(new DeactivateFreezeResponse(
-                DiscardPerformed: true,
-                DiscardVersionId: result.DiscardVersionId,
-                DiscardedChangeCount: result.DiscardedChangeCount,
-                Config: null));
-        }
-
         return Ok(new DeactivateFreezeResponse(
-            DiscardPerformed: false,
-            DiscardVersionId: null,
-            DiscardedChangeCount: 0,
+            DiscardPerformed: result.DiscardPerformed,
+            DiscardVersionId: result.DiscardVersionId,
+            DiscardedChangeCount: result.DiscardedChangeCount,
             Config: result.Config));
     }
 
@@ -371,4 +362,4 @@ public record DeactivateFreezeResponse(
     bool DiscardPerformed,
     Guid? DiscardVersionId,
     int DiscardedChangeCount,
-    HomeLeaveConfigResult? Config);
+    HomeLeaveConfigResult Config);

@@ -286,6 +286,7 @@ export default function HomeLeaveConfigPanel({
         disabled={saving}
         spaceId={spaceId}
         groupId={groupId}
+        // TODO: Query actual schedule.rollback permission from backend instead of using isAdmin as proxy
         canRollback={isAdmin}
         onDeactivateSuccess={handleDeactivateSuccess}
       />
