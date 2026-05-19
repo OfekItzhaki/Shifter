@@ -88,6 +88,7 @@ button:disabled, input:disabled, textarea:disabled, select:disabled {
   .main-content {
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
+}
 
 /* ── Global content centering ────────────────────────────────────────────────
    Centers direct children of the main content area that have a max-width constraint.
@@ -96,7 +97,6 @@ button:disabled, input:disabled, textarea:disabled, select:disabled {
 .main-content main > * {
   margin-inline-start: auto;
   margin-inline-end: auto;
-}
 }
 
 /* ── Sidebar responsive layout ───────────────────────────────────────────────
