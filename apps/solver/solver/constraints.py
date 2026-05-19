@@ -84,6 +84,56 @@ def add_no_overlap_constraints(
             model.add(assign[(s1_idx, p_idx)] + assign[(s2_idx, p_idx)] <= 1)
 
 
+def add_no_consecutive_double_shift_constraints(
+    model: cp_model.CpModel,
+    assign: dict,
+    slots: list[TaskSlot],
+    people,
+    num_people: int,
+    emergency_person_ids: set = None
+):
+    """
+    When a task has allows_double_shift=False, the same person cannot be assigned
+    to two consecutive (adjacent) slots of that same task type.
+    Two slots are considered consecutive if one ends exactly when the other starts
+    (or within a 1-minute tolerance to handle rounding).
+    Emergency-bypassed people skip this constraint.
+    """
+    emergency_person_ids = emergency_person_ids or set()
+
+    # Pre-compute timestamps
+    slot_times = [(_to_timestamp(s.starts_at), _to_timestamp(s.ends_at)) for s in slots]
+
+    # Find consecutive slot pairs of the same task type where double shift is NOT allowed
+    consecutive_pairs = []
+    for s1_idx in range(len(slots)):
+        if slots[s1_idx].allows_double_shift:
+            continue
+        s1_end = slot_times[s1_idx][1]
+        task_type = slots[s1_idx].task_type_id
+
+        for s2_idx in range(len(slots)):
+            if s2_idx == s1_idx:
+                continue
+            if slots[s2_idx].task_type_id != task_type:
+                continue
+            if slots[s2_idx].allows_double_shift:
+                continue
+            s2_start = slot_times[s2_idx][0]
+            # Consecutive: s1 ends exactly when s2 starts (within 60s tolerance)
+            if 0 <= (s2_start - s1_end) <= 60:
+                consecutive_pairs.append((s1_idx, s2_idx))
+
+    if not consecutive_pairs:
+        return
+
+    for p_idx in range(num_people):
+        if people[p_idx].person_id in emergency_person_ids:
+            continue
+        for s1_idx, s2_idx in consecutive_pairs:
+            model.add(assign[(s1_idx, p_idx)] + assign[(s2_idx, p_idx)] <= 1)
+
+
 def add_min_rest_constraints(
     model: cp_model.CpModel,
     assign: dict,

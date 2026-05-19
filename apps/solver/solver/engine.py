@@ -12,6 +12,7 @@ from solver.constraints import (
     add_headcount_constraints,
     add_no_duplicate_assignment,
     add_no_overlap_constraints,
+    add_no_consecutive_double_shift_constraints,
     add_min_rest_constraints,
     add_qualification_constraints,
     add_role_constraints,
@@ -91,6 +92,7 @@ def solve(input: SolverInput) -> SolverOutput:
     add_headcount_constraints(model, assign, slots, num_people)
     add_no_duplicate_assignment(model, assign, num_slots, num_people)
     add_no_overlap_constraints(model, assign, slots, people, num_people, emergency_person_ids)
+    add_no_consecutive_double_shift_constraints(model, assign, slots, people, num_people, emergency_person_ids)
     add_qualification_constraints(model, assign, slots, people, num_people, emergency_person_ids)
     add_role_constraints(model, assign, slots, people, num_people, emergency_person_ids)
     add_restriction_constraints(model, assign, slots, people, num_people, input.hard_constraints)
