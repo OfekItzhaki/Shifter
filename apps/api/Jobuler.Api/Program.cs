@@ -136,16 +136,23 @@ builder.Services.Configure<FeedbackOptions>(builder.Configuration.GetSection("Fe
 builder.Services.Configure<LemonSqueezySettings>(builder.Configuration.GetSection("LemonSqueezy"));
 builder.Services.Configure<BillingOptions>(builder.Configuration.GetSection("LemonSqueezy"));
 
-// Validate settings at startup — fail fast if required values are missing
+// Validate settings at startup — warn if required values are missing (billing features will be unavailable)
 var lemonSqueezySettings = builder.Configuration.GetSection("LemonSqueezy").Get<LemonSqueezySettings>();
 if (lemonSqueezySettings is not null)
 {
-    lemonSqueezySettings.Validate();
+    try
+    {
+        lemonSqueezySettings.Validate();
+    }
+    catch (InvalidOperationException ex)
+    {
+        // Log warning but don't crash — billing endpoints will fail at runtime instead
+        Console.WriteLine($"⚠️  LemonSqueezy configuration incomplete: {ex.Message}");
+    }
 }
 else
 {
-    throw new InvalidOperationException(
-        "LemonSqueezy configuration section is missing. Add a 'LemonSqueezy' section to configuration.");
+    Console.WriteLine("⚠️  LemonSqueezy configuration section is missing. Billing features will be unavailable.");
 }
 
 builder.Services.AddHttpClient<ILemonSqueezyClient, LemonSqueezyClient>(client =>
