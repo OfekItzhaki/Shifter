@@ -187,7 +187,18 @@ export default function StatsTab({ spaceId, groupId }: Props) {
 
   if (error) {
     const errorMessage = error === "timeout" ? t("connectionTimeout") : t("errorLoading");
-    return <p className="text-sm text-red-600 py-8">{errorMessage}</p>;
+    return (
+      <div className="flex flex-col items-center justify-center py-16 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700">
+        <div className="flex items-center justify-center w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 mb-3">
+          <svg width={24} height={24} viewBox="0 0 24 24" fill="none" className="text-slate-400 dark:text-slate-500" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+            <line x1="12" y1="9" x2="12" y2="13" />
+            <circle cx="12" cy="17" r="0.5" fill="currentColor" stroke="none" />
+          </svg>
+        </div>
+        <p className="text-sm text-slate-600 dark:text-slate-400">{errorMessage}</p>
+      </div>
+    );
   }
 
   if (!stats || stats.people.length === 0) {

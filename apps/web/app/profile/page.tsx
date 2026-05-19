@@ -8,6 +8,7 @@ import Modal from "@/components/Modal";
 import { getMe, updateMe, MeDto } from "@/lib/api/auth";
 import { apiClient } from "@/lib/api/client";
 import ImageUpload from "@/components/ImageUpload";
+import ErrorState from "@/components/shared/ErrorState";
 import { useAuthStore } from "@/lib/store/authStore";
 import { formatLocalDate } from "@/lib/utils/formatTime";
 import {
@@ -155,54 +156,13 @@ export default function ProfilePage() {
   if (error || !me) {
     return (
       <AppShell>
-        <div style={{
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          padding: "4rem 1rem",
-          textAlign: "center",
-          direction: "rtl",
-        }}>
-          {/* Error icon */}
-          <div style={{
-            width: 64,
-            height: 64,
-            borderRadius: "50%",
-            background: "#fef2f2",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            marginBottom: "1.25rem",
-          }}>
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="10" />
-              <line x1="12" y1="8" x2="12" y2="12" />
-              <line x1="12" y1="16" x2="12.01" y2="16" />
-            </svg>
-          </div>
-          <h2 style={{ fontSize: "1.125rem", fontWeight: 600, color: "#0f172a", margin: "0 0 0.5rem" }}>
-            {t("loadError")}
-          </h2>
-          <p style={{ fontSize: "0.875rem", color: "#64748b", margin: "0 0 1.5rem", maxWidth: 320 }}>
-            {t("loadErrorDesc")}
-          </p>
-          <button
-            onClick={() => window.location.reload()}
-            style={{
-              padding: "0.625rem 1.5rem",
-              borderRadius: 10,
-              border: "none",
-              background: "#3b82f6",
-              color: "white",
-              fontWeight: 600,
-              fontSize: "0.875rem",
-              cursor: "pointer",
-            }}
-          >
-            {t("retry")}
-          </button>
-        </div>
+        <ErrorState
+          type="server"
+          title={t("loadError")}
+          description={t("loadErrorDesc")}
+          onRetry={() => window.location.reload()}
+          showHomeLink={false}
+        />
       </AppShell>
     );
   }

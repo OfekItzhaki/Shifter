@@ -35,7 +35,7 @@ export default function ErrorPageLayout({
         {/* Status code */}
         {statusCode != null && (
           <p
-            className="text-7xl font-bold text-gray-300 dark:text-gray-700 mb-4 select-none"
+            className="text-7xl font-bold text-slate-200 dark:text-slate-700 mb-4 select-none"
             aria-hidden="true"
           >
             {statusCode}
@@ -43,12 +43,12 @@ export default function ErrorPageLayout({
         )}
 
         {/* Heading */}
-        <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
+        <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-100 mb-2">
           {heading}
         </h1>
 
         {/* Message */}
-        <p className="text-base text-gray-600 dark:text-gray-400 mb-8">
+        <p className="text-base text-slate-500 dark:text-slate-400 mb-8 leading-relaxed">
           {message}
         </p>
 
