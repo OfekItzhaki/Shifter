@@ -16,7 +16,7 @@ public class SubscriptionLifecyclePropertyTests
     private static GroupSubscription CreateActiveSubscription(DateTime periodStart, DateTime periodEnd)
     {
         var sub = GroupSubscription.CreateTrial(Guid.NewGuid(), Guid.NewGuid(), trialDays: 14);
-        sub.Activate("pro", "stripe_sub_123", "stripe_cus_123", periodStart, periodEnd);
+        sub.Activate("pro", "ls_sub_123", "ls_cus_123", periodStart, periodEnd);
         return sub;
     }
 

@@ -1,10 +1,12 @@
 using Jobuler.Application.AI.Import;
 using FluentValidation;
 using Jobuler.Api.Middleware;
+using Jobuler.Application.Billing;
 using Jobuler.Application.Exports;
 using Jobuler.Application.Feedback;
 using Jobuler.Application.HomeLeave;
 using Jobuler.Application.Notifications;
+using Jobuler.Infrastructure.Billing;
 using Jobuler.Infrastructure.Exports;
 using Jobuler.Infrastructure.Notifications;
 using Jobuler.Application.AI;
@@ -129,6 +131,30 @@ builder.Services.AddHttpClient("WebPush", client =>
 
 // ─── Feedback options ─────────────────────────────────────────────────────────
 builder.Services.Configure<FeedbackOptions>(builder.Configuration.GetSection("Feedback"));
+
+// ─── LemonSqueezy billing ─────────────────────────────────────────────────────
+builder.Services.Configure<LemonSqueezySettings>(builder.Configuration.GetSection("LemonSqueezy"));
+builder.Services.Configure<BillingOptions>(builder.Configuration.GetSection("LemonSqueezy"));
+
+// Validate settings at startup — fail fast if required values are missing
+var lemonSqueezySettings = builder.Configuration.GetSection("LemonSqueezy").Get<LemonSqueezySettings>();
+if (lemonSqueezySettings is not null)
+{
+    lemonSqueezySettings.Validate();
+}
+else
+{
+    throw new InvalidOperationException(
+        "LemonSqueezy configuration section is missing. Add a 'LemonSqueezy' section to configuration.");
+}
+
+builder.Services.AddHttpClient<ILemonSqueezyClient, LemonSqueezyClient>(client =>
+{
+    client.BaseAddress = new Uri("https://api.lemonsqueezy.com/");
+    client.Timeout = TimeSpan.FromSeconds(30);
+});
+
+builder.Services.AddSingleton<IWebhookSignatureValidator, WebhookSignatureValidator>();
 
 // ─── Email: SendGrid (real) or NoOp (dev fallback) ────────────────────────────
 if (!string.IsNullOrWhiteSpace(builder.Configuration["SendGrid:ApiKey"]))

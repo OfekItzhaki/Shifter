@@ -9,8 +9,8 @@ public record ActivateSubscriptionCommand(
     Guid SpaceId,
     Guid GroupId,
     string TierId,
-    string StripeSubscriptionId,
-    string StripeCustomerId,
+    string LemonSqueezySubscriptionId,
+    string LemonSqueezyCustomerId,
     DateTime PeriodStart,
     DateTime PeriodEnd) : IRequest;
 
@@ -31,7 +31,7 @@ public class ActivateSubscriptionCommandHandler : IRequestHandler<ActivateSubscr
             .FirstOrDefaultAsync(s => s.GroupId == req.GroupId && s.SpaceId == req.SpaceId, ct)
             ?? throw new KeyNotFoundException("Subscription not found for group.");
 
-        sub.Activate(req.TierId, req.StripeSubscriptionId, req.StripeCustomerId,
+        sub.Activate(req.TierId, req.LemonSqueezySubscriptionId, req.LemonSqueezyCustomerId,
             req.PeriodStart, req.PeriodEnd);
 
         await _db.SaveChangesAsync(ct);

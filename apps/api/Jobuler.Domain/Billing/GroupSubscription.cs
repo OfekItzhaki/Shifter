@@ -10,8 +10,8 @@ public class GroupSubscription : Entity, ITenantScoped
     public Guid GroupId { get; private set; }
     public string TierId { get; private set; } = "trial";
     public SubscriptionStatus Status { get; private set; } = SubscriptionStatus.Trialing;
-    public string? StripeSubscriptionId { get; private set; }
-    public string? StripeCustomerId { get; private set; }
+    public string? LemonSqueezySubscriptionId { get; private set; }
+    public string? LemonSqueezyCustomerId { get; private set; }
     public DateTime? TrialEndsAt { get; private set; }
     public DateTime? CurrentPeriodStart { get; private set; }
     public DateTime? CurrentPeriodEnd { get; private set; }
@@ -32,13 +32,34 @@ public class GroupSubscription : Entity, ITenantScoped
             TrialEndsAt = DateTime.UtcNow.AddDays(trialDays),
         };
 
-    public void Activate(string tierId, string stripeSubscriptionId, string stripeCustomerId,
+    public void Activate(string tierId, string lemonSqueezySubscriptionId, string lemonSqueezyCustomerId,
         DateTime periodStart, DateTime periodEnd)
     {
         TierId = tierId;
         Status = SubscriptionStatus.Active;
-        StripeSubscriptionId = stripeSubscriptionId;
-        StripeCustomerId = stripeCustomerId;
+        LemonSqueezySubscriptionId = lemonSqueezySubscriptionId;
+        LemonSqueezyCustomerId = lemonSqueezyCustomerId;
+        CurrentPeriodStart = periodStart;
+        CurrentPeriodEnd = periodEnd;
+    }
+
+    public void StartTrial(string lemonSqueezySubscriptionId, string lemonSqueezyCustomerId, DateTime trialEndsAt)
+    {
+        Status = SubscriptionStatus.Trialing;
+        LemonSqueezySubscriptionId = lemonSqueezySubscriptionId;
+        LemonSqueezyCustomerId = lemonSqueezyCustomerId;
+        TrialEndsAt = trialEndsAt;
+    }
+
+    public void UpdateStatus(SubscriptionStatus newStatus)
+    {
+        Status = newStatus;
+    }
+
+    public void UpdatePeriod(DateTime periodStart, DateTime periodEnd)
+    {
+        if (periodStart != CurrentPeriodStart)
+            PeakMemberCount = 0;
         CurrentPeriodStart = periodStart;
         CurrentPeriodEnd = periodEnd;
     }

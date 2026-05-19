@@ -40,7 +40,7 @@ Implements the `IPeriodManager` service that manages subscription period lifecyc
 - **PeriodManager** depends on `ICumulativeTracker` for resetting counters on period open.
 - **PublishVersionCommand** now triggers the full snapshot + counter update pipeline.
 - **SolverPayloadNormalizer** now includes cumulative data so the Python solver can use it for eligibility and fairness.
-- The billing commands will be called from a future Stripe webhook controller.
+- The billing commands are called from the LemonSqueezy webhook controller.
 
 ## How to run / verify
 

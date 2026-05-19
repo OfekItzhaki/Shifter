@@ -21,7 +21,7 @@ Extends the `GroupSubscription` domain entity with the `Expired` status and life
 ## Key decisions
 
 - `Cancel()` now throws `InvalidOperationException` if the subscription is already `Canceled` or `Expired`, enforcing the state machine at the domain level.
-- `Expire()` only transitions from `Canceled` — this ensures only subscriptions that were explicitly canceled can expire (active subscriptions auto-renew externally via Stripe).
+- `Expire()` only transitions from `Canceled` — this ensures only subscriptions that were explicitly canceled can expire (active subscriptions auto-renew externally via LemonSqueezy).
 - `Renew()` accepts period dates as parameters, allowing the application layer to decide whether to preserve existing dates (within-period renewal) or create new ones (post-expiry renewal).
 - `Reactivate()` is the inverse of `Deactivate()` — simple and symmetric.
 
