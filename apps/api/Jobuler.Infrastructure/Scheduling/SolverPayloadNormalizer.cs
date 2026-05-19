@@ -388,10 +388,10 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
         {
             hardConstraints.Add(new HardConstraintDto(
                 "system_min_rest",
-                "min_rest_between_assignments",
+                "min_rest_hours",
                 "group",
                 groupId.Value.ToString(),
-                new Dictionary<string, object> { ["min_hours"] = minRestBetweenShiftsHours }));
+                new Dictionary<string, object> { ["hours"] = minRestBetweenShiftsHours }));
         }
 
         var softConstraints = constraints
