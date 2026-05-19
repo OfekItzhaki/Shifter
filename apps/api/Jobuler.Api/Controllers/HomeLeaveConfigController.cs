@@ -185,6 +185,52 @@ public class HomeLeaveConfigController : ControllerBase
             Feasibility: feasibility));
     }
 
+    /// <summary>
+    /// Get the count of schedule changes made during the active freeze period.
+    /// Returns categorized counts (overrides, manual assignments, swaps).
+    /// </summary>
+    [HttpGet("freeze-period-changes-count")]
+    public async Task<IActionResult> GetFreezePeriodChangesCount(Guid spaceId, Guid groupId, CancellationToken ct)
+    {
+        await _permissions.RequirePermissionAsync(CurrentUserId, spaceId, Permissions.SpaceView, ct);
+
+        var result = await _mediator.Send(
+            new GetFreezePeriodChangesCountQuery(spaceId, groupId, CurrentUserId), ct);
+
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Deactivate emergency freeze with optional discard of freeze-period changes.
+    /// When discard is requested, creates a new draft version from the pre-freeze baseline.
+    /// </summary>
+    [HttpPost("deactivate-freeze")]
+    public async Task<IActionResult> DeactivateFreeze(
+        Guid spaceId, Guid groupId,
+        [FromBody] DeactivateFreezeRequest req,
+        CancellationToken ct)
+    {
+        await _permissions.RequirePermissionAsync(CurrentUserId, spaceId, Permissions.ConstraintsManage, ct);
+
+        var result = await _mediator.Send(new DeactivateFreezeWithDiscardCommand(
+            spaceId, groupId, CurrentUserId, req.DiscardFreezeChanges), ct);
+
+        if (result.DiscardPerformed)
+        {
+            return Ok(new DeactivateFreezeResponse(
+                DiscardPerformed: true,
+                DiscardVersionId: result.DiscardVersionId,
+                DiscardedChangeCount: result.DiscardedChangeCount,
+                Config: null));
+        }
+
+        return Ok(new DeactivateFreezeResponse(
+            DiscardPerformed: false,
+            DiscardVersionId: null,
+            DiscardedChangeCount: 0,
+            Config: result.Config));
+    }
+
     /// <summary>Get home-leave schedule (all AtHome presence windows) for a group.</summary>
     [HttpGet("~/spaces/{spaceId:guid}/groups/{groupId:guid}/home-leave-schedule")]
     public async Task<IActionResult> GetHomeLeaveSchedule(Guid spaceId, Guid groupId, CancellationToken ct)
@@ -318,3 +364,11 @@ public record RecallHomeLeaveRequest(
 public record RecallWarningResponse(
     bool RequiresConfirmation,
     string Warning);
+
+public record DeactivateFreezeRequest(bool DiscardFreezeChanges = false);
+
+public record DeactivateFreezeResponse(
+    bool DiscardPerformed,
+    Guid? DiscardVersionId,
+    int DiscardedChangeCount,
+    HomeLeaveConfigResult? Config);

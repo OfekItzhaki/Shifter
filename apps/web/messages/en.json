@@ -1159,10 +1159,32 @@
       "useForScheduling": "Use frozen personnel for task scheduling",
       "activate": "Activate emergency freeze",
       "deactivate": "Deactivate emergency freeze",
+      "deactivating": "Deactivating...",
       "confirmTitle": "Activate emergency freeze",
       "confirmDescription": "This will immediately stop all home leave for the group. Continue?",
       "confirmYes": "Yes, activate",
-      "confirmNo": "Cancel"
+      "confirmNo": "Cancel",
+      "deactivateSuccess": "Emergency freeze deactivated successfully.",
+      "deactivateSuccessDiscard": "Emergency freeze deactivated. {count} changes discarded.",
+      "errorPermission": "You do not have permission to perform this action.",
+      "errorBadRequest": "Cannot deactivate: no active freeze exists for this group.",
+      "errorServer": "An unexpected error occurred. Please try again."
+    },
+    "deactivationDialog": {
+      "title": "Deactivate Emergency Freeze",
+      "description": "The emergency freeze will be lifted and normal scheduling will resume.",
+      "loadingCounts": "Loading change summary...",
+      "changesTitle": "Changes made during freeze",
+      "overrides": "Overrides",
+      "manualAssignments": "Manual assignments",
+      "swaps": "Swaps",
+      "noChanges": "No schedule changes were made during the freeze period.",
+      "fetchError": "Unable to load change summary. You can still deactivate the freeze without discarding.",
+      "discardLabel": "Discard freeze-period changes",
+      "discardHint": "Revert all schedule changes made during the freeze by creating a new draft version from the pre-freeze baseline.",
+      "discardUnavailable": "Cannot determine changes — discard option unavailable.",
+      "confirm": "Confirm deactivation",
+      "cancel": "Cancel"
     },
     "feasibility": {
       "checking": "Checking feasibility...",

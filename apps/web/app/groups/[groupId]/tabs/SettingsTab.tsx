@@ -334,6 +334,7 @@ export default function SettingsTab({
         groupId={groupId}
         isClosedBase={isClosedBase}
         memberCount={members.length}
+        isAdmin={isAdmin}
       />
       )}
 

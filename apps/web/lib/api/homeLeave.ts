@@ -108,6 +108,44 @@ export async function toggleEmergencyFreeze(
   return data;
 }
 
+// ── Freeze Deactivation ──────────────────────────────────────────────────────
+
+export interface FreezePeriodChangesCountDto {
+  overrideCount: number;
+  manualAssignmentCount: number;
+  swapCount: number;
+  totalCount: number;
+}
+
+export interface DeactivateFreezeResponse {
+  discardPerformed: boolean;
+  discardVersionId: string | null;
+  discardedChangeCount: number;
+  config: HomeLeaveConfigDto;
+}
+
+export async function getFreezePeriodChangesCount(
+  spaceId: string,
+  groupId: string
+): Promise<FreezePeriodChangesCountDto> {
+  const { data } = await apiClient.get(
+    `/spaces/${spaceId}/groups/${groupId}/home-leave-config/freeze-period-changes-count`
+  );
+  return data;
+}
+
+export async function deactivateFreeze(
+  spaceId: string,
+  groupId: string,
+  discardFreezeChanges: boolean
+): Promise<DeactivateFreezeResponse> {
+  const { data } = await apiClient.post(
+    `/spaces/${spaceId}/groups/${groupId}/home-leave-config/deactivate-freeze`,
+    { discardFreezeChanges }
+  );
+  return data;
+}
+
 // ── Home-Leave Preview ───────────────────────────────────────────────────────
 
 export interface HomeLeaveScheduleEntry {

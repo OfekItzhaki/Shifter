@@ -8,6 +8,7 @@ import {
   toggleEmergencyFreeze,
   HomeLeaveMode,
   getHomeLeavePreview,
+  DeactivateFreezeResponse,
 } from "@/lib/api/homeLeave";
 import ModeSelector from "./ModeSelector";
 import RatioSlider from "./RatioSlider";
@@ -21,6 +22,8 @@ interface HomeLeaveConfigPanelProps {
   groupId: string;
   isClosedBase: boolean;
   memberCount: number;
+  /** Whether the user is in admin mode (used to determine schedule.rollback permission) */
+  isAdmin?: boolean;
 }
 
 /**
@@ -34,6 +37,7 @@ export default function HomeLeaveConfigPanel({
   groupId,
   isClosedBase,
   memberCount,
+  isAdmin = false,
 }: HomeLeaveConfigPanelProps) {
   const t = useTranslations("homeLeave");
 
@@ -163,6 +167,19 @@ export default function HomeLeaveConfigPanel({
     }
   }
 
+  // Handle successful deactivation via the deactivation dialog
+  function handleDeactivateSuccess(response: DeactivateFreezeResponse) {
+    const config = response.config;
+    setEmergencyFreezeActive(config.emergencyFreezeActive);
+    setEmergencyUseForScheduling(config.emergencyUseForScheduling);
+    setFreezeStartedAt(config.freezeStartedAt);
+    setMode(config.mode as HomeLeaveMode);
+    setBaseDays(config.baseDays);
+    setHomeDays(config.homeDays);
+    setBalanceValue(config.balanceValue);
+    setSliderValue(config.balanceValue);
+  }
+
   // Emergency use-for-scheduling change
   async function handleUseForSchedulingChange(useForScheduling: boolean) {
     setEmergencyUseForScheduling(useForScheduling);
@@ -267,6 +284,10 @@ export default function HomeLeaveConfigPanel({
         onToggleFreeze={handleToggleFreeze}
         onUseForSchedulingChange={handleUseForSchedulingChange}
         disabled={saving}
+        spaceId={spaceId}
+        groupId={groupId}
+        canRollback={isAdmin}
+        onDeactivateSuccess={handleDeactivateSuccess}
       />
 
       {/* Mode Selector */}
