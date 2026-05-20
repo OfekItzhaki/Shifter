@@ -13,8 +13,13 @@ export function isRtl(locale: Locale): boolean {
 
 export default getRequestConfig(async () => {
   // Read locale from cookie set at login, fall back to Hebrew
-  const cookieStore = await cookies();
-  const locale = (cookieStore.get("locale")?.value ?? defaultLocale) as Locale;
+  let locale: Locale = defaultLocale;
+  try {
+    const cookieStore = await cookies();
+    locale = (cookieStore.get("locale")?.value ?? defaultLocale) as Locale;
+  } catch {
+    // cookies() may throw during static generation — use default
+  }
 
   return {
     locale,

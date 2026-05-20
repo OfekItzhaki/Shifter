@@ -52,13 +52,13 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <link rel="manifest" href="/manifest.json" />
       </head>
       <body>
-        <Providers>
-          <NextIntlClientProvider messages={messages}>
+        <NextIntlClientProvider messages={messages}>
+          <Providers>
             <ErrorBoundary>
               {children}
             </ErrorBoundary>
-          </NextIntlClientProvider>
-        </Providers>
+          </Providers>
+        </NextIntlClientProvider>
         {process.env.NEXT_PUBLIC_CRISP_WEBSITE_ID && (
           <script
             dangerouslySetInnerHTML={{
