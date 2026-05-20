@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, Suspense } from "react";
 import { useTranslations } from "next-intl";
 import AppShell from "@/components/shell/AppShell";
 import { useSpaceStore } from "@/lib/store/spaceStore";
@@ -13,7 +13,15 @@ import { ONBOARDING_STEPS } from "@/lib/onboarding/steps";
 import { useOnboardingStore } from "@/lib/store/onboardingStore";
 import { getCurrentStepIndex } from "@/lib/onboarding/decisions";
 
-export default function GroupsPage() {
+export default function GroupsPageWrapper() {
+  return (
+    <Suspense fallback={null}>
+      <GroupsPage />
+    </Suspense>
+  );
+}
+
+function GroupsPage() {
   const t = useTranslations("groups");
   const tErrors = useTranslations("errors");
   const tCommon = useTranslations("common");
