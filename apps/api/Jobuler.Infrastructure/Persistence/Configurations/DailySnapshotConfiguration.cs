@@ -24,6 +24,7 @@ public class DailySnapshotConfiguration : IEntityTypeConfiguration<DailySnapshot
         builder.Property(s => s.BurdenLevel).HasColumnName("burden_level");
         builder.Property(s => s.VersionId).HasColumnName("version_id");
         builder.Property(s => s.CreatedAt).HasColumnName("created_at");
+        builder.Ignore(s => s.IsPast);
 
         // Unique constraint
         builder.HasIndex(s => new { s.SpaceId, s.GroupId, s.PersonId, s.SnapshotDate, s.SlotId })

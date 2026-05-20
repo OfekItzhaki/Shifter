@@ -20,6 +20,7 @@ public class ScheduleRunConfiguration : IEntityTypeConfiguration<ScheduleRun>
         builder.Property(r => r.Status).HasColumnName("status")
             .HasConversion(v => v.ToString().ToLower(), v => Enum.Parse<ScheduleRunStatus>(v, true));
         builder.Property(r => r.SolverInputHash).HasColumnName("solver_input_hash");
+        builder.Property(r => r.ProgressPhase).HasColumnName("progress_phase");
         builder.Property(r => r.StartedAt).HasColumnName("started_at");
         builder.Property(r => r.FinishedAt).HasColumnName("finished_at");
         builder.Property(r => r.DurationMs).HasColumnName("duration_ms");

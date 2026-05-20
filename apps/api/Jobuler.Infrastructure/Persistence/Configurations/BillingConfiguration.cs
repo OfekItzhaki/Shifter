@@ -25,7 +25,7 @@ public class GroupSubscriptionConfiguration : IEntityTypeConfiguration<GroupSubs
         builder.Property(s => s.CouponCode).HasColumnName("coupon_code");
         builder.Property(s => s.DiscountPercent).HasColumnName("discount_percent");
         builder.Property(s => s.CanceledAt).HasColumnName("canceled_at");
-        builder.Property<DateTime>("CreatedAt").HasColumnName("created_at");
+        builder.Property(s => s.CreatedAt).HasColumnName("created_at");
         builder.Property<DateTime>("UpdatedAt").HasColumnName("updated_at");
     }
 }
@@ -40,6 +40,7 @@ public class WebhookEventLogConfiguration : IEntityTypeConfiguration<WebhookEven
         builder.Property(e => e.EventId).HasColumnName("event_id").HasMaxLength(255).IsRequired();
         builder.Property(e => e.EventType).HasColumnName("event_type").HasMaxLength(100).IsRequired();
         builder.Property(e => e.ProcessedAt).HasColumnName("processed_at").IsRequired();
+        builder.Property(e => e.CreatedAt).HasColumnName("created_at");
 
         builder.HasIndex(e => e.EventId).IsUnique();
         builder.HasIndex(e => e.ProcessedAt);
@@ -61,6 +62,6 @@ public class CouponConfiguration : IEntityTypeConfiguration<Coupon>
         builder.Property(c => c.ValidUntil).HasColumnName("valid_until");
         builder.Property(c => c.IsActive).HasColumnName("is_active").IsRequired();
         builder.Property(c => c.Description).HasColumnName("description");
-        builder.Property<DateTime>("CreatedAt").HasColumnName("created_at");
+        builder.Property(c => c.CreatedAt).HasColumnName("created_at");
     }
 }
