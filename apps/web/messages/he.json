@@ -245,7 +245,8 @@
       "reason": "סיבה",
       "selectReason": "בחר סיבה...",
       "customReason": "אחר",
-      "customReasonPlaceholder": "הזן סיבה מותאמת..."
+      "customReasonPlaceholder": "הזן סיבה מותאמת...",
+      "member": "חבר"
     },
     "qualifications_tab": {
       "title": "הכשרות",

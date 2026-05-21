@@ -240,7 +240,8 @@
       "reason": "Причина",
       "selectReason": "Выберите причину...",
       "customReason": "Другое",
-      "customReasonPlaceholder": "Введите причину..."
+      "customReasonPlaceholder": "Введите причину...",
+      "member": "Участник"
     },
     "qualifications_tab": {
       "title": "Квалификации",

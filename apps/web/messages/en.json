@@ -242,7 +242,8 @@
       "reason": "Reason",
       "selectReason": "Select reason...",
       "customReason": "Custom",
-      "customReasonPlaceholder": "Enter custom reason..."
+      "customReasonPlaceholder": "Enter custom reason...",
+      "member": "Member"
     },
     "qualifications_tab": {
       "title": "Qualifications",
