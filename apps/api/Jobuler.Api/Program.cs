@@ -405,10 +405,10 @@ builder.Services.AddRateLimiter(options =>
                 QueueLimit = 50
             }));
 
-    // Strict limit on auth endpoints — prevents brute force
+    // Strict limit on auth endpoints — prevents brute force but allows normal SPA usage
     options.AddFixedWindowLimiter("auth", o =>
     {
-        o.PermitLimit = builder.Environment.IsDevelopment() ? 100 : 10;
+        o.PermitLimit = builder.Environment.IsDevelopment() ? 200 : 60;
         o.Window = TimeSpan.FromMinutes(1);
         o.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
         o.QueueLimit = 0;
