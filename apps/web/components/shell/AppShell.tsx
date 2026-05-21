@@ -200,6 +200,15 @@ export default function AppShell({ children }: AppShellProps) {
               ofeklabs.com
             </a>
           </div>
+          <div style={{ padding: "0 12px 12px", textAlign: "center", display: "flex", justifyContent: "center", gap: 8 }}>
+            <Link href="/terms" style={{ fontSize: 10, color: "#475569", opacity: 0.5, textDecoration: "none" }}>
+              תנאי שימוש
+            </Link>
+            <span style={{ fontSize: 10, color: "#475569", opacity: 0.3 }}>·</span>
+            <Link href="/privacy" style={{ fontSize: 10, color: "#475569", opacity: 0.5, textDecoration: "none" }}>
+              פרטיות
+            </Link>
+          </div>
         </div>
       </aside>
 

@@ -238,6 +238,17 @@ function LoginForm() {
               Built by <span style={{ fontWeight: 600, color: "#64748b" }}>ofeklabs.com</span>
             </a>
           </div>
+
+          {/* Legal links */}
+          <div style={{ textAlign: "center", marginTop: "0.75rem", display: "flex", justifyContent: "center", gap: "12px" }}>
+            <Link href="/terms" style={{ fontSize: "0.6875rem", color: "#94a3b8", textDecoration: "none" }}>
+              תנאי שימוש
+            </Link>
+            <span style={{ fontSize: "0.6875rem", color: "#64748b" }}>·</span>
+            <Link href="/privacy" style={{ fontSize: "0.6875rem", color: "#94a3b8", textDecoration: "none" }}>
+              מדיניות פרטיות
+            </Link>
+          </div>
         </div>
       </div>
     </main>

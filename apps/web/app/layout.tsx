@@ -4,6 +4,7 @@ import { getLocale, getMessages } from "next-intl/server";
 import { isRtl } from "@/i18n/request";
 import type { Locale } from "@/i18n/request";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import CookieConsent from "@/components/CookieConsent";
 import { Providers } from "./providers";
 import "./globals.css";
 
@@ -57,6 +58,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <ErrorBoundary>
               {children}
             </ErrorBoundary>
+            <CookieConsent />
           </Providers>
         </NextIntlClientProvider>
         {process.env.NEXT_PUBLIC_CRISP_WEBSITE_ID && (

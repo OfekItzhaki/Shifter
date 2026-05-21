@@ -55,6 +55,17 @@ cat > /etc/caddy/Caddyfile << 'CADDYEOF'
 # Caddy automatically provisions HTTPS via Let's Encrypt
 
 YOUR_DOMAIN {
+    # Maintenance page — served when backend containers are down (502/503/504)
+    handle_errors {
+        @maintenance expression {err.status_code} in [502, 503, 504]
+        handle @maintenance {
+            rewrite * /maintenance.html
+            file_server {
+                root /opt/shifter/infra/compose
+            }
+        }
+    }
+
     # Frontend
     handle /* {
         reverse_proxy localhost:3000
