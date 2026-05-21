@@ -13,6 +13,23 @@ export function isWebAuthnSupported(): boolean {
   );
 }
 
+/**
+ * Returns true if the device has a platform authenticator available
+ * (e.g. fingerprint reader, Windows Hello, Face ID, Touch ID).
+ *
+ * Use this before offering biometric registration — a desktop PC without
+ * Windows Hello or a fingerprint reader will return false, preventing
+ * the biometric prompt from appearing on devices that can't use it.
+ */
+export async function isPlatformAuthenticatorAvailable(): Promise<boolean> {
+  if (!isWebAuthnSupported()) return false;
+  try {
+    return await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+  } catch {
+    return false;
+  }
+}
+
 // ─── Base64url ↔ ArrayBuffer Helpers ─────────────────────────────────────────
 
 function base64urlToArrayBuffer(base64url: string): ArrayBuffer {
@@ -214,8 +231,19 @@ export async function authenticateWithBiometric(opts?: AuthenticateOptions): Pro
 
 /**
  * List all WebAuthn credentials for the current user.
+ *
+ * @param token Optional access token to use directly in the Authorization header,
+ *              bypassing the apiClient interceptor. Use this when calling immediately
+ *              after login to avoid a race condition where the interceptor may not
+ *              yet have the fresh token available.
  */
-export async function listCredentials(): Promise<WebAuthnCredential[]> {
+export async function listCredentials(token?: string): Promise<WebAuthnCredential[]> {
+  if (token) {
+    const { data } = await apiClient.get<WebAuthnCredential[]>("/auth/webauthn/credentials", {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return data;
+  }
   const { data } = await apiClient.get<WebAuthnCredential[]>("/auth/webauthn/credentials");
   return data;
 }

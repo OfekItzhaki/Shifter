@@ -16,6 +16,7 @@ import ManualModeSection from "./ManualModeSection";
 import EmergencyFreezeBanner from "./EmergencyFreezeBanner";
 import FeasibilityIndicator, { FeasibilityResult } from "./FeasibilityIndicator";
 import { useHomeLeavePreview } from "@/hooks/useHomeLeavePreview";
+import RecommendationCard from "@/components/recommendations/RecommendationCard";
 
 interface HomeLeaveConfigPanelProps {
   spaceId: string;
@@ -275,6 +276,9 @@ export default function HomeLeaveConfigPanel({
         <h3 className="text-sm font-semibold text-slate-700">{t("panel.title")}</h3>
         <p className="text-xs text-slate-400 mt-0.5">{t("panel.description")}</p>
       </div>
+
+      {/* Recommendation Card — above emergency freeze */}
+      <RecommendationCard spaceId={spaceId} groupId={groupId} />
 
       {/* Emergency Freeze Banner — always visible at top */}
       <EmergencyFreezeBanner

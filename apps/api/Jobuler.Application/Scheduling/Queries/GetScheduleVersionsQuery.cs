@@ -1,3 +1,4 @@
+using Jobuler.Application.Scheduling.Models;
 using Jobuler.Domain.Scheduling;
 using Jobuler.Infrastructure.Persistence;
 using MediatR;
@@ -23,7 +24,8 @@ public record ScheduleVersionDto(
 public record ScheduleVersionDetailDto(
     ScheduleVersionDto Version,
     DiffSummaryDto? Diff,
-    List<AssignmentDto> Assignments);
+    List<AssignmentDto> Assignments,
+    Dictionary<string, TaskConfigSummaryDto>? TaskConfigurations = null);
 
 public record DiffSummaryDto(
     int AddedCount,
@@ -122,11 +124,9 @@ public class GetScheduleVersionDetailQueryHandler
         // Shift GUIDs are derived from task GUIDs via XOR — load all group tasks
         // and build a reverse map: shiftGuid -> groupTask
         var missingIds = slotIds.Where(id => !taskSlots.ContainsKey(id)).ToHashSet();
-        var allGroupTasks = missingIds.Count > 0
-            ? await _db.GroupTasks.AsNoTracking()
-                .Where(t => t.SpaceId == req.SpaceId)
-                .ToListAsync(ct)
-            : new();
+        var allGroupTasks = await _db.GroupTasks.AsNoTracking()
+            .Where(t => t.SpaceId == req.SpaceId)
+            .ToListAsync(ct);
 
         // To reconstruct slot times correctly, we need the solver's horizonStartDt.
         // The normalizer uses the run's start time (rounded to hour) as the base for shift generation.
@@ -237,7 +237,24 @@ public class GetScheduleVersionDetailQueryHandler
             diff.AddedCount, diff.RemovedCount, diff.ChangedCount,
             diff.StabilityScore, diff.DiffJson);
 
-        return new ScheduleVersionDetailDto(versionDto, diffDto, assignments);
+        // Build task configurations keyed by task name (what ScheduleTable2D uses for lookup).
+        // Use DistinctBy to handle potential duplicate names across groups in the same space.
+        var taskConfigs = allGroupTasks
+            .Where(gt => gt.IsActive)
+            .DistinctBy(gt => gt.Name)
+            .ToDictionary(
+                gt => gt.Name,
+                gt => new TaskConfigSummaryDto(
+                    TaskId: gt.Id.ToString(),
+                    AllowsDoubleShift: gt.AllowsDoubleShift,
+                    AllowsOverlap: gt.AllowsOverlap,
+                    DailyStartTime: gt.DailyStartTime?.ToString("HH:mm"),
+                    DailyEndTime: gt.DailyEndTime?.ToString("HH:mm"),
+                    BurdenLevel: gt.BurdenLevel.ToString(),
+                    RequiredQualificationNames: gt.RequiredQualificationNames,
+                    SplitCount: gt.SplitCount));
+
+        return new ScheduleVersionDetailDto(versionDto, diffDto, assignments, taskConfigs);
     }
 }
 

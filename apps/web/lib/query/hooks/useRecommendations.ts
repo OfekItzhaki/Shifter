@@ -4,8 +4,6 @@ import {
   getRecommendationsForRun,
   getRecommendationForTask,
   dismissRecommendation,
-  acceptRecommendation,
-  AcceptRecommendationResult,
 } from "@/lib/api/recommendations";
 import { queryKeys } from "../keys";
 
@@ -63,26 +61,4 @@ export function useDismissRecommendation(spaceId: string | null) {
   });
 }
 
-interface AcceptRecommendationParams {
-  recommendationId: string;
-  triggerNewRun: boolean;
-}
 
-/**
- * Mutation hook to accept a recommendation (enable double shift on the task).
- * Supports `triggerNewRun` option to optionally enqueue a new solver run.
- * Invalidates all recommendation queries on success.
- * Validates: Requirements 4.1
- */
-export function useAcceptRecommendation(spaceId: string | null) {
-  const qc = useQueryClient();
-  return useMutation<AcceptRecommendationResult, Error, AcceptRecommendationParams>({
-    mutationFn: ({ recommendationId, triggerNewRun }) =>
-      acceptRecommendation(spaceId!, recommendationId, triggerNewRun),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["recommendations", spaceId ?? ""] });
-      qc.invalidateQueries({ queryKey: ["recommendations-run", spaceId ?? ""] });
-      qc.invalidateQueries({ queryKey: ["recommendation-task", spaceId ?? ""] });
-    },
-  });
-}

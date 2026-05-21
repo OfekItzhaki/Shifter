@@ -1,4 +1,5 @@
 import { apiClient } from "./client";
+import type { TaskConfigSummaryDto } from "./groups";
 
 export interface AssignmentDto {
   id: string;
@@ -32,6 +33,7 @@ export interface ScheduleVersionDetailDto {
   version: ScheduleVersionDto;
   diff: DiffSummaryDto | null;
   assignments: AssignmentDto[];
+  taskConfigurations?: Record<string, TaskConfigSummaryDto>;
 }
 
 export async function getCurrentSchedule(spaceId: string): Promise<ScheduleVersionDetailDto | null> {

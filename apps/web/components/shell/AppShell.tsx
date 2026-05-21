@@ -34,7 +34,7 @@ const S = {
   bottom: { padding: "12px", borderTop: "1px solid rgba(255,255,255,0.08)" },
   userInfo: { padding: "8px 12px", marginBottom: 4 },
   logoutBtn: { display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "9px 12px", borderRadius: 8, background: "none", border: "none", cursor: "pointer", color: "#64748b", fontSize: 14, textAlign: "left" as const },
-  topbar: (admin: boolean) => ({ height: 56, display: "flex", alignItems: "center", justifyContent: "flex-end", padding: "0 24px", borderBottom: `1px solid ${admin ? "#fde68a" : "#e2e8f0"}`, background: admin ? "#fffbeb" : "white", position: "sticky" as const, top: 0, zIndex: 20 }),
+  topbar: (admin: boolean) => ({ height: 56, display: "flex", alignItems: "center", justifyContent: "flex-end", padding: "0 24px", borderBottom: `1px solid ${admin ? "#fde68a" : "var(--border-color, #e2e8f0)"}`, background: admin ? "#fffbeb" : "var(--topbar-bg, white)", position: "sticky" as const, top: 0, zIndex: 20 }),
   main: { marginLeft: 256, display: "flex", flexDirection: "column" as const, minHeight: "100vh", width: "calc(100vw - 256px)" },
   content: { flex: 1, padding: "clamp(16px, 4vw, 32px)", width: "100%", display: "flex", flexDirection: "column" as const, alignItems: "center" },
 };
@@ -199,7 +199,8 @@ export default function AppShell({ children }: AppShellProps) {
         <header style={S.topbar(false)} className="mobile-topbar flex items-center gap-3 px-4">
           <button
             onClick={() => setSidebarOpen(o => !o)}
-            style={{ background: "none", border: "none", cursor: "pointer", padding: 8, color: "#0f172a", borderRadius: 8 }}
+            style={{ background: "none", border: "none", cursor: "pointer", padding: 8, borderRadius: 8 }}
+            className="text-slate-900 dark:text-slate-100"
             aria-label="Toggle menu"
           >
             <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -208,7 +209,7 @@ export default function AppShell({ children }: AppShellProps) {
           </button>
           <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 8 }}>
             <ShifterLogo size={24} />
-            <span style={{ fontWeight: 700, fontSize: 15, color: "#0f172a" }}>Shifter</span>
+            <span className="font-bold text-[15px] text-slate-900 dark:text-white">Shifter</span>
           </div>
           <NotificationBell />
         </header>

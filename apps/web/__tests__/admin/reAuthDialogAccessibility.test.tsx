@@ -211,11 +211,26 @@ describe("ReAuthDialog - Accessibility Compliance (Task 3.4)", () => {
       });
     });
 
-    it("password input gets focus priority over WebAuthn button when both available", async () => {
+    it("password input gets focus after WebAuthn is declined when both available", async () => {
       mockIsWebAuthnSupported.mockReturnValue(true);
       mockListCredentials.mockResolvedValue([
         { id: "cred-1", nickname: "My Key", createdAt: "2024-01-01", lastUsedAt: null, isDisabled: false },
       ]);
+
+      // Mock apiClient.post to return WebAuthn options, then navigator.credentials.get throws NotAllowedError
+      const { apiClient } = await import("@/lib/api/client");
+      (apiClient.post as any).mockResolvedValueOnce({
+        data: { optionsJson: JSON.stringify({ challenge: "dGVzdA", allowCredentials: [] }), challengeId: "ch-1" },
+      });
+
+      const mockCredentialsGet = vi.fn().mockRejectedValue(
+        Object.assign(new Error("The operation either timed out or was not allowed."), { name: "NotAllowedError" })
+      );
+      Object.defineProperty(global.navigator, "credentials", {
+        value: { get: mockCredentialsGet },
+        writable: true,
+        configurable: true,
+      });
 
       render(<ReAuthDialog {...defaultProps} />);
 
@@ -224,7 +239,7 @@ describe("ReAuthDialog - Accessibility Compliance (Task 3.4)", () => {
         expect(screen.getByRole("button", { name: "Authenticate with fingerprint" })).toBeInTheDocument();
       });
 
-      // Wait for the focus timer
+      // After WebAuthn auto-trigger is declined (NotAllowedError), password input should get focus
       await waitFor(() => {
         expect(document.activeElement).toBe(screen.getByLabelText("Password"));
       });

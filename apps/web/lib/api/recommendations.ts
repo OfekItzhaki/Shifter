@@ -4,8 +4,6 @@ import { apiClient } from "./client";
 
 export type RecommendationStatus = "Active" | "Dismissed" | "Resolved" | "Cleared";
 
-export type AcceptRecommendationOutcome = "Accepted" | "AlreadyEnabled" | "TaskNotFound";
-
 // ── DTOs ──────────────────────────────────────────────────────────────────────
 
 export interface Recommendation {
@@ -25,12 +23,6 @@ export interface RecommendationBanner {
   recommendations: Recommendation[];
   remainingCount: number;
   affectedDateRange: string;
-}
-
-export interface AcceptRecommendationResult {
-  outcome: AcceptRecommendationOutcome;
-  message: string;
-  enqueuedRunId: string | null;
 }
 
 // ── API Functions ─────────────────────────────────────────────────────────────
@@ -72,16 +64,4 @@ export async function dismissRecommendation(
   await apiClient.post(
     `/spaces/${spaceId}/recommendations/${recommendationId}/dismiss`
   );
-}
-
-export async function acceptRecommendation(
-  spaceId: string,
-  recommendationId: string,
-  triggerNewRun: boolean
-): Promise<AcceptRecommendationResult> {
-  const { data } = await apiClient.post(
-    `/spaces/${spaceId}/recommendations/${recommendationId}/accept`,
-    { triggerNewRun }
-  );
-  return data;
 }

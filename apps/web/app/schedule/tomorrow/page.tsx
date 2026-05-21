@@ -43,10 +43,12 @@ export default function TomorrowPage() {
 
   // React Query — schedule for selected group
   const {
-    data: rawAssignments = [],
+    data: scheduleResponse,
     isLoading: scheduleLoading,
     isError,
   } = useGroupSchedule(currentSpaceId, selectedGroupId || null);
+
+  const rawAssignments = scheduleResponse?.assignments ?? [];
 
   const assignments: TaskAssignment[] = rawAssignments.map(a => ({
     id: a.id,

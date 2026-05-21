@@ -1,4 +1,5 @@
 using Jobuler.Application.Common;
+using Jobuler.Application.Scheduling.Models;
 using Jobuler.Domain.Scheduling;
 using Jobuler.Infrastructure.Persistence;
 using MediatR;
@@ -16,12 +17,21 @@ public record GroupScheduleAssignmentDto(
     string Source);
 
 /// <summary>
-/// Returns the published schedule assignments for members of a specific group.
+/// Wraps the schedule assignments together with task configuration data,
+/// allowing the frontend to display task info badges without additional API calls.
+/// </summary>
+public record GroupScheduleResponseDto(
+    List<GroupScheduleAssignmentDto> Assignments,
+    Dictionary<string, TaskConfigSummaryDto> TaskConfigurations);
+
+/// <summary>
+/// Returns the published schedule assignments for members of a specific group,
+/// along with task configuration summaries for all tasks in the schedule.
 /// Supports both legacy TaskSlots and the newer GroupTasks model.
 /// </summary>
-public record GetGroupScheduleQuery(Guid SpaceId, Guid GroupId) : IRequest<List<GroupScheduleAssignmentDto>>;
+public record GetGroupScheduleQuery(Guid SpaceId, Guid GroupId) : IRequest<GroupScheduleResponseDto>;
 
-public class GetGroupScheduleQueryHandler : IRequestHandler<GetGroupScheduleQuery, List<GroupScheduleAssignmentDto>>
+public class GetGroupScheduleQueryHandler : IRequestHandler<GetGroupScheduleQuery, GroupScheduleResponseDto>
 {
     private readonly AppDbContext _db;
     private readonly ICacheService _cache;
@@ -32,10 +42,10 @@ public class GetGroupScheduleQueryHandler : IRequestHandler<GetGroupScheduleQuer
         _cache = cache;
     }
 
-    public async Task<List<GroupScheduleAssignmentDto>> Handle(GetGroupScheduleQuery req, CancellationToken ct)
+    public async Task<GroupScheduleResponseDto> Handle(GetGroupScheduleQuery req, CancellationToken ct)
     {
         var cacheKey = $"schedule:{req.SpaceId}:{req.GroupId}";
-        var cached = await _cache.GetAsync<List<GroupScheduleAssignmentDto>>(cacheKey, ct);
+        var cached = await _cache.GetAsync<GroupScheduleResponseDto>(cacheKey, ct);
         if (cached is not null)
             return cached;
 
@@ -45,7 +55,8 @@ public class GetGroupScheduleQueryHandler : IRequestHandler<GetGroupScheduleQuer
             .OrderByDescending(v => v.VersionNumber)
             .FirstOrDefaultAsync(ct);
 
-        if (version is null) return [];
+        if (version is null)
+            return new GroupScheduleResponseDto([], new Dictionary<string, TaskConfigSummaryDto>());
 
         // Also include the previous published version (now archived) so that
         // recent past assignments (yesterday, etc.) remain visible after a new publish.
@@ -67,7 +78,8 @@ public class GetGroupScheduleQueryHandler : IRequestHandler<GetGroupScheduleQuer
             .Select(m => m.PersonId)
             .ToListAsync(ct);
 
-        if (memberIds.Count == 0) return [];
+        if (memberIds.Count == 0)
+            return new GroupScheduleResponseDto([], new Dictionary<string, TaskConfigSummaryDto>());
 
         // Load raw assignments for those members (from current + previous version)
         var rawAssignments = await _db.Assignments.AsNoTracking()
@@ -76,7 +88,8 @@ public class GetGroupScheduleQueryHandler : IRequestHandler<GetGroupScheduleQuer
                 && memberIds.Contains(a.PersonId))
             .ToListAsync(ct);
 
-        if (rawAssignments.Count == 0) return [];
+        if (rawAssignments.Count == 0)
+            return new GroupScheduleResponseDto([], new Dictionary<string, TaskConfigSummaryDto>());
 
         // Load people names
         var people = await _db.People.AsNoTracking()
@@ -99,14 +112,15 @@ public class GetGroupScheduleQueryHandler : IRequestHandler<GetGroupScheduleQuer
         // Only include tasks that belong to THIS group — prevents cross-group leakage
         var missingSlotIds = slotIds.Where(id => !taskSlots.ContainsKey(id)).ToHashSet();
 
+        // Load all active GroupTasks for this group (needed for both shift resolution and task config)
+        var thisGroupTasks = await _db.GroupTasks.AsNoTracking()
+            .Where(t => t.GroupId == req.GroupId && t.SpaceId == req.SpaceId && t.IsActive)
+            .ToListAsync(ct);
+
         // Build shift-GUID → task lookup for this group's tasks (solver generates derived GUIDs)
         var shiftGuidToTask = new Dictionary<Guid, (string Name, DateTime StartsAt, DateTime EndsAt)>();
         if (missingSlotIds.Count > 0)
         {
-            var thisGroupTasks = await _db.GroupTasks.AsNoTracking()
-                .Where(t => t.GroupId == req.GroupId && t.SpaceId == req.SpaceId && t.IsActive)
-                .ToListAsync(ct);
-
             foreach (var gt in thisGroupTasks)
             {
                 if (gt.ShiftDurationMinutes < 1) continue;
@@ -132,6 +146,19 @@ public class GetGroupScheduleQueryHandler : IRequestHandler<GetGroupScheduleQuer
                 }
             }
         }
+
+        // Build task configurations dictionary keyed by task name
+        var taskConfigurations = thisGroupTasks.ToDictionary(
+            gt => gt.Name,
+            gt => new TaskConfigSummaryDto(
+                TaskId: gt.Id.ToString(),
+                AllowsDoubleShift: gt.AllowsDoubleShift,
+                AllowsOverlap: gt.AllowsOverlap,
+                DailyStartTime: gt.DailyStartTime?.ToString("HH:mm"),
+                DailyEndTime: gt.DailyEndTime?.ToString("HH:mm"),
+                BurdenLevel: gt.BurdenLevel.ToString(),
+                RequiredQualificationNames: gt.RequiredQualificationNames,
+                SplitCount: gt.SplitCount));
 
         var result = new List<GroupScheduleAssignmentDto>();
 
@@ -169,8 +196,9 @@ public class GetGroupScheduleQueryHandler : IRequestHandler<GetGroupScheduleQuer
         }
 
         var ordered = result.OrderBy(r => r.SlotStartsAt).ToList();
-        await _cache.SetAsync(cacheKey, ordered, TimeSpan.FromSeconds(30), ct);
-        return ordered;
+        var response = new GroupScheduleResponseDto(ordered, taskConfigurations);
+        await _cache.SetAsync(cacheKey, response, TimeSpan.FromSeconds(30), ct);
+        return response;
     }
 
     private static Guid DeriveShiftGuid(Guid taskId, int shiftIndex)

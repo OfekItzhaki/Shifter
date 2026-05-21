@@ -276,8 +276,9 @@ export default function GroupDetailPage() {
       apiClient.get<Array<{ id: string; status: string; summaryJson?: string | null }>>(
         `/spaces/${currentSpaceId}/schedule-versions?status=discarded`
       ).catch(() => ({ data: [] as Array<{ id: string; status: string; summaryJson?: string | null }> })),
-    ]).then(([groupAssignments, draftRes, discardedRes]) => {
-      if (groupAssignments !== null) {
+    ]).then(([groupScheduleResponse, draftRes, discardedRes]) => {
+      if (groupScheduleResponse !== null) {
+        const groupAssignments = groupScheduleResponse.assignments;
         // Fresh data — update display and cache
         setScheduleData(groupAssignments);
         setScheduleError(null);
@@ -526,12 +527,13 @@ export default function GroupDetailPage() {
       // Small delay to ensure DB consistency after publish
       await new Promise(r => setTimeout(r, 500));
       // Reload schedule using the same function the schedule tab uses
-      const [groupAssignments, draftRes] = await Promise.all([
-        getGroupSchedule(spaceId, groupId).catch(() => [] as ScheduleAssignment[]),
+      const [groupScheduleResponse, draftRes] = await Promise.all([
+        getGroupSchedule(spaceId, groupId).catch(() => ({ assignments: [] as ScheduleAssignment[], taskConfigurations: {} })),
         apiClient.get<Array<{ id: string; status: string }>>(
           `/spaces/${spaceId}/schedule-versions?status=draft`
         ).catch(() => ({ data: [] as Array<{ id: string; status: string }> })),
       ]);
+      const groupAssignments = groupScheduleResponse.assignments;
       setScheduleData(groupAssignments.length > 0 ? groupAssignments : scheduleData);
       const drafts = Array.isArray(draftRes?.data) ? draftRes.data : [];
       setDraftVersion(drafts.length > 0 ? drafts[0] : null);

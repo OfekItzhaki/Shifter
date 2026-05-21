@@ -145,6 +145,17 @@
       "rangeMonth": "this month",
       "rangeYear": "this year",
       "dayNames": ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+    },
+    "taskInfoLabel": "Task configuration info",
+    "taskInfo": {
+      "doubleShift": "Double Shift",
+      "overlap": "Overlap Allowed",
+      "timeWindow": "Time Window",
+      "allDay": "24/7",
+      "burden": "Burden Level",
+      "qualifications": "Required Qualifications",
+      "splitCount": "Split Count",
+      "defaultSettings": "Default settings"
     }
   },
   "groups": {
@@ -1405,6 +1416,11 @@
     "bannerTitle": "{count} uncovered slots detected",
     "andMore": "+{count} more",
     "affectedRange": "Affected: {range}",
-    "viewTasks": "View Task Settings"
+    "viewTasks": "View Task Settings",
+    "cardTitle": "Double Shift Recommendation",
+    "cardDescription": "Enabling double shift on {taskNames} could cover {count} additional slots",
+    "goToTasks": "Go to Tasks",
+    "dismiss": "Dismiss",
+    "slotsCount": "{count} uncovered slots"
   }
 }

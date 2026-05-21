@@ -6,7 +6,6 @@ import { useTranslations } from "next-intl";
 import type { GroupTaskDto } from "@/lib/api/tasks";
 import type { GroupQualificationDto } from "@/lib/api/groups";
 import { burdenLabels, burdenColors } from "../types";
-import TaskDoubleShiftSuggestion from "@/components/recommendations/TaskDoubleShiftSuggestion";
 
 const BURDEN_OPTIONS = ["easy", "normal", "hard"];
 
@@ -485,10 +484,7 @@ export default function TasksTab({
               {t("overlapAllowed")}
             </label>
           </div>
-          {/* Double-shift recommendation suggestion (Req 3.3, 6.2) */}
-          {editingTask && !taskForm.allowsDoubleShift && spaceId && (
-            <TaskDoubleShiftSuggestion spaceId={spaceId} taskId={editingTask.id} />
-          )}
+
 
           {/* Daily time window */}
           <div>

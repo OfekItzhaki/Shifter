@@ -40,6 +40,9 @@ export default function ReAuthDialog({ open, onSuccess, onCancel, mode, spaceId 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // WebAuthn auto-trigger guard: prevents re-triggering after user cancels
+  const [webAuthnDeclined, setWebAuthnDeclined] = useState(false);
+
   // Refs for focus management
   const dialogRef = useRef<HTMLDivElement>(null);
   const submitButtonRef = useRef<HTMLButtonElement>(null);
@@ -90,6 +93,7 @@ export default function ReAuthDialog({ open, onSuccess, onCancel, mode, spaceId 
       setPassword("");
       setError(null);
       setIsSubmitting(false);
+      setWebAuthnDeclined(false);
     } else {
       setCredentials({ hasPassword: false, hasWebAuthn: false, loading: true });
     }
@@ -100,8 +104,17 @@ export default function ReAuthDialog({ open, onSuccess, onCancel, mode, spaceId 
   useEffect(() => {
     if (!open || credentials.loading) return;
 
-    // Focus the password input initially (or WebAuthn button if password unavailable)
+    // When WebAuthn auto-trigger is pending (hasWebAuthn=true AND not yet declined),
+    // don't focus the password input — let the WebAuthn browser prompt receive focus.
+    // Only focus password input when: hasWebAuthn is false, OR webAuthnDeclined is true, OR WebAuthn is not supported.
+    const webAuthnAutoTriggerPending = credentials.hasWebAuthn && !webAuthnDeclined;
+
     const timer = setTimeout(() => {
+      if (webAuthnAutoTriggerPending) {
+        // Don't focus anything — the WebAuthn browser prompt will take focus
+        return;
+      }
+
       if (credentials.hasPassword && passwordInputRef.current) {
         passwordInputRef.current.focus();
       } else if (credentials.hasWebAuthn && webAuthnButtonRef.current) {
@@ -112,7 +125,18 @@ export default function ReAuthDialog({ open, onSuccess, onCancel, mode, spaceId 
     }, 50);
 
     return () => clearTimeout(timer);
-  }, [open, credentials.loading, credentials.hasPassword, credentials.hasWebAuthn]);
+  }, [open, credentials.loading, credentials.hasPassword, credentials.hasWebAuthn, webAuthnDeclined]);
+
+  // ── Auto-trigger WebAuthn when credentials are loaded and available ──────
+
+  useEffect(() => {
+    if (!open) return;
+    if (credentials.loading) return;
+    if (!credentials.hasWebAuthn) return;
+    if (webAuthnDeclined) return;
+
+    handleWebAuthnSubmit();
+  }, [open, credentials.loading, credentials.hasWebAuthn, webAuthnDeclined]);
 
   // ── Focus trap ───────────────────────────────────────────────────────────
 
@@ -217,8 +241,11 @@ export default function ReAuthDialog({ open, onSuccess, onCancel, mode, spaceId 
         credential = result as PublicKeyCredential;
       } catch (err: any) {
         if (err.name === "NotAllowedError" || err.message === "USER_CANCELLED") {
+          setWebAuthnDeclined(true);
           setError(t("webAuthnCancelled"));
           setIsSubmitting(false);
+          // Focus password input as fallback after cancel
+          setTimeout(() => passwordInputRef.current?.focus(), 50);
           return;
         }
         throw err;

@@ -148,6 +148,17 @@
       "rangeMonth": "החודש",
       "rangeYear": "השנה",
       "dayNames": ["א׳", "ב׳", "ג׳", "ד׳", "ה׳", "ו׳", "ש׳"]
+    },
+    "taskInfoLabel": "מידע על הגדרות המשימה",
+    "taskInfo": {
+      "doubleShift": "משמרת כפולה",
+      "overlap": "חפיפה מותרת",
+      "timeWindow": "חלון זמן",
+      "allDay": "24/7",
+      "burden": "רמת עומס",
+      "qualifications": "כישורים נדרשים",
+      "splitCount": "מספר חלוקות",
+      "defaultSettings": "הגדרות ברירת מחדל"
     }
   },
   "groups": {
@@ -1417,6 +1428,11 @@
     "bannerTitle": "{count} משבצות לא מכוסות",
     "andMore": "+{count} נוספים",
     "affectedRange": "תאריכים מושפעים: {range}",
-    "viewTasks": "הגדרות משימות"
+    "viewTasks": "הגדרות משימות",
+    "cardTitle": "המלצת משמרת כפולה",
+    "cardDescription": "הפעלת משמרת כפולה ב-{taskNames} יכולה לכסות {count} משבצות נוספות",
+    "goToTasks": "עבור למשימות",
+    "dismiss": "סגור",
+    "slotsCount": "{count} משבצות לא מכוסות"
   }
 }

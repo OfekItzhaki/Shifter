@@ -145,6 +145,17 @@
       "rangeMonth": "в этом месяце",
       "rangeYear": "в этом году",
       "dayNames": ["Вс", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"]
+    },
+    "taskInfoLabel": "Информация о настройках задачи",
+    "taskInfo": {
+      "doubleShift": "Двойная смена",
+      "overlap": "Перекрытие разрешено",
+      "timeWindow": "Временное окно",
+      "allDay": "24/7",
+      "burden": "Уровень нагрузки",
+      "qualifications": "Требуемые квалификации",
+      "splitCount": "Количество разделений",
+      "defaultSettings": "Настройки по умолчанию"
     }
   },
   "groups": {
@@ -1322,6 +1333,11 @@
     "bannerTitle": "{count} незакрытых слотов обнаружено",
     "andMore": "+{count} ещё",
     "affectedRange": "Затронутый период: {range}",
-    "viewTasks": "Настройки задач"
+    "viewTasks": "Настройки задач",
+    "cardTitle": "Рекомендация двойной смены",
+    "cardDescription": "Включение двойной смены для {taskNames} может закрыть {count} дополнительных слотов",
+    "goToTasks": "Перейти к задачам",
+    "dismiss": "Отклонить",
+    "slotsCount": "{count} незакрытых слотов"
   }
 }

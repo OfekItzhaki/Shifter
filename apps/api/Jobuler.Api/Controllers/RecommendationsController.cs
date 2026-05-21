@@ -81,24 +81,4 @@ public class RecommendationsController : ControllerBase
         return NoContent();
     }
 
-    /// <summary>
-    /// Accept a recommendation. Enables double shift on the referenced task
-    /// and optionally triggers a new solver run.
-    /// </summary>
-    [HttpPost("spaces/{spaceId:guid}/recommendations/{id:guid}/accept")]
-    public async Task<IActionResult> Accept(
-        Guid spaceId, Guid id, [FromBody] AcceptRecommendationRequest? request, CancellationToken ct)
-    {
-        var triggerNewRun = request?.TriggerNewRun ?? false;
-
-        var result = await _mediator.Send(
-            new AcceptRecommendationCommand(spaceId, id, CurrentUserId, triggerNewRun), ct);
-
-        return Ok(result);
-    }
 }
-
-/// <summary>
-/// Request body for the accept recommendation endpoint.
-/// </summary>
-public record AcceptRecommendationRequest(bool TriggerNewRun = false);

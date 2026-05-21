@@ -270,12 +270,32 @@ export interface GroupScheduleAssignmentDto {
   source: string;
 }
 
+export interface TaskConfigSummaryDto {
+  taskId: string;
+  allowsDoubleShift: boolean;
+  allowsOverlap: boolean;
+  dailyStartTime: string | null;  // "HH:mm" or null
+  dailyEndTime: string | null;    // "HH:mm" or null
+  burdenLevel: string;            // "Hard" | "Normal" | "Easy"
+  requiredQualificationNames: string[];
+  splitCount: number;
+}
+
+export interface GroupScheduleResponseDto {
+  assignments: GroupScheduleAssignmentDto[];
+  taskConfigurations: Record<string, TaskConfigSummaryDto>;
+}
+
 export async function getGroupSchedule(
   spaceId: string,
   groupId: string
-): Promise<GroupScheduleAssignmentDto[]> {
+): Promise<GroupScheduleResponseDto> {
   const { data } = await apiClient.get(`/spaces/${spaceId}/groups/${groupId}/schedule`);
-  return data as GroupScheduleAssignmentDto[];
+  // Handle both new response shape and legacy flat array for backward compatibility
+  if (Array.isArray(data)) {
+    return { assignments: data as GroupScheduleAssignmentDto[], taskConfigurations: {} };
+  }
+  return data as GroupScheduleResponseDto;
 }
 
 // ── Live Status ───────────────────────────────────────────────────────────────

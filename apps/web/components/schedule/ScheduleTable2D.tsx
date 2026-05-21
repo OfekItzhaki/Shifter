@@ -4,6 +4,8 @@ import { useTranslations } from "next-intl";
 import { useAuthStore } from "@/lib/store/authStore";
 import { formatLocalTime } from "@/lib/utils/formatTime";
 import type { ScheduleAssignment } from "@/app/groups/[groupId]/types";
+import type { TaskConfigSummaryDto } from "@/lib/api/groups";
+import TaskInfoBadge from "./TaskInfoBadge";
 
 /** Task type name used for home-leave assignments from the solver */
 const HOME_LEAVE_TASK_TYPE = "home_leave";
@@ -27,6 +29,8 @@ interface ScheduleTable2DProps {
   roleColorMap?: Map<string, string | null>;
   /** Called when a cell is clicked — passes slotKey and taskName */
   onCellClick?: (slotKey: string, taskName: string, assignees: string[]) => void;
+  /** Optional task configuration map keyed by task ID for displaying info badges */
+  taskConfigurations?: Record<string, TaskConfigSummaryDto>;
 }
 
 /** Returns true if the assignment's slot overlaps the given date (YYYY-MM-DD). */
@@ -51,6 +55,7 @@ export default function ScheduleTable2D({
   filterDate,
   roleColorMap,
   onCellClick,
+  taskConfigurations,
 }: ScheduleTable2DProps) {
   const t = useTranslations("schedule");
   const timezoneId = useAuthStore(s => s.timezoneId);
@@ -113,7 +118,12 @@ export default function ScheduleTable2D({
                   isHomeLeaveTask(task) ? "text-emerald-700 bg-emerald-50" : task === currentUserTaskName ? "bg-blue-50 text-slate-700" : "text-slate-700"
                 }`}
               >
-                {isHomeLeaveTask(task) ? HOME_LEAVE_LABEL : task}
+                <span className="inline-flex items-center gap-1">
+                  {isHomeLeaveTask(task) ? HOME_LEAVE_LABEL : task}
+                  {!isHomeLeaveTask(task) && (
+                    <TaskInfoBadge config={taskConfigurations?.[task] ?? null} />
+                  )}
+                </span>
               </th>
             ))}
           </tr>

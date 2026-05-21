@@ -192,12 +192,8 @@ describe("ReAuthDialog - Error Handling and Recovery (Task 4.4)", () => {
     });
 
     it("displays 'Verification cancelled' when user cancels WebAuthn prompt (NotAllowedError)", async () => {
-      // First call returns WebAuthn options, then navigator.credentials.get throws NotAllowedError
-      mockApiPost.mockResolvedValueOnce({
-        data: { optionsJson: JSON.stringify({ challenge: "dGVzdA", allowCredentials: [] }), challengeId: "ch-1" },
-      });
-
-      // Mock navigator.credentials.get to throw NotAllowedError
+      // Mock navigator.credentials.get to throw NotAllowedError BEFORE render
+      // so the auto-trigger picks it up
       const mockCredentialsGet = vi.fn().mockRejectedValue(
         Object.assign(new Error("The operation either timed out or was not allowed."), { name: "NotAllowedError" })
       );
@@ -207,17 +203,15 @@ describe("ReAuthDialog - Error Handling and Recovery (Task 4.4)", () => {
         configurable: true,
       });
 
+      // Auto-trigger will call handleWebAuthnSubmit which calls apiClient.post for options
+      mockApiPost.mockResolvedValueOnce({
+        data: { optionsJson: JSON.stringify({ challenge: "dGVzdA", allowCredentials: [] }), challengeId: "ch-1" },
+      });
+
       render(<ReAuthDialog {...defaultProps} />);
 
-      await waitFor(() => {
-        expect(screen.getByRole("button", { name: "Authenticate with fingerprint" })).toBeInTheDocument();
-      });
-
-      const webAuthnBtn = screen.getByRole("button", { name: "Authenticate with fingerprint" });
-      await act(async () => {
-        fireEvent.click(webAuthnBtn);
-      });
-
+      // Auto-trigger fires handleWebAuthnSubmit, which gets options then calls credentials.get
+      // credentials.get throws NotAllowedError → shows "Verification cancelled"
       await waitFor(() => {
         const alert = screen.getByRole("alert");
         expect(alert).toHaveTextContent("Verification cancelled. Please try again.");
@@ -296,13 +290,16 @@ describe("ReAuthDialog - Error Handling and Recovery (Task 4.4)", () => {
     });
 
     it("displays 'Authentication failed' when WebAuthn verification fails with 401", async () => {
+      // Auto-trigger will call handleWebAuthnSubmit:
+      // 1st post → WebAuthn options (success)
+      // 2nd post → re-authenticate (401 error)
       mockApiPost
         .mockResolvedValueOnce({
           data: { optionsJson: JSON.stringify({ challenge: "dGVzdA", allowCredentials: [] }), challengeId: "ch-1" },
         })
         .mockRejectedValueOnce({ response: { status: 401 } });
 
-      // Mock successful navigator.credentials.get
+      // Mock successful navigator.credentials.get BEFORE render
       const mockAssertion = {
         id: "cred-id",
         rawId: new ArrayBuffer(8),
@@ -323,15 +320,7 @@ describe("ReAuthDialog - Error Handling and Recovery (Task 4.4)", () => {
 
       render(<ReAuthDialog {...defaultProps} />);
 
-      await waitFor(() => {
-        expect(screen.getByRole("button", { name: "Authenticate with fingerprint" })).toBeInTheDocument();
-      });
-
-      const webAuthnBtn = screen.getByRole("button", { name: "Authenticate with fingerprint" });
-      await act(async () => {
-        fireEvent.click(webAuthnBtn);
-      });
-
+      // Auto-trigger fires, credentials.get succeeds, but re-authenticate returns 401
       await waitFor(() => {
         const alert = screen.getByRole("alert");
         expect(alert).toHaveTextContent("Authentication failed. Please try again.");
@@ -339,12 +328,16 @@ describe("ReAuthDialog - Error Handling and Recovery (Task 4.4)", () => {
     });
 
     it("displays 'Too many attempts' when WebAuthn verification returns 429", async () => {
+      // Auto-trigger will call handleWebAuthnSubmit:
+      // 1st post → WebAuthn options (success)
+      // 2nd post → re-authenticate (429 error)
       mockApiPost
         .mockResolvedValueOnce({
           data: { optionsJson: JSON.stringify({ challenge: "dGVzdA", allowCredentials: [] }), challengeId: "ch-1" },
         })
         .mockRejectedValueOnce({ response: { status: 429 } });
 
+      // Mock successful navigator.credentials.get BEFORE render
       const mockAssertion = {
         id: "cred-id",
         rawId: new ArrayBuffer(8),
@@ -365,15 +358,7 @@ describe("ReAuthDialog - Error Handling and Recovery (Task 4.4)", () => {
 
       render(<ReAuthDialog {...defaultProps} />);
 
-      await waitFor(() => {
-        expect(screen.getByRole("button", { name: "Authenticate with fingerprint" })).toBeInTheDocument();
-      });
-
-      const webAuthnBtn = screen.getByRole("button", { name: "Authenticate with fingerprint" });
-      await act(async () => {
-        fireEvent.click(webAuthnBtn);
-      });
-
+      // Auto-trigger fires, credentials.get succeeds, but re-authenticate returns 429
       await waitFor(() => {
         const alert = screen.getByRole("alert");
         expect(alert).toHaveTextContent("Too many attempts. Please try again later.");

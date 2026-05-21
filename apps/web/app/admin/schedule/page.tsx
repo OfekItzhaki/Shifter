@@ -371,6 +371,7 @@ function VersionDetailPanel({ selected, actionLoading, spaceId, onPublish, onRol
         assignments={selected.assignments}
         filterDate={selectedDate}
         onCellClick={onCellClick}
+        taskConfigurations={selected.taskConfigurations}
       />
     </div>
   );
