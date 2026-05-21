@@ -1,3 +1,4 @@
+using Jobuler.Application.Common.HealthChecks;
 using Jobuler.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -15,12 +16,18 @@ public class HealthController : ControllerBase
     private readonly AppDbContext _db;
     private readonly IConnectionMultiplexer _redis;
     private readonly ILogger<HealthController> _logger;
+    private readonly IHealthCheckRunner _healthCheckRunner;
 
-    public HealthController(AppDbContext db, IConnectionMultiplexer redis, ILogger<HealthController> logger)
+    public HealthController(
+        AppDbContext db,
+        IConnectionMultiplexer redis,
+        ILogger<HealthController> logger,
+        IHealthCheckRunner healthCheckRunner)
     {
         _db = db;
         _redis = redis;
         _logger = logger;
+        _healthCheckRunner = healthCheckRunner;
     }
 
     [HttpGet]
@@ -76,5 +83,17 @@ public class HealthController : ControllerBase
     public IActionResult Live()
     {
         return Ok(new { status = "alive" });
+    }
+
+    /// <summary>
+    /// Detailed health check endpoint reporting per-service status for all monitored services.
+    /// Returns 200 when all services are healthy, 503 when any service is degraded.
+    /// </summary>
+    [HttpGet("detailed")]
+    public async Task<IActionResult> Detailed(CancellationToken ct)
+    {
+        var report = await _healthCheckRunner.RunAllAsync(ct);
+        var statusCode = report.OverallStatus == "healthy" ? 200 : 503;
+        return StatusCode(statusCode, report);
     }
 }

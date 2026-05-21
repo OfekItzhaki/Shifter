@@ -90,6 +90,10 @@ services:
       LemonSqueezy__StoreId: ${LEMONSQUEEZY_STORE_ID:-}
       LemonSqueezy__DefaultVariantId: ${LEMONSQUEEZY_DEFAULT_VARIANT_ID:-}
       LemonSqueezy__TestVariantId: ${LEMONSQUEEZY_TEST_VARIANT_ID:-}
+      HealthCheck__PushoverUserKey: ${PUSHOVER_USER_KEY:-}
+      HealthCheck__PushoverAppToken: ${PUSHOVER_APP_TOKEN:-}
+      HealthCheck__IntervalSeconds: ${HEALTH_CHECK_INTERVAL_SECONDS:-300}
+      HealthCheck__AlertCooldownSeconds: ${HEALTH_CHECK_ALERT_COOLDOWN_SECONDS:-3600}
     ports:
       - "${API_PORT}:8080"
     volumes:

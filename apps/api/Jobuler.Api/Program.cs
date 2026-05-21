@@ -303,6 +303,66 @@ builder.Services.AddHostedService<SubscriptionCleanupService>();
 // Subscription expiry — transitions canceled subscriptions past their billing period to Expired
 builder.Services.AddHostedService<ExpireSubscriptionsJob>();
 
+// ─── Health check monitoring & alerting ──────────────────────────────────────
+builder.Services.Configure<Jobuler.Application.Common.HealthChecks.HealthCheckOptions>(options =>
+{
+    // Bind from HealthCheck configuration section first (appsettings.json)
+    var section = builder.Configuration.GetSection("HealthCheck");
+    if (section.Exists())
+    {
+        section.Bind(options);
+    }
+
+    // Environment variables override configuration section values
+    var pushoverUserKey = builder.Configuration["PUSHOVER_USER_KEY"]
+        ?? Environment.GetEnvironmentVariable("PUSHOVER_USER_KEY");
+    if (!string.IsNullOrEmpty(pushoverUserKey))
+        options.PushoverUserKey = pushoverUserKey;
+
+    var pushoverAppToken = builder.Configuration["PUSHOVER_APP_TOKEN"]
+        ?? Environment.GetEnvironmentVariable("PUSHOVER_APP_TOKEN");
+    if (!string.IsNullOrEmpty(pushoverAppToken))
+        options.PushoverAppToken = pushoverAppToken;
+
+    var intervalStr = builder.Configuration["HEALTH_CHECK_INTERVAL_SECONDS"]
+        ?? Environment.GetEnvironmentVariable("HEALTH_CHECK_INTERVAL_SECONDS");
+    if (int.TryParse(intervalStr, out var interval))
+        options.IntervalSeconds = interval;
+
+    var cooldownStr = builder.Configuration["HEALTH_CHECK_ALERT_COOLDOWN_SECONDS"]
+        ?? Environment.GetEnvironmentVariable("HEALTH_CHECK_ALERT_COOLDOWN_SECONDS");
+    if (int.TryParse(cooldownStr, out var cooldown))
+        options.AlertCooldownSeconds = cooldown;
+});
+
+// Individual service health checks
+builder.Services.AddScoped<Jobuler.Application.Common.HealthChecks.IServiceHealthCheck, Jobuler.Infrastructure.HealthChecks.PostgresHealthCheck>();
+builder.Services.AddScoped<Jobuler.Application.Common.HealthChecks.IServiceHealthCheck, Jobuler.Infrastructure.HealthChecks.RedisHealthCheck>();
+builder.Services.AddScoped<Jobuler.Application.Common.HealthChecks.IServiceHealthCheck, Jobuler.Infrastructure.HealthChecks.LemonSqueezyHealthCheck>();
+builder.Services.AddScoped<Jobuler.Application.Common.HealthChecks.IServiceHealthCheck, Jobuler.Infrastructure.HealthChecks.SendGridHealthCheck>();
+builder.Services.AddScoped<Jobuler.Application.Common.HealthChecks.IServiceHealthCheck, Jobuler.Infrastructure.HealthChecks.SolverHealthCheck>();
+
+// Health check runner (aggregates all IServiceHealthCheck instances)
+builder.Services.AddScoped<Jobuler.Application.Common.HealthChecks.IHealthCheckRunner, Jobuler.Infrastructure.HealthChecks.HealthCheckRunner>();
+
+// Pushover notifier
+builder.Services.AddSingleton<Jobuler.Application.Common.HealthChecks.IPushoverNotifier, Jobuler.Infrastructure.HealthChecks.PushoverNotifier>();
+
+// Named HttpClient instances for health checks
+builder.Services.AddHttpClient("Pushover");
+builder.Services.AddHttpClient("LemonSqueezy");
+builder.Services.AddHttpClient("SendGrid");
+builder.Services.AddHttpClient("Solver", client =>
+{
+    var solverUrl = builder.Configuration["Solver:BaseUrl"]
+        ?? Environment.GetEnvironmentVariable("SOLVER_URL")
+        ?? "http://localhost:8000";
+    client.BaseAddress = new Uri(solverUrl);
+});
+
+// Background health monitor service
+builder.Services.AddHostedService<Jobuler.Infrastructure.HealthChecks.HealthCheckMonitorService>();
+
 // ─── API ─────────────────────────────────────────────────────────────────────
 builder.Services.AddControllers()
     .AddJsonOptions(o =>
