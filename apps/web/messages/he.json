@@ -67,6 +67,7 @@
     "noCredentialFound": "לא נמצא מכשיר רשום. התחבר עם סיסמה ותוכל להפעיל כניסה ביומטרית."
   },
   "nav": {
+    "home": "דף הבית",
     "schedule": "לוח זמנים",
     "today": "היום",
     "tomorrow": "מחר",
@@ -1435,5 +1436,20 @@
     "goToTasks": "עבור למשימות",
     "dismiss": "סגור",
     "slotsCount": "{count} משבצות לא מכוסות"
+  },
+  "home": {
+    "welcome": "שלום, {name}",
+    "whatsNew": "מה חדש",
+    "viewAllUpdates": "צפה בכל העדכונים",
+    "gettingStarted": "מדריך התחלה",
+    "viewFullGuide": "צפה במדריך המלא",
+    "tipCreateGroup": "צור קבוצה חדשה",
+    "tipAddMembers": "הוסף חברים לקבוצה",
+    "tipDefineTasks": "הגדר משימות ומשמרות",
+    "tipRunSolver": "הפעל סידור אוטומטי",
+    "quickActions": "גישה מהירה",
+    "myMissions": "המשימות שלי",
+    "myGroups": "הקבוצות שלי",
+    "latestVersion": "גרסה אחרונה"
   }
 }

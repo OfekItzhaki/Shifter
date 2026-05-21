@@ -58,7 +58,7 @@ export function useSessionExitHandler(): SessionExitHandlerState {
     exitAdminMode();
 
     // 2. Redirect to main page to hide admin content (Req 7.2, 7.3)
-    router.push("/schedule/my-missions");
+    router.push("/home");
 
     // 3. Show toast notification (Req 7.4)
     setToastVisible(true);

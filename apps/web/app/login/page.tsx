@@ -16,7 +16,7 @@ function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const justRegistered = searchParams.get("registered") === "1";
-  const redirectTo = searchParams.get("redirect") ?? "/schedule/my-missions";
+  const redirectTo = searchParams.get("redirect") ?? "/home";
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

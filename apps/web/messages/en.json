@@ -67,6 +67,7 @@
     "noCredentialFound": "No registered device found. Log in with password to enable biometric login."
   },
   "nav": {
+    "home": "Home",
     "schedule": "Schedule",
     "today": "Today",
     "tomorrow": "Tomorrow",
@@ -1423,5 +1424,20 @@
     "goToTasks": "Go to Tasks",
     "dismiss": "Dismiss",
     "slotsCount": "{count} uncovered slots"
+  },
+  "home": {
+    "welcome": "Hello, {name}",
+    "whatsNew": "What's New",
+    "viewAllUpdates": "View all updates",
+    "gettingStarted": "Getting Started",
+    "viewFullGuide": "View full guide",
+    "tipCreateGroup": "Create a new group",
+    "tipAddMembers": "Add members to a group",
+    "tipDefineTasks": "Define tasks and shifts",
+    "tipRunSolver": "Run automatic scheduling",
+    "quickActions": "Quick Actions",
+    "myMissions": "My Missions",
+    "myGroups": "My Groups",
+    "latestVersion": "Latest version"
   }
 }
