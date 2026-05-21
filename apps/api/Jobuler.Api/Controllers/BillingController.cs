@@ -68,18 +68,6 @@ public class BillingController : ControllerBase
         return Ok();
     }
 
-    /// <summary>Validate a coupon code.</summary>
-    [HttpPost("validate-coupon")]
-    public async Task<IActionResult> ValidateCoupon(
-        Guid spaceId, [FromBody] ValidateCouponRequest req, CancellationToken ct)
-    {
-        if (string.IsNullOrWhiteSpace(req.Code))
-            return BadRequest(new { error = "Coupon code is required." });
-
-        var result = await _mediator.Send(new ValidateCouponQuery(req.Code), ct);
-        return Ok(new { valid = result.Valid, discountPercent = result.DiscountPercent });
-    }
-
     /// <summary>Create a checkout session for a group subscription.</summary>
     [HttpPost("groups/{groupId:guid}/checkout")]
     public async Task<IActionResult> CreateCheckout(
@@ -111,47 +99,16 @@ public class BillingController : ControllerBase
 
         return Ok(new { checkoutUrl });
     }
-}
 
-/// <summary>Platform admin: manage coupons.</summary>
-[ApiController]
-[Route("platform/coupons")]
-[Authorize]
-public class CouponsController : ControllerBase
-{
-    private readonly IMediator _mediator;
-
-    public CouponsController(IMediator mediator) => _mediator = mediator;
-
-    private Guid CurrentUserId =>
-        Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-
-    /// <summary>List all coupons (platform admin only).</summary>
-    [HttpGet]
-    public async Task<IActionResult> List(CancellationToken ct)
+    /// <summary>Get active promo coupon code (if configured).</summary>
+    [HttpGet("promo")]
+    public IActionResult GetPromo(Guid spaceId)
     {
-        var result = await _mediator.Send(new ListCouponsQuery(CurrentUserId), ct);
-        return Ok(result);
-    }
+        if (string.IsNullOrWhiteSpace(_billingOptions.PromoCouponCode))
+            return Ok(new { code = (string?)null, label = (string?)null });
 
-    /// <summary>Create a coupon (platform admin only).</summary>
-    [HttpPost]
-    public async Task<IActionResult> Create(
-        [FromBody] CreateCouponRequest req, CancellationToken ct)
-    {
-        var result = await _mediator.Send(
-            new CreateCouponCommand(CurrentUserId, req.Code, req.DiscountPercent, req.MaxUses, req.ValidUntil, req.Description), ct);
-        return Ok(result);
-    }
-
-    /// <summary>Deactivate a coupon (platform admin only).</summary>
-    [HttpDelete("{couponId:guid}")]
-    public async Task<IActionResult> Deactivate(Guid couponId, CancellationToken ct)
-    {
-        await _mediator.Send(new DeactivateCouponCommand(CurrentUserId, couponId), ct);
-        return NoContent();
+        return Ok(new { code = _billingOptions.PromoCouponCode, label = _billingOptions.PromoCouponLabel });
     }
 }
 
-public record ValidateCouponRequest(string Code);
-public record CreateCouponRequest(string Code, int DiscountPercent, int? MaxUses, DateTime? ValidUntil, string? Description);
+

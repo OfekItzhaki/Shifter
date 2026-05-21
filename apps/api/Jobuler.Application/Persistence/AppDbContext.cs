@@ -93,7 +93,6 @@ public class AppDbContext : DbContext
 
     // Billing
     public DbSet<Jobuler.Domain.Billing.GroupSubscription> GroupSubscriptions => Set<Jobuler.Domain.Billing.GroupSubscription>();
-    public DbSet<Jobuler.Domain.Billing.Coupon> Coupons => Set<Jobuler.Domain.Billing.Coupon>();
     public DbSet<Jobuler.Domain.Billing.WebhookEventLog> WebhookEventLogs => Set<Jobuler.Domain.Billing.WebhookEventLog>();
 
     // Feedback

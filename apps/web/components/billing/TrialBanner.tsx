@@ -16,16 +16,26 @@ interface SubscriptionStatus {
   isActive: boolean;
 }
 
+interface PromoInfo {
+  code: string | null;
+  label: string | null;
+}
+
 export default function TrialBanner({ groupId }: Props) {
   const { currentSpaceId } = useSpaceStore();
   const router = useRouter();
   const [sub, setSub] = useState<SubscriptionStatus | null>(null);
+  const [promo, setPromo] = useState<PromoInfo | null>(null);
 
   useEffect(() => {
     if (!currentSpaceId || !groupId) return;
     apiClient
       .get(`/spaces/${currentSpaceId}/billing/groups/${groupId}/subscription`)
       .then(res => setSub(res.data))
+      .catch(() => {});
+    apiClient
+      .get(`/spaces/${currentSpaceId}/billing/promo`)
+      .then(res => setPromo(res.data))
       .catch(() => {});
   }, [currentSpaceId, groupId]);
 
@@ -40,21 +50,30 @@ export default function TrialBanner({ groupId }: Props) {
 
     if (daysLeft <= 0) {
       return (
-        <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <svg className="w-5 h-5 text-red-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
-            </svg>
-            <span className="text-sm text-red-800 font-medium">
-              תקופת הניסיון הסתיימה. שדרג כדי להמשיך להשתמש בסידור האוטומטי.
-            </span>
+        <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 flex flex-col gap-2">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <svg className="w-5 h-5 text-red-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+              </svg>
+              <span className="text-sm text-red-800 font-medium">
+                תקופת הניסיון הסתיימה. שדרג כדי להמשיך להשתמש בסידור האוטומטי.
+              </span>
+            </div>
+            <button
+              onClick={() => router.push("/pricing")}
+              className="flex-shrink-0 bg-red-500 hover:bg-red-600 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
+            >
+              שדרג עכשיו
+            </button>
           </div>
-          <button
-            onClick={() => router.push("/pricing")}
-            className="flex-shrink-0 bg-red-500 hover:bg-red-600 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
-          >
-            שדרג עכשיו
-          </button>
+          {promo?.code && (
+            <div className="flex items-center gap-2 bg-white/60 rounded-lg px-3 py-1.5">
+              <span className="text-xs text-red-700">🎁 קוד הנחה:</span>
+              <code className="text-xs font-bold text-red-900 bg-red-100 px-2 py-0.5 rounded select-all">{promo.code}</code>
+              {promo.label && <span className="text-xs text-red-600">({promo.label})</span>}
+            </div>
+          )}
         </div>
       );
     }
@@ -83,12 +102,19 @@ export default function TrialBanner({ groupId }: Props) {
         <span className={`text-sm ${textClass}`}>
           ⏳ נותרו <strong>{daysLeft}</strong> ימים לתקופת הניסיון
         </span>
-        <button
-          onClick={() => router.push("/pricing")}
-          className={`flex-shrink-0 text-xs border px-3 py-1.5 rounded-lg transition-colors font-medium ${btnClass}`}
-        >
-          צפה בתוכניות
-        </button>
+        <div className="flex items-center gap-2">
+          {promo?.code && daysLeft <= 3 && (
+            <span className="text-xs opacity-75">
+              קוד: <code className="font-bold select-all">{promo.code}</code>
+            </span>
+          )}
+          <button
+            onClick={() => router.push("/pricing")}
+            className={`flex-shrink-0 text-xs border px-3 py-1.5 rounded-lg transition-colors font-medium ${btnClass}`}
+          >
+            צפה בתוכניות
+          </button>
+        </div>
       </div>
     );
   }

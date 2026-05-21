@@ -47,21 +47,4 @@ public class WebhookEventLogConfiguration : IEntityTypeConfiguration<WebhookEven
     }
 }
 
-public class CouponConfiguration : IEntityTypeConfiguration<Coupon>
-{
-    public void Configure(EntityTypeBuilder<Coupon> builder)
-    {
-        builder.ToTable("coupons");
-        builder.HasKey(c => c.Id);
-        builder.Property(c => c.Id).HasColumnName("id");
-        builder.Property(c => c.Code).HasColumnName("code").IsRequired();
-        builder.Property(c => c.DiscountPercent).HasColumnName("discount_percent").IsRequired();
-        builder.Property(c => c.MaxUses).HasColumnName("max_uses");
-        builder.Property(c => c.CurrentUses).HasColumnName("current_uses");
-        builder.Property(c => c.ValidFrom).HasColumnName("valid_from").IsRequired();
-        builder.Property(c => c.ValidUntil).HasColumnName("valid_until");
-        builder.Property(c => c.IsActive).HasColumnName("is_active").IsRequired();
-        builder.Property(c => c.Description).HasColumnName("description");
-        builder.Property(c => c.CreatedAt).HasColumnName("created_at");
-    }
-}
+
