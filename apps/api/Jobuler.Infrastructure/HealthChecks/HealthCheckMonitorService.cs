@@ -88,7 +88,7 @@ public class HealthCheckMonitorService : BackgroundService
         return configured;
     }
 
-    private async Task ProcessResultsAsync(HealthCheckReport report, CancellationToken ct)
+    internal async Task ProcessResultsAsync(HealthCheckReport report, CancellationToken ct)
     {
         var now = DateTime.UtcNow;
         var cooldown = TimeSpan.FromSeconds(_options.AlertCooldownSeconds);
@@ -120,17 +120,15 @@ public class HealthCheckMonitorService : BackgroundService
                     LastCheckedUtc = now,
                     LastAlertSentUtc = null // Reset cooldown on recovery
                 };
-                continue;
             }
             else if (previousStatus == "unhealthy" && result.Status == "unhealthy")
             {
                 // Still unhealthy: check if cooldown has elapsed
                 await HandleStillUnhealthyAsync(result.ServiceName, previousState, now, cooldown, ct);
             }
-
-            // Update state (for transitions not already handled above)
-            if (previousStatus != "unhealthy" || result.Status != "healthy")
+            else
             {
+                // Default state update (e.g., unknown→healthy, unknown→unhealthy, healthy→healthy)
                 _states[result.ServiceName] = new ServiceState
                 {
                     Status = result.Status,

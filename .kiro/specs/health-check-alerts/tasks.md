@@ -62,7 +62,7 @@ This plan implements a comprehensive health monitoring and alerting system for t
     - Include application version and UTC timestamp in the report
     - _Requirements: 1.1, 1.2, 1.3, 1.4, 2.6_
 
-  - [ ]* 3.2 Write property tests for HealthCheckRunner (Properties 1, 2, 3)
+  - [x]* 3.2 Write property tests for HealthCheckRunner (Properties 1, 2, 3)
     - **Property 1: Response structure completeness** — For any set of service health check results, the report contains an entry for every registered service, a UTC timestamp, and the version string
     - **Validates: Requirements 1.1, 1.4**
     - **Property 2: Overall status derivation** — For any set of results, overall status is "healthy" iff all non-skipped services report "healthy"; otherwise "degraded"
@@ -83,7 +83,7 @@ This plan implements a comprehensive health monitoring and alerting system for t
     - If request fails: log error at Error level, do not retry
     - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5, 5.6, 5.7_
 
-  - [ ]* 4.2 Write unit tests for PushoverNotifier
+  - [x]* 4.2 Write unit tests for PushoverNotifier
     - Create `Jobuler.Tests/HealthChecks/PushoverNotifierTests.cs`
     - Test request body format includes token, user, message, priority=1
     - Test notification message contains service name and UTC timestamp
@@ -109,7 +109,7 @@ This plan implements a comprehensive health monitoring and alerting system for t
     - Catch unhandled exceptions in outer loop: log Error, continue to next cycle
     - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7, 4.1, 4.2, 4.3, 4.4, 6.4_
 
-  - [ ]* 6.2 Write property tests for HealthCheckMonitorService state machine (Properties 4, 5, 7, 8)
+  - [x]* 6.2 Write property tests for HealthCheckMonitorService state machine (Properties 4, 5, 7, 8)
     - **Property 4: State transition triggers alert with correct content** — For any service transitioning healthy→unhealthy, a Pushover notification is sent containing the service name and UTC timestamp
     - **Validates: Requirements 3.4, 5.3**
     - **Property 5: Recovery logs at Information level** — For any service transitioning unhealthy→healthy, an Information-level log entry is produced containing the service name
@@ -122,13 +122,13 @@ This plan implements a comprehensive health monitoring and alerting system for t
     - Use FsCheck.Xunit with minimum 100 iterations per property
     - Generate sequences of service states and timing to test state machine logic
 
-  - [ ]* 6.3 Write property test for exception resilience (Property 6)
+  - [x]* 6.3 Write property test for exception resilience (Property 6)
     - **Property 6: Exception resilience** — For any exception thrown during a health check cycle, the monitor catches it, logs at Error level, and continues executing subsequent cycles
     - **Validates: Requirements 3.7**
     - Add to `Jobuler.Tests/HealthChecks/HealthCheckMonitorPropertyTests.cs`
     - Generate random exceptions and verify the monitor continues running
 
-  - [ ]* 6.4 Write property test for interval clamping (Property 9)
+  - [x]* 6.4 Write property test for interval clamping (Property 9)
     - **Property 9: Interval clamping** — For any configured interval value less than 30, the effective polling interval is clamped to 30 seconds
     - **Validates: Requirements 6.4**
     - Create `Jobuler.Tests/HealthChecks/HealthCheckOptionsPropertyTests.cs`
@@ -152,7 +152,7 @@ This plan implements a comprehensive health monitoring and alerting system for t
     - Register named `HttpClient` instances for Pushover, LemonSqueezy, SendGrid, Solver
     - _Requirements: 6.1, 6.2, 6.3, 6.4_
 
-  - [ ]* 7.3 Write integration tests for health endpoints
+  - [x]* 7.3 Write integration tests for health endpoints
     - Create `Jobuler.Tests/HealthChecks/HealthEndpointIntegrationTests.cs`
     - Test `/health/detailed` returns correct JSON structure with all service entries
     - Test `/health/detailed` returns 200 when all healthy, 503 when degraded
