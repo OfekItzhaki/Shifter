@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState, useCallback, FormEvent, KeyboardEvent } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import { apiClient } from "@/lib/api/client";
-import { isWebAuthnSupported, listCredentials } from "@/lib/webauthn";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -17,7 +16,6 @@ export interface ReAuthDialogProps {
 
 interface CredentialState {
   hasPassword: boolean;
-  hasWebAuthn: boolean;
   loading: boolean;
 }
 
@@ -31,7 +29,6 @@ export default function ReAuthDialog({ open, onSuccess, onCancel, mode, spaceId 
   // Credential availability
   const [credentials, setCredentials] = useState<CredentialState>({
     hasPassword: false,
-    hasWebAuthn: false,
     loading: true,
   });
 
@@ -40,50 +37,17 @@ export default function ReAuthDialog({ open, onSuccess, onCancel, mode, spaceId 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // WebAuthn auto-trigger guard: prevents re-triggering after user cancels
-  const [webAuthnDeclined, setWebAuthnDeclined] = useState(false);
-
   // Refs for focus management
   const dialogRef = useRef<HTMLDivElement>(null);
   const submitButtonRef = useRef<HTMLButtonElement>(null);
   const passwordInputRef = useRef<HTMLInputElement>(null);
-  const webAuthnButtonRef = useRef<HTMLButtonElement>(null);
-  const firstFocusableRef = useRef<HTMLElement | null>(null);
 
   // ── Fetch credential availability ────────────────────────────────────────
 
   useEffect(() => {
     if (!open) return;
-
-    let cancelled = false;
-
-    async function fetchCredentials() {
-      try {
-        // All registered users have a password
-        let hasWebAuthn = false;
-
-        if (isWebAuthnSupported()) {
-          try {
-            const creds = await listCredentials();
-            hasWebAuthn = creds.length > 0;
-          } catch {
-            // If we can't fetch WebAuthn credentials, just don't show the option
-            hasWebAuthn = false;
-          }
-        }
-
-        if (!cancelled) {
-          setCredentials({ hasPassword: true, hasWebAuthn, loading: false });
-        }
-      } catch {
-        if (!cancelled) {
-          setCredentials({ hasPassword: true, hasWebAuthn: false, loading: false });
-        }
-      }
-    }
-
-    fetchCredentials();
-    return () => { cancelled = true; };
+    // All registered users have a password — no need to check WebAuthn
+    setCredentials({ hasPassword: true, loading: false });
   }, [open]);
 
   // ── Reset state when dialog opens/closes ─────────────────────────────────
@@ -93,9 +57,8 @@ export default function ReAuthDialog({ open, onSuccess, onCancel, mode, spaceId 
       setPassword("");
       setError(null);
       setIsSubmitting(false);
-      setWebAuthnDeclined(false);
     } else {
-      setCredentials({ hasPassword: false, hasWebAuthn: false, loading: true });
+      setCredentials({ hasPassword: false, loading: true });
     }
   }, [open]);
 
@@ -104,39 +67,16 @@ export default function ReAuthDialog({ open, onSuccess, onCancel, mode, spaceId 
   useEffect(() => {
     if (!open || credentials.loading) return;
 
-    // When WebAuthn auto-trigger is pending (hasWebAuthn=true AND not yet declined),
-    // don't focus the password input — let the WebAuthn browser prompt receive focus.
-    // Only focus password input when: hasWebAuthn is false, OR webAuthnDeclined is true, OR WebAuthn is not supported.
-    const webAuthnAutoTriggerPending = credentials.hasWebAuthn && !webAuthnDeclined;
-
     const timer = setTimeout(() => {
-      if (webAuthnAutoTriggerPending) {
-        // Don't focus anything — the WebAuthn browser prompt will take focus
-        return;
-      }
-
       if (credentials.hasPassword && passwordInputRef.current) {
         passwordInputRef.current.focus();
-      } else if (credentials.hasWebAuthn && webAuthnButtonRef.current) {
-        webAuthnButtonRef.current.focus();
       } else if (submitButtonRef.current) {
         submitButtonRef.current.focus();
       }
     }, 50);
 
     return () => clearTimeout(timer);
-  }, [open, credentials.loading, credentials.hasPassword, credentials.hasWebAuthn, webAuthnDeclined]);
-
-  // ── Auto-trigger WebAuthn when credentials are loaded and available ──────
-
-  useEffect(() => {
-    if (!open) return;
-    if (credentials.loading) return;
-    if (!credentials.hasWebAuthn) return;
-    if (webAuthnDeclined) return;
-
-    handleWebAuthnSubmit();
-  }, [open, credentials.loading, credentials.hasWebAuthn, webAuthnDeclined]);
+  }, [open, credentials.loading, credentials.hasPassword]);
 
   // ── Focus trap ───────────────────────────────────────────────────────────
 
@@ -208,93 +148,11 @@ export default function ReAuthDialog({ open, onSuccess, onCancel, mode, spaceId 
     }
   }, [password, isSubmitting, spaceId, onSuccess, t]);
 
-  // ── WebAuthn submission ──────────────────────────────────────────────────
-
-  const handleWebAuthnSubmit = useCallback(async () => {
-    if (isSubmitting) return;
-
-    setIsSubmitting(true);
-    setError(null);
-
-    try {
-      // Step 1: Get authentication options from server
-      const { data: optionsData } = await apiClient.post("/auth/webauthn/login/options");
-      const options = JSON.parse(optionsData.optionsJson);
-      const challengeId: string = optionsData.challengeId;
-
-      // Convert base64url fields to ArrayBuffer
-      options.challenge = base64urlToArrayBuffer(options.challenge);
-      if (options.allowCredentials) {
-        options.allowCredentials = options.allowCredentials.map(
-          (cred: { id: string; type: string; transports?: string[] }) => ({
-            ...cred,
-            id: base64urlToArrayBuffer(cred.id),
-          })
-        );
-      }
-
-      // Step 2: Call navigator.credentials.get()
-      let credential: PublicKeyCredential;
-      try {
-        const result = await navigator.credentials.get({ publicKey: options });
-        if (!result) throw new Error("USER_CANCELLED");
-        credential = result as PublicKeyCredential;
-      } catch (err: any) {
-        if (err.name === "NotAllowedError" || err.message === "USER_CANCELLED") {
-          setWebAuthnDeclined(true);
-          setError(t("webAuthnCancelled"));
-          setIsSubmitting(false);
-          // Focus password input as fallback after cancel
-          setTimeout(() => passwordInputRef.current?.focus(), 50);
-          return;
-        }
-        throw err;
-      }
-
-      // Step 3: Send assertion to re-authenticate endpoint
-      const assertionResponse = credential.response as AuthenticatorAssertionResponse;
-      const assertionResponseJson = JSON.stringify({
-        id: credential.id,
-        rawId: arrayBufferToBase64url(credential.rawId),
-        type: credential.type,
-        response: {
-          authenticatorData: arrayBufferToBase64url(assertionResponse.authenticatorData),
-          clientDataJSON: arrayBufferToBase64url(assertionResponse.clientDataJSON),
-          signature: arrayBufferToBase64url(assertionResponse.signature),
-          userHandle: assertionResponse.userHandle
-            ? arrayBufferToBase64url(assertionResponse.userHandle)
-            : null,
-        },
-      });
-
-      const response = await apiClient.post("/auth/re-authenticate", {
-        webAuthnChallengeId: challengeId,
-        webAuthnAssertionJson: assertionResponseJson,
-        spaceId: spaceId || null,
-      });
-
-      if (response.data?.success) {
-        onSuccess();
-      }
-    } catch (err: any) {
-      const status = err?.response?.status;
-      if (status === 429) {
-        setError(t("rateLimited"));
-      } else if (status === 401) {
-        setError(t("authFailed"));
-      } else {
-        setError(t("networkError"));
-      }
-    } finally {
-      setIsSubmitting(false);
-    }
-  }, [isSubmitting, spaceId, onSuccess, t]);
-
   // ── Render ───────────────────────────────────────────────────────────────
 
   if (!open) return null;
 
-  const { hasPassword, hasWebAuthn, loading: credentialsLoading } = credentials;
+  const { hasPassword, loading: credentialsLoading } = credentials;
 
   return (
     <div
@@ -391,7 +249,7 @@ export default function ReAuthDialog({ open, onSuccess, onCancel, mode, spaceId 
           )}
 
           {/* No credentials configured */}
-          {!credentialsLoading && !hasPassword && !hasWebAuthn && (
+          {!credentialsLoading && !hasPassword && (
             <div
               style={{
                 background: "#fef3c7",
@@ -406,11 +264,8 @@ export default function ReAuthDialog({ open, onSuccess, onCancel, mode, spaceId 
             </div>
           )}
 
-          {/* Credential forms */}
-          {!credentialsLoading && (hasPassword || hasWebAuthn) && (
-            <>
-              {/* Password form */}
-              {hasPassword && (
+          {/* Password form */}
+          {!credentialsLoading && hasPassword && (
                 <form onSubmit={handlePasswordSubmit} noValidate>
                   <div style={{ marginBottom: "1rem" }}>
                     <label
@@ -476,64 +331,6 @@ export default function ReAuthDialog({ open, onSuccess, onCancel, mode, spaceId 
                 </form>
               )}
 
-              {/* Divider between methods */}
-              {hasPassword && hasWebAuthn && (
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    margin: "1rem 0",
-                    gap: "0.75rem",
-                  }}
-                >
-                  <div style={{ flex: 1, height: 1, background: "#e2e8f0" }} />
-                  <span style={{ fontSize: "0.8125rem", color: "#94a3b8" }}>{t("or")}</span>
-                  <div style={{ flex: 1, height: 1, background: "#e2e8f0" }} />
-                </div>
-              )}
-
-              {/* WebAuthn button */}
-              {hasWebAuthn && (
-                <button
-                  ref={webAuthnButtonRef}
-                  type="button"
-                  onClick={handleWebAuthnSubmit}
-                  disabled={isSubmitting}
-                  aria-label={t("webAuthnLabel")}
-                  style={{
-                    width: "100%",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: "0.625rem",
-                    background: isSubmitting
-                      ? "linear-gradient(135deg, #a78bfa, #818cf8)"
-                      : "linear-gradient(135deg, #7c3aed, #4f46e5)",
-                    color: "white",
-                    border: "none",
-                    borderRadius: 10,
-                    padding: "0.75rem",
-                    fontSize: "0.9375rem",
-                    fontWeight: 600,
-                    cursor: isSubmitting ? "not-allowed" : "pointer",
-                    transition: "all 0.15s",
-                    boxShadow: "0 2px 8px rgba(79, 70, 229, 0.3)",
-                  }}
-                >
-                  {/* Fingerprint icon */}
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M2 12C2 6.5 6.5 2 12 2a10 10 0 0 1 8 4" />
-                    <path d="M5 19.5C5.5 18 6 15 6 12c0-3.5 2.5-6 6-6 3.5 0 6 2.5 6 6 0 1.5-.5 3-1 4" />
-                    <path d="M9 12c0-1.5 1.5-3 3-3s3 1.5 3 3-1 4-2 6" />
-                    <path d="M12 12v4" />
-                    <path d="M2 16c1 2 2.5 3.5 4.5 4.5" />
-                    <path d="M15 17c1 1.5 2 3 2.5 4.5" />
-                    <path d="M19.5 8c.5 1 .5 2 .5 4 0 2-.5 4-1 6" />
-                  </svg>
-                  {isSubmitting ? t("verifying") : t("webAuthnButton")}
-                </button>
-              )}
-
               {/* Error message */}
               {error && (
                 <div
@@ -553,8 +350,6 @@ export default function ReAuthDialog({ open, onSuccess, onCancel, mode, spaceId 
                   {error}
                 </div>
               )}
-            </>
-          )}
 
           {/* Cancel button */}
           <button
@@ -583,20 +378,4 @@ export default function ReAuthDialog({ open, onSuccess, onCancel, mode, spaceId 
   );
 }
 
-// ── Base64url helpers (duplicated from webauthn.ts to avoid coupling) ────────
 
-function base64urlToArrayBuffer(base64url: string): ArrayBuffer {
-  let base64 = base64url.replace(/-/g, "+").replace(/_/g, "/");
-  while (base64.length % 4 !== 0) base64 += "=";
-  const binary = atob(base64);
-  const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-  return bytes.buffer;
-}
-
-function arrayBufferToBase64url(buffer: ArrayBuffer): string {
-  const bytes = new Uint8Array(buffer);
-  let binary = "";
-  for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
-  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-}

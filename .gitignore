@@ -69,3 +69,6 @@ infra/migrations/*.lock
 
 # Seed file copied into migrations for Docker init — not a real migration
 infra/migrations/999_seed.sql
+
+# Private business notes (not for public repo)
+docs/BUSINESS_TODO.md
