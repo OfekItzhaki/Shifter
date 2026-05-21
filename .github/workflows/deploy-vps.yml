@@ -41,11 +41,17 @@ jobs:
             done
 
             cd infra/compose
+            echo "=== Stopping existing containers ==="
+            docker compose down --remove-orphans || true
+            
+            echo "=== Removing stale containers ==="
+            docker container prune -f
+            
             echo "=== Rebuilding web (no cache) ==="
             docker compose build --no-cache web
             
-            echo "=== Restarting all services ==="
-            docker compose up -d --remove-orphans --force-recreate
+            echo "=== Starting all services ==="
+            docker compose up -d --remove-orphans
             
             echo "=== Waiting for web to start ==="
             sleep 10
