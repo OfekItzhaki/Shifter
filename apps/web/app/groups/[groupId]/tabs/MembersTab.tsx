@@ -84,37 +84,46 @@ export default function MembersTab({
 
       <div className="space-y-2">
         {filtered.map(m => (
-          <div key={m.personId} className="bg-white border border-slate-200 rounded-xl px-4 py-3 hover:border-slate-300 transition-colors">
+          <div key={m.personId} className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 hover:border-blue-200 dark:hover:border-blue-800 hover:shadow-sm transition-all">
             <div className="flex items-center gap-3">
               {/* Avatar */}
-              <div className="w-9 h-9 rounded-full bg-blue-500 flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white text-sm font-bold flex-shrink-0 shadow-sm">
                 {m.fullName.charAt(0).toUpperCase()}
               </div>
 
-              {/* Name + role badge */}
+              {/* Name + info */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <p className="text-sm font-medium text-slate-900 truncate">{m.fullName}</p>
+                  <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">{m.fullName}</p>
                   {m.isOwner && (
-                    <span className="text-xs px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-200 flex-shrink-0">
+                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-700 flex-shrink-0 font-medium">
                       {t("owner")}
                     </span>
                   )}
                   {!m.isOwner && m.roleName && (
-                    <span className="text-xs px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200 flex-shrink-0">
+                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600 flex-shrink-0 font-medium">
                       {m.roleName}
                     </span>
                   )}
                 </div>
-                {m.displayName && m.displayName !== m.fullName && (
-                  <p className="text-xs text-slate-400 truncate">{m.displayName}</p>
-                )}
-                {m.phoneNumber && <p className="text-xs text-slate-400 tabular-nums" dir="ltr">{m.phoneNumber}</p>}
+                <div className="flex items-center gap-3 mt-0.5">
+                  {m.phoneNumber && (
+                    <span className="inline-flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400 tabular-nums" dir="ltr">
+                      <svg className="w-3 h-3 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                      </svg>
+                      {m.phoneNumber}
+                    </span>
+                  )}
+                  {m.displayName && m.displayName !== m.fullName && (
+                    <span className="text-xs text-slate-400 dark:text-slate-500 truncate">{m.displayName}</span>
+                  )}
+                </div>
               </div>
 
               {/* Actions */}
               <div className="flex items-center gap-2 flex-shrink-0">
-                <button onClick={() => onSelectMember(m)} className="text-xs text-blue-600 hover:underline">{t("details")}</button>
+                <button onClick={() => onSelectMember(m)} className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20 px-2.5 py-1.5 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors font-medium">{t("details")}</button>
                 {isAdmin && !m.isOwner && (
                   <>
                     {!m.linkedUserId && (
@@ -315,8 +324,8 @@ export function MemberProfileModal({ member, isAdmin, editForm, saving, error, o
             {isAdmin && (
               <HomeLeavePrioritySelector personId={member.personId} groupId="" />
             )}
-            {/* Home-leave stats — time at base vs home */}
-            <HomeLeaveStatsSection personId={member.personId} />
+            {/* Home-leave stats — time at base vs home (admin only) */}
+            <HomeLeaveStatsSection personId={member.personId} isAdmin={isAdmin} />
           </div>
         )
       ) : (
@@ -416,14 +425,14 @@ export function MemberProfileModal({ member, isAdmin, editForm, saving, error, o
 }
 
 
-// ── Home-leave stats section (shown in member info tab) ───────────────────────
-function HomeLeaveStatsSection({ personId }: { personId: string }) {
+// ── Home-leave stats section (shown in member info tab — admin only) ──────────
+function HomeLeaveStatsSection({ personId, isAdmin }: { personId: string; isAdmin: boolean }) {
   const { currentSpaceId } = useSpaceStore();
   const [stats, setStats] = useState<{ totalBaseHours: number; totalHomeHours: number; baseTimeRatio: number; leaveSlotCount: number } | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!currentSpaceId) return;
+    if (!currentSpaceId || !isAdmin) return;
     setLoading(true);
     // Fetch from the published schedule's summary_json (home_leave_metrics)
     apiClient.get(`/spaces/${currentSpaceId}/schedule-versions/current`)
@@ -448,8 +457,9 @@ function HomeLeaveStatsSection({ personId }: { personId: string }) {
       })
       .catch(() => setStats(null))
       .finally(() => setLoading(false));
-  }, [currentSpaceId, personId]);
+  }, [currentSpaceId, personId, isAdmin]);
 
+  if (!isAdmin) return null;
   if (loading) return null;
   if (!stats) return null;
 
