@@ -7,7 +7,7 @@ import AppShell from "@/components/shell/AppShell";
 import { useAuthStore } from "@/lib/store/authStore";
 import { getPlatformStats, PlatformStats } from "@/lib/api/platform";
 import { apiClient } from "@/lib/api/client";
-import CouponManager from "@/components/platform/CouponManager";
+import BillingTestPanel from "@/components/platform/BillingTestPanel";
 import PlatformSettings from "@/components/platform/PlatformSettings";
 import ReAuthDialog from "@/components/admin/ReAuthDialog";
 import { useAdminSessionStore } from "@/lib/store/adminSessionStore";
@@ -222,8 +222,8 @@ export default function PlatformPage() {
               <StatCard label={t("totalTasks")} value={stats.storageStats.totalTasks} />
             </div>
 
-            {/* Coupon Management */}
-            <CouponManager />
+            {/* Billing Test */}
+            <BillingTestPanel />
 
             {/* Platform Settings */}
             <div style={{ marginTop: "1.25rem" }}>
