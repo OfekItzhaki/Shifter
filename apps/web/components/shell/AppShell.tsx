@@ -193,7 +193,7 @@ export default function AppShell({ children }: AppShellProps) {
             </svg>
             {t("auth.logout")}
           </button>
-          <div style={{ padding: "4px 12px 8px", color: "#334155", fontSize: 11, opacity: 0.4, textAlign: "center" }}>
+          <div style={{ padding: "4px 12px 8px", color: "#94a3b8", fontSize: 11, textAlign: "center" }}>
             v{process.env.NEXT_PUBLIC_APP_VERSION ?? "1.5.0"}
             <span style={{ margin: "0 4px" }}>·</span>
             <a href="https://ofeklabs.com" target="_blank" rel="noopener noreferrer" style={{ color: "inherit", textDecoration: "none" }}>
@@ -201,11 +201,11 @@ export default function AppShell({ children }: AppShellProps) {
             </a>
           </div>
           <div style={{ padding: "0 12px 12px", textAlign: "center", display: "flex", justifyContent: "center", gap: 8 }}>
-            <Link href="/terms" style={{ fontSize: 10, color: "#475569", opacity: 0.5, textDecoration: "none" }}>
+            <Link href="/terms" style={{ fontSize: 10, color: "#94a3b8", textDecoration: "none" }}>
               תנאי שימוש
             </Link>
-            <span style={{ fontSize: 10, color: "#475569", opacity: 0.3 }}>·</span>
-            <Link href="/privacy" style={{ fontSize: 10, color: "#475569", opacity: 0.5, textDecoration: "none" }}>
+            <span style={{ fontSize: 10, color: "#64748b" }}>·</span>
+            <Link href="/privacy" style={{ fontSize: 10, color: "#94a3b8", textDecoration: "none" }}>
               פרטיות
             </Link>
           </div>

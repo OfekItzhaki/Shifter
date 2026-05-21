@@ -186,13 +186,13 @@ button:disabled, input:disabled, textarea:disabled, select:disabled {
 .dark .border-slate-200 { border-color: #334155 !important; }
 .dark .border-slate-100 { border-color: #1e293b !important; }
 
-/* Text colors */
-.dark .text-slate-900 { color: #f1f5f9 !important; }
-.dark .text-slate-800 { color: #e2e8f0 !important; }
-.dark .text-slate-700 { color: #cbd5e1 !important; }
-.dark .text-slate-600 { color: #94a3b8 !important; }
-.dark .text-slate-500 { color: #64748b !important; }
-.dark .text-slate-400 { color: #475569 !important; }
+/* Text colors — ensure WCAG AA contrast (4.5:1 minimum) against dark backgrounds */
+.dark .text-slate-900 { color: #f8fafc !important; }
+.dark .text-slate-800 { color: #f1f5f9 !important; }
+.dark .text-slate-700 { color: #e2e8f0 !important; }
+.dark .text-slate-600 { color: #cbd5e1 !important; }
+.dark .text-slate-500 { color: #94a3b8 !important; }
+.dark .text-slate-400 { color: #94a3b8 !important; }
 
 /* Inputs */
 .dark input, .dark textarea, .dark select {
@@ -202,7 +202,7 @@ button:disabled, input:disabled, textarea:disabled, select:disabled {
 }
 
 .dark input::placeholder, .dark textarea::placeholder {
-  color: #475569 !important;
+  color: #64748b !important;
 }
 
 /* Topbar */
