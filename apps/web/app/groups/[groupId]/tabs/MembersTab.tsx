@@ -93,7 +93,7 @@ export default function MembersTab({
 
               {/* Name + info */}
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
+                <div className="flex items-center gap-2">
                   <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">{m.fullName}</p>
                   {m.isOwner && (
                     <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-700 flex-shrink-0 font-medium">
@@ -102,7 +102,7 @@ export default function MembersTab({
                   )}
                   {!m.isOwner && m.roleName && (
                     <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600 flex-shrink-0 font-medium">
-                      {m.roleName}
+                      {m.roleName.toLowerCase() === "member" ? t("member") : m.roleName}
                     </span>
                   )}
                 </div>

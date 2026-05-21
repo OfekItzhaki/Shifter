@@ -20,10 +20,8 @@ export function useDateFormat() {
   const timeFormat: TimeFormatOption = useAuthStore(s => s.timeFormat);
   const timezoneId = useAuthStore(s => s.timezoneId);
 
-  // Use browser locale if available and stored locale is the generic default
-  const effectiveLocale = typeof window !== "undefined" && locale === "he"
-    ? navigator.language || locale
-    : locale;
+  // Use the stored locale directly — it maps to the correct BCP-47 tag in dateFormat.ts
+  const effectiveLocale = locale || "he";
 
   return {
     fDate:      (d: string | Date | null | undefined) => formatDate(d, effectiveLocale, timeFormat, timezoneId),
