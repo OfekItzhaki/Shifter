@@ -42,8 +42,8 @@ jobs:
             echo "=== Removing stale containers ==="
             docker container prune -f
             
-            echo "=== Rebuilding web (no cache) ==="
-            docker compose build --no-cache web
+            echo "=== Rebuilding web ==="
+            docker compose build web
             
             echo "=== Starting all services ==="
             docker compose up -d --remove-orphans
