@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useAuthStore } from "@/lib/store/authStore";
 import { useOnboardingStore } from "@/lib/store/onboardingStore";
@@ -20,6 +21,19 @@ function HomePage() {
   const { displayName, userId } = useAuthStore();
   const { show: showOnboarding, reset: resetOnboarding } = useOnboardingStore();
   const { refresh: refreshSteps } = useStepCompletion();
+  const [resolvedName, setResolvedName] = useState<string | null>(displayName);
+
+  useEffect(() => {
+    if (displayName) {
+      setResolvedName(displayName);
+    }
+    // Also try to get from API in case store isn't hydrated yet
+    import("@/lib/api/auth").then(({ getMe }) => {
+      getMe().then(me => {
+        if (me.displayName) setResolvedName(me.displayName);
+      }).catch(() => {});
+    });
+  }, [displayName]);
 
   const today = new Date();
   const hebrewDate = today.toLocaleDateString("he-IL", {
@@ -45,12 +59,18 @@ function HomePage() {
 
   return (
     <div className="w-full max-w-3xl mx-auto py-6 px-4 space-y-6">
-      {/* Welcome section */}
-      <div className="space-y-1">
-        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
-          {t("welcome", { name: displayName ?? "" })}
-        </h1>
-        <p className="text-sm text-slate-500 dark:text-slate-400">{hebrewDate}</p>
+      {/* Hero banner */}
+      <div className="rounded-2xl bg-gradient-to-br from-blue-600 via-blue-500 to-indigo-600 p-6 sm:p-8 text-white relative overflow-hidden">
+        {/* Decorative circles */}
+        <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
+        <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2" />
+        
+        <div className="relative z-10">
+          <h1 className="text-2xl sm:text-3xl font-bold mb-1">
+            {t("welcome", { name: resolvedName ?? "" })}
+          </h1>
+          <p className="text-blue-100 text-sm">{hebrewDate}</p>
+        </div>
       </div>
 
       {/* What's New card */}
