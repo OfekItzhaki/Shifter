@@ -36,6 +36,8 @@ jobs:
           port: ${{ secrets.VPS_PORT || 22 }}
           source: "shifter-web.tar.gz"
           target: "/tmp/"
+          timeout: 120s
+          command_timeout: 10m
 
       - name: Deploy on VPS
         uses: appleboy/ssh-action@v1
