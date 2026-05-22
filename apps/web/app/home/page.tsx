@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import { useAuthStore } from "@/lib/store/authStore";
+import { useSpaceStore } from "@/lib/store/spaceStore";
 import { useOnboardingStore } from "@/lib/store/onboardingStore";
 import { useStepCompletion } from "@/lib/hooks/useStepCompletion";
 import AppShell from "@/components/shell/AppShell";
@@ -20,9 +21,11 @@ function HomePage() {
   const t = useTranslations("home");
   const locale = useLocale();
   const { displayName, userId } = useAuthStore();
+  const { currentSpaceId } = useSpaceStore();
   const { show: showOnboarding, reset: resetOnboarding } = useOnboardingStore();
   const { refresh: refreshSteps } = useStepCompletion();
   const [resolvedName, setResolvedName] = useState<string | null>(displayName);
+  const [hasGroups, setHasGroups] = useState(false);
 
   useEffect(() => {
     if (displayName) {
@@ -34,6 +37,14 @@ function HomePage() {
         if (me.displayName) setResolvedName(me.displayName);
       }).catch(() => {});
     });
+    // Check if user has groups
+    if (currentSpaceId) {
+      import("@/lib/api/groups").then(({ getGroups }) => {
+        getGroups(currentSpaceId).then(groups => {
+          setHasGroups(groups.length > 0);
+        }).catch(() => {});
+      }).catch(() => {});
+    }
   }, [displayName]);
 
   const today = new Date();
@@ -76,30 +87,42 @@ function HomePage() {
         </div>
       </div>
 
-      {/* What's New card */}
-      <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-5 space-y-3">
-        <div className="flex items-center justify-between">
-          <h2 className="text-base font-semibold text-slate-900 dark:text-white flex items-center gap-2">
-            <span>✨</span>
-            {t("whatsNew")}
+      {/* Quick Actions — shown first when user has groups */}
+      {hasGroups && (
+        <div className="space-y-3">
+          <h2 className="text-base font-semibold text-slate-900 dark:text-white">
+            {t("quickActions")}
           </h2>
-          <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-sky-100 dark:bg-sky-900/40 text-sky-700 dark:text-sky-300">
-            v{process.env.NEXT_PUBLIC_APP_VERSION ?? "dev"}
-          </span>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Link
+              href="/schedule/my-missions"
+              className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-5 hover:border-sky-300 dark:hover:border-sky-600 hover:shadow-sm transition-all group no-underline"
+            >
+              <div className="flex items-center gap-3">
+                <span className="flex-shrink-0 w-10 h-10 rounded-xl bg-sky-50 dark:bg-sky-900/30 flex items-center justify-center text-sky-600 dark:text-sky-400">
+                  <HomeIcon d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                </span>
+                <span className="text-sm font-semibold text-slate-800 dark:text-slate-100 group-hover:text-sky-600 dark:group-hover:text-sky-400 transition-colors">
+                  {t("myMissions")}
+                </span>
+              </div>
+            </Link>
+            <Link
+              href="/groups"
+              className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-5 hover:border-sky-300 dark:hover:border-sky-600 hover:shadow-sm transition-all group no-underline"
+            >
+              <div className="flex items-center gap-3">
+                <span className="flex-shrink-0 w-10 h-10 rounded-xl bg-sky-50 dark:bg-sky-900/30 flex items-center justify-center text-sky-600 dark:text-sky-400">
+                  <HomeIcon d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                </span>
+                <span className="text-sm font-semibold text-slate-800 dark:text-slate-100 group-hover:text-sky-600 dark:group-hover:text-sky-400 transition-colors">
+                  {t("myGroups")}
+                </span>
+              </div>
+            </Link>
+          </div>
         </div>
-        <p className="text-sm text-slate-600 dark:text-slate-300">
-          {t("latestVersion")}: v{process.env.NEXT_PUBLIC_APP_VERSION ?? "dev"}
-        </p>
-        <Link
-          href="/changelog"
-          className="inline-flex items-center gap-1 text-sm text-sky-600 dark:text-sky-400 hover:underline"
-        >
-          {t("viewAllUpdates")}
-          <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-          </svg>
-        </Link>
-      </div>
+      )}
 
       {/* Getting Started card */}
       <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-5 space-y-4">
@@ -135,39 +158,66 @@ function HomePage() {
         </button>
       </div>
 
-      {/* Quick Actions */}
-      <div className="space-y-3">
-        <h2 className="text-base font-semibold text-slate-900 dark:text-white">
-          {t("quickActions")}
-        </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <Link
-            href="/schedule/my-missions"
-            className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-5 hover:border-sky-300 dark:hover:border-sky-600 hover:shadow-sm transition-all group no-underline"
-          >
-            <div className="flex items-center gap-3">
-              <span className="flex-shrink-0 w-10 h-10 rounded-xl bg-sky-50 dark:bg-sky-900/30 flex items-center justify-center text-sky-600 dark:text-sky-400">
-                <HomeIcon d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-              </span>
-              <span className="text-sm font-semibold text-slate-800 dark:text-slate-100 group-hover:text-sky-600 dark:group-hover:text-sky-400 transition-colors">
-                {t("myMissions")}
-              </span>
-            </div>
-          </Link>
-          <Link
-            href="/groups"
-            className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-5 hover:border-sky-300 dark:hover:border-sky-600 hover:shadow-sm transition-all group no-underline"
-          >
-            <div className="flex items-center gap-3">
-              <span className="flex-shrink-0 w-10 h-10 rounded-xl bg-sky-50 dark:bg-sky-900/30 flex items-center justify-center text-sky-600 dark:text-sky-400">
-                <HomeIcon d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
-              </span>
-              <span className="text-sm font-semibold text-slate-800 dark:text-slate-100 group-hover:text-sky-600 dark:group-hover:text-sky-400 transition-colors">
-                {t("myGroups")}
-              </span>
-            </div>
-          </Link>
+      {/* Quick Actions — shown after Getting Started when user has no groups yet */}
+      {!hasGroups && (
+        <div className="space-y-3">
+          <h2 className="text-base font-semibold text-slate-900 dark:text-white">
+            {t("quickActions")}
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Link
+              href="/schedule/my-missions"
+              className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-5 hover:border-sky-300 dark:hover:border-sky-600 hover:shadow-sm transition-all group no-underline"
+            >
+              <div className="flex items-center gap-3">
+                <span className="flex-shrink-0 w-10 h-10 rounded-xl bg-sky-50 dark:bg-sky-900/30 flex items-center justify-center text-sky-600 dark:text-sky-400">
+                  <HomeIcon d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                </span>
+                <span className="text-sm font-semibold text-slate-800 dark:text-slate-100 group-hover:text-sky-600 dark:group-hover:text-sky-400 transition-colors">
+                  {t("myMissions")}
+                </span>
+              </div>
+            </Link>
+            <Link
+              href="/groups"
+              className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-5 hover:border-sky-300 dark:hover:border-sky-600 hover:shadow-sm transition-all group no-underline"
+            >
+              <div className="flex items-center gap-3">
+                <span className="flex-shrink-0 w-10 h-10 rounded-xl bg-sky-50 dark:bg-sky-900/30 flex items-center justify-center text-sky-600 dark:text-sky-400">
+                  <HomeIcon d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                </span>
+                <span className="text-sm font-semibold text-slate-800 dark:text-slate-100 group-hover:text-sky-600 dark:group-hover:text-sky-400 transition-colors">
+                  {t("myGroups")}
+                </span>
+              </div>
+            </Link>
+          </div>
         </div>
+      )}
+
+      {/* What's New card — at the bottom */}
+      <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-5 space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-base font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+            <span>✨</span>
+            {t("whatsNew")}
+          </h2>
+          <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-sky-100 dark:bg-sky-900/40 text-sky-700 dark:text-sky-300">
+            v{process.env.NEXT_PUBLIC_APP_VERSION ?? "dev"}
+          </span>
+        </div>
+        <p className="text-sm text-slate-600 dark:text-slate-300">
+          {t("latestVersion")}: v{process.env.NEXT_PUBLIC_APP_VERSION ?? "dev"}
+        </p>
+        <Link
+          href="/changelog"
+          className="inline-flex items-center gap-1 text-sm text-sky-600 dark:text-sky-400 hover:underline"
+        >
+          {t("viewAllUpdates")}
+          <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+          </svg>
+        </Link>
       </div>
     </div>
   );
