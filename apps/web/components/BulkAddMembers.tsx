@@ -3,8 +3,14 @@
 import { useState, useCallback } from "react";
 import { useTranslations } from "next-intl";
 
+export interface ParsedMember {
+  name: string;
+  phone?: string;
+  email?: string;
+}
+
 interface Props {
-  onBulkAdd: (names: string[], onProgress: (current: number, total: number) => void) => Promise<{ success: number; errors: number }>;
+  onBulkAdd: (members: ParsedMember[], onProgress: (current: number, total: number) => void) => Promise<{ success: number; errors: number }>;
 }
 
 export default function BulkAddMembers({ onBulkAdd }: Props) {
@@ -14,23 +20,32 @@ export default function BulkAddMembers({ onBulkAdd }: Props) {
   const [progress, setProgress] = useState<{ current: number; total: number } | null>(null);
   const [result, setResult] = useState<{ success: number; errors: number } | null>(null);
 
-  const names = text
+  const members: ParsedMember[] = text
     .split("\n")
     .map(line => line.trim())
-    .filter(line => line.length > 0);
+    .filter(line => line.length > 0)
+    .map(line => {
+      const parts = line.split(",").map(p => p.trim());
+      return {
+        name: parts[0] || "",
+        phone: parts[1] || undefined,
+        email: parts[2] || undefined,
+      };
+    })
+    .filter(m => m.name.length > 0);
 
   const handleProgress = useCallback((current: number, total: number) => {
     setProgress({ current, total });
   }, []);
 
   async function handleBulkAdd() {
-    if (names.length === 0) return;
+    if (members.length === 0) return;
     setAdding(true);
     setResult(null);
-    setProgress({ current: 0, total: names.length });
+    setProgress({ current: 0, total: members.length });
 
     try {
-      const res = await onBulkAdd(names, handleProgress);
+      const res = await onBulkAdd(members, handleProgress);
       setResult(res);
       if (res.errors === 0) {
         setText("");
@@ -44,19 +59,23 @@ export default function BulkAddMembers({ onBulkAdd }: Props) {
   return (
     <div className="space-y-4">
       <div>
+        <p className="text-xs text-slate-500 dark:text-slate-400 mb-2 leading-relaxed">
+          שם, טלפון, אימייל — שורה לכל חבר. טלפון ואימייל אופציונליים.
+        </p>
         <textarea
           value={text}
           onChange={e => { setText(e.target.value); setResult(null); }}
-          placeholder={t("bulkPlaceholder")}
+          placeholder={"יוסי לוי, 0501234567\nדניאל כהן, , daniel@email.com\nאלכס"}
           rows={6}
           disabled={adding}
-          className="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-slate-400 resize-none"
+          className="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-slate-400 dark:placeholder:text-slate-500 resize-none font-mono"
+          dir="rtl"
         />
       </div>
 
-      {names.length > 0 && !adding && !result && (
+      {members.length > 0 && !adding && !result && (
         <p className="text-xs text-slate-500 dark:text-slate-400">
-          {t("bulkCount", { count: names.length })}
+          {t("bulkCount", { count: members.length })}
         </p>
       )}
 
@@ -92,7 +111,7 @@ export default function BulkAddMembers({ onBulkAdd }: Props) {
       <button
         type="button"
         onClick={handleBulkAdd}
-        disabled={names.length === 0 || adding}
+        disabled={members.length === 0 || adding}
         className="w-full bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl disabled:opacity-50 transition-colors"
       >
         {adding

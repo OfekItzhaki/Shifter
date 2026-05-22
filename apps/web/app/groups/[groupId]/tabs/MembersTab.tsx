@@ -122,25 +122,25 @@ export default function MembersTab({
               </div>
 
               {/* Actions */}
-              <div className="flex items-center gap-2 flex-shrink-0">
-                <button onClick={() => onSelectMember(m)} className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20 px-2.5 py-1.5 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors font-medium">{t("details")}</button>
+              <div className="flex items-center gap-1.5 flex-shrink-0">
+                <button onClick={() => onSelectMember(m)} className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 border border-blue-200 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/20 px-2.5 py-1.5 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors font-medium">{t("details")}</button>
                 {isAdmin && !m.isOwner && (
                   <>
-                    {!m.linkedUserId && (
-                      <button onClick={() => onOpenInvite(m.personId)} className="text-xs text-slate-500 hover:text-slate-700 border border-slate-200 px-2 py-1 rounded-lg hover:bg-slate-50 transition-colors">{t("invite")}</button>
+                    {(!m.linkedUserId || (!m.phoneNumber && !m.email)) && (
+                      <button onClick={() => onOpenInvite(m.personId)} className="text-xs text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/20 px-2.5 py-1.5 rounded-lg hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors font-medium">{t("invite")}</button>
                     )}
                     {confirmRemove === m.personId ? (
                       <>
-                        <span className="text-xs text-slate-600">{t("permanentRemove")}</span>
+                        <span className="text-xs text-slate-600 dark:text-slate-400">{t("permanentRemove")}</span>
                         <button
                           onClick={() => { setConfirmRemove(null); onRemoveMember(m.personId); }}
-                          className="text-xs text-white bg-red-500 hover:bg-red-600 px-2 py-1 rounded-lg transition-colors"
+                          className="text-xs text-white bg-red-500 hover:bg-red-600 px-2.5 py-1.5 rounded-lg transition-colors font-medium"
                         >
                           {t("confirm")}
                         </button>
                         <button
                           onClick={() => setConfirmRemove(null)}
-                          className="text-xs text-slate-500 border border-slate-200 px-2 py-1 rounded-lg hover:bg-slate-50 transition-colors"
+                          className="text-xs text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-600 px-2.5 py-1.5 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors font-medium"
                         >
                           {t("cancel")}
                         </button>
@@ -148,7 +148,7 @@ export default function MembersTab({
                     ) : (
                       <button
                         onClick={() => setConfirmRemove(m.personId)}
-                        className="text-xs text-red-500 hover:text-red-700 border border-red-100 px-2 py-1 rounded-lg hover:bg-red-50 transition-colors"
+                        className="text-xs text-red-500 dark:text-red-400 border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 px-2.5 py-1.5 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors font-medium"
                       >
                         {t("remove")}
                       </button>
