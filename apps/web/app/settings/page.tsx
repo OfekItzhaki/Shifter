@@ -161,7 +161,7 @@ function SearchableDropdown({
             width: "100%",
             padding: "0.625rem 0.875rem",
             borderRadius: 10,
-            border: "1px solid #3b82f6",
+            border: "1px solid #0ea5e9",
             background: "white",
             fontSize: "0.8125rem",
             color: "#0f172a",
@@ -215,7 +215,7 @@ function SearchableDropdown({
                   color: "#0f172a",
                   borderRadius: 6,
                   cursor: "pointer",
-                  background: opt.value === value ? "#eff6ff" : "transparent",
+                  background: opt.value === value ? "#f0f9ff" : "transparent",
                   fontWeight: opt.value === value ? 600 : 400,
                   transition: "background 0.1s",
                 }}
@@ -224,7 +224,7 @@ function SearchableDropdown({
                 }}
                 onMouseLeave={(e) => {
                   (e.currentTarget as HTMLElement).style.background =
-                    opt.value === value ? "#eff6ff" : "transparent";
+                    opt.value === value ? "#f0f9ff" : "transparent";
                 }}
               >
                 {opt.label}
@@ -360,7 +360,7 @@ function LocationSection() {
             padding: "0.625rem 1.25rem",
             borderRadius: 10,
             border: "none",
-            background: !selectedCountry || saving ? "#e2e8f0" : "#3b82f6",
+            background: !selectedCountry || saving ? "#e2e8f0" : "#0ea5e9",
             color: !selectedCountry || saving ? "#94a3b8" : "white",
             fontWeight: 600,
             fontSize: "0.8125rem",
@@ -392,8 +392,8 @@ function TimeFormatSection() {
             flex: 1,
             padding: "0.625rem 1rem",
             borderRadius: 10,
-            border: timeFormat === "24h" ? "2px solid #3b82f6" : "1px solid #e2e8f0",
-            background: timeFormat === "24h" ? "#eff6ff" : "white",
+            border: timeFormat === "24h" ? "2px solid #0ea5e9" : "1px solid #e2e8f0",
+            background: timeFormat === "24h" ? "#f0f9ff" : "white",
             color: timeFormat === "24h" ? "#1d4ed8" : "#64748b",
             fontWeight: 600,
             fontSize: "0.875rem",
@@ -413,8 +413,8 @@ function TimeFormatSection() {
             flex: 1,
             padding: "0.625rem 1rem",
             borderRadius: 10,
-            border: timeFormat === "12h" ? "2px solid #3b82f6" : "1px solid #e2e8f0",
-            background: timeFormat === "12h" ? "#eff6ff" : "white",
+            border: timeFormat === "12h" ? "2px solid #0ea5e9" : "1px solid #e2e8f0",
+            background: timeFormat === "12h" ? "#f0f9ff" : "white",
             color: timeFormat === "12h" ? "#1d4ed8" : "#64748b",
             fontWeight: 600,
             fontSize: "0.875rem",

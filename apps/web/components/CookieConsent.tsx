@@ -43,14 +43,14 @@ export default function CookieConsent() {
     >
       <p style={{ color: "#cbd5e1", fontSize: "0.8125rem", margin: 0, lineHeight: 1.5 }}>
         אנחנו משתמשים בעוגיות לצורך אימות והפעלת השירות בלבד.{" "}
-        <Link href="/privacy" style={{ color: "#93c5fd", textDecoration: "underline" }}>
+        <Link href="/privacy" style={{ color: "#7dd3fc", textDecoration: "underline" }}>
           מדיניות פרטיות
         </Link>
       </p>
       <button
         onClick={handleAccept}
         style={{
-          background: "#3b82f6",
+          background: "#0ea5e9",
           color: "white",
           border: "none",
           borderRadius: "6px",

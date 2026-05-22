@@ -342,8 +342,8 @@ export default function ImportModal({ open, onClose, spaceId, groupId, onImporte
                 onClick={() => setMode(m)}
                 style={{
                   padding: "10px 16px", fontSize: 13, fontWeight: 600, border: "none", background: "none",
-                  cursor: "pointer", borderBottom: mode === m ? "2px solid #3b82f6" : "2px solid transparent",
-                  color: mode === m ? "#3b82f6" : "#64748b", marginBottom: -1,
+                  cursor: "pointer", borderBottom: mode === m ? "2px solid #0ea5e9" : "2px solid transparent",
+                  color: mode === m ? "#0ea5e9" : "#64748b", marginBottom: -1,
                 }}
               >
                 {m === "members" ? L.members : L.tasks}
@@ -398,7 +398,7 @@ export default function ImportModal({ open, onClose, spaceId, groupId, onImporte
               {/* Download template */}
               <button
                 onClick={downloadTemplate}
-                style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "#3b82f6", background: "none", border: "1px solid #bfdbfe", borderRadius: 8, padding: "7px 14px", cursor: "pointer", width: "fit-content" }}
+                style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "#0ea5e9", background: "none", border: "1px solid #bfdbfe", borderRadius: 8, padding: "7px 14px", cursor: "pointer", width: "fit-content" }}
               >
                 <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
@@ -560,7 +560,7 @@ const tdStyle: React.CSSProperties = {
 };
 
 const btnPrimary: React.CSSProperties = {
-  background: "#3b82f6", color: "white", border: "none",
+  background: "#0ea5e9", color: "white", border: "none",
   borderRadius: 10, padding: "9px 20px", fontSize: 13, fontWeight: 600, cursor: "pointer",
 };
 

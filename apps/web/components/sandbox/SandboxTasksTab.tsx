@@ -271,7 +271,7 @@ export default function SandboxTasksTab({ taskOverrides, baseline }: SandboxTask
     Hard: t("burdenHard"),
   };
 
-  const inp = "w-full border border-slate-200 dark:border-slate-600 dark:bg-slate-800 dark:text-white rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent";
+  const inp = "w-full border border-slate-200 dark:border-slate-600 dark:bg-slate-800 dark:text-white rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent";
 
   return (
     <div className="space-y-3">
@@ -293,7 +293,7 @@ export default function SandboxTasksTab({ taskOverrides, baseline }: SandboxTask
       {/* Add Task button */}
       <button
         onClick={handleOpenAddForm}
-        className="flex items-center gap-1.5 text-xs font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
+        className="flex items-center gap-1.5 text-xs font-medium text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-300 transition-colors"
       >
         <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
@@ -394,9 +394,9 @@ export default function SandboxTasksTab({ taskOverrides, baseline }: SandboxTask
             {form.requiredRoleIds.length > 0 && (
               <div className="flex flex-wrap gap-1.5 mt-2">
                 {form.requiredRoleIds.map((role) => (
-                  <span key={role} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-700">
+                  <span key={role} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-sky-50 dark:bg-sky-900/30 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-700">
                     {role}
-                    <button type="button" onClick={() => handleRemoveRole(role)} className="text-blue-400 hover:text-blue-600">×</button>
+                    <button type="button" onClick={() => handleRemoveRole(role)} className="text-sky-400 hover:text-sky-600">×</button>
                   </span>
                 ))}
               </div>
@@ -439,7 +439,7 @@ export default function SandboxTasksTab({ taskOverrides, baseline }: SandboxTask
           <div className="flex gap-2 pt-1">
             <button
               type="submit"
-              className="bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium px-3.5 py-2 rounded-lg transition-colors"
+              className="bg-sky-500 hover:bg-sky-600 text-white text-xs font-medium px-3.5 py-2 rounded-lg transition-colors"
             >
               {editingSlotId ? t("saveChanges") : t("addTask")}
             </button>
@@ -512,7 +512,7 @@ export default function SandboxTasksTab({ taskOverrides, baseline }: SandboxTask
                 <>
                   <button
                     onClick={() => handleOpenEditForm(task)}
-                    className="p-1.5 rounded-md text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+                    className="p-1.5 rounded-md text-slate-400 hover:text-sky-600 hover:bg-sky-50 dark:hover:bg-sky-900/20 transition-colors"
                     title={t("editTask")}
                   >
                     <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

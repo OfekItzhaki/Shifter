@@ -67,7 +67,7 @@ function JoinContent() {
   if (!hydrated) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
-        <svg className="animate-spin h-6 w-6 text-blue-400" fill="none" viewBox="0 0 24 24">
+        <svg className="animate-spin h-6 w-6 text-sky-400" fill="none" viewBox="0 0 24 24">
           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
         </svg>
@@ -79,18 +79,18 @@ function JoinContent() {
     const redirectUrl = `/groups/join?code=${encodeURIComponent(code)}`;
     return (
       <div className="text-center space-y-4">
-        <div className="w-16 h-16 rounded-full bg-blue-50 flex items-center justify-center mx-auto">
-          <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="#3b82f6" strokeWidth={2}>
+        <div className="w-16 h-16 rounded-full bg-sky-50 flex items-center justify-center mx-auto">
+          <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="#0ea5e9" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
           </svg>
         </div>
         <h2 className="text-lg font-bold text-slate-900">{t("loginRequired")}</h2>
         <p className="text-sm text-slate-500">{t("loginRequiredDesc")}</p>
         <div className="flex flex-col gap-2">
-          <Link href={`/login?redirect=${encodeURIComponent(redirectUrl)}`} className="bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-6 py-3 rounded-xl transition-colors">
+          <Link href={`/login?redirect=${encodeURIComponent(redirectUrl)}`} className="bg-sky-500 hover:bg-sky-600 text-white text-sm font-medium px-6 py-3 rounded-xl transition-colors">
             {t("signIn")}
           </Link>
-          <Link href={`/register?redirect=${encodeURIComponent(redirectUrl)}`} className="text-sm text-blue-600 hover:underline">
+          <Link href={`/register?redirect=${encodeURIComponent(redirectUrl)}`} className="text-sm text-sky-600 hover:underline">
             {t("createAccount")}
           </Link>
         </div>
@@ -112,7 +112,7 @@ function JoinContent() {
         <p className="text-sm text-slate-500">{t("successDesc", { name: result.groupName })}</p>
         <button
           onClick={() => router.push(`/groups/${result.groupId}`)}
-          className="bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-6 py-3 rounded-xl transition-colors"
+          className="bg-sky-500 hover:bg-sky-600 text-white text-sm font-medium px-6 py-3 rounded-xl transition-colors"
         >
           {t("goToGroup")}
         </button>
@@ -138,7 +138,7 @@ function JoinContent() {
             onChange={e => setCode(e.target.value.toUpperCase())}
             placeholder="ABCD1234"
             maxLength={8}
-            className="w-full border border-slate-200 rounded-xl px-4 py-3 text-center text-lg font-mono font-bold tracking-widest focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase"
+            className="w-full border border-slate-200 rounded-xl px-4 py-3 text-center text-lg font-mono font-bold tracking-widest focus:outline-none focus:ring-2 focus:ring-sky-500 uppercase"
             autoFocus
           />
         </div>
@@ -152,7 +152,7 @@ function JoinContent() {
         <button
           type="submit"
           disabled={!code.trim() || status === "loading"}
-          className="w-full bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-6 py-3 rounded-xl disabled:opacity-50 transition-colors"
+          className="w-full bg-sky-500 hover:bg-sky-600 text-white text-sm font-medium px-6 py-3 rounded-xl disabled:opacity-50 transition-colors"
         >
           {status === "loading" ? t("joining") : t("joinButton")}
         </button>
@@ -174,7 +174,7 @@ export default function JoinGroupPage() {
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
           <Suspense fallback={
             <div className="flex items-center justify-center py-8">
-              <svg className="animate-spin h-6 w-6 text-blue-400" fill="none" viewBox="0 0 24 24">
+              <svg className="animate-spin h-6 w-6 text-sky-400" fill="none" viewBox="0 0 24 24">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
               </svg>

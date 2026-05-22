@@ -56,7 +56,7 @@ export default function CreateGroupWizard({ open, onClose, onCreateGroup, isPend
             value={name}
             onChange={e => setName(e.target.value)}
             placeholder={t("namePlaceholder")}
-            className="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-slate-400"
+            className="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 placeholder:text-slate-400"
             onKeyDown={e => { if (e.key === "Enter" && name.trim() && selectedTemplate) handleSubmit(); }}
           />
         </div>
@@ -76,7 +76,7 @@ export default function CreateGroupWizard({ open, onClose, onCreateGroup, isPend
                 onClick={() => setSelectedTemplate(template.id)}
                 className={`text-start p-3.5 rounded-xl border-2 transition-all ${
                   selectedTemplate === template.id
-                    ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20 shadow-sm"
+                    ? "border-sky-500 bg-sky-50 dark:bg-sky-900/20 shadow-sm"
                     : "border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600"
                 }`}
               >
@@ -106,7 +106,7 @@ export default function CreateGroupWizard({ open, onClose, onCreateGroup, isPend
           type="button"
           onClick={handleSubmit}
           disabled={!name.trim() || !selectedTemplate || isPending}
-          className="w-full bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl disabled:opacity-50 transition-colors"
+          className="w-full bg-sky-500 hover:bg-sky-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl disabled:opacity-50 transition-colors"
         >
           {isPending ? t("creating") : t("continue")}
         </button>

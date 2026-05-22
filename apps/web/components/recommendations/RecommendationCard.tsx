@@ -48,7 +48,7 @@ export default function RecommendationCard({ spaceId, groupId }: Props) {
 
   return (
     <div
-      className="flex flex-col gap-2 rounded-xl border border-blue-200 bg-blue-50 p-4 sm:flex-row sm:items-center sm:gap-4"
+      className="flex flex-col gap-2 rounded-xl border border-sky-200 bg-sky-50 p-4 sm:flex-row sm:items-center sm:gap-4"
       role="status"
       aria-live="polite"
     >
@@ -59,7 +59,7 @@ export default function RecommendationCard({ spaceId, groupId }: Props) {
           height="24"
           fill="none"
           viewBox="0 0 24 24"
-          className="text-blue-600"
+          className="text-sky-600"
         >
           <path
             stroke="currentColor"
@@ -73,13 +73,13 @@ export default function RecommendationCard({ spaceId, groupId }: Props) {
 
       {/* Content */}
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-blue-900">
+        <p className="text-sm font-semibold text-sky-900">
           {t("cardTitle")}
         </p>
-        <p className="mt-1 text-xs text-blue-800">
+        <p className="mt-1 text-xs text-sky-800">
           {t("cardDescription", { taskNames, count: totalUncoveredSlots })}
         </p>
-        <p className="mt-0.5 text-xs text-blue-700">
+        <p className="mt-0.5 text-xs text-sky-700">
           {t("slotsCount", { count: totalUncoveredSlots })}
         </p>
       </div>
@@ -88,14 +88,14 @@ export default function RecommendationCard({ spaceId, groupId }: Props) {
       <div className="flex items-center gap-2 flex-shrink-0">
         <button
           onClick={handleGoToTasks}
-          className="rounded-lg bg-blue-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+          className="rounded-lg bg-sky-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-sky-700 transition-colors focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2"
         >
           {t("goToTasks")}
         </button>
         <button
           onClick={handleDismiss}
           disabled={dismissMutation.isPending}
-          className="rounded-lg border border-blue-200 bg-white px-4 py-2 text-xs font-medium text-blue-700 hover:bg-blue-100 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
+          className="rounded-lg border border-sky-200 bg-white px-4 py-2 text-xs font-medium text-sky-700 hover:bg-sky-100 transition-colors focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 disabled:opacity-50"
         >
           {t("dismiss")}
         </button>

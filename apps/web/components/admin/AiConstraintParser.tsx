@@ -46,12 +46,12 @@ export default function AiConstraintParser({ onConfirm }: AiConstraintParserProp
   }
 
   return (
-    <div className="space-y-4 rounded-lg border border-blue-200 bg-blue-50 p-4">
+    <div className="space-y-4 rounded-lg border border-sky-200 bg-sky-50 p-4">
       <div className="flex items-center gap-2">
-        <span className="text-xs font-semibold text-blue-700 uppercase tracking-wide">
+        <span className="text-xs font-semibold text-sky-700 uppercase tracking-wide">
           {t("title")}
         </span>
-        <span className="text-xs text-blue-500">
+        <span className="text-xs text-sky-500">
           {t("subtitle")}
         </span>
       </div>
@@ -63,12 +63,12 @@ export default function AiConstraintParser({ onConfirm }: AiConstraintParserProp
           onChange={e => setInput(e.target.value)}
           onKeyDown={e => e.key === "Enter" && handleParse()}
           placeholder={t("placeholder")}
-          className="flex-1 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+          className="flex-1 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400"
         />
         <button
           onClick={handleParse}
           disabled={loading || !input.trim()}
-          className="bg-blue-600 text-white text-sm px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+          className="bg-sky-600 text-white text-sm px-4 py-2 rounded-lg hover:bg-sky-700 disabled:opacity-50"
         >
           {loading ? "..." : t("parse")}
         </button>
@@ -77,7 +77,7 @@ export default function AiConstraintParser({ onConfirm }: AiConstraintParserProp
       {error && <p className="text-sm text-red-600">{error}</p>}
 
       {result && (
-        <div className="space-y-3 rounded-lg border border-blue-300 bg-white p-3">
+        <div className="space-y-3 rounded-lg border border-sky-300 bg-white p-3">
           {result.parsed ? (
             <>
               <div className="grid grid-cols-2 gap-2 text-sm">

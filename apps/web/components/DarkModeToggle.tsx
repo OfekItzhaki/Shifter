@@ -25,7 +25,7 @@ export default function DarkModeToggle() {
             aria-label={opt.label}
             style={{
               background: theme === opt.value ? "rgba(59,130,246,0.2)" : "transparent",
-              border: theme === opt.value ? "1px solid rgba(59,130,246,0.4)" : "1px solid transparent",
+              border: theme === opt.value ? "1px solid rgba(14,165,233,0.4)" : "1px solid transparent",
               borderRadius: 5,
               fontSize: 12,
               padding: "2px 6px",

@@ -38,7 +38,7 @@ function VerifyEmailContent() {
   if (status === "loading") {
     return (
       <div style={{ textAlign: "center", padding: "2rem 0" }}>
-        <div style={{ width: 40, height: 40, border: "3px solid #e2e8f0", borderTopColor: "#3b82f6", borderRadius: "50%", animation: "spin 0.8s linear infinite", margin: "0 auto 1rem" }} />
+        <div style={{ width: 40, height: 40, border: "3px solid #e2e8f0", borderTopColor: "#0ea5e9", borderRadius: "50%", animation: "spin 0.8s linear infinite", margin: "0 auto 1rem" }} />
         <p style={{ fontSize: "0.875rem", color: "#64748b" }}>{t("loading")}</p>
       </div>
     );
@@ -56,7 +56,7 @@ function VerifyEmailContent() {
         <p style={{ fontSize: "0.875rem", color: "#64748b", margin: "0 0 1.5rem" }}>{t("successMessage")}</p>
         <Link
           href="/login"
-          style={{ display: "inline-block", background: "#3b82f6", color: "white", borderRadius: 10, padding: "0.625rem 1.5rem", fontSize: "0.875rem", fontWeight: 600, textDecoration: "none" }}
+          style={{ display: "inline-block", background: "#0ea5e9", color: "white", borderRadius: 10, padding: "0.625rem 1.5rem", fontSize: "0.875rem", fontWeight: 600, textDecoration: "none" }}
         >
           {t("goToLogin")}
         </Link>
@@ -80,7 +80,7 @@ function VerifyEmailContent() {
         disabled={resendStatus === "sending" || resendStatus === "sent"}
         style={{
           display: "inline-block",
-          background: resendStatus === "sent" ? "#16a34a" : resendStatus === "sending" ? "#93c5fd" : "#3b82f6",
+          background: resendStatus === "sent" ? "#16a34a" : resendStatus === "sending" ? "#7dd3fc" : "#0ea5e9",
           color: "white",
           border: "none",
           borderRadius: 10,
@@ -95,7 +95,7 @@ function VerifyEmailContent() {
       </button>
 
       <p style={{ fontSize: "0.875rem", color: "#64748b" }}>
-        <Link href="/login" style={{ color: "#3b82f6", fontWeight: 500, textDecoration: "none" }}>
+        <Link href="/login" style={{ color: "#0ea5e9", fontWeight: 500, textDecoration: "none" }}>
           ← {t("goToLogin")}
         </Link>
       </p>

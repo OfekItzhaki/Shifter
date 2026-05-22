@@ -83,19 +83,19 @@ export default function TrialBanner({ groupId }: Props) {
       ? "bg-red-50 border-red-200"
       : daysLeft <= 7
       ? "bg-amber-50 border-amber-200"
-      : "bg-blue-50 border-blue-200";
+      : "bg-sky-50 border-sky-200";
 
     const textClass = daysLeft <= 3
       ? "text-red-800"
       : daysLeft <= 7
       ? "text-amber-800"
-      : "text-blue-800";
+      : "text-sky-800";
 
     const btnClass = daysLeft <= 3
       ? "text-red-700 border-red-300 hover:bg-red-100"
       : daysLeft <= 7
       ? "text-amber-700 border-amber-300 hover:bg-amber-100"
-      : "text-blue-700 border-blue-300 hover:bg-blue-100";
+      : "text-sky-700 border-sky-300 hover:bg-sky-100";
 
     return (
       <div className={`border rounded-xl px-4 py-2.5 flex items-center justify-between gap-3 ${colorClass}`}>

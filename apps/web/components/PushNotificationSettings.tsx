@@ -77,7 +77,7 @@ function ToggleSwitch({
         disabled
           ? "opacity-50 cursor-not-allowed"
           : "cursor-pointer"
-      } ${checked ? "bg-blue-500" : "bg-slate-300 dark:bg-slate-500"}`}
+      } ${checked ? "bg-sky-500" : "bg-slate-300 dark:bg-slate-500"}`}
     >
       <span
         className={`absolute h-[16px] w-[16px] rounded-full bg-white shadow transition-all ${

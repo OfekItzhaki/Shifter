@@ -168,7 +168,7 @@ export default function ProfilePage() {
   ) : (
     <div style={{
       width: 96, height: 96, borderRadius: "50%",
-      background: "linear-gradient(135deg, #3b82f6, #6366f1)",
+      background: "linear-gradient(135deg, #0ea5e9, #6366f1)",
       display: "flex", alignItems: "center", justifyContent: "center",
       color: "white", fontSize: "2rem", fontWeight: 700,
     }}>
@@ -306,7 +306,7 @@ export default function ProfilePage() {
               type="submit"
               disabled={saving}
               style={{
-                background: saving ? "#93c5fd" : "#3b82f6",
+                background: saving ? "#7dd3fc" : "#0ea5e9",
                 color: "white", border: "none", borderRadius: 10,
                 padding: "0.625rem 1.25rem", fontSize: "0.875rem",
                 fontWeight: 600, cursor: saving ? "not-allowed" : "pointer",

@@ -96,7 +96,7 @@ function GroupsPage() {
         <button
           type="button"
           onClick={() => setShowCreateWizard(true)}
-          className="bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl transition-colors whitespace-nowrap"
+          className="bg-sky-500 hover:bg-sky-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl transition-colors whitespace-nowrap"
         >
           {t("newGroup")}
         </button>
@@ -123,9 +123,9 @@ function GroupsPage() {
                   const isCompleted = onboardingSteps[step.key];
                   const isCurrent = index === currentStepIndex;
                   return (
-                    <li key={step.key} className={`flex items-center gap-3 rounded-lg px-3 py-2.5 ${isCurrent ? "bg-blue-50 border border-blue-200" : ""}`}>
+                    <li key={step.key} className={`flex items-center gap-3 rounded-lg px-3 py-2.5 ${isCurrent ? "bg-sky-50 border border-sky-200" : ""}`}>
                       <div className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-                        isCompleted ? "bg-green-100 text-green-600" : isCurrent ? "bg-blue-500 text-white" : "bg-slate-100 text-slate-400"
+                        isCompleted ? "bg-green-100 text-green-600" : isCurrent ? "bg-sky-500 text-white" : "bg-slate-100 text-slate-400"
                       }`}>
                         {isCompleted ? (
                           <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
@@ -156,7 +156,7 @@ function GroupsPage() {
                 key={g.id}
                 onClick={() => router.push(`/groups/${g.id}`)}
                 aria-label={`${g.name} — ${g.memberCount} ${t("members")}`}
-                className="text-start bg-white border border-slate-200 rounded-2xl p-5 hover:border-blue-300 hover:shadow-md transition-all group"
+                className="text-start bg-white border border-slate-200 rounded-2xl p-5 hover:border-sky-300 hover:shadow-md transition-all group"
               >
                 <div className="flex items-start justify-between mb-3">
                   <div
@@ -165,7 +165,7 @@ function GroupsPage() {
                   >
                     {getAvatarLetter(g.name)}
                   </div>
-                  <svg className="w-4 h-4 text-slate-300 group-hover:text-blue-400 transition-colors mt-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <svg className="w-4 h-4 text-slate-300 group-hover:text-sky-400 transition-colors mt-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                   </svg>
                 </div>
@@ -191,7 +191,7 @@ function GroupsPage() {
                   <button
                     onClick={() => handleRestore(g.id)}
                     disabled={restoreGroup.isPending}
-                    className="text-xs text-blue-600 border border-blue-200 hover:bg-blue-50 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
+                    className="text-xs text-sky-600 border border-sky-200 hover:bg-sky-50 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
                   >
                     {t("restore")}
                   </button>

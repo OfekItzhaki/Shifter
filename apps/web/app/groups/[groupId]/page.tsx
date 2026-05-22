@@ -1197,7 +1197,7 @@ export default function GroupDetailPage() {
     return (
       <AppShell>
         <div className="flex items-center justify-center min-h-[60vh]">
-          <svg className="animate-spin h-8 w-8 text-blue-400" fill="none" viewBox="0 0 24 24">
+          <svg className="animate-spin h-8 w-8 text-sky-400" fill="none" viewBox="0 0 24 24">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
           </svg>
@@ -1300,7 +1300,7 @@ export default function GroupDetailPage() {
         </div>
 
         {/* Tab content */}
-        <Suspense fallback={<div className="flex justify-center py-12"><svg className="animate-spin h-6 w-6 text-blue-400" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg></div>}>
+        <Suspense fallback={<div className="flex justify-center py-12"><svg className="animate-spin h-6 w-6 text-sky-400" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg></div>}>
         <div>
           {activeTab === "schedule" && (
             <ScheduleTab
@@ -1666,7 +1666,7 @@ export default function GroupDetailPage() {
                 onChange={e => setAddMemberName(e.target.value)}
                 placeholder={tGroups("members_tab.fullName")}
                 required
-                className="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
               />
             </div>
             <div>
@@ -1677,7 +1677,7 @@ export default function GroupDetailPage() {
                 onChange={e => setAddMemberPhone(e.target.value)}
                 placeholder="+1..."
                 dir="ltr"
-                className="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
               />
             </div>
             <div>
@@ -1688,12 +1688,12 @@ export default function GroupDetailPage() {
                 onChange={e => setAddMemberEmail(e.target.value)}
                 placeholder="example@email.com"
                 dir="ltr"
-                className="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
               />
             </div>
             {addMemberError && <p className="text-sm text-red-600">{addMemberError}</p>}
             <button type="submit" disabled={addMemberSaving}
-              className="w-full bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl disabled:opacity-50 transition-colors">
+              className="w-full bg-sky-500 hover:bg-sky-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl disabled:opacity-50 transition-colors">
               {addMemberSaving ? tGroups("members_tab.adding") : tGroups("members_tab.addMember")}
             </button>
           </form>

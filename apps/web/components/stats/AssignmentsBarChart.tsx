@@ -59,7 +59,7 @@ export default function AssignmentsBarChart({
           />
           <Bar
             dataKey="total"
-            fill="#3b82f6"
+            fill="#0ea5e9"
             radius={[4, 4, 0, 0]}
             name="שיבוצים"
           />

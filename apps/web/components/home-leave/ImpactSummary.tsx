@@ -79,7 +79,7 @@ export default function ImpactSummary({ data, isLoading, error }: ImpactSummaryP
           <p className="text-xs text-slate-500">אנשים בבית</p>
         </div>
         <div className="text-center">
-          <p className="text-2xl font-bold text-blue-600">{data.peopleAtBaseCount}</p>
+          <p className="text-2xl font-bold text-sky-600">{data.peopleAtBaseCount}</p>
           <p className="text-xs text-slate-500">אנשים בבסיס</p>
         </div>
         <div className="text-center">
@@ -106,7 +106,7 @@ export default function ImpactSummary({ data, isLoading, error }: ImpactSummaryP
             title={`בבית: ${homePercent}%`}
           />
           <div
-            className="bg-blue-400 transition-all duration-300"
+            className="bg-sky-400 transition-all duration-300"
             style={{ width: `${basePercent}%` }}
             title={`בבסיס: ${basePercent}%`}
           />

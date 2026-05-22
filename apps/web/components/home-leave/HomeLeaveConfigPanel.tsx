@@ -316,7 +316,7 @@ export default function HomeLeaveConfigPanel({
                 setSaved(false);
               }}
               disabled={saving}
-              className="w-24 rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 focus:border-blue-400 focus:ring-1 focus:ring-blue-400 disabled:opacity-50"
+              className="w-24 rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 focus:border-sky-400 focus:ring-1 focus:ring-sky-400 disabled:opacity-50"
             />
             {minPeopleAtBase >= memberCount && (
               <p className="text-xs text-red-500">{t("minPeopleAtBase.maxError")}</p>
@@ -396,7 +396,7 @@ export default function HomeLeaveConfigPanel({
           <button
             type="submit"
             disabled={saving || emergencyFreezeActive}
-            className="bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl disabled:opacity-50 transition-colors"
+            className="bg-sky-500 hover:bg-sky-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl disabled:opacity-50 transition-colors"
           >
             {saving ? t("panel.saving") : t("panel.save")}
           </button>

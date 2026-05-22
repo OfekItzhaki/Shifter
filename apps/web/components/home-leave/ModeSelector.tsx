@@ -51,9 +51,9 @@ export default function ModeSelector({
         tabIndex={value === "automatic" ? 0 : -1}
         disabled={disabled}
         onClick={() => onChange("automatic")}
-        className={`px-4 py-2 text-sm font-medium rounded-lg transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
+        className={`px-4 py-2 text-sm font-medium rounded-lg transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 ${
           value === "automatic"
-            ? "bg-white text-blue-700 shadow-sm"
+            ? "bg-white text-sky-700 shadow-sm"
             : "text-slate-500 hover:text-slate-700"
         } ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
       >
@@ -66,9 +66,9 @@ export default function ModeSelector({
         tabIndex={value === "manual" ? 0 : -1}
         disabled={disabled}
         onClick={() => onChange("manual")}
-        className={`px-4 py-2 text-sm font-medium rounded-lg transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
+        className={`px-4 py-2 text-sm font-medium rounded-lg transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 ${
           value === "manual"
-            ? "bg-white text-blue-700 shadow-sm"
+            ? "bg-white text-sky-700 shadow-sm"
             : "text-slate-500 hover:text-slate-700"
         } ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
       >

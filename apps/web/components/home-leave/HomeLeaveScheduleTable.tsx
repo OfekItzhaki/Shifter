@@ -45,7 +45,7 @@ export default function HomeLeaveScheduleTable({ spaceId, groupId }: Props) {
     return (
       <div className="flex items-center gap-2 text-slate-400 text-sm py-4">
         <svg
-          className="animate-spin h-4 w-4 text-blue-400"
+          className="animate-spin h-4 w-4 text-sky-400"
           fill="none"
           viewBox="0 0 24 24"
         >
@@ -132,7 +132,7 @@ function StatusBadge({ status }: { status: HomeLeaveScheduleEntry["status"] }) {
     },
     upcoming: {
       label: t("statusUpcoming"),
-      className: "bg-blue-100 text-blue-700 border-blue-200",
+      className: "bg-sky-100 text-sky-700 border-sky-200",
     },
     completed: {
       label: t("statusCompleted"),

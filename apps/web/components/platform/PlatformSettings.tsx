@@ -146,7 +146,7 @@ export default function PlatformSettings() {
             type="submit"
             disabled={saving || !!validationError}
             style={{
-              background: "#3b82f6",
+              background: "#0ea5e9",
               color: "white",
               border: "none",
               borderRadius: 8,

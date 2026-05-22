@@ -88,7 +88,7 @@ function ResetPasswordForm() {
       <button
         type="submit"
         disabled={loading}
-        style={{ width: "100%", background: loading ? "#93c5fd" : "#3b82f6", color: "white", border: "none", borderRadius: 10, padding: "0.75rem", fontSize: "0.875rem", fontWeight: 600, cursor: loading ? "not-allowed" : "pointer" }}
+        style={{ width: "100%", background: loading ? "#7dd3fc" : "#0ea5e9", color: "white", border: "none", borderRadius: 10, padding: "0.75rem", fontSize: "0.875rem", fontWeight: 600, cursor: loading ? "not-allowed" : "pointer" }}
       >
         {loading ? t("resetting") : t("resetPassword")}
       </button>
@@ -117,7 +117,7 @@ export default function ResetPasswordPage() {
             <ResetPasswordForm />
           </Suspense>
           <p style={{ textAlign: "center", fontSize: "0.875rem", color: "#64748b", marginTop: "1.25rem" }}>
-            <Link href="/login" style={{ color: "#3b82f6", fontWeight: 500, textDecoration: "none" }}>
+            <Link href="/login" style={{ color: "#0ea5e9", fontWeight: 500, textDecoration: "none" }}>
               ← {t("backToLogin")}
             </Link>
           </p>

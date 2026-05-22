@@ -94,7 +94,7 @@ export default function RotationProgressCard({
               </div>
               <div className="w-full bg-slate-100 rounded-full h-2">
                 <div
-                  className="bg-blue-500 h-2 rounded-full transition-all"
+                  className="bg-sky-500 h-2 rounded-full transition-all"
                   style={{ width: `${Math.min(entry.completionPercentage, 100)}%` }}
                 />
               </div>

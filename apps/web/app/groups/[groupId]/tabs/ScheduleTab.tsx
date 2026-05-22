@@ -379,7 +379,7 @@ export default function ScheduleTab({
             value={personFilter}
             onChange={e => setPersonFilter(e.target.value)}
             placeholder={t("filterByName")}
-            className="w-full border border-slate-200 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 rounded-xl px-3.5 py-2.5 sm:py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 pr-9"
+            className="w-full border border-slate-200 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 rounded-xl px-3.5 py-2.5 sm:py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 pr-9"
           />
           <svg className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -400,7 +400,7 @@ export default function ScheduleTab({
         {isAdmin && scheduleData && scheduleData.length > 0 && (
           <button
             onClick={() => setShowDiff(true)}
-            className="flex items-center justify-center gap-1.5 text-xs text-blue-600 border border-blue-200 bg-white hover:bg-blue-50 px-3 py-2.5 sm:py-2 rounded-xl transition-colors flex-shrink-0"
+            className="flex items-center justify-center gap-1.5 text-xs text-sky-600 border border-sky-200 bg-white hover:bg-sky-50 px-3 py-2.5 sm:py-2 rounded-xl transition-colors flex-shrink-0"
           >
             <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
@@ -439,7 +439,7 @@ export default function ScheduleTab({
         <button
           onClick={goToToday}
           className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
-            weekDates.includes(today) ? "bg-blue-500 text-white border-blue-500" : "border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"
+            weekDates.includes(today) ? "bg-sky-500 text-white border-sky-500" : "border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"
           }`}
         >
           {t("thisWeek")}
@@ -464,20 +464,20 @@ export default function ScheduleTab({
               onClick={() => setSelectedWeekDay(i)}
               className={`flex-shrink-0 flex flex-col items-center px-3 py-2.5 sm:py-2 rounded-xl text-xs font-medium transition-all min-w-[44px] sm:min-w-[48px] ${
                 isSelected
-                  ? "bg-blue-500 text-white shadow-sm"
+                  ? "bg-sky-500 text-white shadow-sm"
                   : isToday
-                  ? "bg-blue-50 text-blue-600 border border-blue-200"
+                  ? "bg-sky-50 text-sky-600 border border-sky-200"
                   : "bg-slate-100 text-slate-600 hover:bg-slate-200"
               }`}
             >
-              <span className={`text-[10px] font-normal mb-0.5 ${isSelected ? "text-blue-100" : "text-slate-400"}`}>
+              <span className={`text-[10px] font-normal mb-0.5 ${isSelected ? "text-sky-100" : "text-slate-400"}`}>
                 {dayNames[i]}
               </span>
-              <span className={`text-sm font-bold leading-none ${isToday && !isSelected ? "text-blue-600" : ""}`}>
+              <span className={`text-sm font-bold leading-none ${isToday && !isSelected ? "text-sky-600" : ""}`}>
                 {dayNum}
               </span>
               {isToday && !isSelected && (
-                <span className="mt-1 w-1 h-1 rounded-full bg-blue-400" />
+                <span className="mt-1 w-1 h-1 rounded-full bg-sky-400" />
               )}
             </button>
           );
@@ -487,7 +487,7 @@ export default function ScheduleTab({
 
       {/* Historical view banner */}
       {isViewingHistory && !historicalLoading && (
-        <div className="flex items-center gap-2 px-4 py-3 rounded-xl text-sm border bg-blue-50 border-blue-200 text-blue-800">
+        <div className="flex items-center gap-2 px-4 py-3 rounded-xl text-sm border bg-sky-50 border-sky-200 text-sky-800">
           <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
@@ -497,7 +497,7 @@ export default function ScheduleTab({
 
       {(scheduleLoading || historicalLoading) && (
         <div className="flex items-center gap-3 text-slate-400 text-sm py-8">
-          <svg className="animate-spin h-5 w-5 text-blue-400" fill="none" viewBox="0 0 24 24">
+          <svg className="animate-spin h-5 w-5 text-sky-400" fill="none" viewBox="0 0 24 24">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
           </svg>
@@ -542,7 +542,7 @@ export default function ScheduleTab({
               )}
             </span>
             {selectedDate === today && (
-              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-700 border border-blue-200">
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-sky-100 text-sky-700 border border-sky-200">
                 {tAdmin("today")}
               </span>
             )}

@@ -55,7 +55,7 @@ export default function MembersTab({
             value={membersSearch}
             onChange={e => onSearchChange(e.target.value)}
             placeholder={t("search")}
-            className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 pr-9"
+            className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 pr-9"
           />
           <svg className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -63,7 +63,7 @@ export default function MembersTab({
         </div>
         {isAdmin && (
           <div className="flex items-center gap-2">
-            <button onClick={onOpenAddMember} className="flex items-center gap-1.5 text-sm font-medium text-blue-600 border border-blue-200 bg-blue-50 hover:bg-blue-100 px-3 py-2 rounded-xl transition-colors">
+            <button onClick={onOpenAddMember} className="flex items-center gap-1.5 text-sm font-medium text-sky-600 border border-sky-200 bg-sky-50 hover:bg-sky-100 px-3 py-2 rounded-xl transition-colors">
               {t("addMember")}
             </button>
           </div>
@@ -84,10 +84,10 @@ export default function MembersTab({
 
       <div className="space-y-2">
         {filtered.map(m => (
-          <div key={m.personId} className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 hover:border-blue-200 dark:hover:border-blue-800 hover:shadow-sm transition-all">
+          <div key={m.personId} className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 hover:border-sky-200 dark:hover:border-sky-800 hover:shadow-sm transition-all">
             <div className="flex items-center gap-3">
               {/* Avatar */}
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white text-sm font-bold flex-shrink-0 shadow-sm">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-500 to-teal-600 flex items-center justify-center text-white text-sm font-bold flex-shrink-0 shadow-sm">
                 {m.fullName.charAt(0).toUpperCase()}
               </div>
 
@@ -123,7 +123,7 @@ export default function MembersTab({
 
               {/* Actions */}
               <div className="flex items-center gap-1.5 flex-shrink-0">
-                <button onClick={() => onSelectMember(m)} className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 border border-blue-200 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/20 px-2.5 py-1.5 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors font-medium">{t("details")}</button>
+                <button onClick={() => onSelectMember(m)} className="text-xs text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-300 border border-sky-200 dark:border-sky-700 bg-sky-50 dark:bg-sky-900/20 px-2.5 py-1.5 rounded-lg hover:bg-sky-100 dark:hover:bg-sky-900/40 transition-colors font-medium">{t("details")}</button>
                 {isAdmin && !m.isOwner && (
                   <>
                     {(!m.linkedUserId || (!m.phoneNumber && !m.email)) && (
@@ -263,19 +263,19 @@ export function MemberProfileModal({ member, isAdmin, editForm, saving, error, o
           <div className="space-y-4">
             <div>
               <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">{tProfile("fullName")}</label>
-              <input type="text" value={editForm.fullName} onChange={e => onChangeForm({ ...editForm, fullName: e.target.value })} className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              <input type="text" value={editForm.fullName} onChange={e => onChangeForm({ ...editForm, fullName: e.target.value })} className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" />
             </div>
             <div>
               <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">{tProfile("displayName")}</label>
-              <input type="text" value={editForm.displayName} onChange={e => onChangeForm({ ...editForm, displayName: e.target.value })} className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              <input type="text" value={editForm.displayName} onChange={e => onChangeForm({ ...editForm, displayName: e.target.value })} className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" />
             </div>
             <div>
               <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">{tProfile("phone")}</label>
-              <input type="tel" value={editForm.phoneNumber} onChange={e => onChangeForm({ ...editForm, phoneNumber: e.target.value })} dir="ltr" className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              <input type="tel" value={editForm.phoneNumber} onChange={e => onChangeForm({ ...editForm, phoneNumber: e.target.value })} dir="ltr" className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" />
             </div>
             <div>
               <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">{tProfile("email")}</label>
-              <input type="email" value={editForm.email} onChange={e => onChangeForm({ ...editForm, email: e.target.value })} dir="ltr" className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              <input type="email" value={editForm.email} onChange={e => onChangeForm({ ...editForm, email: e.target.value })} dir="ltr" className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" />
             </div>
             <div>
               <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">{tProfile("profileImage")}</label>
@@ -283,11 +283,11 @@ export function MemberProfileModal({ member, isAdmin, editForm, saving, error, o
             </div>
             <div>
               <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">{tProfile("birthday")}</label>
-              <input type="date" value={editForm.birthday} onChange={e => onChangeForm({ ...editForm, birthday: e.target.value })} className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              <input type="date" value={editForm.birthday} onChange={e => onChangeForm({ ...editForm, birthday: e.target.value })} className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" />
             </div>
             {error && <p className="text-sm text-red-600">{error}</p>}
             <div className="flex gap-2 pt-1">
-              <button onClick={() => onSave(member.personId)} disabled={saving} className="bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl disabled:opacity-50 transition-colors">
+              <button onClick={() => onSave(member.personId)} disabled={saving} className="bg-sky-500 hover:bg-sky-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl disabled:opacity-50 transition-colors">
                 {saving ? tCommon("loading") : tCommon("save")}
               </button>
               <button onClick={onCancelEdit} className="text-sm text-slate-500 border border-slate-200 px-4 py-2.5 rounded-xl hover:bg-slate-50 transition-colors">{tCommon("cancel")}</button>
@@ -304,7 +304,7 @@ export function MemberProfileModal({ member, isAdmin, editForm, saving, error, o
                   className="w-16 h-16 rounded-full object-cover flex-shrink-0"
                 />
               ) : (
-                <div className="w-16 h-16 rounded-full bg-blue-500 flex items-center justify-center text-white text-2xl font-bold flex-shrink-0">
+                <div className="w-16 h-16 rounded-full bg-sky-500 flex items-center justify-center text-white text-2xl font-bold flex-shrink-0">
                   {(member.displayName ?? member.fullName).charAt(0).toUpperCase()}
                 </div>
               )}
@@ -316,7 +316,7 @@ export function MemberProfileModal({ member, isAdmin, editForm, saving, error, o
               </div>
             </div>
             {isAdmin && (
-              <button onClick={onStartEdit} className="text-sm text-blue-600 border border-blue-200 bg-blue-50 hover:bg-blue-100 px-4 py-2 rounded-xl transition-colors">
+              <button onClick={onStartEdit} className="text-sm text-sky-600 border border-sky-200 bg-sky-50 hover:bg-sky-100 px-4 py-2 rounded-xl transition-colors">
                 {t("editDetails")}
               </button>
             )}
@@ -374,11 +374,11 @@ export function MemberProfileModal({ member, isAdmin, editForm, saving, error, o
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs text-slate-500 mb-1">{t("from")}</label>
-                <input type="datetime-local" value={newPresenceStart} onChange={e => setNewPresenceStart(e.target.value)} required className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                <input type="datetime-local" value={newPresenceStart} onChange={e => setNewPresenceStart(e.target.value)} required className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" />
               </div>
               <div>
                 <label className="block text-xs text-slate-500 mb-1">{t("until")}</label>
-                <input type="datetime-local" value={newPresenceEnd} onChange={e => setNewPresenceEnd(e.target.value)} required className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                <input type="datetime-local" value={newPresenceEnd} onChange={e => setNewPresenceEnd(e.target.value)} required className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" />
               </div>
             </div>
             {/* Reason picker */}
@@ -388,7 +388,7 @@ export function MemberProfileModal({ member, isAdmin, editForm, saving, error, o
                 <select
                   value={selectedReasonId}
                   onChange={e => setSelectedReasonId(e.target.value)}
-                  className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                  className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 bg-white"
                 >
                   <option value="">{t("selectReason")}</option>
                   {reasons.map(r => (
@@ -406,15 +406,15 @@ export function MemberProfileModal({ member, isAdmin, editForm, saving, error, o
                 onChange={e => setCustomReasonText(e.target.value.slice(0, 200))}
                 placeholder={t("customReasonPlaceholder")}
                 maxLength={200}
-                className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
               />
             )}
             {/* Note field (shown when not using custom reason) */}
             {!isCustomSelected && (
-              <input type="text" value={newPresenceNote} onChange={e => setNewPresenceNote(e.target.value)} placeholder={tCommon("optional")} className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              <input type="text" value={newPresenceNote} onChange={e => setNewPresenceNote(e.target.value)} placeholder={tCommon("optional")} className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" />
             )}
             {presenceError && <p className="text-xs text-red-600">{presenceError}</p>}
-            <button type="submit" disabled={presenceSaving} className="bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-4 py-2 rounded-xl disabled:opacity-50 transition-colors">
+            <button type="submit" disabled={presenceSaving} className="bg-sky-500 hover:bg-sky-600 text-white text-sm font-medium px-4 py-2 rounded-xl disabled:opacity-50 transition-colors">
               {presenceSaving ? tCommon("loading") : tCommon("add")}
             </button>
           </form>
@@ -471,7 +471,7 @@ function HomeLeaveStatsSection({ personId, isAdmin }: { personId: string; isAdmi
       <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">זמן בבית / בבסיס</p>
       <div className="grid grid-cols-3 gap-2 text-center">
         <div>
-          <p className="text-lg font-bold text-blue-600">{stats.totalBaseHours}h</p>
+          <p className="text-lg font-bold text-sky-600">{stats.totalBaseHours}h</p>
           <p className="text-[10px] text-slate-400">בבסיס</p>
         </div>
         <div>
@@ -485,7 +485,7 @@ function HomeLeaveStatsSection({ personId, isAdmin }: { personId: string; isAdmi
       </div>
       {/* Bar */}
       <div className="flex h-2 rounded-full overflow-hidden mt-2">
-        <div className="bg-blue-400" style={{ width: `${basePercent}%` }} title={`בבסיס: ${basePercent}%`} />
+        <div className="bg-sky-400" style={{ width: `${basePercent}%` }} title={`בבסיס: ${basePercent}%`} />
         <div className="bg-emerald-400" style={{ width: `${homePercent}%` }} title={`בבית: ${homePercent}%`} />
       </div>
       <div className="flex justify-between text-[10px] text-slate-400 mt-0.5">
@@ -556,7 +556,7 @@ function HomeLeavePrioritySelector({ personId, groupId }: { personId: string; gr
         value={priority}
         onChange={e => handleChange(Number(e.target.value))}
         disabled={saving}
-        className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white disabled:opacity-50"
+        className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 bg-white disabled:opacity-50"
       >
         {PRIORITY_OPTIONS.map(opt => (
           <option key={opt.value} value={opt.value}>{opt.label}</option>

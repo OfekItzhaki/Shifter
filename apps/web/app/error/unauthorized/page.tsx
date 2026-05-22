@@ -21,7 +21,7 @@ export default function UnauthorizedPage() {
     >
       <Link
         href="/login"
-        className="inline-flex items-center justify-center min-h-[44px] min-w-[44px] bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-6 py-3 rounded-xl transition-colors"
+        className="inline-flex items-center justify-center min-h-[44px] min-w-[44px] bg-sky-500 hover:bg-sky-600 text-white text-sm font-medium px-6 py-3 rounded-xl transition-colors"
       >
         {t("unauthorized.login")}
       </Link>

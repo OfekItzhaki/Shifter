@@ -115,7 +115,7 @@ export default function ScheduleTable2D({
               <th
                 key={task}
                 className={`px-2.5 sm:px-4 py-2.5 sm:py-3 text-center text-xs font-semibold uppercase tracking-wider whitespace-nowrap ${
-                  isHomeLeaveTask(task) ? "text-emerald-700 bg-emerald-50" : task === currentUserTaskName ? "bg-blue-50 text-slate-700" : "text-slate-700"
+                  isHomeLeaveTask(task) ? "text-emerald-700 bg-emerald-50" : task === currentUserTaskName ? "bg-sky-50 text-slate-700" : "text-slate-700"
                 }`}
               >
                 <span className="inline-flex items-center gap-1">
@@ -150,8 +150,8 @@ export default function ScheduleTable2D({
                       onClick={isClickable ? () => onCellClick(key, task, entries.map(e => e.name)) : undefined}
                       className={[
                         "px-2.5 sm:px-4 py-2.5 sm:py-3 text-center align-top",
-                        isHomeLeave ? "bg-emerald-50/60" : isUserTask ? "bg-blue-50/60" : "",
-                        isClickable ? "cursor-pointer hover:bg-blue-50 transition-colors" : "",
+                        isHomeLeave ? "bg-emerald-50/60" : isUserTask ? "bg-sky-50/60" : "",
+                        isClickable ? "cursor-pointer hover:bg-sky-50 transition-colors" : "",
                       ].filter(Boolean).join(" ")}
                     >
                       {entries.length === 0 ? (
@@ -167,7 +167,7 @@ export default function ScheduleTable2D({
                                   isHomeLeave
                                     ? "text-emerald-700"
                                     : entry.name === currentUserName
-                                    ? "text-blue-700"
+                                    ? "text-sky-700"
                                     : "text-slate-800"
                                 }`}
                                 style={

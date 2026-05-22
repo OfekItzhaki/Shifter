@@ -64,7 +64,7 @@ export default function GroupOptOutPage() {
               </p>
             </div>
             <button onClick={() => router.push("/")}
-              className="w-full bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium py-2.5 rounded-xl">
+              className="w-full bg-sky-500 hover:bg-sky-600 text-white text-sm font-medium py-2.5 rounded-xl">
               {t("goHome")}
             </button>
           </>

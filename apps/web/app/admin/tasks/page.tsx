@@ -88,7 +88,7 @@ export default function TasksPage() {
     return <AppShell><p className="text-slate-500 text-sm p-8">{t("adminRequired")}</p></AppShell>;
   }
 
-  const inp = "w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent";
+  const inp = "w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent";
 
   const burdenLabels: Record<string, string> = {
     Easy: t("burden.Easy"),
@@ -115,7 +115,7 @@ export default function TasksPage() {
             {(["types", "slots"] as const).map(tabKey => (
               <button key={tabKey} onClick={() => { setTab(tabKey); setShowTypeForm(false); setShowSlotForm(false); }}
                 className={`px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors ${
-                  tab === tabKey ? "border-blue-500 text-blue-600" : "border-transparent text-slate-500 hover:text-slate-700"
+                  tab === tabKey ? "border-sky-500 text-sky-600" : "border-transparent text-slate-500 hover:text-slate-700"
                 }`}>
                 {tabKey === "types" ? t("taskTypes") : t("taskSlots")}
               </button>
@@ -124,7 +124,7 @@ export default function TasksPage() {
           {/* Button only for current tab */}
           {tab === "types" && (
             <button onClick={() => { setShowTypeForm(true); setShowSlotForm(false); }}
-              className="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-3.5 py-2 rounded-xl mb-1 transition-colors">
+              className="flex items-center gap-2 bg-sky-500 hover:bg-sky-600 text-white text-sm font-medium px-3.5 py-2 rounded-xl mb-1 transition-colors">
               <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
               </svg>
@@ -177,7 +177,7 @@ export default function TasksPage() {
             </label>
             <div className="flex gap-2">
               <button type="submit" disabled={savingType}
-                className="bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl disabled:opacity-50 transition-colors">
+                className="bg-sky-500 hover:bg-sky-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl disabled:opacity-50 transition-colors">
                 {savingType ? t("saving") : t("save")}
               </button>
               <button type="button" onClick={() => setShowTypeForm(false)}

@@ -257,7 +257,7 @@ export default function DraftScheduleModal({
               <p style={{ color: "#64748b", fontSize: 13, marginBottom: 16 }}>{t("emptyDraftHint")}</p>
               {isAdmin && (
                 <button onClick={() => { onClose(); onRunAgain(); }}
-                  style={{ background: "#3b82f6", color: "white", border: "none", borderRadius: 10, padding: "9px 20px", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
+                  style={{ background: "#0ea5e9", color: "white", border: "none", borderRadius: 10, padding: "9px 20px", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
                   🔄 {t("runAgain")}
                 </button>
               )}
@@ -309,7 +309,7 @@ export default function DraftScheduleModal({
                   </svg>
                 </button>
                 <button onClick={() => { setWeekAnchor(today); setSelectedDay(new Date().getDay()); }}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${weekDates.includes(today) ? "bg-blue-500 text-white border-blue-500" : "border-slate-200 text-slate-600 hover:bg-slate-50"}`}>
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${weekDates.includes(today) ? "bg-sky-500 text-white border-sky-500" : "border-slate-200 text-slate-600 hover:bg-slate-50"}`}>
                   {tSchedule("thisWeek")}
                 </button>
                 <button onClick={nextWeek} className="p-2 rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors">
@@ -332,20 +332,20 @@ export default function DraftScheduleModal({
                       onClick={() => setSelectedDay(i)}
                       className={`flex-shrink-0 flex flex-col items-center px-3 py-2 rounded-xl text-xs font-medium transition-all min-w-[48px] ${
                         isSelected
-                          ? "bg-blue-500 text-white shadow-sm"
+                          ? "bg-sky-500 text-white shadow-sm"
                           : isToday
-                          ? "bg-blue-50 text-blue-600 border border-blue-200"
+                          ? "bg-sky-50 text-sky-600 border border-sky-200"
                           : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                       }`}
                     >
-                      <span className={`text-[10px] font-normal mb-0.5 ${isSelected ? "text-blue-100" : "text-slate-400"}`}>
+                      <span className={`text-[10px] font-normal mb-0.5 ${isSelected ? "text-sky-100" : "text-slate-400"}`}>
                         {dayNames[i]}
                       </span>
-                      <span className={`text-sm font-bold leading-none ${isToday && !isSelected ? "text-blue-600" : ""}`}>
+                      <span className={`text-sm font-bold leading-none ${isToday && !isSelected ? "text-sky-600" : ""}`}>
                         {dayNum}
                       </span>
                       {isToday && !isSelected && (
-                        <span className="mt-1 w-1 h-1 rounded-full bg-blue-400" />
+                        <span className="mt-1 w-1 h-1 rounded-full bg-sky-400" />
                       )}
                     </button>
                   );
@@ -361,7 +361,7 @@ export default function DraftScheduleModal({
                   )}
                 </span>
                 {selectedDate === today && (
-                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-700 border border-blue-200">
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-sky-100 text-sky-700 border border-sky-200">
                     {tAdmin("today")}
                   </span>
                 )}
@@ -411,7 +411,7 @@ export default function DraftScheduleModal({
                   {enteringSimulation ? t("enteringSimulation") : `🧪 ${t("enterSimulation")}`}
                 </button>
                 <button onClick={() => { onClose(); onRunAgain(); }} disabled={publishing || discarding}
-                  style={{ background: "#3b82f6", color: "white", border: "none", borderRadius: 10, padding: "9px 20px", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
+                  style={{ background: "#0ea5e9", color: "white", border: "none", borderRadius: 10, padding: "9px 20px", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
                   🔄 {t("runAgain")}
                 </button>
                 <button onClick={() => setShowDiscardConfirm(true)} disabled={publishing || discarding}

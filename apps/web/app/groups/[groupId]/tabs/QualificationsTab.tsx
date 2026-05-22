@@ -94,10 +94,10 @@ export default function QualificationsTab({
               value={newQualName}
               onChange={e => setNewQualName(e.target.value)}
               placeholder={t("addQualification")}
-              className="flex-1 border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="flex-1 border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
             />
             <button type="submit" disabled={qualSaving || !newQualName.trim()}
-              className="bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-4 py-2 rounded-xl disabled:opacity-50 transition-colors">
+              className="bg-sky-500 hover:bg-sky-600 text-white text-sm font-medium px-4 py-2 rounded-xl disabled:opacity-50 transition-colors">
               {qualSaving ? "..." : t("add")}
             </button>
           </form>
@@ -130,7 +130,7 @@ export default function QualificationsTab({
                     <tr key={m.personId} className="hover:bg-slate-50/40 transition-colors">
                       <td className={`px-4 py-3 sticky bg-white ${isRtl ? "right-0 border-l border-slate-100" : "left-0 border-r border-slate-100"}`}>
                         <div className="flex items-center gap-2">
-                          <div className="w-7 h-7 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+                          <div className="w-7 h-7 rounded-full bg-sky-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
                             {m.fullName.charAt(0)}
                           </div>
                           <span className="text-sm font-medium text-slate-800 whitespace-nowrap">{m.displayName ?? m.fullName}</span>
@@ -149,7 +149,7 @@ export default function QualificationsTab({
                                 className={`w-6 h-6 rounded-full border-2 transition-all mx-auto flex items-center justify-center ${
                                   has
                                     ? "bg-emerald-500 border-emerald-500 text-white hover:bg-red-500 hover:border-red-500"
-                                    : "border-slate-300 hover:border-blue-400 hover:bg-blue-50"
+                                    : "border-slate-300 hover:border-sky-400 hover:bg-sky-50"
                                 }`}
                                 title={has ? `${t("deactivate")} ${q.name}` : `${t("add")} ${q.name}`}
                               >

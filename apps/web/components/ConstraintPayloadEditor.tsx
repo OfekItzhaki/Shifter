@@ -37,7 +37,7 @@ function field(
         type={type}
         value={String(payload[key] ?? "")}
         onChange={e => onChange({ ...payload, [key]: type === "number" ? Number(e.target.value) : e.target.value })}
-        className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
       />
     </div>
   );
@@ -58,7 +58,7 @@ export default function ConstraintPayloadEditor({ ruleType, value, onChange, tas
               type="number" min={1} max={72}
               value={Number(payload.hours ?? 8)}
               onChange={e => update({ hours: Number(e.target.value) })}
-              className="w-24 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-24 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
             />
             <span className="text-sm text-slate-500">{t("hours")}</span>
           </div>
@@ -82,7 +82,7 @@ export default function ConstraintPayloadEditor({ ruleType, value, onChange, tas
           <select
             value={String(payload.burden_level ?? "hard")}
             onChange={e => update({ burden_level: e.target.value })}
-            className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
           >
             <option value="hard">{t("hard")}</option>
             <option value="normal">{t("normal")}</option>
@@ -107,7 +107,7 @@ export default function ConstraintPayloadEditor({ ruleType, value, onChange, tas
             <select
               value={String(payload.task_type_id ?? "")}
               onChange={e => update({ task_type_id: e.target.value })}
-              className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
             >
               <option value="">{t("selectTask")}</option>
               {taskOptions.map(opt => (
@@ -134,7 +134,7 @@ export default function ConstraintPayloadEditor({ ruleType, value, onChange, tas
               value={String(payload.qualification_name ?? "")}
               onChange={e => update({ ...payload, qualification_name: e.target.value })}
               placeholder="לדוגמה: מפקד כיתה, חובש"
-              className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
             />
           </div>
           <div>
@@ -143,7 +143,7 @@ export default function ConstraintPayloadEditor({ ruleType, value, onChange, tas
               <select
                 value={String(payload.task_name ?? "")}
                 onChange={e => update({ ...payload, task_name: e.target.value || undefined })}
-                className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
               >
                 <option value="">כל המשימות</option>
                 {taskOptions.map(opt => (
@@ -156,7 +156,7 @@ export default function ConstraintPayloadEditor({ ruleType, value, onChange, tas
                 value={String(payload.task_name ?? "")}
                 onChange={e => update({ ...payload, task_name: e.target.value || undefined })}
                 placeholder="ריק = כל המשימות"
-                className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
               />
             )}
           </div>
@@ -166,7 +166,7 @@ export default function ConstraintPayloadEditor({ ruleType, value, onChange, tas
               type="number" min={1} max={10}
               value={Number(payload.min_count ?? 1)}
               onChange={e => update({ ...payload, min_count: Number(e.target.value) })}
-              className="w-24 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-24 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
             />
           </div>
         </div>
@@ -182,7 +182,7 @@ export default function ConstraintPayloadEditor({ ruleType, value, onChange, tas
             value={value}
             onChange={e => onChange(e.target.value)}
             rows={3}
-            className="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+            className="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-sky-500 resize-none"
           />
         </div>
       );

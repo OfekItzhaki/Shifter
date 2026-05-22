@@ -65,7 +65,7 @@ export default function SandboxMembersTab({ memberExclusions, baseline }: Sandbo
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder={t("members.searchPlaceholder")}
-          className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-400"
+          className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-sky-400"
         />
       )}
 
@@ -117,14 +117,14 @@ function MemberRow({
       className={`flex items-center gap-3 px-3 py-2 rounded-xl border cursor-pointer transition-colors ${
         isExcluded
           ? "border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 opacity-50"
-          : "border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-900/20 hover:bg-blue-50 dark:hover:bg-blue-900/30"
+          : "border-sky-200 dark:border-sky-800 bg-sky-50/50 dark:bg-sky-900/20 hover:bg-sky-50 dark:hover:bg-sky-900/30"
       }`}
     >
       <input
         type="checkbox"
         checked={!isExcluded}
         onChange={() => onToggle(person.personId)}
-        className="accent-blue-500 w-4 h-4 rounded"
+        className="accent-sky-500 w-4 h-4 rounded"
       />
       <div className={`flex-1 min-w-0 ${isExcluded ? "line-through" : ""}`}>
         <span className="text-sm text-slate-800 dark:text-slate-200 block truncate">

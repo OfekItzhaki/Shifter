@@ -9,11 +9,11 @@ export default function PrivacyPage() {
       {/* Header */}
       <header className="border-b border-slate-100 dark:border-slate-800 px-6 py-4">
         <div className="max-w-3xl mx-auto flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2 text-slate-900 dark:text-white hover:text-blue-600 transition-colors">
+          <Link href="/" className="flex items-center gap-2 text-slate-900 dark:text-white hover:text-sky-600 transition-colors">
             <ShifterLogo size={24} />
             <span className="font-bold text-sm">Shifter</span>
           </Link>
-          <Link href="/terms" className="text-sm text-blue-600 hover:underline">
+          <Link href="/terms" className="text-sm text-sky-600 hover:underline">
             תנאי שימוש / Terms
           </Link>
         </div>
@@ -136,7 +136,7 @@ export default function PrivacyPage() {
             <Section title="12. יצירת קשר">
               <p>
                 לשאלות בנוגע לפרטיות, ניתן לפנות אלינו:{" "}
-                <a href={`mailto:${CONTACT_EMAIL}`} className="text-blue-600 hover:underline">{CONTACT_EMAIL}</a>
+                <a href={`mailto:${CONTACT_EMAIL}`} className="text-sky-600 hover:underline">{CONTACT_EMAIL}</a>
               </p>
             </Section>
           </div>
@@ -261,7 +261,7 @@ export default function PrivacyPage() {
             <Section title="12. Contact">
               <p>
                 For privacy-related questions, contact us at:{" "}
-                <a href={`mailto:${CONTACT_EMAIL}`} className="text-blue-600 hover:underline">{CONTACT_EMAIL}</a>
+                <a href={`mailto:${CONTACT_EMAIL}`} className="text-sky-600 hover:underline">{CONTACT_EMAIL}</a>
               </p>
             </Section>
           </div>
@@ -270,11 +270,11 @@ export default function PrivacyPage() {
         {/* Footer */}
         <footer className="mt-12 pt-8 border-t border-slate-200 dark:border-slate-700 text-center text-xs text-slate-400 space-y-2">
           <div className="flex items-center justify-center gap-4">
-            <Link href="/terms" className="text-blue-600 hover:underline">תנאי שימוש</Link>
+            <Link href="/terms" className="text-sky-600 hover:underline">תנאי שימוש</Link>
             <span>·</span>
-            <Link href="/privacy" className="text-blue-600 hover:underline">מדיניות פרטיות</Link>
+            <Link href="/privacy" className="text-sky-600 hover:underline">מדיניות פרטיות</Link>
             <span>·</span>
-            <Link href="/" className="text-blue-600 hover:underline">חזרה לדף הבית</Link>
+            <Link href="/" className="text-sky-600 hover:underline">חזרה לדף הבית</Link>
           </div>
           <p>© {new Date().getFullYear()} Ofek Labs. All rights reserved.</p>
         </footer>

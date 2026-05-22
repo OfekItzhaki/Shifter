@@ -48,9 +48,9 @@ export default function MessagesTab({
           value={newMessageContent}
           onChange={e => onNewMessageChange(e.target.value)}
           placeholder={t("compose")}
-          className="flex-1 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="flex-1 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
         />
-        <button type="submit" disabled={messageSending || !newMessageContent.trim()} className="bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl disabled:opacity-50 transition-colors">
+        <button type="submit" disabled={messageSending || !newMessageContent.trim()} className="bg-sky-500 hover:bg-sky-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl disabled:opacity-50 transition-colors">
           {messageSending ? t("sending") : t("send")}
         </button>
       </form>
@@ -90,10 +90,10 @@ function MessageCard({ message: m, isAdmin, editingId, editContent, editSaving, 
     <div className={`bg-white border rounded-2xl p-4 space-y-2 ${m.isPinned ? "border-amber-200 bg-amber-50/30" : "border-slate-200"}`}>
       {editingId === m.id ? (
         <div className="space-y-2">
-          <textarea value={editContent} onChange={e => onEditChange(e.target.value)} rows={3} className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" />
+          <textarea value={editContent} onChange={e => onEditChange(e.target.value)} rows={3} className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 resize-none" />
           {editError && <p className="text-xs text-red-600">{editError}</p>}
           <div className="flex gap-2">
-            <button onClick={() => onUpdate(m.id)} disabled={editSaving} className="bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium px-3 py-1.5 rounded-lg disabled:opacity-50 transition-colors">{editSaving ? t("saving") : t("save")}</button>
+            <button onClick={() => onUpdate(m.id)} disabled={editSaving} className="bg-sky-500 hover:bg-sky-600 text-white text-xs font-medium px-3 py-1.5 rounded-lg disabled:opacity-50 transition-colors">{editSaving ? t("saving") : t("save")}</button>
             <button onClick={onCloseEdit} className="text-xs text-slate-500 border border-slate-200 px-3 py-1.5 rounded-lg hover:bg-slate-50 transition-colors">{t("cancel")}</button>
           </div>
         </div>

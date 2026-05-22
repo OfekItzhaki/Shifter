@@ -125,9 +125,9 @@ export default function SettingsTab({
             type="text"
             value={newGroupName}
             onChange={e => onGroupNameChange(e.target.value)}
-            className="flex-1 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="flex-1 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
           />
-          <button onClick={onRenameGroup} disabled={renameSaving} className="bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl disabled:opacity-50 transition-colors">
+          <button onClick={onRenameGroup} disabled={renameSaving} className="bg-sky-500 hover:bg-sky-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl disabled:opacity-50 transition-colors">
             {renameSaving ? t("saving") : t("save")}
           </button>
         </div>
@@ -157,7 +157,7 @@ export default function SettingsTab({
               type="datetime-local"
               value={solverStartDateTime ?? ""}
               onChange={e => onSolverStartDateTimeChange(e.target.value || null)}
-              className="flex-1 border border-slate-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="flex-1 border border-slate-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
             />
             {solverStartDateTime && (
               <button
@@ -171,7 +171,7 @@ export default function SettingsTab({
             <p className="text-xs text-amber-600">⚠ התאריך בעבר — הסולבר יתחיל מנקודה זו.</p>
           )}
           <p className="text-xs text-slate-400">{t("solverStartFromHint")}</p>
-          <button onClick={onSaveSettings} disabled={savingSettings} className="bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl disabled:opacity-50 transition-colors">
+          <button onClick={onSaveSettings} disabled={savingSettings} className="bg-sky-500 hover:bg-sky-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl disabled:opacity-50 transition-colors">
             {savingSettings ? t("saving") : t("saveSettings")}
           </button>
           {settingsError && <p className="text-sm text-red-600">{settingsError}</p>}
@@ -190,7 +190,7 @@ export default function SettingsTab({
             aria-checked={autoPublish}
             onClick={() => onAutoPublishChange(!autoPublish)}
             className={`relative inline-flex h-[22px] w-[40px] items-center rounded-full transition-colors flex-shrink-0 ${
-              autoPublish ? "bg-blue-500" : "bg-slate-300"
+              autoPublish ? "bg-sky-500" : "bg-slate-300"
             }`}
           >
             <span
@@ -213,7 +213,7 @@ export default function SettingsTab({
             aria-checked={allowMembersViewHistory}
             onClick={() => onAllowMembersViewHistoryChange(!allowMembersViewHistory)}
             className={`relative inline-flex h-[22px] w-[40px] items-center rounded-full transition-colors flex-shrink-0 ${
-              allowMembersViewHistory ? "bg-blue-500" : "bg-slate-300"
+              allowMembersViewHistory ? "bg-sky-500" : "bg-slate-300"
             }`}
           >
             <span
@@ -236,7 +236,7 @@ export default function SettingsTab({
             aria-checked={allowMembersViewStats}
             onClick={() => onAllowMembersViewStatsChange(!allowMembersViewStats)}
             className={`relative inline-flex h-[22px] w-[40px] items-center rounded-full transition-colors flex-shrink-0 ${
-              allowMembersViewStats ? "bg-blue-500" : "bg-slate-300"
+              allowMembersViewStats ? "bg-sky-500" : "bg-slate-300"
             }`}
           >
             <span
@@ -263,7 +263,7 @@ export default function SettingsTab({
                 const val = Math.max(0, Math.min(24, parseInt(e.target.value) || 0));
                 onMinRestBetweenShiftsChange(val);
               }}
-              className="w-20 border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-center focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-20 border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-center focus:outline-none focus:ring-2 focus:ring-sky-500"
             />
             <span className="text-sm text-slate-500">{t("hours")}</span>
           </div>
@@ -290,7 +290,7 @@ export default function SettingsTab({
                   onManagementTimeoutChange(raw);
                 }
               }}
-              className="w-20 border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-center focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-20 border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-center focus:outline-none focus:ring-2 focus:ring-sky-500"
             />
             <span className="text-sm text-slate-500">{t("minutes")}</span>
           </div>
@@ -314,7 +314,7 @@ export default function SettingsTab({
             aria-checked={isClosedBase}
             onClick={() => onClosedBaseChange(!isClosedBase)}
             className={`relative inline-flex h-[22px] w-[40px] items-center rounded-full transition-colors flex-shrink-0 ${
-              isClosedBase ? "bg-blue-500" : "bg-slate-300"
+              isClosedBase ? "bg-sky-500" : "bg-slate-300"
             }`}
           >
             <span
@@ -367,13 +367,13 @@ export default function SettingsTab({
               type="datetime-local"
               value={solverStartTime}
               onChange={e => setSolverStartTime(e.target.value)}
-              className="flex-1 border border-slate-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="flex-1 border border-slate-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
             />
           </div>
           <button
             onClick={() => onTriggerSolver(solverStartTime ? new Date(solverStartTime).toISOString() : undefined)}
             disabled={solverPolling || members.length < 2}
-            className="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl disabled:opacity-50 transition-colors"
+            className="flex items-center gap-2 bg-sky-500 hover:bg-sky-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl disabled:opacity-50 transition-colors"
           >
             {solverPolling ? (
               <>
@@ -407,7 +407,7 @@ export default function SettingsTab({
             <select
               value={transferPersonId}
               onChange={e => onTransferPersonChange(e.target.value)}
-              className="flex-1 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="flex-1 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
             >
               <option value="">{t("selectMember")}</option>
               {members.map(m => (
@@ -428,7 +428,7 @@ export default function SettingsTab({
           <p className="text-sm text-slate-500">{tImport("subtitle")}</p>
           <button
             onClick={() => setImportModalOpen(true)}
-            className="flex items-center gap-2 text-sm font-medium text-white bg-blue-500 hover:bg-blue-600 px-4 py-2.5 rounded-xl transition-colors"
+            className="flex items-center gap-2 text-sm font-medium text-white bg-sky-500 hover:bg-sky-600 px-4 py-2.5 rounded-xl transition-colors"
           >
             <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
@@ -521,7 +521,7 @@ function JoinCodeSection({ spaceId, groupId }: { spaceId: string; groupId: strin
             <button
               onClick={handleCopy}
               disabled={!joinCode}
-              className="flex items-center gap-1.5 bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium px-4 py-2.5 rounded-xl disabled:opacity-50 transition-colors"
+              className="flex items-center gap-1.5 bg-sky-500 hover:bg-sky-600 text-white text-xs font-medium px-4 py-2.5 rounded-xl disabled:opacity-50 transition-colors"
             >
               {copied ? "✓" : (
                 <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

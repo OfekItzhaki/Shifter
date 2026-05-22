@@ -28,7 +28,7 @@ export default function LiveStatusPanel({ spaceId, groupId }: LiveStatusPanelPro
     MemberLiveStatusDto["status"],
     { label: string; dot: string; badge: string }
   > = {
-    on_mission:   { label: t("onMission"),   dot: "bg-blue-500",    badge: "bg-blue-50 text-blue-700 border-blue-200" },
+    on_mission:   { label: t("onMission"),   dot: "bg-sky-500",    badge: "bg-sky-50 text-sky-700 border-sky-200" },
     at_home:      { label: t("atHome"),      dot: "bg-amber-400",   badge: "bg-amber-50 text-amber-700 border-amber-200" },
     blocked:      { label: t("blocked"),     dot: "bg-red-500",     badge: "bg-red-50 text-red-700 border-red-200" },
     free_in_base: { label: t("freeInBase"),  dot: "bg-emerald-500", badge: "bg-emerald-50 text-emerald-700 border-emerald-200" },
@@ -57,7 +57,7 @@ export default function LiveStatusPanel({ spaceId, groupId }: LiveStatusPanelPro
   if (loading) {
     return (
       <div className="flex items-center gap-3 text-slate-400 text-sm py-8">
-        <svg className="animate-spin h-5 w-5 text-blue-400" fill="none" viewBox="0 0 24 24">
+        <svg className="animate-spin h-5 w-5 text-sky-400" fill="none" viewBox="0 0 24 24">
           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
         </svg>
@@ -101,7 +101,7 @@ export default function LiveStatusPanel({ spaceId, groupId }: LiveStatusPanelPro
           )}
           <button
             onClick={fetchStatus}
-            className="text-xs text-blue-600 hover:text-blue-700 border border-blue-200 bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded-lg transition-colors"
+            className="text-xs text-sky-600 hover:text-sky-700 border border-sky-200 bg-sky-50 hover:bg-sky-100 px-2.5 py-1 rounded-lg transition-colors"
           >
             {t("refresh")}
           </button>

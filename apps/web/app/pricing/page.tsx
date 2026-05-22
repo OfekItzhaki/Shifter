@@ -57,7 +57,7 @@ export default function PricingPage() {
               style={{
                 background: "white",
                 borderRadius: 16,
-                border: i === 2 ? "2px solid #3b82f6" : "1px solid #e2e8f0",
+                border: i === 2 ? "2px solid #0ea5e9" : "1px solid #e2e8f0",
                 padding: "1.5rem 1.25rem",
                 textAlign: "center",
                 position: "relative",
@@ -67,7 +67,7 @@ export default function PricingPage() {
               {i === 2 && (
                 <span style={{
                   position: "absolute", top: -12, left: "50%", transform: "translateX(-50%)",
-                  background: "#3b82f6", color: "white", fontSize: "0.7rem", fontWeight: 600,
+                  background: "#0ea5e9", color: "white", fontSize: "0.7rem", fontWeight: 600,
                   padding: "2px 10px", borderRadius: 20,
                 }}>
                   {t("popular")}
@@ -89,7 +89,7 @@ export default function PricingPage() {
                   padding: "0.6rem",
                   borderRadius: 10,
                   border: i === 2 ? "none" : "1px solid #e2e8f0",
-                  background: i === 2 ? "#3b82f6" : "white",
+                  background: i === 2 ? "#0ea5e9" : "white",
                   color: i === 2 ? "white" : "#374151",
                   fontWeight: 600,
                   fontSize: "0.85rem",
@@ -114,7 +114,7 @@ export default function PricingPage() {
           <button
             onClick={handleBack}
             style={{
-              color: "#3b82f6",
+              color: "#0ea5e9",
               fontSize: "0.875rem",
               textDecoration: "none",
               background: "none",

@@ -32,7 +32,7 @@ export default function GlobalError({
                 width: 48,
                 height: 48,
                 borderRadius: 12,
-                background: "#3b82f6",
+                background: "#0ea5e9",
                 display: "inline-flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -94,7 +94,7 @@ export default function GlobalError({
                 style={{
                   padding: "10px 24px",
                   borderRadius: 12,
-                  background: "#3b82f6",
+                  background: "#0ea5e9",
                   color: "white",
                   border: "none",
                   fontSize: "0.875rem",

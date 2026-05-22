@@ -68,7 +68,7 @@ export default function BulkAddMembers({ onBulkAdd }: Props) {
           placeholder={"יוסי לוי, 0501234567\nדניאל כהן, , daniel@email.com\nאלכס"}
           rows={6}
           disabled={adding}
-          className="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-slate-400 dark:placeholder:text-slate-500 resize-none font-mono"
+          className="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 placeholder:text-slate-400 dark:placeholder:text-slate-500 resize-none font-mono"
           dir="rtl"
         />
       </div>
@@ -81,12 +81,12 @@ export default function BulkAddMembers({ onBulkAdd }: Props) {
 
       {progress && adding && (
         <div className="space-y-2">
-          <p className="text-xs text-blue-600 dark:text-blue-400 font-medium">
+          <p className="text-xs text-sky-600 dark:text-sky-400 font-medium">
             {t("bulkProgress", { current: progress.current, total: progress.total })}
           </p>
           <div className="w-full h-1.5 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
             <div
-              className="h-full bg-blue-500 rounded-full transition-all duration-300"
+              className="h-full bg-sky-500 rounded-full transition-all duration-300"
               style={{ width: `${(progress.current / progress.total) * 100}%` }}
             />
           </div>
@@ -112,7 +112,7 @@ export default function BulkAddMembers({ onBulkAdd }: Props) {
         type="button"
         onClick={handleBulkAdd}
         disabled={members.length === 0 || adding}
-        className="w-full bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl disabled:opacity-50 transition-colors"
+        className="w-full bg-sky-500 hover:bg-sky-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl disabled:opacity-50 transition-colors"
       >
         {adding
           ? t("bulkProgress", { current: progress?.current ?? 0, total: progress?.total ?? 0 })

@@ -84,7 +84,7 @@ export default function BillingTestPanel() {
             href={result}
             target="_blank"
             rel="noopener noreferrer"
-            style={{ fontSize: "0.7rem", color: "#3b82f6", wordBreak: "break-all" }}
+            style={{ fontSize: "0.7rem", color: "#0ea5e9", wordBreak: "break-all" }}
           >
             {result}
           </a>

@@ -21,13 +21,13 @@ interface AppShellProps { children: React.ReactNode; }
 const S = {
   sidebar: { width: 256, background: "#0f172a", display: "flex", flexDirection: "column" as const, height: "100vh", position: "fixed" as const, top: 0, left: 0, zIndex: 30, overflowY: "auto" as const },
   logo: { padding: "20px 16px", borderBottom: "1px solid rgba(255,255,255,0.08)", display: "flex", alignItems: "center", gap: 10, textDecoration: "none" },
-  logoIcon: { width: 32, height: 32, borderRadius: 8, background: "#3b82f6", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 },
+  logoIcon: { width: 32, height: 32, borderRadius: 8, background: "#0ea5e9", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 },
   nav: { flex: 1, padding: "12px 12px", display: "flex", flexDirection: "column" as const, gap: 2 },
   navLink: (active: boolean, admin: boolean) => ({
     display: "flex", alignItems: "center", gap: 10, padding: "9px 12px", borderRadius: 8,
     textDecoration: "none", fontSize: 14, fontWeight: 500, transition: "background 0.15s",
-    background: active ? (admin ? "rgba(245,158,11,0.15)" : "rgba(59,130,246,0.15)") : "transparent",
-    color: active ? (admin ? "#fbbf24" : "#93c5fd") : (admin ? "rgba(251,191,36,0.7)" : "#94a3b8"),
+    background: active ? (admin ? "rgba(245,158,11,0.15)" : "rgba(8,145,178,0.12)") : "transparent",
+    color: active ? (admin ? "#fbbf24" : "#67e8f9") : (admin ? "rgba(251,191,36,0.7)" : "#94a3b8"),
   }),
   bottom: { padding: "12px", borderTop: "1px solid rgba(255,255,255,0.08)" },
   userInfo: { padding: "8px 12px", marginBottom: 4 },
@@ -44,7 +44,7 @@ function NavItem({ href, label, icon, admin, onNavigate }: { href: string; label
     <Link href={href} style={S.navLink(active, !!admin)} onClick={onNavigate}>
       <span style={{ flexShrink: 0, display: "flex" }}>{icon}</span>
       <span>{label}</span>
-      {active && <span style={{ marginLeft: "auto", width: 6, height: 6, borderRadius: "50%", background: admin ? "#fbbf24" : "#3b82f6" }} />}
+      {active && <span style={{ marginLeft: "auto", width: 6, height: 6, borderRadius: "50%", background: admin ? "#fbbf24" : "#06b6d4" }} />}
     </Link>
   );
 }
@@ -151,7 +151,7 @@ export default function AppShell({ children }: AppShellProps) {
           {/* User info — always shown */}
           <div style={{ ...S.userInfo, display: "flex", alignItems: "center", gap: 10 }}>
             <div style={{
-              width: 32, height: 32, borderRadius: "50%", background: "#3b82f6",
+              width: 32, height: 32, borderRadius: "50%", background: "#0ea5e9",
               display: "flex", alignItems: "center", justifyContent: "center",
               color: "white", fontSize: 13, fontWeight: 700, flexShrink: 0
             }}>
@@ -171,7 +171,7 @@ export default function AppShell({ children }: AppShellProps) {
             {t("auth.logout")}
           </button>
           <div style={{ padding: "4px 12px 8px", color: "#94a3b8", fontSize: 11, textAlign: "center" }}>
-            v{process.env.NEXT_PUBLIC_APP_VERSION ?? "1.5.0"}
+            v{process.env.NEXT_PUBLIC_APP_VERSION ?? "dev"}
             <span style={{ margin: "0 4px" }}>·</span>
             <a href="https://ofeklabs.com" target="_blank" rel="noopener noreferrer" style={{ color: "inherit", textDecoration: "none" }}>
               ofeklabs.com

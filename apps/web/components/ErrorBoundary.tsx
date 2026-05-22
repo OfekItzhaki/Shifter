@@ -34,7 +34,7 @@ function ErrorFallback({ error }: { error: Error | null }) {
       )}
       <button
         onClick={() => window.location.reload()}
-        className="inline-flex items-center justify-center px-5 py-2.5 rounded-lg bg-blue-500 text-white font-medium text-sm hover:bg-blue-600 transition-colors"
+        className="inline-flex items-center justify-center px-5 py-2.5 rounded-lg bg-sky-500 text-white font-medium text-sm hover:bg-sky-600 transition-colors"
       >
         {t("clientError.reload")}
       </button>

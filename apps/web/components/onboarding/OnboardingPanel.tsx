@@ -110,7 +110,7 @@ export default function OnboardingPanel() {
                 key={step.key}
                 className={`flex gap-3 rounded-xl px-3 py-3 transition-colors duration-200 ${
                   isCurrent
-                    ? "bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800"
+                    ? "bg-sky-50 dark:bg-sky-900/20 border border-sky-200 dark:border-sky-800"
                     : "border border-transparent"
                 }`}
               >
@@ -120,7 +120,7 @@ export default function OnboardingPanel() {
                     isCompleted
                       ? "bg-green-100 dark:bg-green-900/40 text-green-600 dark:text-green-400"
                       : isCurrent
-                        ? "bg-blue-500 text-white"
+                        ? "bg-sky-500 text-white"
                         : "bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-500"
                   }`}
                 >
@@ -176,7 +176,7 @@ export default function OnboardingPanel() {
                         );
                         router.push(route);
                       }}
-                      className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-blue-500 hover:bg-blue-600 rounded-lg transition-colors"
+                      className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-sky-500 hover:bg-sky-600 rounded-lg transition-colors"
                     >
                       {t(`steps.${step.key}.cta`)}
                       <svg
@@ -211,7 +211,7 @@ export default function OnboardingPanel() {
         </div>
         <div className="h-1.5 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
           <div
-            className="h-full bg-blue-500 rounded-full transition-all duration-500 ease-out"
+            className="h-full bg-sky-500 rounded-full transition-all duration-500 ease-out"
             style={{
               width: `${(Object.values(steps).filter(Boolean).length / ONBOARDING_STEPS.length) * 100}%`,
             }}

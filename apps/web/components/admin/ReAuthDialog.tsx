@@ -349,7 +349,7 @@ export default function ReAuthDialog({ open, onSuccess, onCancel, mode, spaceId 
                       padding: "0.75rem",
                       background: isSubmitting || !password.trim()
                         ? "#94a3b8"
-                        : "linear-gradient(135deg, #3b82f6, #2563eb)",
+                        : "linear-gradient(135deg, #0ea5e9, #0284c7)",
                       color: "white",
                       border: "none",
                       borderRadius: 10,

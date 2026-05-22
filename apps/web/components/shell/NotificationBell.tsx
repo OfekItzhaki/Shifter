@@ -94,7 +94,7 @@ export default function NotificationBell({ variant = "dark" }: { variant?: "ligh
           <button
             type="button"
             onClick={(e) => { e.preventDefault(); e.stopPropagation(); dismissAll.mutate(); }}
-            className="text-xs text-blue-600 hover:underline">
+            className="text-xs text-sky-600 hover:underline">
             {t("markAllRead")}
           </button>
         )}
@@ -105,7 +105,7 @@ export default function NotificationBell({ variant = "dark" }: { variant?: "ligh
           <p className="text-xs text-gray-400 text-center py-6">{t("noNotifications")}</p>
         ) : filteredNotifications.map(n => (
           <div key={n.id}
-            className={`px-4 py-3 flex gap-3 ${n.isRead ? "opacity-50" : "bg-blue-50/40"}`}>
+            className={`px-4 py-3 flex gap-3 ${n.isRead ? "opacity-50" : "bg-sky-50/40"}`}>
             <span className="text-base mt-0.5 flex-shrink-0">{eventIcon(n.eventType)}</span>
             <div className="flex-1 min-w-0">
               <p className="text-xs font-semibold text-gray-800">{n.title}</p>

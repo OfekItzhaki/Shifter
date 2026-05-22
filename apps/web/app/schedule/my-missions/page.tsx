@@ -105,9 +105,9 @@ export default function MyMissionsPage() {
                   onClick={() => setSelectedDay(dayIso)}
                   className={`relative flex-shrink-0 px-3 sm:px-4 py-2.5 sm:py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all border min-w-[40px] ${
                     isSelected
-                      ? "bg-blue-500 text-white border-blue-500 shadow-sm"
+                      ? "bg-sky-500 text-white border-sky-500 shadow-sm"
                       : isToday
-                      ? "bg-blue-50 text-blue-700 border-blue-300"
+                      ? "bg-sky-50 text-sky-700 border-sky-300"
                       : hasMissions
                       ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                       : "bg-white text-slate-500 border-slate-200"
@@ -133,7 +133,7 @@ export default function MyMissionsPage() {
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder={tMy("searchPlaceholder")}
-            className="w-full border border-slate-200 rounded-xl pl-9 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full border border-slate-200 rounded-xl pl-9 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
           />
         </div>
 

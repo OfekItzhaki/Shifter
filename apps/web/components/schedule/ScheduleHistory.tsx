@@ -60,7 +60,7 @@ export default function ScheduleHistory({ spaceId, onClose }: Props) {
 
       {loading ? (
         <div className="flex justify-center py-8">
-          <svg className="animate-spin h-6 w-6 text-blue-400" fill="none" viewBox="0 0 24 24">
+          <svg className="animate-spin h-6 w-6 text-sky-400" fill="none" viewBox="0 0 24 24">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
           </svg>
@@ -72,8 +72,8 @@ export default function ScheduleHistory({ spaceId, onClose }: Props) {
           {versions.map((v, i) => (
             <div key={v.id} className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 flex items-center justify-between gap-3">
               <div className="flex items-center gap-3 min-w-0">
-                <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center flex-shrink-0">
-                  <span className="text-xs font-bold text-blue-600">v{v.versionNumber}</span>
+                <div className="w-8 h-8 rounded-lg bg-sky-50 dark:bg-sky-900/30 flex items-center justify-center flex-shrink-0">
+                  <span className="text-xs font-bold text-sky-600">v{v.versionNumber}</span>
                 </div>
                 <div className="min-w-0">
                   <p className="text-sm font-medium text-slate-800 dark:text-slate-200">
@@ -89,7 +89,7 @@ export default function ScheduleHistory({ spaceId, onClose }: Props) {
                 {i > 0 && (
                   <button
                     onClick={() => { setSelectedId(v.id); setShowDiff(true); }}
-                    className="text-xs text-blue-600 border border-blue-200 hover:bg-blue-50 px-3 py-1.5 rounded-lg transition-colors"
+                    className="text-xs text-sky-600 border border-sky-200 hover:bg-sky-50 px-3 py-1.5 rounded-lg transition-colors"
                   >
                     {t("viewChanges")}
                   </button>
