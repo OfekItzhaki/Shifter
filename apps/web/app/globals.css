@@ -177,6 +177,7 @@ button:disabled, input:disabled, textarea:disabled, select:disabled {
   background: #0f172a;
   color: #e2e8f0;
   --main-bg: #0f172a;
+  --border-color: #1e293b;
 }
 
 .dark ::-webkit-scrollbar-thumb { background: #475569; }

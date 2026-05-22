@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { useAuthStore } from "@/lib/store/authStore";
 import { useOnboardingStore } from "@/lib/store/onboardingStore";
 import { useStepCompletion } from "@/lib/hooks/useStepCompletion";
@@ -18,6 +18,7 @@ function HomeIcon({ d, className }: { d: string; className?: string }) {
 
 function HomePage() {
   const t = useTranslations("home");
+  const locale = useLocale();
   const { displayName, userId } = useAuthStore();
   const { show: showOnboarding, reset: resetOnboarding } = useOnboardingStore();
   const { refresh: refreshSteps } = useStepCompletion();
@@ -36,7 +37,9 @@ function HomePage() {
   }, [displayName]);
 
   const today = new Date();
-  const hebrewDate = today.toLocaleDateString("he-IL", {
+  const localeMap: Record<string, string> = { he: "he-IL", en: "en-US", ru: "ru-RU" };
+  const dateLocale = localeMap[locale] ?? "en-US";
+  const formattedDate = today.toLocaleDateString(dateLocale, {
     weekday: "long",
     year: "numeric",
     month: "long",
@@ -60,16 +63,16 @@ function HomePage() {
   return (
     <div className="w-full max-w-4xl mx-auto py-6 px-4 space-y-6">
       {/* Hero banner */}
-      <div className="rounded-2xl bg-gradient-to-br from-sky-600 via-sky-500 to-cyan-600 p-6 sm:p-8 text-white relative overflow-hidden">
+      <div className="rounded-2xl bg-gradient-to-br from-slate-800 via-slate-800 to-slate-700 dark:from-slate-800 dark:via-slate-750 dark:to-slate-700 border border-slate-700 dark:border-slate-600 p-6 sm:p-8 text-white relative overflow-hidden">
         {/* Decorative circles */}
-        <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
-        <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2" />
+        <div className="absolute top-0 right-0 w-32 h-32 bg-sky-500/10 rounded-full -translate-y-1/2 translate-x-1/2" />
+        <div className="absolute bottom-0 left-0 w-24 h-24 bg-cyan-500/5 rounded-full translate-y-1/2 -translate-x-1/2" />
         
         <div className="relative z-10">
           <h1 className="text-2xl sm:text-3xl font-bold mb-1">
             {t("welcome", { name: resolvedName ?? "" })}
           </h1>
-          <p className="text-sky-100 text-sm">{hebrewDate}</p>
+          <p className="text-slate-400 text-sm">{formattedDate}</p>
         </div>
       </div>
 
