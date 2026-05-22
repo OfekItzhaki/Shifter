@@ -1219,7 +1219,7 @@ export default function GroupDetailPage() {
 
   return (
     <AppShell>
-      <div className="max-w-4xl mx-auto px-2 sm:px-4 py-4 sm:py-6 space-y-4 sm:space-y-6" dir="rtl">
+      <div className="max-w-6xl w-full mx-auto px-2 sm:px-4 py-4 sm:py-6 space-y-4 sm:space-y-6" dir="rtl">
         {/* Header */}
         <div className="flex items-center gap-3 sm:gap-4">
           <Link href="/groups" className="text-slate-400 hover:text-slate-600 transition-colors flex-shrink-0">

@@ -58,7 +58,7 @@ function HomePage() {
   ];
 
   return (
-    <div className="w-full max-w-3xl mx-auto py-6 px-4 space-y-6">
+    <div className="w-full max-w-4xl mx-auto py-6 px-4 space-y-6">
       {/* Hero banner */}
       <div className="rounded-2xl bg-gradient-to-br from-blue-600 via-blue-500 to-indigo-600 p-6 sm:p-8 text-white relative overflow-hidden">
         {/* Decorative circles */}
