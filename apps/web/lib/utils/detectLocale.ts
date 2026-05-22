@@ -1,19 +1,62 @@
 /**
- * Detects the user's preferred locale from the browser.
- * Uses Intl.DateTimeFormat to get the system timezone/locale — no external API needed.
- * Falls back to "he" (Hebrew/Israel) as the app default.
+ * Detects the user's preferred locale based on their timezone (location-based).
+ * Priority: timezone → browser language → fallback "he"
+ *
+ * Mapping:
+ * - Israel timezones → Hebrew
+ * - Russia/Ukraine/Belarus/Kazakhstan timezones → Russian
+ * - Everything else → English
  */
 export function detectBrowserLocale(): string {
   if (typeof window === "undefined") return "he";
 
-  // navigator.language gives the full BCP-47 tag e.g. "he-IL", "en-US"
-  const lang = navigator.language || navigator.languages?.[0] || "he";
+  // First try timezone-based detection (most accurate for location)
+  const tzLocale = detectLocaleFromTimezone();
+  if (tzLocale) return tzLocale;
 
-  // Map to our app's supported locale codes
+  // Fallback to browser language
+  const lang = navigator.language || navigator.languages?.[0] || "he";
   const primary = lang.split("-")[0].toLowerCase();
   const supported = ["he", "en", "ru"];
 
-  return supported.includes(primary) ? primary : "he";
+  return supported.includes(primary) ? primary : "en";
+}
+
+/**
+ * Detects locale from the system timezone.
+ * This is location-based — gives the language of the country the user is in.
+ */
+function detectLocaleFromTimezone(): string | null {
+  try {
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    if (!tz) return null;
+
+    // Israel → Hebrew
+    if (tz.startsWith("Asia/Jerusalem") || tz.startsWith("Asia/Tel_Aviv")) {
+      return "he";
+    }
+
+    // Russian-speaking countries → Russian
+    const russianTimezones = [
+      "Europe/Moscow", "Europe/Kaliningrad", "Europe/Samara", "Europe/Volgograd",
+      "Asia/Yekaterinburg", "Asia/Omsk", "Asia/Novosibirsk", "Asia/Krasnoyarsk",
+      "Asia/Irkutsk", "Asia/Yakutsk", "Asia/Vladivostok", "Asia/Kamchatka",
+      // Ukraine
+      "Europe/Kiev", "Europe/Kyiv", "Europe/Zaporozhye", "Europe/Uzhgorod",
+      // Belarus
+      "Europe/Minsk",
+      // Kazakhstan
+      "Asia/Almaty", "Asia/Aqtau", "Asia/Aqtobe", "Asia/Atyrau", "Asia/Oral", "Asia/Qyzylorda",
+    ];
+    if (russianTimezones.some(rtz => tz === rtz || tz.startsWith(rtz))) {
+      return "ru";
+    }
+
+    // Everything else → English
+    return "en";
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -35,6 +78,10 @@ export function detectCountryFromTimezone(): string | null {
       "Europe/Paris": "FR",
       "Europe/Berlin": "DE",
       "Europe/Moscow": "RU",
+      "Europe/Kiev": "UA",
+      "Europe/Kyiv": "UA",
+      "Europe/Minsk": "BY",
+      "Asia/Almaty": "KZ",
       "Asia/Dubai": "AE",
       "Asia/Riyadh": "SA",
       "Asia/Amman": "JO",
