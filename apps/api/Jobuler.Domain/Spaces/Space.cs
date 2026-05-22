@@ -9,6 +9,7 @@ public class Space : AuditableEntity
     public Guid OwnerUserId { get; private set; }
     public bool IsActive { get; private set; } = true;
     public string Locale { get; private set; } = "he";
+    public string? InviteCode { get; private set; }
 
     private Space() { }
 
@@ -21,7 +22,8 @@ public class Space : AuditableEntity
             Name = name.Trim(),
             Description = description?.Trim(),
             OwnerUserId = ownerUserId,
-            Locale = locale
+            Locale = locale,
+            InviteCode = GenerateInviteCode()
         };
     }
 
@@ -39,5 +41,15 @@ public class Space : AuditableEntity
         Touch();
     }
 
+    public string RegenerateInviteCode()
+    {
+        InviteCode = GenerateInviteCode();
+        Touch();
+        return InviteCode;
+    }
+
     public void Deactivate() { IsActive = false; Touch(); }
+
+    private static string GenerateInviteCode() =>
+        Guid.NewGuid().ToString("N")[..8].ToUpperInvariant();
 }

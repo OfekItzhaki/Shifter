@@ -21,6 +21,7 @@ public class Group : AuditableEntity, ITenantScoped
     public bool AllowMembersViewHistory { get; private set; } = true;
     public bool AllowMembersViewStats { get; private set; } = false;
     public int ManagementTimeoutMinutes { get; private set; } = 15;
+    public Guid? ParentGroupId { get; private set; }
 
     private Group() { }
 
@@ -93,4 +94,16 @@ public class Group : AuditableEntity, ITenantScoped
 
     public void SoftDelete() { DeletedAt = DateTime.UtcNow; Touch(); }
     public void Restore() { DeletedAt = null; Touch(); }
+
+    public void SetParentGroup(Guid? parentGroupId)
+    {
+        ParentGroupId = parentGroupId;
+        Touch();
+    }
+
+    public void UnlinkFromParent()
+    {
+        ParentGroupId = null;
+        Touch();
+    }
 }
