@@ -181,6 +181,22 @@
       "applying": "מגדיר...",
       "errorApplying": "שגיאה בהחלת התבנית. ניתן להגדיר ידנית."
     },
+    "createWizard": {
+      "title": "יצירת קבוצה חדשה",
+      "nameLabel": "שם הקבוצה",
+      "namePlaceholder": "הזן שם לקבוצה...",
+      "templateLabel": "בחר תבנית",
+      "templateDescription": "התבנית תגדיר משימות, אילוצים והכשרות מוכנים מראש",
+      "continue": "המשך",
+      "creating": "יוצר...",
+      "templateCards": {
+        "army-base": "שמירות 24 שעות, מטבח, סיורים. מותאם לפלוגות צבאיות.",
+        "restaurant": "משמרות בוקר, צהריים וערב. מלצרים, מטבח, בר.",
+        "hospital": "משמרות יום, ערב ולילה. רוטציות של 8 שעות.",
+        "security": "רוטציות יום/לילה של 12 שעות עם מנוחה מינימלית.",
+        "custom": "התחל מאפס. הוסף משימות ואילוצים בעצמך."
+      }
+    },
     "join": {
       "title": "הצטרף לקבוצה",
       "subtitle": "הזן את הקוד שקיבלת ממנהל הקבוצה",
@@ -247,7 +263,15 @@
       "selectReason": "בחר סיבה...",
       "customReason": "אחר",
       "customReasonPlaceholder": "הזן סיבה מותאמת...",
-      "member": "חבר"
+      "member": "חבר",
+      "bulkAdd": "הוספה מרובה",
+      "singleAdd": "הוספה בודדת",
+      "bulkPlaceholder": "הדבק שמות — שם אחד בכל שורה",
+      "bulkCount": "יתווספו {count} חברים",
+      "bulkAddAll": "הוסף הכל",
+      "bulkProgress": "מוסיף {current}/{total}...",
+      "bulkSuccess": "נוספו {count} חברים בהצלחה",
+      "bulkErrors": "{count} שגיאות"
     },
     "qualifications_tab": {
       "title": "הכשרות",

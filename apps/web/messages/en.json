@@ -178,6 +178,22 @@
       "applying": "Setting up...",
       "errorApplying": "Error applying template. You can set up manually."
     },
+    "createWizard": {
+      "title": "Create New Group",
+      "nameLabel": "Group Name",
+      "namePlaceholder": "Enter a group name...",
+      "templateLabel": "Choose a Template",
+      "templateDescription": "The template will pre-configure tasks, constraints, and qualifications",
+      "continue": "Continue",
+      "creating": "Creating...",
+      "templateCards": {
+        "army-base": "24h guard shifts, kitchen duty, patrol. Designed for military platoons.",
+        "restaurant": "Morning, afternoon, and evening shifts. Waiters, kitchen, bar.",
+        "hospital": "Day, evening, and night shifts. 8-hour rotations.",
+        "security": "12-hour day/night rotations with minimum rest between shifts.",
+        "custom": "Start from scratch. Add your own tasks and constraints."
+      }
+    },
     "join": {
       "title": "Join a Group",
       "subtitle": "Enter the code shared by your group admin",
@@ -244,7 +260,15 @@
       "selectReason": "Select reason...",
       "customReason": "Custom",
       "customReasonPlaceholder": "Enter custom reason...",
-      "member": "Member"
+      "member": "Member",
+      "bulkAdd": "Bulk Add",
+      "singleAdd": "Single",
+      "bulkPlaceholder": "Paste names — one name per line",
+      "bulkCount": "{count} members will be added",
+      "bulkAddAll": "Add All",
+      "bulkProgress": "Adding {current}/{total}...",
+      "bulkSuccess": "{count} members added successfully",
+      "bulkErrors": "{count} errors"
     },
     "qualifications_tab": {
       "title": "Qualifications",

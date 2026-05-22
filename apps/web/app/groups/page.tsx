@@ -9,6 +9,7 @@ import { getAvatarColor, getAvatarLetter } from "@/lib/utils/groupAvatar";
 import { useGroups, useDeletedGroups, useCreateGroup, useRestoreGroup } from "@/lib/query/hooks/useGroups";
 import Modal from "@/components/Modal";
 import GroupTemplatePicker from "@/components/GroupTemplatePicker";
+import CreateGroupWizard from "@/components/CreateGroupWizard";
 import { ONBOARDING_STEPS } from "@/lib/onboarding/steps";
 import { useOnboardingStore } from "@/lib/store/onboardingStore";
 import { getCurrentStepIndex } from "@/lib/onboarding/decisions";
@@ -30,9 +31,9 @@ function GroupsPage() {
   const searchParams = useSearchParams();
   const deletedRef = useRef<HTMLDivElement>(null);
 
-  const [newGroupName, setNewGroupName] = useState("");
   const [createError, setCreateError] = useState<string | null>(null);
   const [templateGroupId, setTemplateGroupId] = useState<string | null>(null);
+  const [showCreateWizard, setShowCreateWizard] = useState(false);
 
   const tOnboarding = useTranslations("onboarding");
   const { steps: onboardingSteps } = useOnboardingStore();
@@ -50,23 +51,27 @@ function GroupsPage() {
     }
   }, [searchParams, deletedLoading]);
 
-  async function handleCreate(e: React.FormEvent) {
-    e.preventDefault();
-    if (!currentSpaceId || !newGroupName.trim()) return;
+  async function handleCreateWithWizard(name: string, templateId: string) {
+    if (!currentSpaceId) return;
     setCreateError(null);
     try {
-      const result = await createGroup.mutateAsync(newGroupName.trim());
-      setNewGroupName("");
-      // Show template picker for the new group
+      const result = await createGroup.mutateAsync(name);
       const newGroupId = (result as { data?: { id?: string } })?.data?.id;
       if (newGroupId) {
-        setTemplateGroupId(newGroupId);
+        // If a template other than custom is selected, apply it then redirect
+        setShowCreateWizard(false);
+        if (templateId !== "custom") {
+          setTemplateGroupId(newGroupId);
+        } else {
+          router.push(`/groups/${newGroupId}`);
+        }
       }
     } catch (err: unknown) {
       setCreateError(
         (err as { response?: { data?: { error?: string } } })?.response?.data?.error ||
         tErrors("errorCreateGroup")
       );
+      throw err; // re-throw so the wizard knows it failed
     }
   }
 
@@ -87,22 +92,14 @@ function GroupsPage() {
           </div>
         </div>
 
-        {/* Create group */}
-        <form onSubmit={handleCreate} className="flex gap-2 w-full sm:max-w-sm">
-          <input
-            value={newGroupName}
-            onChange={e => setNewGroupName(e.target.value)}
-            placeholder={t("newGroupPlaceholder")}
-            className="flex-1 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          <button
-            type="submit"
-            disabled={createGroup.isPending}
-            className="bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl disabled:opacity-50 whitespace-nowrap flex-shrink-0"
-          >
-            {createGroup.isPending ? "..." : t("newGroup")}
-          </button>
-        </form>
+        {/* Create group button */}
+        <button
+          type="button"
+          onClick={() => setShowCreateWizard(true)}
+          className="bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl transition-colors whitespace-nowrap"
+        >
+          {t("newGroup")}
+        </button>
 
         {createError && <p className="text-sm text-red-600">{createError}</p>}
 
@@ -205,7 +202,15 @@ function GroupsPage() {
         </div>
       </div>
 
-      {/* Template picker modal — shown after creating a new group */}
+      {/* Create group wizard modal */}
+      <CreateGroupWizard
+        open={showCreateWizard}
+        onClose={() => setShowCreateWizard(false)}
+        onCreateGroup={handleCreateWithWizard}
+        isPending={createGroup.isPending}
+      />
+
+      {/* Template picker modal — shown after creating a new group with a non-custom template */}
       {templateGroupId && currentSpaceId && (
         <Modal
           open={true}
