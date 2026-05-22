@@ -124,6 +124,7 @@ services:
 
   # ─── Frontend (Next.js) ─────────────────────────────────────
   web:
+    image: shifter-web:latest
     build:
       context: ../../apps/web
       dockerfile: ../../infra/docker/web.Dockerfile
