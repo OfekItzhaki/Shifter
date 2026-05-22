@@ -34,8 +34,8 @@ export default function FeedbackFab() {
   return (
     <>
       <div
-        className="fixed z-[1200] flex items-stretch"
-        style={{ bottom: 16, left: 16 }}
+        className="fixed z-[1200] flex items-stretch opacity-40 hover:opacity-100 transition-opacity"
+        style={{ bottom: 12, left: 12 }}
       >
         {/* Bug report half (left) */}
         <button
@@ -43,7 +43,7 @@ export default function FeedbackFab() {
           type="button"
           aria-label="Report a bug"
           onClick={() => handleClick("bug")}
-          className="flex items-center justify-center min-w-[44px] min-h-[44px] rounded-l-xl bg-slate-800 hover:bg-slate-700 text-white transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2"
+          className="flex items-center justify-center w-9 h-9 rounded-l-lg bg-slate-800 hover:bg-slate-700 text-white transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2"
         >
           {/* Bug icon */}
           <svg
@@ -79,7 +79,7 @@ export default function FeedbackFab() {
           type="button"
           aria-label="Submit feedback"
           onClick={() => handleClick("feedback")}
-          className="flex items-center justify-center min-w-[44px] min-h-[44px] rounded-r-xl bg-slate-800 hover:bg-slate-700 text-white transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2"
+          className="flex items-center justify-center w-9 h-9 rounded-r-lg bg-slate-800 hover:bg-slate-700 text-white transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2"
         >
           {/* Feedback / message icon */}
           <svg
