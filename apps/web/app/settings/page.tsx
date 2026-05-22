@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import AppShell from "@/components/shell/AppShell";
 import NotificationPreferences from "@/components/NotificationPreferences";
 import PushNotificationSettings from "@/components/PushNotificationSettings";
@@ -17,23 +17,18 @@ import {
 } from "@/lib/data/countries";
 
 const cardStyle: React.CSSProperties = {
-  background: "white",
   borderRadius: 16,
-  border: "1px solid #e2e8f0",
-  boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
   padding: "1.5rem",
 };
 
 const sectionHeaderStyle: React.CSSProperties = {
   fontSize: "0.875rem",
   fontWeight: 600,
-  color: "#0f172a",
   margin: "0 0 0.25rem",
 };
 
 const sectionDescStyle: React.CSSProperties = {
   fontSize: "0.75rem",
-  color: "#64748b",
   margin: "0 0 1rem",
 };
 
@@ -241,7 +236,8 @@ function SearchableDropdown({
 
 function LocationSection() {
   const t = useTranslations("userSettings.location");
-  const { timezoneId, preferredLocale, setTimezone } = useAuthStore();
+  const uiLocale = useLocale();
+  const { timezoneId, setTimezone } = useAuthStore();
 
   const [selectedCountry, setSelectedCountry] = useState<string | null>(null);
   const [selectedState, setSelectedState] = useState<string | null>(null);
@@ -249,8 +245,8 @@ function LocationSection() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
-  // Determine locale key for country/state names
-  const locale = preferredLocale ?? "he";
+  // Use the active UI locale for country/state names
+  const locale = uiLocale;
 
   // Build country options with localized names
   const countryOptions = useMemo(
@@ -312,9 +308,9 @@ function LocationSection() {
   const displayTimezone = resolvedTimezone ?? timezoneId ?? "Asia/Jerusalem";
 
   return (
-    <div style={cardStyle}>
-      <h2 style={sectionHeaderStyle}>{t("title")}</h2>
-      <p style={sectionDescStyle}>{t("description")}</p>
+    <div style={cardStyle} className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm">
+      <h2 style={sectionHeaderStyle} className="text-slate-900 dark:text-white">{t("title")}</h2>
+      <p style={sectionDescStyle} className="text-slate-500 dark:text-slate-400">{t("description")}</p>
       <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
         {/* Country dropdown */}
         <SearchableDropdown
@@ -338,17 +334,15 @@ function LocationSection() {
 
         {/* Resolved timezone display */}
         <div
+          className="bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300"
           style={{
             padding: "0.625rem 0.875rem",
             borderRadius: 10,
-            background: "#f8fafc",
-            border: "1px solid #e2e8f0",
             fontSize: "0.8125rem",
-            color: "#475569",
           }}
         >
           <span style={{ fontWeight: 500 }}>{t("timezone")}:</span>{" "}
-          <span style={{ color: "#0f172a" }}>{displayTimezone}</span>
+          <span className="text-slate-900 dark:text-white">{displayTimezone}</span>
         </div>
 
         {/* Save button */}
@@ -378,13 +372,12 @@ function LocationSection() {
 
 function TimeFormatSection() {
   const t = useTranslations("userSettings.timeFormat");
-  const tProfile = useTranslations("profile");
   const { timeFormat, setTimeFormat } = useAuthStore();
 
   return (
-    <div style={cardStyle}>
-      <h2 style={sectionHeaderStyle}>{t("title")}</h2>
-      <p style={sectionDescStyle}>{t("description")}</p>
+    <div style={cardStyle} className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm">
+      <h2 style={sectionHeaderStyle} className="text-slate-900 dark:text-white">{t("title")}</h2>
+      <p style={sectionDescStyle} className="text-slate-500 dark:text-slate-400">{t("description")}</p>
       <div style={{ display: "flex", gap: "0.5rem" }}>
         <button
           onClick={() => setTimeFormat("24h")}
@@ -437,9 +430,9 @@ function NotificationSection() {
   const t = useTranslations("userSettings.notifications");
 
   return (
-    <div style={cardStyle}>
-      <h2 style={sectionHeaderStyle}>{t("title")}</h2>
-      <p style={sectionDescStyle}>{t("description")}</p>
+    <div style={cardStyle} className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm">
+      <h2 style={sectionHeaderStyle} className="text-slate-900 dark:text-white">{t("title")}</h2>
+      <p style={sectionDescStyle} className="text-slate-500 dark:text-slate-400">{t("description")}</p>
       <NotificationPreferences />
     </div>
   );
@@ -452,9 +445,9 @@ function PushNotificationSection() {
   if (!currentSpaceId) return null;
 
   return (
-    <div style={cardStyle}>
-      <h2 style={sectionHeaderStyle}>{t("title")}</h2>
-      <p style={sectionDescStyle}>{t("description")}</p>
+    <div style={cardStyle} className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm">
+      <h2 style={sectionHeaderStyle} className="text-slate-900 dark:text-white">{t("title")}</h2>
+      <p style={sectionDescStyle} className="text-slate-500 dark:text-slate-400">{t("description")}</p>
       <PushNotificationSettings spaceId={currentSpaceId} />
     </div>
   );
@@ -462,16 +455,18 @@ function PushNotificationSection() {
 
 export default function SettingsPage() {
   const t = useTranslations("userSettings");
+  const locale = useLocale();
+  const isRtl = locale === "he";
 
   return (
     <AppShell>
-      <div style={{ maxWidth: 720, direction: "rtl" }}>
+      <div style={{ maxWidth: 720, direction: isRtl ? "rtl" : "ltr" }}>
         {/* Page header */}
         <div style={{ marginBottom: "1.5rem" }}>
-          <h1 style={{ fontSize: "1.5rem", fontWeight: 700, color: "#0f172a", margin: "0 0 0.25rem" }}>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white" style={{ margin: "0 0 0.25rem" }}>
             {t("title")}
           </h1>
-          <p style={{ fontSize: "0.875rem", color: "#64748b", margin: 0 }}>
+          <p className="text-sm text-slate-500 dark:text-slate-400" style={{ margin: 0 }}>
             {t("subtitle")}
           </p>
         </div>

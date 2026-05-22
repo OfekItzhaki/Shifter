@@ -72,3 +72,4 @@ infra/migrations/999_seed.sql
 
 # Private business notes (not for public repo)
 docs/BUSINESS_TODO.md
+docs/SERVER_SETUP.md
