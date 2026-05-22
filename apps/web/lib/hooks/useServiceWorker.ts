@@ -77,6 +77,11 @@ export function useServiceWorker(): SWState {
       navigator.serviceWorker.addEventListener("controllerchange", () => {
         window.location.reload();
       });
+      // Fallback: if controllerchange doesn't fire within 2s, force reload
+      setTimeout(() => window.location.reload(), 2000);
+    } else {
+      // No waiting worker — just reload to get the latest
+      window.location.reload();
     }
   }
 
