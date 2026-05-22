@@ -59,7 +59,7 @@ public class PeopleController : ControllerBase
     {
         await _permissions.RequirePermissionAsync(CurrentUserId, spaceId, Permissions.PeopleManage, ct);
         var id = await _mediator.Send(
-            new CreatePersonCommand(spaceId, req.FullName, req.DisplayName, req.LinkedUserId, CurrentUserId), ct);
+            new CreatePersonCommand(spaceId, req.FullName, req.DisplayName, req.LinkedUserId, CurrentUserId, req.PhoneNumber, req.Email), ct);
         return CreatedAtAction(nameof(Get), new { spaceId, personId = id }, new { id });
     }
 
@@ -174,7 +174,7 @@ public class InvitationsController : ControllerBase
     }
 }
 
-public record CreatePersonRequest(string FullName, string? DisplayName, Guid? LinkedUserId);
+public record CreatePersonRequest(string FullName, string? DisplayName, Guid? LinkedUserId, string? PhoneNumber = null, string? Email = null);
 public record UpdatePersonRequest(string FullName, string? DisplayName, string? ProfileImageUrl);
 public record UpdatePersonInfoRequest(string FullName, string? DisplayName, string? PhoneNumber, string? ProfileImageUrl, DateOnly? Birthday, string? Email = null);
 public record AssignRoleRequest(Guid RoleId);

@@ -12,7 +12,9 @@ public record CreatePersonCommand(
     string FullName,
     string? DisplayName,
     Guid? LinkedUserId,
-    Guid RequestingUserId) : IRequest<Guid>;
+    Guid RequestingUserId,
+    string? PhoneNumber = null,
+    string? Email = null) : IRequest<Guid>;
 
 public class CreatePersonCommandHandler : IRequestHandler<CreatePersonCommand, Guid>
 {
@@ -37,7 +39,11 @@ public class CreatePersonCommandHandler : IRequestHandler<CreatePersonCommand, G
         var status = req.LinkedUserId.HasValue ? "accepted" : "pending";
 
         var person = Person.Create(req.SpaceId, req.FullName, req.DisplayName, req.LinkedUserId,
-            phoneNumber: null, invitationStatus: status);
+            phoneNumber: req.PhoneNumber, invitationStatus: status);
+        if (!string.IsNullOrWhiteSpace(req.Email))
+        {
+            person.UpdateFull(person.FullName, person.DisplayName, person.ProfileImageUrl, person.PhoneNumber, person.Birthday, req.Email.Trim());
+        }
         _db.People.Add(person);
         await _db.SaveChangesAsync(ct);
         return person.Id;

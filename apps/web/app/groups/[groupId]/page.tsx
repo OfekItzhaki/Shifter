@@ -626,23 +626,24 @@ export default function GroupDetailPage() {
   // ── Bulk add members ─────────────────────────────────────────────────────
   const [addMemberMode, setAddMemberMode] = useState<"single" | "bulk">("single");
 
-  async function handleBulkAdd(names: string[], onProgress: (current: number, total: number) => void): Promise<{ success: number; errors: number }> {
-    if (!currentSpaceId) return { success: 0, errors: names.length };
+  async function handleBulkAdd(members: { name: string; phone?: string; email?: string }[], onProgress: (current: number, total: number) => void): Promise<{ success: number; errors: number }> {
+    if (!currentSpaceId) return { success: 0, errors: members.length };
     let success = 0;
     let errors = 0;
 
-    for (let i = 0; i < names.length; i++) {
-      onProgress(i + 1, names.length);
+    for (let i = 0; i < members.length; i++) {
+      onProgress(i + 1, members.length);
       try {
+        const m = members[i];
         let personId: string;
-        const existingResults = await searchPeople(currentSpaceId, names[i]);
+        const existingResults = await searchPeople(currentSpaceId, m.name);
         const existingMatch = existingResults.find(p =>
-          p.fullName.toLowerCase() === names[i].toLowerCase()
+          p.fullName.toLowerCase() === m.name.toLowerCase()
         );
         if (existingMatch) {
           personId = existingMatch.id;
         } else {
-          const person = await createPerson(currentSpaceId, names[i]);
+          const person = await createPerson(currentSpaceId, m.name, m.phone, m.email);
           personId = person.id;
         }
         await addGroupMemberById(currentSpaceId, groupId, personId);
