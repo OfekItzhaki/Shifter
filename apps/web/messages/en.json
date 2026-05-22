@@ -79,7 +79,9 @@
     "stats": "Statistics",
     "admin": "Admin",
     "logs": "Logs",
-    "platform": "Platform"
+    "platform": "Platform",
+    "terms": "Terms",
+    "privacy": "Privacy"
   },
   "schedule": {
     "title": "Schedule",

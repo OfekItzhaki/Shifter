@@ -179,11 +179,11 @@ export default function AppShell({ children }: AppShellProps) {
           </div>
           <div style={{ padding: "0 12px 12px", textAlign: "center", display: "flex", justifyContent: "center", gap: 8 }}>
             <Link href="/terms" style={{ fontSize: 10, color: "#94a3b8", textDecoration: "none" }}>
-              תנאי שימוש
+              {t("nav.terms")}
             </Link>
             <span style={{ fontSize: 10, color: "#64748b" }}>·</span>
             <Link href="/privacy" style={{ fontSize: 10, color: "#94a3b8", textDecoration: "none" }}>
-              פרטיות
+              {t("nav.privacy")}
             </Link>
           </div>
         </div>
