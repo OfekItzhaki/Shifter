@@ -176,8 +176,8 @@ button:disabled, input:disabled, textarea:disabled, select:disabled {
 .dark body {
   background: #0f172a;
   color: #e2e8f0;
-  --main-bg: #0f172a;
-  --border-color: #1e293b;
+  --main-bg: #1e293b;
+  --border-color: #334155;
 }
 
 .dark ::-webkit-scrollbar-thumb { background: #475569; }
@@ -209,8 +209,8 @@ button:disabled, input:disabled, textarea:disabled, select:disabled {
 
 /* Topbar */
 .dark .mobile-topbar, .dark .desktop-topbar {
-  background: #0f172a !important;
-  border-color: #1e293b !important;
+  background: #1e293b !important;
+  border-color: #334155 !important;
 }
 
 /* Hover states */
