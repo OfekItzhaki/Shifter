@@ -27,7 +27,8 @@ public record SolverInputDto(
     HomeLeaveConfigDto? HomeLeaveConfig = null,
     List<TaskRotationDto>? TaskRotation = null,
     [property: JsonPropertyName("preview_mode")] bool PreviewMode = false,
-    [property: JsonPropertyName("cumulative_tracking")] List<CumulativeTrackingDto>? CumulativeTracking = null);
+    [property: JsonPropertyName("cumulative_tracking")] List<CumulativeTrackingDto>? CumulativeTracking = null,
+    [property: JsonPropertyName("parent_schedule")] List<ParentAssignmentDto>? ParentSchedule = null);
 
 
 public record StabilityWeightsDto(
@@ -111,3 +112,8 @@ public record HomeLeaveConfigDto(
 public record TaskRotationDto(
     [property: JsonPropertyName("person_id")]                  string PersonId,
     [property: JsonPropertyName("completed_task_type_ids")]    List<string> CompletedTaskTypeIds);
+
+public record ParentAssignmentDto(
+    [property: JsonPropertyName("person_id")] string PersonId,
+    [property: JsonPropertyName("starts_at")] string StartsAt,
+    [property: JsonPropertyName("ends_at")] string EndsAt);

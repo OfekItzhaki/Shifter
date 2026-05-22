@@ -6,6 +6,7 @@ import type { GroupMemberDto } from "@/lib/api/groups";
 import { getJoinCode, regenerateJoinCode } from "@/lib/api/groups";
 import SmartImportModal from "@/components/SmartImportModal";
 import HomeLeaveConfigPanel from "@/components/home-leave/HomeLeaveConfigPanel";
+import LinkedGroupSelector from "@/components/groups/LinkedGroupSelector";
 import { FEATURE_VISIBILITY_MAP, type GroupTemplateType } from "@/lib/utils/templateFeatureConfig";
 
 interface DraftVersion { id: string; status: string; }
@@ -89,6 +90,19 @@ export default function SettingsTab({
   const locale = useLocale();
 
   const [importModalOpen, setImportModalOpen] = useState(false);
+  const [allGroups, setAllGroups] = useState<{ id: string; name: string; parentGroupId: string | null }[]>([]);
+  const [currentParentId, setCurrentParentId] = useState<string | null>(null);
+
+  // Fetch all groups in this space for the parent group selector
+  useEffect(() => {
+    import("@/lib/api/groups").then(({ getGroups }) => {
+      getGroups(spaceId).then(groups => {
+        setAllGroups(groups.map(g => ({ id: g.id, name: g.name, parentGroupId: (g as any).parentGroupId ?? null })));
+        const current = groups.find(g => g.id === groupId);
+        if (current) setCurrentParentId((current as any).parentGroupId ?? null);
+      }).catch(() => {});
+    });
+  }, [spaceId, groupId]);
 
   // Resolve feature visibility from template type
   const resolvedTemplateType: GroupTemplateType = (
@@ -136,6 +150,27 @@ export default function SettingsTab({
 
       {/* Join Code */}
       <JoinCodeSection spaceId={spaceId} groupId={groupId} />
+
+      {/* Parent Group Linking */}
+      {allGroups.length > 1 && (
+        <Section title="Parent Group">
+          <LinkedGroupSelector
+            groupId={groupId}
+            currentParentId={currentParentId}
+            allGroups={allGroups}
+            onUpdate={() => {
+              // Refetch groups to update parent state
+              import("@/lib/api/groups").then(({ getGroups }) => {
+                getGroups(spaceId).then(groups => {
+                  setAllGroups(groups.map(g => ({ id: g.id, name: g.name, parentGroupId: (g as any).parentGroupId ?? null })));
+                  const current = groups.find(g => g.id === groupId);
+                  if (current) setCurrentParentId((current as any).parentGroupId ?? null);
+                }).catch(() => {});
+              });
+            }}
+          />
+        </Section>
+      )}
 
       {/* Solver horizon */}
       <Section title={t("planningHorizon")}>

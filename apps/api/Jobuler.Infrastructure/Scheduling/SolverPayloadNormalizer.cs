@@ -496,6 +496,82 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
             }
         }
 
+        // ── Parent schedule cascading ─────────────────────────────────────────
+        List<ParentAssignmentDto>? parentScheduleDto = null;
+        if (groupId.HasValue)
+        {
+            var parentGroupId = await _db.Groups.AsNoTracking()
+                .Where(g => g.Id == groupId.Value && g.SpaceId == spaceId)
+                .Select(g => g.ParentGroupId)
+                .FirstOrDefaultAsync(ct);
+
+            if (parentGroupId.HasValue)
+            {
+                // Get the latest published version for this space
+                var parentVersion = await _db.ScheduleVersions.AsNoTracking()
+                    .Where(v => v.SpaceId == spaceId && v.Status == ScheduleVersionStatus.Published)
+                    .OrderByDescending(v => v.PublishedAt)
+                    .FirstOrDefaultAsync(ct);
+
+                if (parentVersion is not null)
+                {
+                    // Get all parent group task IDs to identify which assignments belong to the parent
+                    var parentGroupTaskIds = await _db.GroupTasks.AsNoTracking()
+                        .Where(gt => gt.SpaceId == spaceId && gt.GroupId == parentGroupId.Value && gt.IsActive)
+                        .Select(gt => gt.Id)
+                        .ToListAsync(ct);
+
+                    if (parentGroupTaskIds.Count > 0)
+                    {
+                        // Get all assignments from the published version
+                        var allAssignments = await _db.Assignments.AsNoTracking()
+                            .Where(a => a.ScheduleVersionId == parentVersion.Id && a.SpaceId == spaceId)
+                            .ToListAsync(ct);
+
+                        // Filter to assignments whose TaskSlotId is derived from a parent group task
+                        // DeriveShiftGuid XORs the task GUID with the shift index
+                        var parentAssignments = new List<ParentAssignmentDto>();
+                        var parentTasks = await _db.GroupTasks.AsNoTracking()
+                            .Where(gt => gt.SpaceId == spaceId && gt.GroupId == parentGroupId.Value && gt.IsActive)
+                            .ToListAsync(ct);
+
+                        foreach (var assignment in allAssignments)
+                        {
+                            // Try to resolve which parent task this assignment belongs to
+                            // by checking if the slot GUID could be derived from any parent task
+                            foreach (var task in parentTasks)
+                            {
+                                var shiftDuration = TimeSpan.FromMinutes(task.ShiftDurationMinutes);
+                                if (shiftDuration <= TimeSpan.Zero) continue;
+
+                                // Check a reasonable range of shift indices
+                                var maxShifts = Math.Min(200, (int)((task.EndsAt - task.StartsAt).TotalMinutes / shiftDuration.TotalMinutes) + 1);
+                                for (int i = 0; i < maxShifts; i++)
+                                {
+                                    var derivedId = DeriveShiftGuid(task.Id, i);
+                                    if (derivedId == assignment.TaskSlotId)
+                                    {
+                                        // Found the matching slot — compute its time window
+                                        var slotStart = task.StartsAt.AddMinutes(i * shiftDuration.TotalMinutes);
+                                        var slotEnd = slotStart.Add(shiftDuration);
+                                        parentAssignments.Add(new ParentAssignmentDto(
+                                            assignment.PersonId.ToString(),
+                                            slotStart.ToString("o"),
+                                            slotEnd.ToString("o")));
+                                        goto nextAssignment;
+                                    }
+                                }
+                            }
+                            nextAssignment:;
+                        }
+
+                        if (parentAssignments.Count > 0)
+                            parentScheduleDto = parentAssignments;
+                    }
+                }
+            }
+        }
+
         return new SolverInputDto(
             spaceId.ToString(), runId.ToString(), triggerMode,
             horizonStart.ToString("yyyy-MM-dd"),
@@ -508,7 +584,8 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
             lockedSlotIds,
             homeLeaveConfigDto,
             taskRotationDto,
-            CumulativeTracking: cumulativeTrackingDto);
+            CumulativeTracking: cumulativeTrackingDto,
+            ParentSchedule: parentScheduleDto);
     }
 
     public async Task<SolverInputDto> BuildPreviewAsync(

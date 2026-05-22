@@ -100,6 +100,10 @@ def solve(input: SolverInput) -> SolverOutput:
         model, assign, slots, people, num_people,
         input.availability_windows, input.presence_windows, emergency_person_ids)
 
+    # Parent schedule cascading: treat parent assignments as blocked presence windows
+    if input.parent_schedule:
+        _add_parent_schedule_constraints(model, assign, slots, people, num_people, input.parent_schedule)
+
     # Extract min_rest_hours from hard constraints if configured
     rest_rules = [c for c in input.hard_constraints if c.rule_type == "min_rest_hours"]
     rest_hours = float(rest_rules[0].payload.get("hours", 8)) if rest_rules else 8.0
@@ -328,6 +332,40 @@ def solve(input: SolverInput) -> SolverOutput:
         fairness_variance=fairness_variance,
         solver_time_ms=solver_time_ms,
     )
+
+
+def _add_parent_schedule_constraints(model, assign, slots, people, num_people, parent_schedule):
+    """
+    Block assignments that conflict with the parent group's published schedule.
+    If a person is assigned in the parent schedule during a time window,
+    they cannot be assigned to overlapping slots in the child group.
+    """
+    from solver.constraints import _to_timestamp
+
+    if not parent_schedule:
+        return
+
+    # Build a map of person_id -> list of (start_ts, end_ts) from parent assignments
+    parent_blocks: dict[str, list[tuple[int, int]]] = {}
+    for pa in parent_schedule:
+        parent_blocks.setdefault(pa.person_id, []).append(
+            (_to_timestamp(pa.starts_at), _to_timestamp(pa.ends_at))
+        )
+
+    # Pre-compute slot timestamps
+    slot_times = [(_to_timestamp(s.starts_at), _to_timestamp(s.ends_at)) for s in slots]
+
+    for p_idx, person in enumerate(people):
+        blocks = parent_blocks.get(person.person_id)
+        if not blocks:
+            continue
+        for s_idx in range(len(slots)):
+            slot_start, slot_end = slot_times[s_idx]
+            # Check if any parent assignment overlaps this slot
+            for block_start, block_end in blocks:
+                if slot_start < block_end and slot_end > block_start:
+                    model.Add(assign[(s_idx, p_idx)] == 0)
+                    break
 
 
 def _empty_result(input: SolverInput) -> SolverOutput:
