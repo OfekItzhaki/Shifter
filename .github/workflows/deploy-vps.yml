@@ -35,11 +35,6 @@ jobs:
             echo "=== Verify layout.tsx has correct provider order ==="
             grep -n "NextIntlClientProvider" apps/web/app/layout.tsx | head -3
 
-            # Run any new migrations (idempotent — safe to re-run)
-            for f in infra/migrations/*.sql; do
-              docker exec -i compose-postgres-1 psql -U jobuler -d jobuler < "$f" 2>&1 | grep -v "already exists" | grep -v "skipping" || true
-            done
-
             cd infra/compose
             echo "=== Stopping existing containers ==="
             docker compose down --remove-orphans || true
@@ -53,8 +48,15 @@ jobs:
             echo "=== Starting all services ==="
             docker compose up -d --remove-orphans
             
-            echo "=== Waiting for web to start ==="
-            sleep 10
+            echo "=== Waiting for services to start ==="
+            sleep 15
+
+            # Run any new migrations (idempotent — safe to re-run)
+            echo "=== Running migrations ==="
+            cd /opt/shifter
+            for f in infra/migrations/*.sql; do
+              docker exec -i compose-postgres-1 psql -U jobuler -d jobuler < "$f" 2>&1 | grep -v "already exists" | grep -v "skipping" || true
+            done
             
             echo "=== Testing web response ==="
             docker compose exec -T web sh -c 'wget -qO /dev/null http://$(cat /etc/hosts | tail -1 | cut -f1):3000/ 2>&1' && echo "OK: 200" || echo "FAIL: still 500"
