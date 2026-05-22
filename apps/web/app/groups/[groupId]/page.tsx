@@ -1638,18 +1638,18 @@ export default function GroupDetailPage() {
       {/* Add member modal */}
       <Modal title={tGroups("members_tab.addMember")} open={showAddMember} onClose={() => { setShowAddMember(false); setAddMemberName(""); setAddMemberPhone(""); setAddMemberEmail(""); setAddMemberError(null); setAddMemberMode("single"); }}>
         {/* Mode toggle */}
-        <div className="flex gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl mb-4">
+        <div className="flex gap-1 bg-slate-200 dark:bg-slate-700 p-1 rounded-xl mb-4">
           <button
             type="button"
             onClick={() => setAddMemberMode("single")}
-            className={`flex-1 py-1.5 rounded-lg text-sm font-medium transition-all ${addMemberMode === "single" ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm" : "text-slate-500 dark:text-slate-400"}`}
+            className={`flex-1 py-1.5 rounded-lg text-sm font-medium transition-all ${addMemberMode === "single" ? "bg-white dark:bg-slate-600 text-slate-900 dark:text-white shadow-sm" : "text-slate-600 dark:text-slate-300"}`}
           >
             {tGroups("members_tab.singleAdd")}
           </button>
           <button
             type="button"
             onClick={() => setAddMemberMode("bulk")}
-            className={`flex-1 py-1.5 rounded-lg text-sm font-medium transition-all ${addMemberMode === "bulk" ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm" : "text-slate-500 dark:text-slate-400"}`}
+            className={`flex-1 py-1.5 rounded-lg text-sm font-medium transition-all ${addMemberMode === "bulk" ? "bg-white dark:bg-slate-600 text-slate-900 dark:text-white shadow-sm" : "text-slate-600 dark:text-slate-300"}`}
           >
             {tGroups("members_tab.bulkAdd")}
           </button>
