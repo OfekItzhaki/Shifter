@@ -439,15 +439,12 @@ function NotificationSection() {
 }
 
 function PushNotificationSection() {
-  const t = useTranslations("userSettings.push");
   const currentSpaceId = useSpaceStore((s) => s.currentSpaceId);
 
   if (!currentSpaceId) return null;
 
   return (
     <div style={cardStyle} className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm">
-      <h2 style={sectionHeaderStyle} className="text-slate-900 dark:text-white">{t("title")}</h2>
-      <p style={sectionDescStyle} className="text-slate-500 dark:text-slate-400">{t("description")}</p>
       <PushNotificationSettings spaceId={currentSpaceId} />
     </div>
   );
