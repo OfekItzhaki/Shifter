@@ -47,7 +47,7 @@ export default function VerificationBanner() {
       role="alert"
       style={{
         background: "#f0f9ff",
-        border: "1px solid #bfdbfe",
+        border: "1px solid #bae6fd",
         borderRadius: 10,
         padding: "10px 16px",
         margin: "0 0 16px",

@@ -182,7 +182,7 @@ export default function ImageUpload({
             disabled={uploading}
             style={{
               fontSize: 11, color: "#0ea5e9", background: "none",
-              border: "1px solid #bfdbfe", borderRadius: 8,
+              border: "1px solid #bae6fd", borderRadius: 8,
               padding: "3px 8px", cursor: "pointer",
             }}
           >

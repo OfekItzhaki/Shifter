@@ -87,7 +87,7 @@ export default function MembersTab({
           <div key={m.personId} className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 hover:border-sky-200 dark:hover:border-sky-800 hover:shadow-sm transition-all">
             <div className="flex items-center gap-3">
               {/* Avatar */}
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-500 to-teal-600 flex items-center justify-center text-white text-sm font-bold flex-shrink-0 shadow-sm">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-sky-500 to-sky-600 flex items-center justify-center text-white text-sm font-bold flex-shrink-0 shadow-sm">
                 {m.fullName.charAt(0).toUpperCase()}
               </div>
 

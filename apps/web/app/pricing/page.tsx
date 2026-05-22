@@ -61,7 +61,7 @@ export default function PricingPage() {
                 padding: "1.5rem 1.25rem",
                 textAlign: "center",
                 position: "relative",
-                boxShadow: i === 2 ? "0 4px 24px rgba(59,130,246,0.12)" : "0 2px 8px rgba(0,0,0,0.04)",
+                boxShadow: i === 2 ? "0 4px 24px rgba(14,165,233,0.12)" : "0 2px 8px rgba(0,0,0,0.04)",
               }}
             >
               {i === 2 && (

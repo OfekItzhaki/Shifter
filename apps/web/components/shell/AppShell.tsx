@@ -26,8 +26,8 @@ const S = {
   navLink: (active: boolean, admin: boolean) => ({
     display: "flex", alignItems: "center", gap: 10, padding: "9px 12px", borderRadius: 8,
     textDecoration: "none", fontSize: 14, fontWeight: 500, transition: "background 0.15s",
-    background: active ? (admin ? "rgba(245,158,11,0.15)" : "rgba(8,145,178,0.12)") : "transparent",
-    color: active ? (admin ? "#fbbf24" : "#67e8f9") : (admin ? "rgba(251,191,36,0.7)" : "#94a3b8"),
+    background: active ? (admin ? "rgba(245,158,11,0.15)" : "rgba(14,165,233,0.15)") : "transparent",
+    color: active ? (admin ? "#fbbf24" : "#7dd3fc") : (admin ? "rgba(251,191,36,0.7)" : "#94a3b8"),
   }),
   bottom: { padding: "12px", borderTop: "1px solid rgba(255,255,255,0.08)" },
   userInfo: { padding: "8px 12px", marginBottom: 4 },
@@ -44,7 +44,7 @@ function NavItem({ href, label, icon, admin, onNavigate }: { href: string; label
     <Link href={href} style={S.navLink(active, !!admin)} onClick={onNavigate}>
       <span style={{ flexShrink: 0, display: "flex" }}>{icon}</span>
       <span>{label}</span>
-      {active && <span style={{ marginLeft: "auto", width: 6, height: 6, borderRadius: "50%", background: admin ? "#fbbf24" : "#06b6d4" }} />}
+      {active && <span style={{ marginLeft: "auto", width: 6, height: 6, borderRadius: "50%", background: admin ? "#fbbf24" : "#0ea5e9" }} />}
     </Link>
   );
 }

@@ -15,7 +15,7 @@ interface Props {
 export default function CreateGroupWizard({ open, onClose, onCreateGroup, isPending }: Props) {
   const t = useTranslations("groups.createWizard");
   const [name, setName] = useState("");
-  const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
+  const [selectedTemplate, setSelectedTemplate] = useState<string>("custom");
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -33,7 +33,6 @@ export default function CreateGroupWizard({ open, onClose, onCreateGroup, isPend
 
   async function handleSubmit() {
     if (!name.trim()) return;
-    if (!selectedTemplate) return;
     setError(null);
     try {
       await onCreateGroup(name.trim(), selectedTemplate);
@@ -105,7 +104,7 @@ export default function CreateGroupWizard({ open, onClose, onCreateGroup, isPend
         <button
           type="button"
           onClick={handleSubmit}
-          disabled={!name.trim() || !selectedTemplate || isPending}
+          disabled={!name.trim() || isPending}
           className="w-full bg-sky-500 hover:bg-sky-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl disabled:opacity-50 transition-colors"
         >
           {isPending ? t("creating") : t("continue")}

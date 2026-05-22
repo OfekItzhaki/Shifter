@@ -58,13 +58,9 @@ function GroupsPage() {
       const result = await createGroup.mutateAsync(name);
       const newGroupId = (result as { data?: { id?: string } })?.data?.id;
       if (newGroupId) {
-        // If a template other than custom is selected, apply it then redirect
         setShowCreateWizard(false);
-        if (templateId !== "custom") {
-          setTemplateGroupId(newGroupId);
-        } else {
-          router.push(`/groups/${newGroupId}`);
-        }
+        // Always redirect to the new group — template settings can be configured there
+        router.push(`/groups/${newGroupId}`);
       }
     } catch (err: unknown) {
       setCreateError(
