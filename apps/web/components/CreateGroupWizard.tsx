@@ -26,7 +26,7 @@ export default function CreateGroupWizard({ open, onClose, onCreateGroup, isPend
     } else {
       // Reset state when closed
       setName("");
-      setSelectedTemplate(null);
+      setSelectedTemplate("custom");
       setError(null);
     }
   }, [open]);
