@@ -1,10 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useTranslations } from "next-intl";
 
 /**
- * Shows a subtle banner when the API is returning errors.
+ * Shows a non-intrusive banner when the API is returning errors.
+ * Positioned below the topbar, doesn't cover content (pushes it down).
  * Auto-dismisses after 10 seconds or when the API recovers.
  */
 export default function ApiStatusBanner() {
@@ -16,7 +16,6 @@ export default function ApiStatusBanner() {
 
     function handleApiError() {
       setVisible(true);
-      // Auto-hide after 10 seconds
       clearTimeout(timeout);
       timeout = setTimeout(() => setVisible(false), 10000);
     }
@@ -40,7 +39,6 @@ export default function ApiStatusBanner() {
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);
 
-    // Check initial state
     if (!navigator.onLine) {
       setIsOffline(true);
       setVisible(true);
@@ -59,23 +57,29 @@ export default function ApiStatusBanner() {
 
   return (
     <div
-      className="fixed top-0 left-0 right-0 z-50 flex items-center justify-center py-2 px-4 text-xs font-medium transition-all"
+      className="w-full rounded-lg mb-4 flex items-center justify-between px-4 py-2.5"
       style={{
-        background: isOffline ? "#1e293b" : "rgba(245, 158, 11, 0.95)",
-        color: isOffline ? "#fbbf24" : "#1e293b",
+        background: isOffline ? "#1e293b" : "#fef3c7",
+        border: isOffline ? "1px solid #fbbf24" : "1px solid #f59e0b",
       }}
     >
-      <span>
+      <span
+        className="text-xs font-medium"
+        style={{ color: isOffline ? "#fbbf24" : "#92400e" }}
+      >
         {isOffline
           ? "📡 No internet connection"
           : "⚠ Server temporarily unavailable — try refreshing in a moment"}
       </span>
       <button
         onClick={() => setVisible(false)}
-        className="ml-4 opacity-60 hover:opacity-100"
-        style={{ background: "none", border: "none", cursor: "pointer", color: "inherit", fontSize: 14 }}
+        className="flex-shrink-0 ml-3 rounded-md p-1 hover:bg-black/10 transition-colors"
+        style={{ background: "none", border: "none", cursor: "pointer", color: isOffline ? "#fbbf24" : "#92400e", lineHeight: 1 }}
+        aria-label="Dismiss"
       >
-        ✕
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+        </svg>
       </button>
     </div>
   );
