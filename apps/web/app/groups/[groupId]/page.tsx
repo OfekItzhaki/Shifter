@@ -182,7 +182,7 @@ export default function GroupDetailPage() {
       if (isWebAuthnSupported()) {
         try {
           const creds = await listCredentials();
-          hasWebAuthn = creds.length > 0;
+          hasWebAuthn = (creds?.length ?? 0) > 0;
         } catch {
           hasWebAuthn = false;
         }
