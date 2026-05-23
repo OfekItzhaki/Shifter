@@ -35,6 +35,7 @@ const securityHeaders = [
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: "standalone",
+  productionBrowserSourceMaps: true,
   env: {
     NEXT_PUBLIC_APP_VERSION: version,
   },
