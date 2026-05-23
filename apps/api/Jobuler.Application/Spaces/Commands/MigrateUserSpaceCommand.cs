@@ -51,9 +51,7 @@ public class MigrateUserSpaceCommandHandler : IRequestHandler<MigrateUserSpaceCo
         var locale = user?.PreferredLocale ?? "he";
         var spaceName = string.IsNullOrWhiteSpace(displayName)
             ? locale == "he" ? "המרחב שלי" : locale == "ru" ? "Моё пространство" : "My Space"
-            : locale == "he" ? $"המרחב של {displayName}"
-            : locale == "ru" ? $"Пространство {displayName}"
-            : $"{displayName}'s Space";
+            : displayName;
 
         if (spaceName.Length > 100)
             spaceName = spaceName[..100];
