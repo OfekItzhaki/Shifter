@@ -65,14 +65,15 @@ export default function AppShell({ children }: AppShellProps) {
     if (storedDisplayName) {
       setResolvedName(storedDisplayName);
     }
-    getMe().then(me => {
-      if (me.displayName) setResolvedName(me.displayName);
-      // Sync isPlatformAdmin from API (in case store is stale)
-      if (me.isPlatformAdmin !== undefined) {
-        useAuthStore.setState({ isPlatformAdmin: me.isPlatformAdmin });
-      }
-    }).catch(() => {
-      if (storedDisplayName) setResolvedName(storedDisplayName);
+    import("@/lib/utils/apiCache").then(({ fetchWithCache }) => {
+      fetchWithCache("me", () => getMe(), (me) => {
+        if (me.displayName) setResolvedName(me.displayName);
+        if (me.isPlatformAdmin !== undefined) {
+          useAuthStore.setState({ isPlatformAdmin: me.isPlatformAdmin });
+        }
+      }).then(me => {
+        if (me?.displayName) setResolvedName(me.displayName);
+      });
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -80,18 +81,27 @@ export default function AppShell({ children }: AppShellProps) {
   const displayName = resolvedName;
 
   useEffect(() => {
-    getMySpaces().then(spaces => {
-      if (spaces.length === 0) {
-        // No spaces — redirect to onboarding (only if API confirmed empty, not on error)
-        router.replace("/onboarding");
-        return;
-      }
-      const storedIsValid = currentSpaceId && spaces.some(s => s.id === currentSpaceId);
-      if (!storedIsValid) {
-        setCurrentSpace(spaces[0].id, spaces[0].name);
-      }
-    }).catch(() => {
-      // API error — don't redirect, just keep current state
+    import("@/lib/utils/apiCache").then(({ fetchWithCache }) => {
+      fetchWithCache("spaces", () => getMySpaces(), (spaces) => {
+        if (spaces.length === 0) {
+          router.replace("/onboarding");
+          return;
+        }
+        const storedIsValid = currentSpaceId && spaces.some(s => s.id === currentSpaceId);
+        if (!storedIsValid) {
+          setCurrentSpace(spaces[0].id, spaces[0].name);
+        }
+      }).then(spaces => {
+        if (!spaces) return; // cache miss + fetch failed
+        if (spaces.length === 0) {
+          router.replace("/onboarding");
+          return;
+        }
+        const storedIsValid = currentSpaceId && spaces.some(s => s.id === currentSpaceId);
+        if (!storedIsValid) {
+          setCurrentSpace(spaces[0].id, spaces[0].name);
+        }
+      });
     });
   }, [currentSpaceId]);
 

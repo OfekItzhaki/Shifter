@@ -33,17 +33,21 @@ function HomePage() {
     }
     // Also try to get from API in case store isn't hydrated yet
     import("@/lib/api/auth").then(({ getMe }) => {
-      getMe().then(me => {
-        if (me.displayName) setResolvedName(me.displayName);
-      }).catch(() => {});
+      import("@/lib/utils/apiCache").then(({ fetchWithCache }) => {
+        fetchWithCache("me", getMe, (me) => {
+          if (me.displayName) setResolvedName(me.displayName);
+        });
+      });
     });
     // Check if user has groups
     if (currentSpaceId) {
       import("@/lib/api/groups").then(({ getGroups }) => {
-        getGroups(currentSpaceId).then(groups => {
-          setHasGroups(groups.length > 0);
-        }).catch(() => {});
-      }).catch(() => {});
+        import("@/lib/utils/apiCache").then(({ fetchWithCache }) => {
+          fetchWithCache(`groups:${currentSpaceId}`, () => getGroups(currentSpaceId), (groups) => {
+            setHasGroups(groups.length > 0);
+          });
+        });
+      });
     }
   }, [displayName]);
 

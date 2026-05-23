@@ -61,8 +61,8 @@ export default function ApiStatusBanner() {
     >
       <span>
         {isOffline
-          ? "📡 No internet connection — showing cached data"
-          : "⚠ Server temporarily unavailable — some data may be outdated"}
+          ? "📡 No internet connection"
+          : "⚠ Server temporarily unavailable — try refreshing in a moment"}
       </span>
       <button
         onClick={() => setVisible(false)}
