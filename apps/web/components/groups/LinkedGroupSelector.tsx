@@ -27,6 +27,7 @@ interface Props {
  */
 export default function LinkedGroupSelector({ groupId, currentParentId, allGroups, onUpdate }: Props) {
   const t = useTranslations("groups.settings_tab");
+  const tLinked = useTranslations("groups.linkedGroup");
   const { currentSpaceId } = useSpaceStore();
   const [saving, setSaving] = useState(false);
 
@@ -61,7 +62,7 @@ export default function LinkedGroupSelector({ groupId, currentParentId, allGroup
   return (
     <div className="space-y-2">
       <label className="block text-xs font-medium text-slate-600 dark:text-slate-300">
-        Parent Group
+        {tLinked("title")}
       </label>
       <select
         value={currentParentId ?? ""}
@@ -69,14 +70,14 @@ export default function LinkedGroupSelector({ groupId, currentParentId, allGroup
         disabled={saving}
         className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-sky-500 disabled:opacity-50"
       >
-        <option value="">None (independent group)</option>
+        <option value="">{tLinked("none")}</option>
         {eligibleParents.map(g => (
           <option key={g.id} value={g.id}>{g.name}</option>
         ))}
       </select>
       {currentParentId && (
         <p className="text-xs text-slate-500 dark:text-slate-400">
-          Linked to: <span className="font-medium">{currentParentName}</span>
+          {tLinked("linkedTo")}: <span className="font-medium">{currentParentName}</span>
         </p>
       )}
     </div>

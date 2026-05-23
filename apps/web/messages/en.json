@@ -457,7 +457,13 @@
       "managementTimeout": "Management Mode Timeout",
       "managementTimeoutDesc": "Minutes of inactivity before the admin is prompted to confirm continued activity in management mode.",
       "managementTimeoutError": "Timeout must be a whole number between 5 and 120 minutes.",
-      "minutes": "minutes"
+      "minutes": "minutes",
+      "parentGroup": "Parent Group"
+    },
+    "linkedGroup": {
+      "title": "Parent Group",
+      "none": "None (independent group)",
+      "linkedTo": "Linked to"
     },
     "stats_tab": {
       "loading": "Loading statistics...",

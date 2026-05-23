@@ -486,7 +486,13 @@
       "managementTimeout": "זמן קצוב למצב ניהול",
       "managementTimeoutDesc": "דקות חוסר פעילות לפני שהמנהל יתבקש לאשר המשך פעילות במצב ניהול.",
       "managementTimeoutError": "הזמן הקצוב חייב להיות מספר שלם בין 5 ל-120 דקות.",
-      "minutes": "דקות"
+      "minutes": "דקות",
+      "parentGroup": "קבוצת אב"
+    },
+    "linkedGroup": {
+      "title": "קבוצת אב",
+      "none": "ללא (קבוצה עצמאית)",
+      "linkedTo": "מקושרת ל"
     },
     "schedule_tab": {
       "draftReady": "סידור טיוטה מוכן לעיון ופרסום",

@@ -153,7 +153,7 @@ export default function SettingsTab({
 
       {/* Parent Group Linking */}
       {allGroups.length > 1 && (
-        <Section title="Parent Group">
+        <Section title={t("parentGroup") ?? "Parent Group"}>
           <LinkedGroupSelector
             groupId={groupId}
             currentParentId={currentParentId}
