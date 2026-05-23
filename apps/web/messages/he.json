@@ -1002,6 +1002,10 @@
     "shifts": "משמרות",
     "hours": "שעות",
     "minutes": "דקות",
+    "general": "כללי",
+    "permissions": "הרשאות",
+    "advanced": "מתקדם",
+    "dangerZone": "אזור מסוכן",
     "completed": "הושלם",
     "timedOut": "חרג מזמן"
   },

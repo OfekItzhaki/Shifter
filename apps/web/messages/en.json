@@ -998,6 +998,10 @@
     "shifts": "shifts",
     "hours": "hours",
     "minutes": "minutes",
+    "general": "General",
+    "permissions": "Permissions",
+    "advanced": "Advanced",
+    "dangerZone": "Danger Zone",
     "completed": "Completed",
     "timedOut": "Timed out"
   },

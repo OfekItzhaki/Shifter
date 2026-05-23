@@ -968,7 +968,11 @@
     "members": "участников",
     "shifts": "смен",
     "hours": "часов",
-    "minutes": "минут"
+    "minutes": "минут",
+    "general": "Общие",
+    "permissions": "Разрешения",
+    "advanced": "Дополнительно",
+    "dangerZone": "Опасная зона"
   },
   "personDetail": {
     "notFound": "Человек не найден.",
