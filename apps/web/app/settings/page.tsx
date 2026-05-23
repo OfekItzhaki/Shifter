@@ -111,15 +111,7 @@ function SearchableDropdown({
 
   return (
     <div ref={containerRef} style={{ position: "relative" }}>
-      <label
-        style={{
-          display: "block",
-          fontSize: "0.75rem",
-          fontWeight: 500,
-          color: "#64748b",
-          marginBottom: 4,
-        }}
-      >
+      <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">
         {label}
       </label>
       {!isOpen ? (
@@ -127,18 +119,11 @@ function SearchableDropdown({
           type="button"
           onClick={handleOpen}
           disabled={disabled}
-          style={{
-            width: "100%",
-            padding: "0.625rem 0.875rem",
-            borderRadius: 10,
-            border: "1px solid #e2e8f0",
-            background: disabled ? "#f1f5f9" : "white",
-            fontSize: "0.8125rem",
-            color: value ? "#0f172a" : "#94a3b8",
-            textAlign: "start",
-            cursor: disabled ? "not-allowed" : "pointer",
-            transition: "border-color 0.15s",
-          }}
+          className={`w-full px-3 py-2.5 rounded-xl border text-sm text-start transition-colors ${
+            disabled
+              ? "bg-slate-100 dark:bg-slate-700 border-slate-200 dark:border-slate-600 cursor-not-allowed"
+              : "bg-white dark:bg-slate-700 border-slate-200 dark:border-slate-600 cursor-pointer hover:border-slate-300 dark:hover:border-slate-500"
+          } ${value ? "text-slate-900 dark:text-white" : "text-slate-400 dark:text-slate-500"}`}
           aria-haspopup="listbox"
           aria-expanded={false}
         >
@@ -152,16 +137,7 @@ function SearchableDropdown({
           onChange={(e) => setSearch(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
-          style={{
-            width: "100%",
-            padding: "0.625rem 0.875rem",
-            borderRadius: 10,
-            border: "1px solid #0ea5e9",
-            background: "white",
-            fontSize: "0.8125rem",
-            color: "#0f172a",
-            outline: "none",
-          }}
+          className="w-full px-3 py-2.5 rounded-xl border border-sky-500 bg-white dark:bg-slate-700 text-sm text-slate-900 dark:text-white outline-none"
           role="combobox"
           aria-expanded={true}
           aria-autocomplete="list"
@@ -170,33 +146,11 @@ function SearchableDropdown({
       {isOpen && (
         <ul
           role="listbox"
-          style={{
-            position: "absolute",
-            top: "100%",
-            left: 0,
-            right: 0,
-            marginTop: 4,
-            maxHeight: 200,
-            overflowY: "auto",
-            background: "white",
-            border: "1px solid #e2e8f0",
-            borderRadius: 10,
-            boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-            zIndex: 50,
-            padding: 4,
-            listStyle: "none",
-          }}
+          className="absolute top-full left-0 right-0 mt-1 max-h-[200px] overflow-y-auto bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl shadow-lg z-50 p-1"
+          style={{ listStyle: "none" }}
         >
           {filtered.length === 0 ? (
-            <li
-              style={{
-                padding: "0.5rem 0.75rem",
-                fontSize: "0.8125rem",
-                color: "#94a3b8",
-              }}
-            >
-              —
-            </li>
+            <li className="px-3 py-2 text-sm text-slate-400">—</li>
           ) : (
             filtered.map((opt) => (
               <li
@@ -204,23 +158,11 @@ function SearchableDropdown({
                 role="option"
                 aria-selected={opt.value === value}
                 onClick={() => handleSelect(opt.value)}
-                style={{
-                  padding: "0.5rem 0.75rem",
-                  fontSize: "0.8125rem",
-                  color: "#0f172a",
-                  borderRadius: 6,
-                  cursor: "pointer",
-                  background: opt.value === value ? "#f0f9ff" : "transparent",
-                  fontWeight: opt.value === value ? 600 : 400,
-                  transition: "background 0.1s",
-                }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLElement).style.background = "#f1f5f9";
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLElement).style.background =
-                    opt.value === value ? "#f0f9ff" : "transparent";
-                }}
+                className={`px-3 py-2 text-sm rounded-lg cursor-pointer transition-colors ${
+                  opt.value === value
+                    ? "bg-sky-50 dark:bg-sky-900/30 text-slate-900 dark:text-white font-semibold"
+                    : "text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-600"
+                }`}
               >
                 {opt.label}
               </li>
@@ -381,45 +323,27 @@ function TimeFormatSection() {
       <div style={{ display: "flex", gap: "0.5rem" }}>
         <button
           onClick={() => setTimeFormat("24h")}
-          style={{
-            flex: 1,
-            padding: "0.625rem 1rem",
-            borderRadius: 10,
-            border: timeFormat === "24h" ? "2px solid #0ea5e9" : "1px solid #e2e8f0",
-            background: timeFormat === "24h" ? "#f0f9ff" : "white",
-            color: timeFormat === "24h" ? "#1d4ed8" : "#64748b",
-            fontWeight: 600,
-            fontSize: "0.875rem",
-            cursor: "pointer",
-            transition: "all 0.15s",
-          }}
+          className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-semibold transition-all ${
+            timeFormat === "24h"
+              ? "border-2 border-sky-500 bg-sky-50 dark:bg-sky-900/20 text-sky-700 dark:text-sky-300"
+              : "border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-500 dark:text-slate-400"
+          }`}
           aria-pressed={timeFormat === "24h"}
         >
           24h
-          <span style={{ display: "block", fontSize: "0.75rem", fontWeight: 400, marginTop: 2 }}>
-            14:30
-          </span>
+          <span className="block text-xs font-normal mt-0.5">14:30</span>
         </button>
         <button
           onClick={() => setTimeFormat("12h")}
-          style={{
-            flex: 1,
-            padding: "0.625rem 1rem",
-            borderRadius: 10,
-            border: timeFormat === "12h" ? "2px solid #0ea5e9" : "1px solid #e2e8f0",
-            background: timeFormat === "12h" ? "#f0f9ff" : "white",
-            color: timeFormat === "12h" ? "#1d4ed8" : "#64748b",
-            fontWeight: 600,
-            fontSize: "0.875rem",
-            cursor: "pointer",
-            transition: "all 0.15s",
-          }}
+          className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-semibold transition-all ${
+            timeFormat === "12h"
+              ? "border-2 border-sky-500 bg-sky-50 dark:bg-sky-900/20 text-sky-700 dark:text-sky-300"
+              : "border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-500 dark:text-slate-400"
+          }`}
           aria-pressed={timeFormat === "12h"}
         >
           AM/PM
-          <span style={{ display: "block", fontSize: "0.75rem", fontWeight: 400, marginTop: 2 }}>
-            2:30 PM
-          </span>
+          <span className="block text-xs font-normal mt-0.5">2:30 PM</span>
         </button>
       </div>
     </div>
