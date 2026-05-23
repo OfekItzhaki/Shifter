@@ -1,16 +1,12 @@
 "use client";
 
+import { Suspense } from "react";
 import { useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import ErrorPageLayout from "@/components/errors/ErrorPageLayout";
 
-/**
- * Dedicated server error page for API 5xx responses.
- * Triggered by the axios interceptor when a 500, 502, 503, or 504 response is received.
- * Uses the shared ErrorPageLayout for consistent branding.
- */
-export default function ServerErrorPage() {
+function ServerErrorContent() {
   const t = useTranslations("errorPages");
   const searchParams = useSearchParams();
   const from = searchParams.get("from") || "/home";
@@ -33,5 +29,13 @@ export default function ServerErrorPage() {
         {t("serverError.goHome")}
       </Link>
     </ErrorPageLayout>
+  );
+}
+
+export default function ServerErrorPage() {
+  return (
+    <Suspense>
+      <ServerErrorContent />
+    </Suspense>
   );
 }
