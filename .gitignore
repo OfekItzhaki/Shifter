@@ -4,6 +4,7 @@ node_modules/
 out/
 dist/
 apps/web/next-env.d.ts
+*.tsbuildinfo
 
 # Playwright test artifacts
 apps/web/playwright-report/

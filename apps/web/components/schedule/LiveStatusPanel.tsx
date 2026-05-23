@@ -92,6 +92,7 @@ export default function LiveStatusPanel({ spaceId, groupId }: LiveStatusPanelPro
         <div className="flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
           <span className="text-sm font-medium text-slate-700">{t("currentStatus")}</span>
+          <span className="text-xs text-slate-400">({statuses.length})</span>
         </div>
         <div className="flex items-center gap-2">
           {lastUpdated && (
