@@ -48,14 +48,15 @@ public class MigrateUserSpaceCommandHandler : IRequestHandler<MigrateUserSpaceCo
         // Get user display name for space naming
         var user = await _db.Users.FirstOrDefaultAsync(u => u.Id == request.UserId, ct);
         var displayName = user?.DisplayName?.Trim();
+        var locale = user?.PreferredLocale ?? "he";
         var spaceName = string.IsNullOrWhiteSpace(displayName)
-            ? "My Space"
+            ? locale == "he" ? "המרחב שלי" : locale == "ru" ? "Моё пространство" : "My Space"
+            : locale == "he" ? $"המרחב של {displayName}"
+            : locale == "ru" ? $"Пространство {displayName}"
             : $"{displayName}'s Space";
 
         if (spaceName.Length > 100)
             spaceName = spaceName[..100];
-
-        var locale = user?.PreferredLocale ?? "he";
 
         // Create space
         var space = Space.Create(spaceName, request.UserId, null, locale);
