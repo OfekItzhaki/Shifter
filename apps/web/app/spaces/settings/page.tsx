@@ -232,17 +232,6 @@ export default function SpaceSettingsPage() {
               ))}
             </div>
           </div>
-
-          {/* Create New Space */}
-          <div className="pt-2">
-            <a
-              href="/onboarding"
-              className="inline-flex items-center gap-2 text-sm text-sky-600 dark:text-sky-400 hover:underline no-underline"
-            >
-              <span>+</span>
-              {t("createNew")}
-            </a>
-          </div>
         </div>
       </div>
     </AppShell>
