@@ -42,7 +42,7 @@ export interface MigrateResult {
 }
 
 export async function getMySpaces(): Promise<SpaceDto[]> {
-  const { data } = await apiClient.get("/spaces");
+  const { data } = await apiClient.get("/spaces", { _skipErrorRedirect: true } as any);
   return data;
 }
 

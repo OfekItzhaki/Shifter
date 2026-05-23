@@ -81,7 +81,7 @@ export default function AppShell({ children }: AppShellProps) {
   useEffect(() => {
     getMySpaces().then(spaces => {
       if (spaces.length === 0) {
-        // No spaces — redirect to onboarding
+        // No spaces — redirect to onboarding (only if API confirmed empty, not on error)
         router.replace("/onboarding");
         return;
       }
@@ -89,7 +89,9 @@ export default function AppShell({ children }: AppShellProps) {
       if (!storedIsValid) {
         setCurrentSpace(spaces[0].id, spaces[0].name);
       }
-    }).catch(() => {});
+    }).catch(() => {
+      // API error — don't redirect, just keep current state
+    });
   }, [currentSpaceId]);
 
   async function handleLogout() { await logout(); router.push("/login"); }

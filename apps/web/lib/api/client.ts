@@ -115,7 +115,8 @@ apiClient.interceptors.response.use(
     }
 
     // 5xx: Redirect to server error page (only for GET requests — form submissions handle their own errors)
-    if ((status === 500 || status === 502 || status === 503 || status === 504) && error.config?.method === "get") {
+    // Skip redirect if the request opted out via _skipErrorRedirect config flag
+    if ((status === 500 || status === 502 || status === 503 || status === 504) && error.config?.method === "get" && !error.config?._skipErrorRedirect) {
       redirectToErrorPage("/error/server-error");
       return Promise.reject(error);
     }
