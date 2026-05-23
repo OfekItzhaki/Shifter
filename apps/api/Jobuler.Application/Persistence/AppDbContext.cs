@@ -94,6 +94,7 @@ public class AppDbContext : DbContext
 
     // Billing
     public DbSet<Jobuler.Domain.Billing.GroupSubscription> GroupSubscriptions => Set<Jobuler.Domain.Billing.GroupSubscription>();
+    public DbSet<Jobuler.Domain.Billing.SpaceSubscription> SpaceSubscriptions => Set<Jobuler.Domain.Billing.SpaceSubscription>();
     public DbSet<Jobuler.Domain.Billing.WebhookEventLog> WebhookEventLogs => Set<Jobuler.Domain.Billing.WebhookEventLog>();
 
     // Feedback

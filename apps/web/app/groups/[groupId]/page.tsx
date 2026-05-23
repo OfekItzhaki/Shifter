@@ -1320,7 +1320,7 @@ export default function GroupDetailPage() {
         </div>
 
         {/* Trial/subscription banner */}
-        <TrialBanner groupId={groupId} />
+        <TrialBanner />
 
         {/* Tabs */}
         <div className="flex gap-1 bg-slate-100 p-1 rounded-xl overflow-x-auto -mx-2 px-2 sm:mx-0 sm:px-1" style={{ scrollbarWidth: "thin" }}>

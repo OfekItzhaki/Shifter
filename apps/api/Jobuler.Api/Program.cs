@@ -162,6 +162,20 @@ builder.Services.AddHttpClient<ILemonSqueezyClient, LemonSqueezyClient>(client =
 });
 
 builder.Services.AddSingleton<IWebhookSignatureValidator, WebhookSignatureValidator>();
+builder.Services.AddScoped<IStatisticsPeriodService, StatisticsPeriodService>();
+builder.Services.AddScoped<IPeakMemberTracker, PeakMemberTracker>();
+
+builder.Services.AddHttpClient("TrialDurationCache", (sp, client) =>
+{
+    var lsSettings = sp.GetRequiredService<IOptions<LemonSqueezySettings>>().Value;
+    client.BaseAddress = new Uri("https://api.lemonsqueezy.com/");
+    client.Timeout = TimeSpan.FromSeconds(10);
+    client.DefaultRequestHeaders.Authorization =
+        new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", lsSettings.ApiKey);
+    client.DefaultRequestHeaders.Accept.Add(
+        new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/vnd.api+json"));
+});
+builder.Services.AddSingleton<ITrialDurationCache, TrialDurationCache>();
 
 // ─── Email: SendGrid (real) or NoOp (dev fallback) ────────────────────────────
 if (!string.IsNullOrWhiteSpace(builder.Configuration["SendGrid:ApiKey"]))

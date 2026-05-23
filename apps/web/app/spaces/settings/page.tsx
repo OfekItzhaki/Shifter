@@ -12,6 +12,7 @@ import {
   SpaceDetailDto,
   SpaceMemberDto,
 } from "@/lib/api/spaces";
+import SpaceBillingCard from "@/components/billing/SpaceBillingCard";
 
 export default function SpaceSettingsPage() {
   const t = useTranslations("spaces");
@@ -234,6 +235,12 @@ export default function SpaceSettingsPage() {
               ))}
             </div>
           </div>
+
+          {/* Billing — permission-gated to space owner (BillingManage) */}
+          <SpaceBillingCard
+            spaceId={currentSpaceId!}
+            hasBillingPermission={space.isOwner}
+          />
         </div>
       </div>
     </AppShell>

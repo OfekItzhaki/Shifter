@@ -2,7 +2,7 @@ using Jobuler.Domain.Common;
 
 namespace Jobuler.Domain.Billing;
 
-public enum SubscriptionStatus { Trialing, Active, PastDue, Canceled, Expired }
+public enum SubscriptionStatus { Trialing, Active, PastDue, Canceled, Expired, Migrated }
 
 public class GroupSubscription : Entity, ITenantScoped
 {

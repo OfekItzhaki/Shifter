@@ -1,3 +1,4 @@
+using Jobuler.Application.Billing.Commands;
 using Jobuler.Application.Platform.Commands;
 using Jobuler.Application.Platform.Queries;
 using Jobuler.Application.Scheduling.Commands;
@@ -140,8 +141,31 @@ public class PlatformController : ControllerBase
 
         return NoContent();
     }
+
+    /// <summary>
+    /// POST /platform/billing/migrate
+    /// One-time migration from group-level billing to space-level billing.
+    /// Platform admin only. Accepts optional batchSize in body.
+    /// </summary>
+    [HttpPost("billing/migrate")]
+    public async Task<IActionResult> MigrateToSpaceBilling(
+        [FromBody] MigrateBillingRequest? request,
+        CancellationToken ct)
+    {
+        var user = await _db.Users.AsNoTracking()
+            .FirstOrDefaultAsync(u => u.Id == CurrentUserId, ct);
+        if (user?.IsPlatformAdmin != true)
+            return Forbid();
+
+        var batchSize = request?.BatchSize ?? 100;
+        var result = await _mediator.Send(new MigrateToSpaceBillingCommand(batchSize), ct);
+
+        return Ok(result);
+    }
 }
 
 public record PlatformSettingsResponse(int PlatformTimeoutMinutes);
 
 public record UpdatePlatformSettingsRequest(int PlatformTimeoutMinutes);
+
+public record MigrateBillingRequest(int? BatchSize = null);

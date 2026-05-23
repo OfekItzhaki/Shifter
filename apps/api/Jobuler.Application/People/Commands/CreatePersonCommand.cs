@@ -1,3 +1,4 @@
+using Jobuler.Application.Billing;
 using Jobuler.Application.Common;
 using Jobuler.Domain.People;
 using Jobuler.Domain.Spaces;
@@ -20,11 +21,13 @@ public class CreatePersonCommandHandler : IRequestHandler<CreatePersonCommand, G
 {
     private readonly AppDbContext _db;
     private readonly IPermissionService _permissions;
+    private readonly IPeakMemberTracker _peakTracker;
 
-    public CreatePersonCommandHandler(AppDbContext db, IPermissionService permissions)
+    public CreatePersonCommandHandler(AppDbContext db, IPermissionService permissions, IPeakMemberTracker peakTracker)
     {
         _db = db;
         _permissions = permissions;
+        _peakTracker = peakTracker;
     }
 
     public async Task<Guid> Handle(CreatePersonCommand req, CancellationToken ct)
@@ -46,6 +49,10 @@ public class CreatePersonCommandHandler : IRequestHandler<CreatePersonCommand, G
         }
         _db.People.Add(person);
         await _db.SaveChangesAsync(ct);
+
+        // Track peak member count for space-level billing
+        await _peakTracker.TrackAsync(req.SpaceId, ct);
+
         return person.Id;
     }
 }
