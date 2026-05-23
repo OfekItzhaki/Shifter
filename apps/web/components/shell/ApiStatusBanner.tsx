@@ -4,34 +4,42 @@ import { useState, useEffect } from "react";
 
 /**
  * Shows a non-intrusive banner when the API is returning errors.
- * Positioned below the topbar, doesn't cover content (pushes it down).
- * Auto-dismisses after 10 seconds or when the API recovers.
+ * Only shows once per session — doesn't flash on every page navigation.
+ * Auto-dismisses after 8 seconds or when the API recovers.
  */
 export default function ApiStatusBanner() {
   const [visible, setVisible] = useState(false);
   const [isOffline, setIsOffline] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
 
   useEffect(() => {
     let timeout: NodeJS.Timeout;
+    let errorCount = 0;
 
     function handleApiError() {
-      setVisible(true);
-      clearTimeout(timeout);
-      timeout = setTimeout(() => setVisible(false), 10000);
+      errorCount++;
+      // Only show after 2+ errors to avoid flashing on single transient failures
+      if (errorCount >= 2 && !dismissed) {
+        setVisible(true);
+        clearTimeout(timeout);
+        timeout = setTimeout(() => setVisible(false), 8000);
+      }
     }
 
     function handleApiOnline() {
+      errorCount = 0;
       setVisible(false);
     }
 
     function handleOnline() {
       setIsOffline(false);
       setVisible(false);
+      errorCount = 0;
     }
 
     function handleOffline() {
       setIsOffline(true);
-      setVisible(true);
+      if (!dismissed) setVisible(true);
     }
 
     window.addEventListener("api-error", handleApiError);
@@ -51,7 +59,7 @@ export default function ApiStatusBanner() {
       window.removeEventListener("offline", handleOffline);
       clearTimeout(timeout);
     };
-  }, []);
+  }, [dismissed]);
 
   if (!visible) return null;
 
@@ -72,7 +80,7 @@ export default function ApiStatusBanner() {
           : "⚠ Server temporarily unavailable — try refreshing in a moment"}
       </span>
       <button
-        onClick={() => setVisible(false)}
+        onClick={() => { setVisible(false); setDismissed(true); }}
         className="flex-shrink-0 ml-3 rounded-md p-1 hover:bg-black/10 transition-colors"
         style={{ background: "none", border: "none", cursor: "pointer", color: isOffline ? "#fbbf24" : "#92400e", lineHeight: 1 }}
         aria-label="Dismiss"
