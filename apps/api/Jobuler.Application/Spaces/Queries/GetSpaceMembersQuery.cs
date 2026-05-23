@@ -16,17 +16,26 @@ public class GetSpaceMembersQueryHandler : IRequestHandler<GetSpaceMembersQuery,
 
     public async Task<List<SpaceMemberDto>> Handle(GetSpaceMembersQuery request, CancellationToken ct)
     {
-        var members = await _db.SpaceMemberships
+        var memberships = await _db.SpaceMemberships
             .AsNoTracking()
             .Where(m => m.SpaceId == request.SpaceId && m.IsActive)
-            .Join(_db.Users, m => m.UserId, u => u.Id, (m, u) => new SpaceMemberDto(
-                u.Id,
-                u.DisplayName,
-                u.Email,
-                m.JoinedAt))
             .OrderBy(m => m.JoinedAt)
             .ToListAsync(ct);
 
-        return members;
+        var userIds = memberships.Select(m => m.UserId).ToList();
+        var users = await _db.Users
+            .AsNoTracking()
+            .Where(u => userIds.Contains(u.Id))
+            .ToDictionaryAsync(u => u.Id, ct);
+
+        return memberships.Select(m =>
+        {
+            users.TryGetValue(m.UserId, out var user);
+            return new SpaceMemberDto(
+                m.UserId,
+                user?.DisplayName,
+                user?.Email,
+                m.JoinedAt);
+        }).ToList();
     }
 }
