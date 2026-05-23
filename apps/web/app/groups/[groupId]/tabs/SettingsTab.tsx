@@ -172,68 +172,110 @@ export default function SettingsTab({
         </Section>
       )}
 
-      {/* Solver horizon */}
+      {/* Scheduling — merged planning horizon + run solver */}
       <Section title={t("planningHorizon")}>
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-slate-600">{t("daysAhead")}: <strong>{solverHorizon}</strong></span>
-          </div>
-          <input
-            type="range"
-            min={1}
-            max={7}
-            value={solverHorizon}
-            onChange={e => onSolverHorizonChange(Number(e.target.value))}
-            className="w-full"
-          />
-          <div className="flex items-center gap-2">
-            <label className="text-sm text-slate-600 whitespace-nowrap">{t("solverStartFrom")}</label>
+        <div className="space-y-4">
+          {/* Horizon slider */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-slate-600 dark:text-slate-300">{t("daysAhead")}: <strong>{solverHorizon}</strong></span>
+            </div>
             <input
-              type="datetime-local"
-              value={solverStartDateTime ?? ""}
-              onChange={e => onSolverStartDateTimeChange(e.target.value || null)}
-              className="flex-1 border border-slate-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+              type="range"
+              min={1}
+              max={7}
+              value={solverHorizon}
+              onChange={e => onSolverHorizonChange(Number(e.target.value))}
+              className="w-full"
             />
-            {solverStartDateTime && (
-              <button
-                onClick={() => onSolverStartDateTimeChange(null)}
-                className="text-xs text-slate-400 hover:text-slate-600 transition-colors"
-                title="Clear — use current time"
-              >✕</button>
-            )}
           </div>
-          {solverStartDateTime && new Date(solverStartDateTime) < new Date() && (
-            <p className="text-xs text-amber-600">⚠ התאריך בעבר — הסולבר יתחיל מנקודה זו.</p>
-          )}
-          <p className="text-xs text-slate-400">{t("solverStartFromHint")}</p>
-          <button onClick={onSaveSettings} disabled={savingSettings} className="bg-sky-500 hover:bg-sky-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl disabled:opacity-50 transition-colors">
-            {savingSettings ? t("saving") : t("saveSettings")}
-          </button>
-          {settingsError && <p className="text-sm text-red-600">{settingsError}</p>}
-          {settingsSaved && <p className="text-sm text-emerald-600">{t("save")} ✓</p>}
-        </div>
-      </Section>
 
-      {/* Auto-publish toggle */}
-      <Section title={t("autoPublish")}>
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm text-slate-600">{t("autoPublishDesc")}</p>
+          {/* Start date/time */}
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <label className="text-sm text-slate-600 dark:text-slate-300 whitespace-nowrap">{t("solverStartFrom")}</label>
+              <input
+                type="datetime-local"
+                value={solverStartDateTime ?? solverStartTime}
+                onChange={e => { onSolverStartDateTimeChange(e.target.value || null); setSolverStartTime(e.target.value); }}
+                className="flex-1 border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+              />
+              {(solverStartDateTime || solverStartTime) && (
+                <button
+                  onClick={() => { onSolverStartDateTimeChange(null); setSolverStartTime(""); }}
+                  className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+                  title="Clear — use current time"
+                >✕</button>
+              )}
+            </div>
+            <p className="text-xs text-slate-400 dark:text-slate-500">{t("solverStartFromHint")}</p>
           </div>
-          <button
-            role="switch"
-            aria-checked={autoPublish}
-            onClick={() => onAutoPublishChange(!autoPublish)}
-            className={`relative inline-flex h-[22px] w-[40px] items-center rounded-full transition-colors flex-shrink-0 ${
-              autoPublish ? "bg-sky-500" : "bg-slate-300"
-            }`}
-          >
-            <span
-              className={`absolute h-[16px] w-[16px] rounded-full bg-white shadow transition-all ${
-                autoPublish ? "left-[21px]" : "left-[3px]"
+
+          {/* Auto-publish toggle */}
+          <div className="flex items-center justify-between py-2 border-t border-slate-100 dark:border-slate-700">
+            <p className="text-sm text-slate-600 dark:text-slate-300">{t("autoPublishDesc")}</p>
+            <button
+              role="switch"
+              aria-checked={autoPublish}
+              onClick={() => onAutoPublishChange(!autoPublish)}
+              className={`relative inline-flex h-[22px] w-[40px] items-center rounded-full transition-colors flex-shrink-0 ${
+                autoPublish ? "bg-sky-500" : "bg-slate-300 dark:bg-slate-600"
               }`}
-            />
-          </button>
+            >
+              <span className={`absolute h-[16px] w-[16px] rounded-full bg-white shadow transition-all ${autoPublish ? "left-[21px]" : "left-[3px]"}`} />
+            </button>
+          </div>
+
+          {/* Errors / warnings */}
+          {members.length < 2 && (
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl px-4 py-3">
+              <p className="text-sm font-medium text-red-700 dark:text-red-400">{tAdmin("solverCannotRun")}</p>
+              <p className="text-xs text-red-600 dark:text-red-400 mt-1">{tAdmin("solverNotEnoughMembers")}</p>
+            </div>
+          )}
+          {solverError && !solverPolling && (
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl px-4 py-3">
+              <p className="text-sm font-medium text-red-700 dark:text-red-400">{tAdmin("solverLastFailed")}</p>
+              <p className="text-xs text-red-600 dark:text-red-400 mt-1">{solverError}</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">{tAdmin("solverSolutions")}</p>
+            </div>
+          )}
+          {draftVersion && (
+            <div className="flex items-center gap-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl px-4 py-3">
+              <span className="text-sm text-amber-800 dark:text-amber-300">{t("draftPending")}</span>
+              <button onClick={onOpenDraftModal} className="text-xs text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-700 hover:bg-amber-100 dark:hover:bg-amber-900/30 px-3 py-1.5 rounded-lg transition-colors font-medium">{t("viewDraft")}</button>
+            </div>
+          )}
+
+          {/* Action buttons */}
+          <div className="flex items-center gap-3 pt-1">
+            <button onClick={onSaveSettings} disabled={savingSettings} className="bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 text-sm font-medium px-4 py-2.5 rounded-xl disabled:opacity-50 transition-colors">
+              {savingSettings ? t("saving") : t("saveSettings")}
+            </button>
+            <button
+              onClick={() => onTriggerSolver(solverStartTime ? new Date(solverStartTime).toISOString() : undefined)}
+              disabled={solverPolling || members.length < 2}
+              className="flex items-center gap-2 bg-sky-500 hover:bg-sky-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl disabled:opacity-50 transition-colors"
+            >
+              {solverPolling ? (
+                <>
+                  <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
+                  {(() => {
+                    const phase = solverStatus?.startsWith("Running:") ? solverStatus.split(":")[1] : null;
+                    const phaseKey = phase ? `solverPhase_${phase}` : null;
+                    return phaseKey ? tAdmin(phaseKey as never) : t("running");
+                  })()}
+                </>
+              ) : t("runSchedule")}
+            </button>
+          </div>
+          {settingsError && <p className="text-sm text-red-600 dark:text-red-400">{settingsError}</p>}
+          {settingsSaved && <p className="text-sm text-emerald-600">✓</p>}
+          {solverStatus && !solverError && !solverPolling && (
+            <p className={`text-sm ${solverStatus === "Completed" ? "text-emerald-600" : solverStatus === "Failed" ? "text-red-600 dark:text-red-400" : "text-slate-600 dark:text-slate-400"}`}>
+              {solverStatus === "Completed" ? tCommon("completed") + " ✓" : solverStatus === "TimedOut" ? tCommon("timedOut") : ""}
+            </p>
+          )}
         </div>
       </Section>
 
@@ -372,62 +414,6 @@ export default function SettingsTab({
         isAdmin={isAdmin}
       />
       )}
-
-      {/* Trigger solver */}
-      <Section title={t("runSchedule")}>
-        <div className="space-y-3">
-          {members.length < 2 && (
-            <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3">
-              <p className="text-sm font-medium text-red-700">{tAdmin("solverCannotRun")}</p>
-              <p className="text-xs text-red-600 mt-1">{tAdmin("solverNotEnoughMembers")}</p>
-            </div>
-          )}
-          {solverError && !solverPolling && (
-            <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3">
-              <p className="text-sm font-medium text-red-700">{tAdmin("solverLastFailed")}</p>
-              <p className="text-xs text-red-600 mt-1">{solverError}</p>
-              <p className="text-xs text-slate-500 mt-2">{tAdmin("solverSolutions")}</p>
-            </div>
-          )}
-          {draftVersion && (
-            <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
-              <span className="text-sm text-amber-800">{t("draftPending")}</span>
-              <button onClick={onOpenDraftModal} className="text-xs text-amber-700 border border-amber-300 hover:bg-amber-100 px-3 py-1.5 rounded-lg transition-colors font-medium">{t("viewDraft")}</button>
-            </div>
-          )}
-          {/* Start time picker — defaults to now, admin can override */}
-          <div className="flex items-center gap-2">
-            <label className="text-sm text-slate-600 whitespace-nowrap">{t("startFrom")}</label>
-            <input
-              type="datetime-local"
-              value={solverStartTime}
-              onChange={e => setSolverStartTime(e.target.value)}
-              className="flex-1 border border-slate-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
-            />
-          </div>
-          <button
-            onClick={() => onTriggerSolver(solverStartTime ? new Date(solverStartTime).toISOString() : undefined)}
-            disabled={solverPolling || members.length < 2}
-            className="flex items-center gap-2 bg-sky-500 hover:bg-sky-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl disabled:opacity-50 transition-colors"
-          >
-            {solverPolling ? (
-              <>
-                <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
-                {(() => {
-                  const phase = solverStatus?.startsWith("Running:") ? solverStatus.split(":")[1] : null;
-                  const phaseKey = phase ? `solverPhase_${phase}` : null;
-                  return phaseKey ? tAdmin(phaseKey as never) : t("running");
-                })()}
-              </>
-            ) : t("runSchedule")}
-          </button>
-          {solverStatus && !solverError && !solverPolling && (
-            <p className={`text-sm ${solverStatus === "Completed" ? "text-emerald-600" : solverStatus === "Failed" ? "text-red-600" : "text-slate-600"}`}>
-              {solverStatus === "Completed" ? tCommon("completed") + " ✓" : solverStatus === "TimedOut" ? tCommon("timedOut") : ""}
-            </p>
-          )}
-        </div>
-      </Section>
 
       {/* Ownership transfer */}      <Section title={t("ownershipTransfer")}>
         {hasPendingTransfer ? (
