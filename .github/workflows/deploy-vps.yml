@@ -60,20 +60,20 @@ jobs:
 
             cd infra/compose
 
-            echo "=== Restarting services (near-zero downtime) ==="
-            docker compose up -d --remove-orphans --force-recreate web
-            
-            echo "=== Waiting for web to start ==="
-            sleep 10
-
             echo "=== Running migrations ==="
             cd /opt/shifter
             for f in infra/migrations/*.sql; do
               docker exec -i compose-postgres-1 psql -U jobuler -d jobuler < "$f" 2>&1 | grep -v "already exists" | grep -v "skipping" || true
             done
 
-            echo "=== Web logs ==="
-            cd infra/compose
-            docker compose logs web --tail 5
+            echo "=== Rebuilding API and restarting services ==="
+            cd /opt/shifter/infra/compose
+            docker compose up -d --build api --force-recreate web --remove-orphans
+            
+            echo "=== Waiting for services to start ==="
+            sleep 10
+
+            echo "=== Service status ==="
+            docker compose ps
 
             echo "✅ Deployed $(git rev-parse --short HEAD) at $(date)"

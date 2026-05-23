@@ -122,11 +122,15 @@ export default function AppShell({ children }: AppShellProps) {
             <ShifterLogo size={32} />
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ color: "white", fontWeight: 700, fontSize: 14, lineHeight: 1.2 }}>Shifter</div>
-              {displayName && <div style={{ color: "#64748b", fontSize: 11, marginTop: 1 }}>{t("spaces.spaceOf", { name: displayName })}</div>}
             </div>
           </Link>
           {/* NotificationBell is OUTSIDE the Link so clicks don't navigate */}
           <NotificationBell />
+        </div>
+
+        {/* Space switcher — under logo */}
+        <div style={{ padding: "4px 12px 8px" }}>
+          <SpaceSwitcher />
         </div>
 
         <nav style={S.nav}>
@@ -149,8 +153,6 @@ export default function AppShell({ children }: AppShellProps) {
         </nav>
 
         <div style={S.bottom}>
-          {/* Space switcher */}
-          <SpaceSwitcher />
           {/* Language switcher */}
           <LanguageSwitcher />
           {/* Dark mode toggle */}
