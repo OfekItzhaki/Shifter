@@ -98,7 +98,7 @@ export const useAuthStore = create<AuthState>()(
         isPlatformAdmin: state.isPlatformAdmin,
         timezoneId: state.timezoneId,
         timezoneOffsetMinutes: state.timezoneOffsetMinutes,
-        adminGroupId: state.adminGroupId,
+        // Don't persist adminGroupId — causes crash when page loads with stale admin state
       }),
     }
   )
