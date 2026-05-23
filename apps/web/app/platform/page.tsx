@@ -12,25 +12,42 @@ import PlatformSettings from "@/components/platform/PlatformSettings";
 import ReAuthDialog from "@/components/admin/ReAuthDialog";
 import { useAdminSessionStore } from "@/lib/store/adminSessionStore";
 
-const card: React.CSSProperties = {
-  background: "white",
-  borderRadius: 14,
-  border: "1px solid #e2e8f0",
-  boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
-  padding: "1.25rem 1.5rem",
-  minWidth: 0,
-};
-
-function StatCard({ label, value, sub }: { label: string; value: string | number; sub?: string }) {
+function StatCard({ label, value, sub, accent }: { label: string; value: string | number; sub?: string; accent?: string }) {
   return (
-    <div style={card}>
-      <p style={{ fontSize: "0.75rem", fontWeight: 600, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.05em", margin: "0 0 0.375rem" }}>
+    <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow">
+      <p className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">
         {label}
       </p>
-      <p style={{ fontSize: "1.75rem", fontWeight: 800, color: "#0f172a", margin: 0, lineHeight: 1.1 }}>
+      <p className={`text-2xl font-extrabold ${accent ?? "text-slate-900 dark:text-white"} leading-tight`}>
         {value}
       </p>
-      {sub && <p style={{ fontSize: "0.75rem", color: "#64748b", margin: "0.25rem 0 0" }}>{sub}</p>}
+      {sub && <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{sub}</p>}
+    </div>
+  );
+}
+
+function SolverHealthBar({ completed, failed, total }: { completed: number; failed: number; total: number }) {
+  if (total === 0) return null;
+  const successPct = Math.round((completed / total) * 100);
+  const failPct = Math.round((failed / total) * 100);
+
+  return (
+    <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-5 shadow-sm">
+      <div className="flex items-center justify-between mb-3">
+        <p className="text-sm font-semibold text-slate-900 dark:text-white">Solver Health (24h)</p>
+        <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${successPct >= 80 ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400" : successPct >= 50 ? "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400" : "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400"}`}>
+          {successPct}% success
+        </span>
+      </div>
+      <div className="w-full h-3 rounded-full bg-slate-100 dark:bg-slate-700 overflow-hidden flex">
+        <div className="h-full bg-emerald-500 transition-all" style={{ width: `${successPct}%` }} />
+        <div className="h-full bg-red-500 transition-all" style={{ width: `${failPct}%` }} />
+      </div>
+      <div className="flex justify-between mt-2 text-xs text-slate-500 dark:text-slate-400">
+        <span>{completed} completed</span>
+        <span>{failed} failed</span>
+        <span>{total} total</span>
+      </div>
     </div>
   );
 }
@@ -43,7 +60,6 @@ export default function PlatformPage() {
   const isElevated = useAdminSessionStore((s) => s.isElevated);
   const elevatedMode = useAdminSessionStore((s) => s.elevatedMode);
 
-  // Check auth from both Zustand store AND localStorage (store may not be hydrated yet)
   const hasToken = typeof window !== "undefined" && !!localStorage.getItem("access_token");
   const loggedIn = isAuthenticated || hasToken;
 
@@ -52,71 +68,45 @@ export default function PlatformPage() {
   const [accessDenied, setAccessDenied] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Re-authentication gate state
   const [showReAuth, setShowReAuth] = useState(false);
   const [platformAuthenticated, setPlatformAuthenticated] = useState(false);
   const [platformTimeoutMinutes, setPlatformTimeoutMinutes] = useState<number>(15);
-
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    // Wait for Zustand persist to rehydrate from localStorage.
-    // Check immediately first (store may already be hydrated).
     if (useAuthStore.persist.hasHydrated()) {
       setHydrated(true);
       return;
     }
-    const unsub = useAuthStore.persist.onFinishHydration(() => {
-      setHydrated(true);
-    });
-    // Fallback: if hydration doesn't fire within 500ms, force it
+    const unsub = useAuthStore.persist.onFinishHydration(() => setHydrated(true));
     const fallback = setTimeout(() => setHydrated(true), 500);
     return () => { unsub(); clearTimeout(fallback); };
   }, []);
 
   useEffect(() => {
     if (!hydrated) return;
-    if (!loggedIn) {
-      router.push("/login");
-      return;
-    }
+    if (!loggedIn) { router.push("/login"); return; }
 
-    // If already in elevated platform mode (e.g. from another tab sync), skip re-auth
     if (isElevated && elevatedMode === "platform") {
       setPlatformAuthenticated(true);
     } else if (!platformAuthenticated) {
-      // Show re-auth dialog before granting platform access
       setShowReAuth(true);
-      // Fetch platform timeout setting
       apiClient.get<{ platformTimeoutMinutes: number }>("/platform/settings")
-        .then(({ data }) => {
-          setPlatformTimeoutMinutes(data.platformTimeoutMinutes ?? 15);
-        })
-        .catch(() => {
-          // Use default if settings fetch fails
-          setPlatformTimeoutMinutes(15);
-        });
-      return; // Don't load stats until re-authenticated
+        .then(({ data }) => setPlatformTimeoutMinutes(data.platformTimeoutMinutes ?? 15))
+        .catch(() => setPlatformTimeoutMinutes(15));
+      return;
     }
 
     setLoading(true);
-    const timeout = setTimeout(() => {
-      setLoading(false);
-      setError("הטעינה נכשלה — נסה לרענן את הדף");
-    }, 10000);
+    const timeout = setTimeout(() => { setLoading(false); setError("Loading failed — try refreshing"); }, 10000);
     getPlatformStats()
       .then(setStats)
       .catch((err) => {
-        if (err?.response?.status === 403) {
-          setAccessDenied(true);
-        } else {
-          setError(err?.response?.data?.error ?? err?.message ?? "שגיאה בטעינת נתוני הפלטפורמה");
-        }
+        if (err?.response?.status === 403) setAccessDenied(true);
+        else setError(err?.response?.data?.error ?? err?.message ?? "Error loading platform data");
       })
       .finally(() => { setLoading(false); clearTimeout(timeout); });
   }, [hydrated, loggedIn, router, platformAuthenticated, isElevated, elevatedMode]);
-
-  // ── Re-auth handlers ─────────────────────────────────────────────────────
 
   const handleReAuthSuccess = useCallback(() => {
     setShowReAuth(false);
@@ -126,7 +116,6 @@ export default function PlatformPage() {
 
   const handleReAuthCancel = useCallback(() => {
     setShowReAuth(false);
-    // Remain in standard view — navigate away from platform page
     router.push("/");
   }, [router]);
 
@@ -143,31 +132,29 @@ export default function PlatformPage() {
     );
   }
 
-  // Show re-auth dialog gate before platform content
   if (showReAuth) {
     return (
       <AppShell>
-        <ReAuthDialog
-          open={showReAuth}
-          onSuccess={handleReAuthSuccess}
-          onCancel={handleReAuthCancel}
-          mode="platform"
-        />
+        <ReAuthDialog open={showReAuth} onSuccess={handleReAuthSuccess} onCancel={handleReAuthCancel} mode="platform" />
       </AppShell>
     );
   }
 
   return (
     <AppShell>
-      <div style={{ maxWidth: 1100 }}>
-        <div style={{ marginBottom: "1.5rem" }}>
-          <h1 style={{ fontSize: "1.5rem", fontWeight: 800, color: "#0f172a", margin: 0 }}>
+      <div style={{ maxWidth: 1100 }} className="w-full">
+        {/* Header */}
+        <div className="mb-6">
+          <h1 className="text-2xl font-extrabold text-slate-900 dark:text-white">
             {t("title")}
           </h1>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+            System overview and administration
+          </p>
         </div>
 
         {loading && (
-          <div style={{ display: "flex", alignItems: "center", gap: 10, color: "#94a3b8", fontSize: "0.875rem", padding: "2rem 0" }}>
+          <div className="flex items-center gap-3 text-slate-400 text-sm py-8">
             <svg className="animate-spin" width="20" height="20" fill="none" viewBox="0 0 24 24">
               <circle style={{ opacity: 0.25 }} cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
               <path style={{ opacity: 0.75 }} fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
@@ -176,48 +163,49 @@ export default function PlatformPage() {
         )}
 
         {accessDenied && (
-          <div style={{
-            display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-            padding: "5rem 0", textAlign: "center", background: "white", borderRadius: 16, border: "1px solid #e2e8f0"
-          }}>
-            <svg width="48" height="48" fill="none" viewBox="0 0 24 24" stroke="#dc2626" strokeWidth={1.5} style={{ marginBottom: 12 }}>
+          <div className="flex flex-col items-center justify-center py-20 text-center bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700">
+            <svg width="48" height="48" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} className="text-red-500 mb-3">
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" />
             </svg>
-            <p style={{ fontSize: "0.875rem", color: "#dc2626", margin: 0, fontWeight: 600 }}>
-              {t("accessDenied")}
-            </p>
+            <p className="text-sm text-red-600 dark:text-red-400 font-semibold">{t("accessDenied")}</p>
           </div>
         )}
 
         {error && !accessDenied && (
-          <p style={{ color: "#dc2626", fontSize: "0.875rem" }}>{error}</p>
+          <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
         )}
 
         {stats && (
-          <>
-            {/* Row 1: Users & Spaces */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "1rem", marginBottom: "1.25rem" }}>
-              <StatCard label={t("totalUsers")} value={stats.totalUsers} />
-              <StatCard label={t("activeUsers7d")} value={stats.activeUsersLast7d} />
+          <div className="space-y-5">
+            {/* Row 1: Users & Infrastructure */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <StatCard label={t("totalUsers")} value={stats.totalUsers} accent="text-sky-600 dark:text-sky-400" />
+              <StatCard label={t("activeUsers7d")} value={stats.activeUsersLast7d} accent="text-emerald-600 dark:text-emerald-400" />
               <StatCard label={t("totalSpaces")} value={stats.totalSpaces} />
               <StatCard label={t("totalGroups")} value={stats.totalGroups} />
             </div>
 
-            {/* Row 2: Solver */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "1rem", marginBottom: "1.25rem" }}>
+            {/* Solver Health Bar */}
+            <SolverHealthBar
+              completed={stats.solverStats.completedLast24h}
+              failed={stats.solverStats.failedLast24h}
+              total={stats.solverStats.totalRunsLast24h}
+            />
+
+            {/* Row 2: Solver details */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <StatCard label={t("solverRuns24h")} value={stats.solverStats.totalRunsLast24h} />
-              <StatCard label={t("completed")} value={stats.solverStats.completedLast24h} />
-              <StatCard label={t("failed")} value={stats.solverStats.failedLast24h} />
+              <StatCard label={t("completed")} value={stats.solverStats.completedLast24h} accent="text-emerald-600 dark:text-emerald-400" />
+              <StatCard label={t("failed")} value={stats.solverStats.failedLast24h} accent={stats.solverStats.failedLast24h > 0 ? "text-red-600 dark:text-red-400" : undefined} />
               <StatCard
                 label={t("avgDuration")}
-                value={stats.solverStats.avgDurationMs > 0 ? stats.solverStats.avgDurationMs : "—"}
-                sub={stats.solverStats.avgDurationMs > 0 ? t("ms") : undefined}
+                value={stats.solverStats.avgDurationMs > 0 ? `${(stats.solverStats.avgDurationMs / 1000).toFixed(1)}s` : "—"}
               />
             </div>
 
             {/* Row 3: Storage */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "1rem", marginBottom: "2rem" }}>
-              <StatCard label={t("totalAssignments")} value={stats.storageStats.totalAssignments} />
+            <div className="grid grid-cols-3 gap-3">
+              <StatCard label={t("totalAssignments")} value={stats.storageStats.totalAssignments.toLocaleString()} />
               <StatCard label={t("totalConstraints")} value={stats.storageStats.totalConstraints} />
               <StatCard label={t("totalTasks")} value={stats.storageStats.totalTasks} />
             </div>
@@ -226,10 +214,8 @@ export default function PlatformPage() {
             <BillingTestPanel />
 
             {/* Platform Settings */}
-            <div style={{ marginTop: "1.25rem" }}>
-              <PlatformSettings />
-            </div>
-          </>
+            <PlatformSettings />
+          </div>
         )}
       </div>
     </AppShell>

@@ -12,7 +12,7 @@ export default function BillingTestPanel() {
 
   async function handleTestCharge() {
     if (!currentSpaceId) {
-      setError("לא נבחר מרחב עבודה");
+      setError("No space selected");
       return;
     }
     setLoading(true);
@@ -24,67 +24,54 @@ export default function BillingTestPanel() {
         setResult(data.checkoutUrl);
         window.open(data.checkoutUrl, "_blank");
       } else {
-        setError("לא התקבל קישור לתשלום");
+        setError("No checkout URL received");
       }
     } catch (err: unknown) {
       const axiosErr = err as { response?: { data?: { error?: string } }; message?: string };
-      setError(axiosErr?.response?.data?.error ?? axiosErr?.message ?? "שגיאה בביצוע חיוב ניסיון");
+      setError(axiosErr?.response?.data?.error ?? axiosErr?.message ?? "Error creating test charge");
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <div style={{ background: "white", borderRadius: 14, border: "1px solid #e2e8f0", padding: "1.5rem" }}>
-      <h2 style={{ fontSize: "1rem", fontWeight: 700, color: "#0f172a", margin: "0 0 0.5rem" }}>
-        🧪 בדיקת חיוב (Test Charge)
+    <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-5 shadow-sm">
+      <h2 className="text-sm font-bold text-slate-900 dark:text-white mb-1 flex items-center gap-2">
+        <span>🧪</span> Test Charge
       </h2>
-      <p style={{ fontSize: "0.8rem", color: "#64748b", margin: "0 0 1rem" }}>
-        יוצר checkout session עם המוצר הזול לבדיקה. השתמש בכרטיס 4242 4242 4242 4242.
-        <br />
-        החיוב מסומן כ-test-charge ולא ישפיע על מנויים.
+      <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
+        Creates a checkout session with the test product. Use card 4242 4242 4242 4242.
+        Marked as test-charge — won't affect subscriptions.
       </p>
 
-      <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+      <div className="flex items-center gap-3">
         <button
           onClick={handleTestCharge}
           disabled={loading}
-          style={{
-            background: "#8b5cf6",
-            color: "white",
-            border: "none",
-            borderRadius: 8,
-            padding: "0.5rem 1.25rem",
-            fontSize: "0.8rem",
-            fontWeight: 600,
-            cursor: loading ? "not-allowed" : "pointer",
-            opacity: loading ? 0.6 : 1,
-          }}
+          className="bg-violet-600 hover:bg-violet-700 text-white rounded-lg px-4 py-2 text-xs font-semibold disabled:opacity-60 cursor-pointer border-none transition-colors"
         >
-          {loading ? "יוצר..." : "בצע חיוב ניסיון"}
+          {loading ? "Creating..." : "Run Test Charge"}
         </button>
 
         {!currentSpaceId && (
-          <span style={{ fontSize: "0.75rem", color: "#f59e0b" }}>
-            ⚠️ בחר מרחב עבודה קודם
-          </span>
+          <span className="text-xs text-amber-500">⚠️ Select a space first</span>
         )}
       </div>
 
       {error && (
-        <p style={{ color: "#dc2626", fontSize: "0.8rem", margin: "0.75rem 0 0" }}>{error}</p>
+        <p className="text-xs text-red-600 dark:text-red-400 mt-3">{error}</p>
       )}
 
       {result && (
-        <div style={{ marginTop: "0.75rem", padding: "0.5rem 0.75rem", background: "#f0fdf4", borderRadius: 8, border: "1px solid #bbf7d0" }}>
-          <p style={{ fontSize: "0.75rem", color: "#15803d", margin: 0 }}>
-            ✅ Checkout URL נוצר בהצלחה — נפתח בטאב חדש
+        <div className="mt-3 px-3 py-2 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg">
+          <p className="text-xs text-emerald-700 dark:text-emerald-400">
+            ✅ Checkout URL created — opened in new tab
           </p>
           <a
             href={result}
             target="_blank"
             rel="noopener noreferrer"
-            style={{ fontSize: "0.7rem", color: "#0ea5e9", wordBreak: "break-all" }}
+            className="text-[10px] text-sky-600 dark:text-sky-400 break-all"
           >
             {result}
           </a>

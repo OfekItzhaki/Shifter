@@ -27,10 +27,12 @@ export default function SpaceSettingsPage() {
   const [saved, setSaved] = useState(false);
   const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
 
   useEffect(() => {
     if (!currentSpaceId) return;
     setLoading(true);
+    setLoadError(false);
     Promise.all([
       getSpaceDetail(currentSpaceId),
       getSpaceMembers(currentSpaceId),
@@ -39,7 +41,7 @@ export default function SpaceSettingsPage() {
       setMembers(memberList);
       setName(detail.name);
       setDescription(detail.description ?? "");
-    }).catch(() => {}).finally(() => setLoading(false));
+    }).catch(() => { setLoadError(true); }).finally(() => setLoading(false));
   }, [currentSpaceId]);
 
   const handleSave = useCallback(async () => {
@@ -79,6 +81,26 @@ export default function SpaceSettingsPage() {
   }
 
   if (!space) {
+    // API error — show retry, not "create new space"
+    if (loadError) {
+      return (
+        <AppShell>
+          <div className="w-full max-w-md mx-auto py-16 text-center space-y-4">
+            <p className="text-slate-500 dark:text-slate-400 text-sm">
+              Could not load space settings. The server may be temporarily unavailable.
+            </p>
+            <button
+              onClick={() => window.location.reload()}
+              className="inline-block px-5 py-2.5 rounded-xl bg-sky-500 hover:bg-sky-600 text-white font-semibold text-sm transition-colors cursor-pointer border-none"
+            >
+              Try Again
+            </button>
+          </div>
+        </AppShell>
+      );
+    }
+
+    // No currentSpaceId at all
     return (
       <AppShell>
         <div className="w-full max-w-md mx-auto py-16 text-center space-y-4">

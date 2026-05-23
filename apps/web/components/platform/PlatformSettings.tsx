@@ -26,40 +26,28 @@ export default function PlatformSettings() {
         setTimeoutMinutes(value);
         setInputValue(String(value));
       })
-      .catch(() => {
-        // Use default if fetch fails
-      })
+      .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
 
   function validateInput(value: string): string | null {
     const num = Number(value);
-    if (value === "" || isNaN(num)) {
-      return t("timeoutValidationRequired");
-    }
-    if (!Number.isInteger(num)) {
-      return t("timeoutValidationInteger");
-    }
-    if (num < MIN_TIMEOUT || num > MAX_TIMEOUT) {
-      return t("timeoutValidationRange", { min: MIN_TIMEOUT, max: MAX_TIMEOUT });
-    }
+    if (value === "" || isNaN(num)) return t("timeoutValidationRequired");
+    if (!Number.isInteger(num)) return t("timeoutValidationInteger");
+    if (num < MIN_TIMEOUT || num > MAX_TIMEOUT) return t("timeoutValidationRange", { min: MIN_TIMEOUT, max: MAX_TIMEOUT });
     return null;
   }
 
   function handleInputChange(value: string) {
     setInputValue(value);
     setSaved(false);
-    const err = validateInput(value);
-    setValidationError(err);
+    setValidationError(validateInput(value));
   }
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
     const err = validateInput(inputValue);
-    if (err) {
-      setValidationError(err);
-      return;
-    }
+    if (err) { setValidationError(err); return; }
 
     const newValue = Number(inputValue);
     setSaving(true);
@@ -67,9 +55,7 @@ export default function PlatformSettings() {
     setSaved(false);
 
     try {
-      await apiClient.patch("/platform/settings", {
-        platformTimeoutMinutes: newValue,
-      });
+      await apiClient.patch("/platform/settings", { platformTimeoutMinutes: newValue });
       setTimeoutMinutes(newValue);
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
@@ -83,33 +69,26 @@ export default function PlatformSettings() {
 
   if (loading) {
     return (
-      <div style={{ background: "white", borderRadius: 14, border: "1px solid #e2e8f0", padding: "1.5rem" }}>
-        <h2 style={{ fontSize: "1rem", fontWeight: 700, color: "#0f172a", margin: "0 0 1rem" }}>
-          {t("platformSettings")}
-        </h2>
-        <p style={{ color: "#94a3b8", fontSize: "0.8rem" }}>{t("loading")}</p>
+      <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-5 shadow-sm">
+        <h2 className="text-sm font-bold text-slate-900 dark:text-white mb-3">{t("platformSettings")}</h2>
+        <p className="text-xs text-slate-400">{t("loading")}</p>
       </div>
     );
   }
 
   return (
-    <div style={{ background: "white", borderRadius: 14, border: "1px solid #e2e8f0", padding: "1.5rem" }}>
-      <h2 style={{ fontSize: "1rem", fontWeight: 700, color: "#0f172a", margin: "0 0 1rem" }}>
-        {t("platformSettings")}
-      </h2>
+    <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-5 shadow-sm">
+      <h2 className="text-sm font-bold text-slate-900 dark:text-white mb-4">{t("platformSettings")}</h2>
 
-      <form onSubmit={handleSave} style={{ display: "flex", flexDirection: "column", gap: "0.75rem", maxWidth: 400 }}>
+      <form onSubmit={handleSave} className="flex flex-col gap-3 max-w-sm">
         <div>
-          <label
-            htmlFor="platformTimeoutMinutes"
-            style={{ display: "block", fontSize: "0.8rem", fontWeight: 600, color: "#475569", marginBottom: "0.375rem" }}
-          >
+          <label htmlFor="platformTimeoutMinutes" className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">
             {t("sessionTimeoutLabel")}
           </label>
-          <p style={{ fontSize: "0.75rem", color: "#94a3b8", margin: "0 0 0.5rem" }}>
+          <p className="text-xs text-slate-400 dark:text-slate-500 mb-2">
             {t("sessionTimeoutDescription")}
           </p>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+          <div className="flex items-center gap-2">
             <input
               id="platformTimeoutMinutes"
               type="number"
@@ -118,57 +97,33 @@ export default function PlatformSettings() {
               step={1}
               value={inputValue}
               onChange={(e) => handleInputChange(e.target.value)}
-              aria-describedby="timeout-hint"
               aria-invalid={!!validationError}
-              style={{
-                width: 90,
-                border: `1px solid ${validationError ? "#fca5a5" : "#e2e8f0"}`,
-                borderRadius: 8,
-                padding: "0.5rem 0.75rem",
-                fontSize: "0.8rem",
-                textAlign: "center",
-              }}
+              className={`w-20 px-3 py-2 rounded-lg border text-center text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:border-sky-500 ${validationError ? "border-red-300 dark:border-red-700" : "border-slate-200 dark:border-slate-600"}`}
             />
-            <span style={{ fontSize: "0.8rem", color: "#64748b" }}>{t("minutes")}</span>
+            <span className="text-xs text-slate-500 dark:text-slate-400">{t("minutes")}</span>
           </div>
-          <p id="timeout-hint" style={{ fontSize: "0.7rem", color: "#94a3b8", margin: "0.25rem 0 0" }}>
+          <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1">
             {t("timeoutRangeHint", { min: MIN_TIMEOUT, max: MAX_TIMEOUT })}
           </p>
           {validationError && (
-            <p style={{ fontSize: "0.75rem", color: "#dc2626", margin: "0.25rem 0 0" }} role="alert">
-              {validationError}
-            </p>
+            <p className="text-xs text-red-600 dark:text-red-400 mt-1" role="alert">{validationError}</p>
           )}
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+        <div className="flex items-center gap-3">
           <button
             type="submit"
             disabled={saving || !!validationError}
-            style={{
-              background: "#0ea5e9",
-              color: "white",
-              border: "none",
-              borderRadius: 8,
-              padding: "0.5rem 1rem",
-              fontSize: "0.8rem",
-              fontWeight: 600,
-              cursor: saving || !!validationError ? "not-allowed" : "pointer",
-              opacity: saving || !!validationError ? 0.5 : 1,
-            }}
+            className="bg-sky-500 hover:bg-sky-600 text-white rounded-lg px-4 py-2 text-xs font-semibold disabled:opacity-50 cursor-pointer border-none transition-colors"
           >
             {saving ? "..." : t("saveSettings")}
           </button>
           {saved && (
-            <span style={{ fontSize: "0.8rem", color: "#10b981", fontWeight: 600 }}>
-              ✓ {t("saved")}
-            </span>
+            <span className="text-xs text-emerald-500 font-semibold">✓ {t("saved")}</span>
           )}
         </div>
 
-        {error && (
-          <p style={{ color: "#dc2626", fontSize: "0.8rem", margin: 0 }}>{error}</p>
-        )}
+        {error && <p className="text-xs text-red-600 dark:text-red-400">{error}</p>}
       </form>
     </div>
   );
