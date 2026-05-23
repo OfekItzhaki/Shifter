@@ -39,7 +39,7 @@ function GroupsPage() {
   const { steps: onboardingSteps } = useOnboardingStore();
   const currentStepIndex = getCurrentStepIndex(onboardingSteps);
 
-  const { data: groups = [], isLoading: loading } = useGroups(currentSpaceId);
+  const { data: groups = [], isLoading: loading, isError: groupsError } = useGroups(currentSpaceId);
   const { data: deletedGroups = [], isLoading: deletedLoading } = useDeletedGroups(currentSpaceId);
   const createGroup = useCreateGroup(currentSpaceId);
   const restoreGroup = useRestoreGroup(currentSpaceId);
@@ -88,16 +88,33 @@ function GroupsPage() {
           </div>
         </div>
 
-        {/* Create group button */}
-        <button
-          type="button"
-          onClick={() => setShowCreateWizard(true)}
-          className="bg-sky-500 hover:bg-sky-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl transition-colors whitespace-nowrap"
-        >
-          {t("newGroup")}
-        </button>
+        {/* Create group button — only show when API is working */}
+        {!groupsError && (
+          <button
+            type="button"
+            onClick={() => setShowCreateWizard(true)}
+            className="bg-sky-500 hover:bg-sky-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl transition-colors whitespace-nowrap"
+          >
+            {t("newGroup")}
+          </button>
+        )}
 
         {createError && <p className="text-sm text-red-600">{createError}</p>}
+
+        {/* Error state */}
+        {groupsError && !loading && (
+          <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6 text-center">
+            <p className="text-slate-500 dark:text-slate-400 text-sm">
+              Could not load groups — the server may be temporarily unavailable.
+            </p>
+            <button
+              onClick={() => window.location.reload()}
+              className="mt-3 text-sm text-sky-600 dark:text-sky-400 hover:underline bg-transparent border-none cursor-pointer"
+            >
+              Try again
+            </button>
+          </div>
+        )}
 
         {/* Active groups */}
         {loading ? (
