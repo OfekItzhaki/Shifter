@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Jobuler.Application.Common;
+using Jobuler.Domain.Auth;
 using Jobuler.Infrastructure.Persistence;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -18,17 +19,22 @@ public record ReAuthenticateCommand(
     string? WebAuthnChallengeId,
     string? WebAuthnAssertionJson,
     Guid? SpaceId,
-    string? IpAddress
+    string? IpAddress,
+    string? WebAuthnFailureReason = null
 ) : IRequest<ReAuthenticateResult>;
 
 /// <summary>
-/// Result of a re-authentication attempt. Contains only a success boolean
-/// to avoid leaking information about failure causes.
+/// Result of a re-authentication attempt.
+/// IsLockedOut indicates the user has exceeded the failure threshold (5 in 15 min).
+/// RetryAfterSeconds tells the client how long to wait before retrying.
 /// </summary>
-public record ReAuthenticateResult(bool Success);
+public record ReAuthenticateResult(bool Success, bool IsLockedOut = false, int RetryAfterSeconds = 0);
 
 public class ReAuthenticateCommandHandler : IRequestHandler<ReAuthenticateCommand, ReAuthenticateResult>
 {
+    private const int MaxFailedAttempts = 5;
+    private const int LockoutWindowMinutes = 15;
+
     private readonly AppDbContext _db;
     private readonly IWebAuthnService _webAuthn;
     private readonly IAuditLogger _audit;
@@ -51,9 +57,27 @@ public class ReAuthenticateCommandHandler : IRequestHandler<ReAuthenticateComman
         // Determine authentication method for audit logging
         var method = !string.IsNullOrEmpty(request.Password) ? "password" : "webauthn";
 
-        // Reject passwords exceeding 128 characters without performing hash verification
+        // --- Lockout check: query failures in last 15 minutes ---
+        var windowStart = DateTime.UtcNow.AddMinutes(-LockoutWindowMinutes);
+        var recentFailureCount = await _db.ReAuthAttempts
+            .CountAsync(a => a.UserId == request.UserId
+                          && !a.Success
+                          && a.AttemptedAt >= windowStart, ct);
+
+        if (recentFailureCount >= MaxFailedAttempts)
+        {
+            // User is locked out — log lockout event and return 429
+            _logger.LogWarning("Re-auth lockout triggered for user {UserId}. {Count} failures in last {Window} minutes.",
+                request.UserId, recentFailureCount, LockoutWindowMinutes);
+
+            await LogLockoutEvent(request, method, ct);
+            return new ReAuthenticateResult(Success: false, IsLockedOut: true, RetryAfterSeconds: LockoutWindowMinutes * 60);
+        }
+
+        // --- Reject passwords > 128 chars without hashing (DoS prevention) ---
         if (!string.IsNullOrEmpty(request.Password) && request.Password.Length > 128)
         {
+            await RecordAttempt(request.UserId, success: false, method, ct);
             await LogAttempt(request, method, success: false, ct);
             return new ReAuthenticateResult(false);
         }
@@ -64,6 +88,7 @@ public class ReAuthenticateCommandHandler : IRequestHandler<ReAuthenticateComman
 
         if (user == null)
         {
+            await RecordAttempt(request.UserId, success: false, method, ct);
             await LogAttempt(request, method, success: false, ct);
             return new ReAuthenticateResult(false);
         }
@@ -84,10 +109,13 @@ public class ReAuthenticateCommandHandler : IRequestHandler<ReAuthenticateComman
         else
         {
             // No valid credential provided
+            await RecordAttempt(request.UserId, success: false, method, ct);
             await LogAttempt(request, method, success: false, ct);
             return new ReAuthenticateResult(false);
         }
 
+        // Record the attempt (success or failure)
+        await RecordAttempt(request.UserId, verified, method, ct);
         await LogAttempt(request, method, verified, ct);
         return new ReAuthenticateResult(verified);
     }
@@ -127,18 +155,74 @@ public class ReAuthenticateCommandHandler : IRequestHandler<ReAuthenticateComman
         }
     }
 
+    /// <summary>
+    /// Records a re-authentication attempt in the reauth_attempts table for lockout tracking.
+    /// </summary>
+    private async Task RecordAttempt(Guid userId, bool success, string method, CancellationToken ct)
+    {
+        var attempt = ReAuthAttempt.Create(userId, success, method);
+        _db.ReAuthAttempts.Add(attempt);
+        await _db.SaveChangesAsync(ct);
+    }
+
+    /// <summary>
+    /// Logs the re-authentication attempt to the audit log with method, outcome,
+    /// and optional WebAuthn failure reason.
+    /// </summary>
     private async Task LogAttempt(ReAuthenticateCommand request, string method, bool success, CancellationToken ct)
     {
-        var afterJson = System.Text.Json.JsonSerializer.Serialize(new
+        object afterSnapshot;
+
+        if (method == "webauthn" && !success && !string.IsNullOrEmpty(request.WebAuthnFailureReason))
         {
-            method,
-            success
-        });
+            afterSnapshot = new
+            {
+                method,
+                success,
+                failureReason = request.WebAuthnFailureReason
+            };
+        }
+        else
+        {
+            afterSnapshot = new
+            {
+                method,
+                success
+            };
+        }
+
+        var afterJson = JsonSerializer.Serialize(afterSnapshot);
 
         await _audit.LogAsync(
             spaceId: request.SpaceId,
             actorUserId: request.UserId,
             action: "re_authenticate",
+            entityType: "user",
+            entityId: request.UserId,
+            afterJson: afterJson,
+            ipAddress: request.IpAddress,
+            ct: ct);
+    }
+
+    /// <summary>
+    /// Logs a lockout event to the audit log when the user exceeds the failure threshold.
+    /// </summary>
+    private async Task LogLockoutEvent(ReAuthenticateCommand request, string method, CancellationToken ct)
+    {
+        var afterJson = JsonSerializer.Serialize(new
+        {
+            method,
+            success = false,
+            lockout = true,
+            reason = "exceeded_max_attempts",
+            maxAttempts = MaxFailedAttempts,
+            windowMinutes = LockoutWindowMinutes
+        });
+
+        await _audit.LogAsync(
+            spaceId: request.SpaceId,
+            actorUserId: request.UserId,
+            action: "re_authenticate_lockout",
             entityType: "user",
             entityId: request.UserId,
             afterJson: afterJson,

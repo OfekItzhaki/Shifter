@@ -175,10 +175,14 @@ public class AuthController : ControllerBase
             req.WebAuthnChallengeId,
             req.WebAuthnAssertionJson,
             req.SpaceId,
-            ipAddress), ct);
+            ipAddress,
+            req.WebAuthnFailureReason), ct);
 
         if (result.Success)
             return Ok(new { success = true });
+
+        if (result.IsLockedOut)
+            return StatusCode(429, new { error = "Too many attempts", retryAfterSeconds = result.RetryAfterSeconds });
 
         return Unauthorized(new { error = "Authentication failed." });
     }
@@ -238,4 +242,4 @@ public record ResetPasswordRequest(string Token, string NewPassword);
 public record UpdateMeRequest(string DisplayName, string? PhoneNumber, string? ProfileImageUrl, DateOnly? Birthday);
 public record VerifyEmailRequest(string Token);
 public record SessionTimeoutEventRequest(Guid? SpaceId, string Mode);
-public record ReAuthenticateRequest(string? Password, string? WebAuthnChallengeId, string? WebAuthnAssertionJson, Guid? SpaceId);
+public record ReAuthenticateRequest(string? Password, string? WebAuthnChallengeId, string? WebAuthnAssertionJson, Guid? SpaceId, string? WebAuthnFailureReason = null);

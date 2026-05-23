@@ -1,3 +1,4 @@
+using Jobuler.Domain.Auth;
 using Jobuler.Domain.Constraints;
 using Jobuler.Domain.Feedback;
 using Jobuler.Domain.Groups;using Jobuler.Domain.Identity;
@@ -26,6 +27,9 @@ public class AppDbContext : DbContext
     public DbSet<PasswordResetToken> PasswordResetTokens => Set<PasswordResetToken>();
     public DbSet<EmailVerificationToken> EmailVerificationTokens => Set<EmailVerificationToken>();
     public DbSet<WebAuthnCredential> WebAuthnCredentials => Set<WebAuthnCredential>();
+
+    // Auth
+    public DbSet<ReAuthAttempt> ReAuthAttempts => Set<ReAuthAttempt>();
 
     // Spaces
     public DbSet<Space> Spaces => Set<Space>();
