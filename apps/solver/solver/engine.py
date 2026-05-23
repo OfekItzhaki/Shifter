@@ -109,10 +109,12 @@ def solve(input: SolverInput) -> SolverOutput:
     rest_hours = float(rest_rules[0].payload.get("hours", 8)) if rest_rules else 8.0
 
     # For closed-base groups with home_leave_config enabled, override rest_hours
-    # with the config value and disable the long-shift soft exception (strictly hard).
+    # with the config value (if > 0) and disable the long-shift soft exception (strictly hard).
+    # If home_leave_config.min_rest_hours is 0, keep the group's configured rest_hours.
     home_leave_cfg = input.home_leave_config
     if home_leave_cfg and home_leave_cfg.enabled:
-        rest_hours = home_leave_cfg.min_rest_hours
+        if home_leave_cfg.min_rest_hours > 0:
+            rest_hours = home_leave_cfg.min_rest_hours
         rest_soft_penalties = None  # None disables soft penalty path — all rest is hard
     else:
         rest_soft_penalties = []
