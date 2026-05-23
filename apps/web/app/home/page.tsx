@@ -135,15 +135,6 @@ function HomePage() {
           </div>
         </div>
       )}
-                </span>
-                <span className="text-sm font-semibold text-slate-800 dark:text-slate-100 group-hover:text-sky-600 dark:group-hover:text-sky-400 transition-colors">
-                  {t("myGroups")}
-                </span>
-              </div>
-            </Link>
-          </div>
-        </div>
-      )}
 
       {/* Getting Started card */}
       <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-5 space-y-4">
