@@ -134,7 +134,7 @@ export default function SettingsTab({
     <div className="space-y-8">
       {/* ═══ GENERAL ═══ */}
       <div className="space-y-4">
-        <h3 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">{tCommon("general") ?? "General"}</h3>
+        <h3 className="text-sm font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wide border-b border-slate-200 dark:border-slate-700 pb-2">{tCommon("general") ?? "General"}</h3>
 
         {/* Rename */}
         <Section title={t("groupName")}>
@@ -178,7 +178,7 @@ export default function SettingsTab({
 
       {/* ═══ SCHEDULING ═══ */}
       <div className="space-y-4">
-        <h3 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">{t("planningHorizon")}</h3>
+        <h3 className="text-sm font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wide border-b border-slate-200 dark:border-slate-700 pb-2">{t("planningHorizon")}</h3>
 
         <Section title={t("planningHorizon")}>
         <div className="space-y-4">
@@ -334,7 +334,7 @@ export default function SettingsTab({
 
       {/* ═══ PERMISSIONS ═══ */}
       <div className="space-y-4">
-        <h3 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">{tCommon("permissions") ?? "Permissions"}</h3>
+        <h3 className="text-sm font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wide border-b border-slate-200 dark:border-slate-700 pb-2">{tCommon("permissions") ?? "Permissions"}</h3>
 
       {/* Allow members to view history toggle */}
       <Section title={t("allowMembersViewHistory")}>
@@ -411,7 +411,7 @@ export default function SettingsTab({
 
       {/* ═══ ADVANCED ═══ */}
       <div className="space-y-4">
-        <h3 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">{tCommon("advanced") ?? "Advanced"}</h3>
+        <h3 className="text-sm font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wide border-b border-slate-200 dark:border-slate-700 pb-2">{tCommon("advanced") ?? "Advanced"}</h3>
 
       {/* Closed base toggle */}
       {visibility.closedBase && (
@@ -469,8 +469,13 @@ export default function SettingsTab({
       </div>
 
       {/* ═══ DANGER ZONE ═══ */}
-      <div className="space-y-4">
-        <h3 className="text-xs font-bold text-red-400 dark:text-red-500 uppercase tracking-wider">{tCommon("dangerZone") ?? "Danger Zone"}</h3>
+      <div className="space-y-4 mt-4 p-4 -mx-4 rounded-2xl bg-red-50/50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/50">
+        <h3 className="text-sm font-extrabold text-red-600 dark:text-red-400 uppercase tracking-wide flex items-center gap-2">
+          <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" />
+          </svg>
+          {tCommon("dangerZone") ?? "Danger Zone"}
+        </h3>
 
       {/* Ownership transfer */}      <Section title={t("ownershipTransfer")}>
         {hasPendingTransfer ? (
