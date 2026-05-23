@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { persist } from "zustand/middleware";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -60,10 +61,13 @@ const initialState = {
 };
 
 // ── Store Implementation ──────────────────────────────────────────────────────
-// NOTE: No localStorage persistence — elevated mode resets on page load (Req 7.1)
+// Persisted to sessionStorage so admin mode survives page refresh but not tab close.
+// Exits only on: manual exit, timeout, or prompt dismissal.
 
-export const useAdminSessionStore = create<AdminSessionState>()((set, get) => ({
-  ...initialState,
+export const useAdminSessionStore = create<AdminSessionState>()(
+  persist(
+    (set, get) => ({
+      ...initialState,
 
   enterElevatedMode: (
     mode: ElevatedMode,
@@ -147,4 +151,21 @@ export const useAdminSessionStore = create<AdminSessionState>()((set, get) => ({
   clearExitContext: () => {
     set({ lastExitContext: null });
   },
-}));
+}),
+    {
+      name: "shifter-admin-session",
+      storage: {
+        getItem: (name) => {
+          const str = sessionStorage.getItem(name);
+          return str ? JSON.parse(str) : null;
+        },
+        setItem: (name, value) => {
+          sessionStorage.setItem(name, JSON.stringify(value));
+        },
+        removeItem: (name) => {
+          sessionStorage.removeItem(name);
+        },
+      },
+    }
+  )
+);

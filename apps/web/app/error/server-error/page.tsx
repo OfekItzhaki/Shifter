@@ -1,15 +1,18 @@
 "use client";
 
-import { Suspense } from "react";
+import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
-import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import ErrorPageLayout from "@/components/errors/ErrorPageLayout";
 
-function ServerErrorContent() {
+export default function ServerErrorPage() {
   const t = useTranslations("errorPages");
-  const searchParams = useSearchParams();
-  const from = searchParams.get("from") || "/home";
+  const [from, setFrom] = useState("/home");
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    setFrom(params.get("from") || "/home");
+  }, []);
 
   return (
     <ErrorPageLayout
@@ -29,13 +32,5 @@ function ServerErrorContent() {
         {t("serverError.goHome")}
       </Link>
     </ErrorPageLayout>
-  );
-}
-
-export default function ServerErrorPage() {
-  return (
-    <Suspense>
-      <ServerErrorContent />
-    </Suspense>
   );
 }
