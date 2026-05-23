@@ -85,22 +85,27 @@ public class LemonSqueezyClient : ILemonSqueezyClient
 
     private object BuildCheckoutPayload(CreateCheckoutRequest request)
     {
-        var checkoutData = new Dictionary<string, object>
+        var checkoutDataInner = new Dictionary<string, object>
         {
             ["custom"] = request.Metadata
         };
 
         if (!string.IsNullOrWhiteSpace(request.CustomerEmail))
         {
-            checkoutData["checkout_data"] = new { email = request.CustomerEmail };
+            checkoutDataInner["email"] = request.CustomerEmail;
         }
+
+        var attributes = new Dictionary<string, object>
+        {
+            ["checkout_data"] = checkoutDataInner
+        };
 
         return new
         {
             data = new
             {
                 type = "checkouts",
-                attributes = checkoutData,
+                attributes,
                 relationships = new
                 {
                     store = new
