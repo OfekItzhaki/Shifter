@@ -589,6 +589,43 @@ export default function GroupDetailPage() {
     if (!currentSpaceId || !addMemberName.trim()) return;
     setAddMemberSaving(true);
     setAddMemberError(null);
+
+    // ── Client-side duplicate check against current group members ──────────
+    const nameTrimmed = addMemberName.trim().toLowerCase();
+    const phoneTrimmed = addMemberPhone.trim();
+    const emailTrimmed = addMemberEmail.trim().toLowerCase();
+
+    const duplicateByName = members.find(m =>
+      m.fullName.toLowerCase() === nameTrimmed
+    );
+    if (duplicateByName) {
+      setAddMemberError(tErrors("memberAlreadyExists"));
+      setAddMemberSaving(false);
+      return;
+    }
+
+    if (phoneTrimmed) {
+      const duplicateByPhone = members.find(m =>
+        m.phoneNumber && m.phoneNumber.replace(/\s+/g, "") === phoneTrimmed.replace(/\s+/g, "")
+      );
+      if (duplicateByPhone) {
+        setAddMemberError(tErrors("memberPhoneExists"));
+        setAddMemberSaving(false);
+        return;
+      }
+    }
+
+    if (emailTrimmed) {
+      const duplicateByEmail = members.find(m =>
+        m.email && m.email.toLowerCase() === emailTrimmed
+      );
+      if (duplicateByEmail) {
+        setAddMemberError(tErrors("memberEmailExists"));
+        setAddMemberSaving(false);
+        return;
+      }
+    }
+
     try {
       let personId: string;
 
@@ -610,10 +647,10 @@ export default function GroupDetailPage() {
       // Add to group by ID (idempotent on the backend)
       await addGroupMemberById(currentSpaceId, groupId, personId);
       // If phone or email provided, send invitation
-      if (addMemberPhone.trim()) {
-        try { await invitePerson(currentSpaceId, personId, addMemberPhone.trim(), "whatsapp"); } catch { /* non-fatal */ }
-      } else if (addMemberEmail.trim()) {
-        try { await invitePerson(currentSpaceId, personId, addMemberEmail.trim(), "email"); } catch { /* non-fatal */ }
+      if (phoneTrimmed) {
+        try { await invitePerson(currentSpaceId, personId, phoneTrimmed, "whatsapp"); } catch { /* non-fatal */ }
+      } else if (emailTrimmed) {
+        try { await invitePerson(currentSpaceId, personId, emailTrimmed, "email"); } catch { /* non-fatal */ }
       }
       setAddMemberName(""); setAddMemberPhone(""); setAddMemberEmail("");
       setShowAddMember(false);
