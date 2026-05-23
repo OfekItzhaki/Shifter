@@ -17,7 +17,7 @@ export default function SpaceSettingsPage() {
   const t = useTranslations("spaces");
   const locale = useLocale();
   const isRtl = locale === "he";
-  const { currentSpaceId } = useSpaceStore();
+  const { currentSpaceId, setCurrentSpace } = useSpaceStore();
 
   const [space, setSpace] = useState<SpaceDetailDto | null>(null);
   const [members, setMembers] = useState<SpaceMemberDto[]>([]);
@@ -51,9 +51,11 @@ export default function SpaceSettingsPage() {
     try {
       await updateSpace(currentSpaceId, { name: name.trim(), description: description.trim() || null, locale: space.locale });
       setSaved(true);
+      // Update the space store so the sidebar reflects the new name
+      setCurrentSpace(currentSpaceId, name.trim());
     } catch { /* handled by interceptor */ }
     finally { setSaving(false); }
-  }, [currentSpaceId, name, description, space]);
+  }, [currentSpaceId, name, description, space, setCurrentSpace]);
 
   const handleRegenerate = useCallback(async () => {
     if (!currentSpaceId || !confirm(t("regenerateConfirm"))) return;
