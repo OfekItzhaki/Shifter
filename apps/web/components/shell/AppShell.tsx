@@ -11,6 +11,7 @@ import ShifterLogo from "@/components/shell/ShifterLogo";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import DarkModeToggle from "@/components/DarkModeToggle";
 import VerificationBanner from "@/components/shell/VerificationBanner";
+import ApiStatusBanner from "@/components/shell/ApiStatusBanner";
 import OnboardingProvider from "@/components/onboarding/OnboardingProvider";
 import OnboardingPanel from "@/components/onboarding/OnboardingPanel";
 import SpaceSwitcher from "@/components/shell/SpaceSwitcher";
@@ -225,6 +226,7 @@ export default function AppShell({ children }: AppShellProps) {
         </header>
         <OnboardingProvider>
           <main style={S.content} className="bg-slate-50 dark:bg-slate-900">
+            <ApiStatusBanner />
             <VerificationBanner />
             {children}
           </main>
