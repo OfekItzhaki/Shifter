@@ -27,42 +27,6 @@ function onTokenRefreshed(token: string) {
   refreshSubscribers = [];
 }
 
-/**
- * Simple localStorage cache for all GET API responses.
- * Strategy: cache every successful GET, serve from cache when API fails.
- */
-const CACHE_PREFIX = "shifter-api:";
-
-function getCacheKey(url: string): string {
-  return `${CACHE_PREFIX}${url}`;
-}
-
-function readApiCache(url: string): any | null {
-  try {
-    const raw = localStorage.getItem(getCacheKey(url));
-    if (!raw) return null;
-    return JSON.parse(raw);
-  } catch {
-    return null;
-  }
-}
-
-function writeApiCache(url: string, data: any): void {
-  try {
-    localStorage.setItem(getCacheKey(url), JSON.stringify(data));
-  } catch {
-    // localStorage full — evict oldest entries
-    try {
-      const keys = Object.keys(localStorage).filter(k => k.startsWith(CACHE_PREFIX));
-      if (keys.length > 50) {
-        // Remove first 10 entries
-        keys.slice(0, 10).forEach(k => localStorage.removeItem(k));
-        localStorage.setItem(getCacheKey(url), JSON.stringify(data));
-      }
-    } catch {}
-  }
-}
-
 /** Track API connectivity status */
 let apiOnline = true;
 export function isApiOnline(): boolean { return apiOnline; }
@@ -85,18 +49,7 @@ apiClient.interceptors.request.use((config) => {
 
 // Response interceptor: error handling order is 401 → 403 → 5xx → 404
 apiClient.interceptors.response.use(
-  (res) => {
-    // Cache all successful GET responses (only if data is truthy)
-    if (res.config.method === "get" && res.config.url && res.data != null) {
-      const fullUrl = res.config.baseURL ? `${res.config.url}` : res.config.url;
-      writeApiCache(fullUrl, res.data);
-      apiOnline = true;
-      if (typeof window !== "undefined") {
-        window.dispatchEvent(new CustomEvent("api-online"));
-      }
-    }
-    return res;
-  },
+  (res) => res,
   async (error) => {
     const status = error.response?.status;
     const original = error.config;
@@ -161,19 +114,10 @@ apiClient.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    // 5xx or network error: serve from cache if available
+    // 5xx or network error: emit event for the status banner
     if ((status === 500 || status === 502 || status === 503 || status === 504 || !error.response) && typeof window !== "undefined") {
       apiOnline = false;
       window.dispatchEvent(new CustomEvent("api-error", { detail: { status, url: error.config?.url } }));
-
-      // Try to serve cached response for GET requests
-      if (error.config?.method === "get" && error.config?.url) {
-        const cached = readApiCache(error.config.url);
-        if (cached !== null) {
-          // Return a fake successful response with cached data
-          return { data: cached, status: 200, statusText: "OK (cached)", config: error.config, headers: {} };
-        }
-      }
       return Promise.reject(error);
     }
 
