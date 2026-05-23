@@ -534,7 +534,7 @@ export default function GroupDetailPage() {
           `/spaces/${spaceId}/schedule-versions?status=draft`
         ).catch(() => ({ data: [] as Array<{ id: string; status: string }> })),
       ]);
-      const groupAssignments = groupScheduleResponse.assignments;
+      const groupAssignments = groupScheduleResponse?.assignments ?? [];
       setScheduleData(groupAssignments.length > 0 ? groupAssignments : scheduleData);
       const drafts = Array.isArray(draftRes?.data) ? draftRes.data : [];
       setDraftVersion(drafts.length > 0 ? drafts[0] : null);
