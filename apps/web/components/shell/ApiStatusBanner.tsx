@@ -21,6 +21,10 @@ export default function ApiStatusBanner() {
       timeout = setTimeout(() => setVisible(false), 10000);
     }
 
+    function handleApiOnline() {
+      setVisible(false);
+    }
+
     function handleOnline() {
       setIsOffline(false);
       setVisible(false);
@@ -32,6 +36,7 @@ export default function ApiStatusBanner() {
     }
 
     window.addEventListener("api-error", handleApiError);
+    window.addEventListener("api-online", handleApiOnline);
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);
 
@@ -43,6 +48,7 @@ export default function ApiStatusBanner() {
 
     return () => {
       window.removeEventListener("api-error", handleApiError);
+      window.removeEventListener("api-online", handleApiOnline);
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
       clearTimeout(timeout);

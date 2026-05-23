@@ -31,22 +31,17 @@ function HomePage() {
     if (displayName) {
       setResolvedName(displayName);
     }
-    // Also try to get from API in case store isn't hydrated yet
     import("@/lib/api/auth").then(({ getMe }) => {
-      import("@/lib/utils/apiCache").then(({ fetchWithCache }) => {
-        fetchWithCache("me", getMe, (me) => {
-          if (me.displayName) setResolvedName(me.displayName);
-        });
-      });
+      getMe().then(me => {
+        if (me.displayName) setResolvedName(me.displayName);
+      }).catch(() => {});
     });
     // Check if user has groups
     if (currentSpaceId) {
       import("@/lib/api/groups").then(({ getGroups }) => {
-        import("@/lib/utils/apiCache").then(({ fetchWithCache }) => {
-          fetchWithCache(`groups:${currentSpaceId}`, () => getGroups(currentSpaceId), (groups) => {
-            setHasGroups(groups.length > 0);
-          });
-        });
+        getGroups(currentSpaceId).then(groups => {
+          setHasGroups(groups.length > 0);
+        }).catch(() => {});
       });
     }
   }, [displayName]);
