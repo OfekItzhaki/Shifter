@@ -203,9 +203,10 @@ export default function SettingsTab({
               {(solverStartDateTime || solverStartTime) && (
                 <button
                   onClick={() => { onSolverStartDateTimeChange(null); setSolverStartTime(""); }}
-                  className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
-                  title="Clear — use current time"
-                >✕</button>
+                  className="text-xs text-slate-500 dark:text-slate-400 hover:text-red-500 dark:hover:text-red-400 border border-slate-200 dark:border-slate-600 rounded-lg px-2 py-1 transition-colors"
+                >
+                  {tCommon("clear") ?? "Clear"}
+                </button>
               )}
             </div>
             <p className="text-xs text-slate-400 dark:text-slate-500">{t("solverStartFromHint")}</p>
@@ -223,6 +224,24 @@ export default function SettingsTab({
               }`}
             >
               <span className={`absolute h-[16px] w-[16px] rounded-full bg-white shadow transition-all ${autoPublish ? "left-[21px]" : "left-[3px]"}`} />
+            </button>
+          </div>
+
+          {/* Auto-scheduler toggle — runs periodically to fill uncovered slots */}
+          <div className="flex items-center justify-between py-2 border-t border-slate-100 dark:border-slate-700">
+            <div>
+              <p className="text-sm text-slate-600 dark:text-slate-300">{t("autoScheduler") ?? "Auto-scheduler"}</p>
+              <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">{t("autoSchedulerDesc") ?? "Runs every 6 hours to fill uncovered shifts with minimal changes"}</p>
+            </div>
+            <button
+              role="switch"
+              aria-checked={isClosedBase}
+              onClick={() => onClosedBaseChange(!isClosedBase)}
+              className={`relative inline-flex h-[22px] w-[40px] items-center rounded-full transition-colors flex-shrink-0 ${
+                isClosedBase ? "bg-sky-500" : "bg-slate-300 dark:bg-slate-600"
+              }`}
+            >
+              <span className={`absolute h-[16px] w-[16px] rounded-full bg-white shadow transition-all ${isClosedBase ? "left-[21px]" : "left-[3px]"}`} />
             </button>
           </div>
 
