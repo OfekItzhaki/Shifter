@@ -222,13 +222,13 @@ export default function AppShell({ children }: AppShellProps) {
         </header>
         <OnboardingProvider>
           <main style={S.content} className="bg-slate-50 dark:bg-slate-900">
-            <ApiStatusBanner />
             <VerificationBanner />
             {children}
           </main>
           <OnboardingPanel />
         </OnboardingProvider>
       </div>
+      <ApiStatusBanner />
     </div>
   );
 }

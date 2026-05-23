@@ -3,9 +3,8 @@
 import { useState, useEffect } from "react";
 
 /**
- * Shows a non-intrusive banner when the API is returning errors.
- * Only shows once per session — doesn't flash on every page navigation.
- * Auto-dismisses after 8 seconds or when the API recovers.
+ * Subtle fixed banner at the bottom of the screen when API is unavailable.
+ * Doesn't push content, doesn't jump, stays visible while offline.
  */
 export default function ApiStatusBanner() {
   const [visible, setVisible] = useState(false);
@@ -13,16 +12,12 @@ export default function ApiStatusBanner() {
   const [dismissed, setDismissed] = useState(false);
 
   useEffect(() => {
-    let timeout: NodeJS.Timeout;
     let errorCount = 0;
 
     function handleApiError() {
       errorCount++;
-      // Only show after 2+ errors to avoid flashing on single transient failures
       if (errorCount >= 2 && !dismissed) {
         setVisible(true);
-        clearTimeout(timeout);
-        timeout = setTimeout(() => setVisible(false), 8000);
       }
     }
 
@@ -57,7 +52,6 @@ export default function ApiStatusBanner() {
       window.removeEventListener("api-online", handleApiOnline);
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
-      clearTimeout(timeout);
     };
   }, [dismissed]);
 
@@ -65,30 +59,52 @@ export default function ApiStatusBanner() {
 
   return (
     <div
-      className="w-full rounded-lg mb-4 flex items-center justify-between px-4 py-2.5"
       style={{
-        background: isOffline ? "#1e293b" : "#fef3c7",
-        border: isOffline ? "1px solid #fbbf24" : "1px solid #f59e0b",
+        position: "fixed",
+        bottom: 16,
+        left: "50%",
+        transform: "translateX(-50%)",
+        zIndex: 9999,
+        maxWidth: 400,
+        width: "calc(100% - 32px)",
+        padding: "10px 16px",
+        borderRadius: 12,
+        background: isOffline ? "#1e293b" : "rgba(30, 41, 59, 0.95)",
+        border: `1px solid ${isOffline ? "#fbbf24" : "#475569"}`,
+        backdropFilter: "blur(8px)",
+        display: "flex",
+        alignItems: "center",
+        gap: 10,
+        boxShadow: "0 4px 20px rgba(0,0,0,0.3)",
+        animation: "slideUp 0.3s ease-out",
       }}
     >
-      <span
-        className="text-xs font-medium"
-        style={{ color: isOffline ? "#fbbf24" : "#92400e" }}
-      >
+      <span style={{ fontSize: 14 }}>{isOffline ? "📡" : "⚠️"}</span>
+      <span style={{ flex: 1, fontSize: 12, fontWeight: 500, color: isOffline ? "#fbbf24" : "#94a3b8" }}>
         {isOffline
-          ? "📡 No internet connection"
-          : "⚠ Server temporarily unavailable — try refreshing in a moment"}
+          ? "No internet connection"
+          : "Server temporarily unavailable"}
       </span>
-      <button
-        onClick={() => { setVisible(false); setDismissed(true); }}
-        className="flex-shrink-0 ml-3 rounded-md p-1 hover:bg-black/10 transition-colors"
-        style={{ background: "none", border: "none", cursor: "pointer", color: isOffline ? "#fbbf24" : "#92400e", lineHeight: 1 }}
-        aria-label="Dismiss"
-      >
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-        </svg>
-      </button>
+      {!isOffline && (
+        <button
+          onClick={() => { setVisible(false); setDismissed(true); }}
+          style={{
+            background: "none",
+            border: "none",
+            cursor: "pointer",
+            color: "#64748b",
+            padding: 4,
+            lineHeight: 1,
+            borderRadius: 4,
+            flexShrink: 0,
+          }}
+          aria-label="Dismiss"
+        >
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      )}
     </div>
   );
 }
