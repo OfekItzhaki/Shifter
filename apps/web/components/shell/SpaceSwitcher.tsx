@@ -83,10 +83,10 @@ export default function SpaceSwitcher() {
         <div
           style={{
             position: "absolute",
-            bottom: "100%",
+            top: "100%",
             left: 0,
             right: 0,
-            marginBottom: 4,
+            marginTop: 4,
             background: "#1e293b",
             border: "1px solid rgba(255,255,255,0.1)",
             borderRadius: 10,
