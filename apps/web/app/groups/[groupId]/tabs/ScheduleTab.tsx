@@ -155,7 +155,7 @@ export default function ScheduleTab({
       .then(res => {
         if (cancelled) return;
         // Map snapshot DTOs to ScheduleAssignment format
-        const mapped: ScheduleAssignment[] = res.assignments.map(snap => ({
+        const mapped: ScheduleAssignment[] = (res?.assignments ?? []).map(snap => ({
           id: snap.id,
           personId: snap.personId,
           personName: snap.personName || "",
