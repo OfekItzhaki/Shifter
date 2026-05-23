@@ -98,11 +98,12 @@ export default function SettingsTab({
   useEffect(() => {
     import("@/lib/api/groups").then(({ getGroups }) => {
       getGroups(spaceId).then(groups => {
+        if (!Array.isArray(groups)) return; // safety check
         setAllGroups(groups.map(g => ({ id: g.id, name: g.name, parentGroupId: (g as any).parentGroupId ?? null })));
         const current = groups.find(g => g.id === groupId);
         if (current) setCurrentParentId((current as any).parentGroupId ?? null);
       }).catch(() => {});
-    });
+    }).catch(() => {});
   }, [spaceId, groupId]);
 
   // Resolve feature visibility from template type

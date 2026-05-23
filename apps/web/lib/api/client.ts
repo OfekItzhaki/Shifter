@@ -86,8 +86,8 @@ apiClient.interceptors.request.use((config) => {
 // Response interceptor: error handling order is 401 → 403 → 5xx → 404
 apiClient.interceptors.response.use(
   (res) => {
-    // Cache all successful GET responses
-    if (res.config.method === "get" && res.config.url) {
+    // Cache all successful GET responses (only if data is truthy)
+    if (res.config.method === "get" && res.config.url && res.data != null) {
       const fullUrl = res.config.baseURL ? `${res.config.url}` : res.config.url;
       writeApiCache(fullUrl, res.data);
       apiOnline = true;
