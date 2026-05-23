@@ -12,6 +12,13 @@ export const apiClient = axios.create({
 // from triggering multiple redirects. Never reset; page navigation clears it.
 let isRedirecting = false;
 
+// Delay error page redirects for 3 seconds after page load to avoid
+// redirecting during initial hydration when the API might be temporarily unavailable.
+let errorRedirectEnabled = false;
+if (typeof window !== "undefined") {
+  setTimeout(() => { errorRedirectEnabled = true; }, 3000);
+}
+
 // Token refresh mutex — prevents multiple concurrent 401 responses from
 // triggering multiple refresh requests (which would revoke the token and
 // cause a cascade of failures leading to logout).
@@ -116,7 +123,8 @@ apiClient.interceptors.response.use(
 
     // 5xx: Redirect to server error page (only for GET requests — form submissions handle their own errors)
     // Skip redirect if the request opted out via _skipErrorRedirect config flag
-    if ((status === 500 || status === 502 || status === 503 || status === 504) && error.config?.method === "get" && !error.config?._skipErrorRedirect) {
+    // Skip redirect during initial page load (first 3 seconds)
+    if ((status === 500 || status === 502 || status === 503 || status === 504) && error.config?.method === "get" && !error.config?._skipErrorRedirect && errorRedirectEnabled) {
       redirectToErrorPage("/error/server-error");
       return Promise.reject(error);
     }

@@ -49,7 +49,7 @@ export interface MeDto {
 }
 
 export async function getMe(): Promise<MeDto> {
-  const { data } = await apiClient.get<MeDto>("/auth/me");
+  const { data } = await apiClient.get<MeDto>("/auth/me", { _skipErrorRedirect: true } as any);
   return data;
 }
 
