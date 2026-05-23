@@ -44,6 +44,10 @@ export async function getRecommendationsForRun(
   const { data } = await apiClient.get(
     `/spaces/${spaceId}/runs/${runId}/recommendations`
   );
+  // API returns {} when no recommendations exist for the run
+  if (!data || !data.recommendations) {
+    return { totalUncoveredSlots: 0, recommendations: [], remainingCount: 0, affectedDateRange: "" };
+  }
   return data;
 }
 
