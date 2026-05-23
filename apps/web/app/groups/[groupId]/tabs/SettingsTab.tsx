@@ -136,7 +136,7 @@ export default function SettingsTab({
     <div className="space-y-8">
       {/* ═══ GENERAL ═══ */}
       <div className="space-y-4">
-        <h3 className="text-sm font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wide border-b border-slate-200 dark:border-slate-700 pb-2">{tCommon("general") ?? "General"}</h3>
+        <h3 className="text-xs font-black text-slate-600 dark:text-slate-300 uppercase tracking-widest border-b-2 border-slate-300 dark:border-slate-600 pb-2">{tCommon("general") ?? "General"}</h3>
 
         {/* Rename */}
         <Section title={t("groupName")}>
@@ -180,7 +180,7 @@ export default function SettingsTab({
 
       {/* ═══ SCHEDULING ═══ */}
       <div className="space-y-4">
-        <h3 className="text-sm font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wide border-b border-slate-200 dark:border-slate-700 pb-2">{t("planningHorizon")}</h3>
+        <h3 className="text-xs font-black text-slate-600 dark:text-slate-300 uppercase tracking-widest border-b-2 border-slate-300 dark:border-slate-600 pb-2">{t("planningHorizon")}</h3>
 
         <Section title={t("planningHorizon")}>
         <div className="space-y-4">
@@ -327,7 +327,7 @@ export default function SettingsTab({
 
       {/* ═══ PERMISSIONS ═══ */}
       <div className="space-y-4">
-        <h3 className="text-sm font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wide border-b border-slate-200 dark:border-slate-700 pb-2">{tCommon("permissions") ?? "Permissions"}</h3>
+        <h3 className="text-xs font-black text-slate-600 dark:text-slate-300 uppercase tracking-widest border-b-2 border-slate-300 dark:border-slate-600 pb-2">{tCommon("permissions") ?? "Permissions"}</h3>
 
       {/* Allow members to view history toggle */}
       <Section title={t("allowMembersViewHistory")}>
@@ -404,7 +404,7 @@ export default function SettingsTab({
 
       {/* ═══ ADVANCED ═══ */}
       <div className="space-y-4">
-        <h3 className="text-sm font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wide border-b border-slate-200 dark:border-slate-700 pb-2">{tCommon("advanced") ?? "Advanced"}</h3>
+        <h3 className="text-xs font-black text-slate-600 dark:text-slate-300 uppercase tracking-widest border-b-2 border-slate-300 dark:border-slate-600 pb-2">{tCommon("advanced") ?? "Advanced"}</h3>
 
       {/* Closed base toggle */}
       {visibility.closedBase && (
@@ -530,8 +530,8 @@ export default function SettingsTab({
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="bg-white border border-slate-200 rounded-2xl p-5 space-y-3">
-      <h3 className="text-sm font-semibold text-slate-700">{title}</h3>
+    <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-5 space-y-3">
+      <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">{title}</h3>
       {children}
     </div>
   );
