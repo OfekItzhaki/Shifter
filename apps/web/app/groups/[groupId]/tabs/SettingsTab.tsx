@@ -7,6 +7,7 @@ import { getJoinCode, regenerateJoinCode } from "@/lib/api/groups";
 import SmartImportModal from "@/components/SmartImportModal";
 import HomeLeaveConfigPanel from "@/components/home-leave/HomeLeaveConfigPanel";
 import LinkedGroupSelector from "@/components/groups/LinkedGroupSelector";
+import DateTimePicker from "@/components/shared/DateTimePicker";
 import { FEATURE_VISIBILITY_MAP, type GroupTemplateType } from "@/lib/utils/templateFeatureConfig";
 
 interface DraftVersion { id: string; status: string; }
@@ -199,23 +200,14 @@ export default function SettingsTab({
 
           {/* Start date/time */}
           <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <label className="text-sm text-slate-600 dark:text-slate-300 whitespace-nowrap">{t("solverStartFrom")}</label>
-              <input
-                type="datetime-local"
-                value={solverStartDateTime ?? solverStartTime}
-                onChange={e => { onSolverStartDateTimeChange(e.target.value || null); setSolverStartTime(e.target.value); }}
-                className="flex-1 border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
-              />
-              {(solverStartDateTime || solverStartTime) && (
-                <button
-                  onClick={() => { onSolverStartDateTimeChange(null); setSolverStartTime(""); }}
-                  className="text-xs text-slate-500 dark:text-slate-400 hover:text-red-500 dark:hover:text-red-400 border border-slate-200 dark:border-slate-600 rounded-lg px-2 py-1 transition-colors"
-                >
-                  {tCommon("clear") ?? "Clear"}
-                </button>
-              )}
-            </div>
+            <label className="text-sm text-slate-600 dark:text-slate-300">{t("solverStartFrom")}</label>
+            <DateTimePicker
+              value={solverStartDateTime ?? solverStartTime}
+              onChange={(val) => { onSolverStartDateTimeChange(val || null); setSolverStartTime(val); }}
+              onClear={() => { onSolverStartDateTimeChange(null); setSolverStartTime(""); }}
+              clearLabel={tCommon("clear") ?? "Clear"}
+              className="w-full"
+            />
             <p className="text-xs text-slate-400 dark:text-slate-500">{t("solverStartFromHint")}</p>
           </div>
 
