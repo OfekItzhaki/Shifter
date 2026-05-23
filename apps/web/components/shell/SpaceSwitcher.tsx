@@ -41,7 +41,7 @@ export default function SpaceSwitcher() {
   }
 
   // Don't show switcher if only 1 space
-  const showDropdown = spaces.length > 1;
+  const showDropdown = spaces.length > 0;
   const displayName = currentSpaceName
     ? currentSpaceName.length > 30
       ? currentSpaceName.slice(0, 30) + "…"
