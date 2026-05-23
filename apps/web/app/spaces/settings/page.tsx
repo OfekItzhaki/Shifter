@@ -81,8 +81,16 @@ export default function SpaceSettingsPage() {
   if (!space) {
     return (
       <AppShell>
-        <div className="text-center py-20 text-slate-500 dark:text-slate-400">
-          Space not found
+        <div className="w-full max-w-md mx-auto py-16 text-center space-y-4">
+          <p className="text-slate-500 dark:text-slate-400">
+            {t("noSpace")}
+          </p>
+          <a
+            href="/onboarding"
+            className="inline-block px-5 py-2.5 rounded-xl bg-sky-500 hover:bg-sky-600 text-white font-semibold text-sm transition-colors no-underline"
+          >
+            {t("createNew")}
+          </a>
         </div>
       </AppShell>
     );
@@ -201,6 +209,17 @@ export default function SpaceSettingsPage() {
                 </div>
               ))}
             </div>
+          </div>
+
+          {/* Create New Space */}
+          <div className="pt-2">
+            <a
+              href="/onboarding"
+              className="inline-flex items-center gap-2 text-sm text-sky-600 dark:text-sky-400 hover:underline no-underline"
+            >
+              <span>+</span>
+              {t("createNew")}
+            </a>
           </div>
         </div>
       </div>
