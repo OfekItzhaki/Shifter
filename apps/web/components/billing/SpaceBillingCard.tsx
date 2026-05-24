@@ -367,33 +367,14 @@ function ActionButtons({ spaceId, status, onSubscriptionChange }: ActionButtonsP
 
 function UpgradeButton({ spaceId }: { spaceId: string }) {
   const t = useTranslations("billing");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const handleUpgrade = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const { checkoutUrl } = await createSpaceCheckout(spaceId);
-      window.location.href = checkoutUrl;
-    } catch {
-      setError(t("errors.checkout"));
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
-    <>
-      <button
-        onClick={handleUpgrade}
-        disabled={loading}
-        className="bg-sky-500 hover:bg-sky-600 text-white text-sm font-medium px-4 py-2 rounded-lg disabled:opacity-50 transition-colors"
-      >
-        {loading ? t("actions.loading") : t("upgradeNow")}
-      </button>
-      {error && <p className="text-xs text-red-500 mt-2">{error}</p>}
-    </>
+    <a
+      href="/pricing"
+      className="inline-block bg-sky-500 hover:bg-sky-600 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors no-underline text-center"
+    >
+      {t("upgradeNow")}
+    </a>
   );
 }
 
