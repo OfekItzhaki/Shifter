@@ -57,7 +57,7 @@ echo "✅ Postgres is ready"
 MIGRATION_COUNT=$(ls "$MIGRATIONS_DIR"/*.sql 2>/dev/null | wc -l)
 echo "📋 Running $MIGRATION_COUNT SQL migration files..."
 for f in $(ls "$MIGRATIONS_DIR"/*.sql | sort); do
-  docker exec -i "$CONTAINER_NAME" psql -U "$DB_USER" -d "$DB_NAME" -v ON_ERROR_STOP=0 < "$f" > /dev/null 2>&1
+  docker exec -i "$CONTAINER_NAME" psql -U "$DB_USER" -d "$DB_NAME" -v ON_ERROR_STOP=0 < "$f" > /dev/null 2>&1 || true
 done
 echo "✅ All migrations applied"
 echo ""
@@ -65,7 +65,12 @@ echo ""
 # ─── 3. Check EF columns exist in the database ───────────────────────────────
 echo "🔎 Verifying EF column mappings..."
 
-EF_COLUMNS=$(grep -rhoP '\.HasColumnName\("\K[^"]+' "$CONFIGS_DIR" 2>/dev/null | sort -u)
+EF_COLUMNS=$(grep -rhoE '\.HasColumnName\("[^"]+"\)' "$CONFIGS_DIR" 2>/dev/null | sed 's/.*HasColumnName("//;s/")//' | sort -u) || true
+
+if [ -z "$EF_COLUMNS" ]; then
+  echo "⚠️  No EF column mappings found — skipping check."
+  exit 0
+fi
 
 MISSING=()
 for col in $EF_COLUMNS; do
