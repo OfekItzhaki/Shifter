@@ -78,16 +78,21 @@ export default function SpaceSettingsPage() {
     if (loadError) {
       return (
         <AppShell>
-          <div className="w-full max-w-md mx-auto py-16 text-center space-y-4">
-            <p className="text-slate-500 dark:text-slate-400 text-sm">
-              Could not load space settings. The server may be temporarily unavailable.
-            </p>
-            <button
-              onClick={() => window.location.reload()}
-              className="inline-block px-5 py-2.5 rounded-xl bg-sky-500 hover:bg-sky-600 text-white font-semibold text-sm transition-colors cursor-pointer border-none"
-            >
-              Try Again
-            </button>
+          <div className="w-full max-w-md mx-auto py-16">
+            <div className="bg-amber-50 dark:bg-amber-900/30 border border-amber-300 dark:border-amber-600 rounded-xl p-4 flex items-center gap-3">
+              <span className="text-amber-600 dark:text-amber-400 text-lg flex-shrink-0">⚠️</span>
+              <div className="flex-1 min-w-0">
+                <p className="text-amber-800 dark:text-amber-200 text-sm font-medium">
+                  השרת לא זמין כרגע — נסה שוב בעוד כמה שניות
+                </p>
+              </div>
+              <button
+                onClick={() => window.location.reload()}
+                className="flex-shrink-0 px-3 py-1.5 text-xs font-semibold rounded-lg bg-amber-200 dark:bg-amber-700 text-amber-900 dark:text-amber-100 hover:bg-amber-300 dark:hover:bg-amber-600 transition-colors cursor-pointer border-none"
+              >
+                נסה שוב
+              </button>
+            </div>
           </div>
         </AppShell>
       );
