@@ -33,12 +33,12 @@ See **[docs/LOCAL-SETUP.md](docs/LOCAL-SETUP.md)** for full setup instructions.
 # 2. Run migrations
 psql -h localhost -U jobuler -d jobuler -f infra/migrations/000_extensions.sql
 # ... run all files in infra/migrations/ in order
-
+rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr
 # 3. Install deps
 cd apps/web && npm install --legacy-peer-deps
 cd apps/solver && pip install -r requirements.txt
 
-# 4. Start services (3 terminals)
+# 4. Start services (3 terminals) 
 dotnet run --project apps/api/Jobuler.Api   # http://localhost:5000
 python -m uvicorn main:app --port 8000       # http://localhost:8000 (from apps/solver)
 npm run dev                                   # http://localhost:3000 (from apps/web)
