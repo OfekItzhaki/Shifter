@@ -186,10 +186,11 @@ export default function ReAuthDialog({ open, onSuccess, onCancel, mode, spaceId 
         const credentialsList = response.data;
         const hasWebAuthn = Array.isArray(credentialsList) && credentialsList.length > 0;
         const platformAvailable = await isWebAuthnPlatformAvailable();
+        setWebAuthnSupported(platformAvailable);
         setCredentials({
           hasPassword: true,
           loading: false,
-          hasWebAuthnCredentials: hasWebAuthn,
+          hasWebAuthnCredentials: hasWebAuthn && platformAvailable,
           credentialCheckLoading: false,
         });
         // Set active method based on credential availability AND platform authenticator
