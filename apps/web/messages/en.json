@@ -1210,30 +1210,6 @@
       "goHome": "Go Home"
     }
   },
-  "errors": {
-    "generic": {
-      "title": "Something went wrong",
-      "description": "An unexpected error occurred. Please try again."
-    },
-    "network": {
-      "title": "Connection error",
-      "description": "Unable to reach the server. Check your internet connection."
-    },
-    "notFound": {
-      "title": "Page not found",
-      "description": "The page you're looking for doesn't exist or has been moved."
-    },
-    "permission": {
-      "title": "Access denied",
-      "description": "You don't have permission to view this page."
-    },
-    "server": {
-      "title": "Server error",
-      "description": "Something went wrong on our end. Please try again later."
-    },
-    "retry": "Try again",
-    "goHome": "Back to home"
-  },
   "stats": {
     "title": "Statistics",
     "assignments": "Assignments",
