@@ -13,6 +13,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Check migration completeness
+        run: |
+          chmod +x infra/scripts/check-migrations.sh
+          bash infra/scripts/check-migrations.sh
+
       - name: Build web Docker image
         run: |
           docker build \

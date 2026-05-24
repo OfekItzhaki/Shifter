@@ -1,0 +1,16 @@
+{
+  "enabled": true,
+  "name": "SQL Migration Reminder",
+  "description": "When an EF Core configuration file is edited (adding/modifying column mappings), reminds you to create a corresponding SQL migration in infra/migrations/",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "**/Configurations/*Configuration.cs"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "An EF Core configuration file was just modified. Check if any new .HasColumnName() mappings were added. If so, verify that a corresponding SQL migration exists in infra/migrations/ that creates that column (ALTER TABLE ... ADD COLUMN IF NOT EXISTS ...). If no migration exists, create one following the naming convention: infra/migrations/{next_number}_{description}.sql"
+  }
+}
