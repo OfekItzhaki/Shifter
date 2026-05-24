@@ -470,7 +470,7 @@ public class SolverWorkerService : BackgroundService
                 {
                     // Post-solve validation detected hard constraint violations in a "feasible" result.
                     // This means the solver's model was missing constraints — treat as failed.
-                    var violationLocale = input.Locale ?? "he";
+                    var violationLocale = input.Locale ?? "en";
                     var violationList = string.Join("\n", postSolveViolations.Select(v => $"• {v}"));
                     var violationError = violationLocale switch {
                         "he" => $"הסולבר החזיר תוצאה שמפרה אילוצים קשיחים ({postSolveViolations.Count} הפרות). לא נוצרה טיוטה.\n\n{violationList}\n\nבדוק את הגדרות האילוצים ונסה שוב.",
@@ -491,7 +491,7 @@ public class SolverWorkerService : BackgroundService
                     var taskList = string.Join(", ", uncoveredTaskNames);
 
                     // Build a locale-aware error with actionable guidance
-                    var uncoveredLocale = input.Locale ?? "he";
+                    var uncoveredLocale = input.Locale ?? "en";
                     var uncoveredError = uncoveredLocale switch {
                         "he" => $"לא ניתן לאייש את כל המשמרות: {taskList} ({output.UncoveredSlotIds.Count} משמרות חסרות). נסה להקטין את אופק התכנון, להוסיף חברים, או להקל על האילוצים.",
                         "ru" => $"Не удалось укомплектовать все смены: {taskList} ({output.UncoveredSlotIds.Count} смен не заполнены). Попробуйте уменьшить горизонт планирования, добавить участников или смягчить ограничения.",
