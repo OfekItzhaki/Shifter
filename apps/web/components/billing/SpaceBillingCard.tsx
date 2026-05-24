@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useTranslations } from "next-intl";
 import {
   getSpaceSubscription,
   createSpaceCheckout,
@@ -22,6 +23,7 @@ type LoadingState = "loading" | "loaded" | "error";
  * Permission-gated: only visible to users with BillingManage permission.
  */
 export default function SpaceBillingCard({ spaceId, hasBillingPermission }: Props) {
+  const t = useTranslations("billing");
   const [subscription, setSubscription] = useState<SpaceSubscriptionDto | null>(null);
   const [loadingState, setLoadingState] = useState<LoadingState>("loading");
 
@@ -50,10 +52,10 @@ export default function SpaceBillingCard({ spaceId, hasBillingPermission }: Prop
     return (
       <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-5 shadow-sm">
         <h2 className="text-sm font-semibold text-slate-900 dark:text-white mb-3">
-          Subscription
+          {t("title")}
         </h2>
         <div className="flex items-center justify-center py-4 text-slate-500 dark:text-slate-400 text-sm">
-          Loading...
+          {t("loading")}
         </div>
       </div>
     );
@@ -63,17 +65,17 @@ export default function SpaceBillingCard({ spaceId, hasBillingPermission }: Prop
     return (
       <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-5 shadow-sm">
         <h2 className="text-sm font-semibold text-slate-900 dark:text-white mb-3">
-          Subscription
+          {t("title")}
         </h2>
         <div className="flex flex-col items-center gap-3 py-4">
           <p className="text-sm text-slate-500 dark:text-slate-400">
-            Could not load billing information.
+            {t("errorLoad")}
           </p>
           <button
             onClick={fetchSubscription}
             className="px-4 py-2 rounded-lg bg-sky-500 hover:bg-sky-600 text-white font-semibold text-sm transition-colors"
           >
-            Retry
+            {t("retry")}
           </button>
         </div>
       </div>
@@ -85,10 +87,10 @@ export default function SpaceBillingCard({ spaceId, hasBillingPermission }: Prop
     return (
       <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-5 shadow-sm">
         <h2 className="text-sm font-semibold text-slate-900 dark:text-white mb-3">
-          Subscription
+          {t("title")}
         </h2>
         <p className="text-sm text-slate-500 dark:text-slate-400">
-          No subscription found for this space.
+          {t("noSubscription")}
         </p>
       </div>
     );
@@ -98,7 +100,7 @@ export default function SpaceBillingCard({ spaceId, hasBillingPermission }: Prop
     <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-5 shadow-sm">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-sm font-semibold text-slate-900 dark:text-white">
-          Subscription
+          {t("title")}
         </h2>
         <StatusBadge status={subscription.status} />
       </div>
@@ -117,7 +119,8 @@ export default function SpaceBillingCard({ spaceId, hasBillingPermission }: Prop
 // ── Status Badge ──────────────────────────────────────────────────────────────
 
 function StatusBadge({ status }: { status: SpaceSubscriptionDto["status"] }) {
-  const config = getStatusBadgeConfig(status);
+  const t = useTranslations("billing");
+  const config = getStatusBadgeConfig(status, t);
 
   return (
     <span className={`text-xs font-medium px-2.5 py-1 rounded-full border ${config.classes}`}>
@@ -126,31 +129,31 @@ function StatusBadge({ status }: { status: SpaceSubscriptionDto["status"] }) {
   );
 }
 
-function getStatusBadgeConfig(status: SpaceSubscriptionDto["status"]) {
+function getStatusBadgeConfig(status: SpaceSubscriptionDto["status"], t: (key: string) => string) {
   switch (status) {
     case "trialing":
       return {
-        label: "Trialing",
+        label: t("status.trialing"),
         classes: "bg-sky-50 dark:bg-sky-900/20 text-sky-700 dark:text-sky-300 border-sky-200 dark:border-sky-700",
       };
     case "active":
       return {
-        label: "Active",
+        label: t("status.active"),
         classes: "bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 border-green-200 dark:border-green-700",
       };
     case "past_due":
       return {
-        label: "Past Due",
+        label: t("status.past_due"),
         classes: "bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-700",
       };
     case "canceled":
       return {
-        label: "Canceled",
+        label: t("status.canceled"),
         classes: "bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-300 border-orange-200 dark:border-orange-700",
       };
     case "expired":
       return {
-        label: "Expired",
+        label: t("status.expired"),
         classes: "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-600",
       };
     default:
@@ -181,51 +184,56 @@ function SubscriptionDetails({ subscription }: { subscription: SpaceSubscription
 }
 
 function TrialingDetails({ subscription }: { subscription: SpaceSubscriptionDto }) {
+  const t = useTranslations("billing");
   return (
     <div className="space-y-2">
-      <DetailRow label="Trial Start" value={formatDate(subscription.trialStartsAt)} />
-      <DetailRow label="Trial End" value={formatDate(subscription.trialEndsAt)} />
+      <DetailRow label={t("trialStart")} value={formatDate(subscription.trialStartsAt)} />
+      <DetailRow label={t("trialEnd")} value={formatDate(subscription.trialEndsAt)} />
       {subscription.daysRemaining !== null && (
-        <DetailRow label="Days Remaining" value={String(subscription.daysRemaining)} />
+        <DetailRow label={t("daysRemaining")} value={String(subscription.daysRemaining)} />
       )}
     </div>
   );
 }
 
 function ActiveDetails({ subscription }: { subscription: SpaceSubscriptionDto }) {
+  const t = useTranslations("billing");
   return (
     <div className="space-y-2">
-      <DetailRow label="Period Start" value={formatDate(subscription.currentPeriodStart)} />
-      <DetailRow label="Period End" value={formatDate(subscription.currentPeriodEnd)} />
+      <DetailRow label={t("periodStart")} value={formatDate(subscription.currentPeriodStart)} />
+      <DetailRow label={t("periodEnd")} value={formatDate(subscription.currentPeriodEnd)} />
     </div>
   );
 }
 
 function CanceledDetails({ subscription }: { subscription: SpaceSubscriptionDto }) {
+  const t = useTranslations("billing");
   return (
     <div className="space-y-2">
-      <DetailRow label="Cancellation Date" value={formatDate(subscription.canceledAt)} />
-      <DetailRow label="Access Expires" value={formatDate(subscription.currentPeriodEnd)} />
+      <DetailRow label={t("canceledAt")} value={formatDate(subscription.canceledAt)} />
+      <DetailRow label={t("accessExpires")} value={formatDate(subscription.currentPeriodEnd)} />
     </div>
   );
 }
 
 function PastDueDetails({ subscription }: { subscription: SpaceSubscriptionDto }) {
+  const t = useTranslations("billing");
   return (
     <div className="space-y-2">
-      <DetailRow label="Period Start" value={formatDate(subscription.currentPeriodStart)} />
-      <DetailRow label="Period End" value={formatDate(subscription.currentPeriodEnd)} />
+      <DetailRow label={t("periodStart")} value={formatDate(subscription.currentPeriodStart)} />
+      <DetailRow label={t("periodEnd")} value={formatDate(subscription.currentPeriodEnd)} />
       <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
-        Payment is past due. Please update your payment method.
+        {t("pastDueWarning")}
       </p>
     </div>
   );
 }
 
 function ExpiredDetails() {
+  const t = useTranslations("billing");
   return (
     <p className="text-sm text-slate-500 dark:text-slate-400">
-      Your subscription has expired. Renew to regain access to premium features.
+      {t("expiredMessage")}
     </p>
   );
 }
@@ -241,6 +249,7 @@ interface ActionButtonsProps {
 }
 
 function ActionButtons({ spaceId, status, onSubscriptionChange }: ActionButtonsProps) {
+  const t = useTranslations("billing");
   const [loadingAction, setLoadingAction] = useState<ActionType | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -257,7 +266,7 @@ function ActionButtons({ spaceId, status, onSubscriptionChange }: ActionButtonsP
       const { checkoutUrl } = await createSpaceCheckout(spaceId);
       window.location.href = checkoutUrl;
     } catch {
-      setError("Could not create checkout. Please try again.");
+      setError(t("errors.checkout"));
     } finally {
       setLoadingAction(null);
     }
@@ -270,7 +279,7 @@ function ActionButtons({ spaceId, status, onSubscriptionChange }: ActionButtonsP
       await cancelSpaceSubscription(spaceId);
       onSubscriptionChange();
     } catch {
-      setError("Could not cancel subscription. Please try again.");
+      setError(t("errors.cancel"));
     } finally {
       setLoadingAction(null);
     }
@@ -283,7 +292,7 @@ function ActionButtons({ spaceId, status, onSubscriptionChange }: ActionButtonsP
       await renewSpaceSubscription(spaceId);
       onSubscriptionChange();
     } catch {
-      setError("Could not renew subscription. Please try again.");
+      setError(t("errors.renew"));
     } finally {
       setLoadingAction(null);
     }
@@ -300,7 +309,7 @@ function ActionButtons({ spaceId, status, onSubscriptionChange }: ActionButtonsP
             disabled={isLoading}
             className="bg-sky-500 hover:bg-sky-600 text-white text-sm font-medium px-4 py-2 rounded-lg disabled:opacity-50 transition-colors"
           >
-            {loadingAction === "upgrade" ? "Loading…" : "Upgrade"}
+            {loadingAction === "upgrade" ? t("actions.loading") : t("actions.upgrade")}
           </button>
         )}
         {showRenew && (
@@ -309,7 +318,7 @@ function ActionButtons({ spaceId, status, onSubscriptionChange }: ActionButtonsP
             disabled={isLoading}
             className="bg-sky-500 hover:bg-sky-600 text-white text-sm font-medium px-4 py-2 rounded-lg disabled:opacity-50 transition-colors"
           >
-            {loadingAction === "renew" ? "Loading…" : "Renew"}
+            {loadingAction === "renew" ? t("actions.loading") : t("actions.renew")}
           </button>
         )}
         {showCancel && (
@@ -318,7 +327,7 @@ function ActionButtons({ spaceId, status, onSubscriptionChange }: ActionButtonsP
             disabled={isLoading}
             className="bg-red-500 hover:bg-red-600 text-white text-sm font-medium px-4 py-2 rounded-lg disabled:opacity-50 transition-colors"
           >
-            {loadingAction === "cancel" ? "Loading…" : "Cancel"}
+            {loadingAction === "cancel" ? t("actions.loading") : t("actions.cancel")}
           </button>
         )}
       </div>

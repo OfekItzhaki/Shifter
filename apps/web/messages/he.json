@@ -1221,6 +1221,40 @@
       "goHome": "חזרה לדף הבית"
     }
   },
+  "billing": {
+    "title": "מנוי",
+    "loading": "טוען...",
+    "errorLoad": "לא ניתן לטעון את פרטי החיוב.",
+    "retry": "נסה שוב",
+    "noSubscription": "לא נמצא מנוי למרחב זה.",
+    "trialStart": "תחילת ניסיון",
+    "trialEnd": "סיום ניסיון",
+    "daysRemaining": "ימים שנותרו",
+    "periodStart": "תחילת תקופה",
+    "periodEnd": "סיום תקופה",
+    "canceledAt": "תאריך ביטול",
+    "accessExpires": "הגישה פגה",
+    "pastDueWarning": "התשלום באיחור. אנא עדכן את אמצעי התשלום.",
+    "expiredMessage": "המנוי פג. חדש כדי לחזור לתכונות פרימיום.",
+    "status": {
+      "trialing": "ניסיון",
+      "active": "פעיל",
+      "past_due": "באיחור",
+      "canceled": "בוטל",
+      "expired": "פג תוקף"
+    },
+    "actions": {
+      "upgrade": "שדרג",
+      "cancel": "בטל מנוי",
+      "renew": "חדש מנוי",
+      "loading": "טוען..."
+    },
+    "errors": {
+      "checkout": "לא ניתן ליצור תשלום. נסה שוב.",
+      "cancel": "לא ניתן לבטל את המנוי. נסה שוב.",
+      "renew": "לא ניתן לחדש את המנוי. נסה שוב."
+    }
+  },
   "stats": {
     "title": "סטטיסטיקות",
     "assignments": "שיבוצים",

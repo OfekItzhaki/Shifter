@@ -1210,6 +1210,40 @@
       "goHome": "Go Home"
     }
   },
+  "billing": {
+    "title": "Subscription",
+    "loading": "Loading...",
+    "errorLoad": "Could not load billing information.",
+    "retry": "Retry",
+    "noSubscription": "No subscription found for this space.",
+    "trialStart": "Trial Start",
+    "trialEnd": "Trial End",
+    "daysRemaining": "Days Remaining",
+    "periodStart": "Period Start",
+    "periodEnd": "Period End",
+    "canceledAt": "Cancellation Date",
+    "accessExpires": "Access Expires",
+    "pastDueWarning": "Payment is past due. Please update your payment method.",
+    "expiredMessage": "Your subscription has expired. Renew to regain access to premium features.",
+    "status": {
+      "trialing": "Trialing",
+      "active": "Active",
+      "past_due": "Past Due",
+      "canceled": "Canceled",
+      "expired": "Expired"
+    },
+    "actions": {
+      "upgrade": "Upgrade",
+      "cancel": "Cancel",
+      "renew": "Renew",
+      "loading": "Loading…"
+    },
+    "errors": {
+      "checkout": "Could not create checkout. Please try again.",
+      "cancel": "Could not cancel subscription. Please try again.",
+      "renew": "Could not renew subscription. Please try again."
+    }
+  },
   "stats": {
     "title": "Statistics",
     "assignments": "Assignments",
