@@ -16,7 +16,8 @@ public record SpaceDetailDto(
     int MemberCount,
     int GroupCount,
     bool IsOwner,
-    DateTime CreatedAt);
+    DateTime CreatedAt,
+    int ManagementTimeoutMinutes);
 
 public class GetSpaceDetailQueryHandler : IRequestHandler<GetSpaceDetailQuery, SpaceDetailDto?>
 {
@@ -28,7 +29,7 @@ public class GetSpaceDetailQueryHandler : IRequestHandler<GetSpaceDetailQuery, S
     {
         var space = await _db.Spaces
             .AsNoTracking()
-            .FirstOrDefaultAsync(s => s.Id == request.SpaceId && s.IsActive, ct);
+            .FirstOrDefaultAsync(s => s.Id == request.SpaceId && s.IsActive && s.DeletedAt == null, ct);
 
         if (space is null) return null;
 
@@ -50,6 +51,7 @@ public class GetSpaceDetailQueryHandler : IRequestHandler<GetSpaceDetailQuery, S
             memberCount,
             groupCount,
             isOwner,
-            space.CreatedAt);
+            space.CreatedAt,
+            space.ManagementTimeoutMinutes);
     }
 }

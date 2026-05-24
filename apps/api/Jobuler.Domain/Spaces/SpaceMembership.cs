@@ -8,6 +8,7 @@ public class SpaceMembership : Entity, ITenantScoped
     public Guid UserId { get; private set; }
     public DateTime JoinedAt { get; private set; } = DateTime.UtcNow;
     public bool IsActive { get; private set; } = true;
+    public SpacePermissionLevel PermissionLevel { get; private set; } = SpacePermissionLevel.Member;
 
     private SpaceMembership() { }
 
@@ -15,4 +16,9 @@ public class SpaceMembership : Entity, ITenantScoped
         new() { SpaceId = spaceId, UserId = userId };
 
     public void Deactivate() => IsActive = false;
+
+    public void SetPermissionLevel(SpacePermissionLevel level)
+    {
+        PermissionLevel = level;
+    }
 }
