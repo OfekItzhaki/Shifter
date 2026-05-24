@@ -780,6 +780,18 @@
       "shiftCleared": "Shift cleared — draft updated",
       "shiftClearError": "Error clearing shift",
       "shiftNotFound": "Shift not found"
+    },
+    "regeneration": {
+      "button": "Regenerate Schedule",
+      "inProgress": "Regenerating...",
+      "confirmTitle": "Regenerate Schedule",
+      "confirmDescription": "This will create a new draft schedule for the period from today forward. The current published schedule will remain active until you publish the new draft.",
+      "confirm": "Confirm",
+      "cancel": "Cancel",
+      "errorSubscription": "Your subscription has expired. Renew to use this feature.",
+      "errorConflict": "A regeneration is already in progress for this group.",
+      "errorPermission": "You do not have permission to regenerate the schedule.",
+      "errorGeneric": "Failed to start regeneration. Please try again."
     }
   },
   "language": {
@@ -1529,5 +1541,30 @@
     "myGroups": "My Groups",
     "createSpace": "Create New Space",
     "latestVersion": "Latest version"
+  },
+  "regeneration": {
+    "status": {
+      "ariaLabel": "Regeneration run status",
+      "queued": "Queued for processing...",
+      "running": "Computing new schedule...",
+      "completed": "New schedule is ready",
+      "failed": "Schedule regeneration failed",
+      "unknownError": "An unknown error occurred",
+      "pollError": "Error checking run status",
+      "reviewDraft": "Review Draft",
+      "dismiss": "Dismiss"
+    }
+  },
+  "scheduleRegeneration": {
+    "title": "Regenerate Schedule",
+    "description": "This will create a new draft schedule for the period from today forward. The current published schedule will remain active until you review and publish the new draft.",
+    "confirm": "Confirm",
+    "confirming": "Regenerating...",
+    "cancel": "Cancel",
+    "close": "Close",
+    "errorSubscriptionExpired": "Your subscription has expired. Please renew to use schedule regeneration.",
+    "errorAlreadyInProgress": "A regeneration is already in progress for this group. Please wait for it to complete.",
+    "errorPermissionDenied": "You do not have permission to regenerate the schedule.",
+    "errorGeneric": "Something went wrong. Please try again."
   }
 }

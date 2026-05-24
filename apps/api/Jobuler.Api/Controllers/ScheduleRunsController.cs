@@ -59,6 +59,23 @@ public class ScheduleRunsController : ControllerBase
         return Accepted(new { runId });
     }
 
+    /// <summary>
+    /// Trigger a schedule regeneration for a group. Returns the RunId immediately —
+    /// the solver runs asynchronously. Poll GET /schedule-runs/{runId} to check status.
+    /// </summary>
+    [HttpPost("regenerate")]
+    public async Task<IActionResult> Regenerate(
+        Guid spaceId, [FromBody] RegenerateRequest request, CancellationToken ct)
+    {
+        await _permissions.RequirePermissionAsync(
+            CurrentUserId, spaceId, Permissions.ScheduleRecalculate, ct);
+
+        var runId = await _mediator.Send(
+            new TriggerRegenerationCommand(spaceId, request.GroupId, CurrentUserId), ct);
+
+        return Accepted(new { runId });
+    }
+
     /// <summary>Poll the status of a solver run.</summary>
     [HttpGet("{runId:guid}")]
     public async Task<IActionResult> GetRun(Guid spaceId, Guid runId, CancellationToken ct)
@@ -70,3 +87,4 @@ public class ScheduleRunsController : ControllerBase
 }
 
 public record TriggerSolverRequest(string? TriggerMode, Guid? GroupId = null, DateTime? StartTime = null);
+public record RegenerateRequest(Guid GroupId);

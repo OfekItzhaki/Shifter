@@ -784,6 +784,18 @@
       "shiftCleared": "המשמרת נוקתה — הטיוטה עודכנה",
       "shiftClearError": "שגיאה בניקוי המשמרת",
       "shiftNotFound": "המשמרת לא נמצאה"
+    },
+    "regeneration": {
+      "button": "חישוב מחדש",
+      "inProgress": "מחשב מחדש...",
+      "confirmTitle": "חישוב לוח זמנים מחדש",
+      "confirmDescription": "פעולה זו תיצור טיוטת סידור חדשה מהיום והלאה. הסידור הנוכחי יישאר פעיל עד שתפרסם את הטיוטה החדשה.",
+      "confirm": "אישור",
+      "cancel": "ביטול",
+      "errorSubscription": "תקופת הניסיון הסתיימה. חדש את המנוי כדי להשתמש בתכונה זו.",
+      "errorConflict": "חישוב מחדש כבר מתבצע עבור קבוצה זו.",
+      "errorPermission": "אין לך הרשאה לחשב מחדש את הסידור.",
+      "errorGeneric": "שגיאה בהפעלת החישוב מחדש. נסה שוב."
     }
   },
   "language": {
@@ -1541,5 +1553,30 @@
     "myGroups": "הקבוצות שלי",
     "createSpace": "צור מרחב חדש",
     "latestVersion": "גרסה אחרונה"
+  },
+  "regeneration": {
+    "status": {
+      "ariaLabel": "מצב חידוש סידור",
+      "queued": "בתור לעיבוד...",
+      "running": "מחשב סידור חדש...",
+      "completed": "הסידור החדש מוכן",
+      "failed": "חידוש הסידור נכשל",
+      "unknownError": "אירעה שגיאה לא ידועה",
+      "pollError": "שגיאה בבדיקת מצב הריצה",
+      "reviewDraft": "סקירת טיוטה",
+      "dismiss": "סגור"
+    }
+  },
+  "scheduleRegeneration": {
+    "title": "חידוש סידור",
+    "description": "פעולה זו תיצור טיוטת סידור חדשה מהיום והלאה. הסידור הנוכחי ימשיך לפעול עד שתבדוק ותפרסם את הטיוטה החדשה.",
+    "confirm": "אישור",
+    "confirming": "מחדש סידור...",
+    "cancel": "ביטול",
+    "close": "סגור",
+    "errorSubscriptionExpired": "המנוי שלך פג תוקף. יש לחדש את המנוי כדי להשתמש בחידוש סידור.",
+    "errorAlreadyInProgress": "חידוש סידור כבר מתבצע עבור קבוצה זו. יש להמתין לסיומו.",
+    "errorPermissionDenied": "אין לך הרשאה לחדש את הסידור.",
+    "errorGeneric": "משהו השתבש. נסה שוב."
   }
 }

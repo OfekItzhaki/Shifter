@@ -361,9 +361,21 @@ public class SolverWorkerService : BackgroundService
                     .Where(v => v.SpaceId == job.SpaceId)
                     .MaxAsync(v => (int?)v.VersionNumber, ct) ?? 0) + 1;
 
-                version = ScheduleVersion.CreateDraft(
-                    job.SpaceId, nextVersion, job.BaselineVersionId,
-                    job.RunId, job.RequestedByUserId, summaryJson);
+                // Regeneration runs use a dedicated factory that sets SupersedesVersionId
+                // and SourceType="regeneration" for audit trail and UI context.
+                var isRegeneration = job.TriggerMode == "regeneration";
+                if (isRegeneration && job.BaselineVersionId.HasValue && job.RequestedByUserId.HasValue)
+                {
+                    version = ScheduleVersion.CreateRegenerationDraft(
+                        job.SpaceId, nextVersion, job.RunId,
+                        job.BaselineVersionId.Value, job.RequestedByUserId.Value, summaryJson);
+                }
+                else
+                {
+                    version = ScheduleVersion.CreateDraft(
+                        job.SpaceId, nextVersion, job.BaselineVersionId,
+                        job.RunId, job.RequestedByUserId, summaryJson);
+                }
 
                 db.ScheduleVersions.Add(version);
                 await db.SaveChangesAsync(ct); // get version.Id
@@ -398,6 +410,9 @@ public class SolverWorkerService : BackgroundService
                     JsonSerializer.Serialize(output.StabilityMetrics));
 
                 db.AssignmentChangeSummaries.Add(diffSummary);
+
+                // Link the result version to the run for status polling
+                run.SetResultVersion(version.Id);
 
                 // Mark run completed
                 if (output.TimedOut)
@@ -571,7 +586,9 @@ public class SolverWorkerService : BackgroundService
 
             // Auto-publish: if the group has auto_publish enabled and the schedule is feasible,
             // publish the draft immediately without admin review.
-            if (!shouldDiscard && output.Feasible && job.GroupId.HasValue && version is not null)
+            // Regeneration drafts are NEVER auto-published — they always require admin review.
+            var isRegenerationRun = job.TriggerMode == "regeneration";
+            if (!shouldDiscard && output.Feasible && job.GroupId.HasValue && version is not null && !isRegenerationRun)
             {
                 var autoPublishGroup = await db.Groups.AsNoTracking()
                     .FirstOrDefaultAsync(g => g.Id == job.GroupId.Value, ct);
