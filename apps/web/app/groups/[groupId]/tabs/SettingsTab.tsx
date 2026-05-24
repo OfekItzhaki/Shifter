@@ -518,7 +518,7 @@ export default function SettingsTab({
             {deleteError && <p className="text-sm text-red-600">{deleteError}</p>}
           </div>
         ) : (
-          <button onClick={() => onShowDeleteConfirm(true)} className="text-sm text-red-600 border border-red-200 hover:bg-red-50 px-4 py-2.5 rounded-xl transition-colors">
+          <button onClick={() => onShowDeleteConfirm(true)} className="text-sm text-white font-medium bg-red-500 hover:bg-red-600 px-4 py-2.5 rounded-xl transition-colors shadow-sm">
             {t("deleteGroup")}
           </button>
         )}

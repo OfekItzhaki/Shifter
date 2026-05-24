@@ -505,12 +505,12 @@ export default function ScheduleTab({
         </div>
       )}
       {scheduleError && (
-        <div className={`flex items-center gap-2 px-4 py-3 rounded-xl text-sm border ${
+        <div className={`flex items-center gap-3 px-5 py-4 rounded-xl text-base font-semibold border-2 shadow-sm ${
           scheduleIsOffline
-            ? "bg-amber-50 border-amber-200 text-amber-800"
-            : "bg-red-50 border-red-200 text-red-700"
+            ? "bg-amber-50 border-amber-300 text-amber-900"
+            : "bg-red-50 border-red-300 text-red-800"
         }`}>
-          <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <svg className="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
             {scheduleIsOffline
               ? <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
               : <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
