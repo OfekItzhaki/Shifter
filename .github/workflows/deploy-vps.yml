@@ -6,54 +6,74 @@ on:
   workflow_dispatch:
 
 jobs:
-  deploy:
-    name: Deploy to VPS
+  build-and-deploy:
+    name: Build & Deploy
     runs-on: ubuntu-latest
     steps:
-      - name: Deploy via SSH
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build web Docker image
+        run: |
+          docker build \
+            --build-arg NEXT_PUBLIC_API_URL=https://api.shifter.ofeklabs.com \
+            --build-arg NEXT_PUBLIC_APP_VERSION=${{ github.sha }} \
+            -t shifter-web:latest \
+            -f infra/docker/web.Dockerfile \
+            apps/web/
+
+      - name: Save Docker image to tar
+        run: |
+          docker save shifter-web:latest | gzip > shifter-web.tar.gz
+          ls -lh shifter-web.tar.gz
+
+      - name: Copy image to VPS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT || 22 }}
+          source: "shifter-web.tar.gz"
+          target: "/tmp/"
+          timeout: 120s
+          command_timeout: 10m
+
+      - name: Deploy on VPS
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_PORT || 22 }}
+          command_timeout: 5m
           script: |
             set -e
             cd /opt/shifter
-            echo "=== Current commit ==="
-            git rev-parse --short HEAD
-            
-            echo "=== Pulling latest ==="
-            git pull origin main
-            
-            echo "=== Cleaning untracked files in apps/web ==="
-            git clean -fd apps/web/
-            
-            echo "=== Verify middleware.ts is gone ==="
-            ls apps/web/middleware.ts 2>/dev/null && echo "ERROR: middleware.ts still exists!" || echo "OK: middleware.ts removed"
-            
-            echo "=== Verify layout.tsx has correct provider order ==="
-            grep -n "NextIntlClientProvider" apps/web/app/layout.tsx | head -3
 
-            # Run any new migrations (idempotent — safe to re-run)
+            echo "=== Pulling latest code ==="
+            git pull origin main
+
+            echo "=== Loading pre-built web image ==="
+            docker load < /tmp/shifter-web.tar.gz
+            rm -f /tmp/shifter-web.tar.gz
+
+            cd infra/compose
+
+            echo "=== Running migrations ==="
+            cd /opt/shifter
             for f in infra/migrations/*.sql; do
               docker exec -i compose-postgres-1 psql -U jobuler -d jobuler < "$f" 2>&1 | grep -v "already exists" | grep -v "skipping" || true
             done
 
-            cd infra/compose
-            echo "=== Rebuilding web (no cache) ==="
-            docker compose build --no-cache web
+            echo "=== Rebuilding API and restarting services ==="
+            cd /opt/shifter/infra/compose
+            docker compose up -d --build api solver --force-recreate web --remove-orphans
             
-            echo "=== Restarting all services ==="
-            docker compose up -d --remove-orphans --force-recreate
-            
-            echo "=== Waiting for web to start ==="
+            echo "=== Waiting for services to start ==="
             sleep 10
-            
-            echo "=== Testing web response ==="
-            docker compose exec -T web sh -c 'wget -qO /dev/null http://$(cat /etc/hosts | tail -1 | cut -f1):3000/ 2>&1' && echo "OK: 200" || echo "FAIL: still 500"
-            
-            echo "=== Web logs ==="
-            docker compose logs web --tail 10
-            
+
+            echo "=== Service status ==="
+            docker compose ps
+
             echo "✅ Deployed $(git rev-parse --short HEAD) at $(date)"

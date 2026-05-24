@@ -80,6 +80,7 @@ public class ExceptionHandlingMiddleware
         {
             UnauthorizedAccessException => (HttpStatusCode.Forbidden, "אין לך הרשאה לבצע פעולה זו.", (List<string>?)[]),
             KeyNotFoundException        => (HttpStatusCode.NotFound, "הפריט המבוקש לא נמצא.", (List<string>?)[]),
+            Jobuler.Application.Common.PaymentRequiredException => ((HttpStatusCode)402, ex.Message, (List<string>?)[]),
             Jobuler.Application.Common.ConflictException => (HttpStatusCode.Conflict, ex.Message, (List<string>?)[]),
             Jobuler.Application.Common.DomainValidationException => ((HttpStatusCode)422, ex.Message, (List<string>?)[]),
             InvalidOperationException   => (HttpStatusCode.BadRequest, ex.Message, (List<string>?)[]),

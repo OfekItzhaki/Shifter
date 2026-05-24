@@ -41,10 +41,10 @@ export default function LanguageSwitcher({ variant = "sidebar" }: Props) {
               title={l.full}
               aria-label={`Switch to ${l.full}`}
               style={{
-                background: locale === l.code ? "rgba(59,130,246,0.1)" : "transparent",
-                border: locale === l.code ? "1px solid rgba(59,130,246,0.4)" : "1px solid #e2e8f0",
+                background: locale === l.code ? "rgba(14,165,233,0.1)" : "transparent",
+                border: locale === l.code ? "1px solid rgba(14,165,233,0.4)" : "1px solid #e2e8f0",
                 borderRadius: 6,
-                color: locale === l.code ? "#3b82f6" : "#94a3b8",
+                color: locale === l.code ? "#0ea5e9" : "#94a3b8",
                 fontSize: 11,
                 fontWeight: locale === l.code ? 700 : 500,
                 padding: "3px 8px",
@@ -74,10 +74,10 @@ export default function LanguageSwitcher({ variant = "sidebar" }: Props) {
             title={l.full}
             aria-label={`Switch to ${l.full}`}
             style={{
-              background: locale === l.code ? "rgba(59,130,246,0.2)" : "transparent",
-              border: locale === l.code ? "1px solid rgba(59,130,246,0.4)" : "1px solid transparent",
+              background: locale === l.code ? "rgba(14,165,233,0.2)" : "transparent",
+              border: locale === l.code ? "1px solid rgba(14,165,233,0.4)" : "1px solid transparent",
               borderRadius: 5,
-              color: locale === l.code ? "#93c5fd" : "#64748b",
+              color: locale === l.code ? "#7dd3fc" : "#64748b",
               fontSize: 11,
               fontWeight: locale === l.code ? 700 : 500,
               padding: "2px 6px",

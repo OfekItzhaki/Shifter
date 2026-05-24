@@ -146,7 +146,7 @@ const CHANGELOG: ChangelogEntry[] = [
 const BADGE_STYLES: Record<ChangeType, string> = {
   new: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300",
   fix: "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300",
-  improved: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300",
+  improved: "bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300",
 };
 
 export default function ChangelogPage() {

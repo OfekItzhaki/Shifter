@@ -13,8 +13,7 @@ import DarkModeToggle from "@/components/DarkModeToggle";
 import VerificationBanner from "@/components/shell/VerificationBanner";
 import OnboardingProvider from "@/components/onboarding/OnboardingProvider";
 import OnboardingPanel from "@/components/onboarding/OnboardingPanel";
-import { useOnboardingStore } from "@/lib/store/onboardingStore";
-import { useStepCompletion } from "@/lib/hooks/useStepCompletion";
+import SpaceSwitcher from "@/components/shell/SpaceSwitcher";
 import { getMySpaces } from "@/lib/api/spaces";
 import { getMe } from "@/lib/api/auth";
 
@@ -23,20 +22,20 @@ interface AppShellProps { children: React.ReactNode; }
 const S = {
   sidebar: { width: 256, background: "#0f172a", display: "flex", flexDirection: "column" as const, height: "100vh", position: "fixed" as const, top: 0, left: 0, zIndex: 30, overflowY: "auto" as const },
   logo: { padding: "20px 16px", borderBottom: "1px solid rgba(255,255,255,0.08)", display: "flex", alignItems: "center", gap: 10, textDecoration: "none" },
-  logoIcon: { width: 32, height: 32, borderRadius: 8, background: "#3b82f6", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 },
+  logoIcon: { width: 32, height: 32, borderRadius: 8, background: "#0ea5e9", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 },
   nav: { flex: 1, padding: "12px 12px", display: "flex", flexDirection: "column" as const, gap: 2 },
   navLink: (active: boolean, admin: boolean) => ({
     display: "flex", alignItems: "center", gap: 10, padding: "9px 12px", borderRadius: 8,
     textDecoration: "none", fontSize: 14, fontWeight: 500, transition: "background 0.15s",
-    background: active ? (admin ? "rgba(245,158,11,0.15)" : "rgba(59,130,246,0.15)") : "transparent",
-    color: active ? (admin ? "#fbbf24" : "#93c5fd") : (admin ? "rgba(251,191,36,0.7)" : "#94a3b8"),
+    background: active ? (admin ? "rgba(245,158,11,0.15)" : "rgba(14,165,233,0.15)") : "transparent",
+    color: active ? (admin ? "#fbbf24" : "#7dd3fc") : (admin ? "rgba(251,191,36,0.7)" : "#94a3b8"),
   }),
   bottom: { padding: "12px", borderTop: "1px solid rgba(255,255,255,0.08)" },
   userInfo: { padding: "8px 12px", marginBottom: 4 },
   logoutBtn: { display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "9px 12px", borderRadius: 8, background: "none", border: "none", cursor: "pointer", color: "#64748b", fontSize: 14, textAlign: "left" as const },
-  topbar: (admin: boolean) => ({ height: 56, display: "flex", alignItems: "center", justifyContent: "flex-end", padding: "0 24px", borderBottom: `1px solid ${admin ? "#fde68a" : "var(--border-color, #e2e8f0)"}`, background: admin ? "#fffbeb" : "var(--topbar-bg, white)", position: "sticky" as const, top: 0, zIndex: 20 }),
-  main: { marginLeft: 256, display: "flex", flexDirection: "column" as const, minHeight: "100vh", width: "calc(100vw - 256px)" },
-  content: { flex: 1, padding: "clamp(16px, 4vw, 32px)", width: "100%", display: "flex", flexDirection: "column" as const, alignItems: "center" },
+  topbar: (admin: boolean) => ({ height: 56, display: "flex", alignItems: "center", justifyContent: "flex-end", padding: "0 24px", borderBottom: `1px solid ${admin ? "#fde68a" : "var(--border-color, #e2e8f0)"}`, background: admin ? "#fffbeb" : "var(--main-bg, #f8fafc)", position: "sticky" as const, top: 0, zIndex: 20 }),
+  main: { marginLeft: 256, display: "flex", flexDirection: "column" as const, minHeight: "100vh", width: "calc(100vw - 256px)", background: "var(--main-bg, #f8fafc)" },
+  content: { flex: 1, padding: "clamp(16px, 3vw, 32px)", width: "100%", maxWidth: "1400px", margin: "0 auto", display: "flex", flexDirection: "column" as const, alignItems: "center" },
 };
 
 function NavItem({ href, label, icon, admin, onNavigate }: { href: string; label: string; icon: React.ReactNode; admin?: boolean; onNavigate?: () => void }) {
@@ -46,7 +45,7 @@ function NavItem({ href, label, icon, admin, onNavigate }: { href: string; label
     <Link href={href} style={S.navLink(active, !!admin)} onClick={onNavigate}>
       <span style={{ flexShrink: 0, display: "flex" }}>{icon}</span>
       <span>{label}</span>
-      {active && <span style={{ marginLeft: "auto", width: 6, height: 6, borderRadius: "50%", background: admin ? "#fbbf24" : "#3b82f6" }} />}
+      {active && <span style={{ marginLeft: "auto", width: 6, height: 6, borderRadius: "50%", background: admin ? "#fbbf24" : "#0ea5e9" }} />}
     </Link>
   );
 }
@@ -54,10 +53,8 @@ function NavItem({ href, label, icon, admin, onNavigate }: { href: string; label
 
 export default function AppShell({ children }: AppShellProps) {
   const t = useTranslations();
-  const { displayName: storedDisplayName, logout, userId, isPlatformAdmin } = useAuthStore();
+  const { displayName: storedDisplayName, logout, isPlatformAdmin } = useAuthStore();
   const { currentSpaceId, currentSpaceName, setCurrentSpace } = useSpaceStore();
-  const { show: showOnboarding, reset: resetOnboarding } = useOnboardingStore();
-  const { refresh: refreshSteps } = useStepCompletion();
   const router = useRouter();
   const [resolvedName, setResolvedName] = useState<string | null>(storedDisplayName);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -69,7 +66,6 @@ export default function AppShell({ children }: AppShellProps) {
     }
     getMe().then(me => {
       if (me.displayName) setResolvedName(me.displayName);
-      // Sync isPlatformAdmin from API (in case store is stale)
       if (me.isPlatformAdmin !== undefined) {
         useAuthStore.setState({ isPlatformAdmin: me.isPlatformAdmin });
       }
@@ -83,20 +79,16 @@ export default function AppShell({ children }: AppShellProps) {
 
   useEffect(() => {
     getMySpaces().then(spaces => {
-      if (spaces.length === 0) return;
+      if (spaces.length === 0) {
+        router.replace("/onboarding");
+        return;
+      }
       const storedIsValid = currentSpaceId && spaces.some(s => s.id === currentSpaceId);
       if (!storedIsValid) {
         setCurrentSpace(spaces[0].id, spaces[0].name);
       }
     }).catch(() => {});
   }, [currentSpaceId]);
-
-  function handleRestartOnboarding() {
-    if (!userId) return;
-    resetOnboarding(userId);
-    showOnboarding();
-    refreshSteps();
-  }
 
   async function handleLogout() { await logout(); router.push("/login"); }
 
@@ -124,31 +116,33 @@ export default function AppShell({ children }: AppShellProps) {
         className={`sidebar-nav ${sidebarOpen ? "sidebar-open" : ""}`}
       >
         <div style={{ ...S.logo, textDecoration: "none" }}>
-          <Link href="/spaces" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none", flex: 1, minWidth: 0 }}>
+          <Link href="/home" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none", flex: 1, minWidth: 0 }}>
             <ShifterLogo size={32} />
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ color: "white", fontWeight: 700, fontSize: 14, lineHeight: 1.2 }}>Shifter</div>
-              {displayName && <div style={{ color: "#64748b", fontSize: 11, marginTop: 1 }}>{t("spaces.spaceOf", { name: displayName })}</div>}
             </div>
           </Link>
           {/* NotificationBell is OUTSIDE the Link so clicks don't navigate */}
           <NotificationBell />
         </div>
 
+        {/* Space switcher — under logo */}
+        <div style={{ padding: "4px 12px 8px" }}>
+          <SpaceSwitcher />
+        </div>
+
         <nav style={S.nav}>
-          <NavItem href="/profile" label={t("nav.myProfile")} icon={ic("M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z")} onNavigate={() => setSidebarOpen(false)} />
-          <NavItem href="/settings" label={t("nav.settings")} icon={ic("M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z")} onNavigate={() => setSidebarOpen(false)} />
+          {/* Primary — daily use */}
           <NavItem href="/schedule/my-missions" label={t("nav.myMissions")} icon={ic("M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01")} onNavigate={() => setSidebarOpen(false)} />
           <NavItem href="/groups" label={t("nav.myGroups")} icon={ic("M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z")} onNavigate={() => setSidebarOpen(false)} />
-          <NavItem href="/changelog" label={t("nav.changelog")} icon={ic("M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2")} onNavigate={() => setSidebarOpen(false)} />
-          <button
-            onClick={handleRestartOnboarding}
-            style={{ ...S.navLink(false, false), cursor: "pointer", border: "none", background: "transparent" }}
-            className="w-full text-left"
-          >
-            <span style={{ flexShrink: 0, display: "flex" }}>{ic("M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15")}</span>
-            <span>{t("onboarding.restart")}</span>
-          </button>
+
+          {/* Account */}
+          <div style={{ marginTop: 12, paddingTop: 12, borderTop: "1px solid rgba(255,255,255,0.06)" }} />
+          <NavItem href="/profile" label={t("nav.myProfile")} icon={ic("M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z")} onNavigate={() => setSidebarOpen(false)} />
+          <NavItem href="/settings" label={t("nav.settings")} icon={ic("M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z")} onNavigate={() => setSidebarOpen(false)} />
+          <NavItem href="/spaces/settings" label={t("spaces.settings")} icon={ic("M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4")} onNavigate={() => setSidebarOpen(false)} />
+
+          {/* Admin */}
           {isPlatformAdmin && (
             <div style={{ marginTop: 8, paddingTop: 8, borderTop: "1px solid rgba(251,191,36,0.2)" }}>
               <NavItem href="/platform" label={t("nav.platform")} icon={ic("M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4")} admin onNavigate={() => setSidebarOpen(false)} />
@@ -165,7 +159,7 @@ export default function AppShell({ children }: AppShellProps) {
           {/* User info — always shown */}
           <div style={{ ...S.userInfo, display: "flex", alignItems: "center", gap: 10 }}>
             <div style={{
-              width: 32, height: 32, borderRadius: "50%", background: "#3b82f6",
+              width: 32, height: 32, borderRadius: "50%", background: "#0ea5e9",
               display: "flex", alignItems: "center", justifyContent: "center",
               color: "white", fontSize: 13, fontWeight: 700, flexShrink: 0
             }}>
@@ -184,12 +178,21 @@ export default function AppShell({ children }: AppShellProps) {
             </svg>
             {t("auth.logout")}
           </button>
-          <div style={{ padding: "4px 12px 8px", color: "#334155", fontSize: 11, opacity: 0.4, textAlign: "center" }}>
-            v{process.env.NEXT_PUBLIC_APP_VERSION ?? "1.5.0"}
+          <div style={{ padding: "4px 12px 8px", color: "#94a3b8", fontSize: 11, textAlign: "center" }}>
+            v{process.env.NEXT_PUBLIC_APP_VERSION ?? "dev"}
             <span style={{ margin: "0 4px" }}>·</span>
             <a href="https://ofeklabs.com" target="_blank" rel="noopener noreferrer" style={{ color: "inherit", textDecoration: "none" }}>
               ofeklabs.com
             </a>
+          </div>
+          <div style={{ padding: "0 12px 12px", textAlign: "center", display: "flex", justifyContent: "center", gap: 8 }}>
+            <Link href="/terms" style={{ fontSize: 10, color: "#94a3b8", textDecoration: "none" }}>
+              {t("nav.terms")}
+            </Link>
+            <span style={{ fontSize: 10, color: "#64748b" }}>·</span>
+            <Link href="/privacy" style={{ fontSize: 10, color: "#94a3b8", textDecoration: "none" }}>
+              {t("nav.privacy")}
+            </Link>
           </div>
         </div>
       </aside>

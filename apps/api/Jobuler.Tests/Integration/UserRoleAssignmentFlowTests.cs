@@ -1,5 +1,6 @@
 using FluentAssertions;
 using Jobuler.Application.Auth.Commands;
+using Jobuler.Application.Billing;
 using Jobuler.Application.Common;
 using Jobuler.Application.People.Commands;
 using Jobuler.Application.People.Queries;
@@ -26,6 +27,14 @@ public class UserRoleAssignmentFlowTests
         new(new DbContextOptionsBuilder<AppDbContext>()
             .UseInMemoryDatabase(Guid.NewGuid().ToString()).Options);
 
+    private static CreateSpaceCommandHandler CreateSpaceHandler(AppDbContext db)
+    {
+        var trialCache = Substitute.For<ITrialDurationCache>();
+        trialCache.GetTrialDaysAsync(Arg.Any<CancellationToken>()).Returns(14);
+        var statisticsPeriodService = Substitute.For<IStatisticsPeriodService>();
+        return new CreateSpaceCommandHandler(db, trialCache, statisticsPeriodService);
+    }
+
     [Fact]
     public async Task FullFlow_RegisterCreateSpaceAssignRole_RoleAppearsInPersonDetail()
     {
@@ -44,13 +53,14 @@ public class UserRoleAssignmentFlowTests
             default);
 
         // 2. Create a space
-        var createSpaceHandler = new CreateSpaceCommandHandler(db);
+        var createSpaceHandler = CreateSpaceHandler(db);
         var spaceId = await createSpaceHandler.Handle(
             new CreateSpaceCommand("Test Unit", null, "en", adminId),
             default);
 
         // 3. Create a person in the space
-        var createPersonHandler = new CreatePersonCommandHandler(db, new NoOpPermissionService());
+        var peakTracker = Substitute.For<IPeakMemberTracker>();
+        var createPersonHandler = new CreatePersonCommandHandler(db, new NoOpPermissionService(), peakTracker);
         var personId = await createPersonHandler.Handle(
             new CreatePersonCommand(spaceId, "Bob Smith", "Bob", null, adminId),
             default);
@@ -100,10 +110,10 @@ public class UserRoleAssignmentFlowTests
         var db = CreateDb();
         var adminId = Guid.NewGuid();
 
-        var spaceId = await new CreateSpaceCommandHandler(db).Handle(
+        var spaceId = await CreateSpaceHandler(db).Handle(
             new CreateSpaceCommand("Unit B", null, "en", adminId), default);
 
-        var personId = await new CreatePersonCommandHandler(db, new NoOpPermissionService()).Handle(
+        var personId = await new CreatePersonCommandHandler(db, new NoOpPermissionService(), Substitute.For<IPeakMemberTracker>()).Handle(
             new CreatePersonCommand(spaceId, "Carol", null, null, adminId), default);
 
         var roleId1 = await new CreateSpaceRoleCommandHandler(db).Handle(
@@ -128,12 +138,12 @@ public class UserRoleAssignmentFlowTests
         var db = CreateDb();
         var adminId = Guid.NewGuid();
 
-        var spaceA = await new CreateSpaceCommandHandler(db).Handle(
+        var spaceA = await CreateSpaceHandler(db).Handle(
             new CreateSpaceCommand("Space A", null, "en", adminId), default);
-        var spaceB = await new CreateSpaceCommandHandler(db).Handle(
+        var spaceB = await CreateSpaceHandler(db).Handle(
             new CreateSpaceCommand("Space B", null, "en", adminId), default);
 
-        var personInA = await new CreatePersonCommandHandler(db, new NoOpPermissionService()).Handle(
+        var personInA = await new CreatePersonCommandHandler(db, new NoOpPermissionService(), Substitute.For<IPeakMemberTracker>()).Handle(
             new CreatePersonCommand(spaceA, "Alice", null, null, adminId), default);
 
         // Query from spaceB — should return null

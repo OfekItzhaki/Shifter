@@ -12,7 +12,7 @@ import {
 } from "recharts";
 
 const PERSON_COLORS = [
-  "#3b82f6", // blue
+  "#0ea5e9", // blue
   "#ef4444", // red
   "#10b981", // emerald
   "#f59e0b", // amber

@@ -24,7 +24,7 @@ public class SolverHealthCheck : IServiceHealthCheck
         try
         {
             var client = _httpClientFactory.CreateClient("Solver");
-            var response = await client.GetAsync("/", ct);
+            var response = await client.GetAsync("/health", ct);
             response.EnsureSuccessStatusCode();
             stopwatch.Stop();
 

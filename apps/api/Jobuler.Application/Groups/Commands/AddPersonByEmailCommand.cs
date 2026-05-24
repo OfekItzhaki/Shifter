@@ -1,3 +1,4 @@
+using Jobuler.Application.Billing;
 using Jobuler.Application.Common;
 using Jobuler.Domain.Groups;
 using Jobuler.Domain.Notifications;
@@ -29,7 +30,13 @@ public record AddPersonByEmailResult(Guid PersonId, bool IsNewPerson, bool HasLi
 public class AddPersonByEmailCommandHandler : IRequestHandler<AddPersonByEmailCommand, AddPersonByEmailResult>
 {
     private readonly AppDbContext _db;
-    public AddPersonByEmailCommandHandler(AppDbContext db) => _db = db;
+    private readonly IPeakMemberTracker _peakTracker;
+
+    public AddPersonByEmailCommandHandler(AppDbContext db, IPeakMemberTracker peakTracker)
+    {
+        _db = db;
+        _peakTracker = peakTracker;
+    }
 
     public async Task<AddPersonByEmailResult> Handle(AddPersonByEmailCommand req, CancellationToken ct)
     {
@@ -154,6 +161,11 @@ public class AddPersonByEmailCommandHandler : IRequestHandler<AddPersonByEmailCo
         }
 
         await _db.SaveChangesAsync(ct);
+
+        // Track peak member count for space-level billing (only when a new person was created)
+        if (isNew)
+            await _peakTracker.TrackAsync(req.SpaceId, ct);
+
         return new AddPersonByEmailResult(person.Id, isNew, user is not null);
     }
 }

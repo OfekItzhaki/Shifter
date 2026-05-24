@@ -55,7 +55,7 @@ export default function MembersTab({
             value={membersSearch}
             onChange={e => onSearchChange(e.target.value)}
             placeholder={t("search")}
-            className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 pr-9"
+            className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 pr-9"
           />
           <svg className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -63,7 +63,7 @@ export default function MembersTab({
         </div>
         {isAdmin && (
           <div className="flex items-center gap-2">
-            <button onClick={onOpenAddMember} className="flex items-center gap-1.5 text-sm font-medium text-blue-600 border border-blue-200 bg-blue-50 hover:bg-blue-100 px-3 py-2 rounded-xl transition-colors">
+            <button onClick={onOpenAddMember} className="flex items-center gap-1.5 text-sm font-medium text-sky-600 border border-sky-200 bg-sky-50 hover:bg-sky-100 px-3 py-2 rounded-xl transition-colors">
               {t("addMember")}
             </button>
           </div>
@@ -84,54 +84,63 @@ export default function MembersTab({
 
       <div className="space-y-2">
         {filtered.map(m => (
-          <div key={m.personId} className="bg-white border border-slate-200 rounded-xl px-4 py-3 hover:border-slate-300 transition-colors">
+          <div key={m.personId} className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 hover:border-sky-200 dark:hover:border-sky-800 hover:shadow-sm transition-all">
             <div className="flex items-center gap-3">
               {/* Avatar */}
-              <div className="w-9 h-9 rounded-full bg-blue-500 flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-sky-500 to-sky-600 flex items-center justify-center text-white text-sm font-bold flex-shrink-0 shadow-sm">
                 {m.fullName.charAt(0).toUpperCase()}
               </div>
 
-              {/* Name + role badge */}
+              {/* Name + info */}
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <p className="text-sm font-medium text-slate-900 truncate">{m.fullName}</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">{m.fullName}</p>
                   {m.isOwner && (
-                    <span className="text-xs px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-200 flex-shrink-0">
+                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-700 flex-shrink-0 font-medium">
                       {t("owner")}
                     </span>
                   )}
                   {!m.isOwner && m.roleName && (
-                    <span className="text-xs px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200 flex-shrink-0">
-                      {m.roleName}
+                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600 flex-shrink-0 font-medium">
+                      {m.roleName.toLowerCase() === "member" ? t("member") : m.roleName}
                     </span>
                   )}
                 </div>
-                {m.displayName && m.displayName !== m.fullName && (
-                  <p className="text-xs text-slate-400 truncate">{m.displayName}</p>
-                )}
-                {m.phoneNumber && <p className="text-xs text-slate-400 tabular-nums" dir="ltr">{m.phoneNumber}</p>}
+                <div className="flex items-center gap-3 mt-0.5">
+                  {m.phoneNumber && (
+                    <span className="inline-flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400 tabular-nums" dir="ltr">
+                      <svg className="w-3 h-3 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                      </svg>
+                      {m.phoneNumber}
+                    </span>
+                  )}
+                  {m.displayName && m.displayName !== m.fullName && (
+                    <span className="text-xs text-slate-400 dark:text-slate-500 truncate">{m.displayName}</span>
+                  )}
+                </div>
               </div>
 
               {/* Actions */}
-              <div className="flex items-center gap-2 flex-shrink-0">
-                <button onClick={() => onSelectMember(m)} className="text-xs text-blue-600 hover:underline">{t("details")}</button>
+              <div className="flex items-center gap-1.5 flex-shrink-0">
+                <button onClick={() => onSelectMember(m)} className="text-xs text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-300 border border-sky-200 dark:border-sky-700 bg-sky-50 dark:bg-sky-900/20 px-2.5 py-1.5 rounded-lg hover:bg-sky-100 dark:hover:bg-sky-900/40 transition-colors font-medium">{t("details")}</button>
                 {isAdmin && !m.isOwner && (
                   <>
-                    {!m.linkedUserId && (
-                      <button onClick={() => onOpenInvite(m.personId)} className="text-xs text-slate-500 hover:text-slate-700 border border-slate-200 px-2 py-1 rounded-lg hover:bg-slate-50 transition-colors">{t("invite")}</button>
+                    {(!m.linkedUserId || (!m.phoneNumber && !m.email)) && (
+                      <button onClick={() => onOpenInvite(m.personId)} className="text-xs text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/20 px-2.5 py-1.5 rounded-lg hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors font-medium">{t("invite")}</button>
                     )}
                     {confirmRemove === m.personId ? (
                       <>
-                        <span className="text-xs text-slate-600">{t("permanentRemove")}</span>
+                        <span className="text-xs text-slate-600 dark:text-slate-400">{t("permanentRemove")}</span>
                         <button
                           onClick={() => { setConfirmRemove(null); onRemoveMember(m.personId); }}
-                          className="text-xs text-white bg-red-500 hover:bg-red-600 px-2 py-1 rounded-lg transition-colors"
+                          className="text-xs text-white bg-red-500 hover:bg-red-600 px-2.5 py-1.5 rounded-lg transition-colors font-medium"
                         >
                           {t("confirm")}
                         </button>
                         <button
                           onClick={() => setConfirmRemove(null)}
-                          className="text-xs text-slate-500 border border-slate-200 px-2 py-1 rounded-lg hover:bg-slate-50 transition-colors"
+                          className="text-xs text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-600 px-2.5 py-1.5 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors font-medium"
                         >
                           {t("cancel")}
                         </button>
@@ -139,7 +148,7 @@ export default function MembersTab({
                     ) : (
                       <button
                         onClick={() => setConfirmRemove(m.personId)}
-                        className="text-xs text-red-500 hover:text-red-700 border border-red-100 px-2 py-1 rounded-lg hover:bg-red-50 transition-colors"
+                        className="text-xs text-red-500 dark:text-red-400 border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 px-2.5 py-1.5 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors font-medium"
                       >
                         {t("remove")}
                       </button>
@@ -254,19 +263,19 @@ export function MemberProfileModal({ member, isAdmin, editForm, saving, error, o
           <div className="space-y-4">
             <div>
               <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">{tProfile("fullName")}</label>
-              <input type="text" value={editForm.fullName} onChange={e => onChangeForm({ ...editForm, fullName: e.target.value })} className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              <input type="text" value={editForm.fullName} onChange={e => onChangeForm({ ...editForm, fullName: e.target.value })} className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" />
             </div>
             <div>
               <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">{tProfile("displayName")}</label>
-              <input type="text" value={editForm.displayName} onChange={e => onChangeForm({ ...editForm, displayName: e.target.value })} className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              <input type="text" value={editForm.displayName} onChange={e => onChangeForm({ ...editForm, displayName: e.target.value })} className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" />
             </div>
             <div>
               <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">{tProfile("phone")}</label>
-              <input type="tel" value={editForm.phoneNumber} onChange={e => onChangeForm({ ...editForm, phoneNumber: e.target.value })} dir="ltr" className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              <input type="tel" value={editForm.phoneNumber} onChange={e => onChangeForm({ ...editForm, phoneNumber: e.target.value })} dir="ltr" className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" />
             </div>
             <div>
               <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">{tProfile("email")}</label>
-              <input type="email" value={editForm.email} onChange={e => onChangeForm({ ...editForm, email: e.target.value })} dir="ltr" className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              <input type="email" value={editForm.email} onChange={e => onChangeForm({ ...editForm, email: e.target.value })} dir="ltr" className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" />
             </div>
             <div>
               <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">{tProfile("profileImage")}</label>
@@ -274,11 +283,11 @@ export function MemberProfileModal({ member, isAdmin, editForm, saving, error, o
             </div>
             <div>
               <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">{tProfile("birthday")}</label>
-              <input type="date" value={editForm.birthday} onChange={e => onChangeForm({ ...editForm, birthday: e.target.value })} className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              <input type="date" value={editForm.birthday} onChange={e => onChangeForm({ ...editForm, birthday: e.target.value })} className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" />
             </div>
             {error && <p className="text-sm text-red-600">{error}</p>}
             <div className="flex gap-2 pt-1">
-              <button onClick={() => onSave(member.personId)} disabled={saving} className="bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl disabled:opacity-50 transition-colors">
+              <button onClick={() => onSave(member.personId)} disabled={saving} className="bg-sky-500 hover:bg-sky-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl disabled:opacity-50 transition-colors">
                 {saving ? tCommon("loading") : tCommon("save")}
               </button>
               <button onClick={onCancelEdit} className="text-sm text-slate-500 border border-slate-200 px-4 py-2.5 rounded-xl hover:bg-slate-50 transition-colors">{tCommon("cancel")}</button>
@@ -295,7 +304,7 @@ export function MemberProfileModal({ member, isAdmin, editForm, saving, error, o
                   className="w-16 h-16 rounded-full object-cover flex-shrink-0"
                 />
               ) : (
-                <div className="w-16 h-16 rounded-full bg-blue-500 flex items-center justify-center text-white text-2xl font-bold flex-shrink-0">
+                <div className="w-16 h-16 rounded-full bg-sky-500 flex items-center justify-center text-white text-2xl font-bold flex-shrink-0">
                   {(member.displayName ?? member.fullName).charAt(0).toUpperCase()}
                 </div>
               )}
@@ -307,7 +316,7 @@ export function MemberProfileModal({ member, isAdmin, editForm, saving, error, o
               </div>
             </div>
             {isAdmin && (
-              <button onClick={onStartEdit} className="text-sm text-blue-600 border border-blue-200 bg-blue-50 hover:bg-blue-100 px-4 py-2 rounded-xl transition-colors">
+              <button onClick={onStartEdit} className="text-sm text-sky-600 border border-sky-200 bg-sky-50 hover:bg-sky-100 px-4 py-2 rounded-xl transition-colors">
                 {t("editDetails")}
               </button>
             )}
@@ -315,8 +324,8 @@ export function MemberProfileModal({ member, isAdmin, editForm, saving, error, o
             {isAdmin && (
               <HomeLeavePrioritySelector personId={member.personId} groupId="" />
             )}
-            {/* Home-leave stats — time at base vs home */}
-            <HomeLeaveStatsSection personId={member.personId} />
+            {/* Home-leave stats — time at base vs home (admin only) */}
+            <HomeLeaveStatsSection personId={member.personId} isAdmin={isAdmin} />
           </div>
         )
       ) : (
@@ -365,11 +374,11 @@ export function MemberProfileModal({ member, isAdmin, editForm, saving, error, o
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs text-slate-500 mb-1">{t("from")}</label>
-                <input type="datetime-local" value={newPresenceStart} onChange={e => setNewPresenceStart(e.target.value)} required className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                <input type="datetime-local" value={newPresenceStart} onChange={e => setNewPresenceStart(e.target.value)} required className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" />
               </div>
               <div>
                 <label className="block text-xs text-slate-500 mb-1">{t("until")}</label>
-                <input type="datetime-local" value={newPresenceEnd} onChange={e => setNewPresenceEnd(e.target.value)} required className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                <input type="datetime-local" value={newPresenceEnd} onChange={e => setNewPresenceEnd(e.target.value)} required className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" />
               </div>
             </div>
             {/* Reason picker */}
@@ -379,7 +388,7 @@ export function MemberProfileModal({ member, isAdmin, editForm, saving, error, o
                 <select
                   value={selectedReasonId}
                   onChange={e => setSelectedReasonId(e.target.value)}
-                  className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                  className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 bg-white"
                 >
                   <option value="">{t("selectReason")}</option>
                   {reasons.map(r => (
@@ -397,15 +406,15 @@ export function MemberProfileModal({ member, isAdmin, editForm, saving, error, o
                 onChange={e => setCustomReasonText(e.target.value.slice(0, 200))}
                 placeholder={t("customReasonPlaceholder")}
                 maxLength={200}
-                className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
               />
             )}
             {/* Note field (shown when not using custom reason) */}
             {!isCustomSelected && (
-              <input type="text" value={newPresenceNote} onChange={e => setNewPresenceNote(e.target.value)} placeholder={tCommon("optional")} className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              <input type="text" value={newPresenceNote} onChange={e => setNewPresenceNote(e.target.value)} placeholder={tCommon("optional")} className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" />
             )}
             {presenceError && <p className="text-xs text-red-600">{presenceError}</p>}
-            <button type="submit" disabled={presenceSaving} className="bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-4 py-2 rounded-xl disabled:opacity-50 transition-colors">
+            <button type="submit" disabled={presenceSaving} className="bg-sky-500 hover:bg-sky-600 text-white text-sm font-medium px-4 py-2 rounded-xl disabled:opacity-50 transition-colors">
               {presenceSaving ? tCommon("loading") : tCommon("add")}
             </button>
           </form>
@@ -416,14 +425,14 @@ export function MemberProfileModal({ member, isAdmin, editForm, saving, error, o
 }
 
 
-// ── Home-leave stats section (shown in member info tab) ───────────────────────
-function HomeLeaveStatsSection({ personId }: { personId: string }) {
+// ── Home-leave stats section (shown in member info tab — admin only) ──────────
+function HomeLeaveStatsSection({ personId, isAdmin }: { personId: string; isAdmin: boolean }) {
   const { currentSpaceId } = useSpaceStore();
   const [stats, setStats] = useState<{ totalBaseHours: number; totalHomeHours: number; baseTimeRatio: number; leaveSlotCount: number } | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!currentSpaceId) return;
+    if (!currentSpaceId || !isAdmin) return;
     setLoading(true);
     // Fetch from the published schedule's summary_json (home_leave_metrics)
     apiClient.get(`/spaces/${currentSpaceId}/schedule-versions/current`)
@@ -448,8 +457,9 @@ function HomeLeaveStatsSection({ personId }: { personId: string }) {
       })
       .catch(() => setStats(null))
       .finally(() => setLoading(false));
-  }, [currentSpaceId, personId]);
+  }, [currentSpaceId, personId, isAdmin]);
 
+  if (!isAdmin) return null;
   if (loading) return null;
   if (!stats) return null;
 
@@ -461,7 +471,7 @@ function HomeLeaveStatsSection({ personId }: { personId: string }) {
       <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">זמן בבית / בבסיס</p>
       <div className="grid grid-cols-3 gap-2 text-center">
         <div>
-          <p className="text-lg font-bold text-blue-600">{stats.totalBaseHours}h</p>
+          <p className="text-lg font-bold text-sky-600">{stats.totalBaseHours}h</p>
           <p className="text-[10px] text-slate-400">בבסיס</p>
         </div>
         <div>
@@ -475,7 +485,7 @@ function HomeLeaveStatsSection({ personId }: { personId: string }) {
       </div>
       {/* Bar */}
       <div className="flex h-2 rounded-full overflow-hidden mt-2">
-        <div className="bg-blue-400" style={{ width: `${basePercent}%` }} title={`בבסיס: ${basePercent}%`} />
+        <div className="bg-sky-400" style={{ width: `${basePercent}%` }} title={`בבסיס: ${basePercent}%`} />
         <div className="bg-emerald-400" style={{ width: `${homePercent}%` }} title={`בבית: ${homePercent}%`} />
       </div>
       <div className="flex justify-between text-[10px] text-slate-400 mt-0.5">
@@ -546,7 +556,7 @@ function HomeLeavePrioritySelector({ personId, groupId }: { personId: string; gr
         value={priority}
         onChange={e => handleChange(Number(e.target.value))}
         disabled={saving}
-        className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white disabled:opacity-50"
+        className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 bg-white disabled:opacity-50"
       >
         {PRIORITY_OPTIONS.map(opt => (
           <option key={opt.value} value={opt.value}>{opt.label}</option>

@@ -73,7 +73,7 @@ export default function OverrideModal({
             <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">{t("currentAssignees")}</p>
             <div className="flex flex-wrap gap-1.5">
               {currentAssignees.map(name => (
-                <span key={name} className="px-2.5 py-1 bg-blue-50 text-blue-700 border border-blue-200 rounded-full text-xs font-medium">
+                <span key={name} className="px-2.5 py-1 bg-sky-50 text-sky-700 border border-sky-200 rounded-full text-xs font-medium">
                   {name}
                 </span>
               ))}
@@ -93,7 +93,7 @@ export default function OverrideModal({
                   key={p.personId}
                   className={`flex items-center gap-3 px-3 py-2 rounded-xl border cursor-pointer transition-colors ${
                     selectedIds.has(p.personId)
-                      ? "border-blue-300 bg-blue-50"
+                      ? "border-sky-300 bg-sky-50"
                       : "border-slate-200 bg-white hover:bg-slate-50"
                   }`}
                 >
@@ -101,7 +101,7 @@ export default function OverrideModal({
                     type="checkbox"
                     checked={selectedIds.has(p.personId)}
                     onChange={() => togglePerson(p.personId)}
-                    className="accent-blue-500"
+                    className="accent-sky-500"
                   />
                   <span className="text-sm text-slate-800">{p.displayName}</span>
                 </label>
@@ -117,7 +117,7 @@ export default function OverrideModal({
           <button
             onClick={handleConfirm}
             disabled={saving || selectedIds.size === 0}
-            className="bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl disabled:opacity-50 transition-colors"
+            className="bg-sky-500 hover:bg-sky-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl disabled:opacity-50 transition-colors"
           >
             {saving ? t("saving") : t("applyOverride")}
           </button>

@@ -243,7 +243,7 @@ export default function StatsTab({ spaceId, groupId }: Props) {
             onClick={() => setTimeRange(opt.value)}
             className={`px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors ${
               timeRange === opt.value
-                ? "bg-blue-50 text-blue-700 border-blue-200"
+                ? "bg-sky-50 text-sky-700 border-sky-200"
                 : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
             }`}
           >

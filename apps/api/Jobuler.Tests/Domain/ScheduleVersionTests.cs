@@ -55,4 +55,51 @@ public class ScheduleVersionTests
 
         version.Status.Should().Be(ScheduleVersionStatus.RolledBack);
     }
+
+    [Fact]
+    public void CreateRegenerationDraft_SetsAllFieldsCorrectly()
+    {
+        var spaceId = Guid.NewGuid();
+        var versionNumber = 5;
+        var sourceRunId = Guid.NewGuid();
+        var supersedesVersionId = Guid.NewGuid();
+        var createdByUserId = Guid.NewGuid();
+        var summaryJson = """{"solver":"cp-sat","iterations":42}""";
+
+        var version = ScheduleVersion.CreateRegenerationDraft(
+            spaceId, versionNumber, sourceRunId,
+            supersedesVersionId, createdByUserId, summaryJson);
+
+        version.SpaceId.Should().Be(spaceId);
+        version.VersionNumber.Should().Be(versionNumber);
+        version.Status.Should().Be(ScheduleVersionStatus.Draft);
+        version.SourceRunId.Should().Be(sourceRunId);
+        version.SupersedesVersionId.Should().Be(supersedesVersionId);
+        version.CreatedByUserId.Should().Be(createdByUserId);
+        version.SourceType.Should().Be("regeneration");
+        version.SummaryJson.Should().Be(summaryJson);
+    }
+
+    [Fact]
+    public void CreateRegenerationDraft_WithoutSummaryJson_LeavesItNull()
+    {
+        var version = ScheduleVersion.CreateRegenerationDraft(
+            Guid.NewGuid(), 1, Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
+
+        version.SummaryJson.Should().BeNull();
+        version.SourceType.Should().Be("regeneration");
+        version.Status.Should().Be(ScheduleVersionStatus.Draft);
+    }
+
+    [Fact]
+    public void CreateRegenerationDraft_DoesNotSetRollbackOrBaselineFields()
+    {
+        var version = ScheduleVersion.CreateRegenerationDraft(
+            Guid.NewGuid(), 1, Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
+
+        version.BaselineVersionId.Should().BeNull();
+        version.RollbackSourceVersionId.Should().BeNull();
+        version.PublishedByUserId.Should().BeNull();
+        version.PublishedAt.Should().BeNull();
+    }
 }

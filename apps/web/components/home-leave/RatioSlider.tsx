@@ -93,15 +93,15 @@ export default function RatioSlider({
 
   // Gradient direction: in RTL, conservative is on the right, generous on the left
   const gradientClass = isRTL
-    ? "bg-gradient-to-r from-emerald-400 via-slate-300 to-blue-400"
-    : "bg-gradient-to-l from-emerald-400 via-slate-300 to-blue-400";
+    ? "bg-gradient-to-r from-emerald-400 via-slate-300 to-sky-400"
+    : "bg-gradient-to-l from-emerald-400 via-slate-300 to-sky-400";
 
   return (
     <div className="space-y-3" dir={isRTL ? "rtl" : "ltr"}>
       {/* Current ratio display */}
       <div className="flex justify-center">
         <span className="inline-flex items-center gap-1.5 px-4 py-1.5 text-sm font-semibold text-slate-700 bg-slate-100 rounded-lg">
-          <span className="text-blue-600">{baseDays}</span>
+          <span className="text-sky-600">{baseDays}</span>
           <span className="text-slate-400">:</span>
           <span className="text-emerald-600">{homeDays}</span>
           <span className="text-xs text-slate-400 font-normal ms-1">
@@ -143,7 +143,7 @@ export default function RatioSlider({
             [&::-webkit-slider-thumb]:rounded-full
             [&::-webkit-slider-thumb]:bg-white
             [&::-webkit-slider-thumb]:border-2
-            [&::-webkit-slider-thumb]:border-blue-500
+            [&::-webkit-slider-thumb]:border-sky-500
             [&::-webkit-slider-thumb]:shadow-md
             [&::-webkit-slider-thumb]:transition-transform
             [&::-webkit-slider-thumb]:hover:scale-110
@@ -152,7 +152,7 @@ export default function RatioSlider({
             [&::-moz-range-thumb]:rounded-full
             [&::-moz-range-thumb]:bg-white
             [&::-moz-range-thumb]:border-2
-            [&::-moz-range-thumb]:border-blue-500
+            [&::-moz-range-thumb]:border-sky-500
             [&::-moz-range-thumb]:shadow-md
             [&::-webkit-slider-runnable-track]:bg-transparent
             [&::-moz-range-track]:bg-transparent`}
@@ -163,7 +163,7 @@ export default function RatioSlider({
 
       {/* Labels */}
       <div className="flex justify-between px-1">
-        <span className="text-xs text-blue-600 font-medium">
+        <span className="text-xs text-sky-600 font-medium">
           {t("moreBase")}
         </span>
         <span className="text-xs text-emerald-600 font-medium">

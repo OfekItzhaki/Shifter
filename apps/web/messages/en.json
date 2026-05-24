@@ -67,6 +67,7 @@
     "noCredentialFound": "No registered device found. Log in with password to enable biometric login."
   },
   "nav": {
+    "home": "Home",
     "schedule": "Schedule",
     "today": "Today",
     "tomorrow": "Tomorrow",
@@ -78,7 +79,9 @@
     "stats": "Statistics",
     "admin": "Admin",
     "logs": "Logs",
-    "platform": "Platform"
+    "platform": "Platform",
+    "terms": "Terms",
+    "privacy": "Privacy"
   },
   "schedule": {
     "title": "Schedule",
@@ -93,7 +96,7 @@
     "loading": "Loading...",
     "source": "Source",
     "sourceOverride": "Override",
-    "sourceSolver": "Solver",
+    "sourceSolver": "Automatic",
     "hours": "Hours",
     "assignee": "Assignee",
     "assigneeN": "Assignee {n}",
@@ -177,6 +180,22 @@
       "applying": "Setting up...",
       "errorApplying": "Error applying template. You can set up manually."
     },
+    "createWizard": {
+      "title": "Create New Group",
+      "nameLabel": "Group Name",
+      "namePlaceholder": "Enter a group name...",
+      "templateLabel": "Choose a Template",
+      "templateDescription": "The template will pre-configure tasks, constraints, and qualifications",
+      "continue": "Continue",
+      "creating": "Creating...",
+      "templateCards": {
+        "army-base": "24h guard shifts, kitchen duty, patrol. Designed for military platoons.",
+        "restaurant": "Morning, afternoon, and evening shifts. Waiters, kitchen, bar.",
+        "hospital": "Day, evening, and night shifts. 8-hour rotations.",
+        "security": "12-hour day/night rotations with minimum rest between shifts.",
+        "custom": "Start from scratch. Add your own tasks and constraints."
+      }
+    },
     "join": {
       "title": "Join a Group",
       "subtitle": "Enter the code shared by your group admin",
@@ -232,7 +251,7 @@
       "tabInfo": "Info",
       "tabAvailability": "Availability",
       "editDetails": "Edit Details",
-      "availabilityHint": "Set when this member is unavailable (vacation, sick leave, etc.). The solver will not assign them during these times.",
+      "availabilityHint": "Set when this member is unavailable (vacation, sick leave, etc.). The system will not assign them during these times.",
       "noAvailabilityWindows": "No unavailability windows defined",
       "addAvailabilityWindow": "Add unavailability window",
       "from": "From",
@@ -242,7 +261,16 @@
       "reason": "Reason",
       "selectReason": "Select reason...",
       "customReason": "Custom",
-      "customReasonPlaceholder": "Enter custom reason..."
+      "customReasonPlaceholder": "Enter custom reason...",
+      "member": "Member",
+      "bulkAdd": "Bulk Add",
+      "singleAdd": "Single",
+      "bulkPlaceholder": "Paste names — one name per line",
+      "bulkCount": "{count} members will be added",
+      "bulkAddAll": "Add All",
+      "bulkProgress": "Adding {current}/{total}...",
+      "bulkSuccess": "{count} members added successfully",
+      "bulkErrors": "{count} errors"
     },
     "qualifications_tab": {
       "title": "Qualifications",
@@ -377,7 +405,9 @@
       "daysAhead": "days ahead",
       "saveSettings": "Save Settings",
       "autoPublish": "Auto-Publish",
-      "autoPublishDesc": "Automatically publish the schedule when the solver completes successfully",
+      "autoPublishDesc": "Automatically publish the schedule when it is ready",
+      "autoScheduler": "Auto-Scheduler",
+      "autoSchedulerDesc": "Runs every 6 hours to fill uncovered shifts with minimal changes",
       "runSchedule": "Run Schedule",
       "running": "Running...",
       "startFrom": "Start from",
@@ -419,7 +449,7 @@
       "regenerateCode": "Generate new code (invalidates old link)",
       "loading": "Loading...",
       "minRestBetweenShifts": "Minimum Rest Between Shifts",
-      "minRestBetweenShiftsDesc": "Minimum hours of rest between two consecutive shifts. The solver enforces this automatically.",
+      "minRestBetweenShiftsDesc": "Minimum hours of rest between two consecutive shifts. The system enforces this automatically.",
       "hours": "hours",
       "minRestZeroWarning": "⚠ No minimum rest — suitable for restaurants etc.",
       "allowMembersViewHistory": "History viewing permission",
@@ -429,7 +459,13 @@
       "managementTimeout": "Management Mode Timeout",
       "managementTimeoutDesc": "Minutes of inactivity before the admin is prompted to confirm continued activity in management mode.",
       "managementTimeoutError": "Timeout must be a whole number between 5 and 120 minutes.",
-      "minutes": "minutes"
+      "minutes": "minutes",
+      "parentGroup": "Parent Group"
+    },
+    "linkedGroup": {
+      "title": "Parent Group",
+      "none": "None (independent group)",
+      "linkedTo": "Linked to"
     },
     "stats_tab": {
       "loading": "Loading statistics...",
@@ -474,7 +510,7 @@
       "history": "History",
       "thisWeek": "This Week",
       "infeasible": "Could not create schedule",
-      "infeasibleDesc": "The solver could not build a schedule with the current constraints.",
+      "infeasibleDesc": "The system could not build a schedule with the current constraints.",
       "infeasibleSolution": "Solutions: add more members, extend the time horizon, or relax constraints.",
       "noMissionsToday": "No missions on this day"
     },
@@ -530,7 +566,7 @@
     "push": {
       "title": "Push Notifications",
       "enableLabel": "Enable push notifications",
-      "enableDescription": "Receive browser notifications for schedule updates, solver results, and group alerts",
+      "enableDescription": "Receive browser notifications for schedule updates, automatic scheduling results, and group alerts",
       "notSupported": "Push notifications are not supported in this browser",
       "permissionDenied": "Notifications are blocked. Enable them in your browser settings to receive push alerts."
     },
@@ -646,6 +682,9 @@
     "errorCreatePerson": "Error creating person",
     "errorCreateGroup": "Error creating group",
     "errorAddMember": "Error adding member",
+    "memberAlreadyExists": "A member with this name already exists in the group",
+    "memberPhoneExists": "A member with this phone number already exists in the group",
+    "memberEmailExists": "A member with this email already exists in the group",
     "errorRemoveMember": "Error removing member",
     "errorSaveSettings": "Error saving settings",
     "errorSaveConstraint": "Error saving constraint",
@@ -663,22 +702,22 @@
     "today": "Today",
     "yesterday": "Yesterday",
     "tomorrow": "Tomorrow",
-    "runSolver": "Run Solver",
+    "runSolver": "Run Schedule",
     "runEmergency": "Emergency Schedule",
     "solverStartTime": "Start from",
-    "solverStarted": "Solver started. Run ID: {runId}",
-    "emergencyStarted": "Emergency solver started. Run ID: {runId}",
-    "errorSolver": "Error starting solver.",
+    "solverStarted": "Schedule started. ID: {runId}",
+    "emergencyStarted": "Emergency schedule started. ID: {runId}",
+    "errorSolver": "Error starting the schedule.",
     "solver_uncovered_slots": "Could not fill all shifts. Missing tasks: {tasks} ({count} shifts). Try adding more members.",
     "member_limit_reached": "You've reached the member limit for your plan ({limit}). Upgrade to add more.",
     "solverCannotRun": "⚠ Cannot create schedule",
-    "solverNotEnoughMembers": "Not enough members in the group. Add at least 2 members for the solver to work.",
+    "solverNotEnoughMembers": "Not enough members in the group. Add at least 2 members for the system to create a schedule.",
     "solverLastFailed": "⚠ Last schedule run failed",
     "solverSolutions": "Possible solutions: add more members, change home-time settings, or relax constraints.",
     "solverPhase_building_payload": "Building schedule data...",
     "solverPhase_solving": "Finding optimal solution...",
     "solverPhase_storing_results": "Storing results...",
-    "errorEmergencySolver": "Error starting emergency solver.",
+    "errorEmergencySolver": "Error starting emergency schedule.",
     "selectVersion": "Select a version to view details.",
     "selectGroup": "Select a group to manage",
     "noMembers": "No members yet.",
@@ -687,7 +726,7 @@
     "loadingMembers": "Loading...",
     "addByEmail": "Add by email...",
     "addByEmailHint": "If the person is not registered yet, a profile will be created automatically.",
-    "planningHorizon": "Solver planning horizon",
+    "planningHorizon": "Planning Horizon",
     "days": "days",
     "saveSettings": "Save Settings",
     "complexityLow": "Low complexity",
@@ -741,6 +780,18 @@
       "shiftCleared": "Shift cleared — draft updated",
       "shiftClearError": "Error clearing shift",
       "shiftNotFound": "Shift not found"
+    },
+    "regeneration": {
+      "button": "Regenerate Schedule",
+      "inProgress": "Regenerating...",
+      "confirmTitle": "Regenerate Schedule",
+      "confirmDescription": "This will create a new draft schedule for the period from today forward. The current published schedule will remain active until you publish the new draft.",
+      "confirm": "Confirm",
+      "cancel": "Cancel",
+      "errorSubscription": "Your subscription has expired. Renew to use this feature.",
+      "errorConflict": "A regeneration is already in progress for this group.",
+      "errorPermission": "You do not have permission to regenerate the schedule.",
+      "errorGeneric": "Failed to start regeneration. Please try again."
     }
   },
   "language": {
@@ -781,7 +832,7 @@
     "errorPublish": "Error publishing",
     "errorDiscard": "Error discarding",
     "emptyDraft": "The schedule is empty — no assignments found in this draft.",
-    "emptyDraftHint": "The solver may not have been able to build a schedule with the current constraints.",
+    "emptyDraftHint": "The system may not have been able to build a schedule with the current constraints.",
     "runAgain": "Run Again",
     "publish": "Publish Schedule",
     "publishing": "Publishing...",
@@ -869,7 +920,93 @@
     "creating": "Creating...",
     "cancel": "Cancel",
     "errorCreate": "Error creating workspace.",
-    "spaceOf": "{name}'s Space"
+    "spaceOf": "{name}'s Space",
+    "noSpace": "No space selected",
+    "settings": "Space Settings",
+    "inviteCode": "Invite Code",
+    "copyCode": "Copy",
+    "copied": "Copied!",
+    "regenerateCode": "Generate new code",
+    "regenerateConfirm": "This will invalidate the current code. Continue?",
+    "members": "Members",
+    "memberCount": "{count} members",
+    "groupCount": "{count} groups",
+    "nameLabel": "Space Name",
+    "descriptionLabel": "Description",
+    "descriptionPlaceholder": "Optional description...",
+    "save": "Save",
+    "saving": "Saving...",
+    "saved": "Saved ✓",
+    "ownerOnly": "Only the space owner can edit settings",
+    "managementTimeout": {
+      "title": "Management Mode Timeout",
+      "description": "Minutes of inactivity before admin sessions expire across all groups in this space.",
+      "inputLabel": "Timeout in minutes",
+      "minutes": "minutes",
+      "validationError": "Timeout must be a whole number between 5 and 120 minutes.",
+      "saveError": "Failed to update management timeout. Please try again.",
+      "saved": "Management timeout updated successfully."
+    },
+    "roleAssignment": {
+      "title": "Role Assignment",
+      "description": "Assign permission levels to space members",
+      "loading": "Loading members...",
+      "loadError": "Error loading members",
+      "retry": "Retry",
+      "saved": "Role updated successfully",
+      "saveError": "Error updating role",
+      "noMembers": "No members in this space",
+      "selectLabel": "Role for {name}",
+      "levels": {
+        "spaceOwner": "Space Owner",
+        "groupOwner": "Group Owner",
+        "admin": "Admin",
+        "member": "Member"
+      }
+    },
+    "dangerZone": {
+      "title": "Danger Zone",
+      "description": "Irreversible and destructive actions. Proceed with caution.",
+      "deleteTitle": "Delete Space",
+      "deleteDescription": "Soft-delete this space and all its groups. The space can be restored later.",
+      "deleteButton": "Delete Space",
+      "deleteConfirm": "Are you sure? The space and all its groups will be archived.",
+      "confirmDelete": "Yes, delete",
+      "deleting": "Deleting...",
+      "deleteSuccess": "Space deleted successfully.",
+      "deleteError": "Failed to delete space. Please try again.",
+      "transferTitle": "Transfer Ownership",
+      "transferDescription": "Transfer space ownership to another member. You will lose owner privileges.",
+      "selectMember": "Select a member...",
+      "selectMemberLabel": "Select transfer target",
+      "transferButton": "Transfer",
+      "confirmTransfer": "Yes, transfer",
+      "transferring": "Transferring...",
+      "transferSuccess": "Ownership transferred successfully.",
+      "transferError": "Failed to transfer ownership. Please try again.",
+      "cancel": "Cancel"
+    }
+  },
+  "spaceOnboarding": {
+    "title": "Welcome to Shifter",
+    "subtitle": "Let's set up your workspace",
+    "createNew": "Create a New Space",
+    "createNewDesc": "Start fresh with your own organization",
+    "joinExisting": "Join an Existing Space",
+    "joinExistingDesc": "Enter an invite code from your team",
+    "spaceNameLabel": "Space Name",
+    "spaceNamePlaceholder": "e.g. My Platoon, Restaurant Team...",
+    "nameValidation": "Name must be between 2 and 100 characters",
+    "createButton": "Create Space",
+    "creating": "Creating...",
+    "createError": "Could not create space. Please try again.",
+    "inviteCodeLabel": "Invite Code",
+    "codeValidation": "Code must be exactly 8 characters (letters and numbers)",
+    "joinButton": "Join Space",
+    "joining": "Joining...",
+    "invalidCode": "Invalid code. Check with your team admin.",
+    "tooManyAttempts": "Too many attempts. Please wait 60 seconds.",
+    "back": "Back"
   },
   "notifications": {
     "title": "Notifications",
@@ -900,15 +1037,16 @@
     "errorLoadSchedule": "Error loading schedule",
     "offlineWithCache": "No internet connection — showing cached schedule from {date}",
     "offlineNoCache": "No internet connection and no cached schedule",
-    "solverTimeout": "The solver did not respond in time. The problem may be too complex — try reducing the planning horizon or simplifying constraints.",
-    "solverCheckError": "Error checking solver status",
-    "solverStartError": "Error starting the solver",
+    "solverTimeout": "The system did not respond in time. The problem may be too complex — try reducing the planning horizon or simplifying constraints.",
+    "solverCheckError": "Error checking schedule status",
+    "solverStartError": "Error starting the schedule",
     "timeoutOutOfRange": "Timeout must be a whole number between 5 and 120 minutes."
   },
   "common": {
     "loading": "Loading...",
     "save": "Save",
     "cancel": "Cancel",
+    "clear": "Clear",
     "delete": "Delete",
     "edit": "Edit",
     "confirm": "Confirm",
@@ -923,6 +1061,10 @@
     "shifts": "shifts",
     "hours": "hours",
     "minutes": "minutes",
+    "general": "General",
+    "permissions": "Permissions",
+    "advanced": "Advanced",
+    "dangerZone": "Danger Zone",
     "completed": "Completed",
     "timedOut": "Timed out"
   },
@@ -996,7 +1138,7 @@
     "totalSpaces": "Spaces",
     "totalGroups": "Groups",
     "totalPeople": "People",
-    "solverRuns24h": "Solver Runs (24h)",
+    "solverRuns24h": "Schedules (24h)",
     "completed": "Completed",
     "failed": "Failed",
     "avgDuration": "Avg Duration",
@@ -1044,7 +1186,10 @@
     "selectPlan": "Select Plan",
     "allPlansInclude": "All plans include: Auto-scheduling · Smart import · Notifications · Constraint management · Chat support",
     "back": "Back",
-    "comingSoon": "Payment will be available soon! Contact us via chat for details."
+    "comingSoon": "Payment will be available soon! Contact us via chat for details.",
+    "loading": "Loading plans...",
+    "fetchError": "Could not load current pricing. Showing estimated prices.",
+    "checkoutError": "Failed to create checkout. Please try again."
   },
   "onboarding": {
     "title": "Getting Started",
@@ -1076,7 +1221,7 @@
       "runSolver": {
         "title": "Generate Schedule",
         "description": "Run the auto-scheduler",
-        "cta": "Run Solver"
+        "cta": "Run Schedule"
       }
     }
   },
@@ -1116,34 +1261,47 @@
       "goHome": "Go Home"
     }
   },
-  "errors": {
-    "generic": {
-      "title": "Something went wrong",
-      "description": "An unexpected error occurred. Please try again."
+  "billing": {
+    "title": "Subscription",
+    "loading": "Loading...",
+    "errorLoad": "Could not load billing information.",
+    "retry": "Retry",
+    "noSubscription": "No subscription found for this space.",
+    "trialPeriod": "Free trial — 14 days",
+    "trialExpired": "Trial period ended — upgrade to continue using",
+    "upgradeNow": "Upgrade Now",
+    "trialStart": "Trial Start",
+    "trialEnd": "Trial End",
+    "daysRemaining": "Days Remaining",
+    "periodStart": "Period Start",
+    "periodEnd": "Period End",
+    "canceledAt": "Cancellation Date",
+    "accessExpires": "Access Expires",
+    "pastDueWarning": "Payment is past due. Please update your payment method.",
+    "expiredMessage": "Your subscription has expired. Renew to regain access to premium features.",
+    "status": {
+      "trialing": "Trialing",
+      "active": "Active",
+      "past_due": "Past Due",
+      "canceled": "Canceled",
+      "expired": "Expired"
     },
-    "network": {
-      "title": "Connection error",
-      "description": "Unable to reach the server. Check your internet connection."
+    "actions": {
+      "upgrade": "Upgrade",
+      "cancel": "Cancel",
+      "renew": "Renew",
+      "loading": "Loading…"
     },
-    "notFound": {
-      "title": "Page not found",
-      "description": "The page you're looking for doesn't exist or has been moved."
-    },
-    "permission": {
-      "title": "Access denied",
-      "description": "You don't have permission to view this page."
-    },
-    "server": {
-      "title": "Server error",
-      "description": "Something went wrong on our end. Please try again later."
-    },
-    "retry": "Try again",
-    "goHome": "Back to home"
+    "errors": {
+      "checkout": "Could not create checkout. Please try again.",
+      "cancel": "Could not cancel subscription. Please try again.",
+      "renew": "Could not renew subscription. Please try again."
+    }
   },
   "stats": {
     "title": "Statistics",
     "assignments": "Assignments",
-    "solverRuns": "Solver Runs",
+    "solverRuns": "Schedule Runs",
     "versionsPublished": "Versions Published",
     "burdenTrend": "Burden Trend",
     "last7days": "7d",
@@ -1236,7 +1394,7 @@
     },
     "panel": {
       "title": "Home Time Management",
-      "description": "Home-leave settings for group members. The solver uses these settings to schedule home visits.",
+      "description": "Home-leave settings for group members. The system uses these settings to schedule home visits.",
       "loading": "Loading...",
       "save": "Save",
       "saving": "Saving...",
@@ -1261,7 +1419,7 @@
     "runSimulation": "Run Simulation",
     "runningSimulation": "Running...",
     "errors": {
-      "solverTimeout": "The solver timed out. Try simplifying constraints or reducing the number of tasks.",
+      "solverTimeout": "The system timed out. Try simplifying constraints or reducing the number of tasks.",
       "networkError": "A network error occurred. Please check your connection and try again.",
       "infeasible": "The schedule is infeasible. Review the hard conflicts below."
     },
@@ -1326,16 +1484,16 @@
     "preview": {
       "simulating": "Running simulation...",
       "placeholder": "Run a simulation to preview the schedule here.",
-      "timedOut": "Solver timed out",
-      "timedOutHint": "The solver could not find a solution within the time limit. Try reducing constraints or task count.",
+      "timedOut": "System timed out",
+      "timedOutHint": "The system could not find a solution within the time limit. Try reducing constraints or task count.",
       "infeasible": "Schedule infeasible",
-      "infeasibleHint": "The solver could not find a valid schedule with the current parameters.",
+      "infeasibleHint": "The system could not find a valid schedule with the current parameters.",
       "conflicts": "Hard Conflicts",
       "assignmentsTitle": "Assignments",
       "homeLeaveTitle": "Home-Leave Assignments",
       "member": "Member",
       "leaveWindow": "Leave Window",
-      "solverTime": "Solver time: {ms}ms"
+      "solverTime": "Processing time: {ms}ms"
     },
     "publish": "Publish",
     "publishing": "Publishing...",
@@ -1398,9 +1556,18 @@
     "or": "or",
     "webAuthnButton": "Use Fingerprint / Security Key",
     "webAuthnLabel": "Authenticate with fingerprint or security key",
+    "webAuthnVerifying": "Verifying...",
     "webAuthnCancelled": "Verification cancelled. Please try again.",
+    "webAuthnTimedOut": "Verification timed out. Please try again.",
+    "webAuthnNotRecognized": "Credential not recognized. Please try again or use your password.",
+    "usePasswordInstead": "Use password instead",
+    "useBiometricInstead": "Use biometric instead",
     "authFailed": "Authentication failed. Please try again.",
+    "invalidCredentials": "Invalid credentials. Please check your password and try again.",
+    "connectionProblem": "Connection problem. Please check your network and try again.",
+    "passwordRequired": "Password is required.",
     "rateLimited": "Too many attempts. Please try again later.",
+    "lockedOut": "Too many attempts. Try again in {minutes} minutes.",
     "networkError": "Connection error. Please try again.",
     "noCredentials": "No credentials configured. Please set up a password or biometric authentication in your profile before using admin mode.",
     "loadingCredentials": "Loading...",
@@ -1422,5 +1589,70 @@
     "goToTasks": "Go to Tasks",
     "dismiss": "Dismiss",
     "slotsCount": "{count} uncovered slots"
+  },
+  "home": {
+    "welcome": "Hello, {name}",
+    "whatsNew": "What's New",
+    "viewAllUpdates": "View all updates",
+    "gettingStarted": "Getting Started",
+    "viewFullGuide": "View full guide",
+    "tipCreateGroup": "Create a new group",
+    "tipAddMembers": "Add members to a group",
+    "tipDefineTasks": "Define tasks and shifts",
+    "tipRunSolver": "Run automatic scheduling",
+    "quickActions": "Quick Actions",
+    "myMissions": "My Missions",
+    "myGroups": "My Groups",
+    "createSpace": "Create New Space",
+    "latestVersion": "Latest version"
+  },
+  "regeneration": {
+    "status": {
+      "ariaLabel": "Regeneration run status",
+      "queued": "Queued for processing...",
+      "running": "Computing new schedule...",
+      "completed": "New schedule is ready",
+      "failed": "Schedule regeneration failed",
+      "unknownError": "An unknown error occurred",
+      "pollError": "Error checking run status",
+      "reviewDraft": "Review Draft",
+      "dismiss": "Dismiss"
+    }
+  },
+  "scheduleRegeneration": {
+    "title": "Regenerate Schedule",
+    "description": "This will create a new draft schedule for the period from today forward. The current published schedule will remain active until you review and publish the new draft.",
+    "confirm": "Confirm",
+    "confirming": "Regenerating...",
+    "cancel": "Cancel",
+    "close": "Close",
+    "errorSubscriptionExpired": "Your subscription has expired. Please renew to use schedule regeneration.",
+    "errorAlreadyInProgress": "A regeneration is already in progress for this group. Please wait for it to complete.",
+    "errorPermissionDenied": "You do not have permission to regenerate the schedule.",
+    "errorGeneric": "Something went wrong. Please try again."
+  },
+  "spaceHomeLeave": {
+    "title": "Home Leave Configuration",
+    "description": "Configure home-leave scheduling parameters for all closed-base groups in this space.",
+    "loading": "Loading configuration...",
+    "loadError": "Could not load home-leave configuration.",
+    "retry": "Retry",
+    "modeLabel": "Mode",
+    "modeAutomatic": "Automatic",
+    "modeManual": "Manual",
+    "modeDisabled": "Disabled",
+    "balanceLabel": "Balance ratio",
+    "moreBase": "More at base",
+    "moreHome": "More at home",
+    "baseDaysLabel": "Base days",
+    "homeDaysLabel": "Home days",
+    "minPeopleLabel": "Min at base",
+    "emergencyFreezeLabel": "Emergency Freeze",
+    "emergencyFreezeHint": "Freeze all home-leave assignments immediately.",
+    "useForSchedulingLabel": "Use frozen personnel for task scheduling",
+    "saving": "Saving...",
+    "save": "Save",
+    "saved": "Saved",
+    "saveError": "Failed to save configuration."
   }
 }

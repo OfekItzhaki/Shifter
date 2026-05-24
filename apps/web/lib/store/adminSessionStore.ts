@@ -60,7 +60,8 @@ const initialState = {
 };
 
 // ── Store Implementation ──────────────────────────────────────────────────────
-// NOTE: No localStorage persistence — elevated mode resets on page load (Req 7.1)
+// No persistence — elevated mode resets on page load.
+// Exits only on: manual exit, timeout, or prompt dismissal.
 
 export const useAdminSessionStore = create<AdminSessionState>()((set, get) => ({
   ...initialState,

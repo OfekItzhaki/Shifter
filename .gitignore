@@ -4,6 +4,7 @@ node_modules/
 out/
 dist/
 apps/web/next-env.d.ts
+*.tsbuildinfo
 
 # Playwright test artifacts
 apps/web/playwright-report/
@@ -69,3 +70,7 @@ infra/migrations/*.lock
 
 # Seed file copied into migrations for Docker init — not a real migration
 infra/migrations/999_seed.sql
+
+# Private business notes (not for public repo)
+docs/BUSINESS_TODO.md
+docs/SERVER_SETUP.md

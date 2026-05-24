@@ -109,7 +109,7 @@ export default function ImageUpload({
             type="button"
             onClick={handleUrlSubmit}
             style={{
-              background: "#3b82f6", color: "white", border: "none",
+              background: "#0ea5e9", color: "white", border: "none",
               borderRadius: 10, padding: "6px 12px", fontSize: 13,
               fontWeight: 600, cursor: "pointer", flexShrink: 0,
             }}
@@ -181,8 +181,8 @@ export default function ImageUpload({
             onClick={() => inputRef.current?.click()}
             disabled={uploading}
             style={{
-              fontSize: 11, color: "#3b82f6", background: "none",
-              border: "1px solid #bfdbfe", borderRadius: 8,
+              fontSize: 11, color: "#0ea5e9", background: "none",
+              border: "1px solid #bae6fd", borderRadius: 8,
               padding: "3px 8px", cursor: "pointer",
             }}
           >

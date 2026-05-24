@@ -133,11 +133,21 @@ public class PublishVersionCommandHandler : IRequestHandler<PublishVersionComman
 
         // Audit log — do this BEFORE the fire-and-forget so it uses the same DbContext
         // sequentially (no concurrency risk).
+        var afterJson = version.SourceType == "regeneration"
+            ? JsonSerializer.Serialize(new
+            {
+                version_number = version.VersionNumber,
+                supersedes_version_id = version.SupersedesVersionId,
+                regeneration_run_id = version.SourceRunId,
+                published_by_user_id = req.RequestingUserId
+            })
+            : $"{{\"version_number\":{version.VersionNumber}}}";
+
         await _audit.LogAsync(
             req.SpaceId, req.RequestingUserId,
             "publish_schedule",
             "schedule_version", req.VersionId,
-            afterJson: $"{{\"version_number\":{version.VersionNumber}}}",
+            afterJson: afterJson,
             ct: ct);
 
         // Send WhatsApp/email notifications to group members (fire-and-forget, non-blocking).

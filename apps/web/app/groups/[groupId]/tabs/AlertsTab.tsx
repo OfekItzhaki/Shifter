@@ -58,7 +58,7 @@ export default function AlertsTab({
   return (
     <div className="space-y-4">
       {isAdmin && (
-        <button onClick={onOpenCreateForm} className="flex items-center gap-2 text-sm font-medium text-blue-600 border border-blue-200 bg-blue-50 hover:bg-blue-100 px-4 py-2.5 rounded-xl transition-colors">
+        <button onClick={onOpenCreateForm} className="flex items-center gap-2 text-sm font-medium text-sky-600 border border-sky-200 bg-sky-50 hover:bg-sky-100 px-4 py-2.5 rounded-xl transition-colors">
           {t("newAlert")}
         </button>
       )}
@@ -100,21 +100,21 @@ export default function AlertsTab({
         <form onSubmit={onCreateSubmit} className="space-y-4">
           <div>
             <label className="block text-xs text-slate-500 mb-1">{t("title")} *</label>
-            <input type="text" value={newAlertTitle} onChange={e => onCreateTitleChange(e.target.value)} placeholder={t("title")} required className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            <input type="text" value={newAlertTitle} onChange={e => onCreateTitleChange(e.target.value)} placeholder={t("title")} required className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" />
           </div>
           <div>
             <label className="block text-xs text-slate-500 mb-1">{t("body")} *</label>
-            <textarea value={newAlertBody} onChange={e => onCreateBodyChange(e.target.value)} placeholder={t("body")} required rows={3} className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" />
+            <textarea value={newAlertBody} onChange={e => onCreateBodyChange(e.target.value)} placeholder={t("body")} required rows={3} className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 resize-none" />
           </div>
           <div>
             <label className="block text-xs text-slate-500 mb-1">{t("severity")}</label>
-            <select value={newAlertSeverity} onChange={e => onCreateSeverityChange(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <select value={newAlertSeverity} onChange={e => onCreateSeverityChange(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500">
               {SEVERITIES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
             </select>
           </div>
           {alertSubmitError && <p className="text-sm text-red-600">{alertSubmitError}</p>}
           <div className="flex gap-2">
-            <button type="submit" disabled={alertSubmitting} className="bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl disabled:opacity-50 transition-colors">
+            <button type="submit" disabled={alertSubmitting} className="bg-sky-500 hover:bg-sky-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl disabled:opacity-50 transition-colors">
               {alertSubmitting ? t("sending") : t("send")}
             </button>
             <button type="button" onClick={onCloseCreateForm} className="text-sm text-slate-500 border border-slate-200 px-4 py-2.5 rounded-xl hover:bg-slate-50 transition-colors">{t("cancel")}</button>
@@ -128,21 +128,21 @@ export default function AlertsTab({
           <div className="space-y-4">
             <div>
               <label className="block text-xs text-slate-500 mb-1">{t("title")}</label>
-              <input type="text" value={editAlertTitle} onChange={e => onEditTitleChange(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              <input type="text" value={editAlertTitle} onChange={e => onEditTitleChange(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" />
             </div>
             <div>
               <label className="block text-xs text-slate-500 mb-1">{t("body")}</label>
-              <textarea value={editAlertBody} onChange={e => onEditBodyChange(e.target.value)} rows={3} className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" />
+              <textarea value={editAlertBody} onChange={e => onEditBodyChange(e.target.value)} rows={3} className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 resize-none" />
             </div>
             <div>
               <label className="block text-xs text-slate-500 mb-1">{t("severity")}</label>
-              <select value={editAlertSeverity} onChange={e => onEditSeverityChange(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <select value={editAlertSeverity} onChange={e => onEditSeverityChange(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500">
                 {SEVERITIES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
               </select>
             </div>
             {editAlertError && <p className="text-sm text-red-600">{editAlertError}</p>}
             <div className="flex gap-2">
-              <button onClick={() => onUpdateAlert(editingAlert.id)} disabled={editAlertSaving} className="bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl disabled:opacity-50 transition-colors">
+              <button onClick={() => onUpdateAlert(editingAlert.id)} disabled={editAlertSaving} className="bg-sky-500 hover:bg-sky-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl disabled:opacity-50 transition-colors">
                 {editAlertSaving ? t("saving") : t("save")}
               </button>
               <button onClick={onCloseEdit} className="text-sm text-slate-500 border border-slate-200 px-4 py-2.5 rounded-xl hover:bg-slate-50 transition-colors">{t("cancel")}</button>

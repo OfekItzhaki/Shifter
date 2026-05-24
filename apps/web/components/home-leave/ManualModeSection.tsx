@@ -116,7 +116,7 @@ export default function ManualModeSection({
             disabled={disabled}
             aria-label={t("baseDaysLabel")}
             aria-invalid={!!baseDaysError}
-            className={`w-full border rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed ${
+            className={`w-full border rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 disabled:opacity-50 disabled:cursor-not-allowed ${
               baseDaysError
                 ? "border-red-300 focus:ring-red-500"
                 : "border-slate-200"
@@ -144,7 +144,7 @@ export default function ManualModeSection({
             disabled={disabled}
             aria-label={t("homeDaysLabel")}
             aria-invalid={!!homeDaysError}
-            className={`w-full border rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed ${
+            className={`w-full border rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 disabled:opacity-50 disabled:cursor-not-allowed ${
               homeDaysError
                 ? "border-red-300 focus:ring-red-500"
                 : "border-slate-200"

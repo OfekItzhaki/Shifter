@@ -22,14 +22,15 @@ export const EMPTY_STEPS: StepCompletionMap = {
 };
 
 /** Returns the localStorage key for a given user */
-export function getStorageKey(userId: string): string {
+export function getStorageKey(userId: string, spaceId?: string): string {
+  if (spaceId) return `shifter-onboarding-${userId}-${spaceId}`;
   return `shifter-onboarding-${userId}`;
 }
 
 /** Reads onboarding state from localStorage. Returns null if not found or on error. */
-export function readOnboardingState(userId: string): OnboardingState | null {
+export function readOnboardingState(userId: string, spaceId?: string): OnboardingState | null {
   try {
-    const raw = localStorage.getItem(getStorageKey(userId));
+    const raw = localStorage.getItem(getStorageKey(userId, spaceId));
     if (!raw) return null;
     const parsed = JSON.parse(raw);
     return parsed as OnboardingState;
@@ -39,9 +40,9 @@ export function readOnboardingState(userId: string): OnboardingState | null {
 }
 
 /** Writes onboarding state to localStorage. Silently fails if localStorage is unavailable. */
-export function writeOnboardingState(userId: string, state: OnboardingState): void {
+export function writeOnboardingState(userId: string, state: OnboardingState, spaceId?: string): void {
   try {
-    localStorage.setItem(getStorageKey(userId), JSON.stringify(state));
+    localStorage.setItem(getStorageKey(userId, spaceId), JSON.stringify(state));
   } catch {
     // Silently fail — localStorage may be unavailable (private browsing, quota exceeded)
   }

@@ -40,8 +40,8 @@ function ConfirmTransferContent() {
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-8 max-w-md w-full text-center space-y-4">
         {status === "loading" && (
           <>
-            <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center mx-auto">
-              <svg className="animate-spin h-6 w-6 text-blue-500" fill="none" viewBox="0 0 24 24">
+            <div className="w-12 h-12 rounded-full bg-sky-50 flex items-center justify-center mx-auto">
+              <svg className="animate-spin h-6 w-6 text-sky-500" fill="none" viewBox="0 0 24 24">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
               </svg>
@@ -58,7 +58,7 @@ function ConfirmTransferContent() {
             </div>
             <h1 className="text-xl font-bold text-slate-900">{t("successTitle")}</h1>
             <p className="text-slate-500 text-sm">{t("successMessage")}</p>
-            <Link href="/groups" className="inline-block mt-2 text-sm text-blue-500 hover:text-blue-700">
+            <Link href="/groups" className="inline-block mt-2 text-sm text-sky-500 hover:text-sky-700">
               {t("goToGroups")}
             </Link>
           </>
@@ -72,7 +72,7 @@ function ConfirmTransferContent() {
             </div>
             <h1 className="text-xl font-bold text-slate-900">{t("errorTitle")}</h1>
             <p className="text-slate-500 text-sm">{errorMessage}</p>
-            <Link href="/groups" className="inline-block mt-2 text-sm text-blue-500 hover:text-blue-700">
+            <Link href="/groups" className="inline-block mt-2 text-sm text-sky-500 hover:text-sky-700">
               {t("backToGroups")}
             </Link>
           </>
@@ -86,8 +86,8 @@ export default function ConfirmTransferPage() {
   return (
     <Suspense fallback={
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-        <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center mx-auto">
-          <svg className="animate-spin h-6 w-6 text-blue-500" fill="none" viewBox="0 0 24 24">
+        <div className="w-12 h-12 rounded-full bg-sky-50 flex items-center justify-center mx-auto">
+          <svg className="animate-spin h-6 w-6 text-sky-500" fill="none" viewBox="0 0 24 24">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
           </svg>

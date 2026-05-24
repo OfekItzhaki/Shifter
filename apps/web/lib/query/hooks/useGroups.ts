@@ -21,7 +21,7 @@ export function useGroups(spaceId: string | null) {
     queryKey: queryKeys.groups(spaceId ?? ""),
     queryFn: async () => {
       const { data } = await apiClient.get<GroupDto[]>(`/spaces/${spaceId}/groups`);
-      return data;
+      return Array.isArray(data) ? data : [];
     },
     enabled: !!spaceId,
     staleTime: GROUPS_STALE_MS,

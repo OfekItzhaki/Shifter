@@ -27,10 +27,10 @@ function onTokenRefreshed(token: string) {
   refreshSubscribers = [];
 }
 
-/**
- * Redirects to an error page with a `?from=` query parameter encoding the
- * current pathname. Skips if a redirect is already in progress.
- */
+/** Track API connectivity status */
+let apiOnline = true;
+export function isApiOnline(): boolean { return apiOnline; }
+
 function redirectToErrorPage(path: string): void {
   if (isRedirecting) return;
   isRedirecting = true;
@@ -114,9 +114,10 @@ apiClient.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    // 5xx: Redirect to server error page (only for GET requests — form submissions handle their own errors)
-    if ((status === 500 || status === 502 || status === 503 || status === 504) && error.config?.method === "get") {
-      redirectToErrorPage("/error/server-error");
+    // 5xx or network error: emit event for the status banner
+    if ((status === 500 || status === 502 || status === 503 || status === 504 || !error.response) && typeof window !== "undefined") {
+      apiOnline = false;
+      window.dispatchEvent(new CustomEvent("api-error", { detail: { status, url: error.config?.url } }));
       return Promise.reject(error);
     }
 

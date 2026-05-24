@@ -9,6 +9,9 @@ public class Space : AuditableEntity
     public Guid OwnerUserId { get; private set; }
     public bool IsActive { get; private set; } = true;
     public string Locale { get; private set; } = "he";
+    public string? InviteCode { get; private set; }
+    public DateTime? DeletedAt { get; private set; }
+    public int ManagementTimeoutMinutes { get; private set; } = 15;
 
     private Space() { }
 
@@ -21,7 +24,8 @@ public class Space : AuditableEntity
             Name = name.Trim(),
             Description = description?.Trim(),
             OwnerUserId = ownerUserId,
-            Locale = locale
+            Locale = locale,
+            InviteCode = GenerateInviteCode()
         };
     }
 
@@ -39,5 +43,35 @@ public class Space : AuditableEntity
         Touch();
     }
 
+    public string RegenerateInviteCode()
+    {
+        InviteCode = GenerateInviteCode();
+        Touch();
+        return InviteCode;
+    }
+
+    public void SoftDelete()
+    {
+        DeletedAt = DateTime.UtcNow;
+        Touch();
+    }
+
+    public void Restore()
+    {
+        DeletedAt = null;
+        Touch();
+    }
+
+    public void SetManagementTimeout(int minutes)
+    {
+        if (minutes < 5 || minutes > 120)
+            throw new InvalidOperationException("Management timeout must be between 5 and 120 minutes.");
+        ManagementTimeoutMinutes = minutes;
+        Touch();
+    }
+
     public void Deactivate() { IsActive = false; Touch(); }
+
+    private static string GenerateInviteCode() =>
+        Guid.NewGuid().ToString("N")[..8].ToUpperInvariant();
 }

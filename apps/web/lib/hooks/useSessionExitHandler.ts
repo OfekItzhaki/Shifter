@@ -57,17 +57,8 @@ export function useSessionExitHandler(): SessionExitHandlerState {
     // 1. Clear authStore admin mode state (Req 7.1)
     exitAdminMode();
 
-    // 2. Redirect based on mode (Req 7.2, 7.3)
-    if (mode === "management" && groupId) {
-      // Redirect to group page in standard (non-admin) view
-      router.push(`/groups/${groupId}`);
-    } else if (mode === "platform") {
-      // Redirect to application home page
-      router.push("/");
-    } else {
-      // Fallback: go home
-      router.push("/");
-    }
+    // 2. Redirect to main page to hide admin content (Req 7.2, 7.3)
+    router.push("/home");
 
     // 3. Show toast notification (Req 7.4)
     setToastVisible(true);

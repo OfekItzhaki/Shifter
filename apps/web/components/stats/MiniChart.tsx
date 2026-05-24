@@ -10,7 +10,7 @@ interface MiniChartProps {
 export default function MiniChart({
   data,
   height = 80,
-  color = "#3b82f6",
+  color = "#0ea5e9",
   type = "bar",
 }: MiniChartProps) {
   if (data.length === 0) return null;

@@ -53,7 +53,7 @@ export default function ErrorPageLayout({
         </p>
 
         {/* Actions */}
-        <div className="flex flex-col sm:flex-row items-center gap-3 [&>*]:min-h-[44px] [&>*]:min-w-[44px] [&>*]:focus-visible:outline [&>*]:focus-visible:outline-2 [&>*]:focus-visible:outline-offset-2 [&>*]:focus-visible:outline-blue-500">
+        <div className="flex flex-col sm:flex-row items-center gap-3 [&>*]:min-h-[44px] [&>*]:min-w-[44px] [&>*]:focus-visible:outline [&>*]:focus-visible:outline-2 [&>*]:focus-visible:outline-offset-2 [&>*]:focus-visible:outline-sky-500">
           {children}
         </div>
       </div>

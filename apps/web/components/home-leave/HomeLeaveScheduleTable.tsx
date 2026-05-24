@@ -45,7 +45,7 @@ export default function HomeLeaveScheduleTable({ spaceId, groupId }: Props) {
     return (
       <div className="flex items-center gap-2 text-slate-400 text-sm py-4">
         <svg
-          className="animate-spin h-4 w-4 text-blue-400"
+          className="animate-spin h-4 w-4 text-sky-400"
           fill="none"
           viewBox="0 0 24 24"
         >
@@ -72,14 +72,17 @@ export default function HomeLeaveScheduleTable({ spaceId, groupId }: Props) {
     return <p className="text-sm text-red-600">{error}</p>;
   }
 
-  if (entries.length === 0) {
+  // Filter out completed entries — only show active and upcoming
+  const activeEntries = entries.filter((e) => e.status !== "completed");
+
+  if (activeEntries.length === 0) {
     return (
-      <p className="text-sm text-slate-400 py-2">{t("noEntries")}</p>
+      <p className="text-sm text-slate-400 py-2 mt-6">{t("noEntries")}</p>
     );
   }
 
   return (
-    <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl overflow-hidden">
+    <div className="mt-6 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl overflow-hidden">
       <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-700">
         <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200">
           {t("title")}
@@ -96,7 +99,7 @@ export default function HomeLeaveScheduleTable({ spaceId, groupId }: Props) {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-            {entries.map((entry, idx) => (
+            {activeEntries.map((entry, idx) => (
               <tr key={`${entry.personId}-${idx}`} className="hover:bg-slate-50 dark:hover:bg-slate-750">
                 <td className="px-4 py-2.5 text-slate-700 dark:text-slate-200">
                   {entry.personName}
@@ -129,7 +132,7 @@ function StatusBadge({ status }: { status: HomeLeaveScheduleEntry["status"] }) {
     },
     upcoming: {
       label: t("statusUpcoming"),
-      className: "bg-blue-100 text-blue-700 border-blue-200",
+      className: "bg-sky-100 text-sky-700 border-sky-200",
     },
     completed: {
       label: t("statusCompleted"),

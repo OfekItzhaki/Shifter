@@ -21,6 +21,8 @@ public class ScheduleVersion : Entity, ITenantScoped
     public Guid? PublishedByUserId { get; private set; }
     public DateTime? PublishedAt { get; private set; }
     public string? SummaryJson { get; private set; }
+    public Guid? SupersedesVersionId { get; private set; }
+    public string? SourceType { get; private set; }
 
     private ScheduleVersion() { }
 
@@ -48,6 +50,21 @@ public class ScheduleVersion : Entity, ITenantScoped
             Status = ScheduleVersionStatus.Draft,
             RollbackSourceVersionId = rollbackSourceVersionId,
             CreatedByUserId = publishedByUserId
+        };
+
+    public static ScheduleVersion CreateRegenerationDraft(
+        Guid spaceId, int versionNumber, Guid sourceRunId,
+        Guid supersedesVersionId, Guid createdByUserId, string? summaryJson = null) =>
+        new()
+        {
+            SpaceId = spaceId,
+            VersionNumber = versionNumber,
+            Status = ScheduleVersionStatus.Draft,
+            SourceRunId = sourceRunId,
+            SupersedesVersionId = supersedesVersionId,
+            CreatedByUserId = createdByUserId,
+            SourceType = "regeneration",
+            SummaryJson = summaryJson
         };
 
     public void Publish(Guid publishedByUserId)

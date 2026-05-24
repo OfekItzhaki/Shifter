@@ -46,8 +46,8 @@ export default function VerificationBanner() {
     <div
       role="alert"
       style={{
-        background: "#eff6ff",
-        border: "1px solid #bfdbfe",
+        background: "#f0f9ff",
+        border: "1px solid #bae6fd",
         borderRadius: 10,
         padding: "10px 16px",
         margin: "0 0 16px",
@@ -66,7 +66,7 @@ export default function VerificationBanner() {
         onClick={handleResend}
         disabled={resendStatus !== "idle"}
         style={{
-          background: resendStatus === "sent" ? "#16a34a" : "#3b82f6",
+          background: resendStatus === "sent" ? "#16a34a" : "#0ea5e9",
           color: "white",
           border: "none",
           borderRadius: 6,

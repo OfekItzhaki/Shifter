@@ -162,6 +162,20 @@ builder.Services.AddHttpClient<ILemonSqueezyClient, LemonSqueezyClient>(client =
 });
 
 builder.Services.AddSingleton<IWebhookSignatureValidator, WebhookSignatureValidator>();
+builder.Services.AddScoped<IStatisticsPeriodService, StatisticsPeriodService>();
+builder.Services.AddScoped<IPeakMemberTracker, PeakMemberTracker>();
+
+builder.Services.AddHttpClient("TrialDurationCache", (sp, client) =>
+{
+    var lsSettings = sp.GetRequiredService<IOptions<LemonSqueezySettings>>().Value;
+    client.BaseAddress = new Uri("https://api.lemonsqueezy.com/");
+    client.Timeout = TimeSpan.FromSeconds(10);
+    client.DefaultRequestHeaders.Authorization =
+        new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", lsSettings.ApiKey);
+    client.DefaultRequestHeaders.Accept.Add(
+        new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/vnd.api+json"));
+});
+builder.Services.AddSingleton<ITrialDurationCache, TrialDurationCache>();
 
 // ─── Email: SendGrid (real) or NoOp (dev fallback) ────────────────────────────
 if (!string.IsNullOrWhiteSpace(builder.Configuration["SendGrid:ApiKey"]))
@@ -405,10 +419,10 @@ builder.Services.AddRateLimiter(options =>
                 QueueLimit = 50
             }));
 
-    // Strict limit on auth endpoints — prevents brute force
+    // Strict limit on auth endpoints — prevents brute force but allows normal SPA usage
     options.AddFixedWindowLimiter("auth", o =>
     {
-        o.PermitLimit = builder.Environment.IsDevelopment() ? 100 : 10;
+        o.PermitLimit = builder.Environment.IsDevelopment() ? 200 : 60;
         o.Window = TimeSpan.FromMinutes(1);
         o.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
         o.QueueLimit = 0;

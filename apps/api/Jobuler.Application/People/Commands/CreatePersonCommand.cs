@@ -1,3 +1,4 @@
+using Jobuler.Application.Billing;
 using Jobuler.Application.Common;
 using Jobuler.Domain.People;
 using Jobuler.Domain.Spaces;
@@ -12,17 +13,21 @@ public record CreatePersonCommand(
     string FullName,
     string? DisplayName,
     Guid? LinkedUserId,
-    Guid RequestingUserId) : IRequest<Guid>;
+    Guid RequestingUserId,
+    string? PhoneNumber = null,
+    string? Email = null) : IRequest<Guid>;
 
 public class CreatePersonCommandHandler : IRequestHandler<CreatePersonCommand, Guid>
 {
     private readonly AppDbContext _db;
     private readonly IPermissionService _permissions;
+    private readonly IPeakMemberTracker _peakTracker;
 
-    public CreatePersonCommandHandler(AppDbContext db, IPermissionService permissions)
+    public CreatePersonCommandHandler(AppDbContext db, IPermissionService permissions, IPeakMemberTracker peakTracker)
     {
         _db = db;
         _permissions = permissions;
+        _peakTracker = peakTracker;
     }
 
     public async Task<Guid> Handle(CreatePersonCommand req, CancellationToken ct)
@@ -37,9 +42,17 @@ public class CreatePersonCommandHandler : IRequestHandler<CreatePersonCommand, G
         var status = req.LinkedUserId.HasValue ? "accepted" : "pending";
 
         var person = Person.Create(req.SpaceId, req.FullName, req.DisplayName, req.LinkedUserId,
-            phoneNumber: null, invitationStatus: status);
+            phoneNumber: req.PhoneNumber, invitationStatus: status);
+        if (!string.IsNullOrWhiteSpace(req.Email))
+        {
+            person.UpdateFull(person.FullName, person.DisplayName, person.ProfileImageUrl, person.PhoneNumber, person.Birthday, req.Email.Trim());
+        }
         _db.People.Add(person);
         await _db.SaveChangesAsync(ct);
+
+        // Track peak member count for space-level billing
+        await _peakTracker.TrackAsync(req.SpaceId, ct);
+
         return person.Id;
     }
 }

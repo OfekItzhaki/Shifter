@@ -201,7 +201,7 @@ export default function ActivityPromptModal({
               style={{
                 flex: 1,
                 padding: "0.75rem 1.5rem",
-                background: "linear-gradient(135deg, #3b82f6, #2563eb)",
+                background: "linear-gradient(135deg, #0ea5e9, #0284c7)",
                 color: "white",
                 border: "none",
                 borderRadius: 10,

@@ -192,10 +192,10 @@ export default function PersonDetailPage() {
               ? <p className="text-xs text-gray-400">{t("noRoles")}</p>
               : (person.roles ?? []).map(r => (
                 <span key={r.roleId}
-                  className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 text-xs px-2 py-0.5 rounded-full">
+                  className="inline-flex items-center gap-1 bg-sky-50 text-sky-700 text-xs px-2 py-0.5 rounded-full">
                   {r.name}
                   <button onClick={() => handleRemoveRole(r.roleId)} disabled={roleWorking}
-                    className="text-blue-400 hover:text-red-500 disabled:opacity-40 leading-none"
+                    className="text-sky-400 hover:text-red-500 disabled:opacity-40 leading-none"
                     aria-label={`${t("removeRole")} ${r.name}`}>×</button>
                 </span>
               ))}
@@ -210,7 +210,7 @@ export default function PersonDetailPage() {
                 ))}
               </select>
               <button onClick={handleAssignRole} disabled={!selectedRoleId || roleWorking}
-                className="bg-blue-600 text-white text-xs px-3 py-1.5 rounded-lg hover:bg-blue-700 disabled:opacity-50">
+                className="bg-sky-600 text-white text-xs px-3 py-1.5 rounded-lg hover:bg-sky-700 disabled:opacity-50">
                 {roleWorking ? "…" : t("assign")}
               </button>
             </div>
@@ -232,7 +232,7 @@ export default function PersonDetailPage() {
           <div className="flex items-center justify-between">
             <h2 className="text-xs font-semibold text-gray-500 uppercase">{t("qualifications")}</h2>
             <button onClick={() => setShowQualForm(!showQualForm)}
-              className="text-xs text-blue-600 hover:underline">+ {tCommon("add")}</button>
+              className="text-xs text-sky-600 hover:underline">+ {tCommon("add")}</button>
           </div>
           {showQualForm && (
             <form onSubmit={handleAddQualification} className="flex gap-2 border-t pt-3">
@@ -256,7 +256,7 @@ export default function PersonDetailPage() {
           <div className="flex items-center justify-between">
             <h2 className="text-xs font-semibold text-gray-500 uppercase">{t("availabilityWindows")}</h2>
             <button onClick={() => setShowAvailForm(!showAvailForm)}
-              className="text-xs text-blue-600 hover:underline">+ {tCommon("add")}</button>
+              className="text-xs text-sky-600 hover:underline">+ {tCommon("add")}</button>
           </div>
           {showAvailForm && (
             <form onSubmit={handleAddAvailability} className="space-y-3 border-t pt-3">
@@ -280,7 +280,7 @@ export default function PersonDetailPage() {
                 </div>
               </div>
               <button type="submit" disabled={savingAvail}
-                className="bg-blue-600 text-white text-xs px-3 py-1.5 rounded-lg hover:bg-blue-700 disabled:opacity-50">
+                className="bg-sky-600 text-white text-xs px-3 py-1.5 rounded-lg hover:bg-sky-700 disabled:opacity-50">
                 {savingAvail ? "..." : tCommon("save")}
               </button>
             </form>
@@ -302,7 +302,7 @@ export default function PersonDetailPage() {
           <div className="flex items-center justify-between">
             <h2 className="text-xs font-semibold text-gray-500 uppercase">{t("presenceWindows")}</h2>
             <button onClick={() => setShowPresenceForm(!showPresenceForm)}
-              className="text-xs text-blue-600 hover:underline">+ {tCommon("add")}</button>
+              className="text-xs text-sky-600 hover:underline">+ {tCommon("add")}</button>
           </div>
           {showPresenceForm && (
             <form onSubmit={handleAddPresence} className="space-y-3 border-t pt-3">
@@ -336,7 +336,7 @@ export default function PersonDetailPage() {
                 </div>
               </div>
               <button type="submit" disabled={savingPresence}
-                className="bg-blue-600 text-white text-xs px-3 py-1.5 rounded-lg hover:bg-blue-700 disabled:opacity-50">
+                className="bg-sky-600 text-white text-xs px-3 py-1.5 rounded-lg hover:bg-sky-700 disabled:opacity-50">
                 {savingPresence ? "..." : tCommon("save")}
               </button>
             </form>
@@ -360,7 +360,7 @@ export default function PersonDetailPage() {
           <div className="flex items-center justify-between">
             <h2 className="text-xs font-semibold text-gray-500 uppercase">{t("restrictions")}</h2>
             <button onClick={() => setShowRestriction(!showRestriction)}
-              className="text-xs text-blue-600 hover:underline">+ {tCommon("add")}</button>
+              className="text-xs text-sky-600 hover:underline">+ {tCommon("add")}</button>
           </div>
           {showRestriction && (
             <form onSubmit={handleAddRestriction} className="space-y-3 border-t pt-3">
@@ -392,7 +392,7 @@ export default function PersonDetailPage() {
                 </div>
               </div>
               <button type="submit" disabled={saving}
-                className="bg-blue-600 text-white text-xs px-3 py-1.5 rounded-lg hover:bg-blue-700 disabled:opacity-50">
+                className="bg-sky-600 text-white text-xs px-3 py-1.5 rounded-lg hover:bg-sky-700 disabled:opacity-50">
                 {saving ? "..." : t("saveRestriction")}
               </button>
             </form>

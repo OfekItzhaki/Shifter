@@ -33,7 +33,7 @@ export function useServiceWorker(): SWState {
     window.addEventListener("offline", handleOffline);
 
     // Register service worker with version query param to force re-download on deploy
-    const appVersion = process.env.NEXT_PUBLIC_APP_VERSION || "1.9.0";
+    const appVersion = process.env.NEXT_PUBLIC_APP_VERSION || "dev";
     navigator.serviceWorker
       .register(`/sw.js?v=${appVersion}`, { scope: "/" })
       .then((reg) => {
@@ -77,6 +77,11 @@ export function useServiceWorker(): SWState {
       navigator.serviceWorker.addEventListener("controllerchange", () => {
         window.location.reload();
       });
+      // Fallback: if controllerchange doesn't fire within 2s, force reload
+      setTimeout(() => window.location.reload(), 2000);
+    } else {
+      // No waiting worker — just reload to get the latest
+      window.location.reload();
     }
   }
 

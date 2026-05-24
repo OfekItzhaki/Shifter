@@ -16,6 +16,10 @@ public class SpaceConfiguration : IEntityTypeConfiguration<Space>
         builder.Property(s => s.OwnerUserId).HasColumnName("owner_user_id");
         builder.Property(s => s.IsActive).HasColumnName("is_active");
         builder.Property(s => s.Locale).HasColumnName("locale");
+        builder.Property(s => s.InviteCode).HasColumnName("invite_code").HasMaxLength(8).IsRequired(false);
+        builder.HasIndex(s => s.InviteCode).IsUnique().HasFilter("invite_code IS NOT NULL");
+        builder.Property(s => s.DeletedAt).HasColumnName("deleted_at");
+        builder.Property(s => s.ManagementTimeoutMinutes).HasColumnName("management_timeout_minutes").HasDefaultValue(15);
         builder.Property(s => s.CreatedAt).HasColumnName("created_at");
         builder.Property(s => s.UpdatedAt).HasColumnName("updated_at");
     }
@@ -32,6 +36,9 @@ public class SpaceMembershipConfiguration : IEntityTypeConfiguration<SpaceMember
         builder.Property(m => m.UserId).HasColumnName("user_id");
         builder.Property(m => m.JoinedAt).HasColumnName("joined_at");
         builder.Property(m => m.IsActive).HasColumnName("is_active");
+        builder.Property(m => m.PermissionLevel).HasColumnName("permission_level")
+            .HasConversion<int>()
+            .HasDefaultValue(SpacePermissionLevel.Member);
         builder.Ignore(m => m.CreatedAt); // table uses joined_at, no created_at column
         builder.HasIndex(m => new { m.SpaceId, m.UserId }).IsUnique();
     }
@@ -95,5 +102,21 @@ public class OwnershipTransferHistoryConfiguration : IEntityTypeConfiguration<Ow
         builder.Property(o => o.Reason).HasColumnName("reason");
         builder.Property(o => o.TransferredAt).HasColumnName("transferred_at");
         builder.Ignore(o => o.CreatedAt); // table uses transferred_at, no created_at column
+    }
+}
+
+public class UserSpaceMigrationConfiguration : IEntityTypeConfiguration<UserSpaceMigration>
+{
+    public void Configure(EntityTypeBuilder<UserSpaceMigration> builder)
+    {
+        builder.ToTable("user_space_migrations");
+        builder.HasKey(m => m.Id);
+        builder.Property(m => m.Id).HasColumnName("id");
+        builder.Property(m => m.UserId).HasColumnName("user_id");
+        builder.Property(m => m.SpaceId).HasColumnName("space_id");
+        builder.Property(m => m.MigratedAt).HasColumnName("migrated_at");
+        builder.Property(m => m.GroupsMigrated).HasColumnName("groups_migrated");
+        builder.HasIndex(m => m.UserId).IsUnique();
+        builder.Ignore(m => m.CreatedAt);
     }
 }

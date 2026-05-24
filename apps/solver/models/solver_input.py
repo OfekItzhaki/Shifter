@@ -138,7 +138,16 @@ class SolverInput(BaseModel):
     preview_mode: bool = False  # when True, solver uses reduced time limit and single worker
     cumulative_tracking: list[CumulativeTracking] = []
     task_rotation: Optional[list[TaskRotation]] = None  # rotation data for army-template groups
+    parent_schedule: Optional[list["ParentAssignment"]] = None  # assignments from parent group to avoid conflicts
 
     @property
     def locked_slot_ids_safe(self) -> list[str]:
         return self.locked_slot_ids or []
+
+
+class ParentAssignment(BaseModel):
+    """An assignment from a parent group's published schedule.
+    The child solver treats these as unavailability windows for the assigned person."""
+    person_id: str
+    starts_at: datetime
+    ends_at: datetime

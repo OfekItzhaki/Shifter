@@ -15,8 +15,8 @@ export default function PushNotificationSettings({ spaceId }: PushNotificationSe
   if (!isSupported) {
     return (
       <div className="space-y-2">
-        <h2 className="text-sm font-semibold text-slate-900">{t("title")}</h2>
-        <p className="text-xs text-slate-500">{t("notSupported")}</p>
+        <h2 className="text-sm font-semibold text-slate-900 dark:text-white">{t("title")}</h2>
+        <p className="text-xs text-slate-500 dark:text-slate-400">{t("notSupported")}</p>
       </div>
     );
   }
@@ -24,10 +24,10 @@ export default function PushNotificationSettings({ spaceId }: PushNotificationSe
   if (permission === "denied") {
     return (
       <div className="space-y-2">
-        <h2 className="text-sm font-semibold text-slate-900">{t("title")}</h2>
-        <p className="text-xs text-slate-500">{t("enableDescription")}</p>
-        <div className="rounded-lg bg-amber-50 border border-amber-200 px-3 py-2">
-          <p className="text-xs text-amber-700">{t("permissionDenied")}</p>
+        <h2 className="text-sm font-semibold text-slate-900 dark:text-white">{t("title")}</h2>
+        <p className="text-xs text-slate-500 dark:text-slate-400">{t("enableDescription")}</p>
+        <div className="rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 px-3 py-2">
+          <p className="text-xs text-amber-700 dark:text-amber-400">{t("permissionDenied")}</p>
         </div>
       </div>
     );
@@ -36,16 +36,16 @@ export default function PushNotificationSettings({ spaceId }: PushNotificationSe
   return (
     <div className="space-y-4">
       <div>
-        <h2 className="text-sm font-semibold text-slate-900">{t("title")}</h2>
-        <p className="text-xs text-slate-500 mt-1">{t("enableDescription")}</p>
+        <h2 className="text-sm font-semibold text-slate-900 dark:text-white">{t("title")}</h2>
+        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{t("enableDescription")}</p>
       </div>
 
-      <div className="flex items-center justify-between py-2.5 border-b border-slate-100">
+      <div className="flex items-center justify-between py-2.5 border-b border-slate-100 dark:border-slate-700">
         <div className="flex items-center gap-3">
           <span className="text-base">🔔</span>
           <div>
-            <p className="text-sm font-medium text-slate-800">{t("enableLabel")}</p>
-            <p className="text-xs text-slate-400">{t("enableDescription")}</p>
+            <p className="text-sm font-medium text-slate-800 dark:text-slate-200">{t("enableLabel")}</p>
+            <p className="text-xs text-slate-400 dark:text-slate-500">{t("enableDescription")}</p>
           </div>
         </div>
         <ToggleSwitch
@@ -77,7 +77,7 @@ function ToggleSwitch({
         disabled
           ? "opacity-50 cursor-not-allowed"
           : "cursor-pointer"
-      } ${checked ? "bg-blue-500" : "bg-slate-300 dark:bg-slate-500"}`}
+      } ${checked ? "bg-sky-500" : "bg-slate-300 dark:bg-slate-500"}`}
     >
       <span
         className={`absolute h-[16px] w-[16px] rounded-full bg-white shadow transition-all ${

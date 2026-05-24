@@ -10,7 +10,7 @@ type PermLevel = typeof PERM_LEVELS[number];
 
 const PERM_COLORS: Record<PermLevel, string> = {
   view:        "bg-slate-100 text-slate-600 border-slate-200",
-  ViewAndEdit: "bg-blue-50 text-blue-700 border-blue-200",
+  ViewAndEdit: "bg-sky-50 text-sky-700 border-sky-200",
   Owner:       "bg-purple-50 text-purple-700 border-purple-200",
 };
 
@@ -109,14 +109,14 @@ export default function RolesTab({
     <div className="space-y-6">
 
       {/* Explainer */}
-      <div className="bg-blue-50 border border-blue-200 rounded-2xl p-5 space-y-3">
+      <div className="bg-sky-50 border border-sky-200 rounded-2xl p-5 space-y-3">
         <div className="flex items-start gap-3">
-          <svg className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <svg className="w-5 h-5 text-sky-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
           <div className="space-y-1">
-            <p className="text-sm font-semibold text-blue-800">{t("explainerTitle")}</p>
-            <p className="text-sm text-blue-700">{t("explainerBody")}</p>
+            <p className="text-sm font-semibold text-sky-800">{t("explainerTitle")}</p>
+            <p className="text-sm text-sky-700">{t("explainerBody")}</p>
           </div>
         </div>
 
@@ -127,18 +127,18 @@ export default function RolesTab({
             return (
               <div key={level} className="flex items-start gap-3">
                 <div className="flex items-center gap-1.5 flex-shrink-0 mt-0.5">
-                  <span className="text-xs font-bold text-blue-400 w-4 text-center">{i + 1}</span>
+                  <span className="text-xs font-bold text-sky-400 w-4 text-center">{i + 1}</span>
                   <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${meta.color}`}>
                     {meta.label}
                   </span>
                 </div>
-                <p className="text-xs text-blue-700">{meta.description}</p>
+                <p className="text-xs text-sky-700">{meta.description}</p>
               </div>
             );
           })}
         </div>
 
-        <p className="text-xs text-blue-600 pt-1 border-t border-blue-200">
+        <p className="text-xs text-sky-600 pt-1 border-t border-sky-200">
           {t("singleRoleNote")}
         </p>
       </div>
@@ -171,20 +171,20 @@ export default function RolesTab({
                         type="text"
                         value={editRoleName}
                         onChange={e => setEditRoleName(e.target.value)}
-                        className="w-full border border-slate-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full border border-slate-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
                         placeholder={tSettings("addRole")}
                       />
                       <input
                         type="text"
                         value={editRoleDesc}
                         onChange={e => setEditRoleDesc(e.target.value)}
-                        className="w-full border border-slate-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full border border-slate-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
                         placeholder={tSettings("roleDescription")}
                       />
                       <select
                         value={editRolePermLevel}
                         onChange={e => setEditRolePermLevel(e.target.value as PermLevel)}
-                        className="w-full border border-slate-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full border border-slate-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
                       >
                         <option value="view">{tSettings("viewOnly")}</option>
                         <option value="ViewAndEdit">{tSettings("viewAndEdit")}</option>
@@ -194,7 +194,7 @@ export default function RolesTab({
                       {editRoleError && <p className="text-xs text-red-600">{editRoleError}</p>}
                       <div className="flex gap-2">
                         <button onClick={() => handleUpdateRole(role.id)} disabled={editRoleSaving}
-                          className="bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium px-3 py-1.5 rounded-lg disabled:opacity-50 transition-colors">
+                          className="bg-sky-500 hover:bg-sky-600 text-white text-xs font-medium px-3 py-1.5 rounded-lg disabled:opacity-50 transition-colors">
                           {editRoleSaving ? tSettings("saving") : tSettings("save")}
                         </button>
                         <button onClick={() => setEditingRoleId(null)}
@@ -276,10 +276,10 @@ export default function RolesTab({
                   value={newRoleName}
                   onChange={e => setNewRoleName(e.target.value)}
                   placeholder={tSettings("addRole")}
-                  className="flex-1 border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="flex-1 border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
                 />
                 <button type="submit" disabled={roleFormSaving || !newRoleName.trim()}
-                  className="bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-4 py-2 rounded-xl disabled:opacity-50 transition-colors">
+                  className="bg-sky-500 hover:bg-sky-600 text-white text-sm font-medium px-4 py-2 rounded-xl disabled:opacity-50 transition-colors">
                   {roleFormSaving ? "..." : tSettings("add")}
                 </button>
               </div>
@@ -288,12 +288,12 @@ export default function RolesTab({
                 value={newRoleDesc}
                 onChange={e => setNewRoleDesc(e.target.value)}
                 placeholder={tSettings("roleDescription")}
-                className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
               />
               <select
                 value={newRolePermLevel}
                 onChange={e => setNewRolePermLevel(e.target.value as PermLevel)}
-                className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
               >
                 <option value="view">{tSettings("viewOnly")}</option>
                 <option value="ViewAndEdit">{tSettings("viewAndEdit")}</option>
@@ -319,7 +319,7 @@ export default function RolesTab({
               const isSaving = memberRoleSaving === m.personId;
               return (
                 <div key={m.personId} className="flex items-center gap-3 px-5 py-3">
-                  <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+                  <div className="w-8 h-8 rounded-full bg-sky-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
                     {(m.displayName ?? m.fullName).charAt(0)}
                   </div>
                   <div className="flex-1 min-w-0">
@@ -329,7 +329,7 @@ export default function RolesTab({
                     )}
                   </div>
                   {isSaving ? (
-                    <svg className="animate-spin h-4 w-4 text-blue-400 flex-shrink-0" fill="none" viewBox="0 0 24 24">
+                    <svg className="animate-spin h-4 w-4 text-sky-400 flex-shrink-0" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                     </svg>
@@ -338,7 +338,7 @@ export default function RolesTab({
                       value={m.roleId ?? ""}
                       onChange={e => handleMemberRoleChange(m.personId, e.target.value || null)}
                       disabled={m.isOwner}
-                      className="border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed bg-white"
+                      className="border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-sky-500 disabled:opacity-50 disabled:cursor-not-allowed bg-white"
                     >
                       <option value="">{t("noRole")}</option>
                       {activeRoles.map(r => (

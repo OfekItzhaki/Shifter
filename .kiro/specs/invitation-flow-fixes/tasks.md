@@ -105,7 +105,7 @@
     - `window.location.href = "/login?redirect=" + encodeURIComponent(window.location.pathname + window.location.search)`
     - Keep existing token cleanup logic (localStorage.removeItem, cookie clearing) unchanged
     - Ensure 403 handling remains unchanged (still redirects to `/error/forbidden`)
-    - _Bug_Condition: isBugCondition(input) where input.authStatus == '401_refresh_failed'_
+    - _Bug_Condition: isBugCondition(input) where input.authStatus == '401_refresh_failed'_ 
     - _Expected_Behavior: Silent redirect to `/login` with current path as redirect param_
     - _Preservation: 403 errors still show `/error/forbidden`, other error codes unaffected_
     - _Requirements: 2.3, 3.3_

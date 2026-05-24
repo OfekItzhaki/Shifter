@@ -7,6 +7,7 @@
 // but do NOT create SpaceMembership or SpacePermissionGrant.
 
 using FluentAssertions;
+using Jobuler.Application.Billing;
 using Jobuler.Application.Groups.Commands;
 using Jobuler.Domain.Groups;
 using Jobuler.Domain.Identity;
@@ -14,6 +15,7 @@ using Jobuler.Domain.People;
 using Jobuler.Domain.Spaces;
 using Jobuler.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+using NSubstitute;
 using Xunit;
 
 namespace Jobuler.Tests.InvitationFlow;
@@ -126,7 +128,7 @@ public class BugConditionExplorationTests
     {
         // Arrange
         var fixture = await SetupAsync();
-        var handler = new AddPersonByEmailCommandHandler(fixture.Db);
+        var handler = new AddPersonByEmailCommandHandler(fixture.Db, Substitute.For<IPeakMemberTracker>());
         var command = new AddPersonByEmailCommand(
             fixture.SpaceId,
             fixture.GroupId,
@@ -149,7 +151,7 @@ public class BugConditionExplorationTests
     {
         // Arrange
         var fixture = await SetupAsync();
-        var handler = new AddPersonByEmailCommandHandler(fixture.Db);
+        var handler = new AddPersonByEmailCommandHandler(fixture.Db, Substitute.For<IPeakMemberTracker>());
         var command = new AddPersonByEmailCommand(
             fixture.SpaceId,
             fixture.GroupId,
@@ -177,7 +179,7 @@ public class BugConditionExplorationTests
     {
         // Arrange
         var fixture = await SetupAsync();
-        var handler = new AddPersonByPhoneCommandHandler(fixture.Db);
+        var handler = new AddPersonByPhoneCommandHandler(fixture.Db, Substitute.For<IPeakMemberTracker>());
         var command = new AddPersonByPhoneCommand(
             fixture.SpaceId,
             fixture.GroupId,
@@ -200,7 +202,7 @@ public class BugConditionExplorationTests
     {
         // Arrange
         var fixture = await SetupAsync();
-        var handler = new AddPersonByPhoneCommandHandler(fixture.Db);
+        var handler = new AddPersonByPhoneCommandHandler(fixture.Db, Substitute.For<IPeakMemberTracker>());
         var command = new AddPersonByPhoneCommand(
             fixture.SpaceId,
             fixture.GroupId,

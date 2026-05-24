@@ -61,6 +61,11 @@ export async function triggerSolve(spaceId: string, triggerMode = "standard", gr
   return data;
 }
 
+export async function triggerRegeneration(spaceId: string, groupId: string): Promise<{ runId: string }> {
+  const { data } = await apiClient.post(`/spaces/${spaceId}/schedule-runs/regenerate`, { groupId });
+  return data;
+}
+
 export async function getRunStatus(spaceId: string, runId: string) {
   const { data } = await apiClient.get(`/spaces/${spaceId}/schedule-runs/${runId}`);
   return data;

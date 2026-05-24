@@ -135,7 +135,7 @@ const styles = {
   },
   link: {
     fontSize: 14,
-    color: "#3b82f6",
+    color: "#0ea5e9",
     textDecoration: "none",
     fontWeight: 500,
   },
@@ -155,7 +155,7 @@ const styles = {
     width: 32,
     height: 32,
     border: "3px solid #e2e8f0",
-    borderTop: "3px solid #3b82f6",
+    borderTop: "3px solid #0ea5e9",
     borderRadius: "50%",
     animation: "spin 0.8s linear infinite",
   },

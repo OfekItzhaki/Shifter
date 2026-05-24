@@ -68,7 +68,7 @@ export default function PeoplePage() {
           </div>
           <button
             onClick={() => setShowCreate(!showCreate)}
-            className="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl shadow-sm shadow-blue-500/20 transition-all"
+            className="flex items-center gap-2 bg-sky-500 hover:bg-sky-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl shadow-sm shadow-sky-500/20 transition-all"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
@@ -86,7 +86,7 @@ export default function PeoplePage() {
                 <input
                   value={fullName}
                   onChange={e => setFullName(e.target.value)}
-                  className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow"
+                  className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-shadow"
                   placeholder={t("fullName")}
                   required
                 />
@@ -96,7 +96,7 @@ export default function PeoplePage() {
                 <input
                   value={displayName}
                   onChange={e => setDisplayName(e.target.value)}
-                  className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow"
+                  className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-shadow"
                   placeholder={t("optional")}
                 />
               </div>
@@ -117,7 +117,7 @@ export default function PeoplePage() {
 
         {loading && (
           <div className="flex items-center gap-3 text-slate-400 text-sm py-8">
-            <svg className="animate-spin h-5 w-5 text-blue-400" fill="none" viewBox="0 0 24 24">
+            <svg className="animate-spin h-5 w-5 text-sky-400" fill="none" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
             </svg>
@@ -150,7 +150,7 @@ export default function PeoplePage() {
                     </span>
                   </td>
                   <td className="px-4 py-3.5">
-                    <Link href={`/admin/people/${p.id}`} className="text-xs font-medium text-blue-600 hover:text-blue-700 transition-colors">
+                    <Link href={`/admin/people/${p.id}`} className="text-xs font-medium text-sky-600 hover:text-sky-700 transition-colors">
                       {t("details")}
                     </Link>
                   </td>

@@ -19,7 +19,7 @@ const CATEGORIES: CategoryInfo[] = [
   { key: "solver_infeasible", icon: "⚠", color: "#f59e0b", adminOnly: true },
   { key: "solver_failed", icon: "✕", color: "#ef4444", adminOnly: true },
   { key: "solver_preflight_failed", icon: "⚡", color: "#f97316", adminOnly: true },
-  { key: "schedule_published", icon: "📅", color: "#3b82f6" },
+  { key: "schedule_published", icon: "📅", color: "#0ea5e9" },
   { key: "group_alert", icon: "🔔", color: "#8b5cf6" },
 ];
 
@@ -38,7 +38,7 @@ export default function NotificationPreferences() {
         <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">{t("title")}</h2>
         <button
           onClick={resetDefaults}
-          className="text-xs text-blue-600 hover:underline"
+          className="text-xs text-sky-600 hover:underline"
         >
           {t("resetDefaults")}
         </button>
@@ -110,7 +110,7 @@ function ToggleSwitch({
       aria-checked={checked}
       onClick={onChange}
       className={`relative inline-flex h-[22px] w-[40px] items-center rounded-full transition-colors flex-shrink-0 ${
-        checked ? "bg-blue-500" : "bg-slate-300 dark:bg-slate-500"
+        checked ? "bg-sky-500" : "bg-slate-300 dark:bg-slate-500"
       }`}
     >
       <span

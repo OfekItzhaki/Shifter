@@ -3,9 +3,11 @@ using Jobuler.Application.Billing.Commands;
 using Jobuler.Application.Billing.Queries;
 using Jobuler.Application.Common;
 using Jobuler.Domain.Spaces;
+using Jobuler.Infrastructure.Persistence;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using System.Security.Claims;
 
@@ -20,27 +22,111 @@ public class BillingController : ControllerBase
     private readonly IPermissionService _permissions;
     private readonly ILemonSqueezyClient _lemonSqueezy;
     private readonly BillingOptions _billingOptions;
+    private readonly AppDbContext _db;
 
     public BillingController(
         IMediator mediator,
         IPermissionService permissions,
         ILemonSqueezyClient lemonSqueezy,
-        IOptions<BillingOptions> billingOptions)
+        IOptions<BillingOptions> billingOptions,
+        AppDbContext db)
     {
         _mediator = mediator;
         _permissions = permissions;
         _lemonSqueezy = lemonSqueezy;
         _billingOptions = billingOptions.Value;
+        _db = db;
     }
 
     private Guid CurrentUserId =>
         Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+
+    // ─── Space-level billing endpoints ───────────────────────────────────────────
+
+    /// <summary>Get space subscription status.</summary>
+    [HttpGet("subscription")]
+    public async Task<IActionResult> GetSpaceSubscription(
+        Guid spaceId, CancellationToken ct)
+    {
+        var result = await _mediator.Send(
+            new GetSpaceSubscriptionQuery(spaceId, CurrentUserId), ct);
+
+        return Ok(result);
+    }
+
+    /// <summary>Create a checkout session for the space subscription.</summary>
+    [HttpPost("checkout")]
+    public async Task<IActionResult> CreateSpaceCheckout(
+        Guid spaceId, [FromBody] CreateSpaceCheckoutRequest? req, CancellationToken ct)
+    {
+        var checkoutUrl = await _mediator.Send(
+            new CreateSpaceCheckoutCommand(spaceId, CurrentUserId, req?.VariantId), ct);
+
+        return Ok(new { checkoutUrl });
+    }
+
+    /// <summary>Cancel the space subscription.</summary>
+    [HttpPost("cancel")]
+    public async Task<IActionResult> CancelSpaceSubscription(
+        Guid spaceId, CancellationToken ct)
+    {
+        await _mediator.Send(
+            new CancelSpaceSubscriptionCommand(spaceId, CurrentUserId), ct);
+
+        return NoContent();
+    }
+
+    /// <summary>Renew the space subscription.</summary>
+    [HttpPost("renew")]
+    public async Task<IActionResult> RenewSpaceSubscription(
+        Guid spaceId, CancellationToken ct)
+    {
+        await _mediator.Send(
+            new RenewSpaceSubscriptionCommand(spaceId, CurrentUserId), ct);
+
+        return NoContent();
+    }
+
+    /// <summary>Upgrade the space plan to a higher-tier variant.</summary>
+    [HttpPost("upgrade")]
+    public async Task<IActionResult> UpgradeSpacePlan(
+        Guid spaceId, [FromBody] UpgradeSpacePlanRequest req, CancellationToken ct)
+    {
+        var checkoutUrl = await _mediator.Send(
+            new UpgradeSpacePlanCommand(spaceId, CurrentUserId, req.VariantId), ct);
+
+        return Ok(new { checkoutUrl });
+    }
+
+    // ─── Legacy group-level billing endpoints ────────────────────────────────────
+
+    /// <summary>
+    /// Returns 410 Gone if the space has been migrated to space-level billing.
+    /// </summary>
+    private async Task<IActionResult?> RejectIfMigratedAsync(Guid spaceId, CancellationToken ct)
+    {
+        var hasSpaceSubscription = await _db.SpaceSubscriptions
+            .AnyAsync(s => s.SpaceId == spaceId, ct);
+
+        if (hasSpaceSubscription)
+        {
+            return StatusCode(StatusCodes.Status410Gone, new
+            {
+                error = "Group-level billing has been migrated to space-level billing."
+            });
+        }
+
+        return null;
+    }
 
     /// <summary>Get subscription status for a group.</summary>
     [HttpGet("groups/{groupId:guid}/subscription")]
     public async Task<IActionResult> GetSubscription(
         Guid spaceId, Guid groupId, CancellationToken ct)
     {
+        var migrated = await RejectIfMigratedAsync(spaceId, ct);
+        if (migrated != null) return migrated;
+
         await _permissions.RequirePermissionAsync(CurrentUserId, spaceId, Permissions.SpaceView, ct);
         var result = await _mediator.Send(new GetSubscriptionQuery(spaceId, groupId), ct);
 
@@ -55,6 +141,9 @@ public class BillingController : ControllerBase
     public async Task<IActionResult> CancelSubscription(
         Guid spaceId, Guid groupId, CancellationToken ct)
     {
+        var migrated = await RejectIfMigratedAsync(spaceId, ct);
+        if (migrated != null) return migrated;
+
         await _mediator.Send(new CancelSubscriptionCommand(spaceId, groupId, CurrentUserId), ct);
         return Ok();
     }
@@ -64,20 +153,11 @@ public class BillingController : ControllerBase
     public async Task<IActionResult> RenewSubscription(
         Guid spaceId, Guid groupId, CancellationToken ct)
     {
+        var migrated = await RejectIfMigratedAsync(spaceId, ct);
+        if (migrated != null) return migrated;
+
         await _mediator.Send(new RenewSubscriptionCommand(spaceId, groupId, CurrentUserId), ct);
         return Ok();
-    }
-
-    /// <summary>Validate a coupon code.</summary>
-    [HttpPost("validate-coupon")]
-    public async Task<IActionResult> ValidateCoupon(
-        Guid spaceId, [FromBody] ValidateCouponRequest req, CancellationToken ct)
-    {
-        if (string.IsNullOrWhiteSpace(req.Code))
-            return BadRequest(new { error = "Coupon code is required." });
-
-        var result = await _mediator.Send(new ValidateCouponQuery(req.Code), ct);
-        return Ok(new { valid = result.Valid, discountPercent = result.DiscountPercent });
     }
 
     /// <summary>Create a checkout session for a group subscription.</summary>
@@ -85,6 +165,9 @@ public class BillingController : ControllerBase
     public async Task<IActionResult> CreateCheckout(
         Guid spaceId, Guid groupId, CancellationToken ct)
     {
+        var migrated = await RejectIfMigratedAsync(spaceId, ct);
+        if (migrated != null) return migrated;
+
         var checkoutUrl = await _mediator.Send(
             new CreateCheckoutCommand(spaceId, groupId, CurrentUserId), ct);
 
@@ -111,47 +194,21 @@ public class BillingController : ControllerBase
 
         return Ok(new { checkoutUrl });
     }
-}
 
-/// <summary>Platform admin: manage coupons.</summary>
-[ApiController]
-[Route("platform/coupons")]
-[Authorize]
-public class CouponsController : ControllerBase
-{
-    private readonly IMediator _mediator;
-
-    public CouponsController(IMediator mediator) => _mediator = mediator;
-
-    private Guid CurrentUserId =>
-        Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-
-    /// <summary>List all coupons (platform admin only).</summary>
-    [HttpGet]
-    public async Task<IActionResult> List(CancellationToken ct)
+    /// <summary>Get active promo coupon code (if configured).</summary>
+    [HttpGet("promo")]
+    public IActionResult GetPromo(Guid spaceId)
     {
-        var result = await _mediator.Send(new ListCouponsQuery(CurrentUserId), ct);
-        return Ok(result);
-    }
+        if (string.IsNullOrWhiteSpace(_billingOptions.PromoCouponCode))
+            return Ok(new { code = (string?)null, label = (string?)null });
 
-    /// <summary>Create a coupon (platform admin only).</summary>
-    [HttpPost]
-    public async Task<IActionResult> Create(
-        [FromBody] CreateCouponRequest req, CancellationToken ct)
-    {
-        var result = await _mediator.Send(
-            new CreateCouponCommand(CurrentUserId, req.Code, req.DiscountPercent, req.MaxUses, req.ValidUntil, req.Description), ct);
-        return Ok(result);
-    }
-
-    /// <summary>Deactivate a coupon (platform admin only).</summary>
-    [HttpDelete("{couponId:guid}")]
-    public async Task<IActionResult> Deactivate(Guid couponId, CancellationToken ct)
-    {
-        await _mediator.Send(new DeactivateCouponCommand(CurrentUserId, couponId), ct);
-        return NoContent();
+        return Ok(new { code = _billingOptions.PromoCouponCode, label = _billingOptions.PromoCouponLabel });
     }
 }
 
-public record ValidateCouponRequest(string Code);
-public record CreateCouponRequest(string Code, int DiscountPercent, int? MaxUses, DateTime? ValidUntil, string? Description);
+// ─── Request DTOs ────────────────────────────────────────────────────────────────
+
+public record CreateSpaceCheckoutRequest(string? VariantId = null);
+public record UpgradeSpacePlanRequest(string VariantId);
+
+

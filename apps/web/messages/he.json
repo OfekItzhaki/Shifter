@@ -67,6 +67,7 @@
     "noCredentialFound": "לא נמצא מכשיר רשום. התחבר עם סיסמה ותוכל להפעיל כניסה ביומטרית."
   },
   "nav": {
+    "home": "דף הבית",
     "schedule": "לוח זמנים",
     "today": "היום",
     "tomorrow": "מחר",
@@ -78,7 +79,9 @@
     "stats": "סטטיסטיקות",
     "admin": "ניהול",
     "logs": "יומן",
-    "platform": "פלטפורמה"
+    "platform": "פלטפורמה",
+    "terms": "תנאי שימוש",
+    "privacy": "פרטיות"
   },
   "schedule": {
     "title": "לוח זמנים",
@@ -93,7 +96,7 @@
     "loading": "טוען...",
     "source": "מקור",
     "sourceOverride": "עקיפה",
-    "sourceSolver": "סולבר",
+    "sourceSolver": "אוטומטי",
     "hours": "שעות",
     "assignee": "משובץ",
     "assigneeN": "משובץ {n}",
@@ -180,6 +183,22 @@
       "applying": "מגדיר...",
       "errorApplying": "שגיאה בהחלת התבנית. ניתן להגדיר ידנית."
     },
+    "createWizard": {
+      "title": "יצירת קבוצה חדשה",
+      "nameLabel": "שם הקבוצה",
+      "namePlaceholder": "הזן שם לקבוצה...",
+      "templateLabel": "בחר תבנית",
+      "templateDescription": "התבנית תגדיר משימות, אילוצים והכשרות מוכנים מראש",
+      "continue": "המשך",
+      "creating": "יוצר...",
+      "templateCards": {
+        "army-base": "שמירות 24 שעות, מטבח, סיורים. מותאם לפלוגות צבאיות.",
+        "restaurant": "משמרות בוקר, צהריים וערב. מלצרים, מטבח, בר.",
+        "hospital": "משמרות יום, ערב ולילה. רוטציות של 8 שעות.",
+        "security": "רוטציות יום/לילה של 12 שעות עם מנוחה מינימלית.",
+        "custom": "התחל מאפס. הוסף משימות ואילוצים בעצמך."
+      }
+    },
     "join": {
       "title": "הצטרף לקבוצה",
       "subtitle": "הזן את הקוד שקיבלת ממנהל הקבוצה",
@@ -235,7 +254,7 @@
       "tabInfo": "פרטים",
       "tabAvailability": "זמינות",
       "editDetails": "ערוך פרטים",
-      "availabilityHint": "הגדר מתי החבר אינו זמין (חופשה, מחלה, וכו׳). הסולבר לא ישבץ אותו בזמנים אלו.",
+      "availabilityHint": "הגדר מתי החבר אינו זמין (חופשה, מחלה, וכו׳). המערכת לא תשבץ אותו בזמנים אלו.",
       "noAvailabilityWindows": "אין חלוני אי-זמינות מוגדרים",
       "addAvailabilityWindow": "הוסף חלון אי-זמינות",
       "from": "מ",
@@ -245,7 +264,16 @@
       "reason": "סיבה",
       "selectReason": "בחר סיבה...",
       "customReason": "אחר",
-      "customReasonPlaceholder": "הזן סיבה מותאמת..."
+      "customReasonPlaceholder": "הזן סיבה מותאמת...",
+      "member": "חבר",
+      "bulkAdd": "הוספה מרובה",
+      "singleAdd": "הוספה בודדת",
+      "bulkPlaceholder": "הדבק שמות — שם אחד בכל שורה",
+      "bulkCount": "יתווספו {count} חברים",
+      "bulkAddAll": "הוסף הכל",
+      "bulkProgress": "מוסיף {current}/{total}...",
+      "bulkSuccess": "נוספו {count} חברים בהצלחה",
+      "bulkErrors": "{count} שגיאות"
     },
     "qualifications_tab": {
       "title": "הכשרות",
@@ -406,7 +434,9 @@
       "daysAhead": "ימים קדימה",
       "saveSettings": "שמור הגדרות",
       "autoPublish": "פרסום אוטומטי",
-      "autoPublishDesc": "פרסום אוטומטי של הסידור כאשר הסולבר מסיים בהצלחה",
+      "autoPublishDesc": "פרסום אוטומטי של הסידור כאשר הוא מוכן",
+      "autoScheduler": "סידור אוטומטי",
+      "autoSchedulerDesc": "רץ כל 6 שעות למילוי משמרות חסרות עם שינויים מינימליים",
       "runSchedule": "הפעל סידור",
       "running": "מחשב סידור...",
       "startFrom": "התחל מ",
@@ -448,7 +478,7 @@
       "regenerateCode": "צור קוד חדש (מבטל את הקודם)",
       "loading": "טוען...",
       "minRestBetweenShifts": "מנוחה מינימלית בין משמרות",
-      "minRestBetweenShiftsDesc": "מספר שעות מנוחה מינימלי בין שתי משמרות עוקבות. הסולבר יאכוף זאת אוטומטית.",
+      "minRestBetweenShiftsDesc": "מספר שעות מנוחה מינימלי בין שתי משמרות עוקבות. המערכת תאכוף זאת אוטומטית.",
       "hours": "שעות",
       "minRestZeroWarning": "⚠ ללא מנוחה מינימלית — מתאים למסעדות וכד׳",
       "allowMembersViewHistory": "הרשאת צפייה בהיסטוריה",
@@ -458,7 +488,13 @@
       "managementTimeout": "זמן קצוב למצב ניהול",
       "managementTimeoutDesc": "דקות חוסר פעילות לפני שהמנהל יתבקש לאשר המשך פעילות במצב ניהול.",
       "managementTimeoutError": "הזמן הקצוב חייב להיות מספר שלם בין 5 ל-120 דקות.",
-      "minutes": "דקות"
+      "minutes": "דקות",
+      "parentGroup": "קבוצת אב"
+    },
+    "linkedGroup": {
+      "title": "קבוצת אב",
+      "none": "ללא (קבוצה עצמאית)",
+      "linkedTo": "מקושרת ל"
     },
     "schedule_tab": {
       "draftReady": "סידור טיוטה מוכן לעיון ופרסום",
@@ -477,7 +513,7 @@
       "history": "היסטוריה",
       "thisWeek": "השבוע",
       "infeasible": "לא ניתן היה ליצור סידור",
-      "infeasibleDesc": "הסולבר לא הצליח לבנות סידור עם האילוצים הנוכחיים.",
+      "infeasibleDesc": "המערכת לא הצליחה לבנות סידור עם האילוצים הנוכחיים.",
       "infeasibleSolution": "ניתן לפתור על ידי: הוספת חברים נוספים, הרחבת אופק הזמן, או הקלת אילוצים.",
       "noMissionsToday": "אין משימות ביום זה"
     },
@@ -533,7 +569,7 @@
     "push": {
       "title": "התראות דחיפה",
       "enableLabel": "הפעל התראות דחיפה",
-      "enableDescription": "קבל התראות דפדפן על עדכוני סידור, תוצאות סולבר והתראות קבוצה",
+      "enableDescription": "קבל התראות דפדפן על עדכוני סידור, תוצאות סידור אוטומטי והתראות קבוצה",
       "notSupported": "התראות דחיפה אינן נתמכות בדפדפן זה",
       "permissionDenied": "ההתראות חסומות. הפעל אותן בהגדרות הדפדפן כדי לקבל התראות דחיפה."
     },
@@ -649,6 +685,9 @@
     "errorCreatePerson": "שגיאה ביצירת אדם",
     "errorCreateGroup": "שגיאה ביצירת קבוצה",
     "errorAddMember": "שגיאה בהוספת חבר",
+    "memberAlreadyExists": "חבר עם שם זהה כבר קיים בקבוצה",
+    "memberPhoneExists": "חבר עם מספר טלפון זהה כבר קיים בקבוצה",
+    "memberEmailExists": "חבר עם אימייל זהה כבר קיים בקבוצה",
     "memberLimitReached": "הגעת למגבלת החברים בתוכנית ({limit}). שדרג כדי להוסיף עוד.",
     "errorRemoveMember": "שגיאה בהסרת חבר",
     "errorSaveSettings": "שגיאה בשמירת הגדרות",
@@ -667,22 +706,22 @@
     "today": "היום",
     "yesterday": "אתמול",
     "tomorrow": "מחר",
-    "runSolver": "הפעל סולבר",
+    "runSolver": "הפעל סידור",
     "runEmergency": "סידור חירום",
     "solverStartTime": "התחל מ",
-    "solverStarted": "הסולבר הופעל. מזהה: {runId}",
-    "emergencyStarted": "סולבר חירום הופעל. מזהה: {runId}",
-    "errorSolver": "שגיאה בהפעלת הסולבר.",
+    "solverStarted": "הסידור הופעל. מזהה: {runId}",
+    "emergencyStarted": "סידור חירום הופעל. מזהה: {runId}",
+    "errorSolver": "שגיאה בהפעלת הסידור.",
     "solver_uncovered_slots": "לא ניתן לאייש את כל המשמרות. משימות חסרות: {tasks} ({count} משמרות). נסה להוסיף חברים נוספים.",
     "member_limit_reached": "הגעת למגבלת החברים בתוכנית ({limit}). שדרג כדי להוסיף עוד.",
     "solverCannotRun": "⚠ לא ניתן ליצור סידור",
-    "solverNotEnoughMembers": "אין מספיק חברים בקבוצה. הוסף לפחות 2 חברים כדי שהסולבר יוכל לעבוד.",
+    "solverNotEnoughMembers": "אין מספיק חברים בקבוצה. הוסף לפחות 2 חברים כדי שהמערכת תוכל ליצור סידור.",
     "solverLastFailed": "⚠ הסידור האחרון נכשל",
     "solverSolutions": "פתרונות אפשריים: הוסף חברים נוספים, שנה הגדרות זמן בית, או הקל אילוצים.",
     "solverPhase_building_payload": "בונה את הנתונים...",
     "solverPhase_solving": "מחפש פתרון אופטימלי...",
     "solverPhase_storing_results": "שומר תוצאות...",
-    "errorEmergencySolver": "שגיאה בהפעלת סולבר חירום.",
+    "errorEmergencySolver": "שגיאה בהפעלת סידור חירום.",
     "selectVersion": "בחר גרסה לצפייה בפרטים.",
     "selectGroup": "בחר קבוצה לניהול",
     "noMembers": "אין חברים עדיין.",
@@ -691,7 +730,7 @@
     "loadingMembers": "טוען...",
     "addByEmail": "הוסף לפי אימייל...",
     "addByEmailHint": "אם האדם לא רשום עדיין, פרופיל ייווצר אוטומטית.",
-    "planningHorizon": "אופק תכנון הסולבר",
+    "planningHorizon": "אופק תכנון",
     "days": "ימים",
     "saveSettings": "שמור הגדרות",
     "complexityLow": "מורכבות נמוכה",
@@ -745,6 +784,18 @@
       "shiftCleared": "המשמרת נוקתה — הטיוטה עודכנה",
       "shiftClearError": "שגיאה בניקוי המשמרת",
       "shiftNotFound": "המשמרת לא נמצאה"
+    },
+    "regeneration": {
+      "button": "חישוב מחדש",
+      "inProgress": "מחשב מחדש...",
+      "confirmTitle": "חישוב לוח זמנים מחדש",
+      "confirmDescription": "פעולה זו תיצור טיוטת סידור חדשה מהיום והלאה. הסידור הנוכחי יישאר פעיל עד שתפרסם את הטיוטה החדשה.",
+      "confirm": "אישור",
+      "cancel": "ביטול",
+      "errorSubscription": "תקופת הניסיון הסתיימה. חדש את המנוי כדי להשתמש בתכונה זו.",
+      "errorConflict": "חישוב מחדש כבר מתבצע עבור קבוצה זו.",
+      "errorPermission": "אין לך הרשאה לחשב מחדש את הסידור.",
+      "errorGeneric": "שגיאה בהפעלת החישוב מחדש. נסה שוב."
     }
   },
   "language": {
@@ -785,7 +836,7 @@
     "errorPublish": "שגיאה בפרסום",
     "errorDiscard": "שגיאה בביטול",
     "emptyDraft": "הסידור ריק — לא נמצאו שיבוצים בטיוטה זו.",
-    "emptyDraftHint": "ייתכן שהסולבר לא הצליח לבנות סידור עם האילוצים הנוכחיים.",
+    "emptyDraftHint": "ייתכן שהמערכת לא הצליחה לבנות סידור עם האילוצים הנוכחיים.",
     "runAgain": "הפעל שוב",
     "publish": "פרסם סידור",
     "publishing": "מפרסם...",
@@ -873,7 +924,93 @@
     "creating": "יוצר...",
     "cancel": "ביטול",
     "errorCreate": "שגיאה ביצירת המרחב.",
-    "spaceOf": "המרחב של {name}"
+    "spaceOf": "המרחב של {name}",
+    "noSpace": "לא נבחר מרחב",
+    "settings": "הגדרות מרחב",
+    "inviteCode": "קוד הזמנה",
+    "copyCode": "העתק",
+    "copied": "הועתק!",
+    "regenerateCode": "צור קוד חדש",
+    "regenerateConfirm": "פעולה זו תבטל את הקוד הנוכחי. להמשיך?",
+    "members": "חברים",
+    "memberCount": "{count} חברים",
+    "groupCount": "{count} קבוצות",
+    "nameLabel": "שם המרחב",
+    "descriptionLabel": "תיאור",
+    "descriptionPlaceholder": "תיאור אופציונלי...",
+    "save": "שמור",
+    "saving": "שומר...",
+    "saved": "נשמר ✓",
+    "ownerOnly": "רק בעל המרחב יכול לערוך הגדרות",
+    "managementTimeout": {
+      "title": "זמן קצוב למצב ניהול",
+      "description": "דקות חוסר פעילות לפני שמפגשי ניהול יפוגו בכל הקבוצות במרחב.",
+      "inputLabel": "זמן קצוב בדקות",
+      "minutes": "דקות",
+      "validationError": "הזמן הקצוב חייב להיות מספר שלם בין 5 ל-120 דקות.",
+      "saveError": "שגיאה בעדכון הזמן הקצוב. נסה שוב.",
+      "saved": "הזמן הקצוב עודכן בהצלחה."
+    },
+    "roleAssignment": {
+      "title": "הקצאת תפקידים",
+      "description": "הקצה רמות הרשאה לחברי המרחב",
+      "loading": "טוען חברים...",
+      "loadError": "שגיאה בטעינת חברים",
+      "retry": "נסה שוב",
+      "saved": "התפקיד עודכן בהצלחה",
+      "saveError": "שגיאה בעדכון התפקיד",
+      "noMembers": "אין חברים במרחב זה",
+      "selectLabel": "תפקיד עבור {name}",
+      "levels": {
+        "spaceOwner": "בעל מרחב",
+        "groupOwner": "בעל קבוצה",
+        "admin": "מנהל",
+        "member": "חבר"
+      }
+    },
+    "dangerZone": {
+      "title": "אזור סכנה",
+      "description": "פעולות בלתי הפיכות והרסניות. יש להמשיך בזהירות.",
+      "deleteTitle": "מחיקת מרחב",
+      "deleteDescription": "מחיקה רכה של המרחב וכל הקבוצות שלו. ניתן לשחזר מאוחר יותר.",
+      "deleteButton": "מחק מרחב",
+      "deleteConfirm": "האם אתה בטוח? המרחב וכל הקבוצות שלו יועברו לארכיון.",
+      "confirmDelete": "כן, מחק",
+      "deleting": "מוחק...",
+      "deleteSuccess": "המרחב נמחק בהצלחה.",
+      "deleteError": "שגיאה במחיקת המרחב. נסה שוב.",
+      "transferTitle": "העברת בעלות",
+      "transferDescription": "העבר את בעלות המרחב לחבר אחר. תאבד את הרשאות הבעלים.",
+      "selectMember": "בחר חבר...",
+      "selectMemberLabel": "בחר יעד להעברה",
+      "transferButton": "העבר",
+      "confirmTransfer": "כן, העבר",
+      "transferring": "מעביר...",
+      "transferSuccess": "הבעלות הועברה בהצלחה.",
+      "transferError": "שגיאה בהעברת הבעלות. נסה שוב.",
+      "cancel": "ביטול"
+    }
+  },
+  "spaceOnboarding": {
+    "title": "ברוכים הבאים ל-Shifter",
+    "subtitle": "בואו נגדיר את המרחב שלכם",
+    "createNew": "צור מרחב חדש",
+    "createNewDesc": "התחל מאפס עם הארגון שלך",
+    "joinExisting": "הצטרף למרחב קיים",
+    "joinExistingDesc": "הזן קוד הזמנה מהצוות שלך",
+    "spaceNameLabel": "שם המרחב",
+    "spaceNamePlaceholder": "לדוגמה: הפלוגה שלי, צוות המסעדה...",
+    "nameValidation": "השם חייב להיות בין 2 ל-100 תווים",
+    "createButton": "צור מרחב",
+    "creating": "יוצר...",
+    "createError": "לא ניתן ליצור מרחב. נסה שוב.",
+    "inviteCodeLabel": "קוד הזמנה",
+    "codeValidation": "הקוד חייב להיות בדיוק 8 תווים (אותיות ומספרים)",
+    "joinButton": "הצטרף למרחב",
+    "joining": "מצטרף...",
+    "invalidCode": "קוד לא תקין. בדוק עם מנהל הצוות.",
+    "tooManyAttempts": "יותר מדי ניסיונות. המתן 60 שניות.",
+    "back": "חזרה"
   },
   "notifications": {
     "title": "התראות",
@@ -904,15 +1041,16 @@
     "errorLoadSchedule": "שגיאה בטעינת הסידור",
     "offlineWithCache": "אין חיבור לאינטרנט — מוצג סידור שמור מ-{date}",
     "offlineNoCache": "אין חיבור לאינטרנט ואין סידור שמור",
-    "solverTimeout": "הסולבר לא הגיב בזמן. ייתכן שהבעיה מורכבת מדי — נסה להקטין את אופק התכנון או לפשט את האילוצים.",
-    "solverCheckError": "שגיאה בבדיקת סטטוס הסולבר",
-    "solverStartError": "שגיאה בהפעלת הסולבר",
+    "solverTimeout": "המערכת לא הגיבה בזמן. ייתכן שהבעיה מורכבת מדי — נסה להקטין את אופק התכנון או לפשט את האילוצים.",
+    "solverCheckError": "שגיאה בבדיקת סטטוס הסידור",
+    "solverStartError": "שגיאה בהפעלת הסידור",
     "timeoutOutOfRange": "הזמן הקצוב חייב להיות מספר שלם בין 5 ל-120 דקות."
   },
   "common": {
     "loading": "טוען...",
     "save": "שמור",
     "cancel": "ביטול",
+    "clear": "נקה",
     "delete": "מחק",
     "edit": "ערוך",
     "confirm": "אישור",
@@ -927,6 +1065,10 @@
     "shifts": "משמרות",
     "hours": "שעות",
     "minutes": "דקות",
+    "general": "כללי",
+    "permissions": "הרשאות",
+    "advanced": "מתקדם",
+    "dangerZone": "אזור מסוכן",
     "completed": "הושלם",
     "timedOut": "חרג מזמן"
   },
@@ -1007,7 +1149,7 @@
     "totalSpaces": "מרחבים",
     "totalGroups": "קבוצות",
     "totalPeople": "אנשים",
-    "solverRuns24h": "הרצות סולבר (24ש׳)",
+    "solverRuns24h": "סידורים (24ש׳)",
     "completed": "הושלמו",
     "failed": "נכשלו",
     "avgDuration": "זמן ממוצע",
@@ -1055,7 +1197,10 @@
     "selectPlan": "בחר תוכנית",
     "allPlansInclude": "כל התוכניות כוללות: סידור אוטומטי · ייבוא חכם · התראות · ניהול אילוצים · תמיכה בצ׳אט",
     "back": "חזרה",
-    "comingSoon": "תשלום יהיה זמין בקרוב! צור קשר דרך הצ׳אט לפרטים."
+    "comingSoon": "תשלום יהיה זמין בקרוב! צור קשר דרך הצ׳אט לפרטים.",
+    "loading": "טוען תוכניות...",
+    "fetchError": "לא ניתן לטעון מחירים עדכניים. מוצגים מחירים משוערים.",
+    "checkoutError": "שגיאה ביצירת עמוד תשלום. נסה שוב."
   },
   "onboarding": {
     "title": "תחילת העבודה",
@@ -1127,34 +1272,47 @@
       "goHome": "חזרה לדף הבית"
     }
   },
-  "errors": {
-    "generic": {
-      "title": "משהו השתבש",
-      "description": "אירעה שגיאה בלתי צפויה. נסה שוב."
-    },
-    "network": {
-      "title": "שגיאת חיבור",
-      "description": "לא ניתן להתחבר לשרת. בדוק את חיבור האינטרנט שלך."
-    },
-    "notFound": {
-      "title": "הדף לא נמצא",
-      "description": "הדף שחיפשת אינו קיים או שהועבר למיקום אחר."
-    },
-    "permission": {
-      "title": "הגישה נדחתה",
-      "description": "אין לך הרשאה לצפות בדף זה."
-    },
-    "server": {
-      "title": "שגיאת שרת",
-      "description": "משהו השתבש אצלנו. נסה שוב מאוחר יותר."
-    },
+  "billing": {
+    "title": "מנוי",
+    "loading": "טוען...",
+    "errorLoad": "לא ניתן לטעון את פרטי החיוב.",
     "retry": "נסה שוב",
-    "goHome": "חזרה לדף הבית"
+    "noSubscription": "לא נמצא מנוי למרחב זה.",
+    "trialPeriod": "תקופת ניסיון — 14 ימים",
+    "trialExpired": "תקופת הניסיון הסתיימה — שדרג כדי להמשיך להשתמש",
+    "upgradeNow": "שדרג עכשיו",
+    "trialStart": "תחילת ניסיון",
+    "trialEnd": "סיום ניסיון",
+    "daysRemaining": "ימים שנותרו",
+    "periodStart": "תחילת תקופה",
+    "periodEnd": "סיום תקופה",
+    "canceledAt": "תאריך ביטול",
+    "accessExpires": "הגישה פגה",
+    "pastDueWarning": "התשלום באיחור. אנא עדכן את אמצעי התשלום.",
+    "expiredMessage": "המנוי פג. חדש כדי לחזור לתכונות פרימיום.",
+    "status": {
+      "trialing": "ניסיון",
+      "active": "פעיל",
+      "past_due": "באיחור",
+      "canceled": "בוטל",
+      "expired": "פג תוקף"
+    },
+    "actions": {
+      "upgrade": "שדרג",
+      "cancel": "בטל מנוי",
+      "renew": "חדש מנוי",
+      "loading": "טוען..."
+    },
+    "errors": {
+      "checkout": "לא ניתן ליצור תשלום. נסה שוב.",
+      "cancel": "לא ניתן לבטל את המנוי. נסה שוב.",
+      "renew": "לא ניתן לחדש את המנוי. נסה שוב."
+    }
   },
   "stats": {
     "title": "סטטיסטיקות",
     "assignments": "שיבוצים",
-    "solverRuns": "הרצות סולבר",
+    "solverRuns": "סידורים אוטומטיים",
     "versionsPublished": "גרסאות שפורסמו",
     "burdenTrend": "מגמת עומס",
     "last7days": "7 ימים",
@@ -1247,7 +1405,7 @@
     },
     "panel": {
       "title": "ניהול זמן בבית",
-      "description": "הגדרות זמן בית לחברי הקבוצה. הסולבר ישתמש בהגדרות אלו כדי לתזמן יציאות הביתה.",
+      "description": "הגדרות זמן בית לחברי הקבוצה. המערכת תשתמש בהגדרות אלו כדי לתזמן יציאות הביתה.",
       "loading": "טוען...",
       "save": "שמור",
       "saving": "שומר...",
@@ -1410,9 +1568,18 @@
     "or": "או",
     "webAuthnButton": "שימוש בטביעת אצבע / מפתח אבטחה",
     "webAuthnLabel": "אימות באמצעות טביעת אצבע או מפתח אבטחה",
+    "webAuthnVerifying": "מאמת...",
     "webAuthnCancelled": "האימות בוטל. נסה/י שוב.",
+    "webAuthnTimedOut": "האימות פג תוקף. נסה/י שוב.",
+    "webAuthnNotRecognized": "אמצעי האימות לא זוהה. נסה/י שוב או השתמש/י בסיסמה.",
+    "usePasswordInstead": "שימוש בסיסמה במקום",
+    "useBiometricInstead": "שימוש בביומטרי במקום",
     "authFailed": "האימות נכשל. נסה/י שוב.",
+    "invalidCredentials": "פרטי ההתחברות שגויים. בדוק/י את הסיסמה ונסה/י שוב.",
+    "connectionProblem": "בעיית חיבור. בדוק/י את הרשת ונסה/י שוב.",
+    "passwordRequired": "יש להזין סיסמה.",
     "rateLimited": "יותר מדי ניסיונות. נסה/י שוב מאוחר יותר.",
+    "lockedOut": "יותר מדי ניסיונות. נסה/י שוב בעוד {minutes} דקות.",
     "networkError": "שגיאת חיבור. נסה/י שוב.",
     "noCredentials": "לא הוגדרו אמצעי אימות. הגדר/י סיסמה או אימות ביומטרי בפרופיל לפני שימוש במצב ניהול.",
     "loadingCredentials": "טוען...",
@@ -1434,5 +1601,70 @@
     "goToTasks": "עבור למשימות",
     "dismiss": "סגור",
     "slotsCount": "{count} משבצות לא מכוסות"
+  },
+  "home": {
+    "welcome": "שלום, {name}",
+    "whatsNew": "מה חדש",
+    "viewAllUpdates": "צפה בכל העדכונים",
+    "gettingStarted": "מדריך התחלה",
+    "viewFullGuide": "צפה במדריך המלא",
+    "tipCreateGroup": "צור קבוצה חדשה",
+    "tipAddMembers": "הוסף חברים לקבוצה",
+    "tipDefineTasks": "הגדר משימות ומשמרות",
+    "tipRunSolver": "הפעל סידור אוטומטי",
+    "quickActions": "גישה מהירה",
+    "myMissions": "המשימות שלי",
+    "myGroups": "הקבוצות שלי",
+    "createSpace": "צור מרחב חדש",
+    "latestVersion": "גרסה אחרונה"
+  },
+  "regeneration": {
+    "status": {
+      "ariaLabel": "מצב חידוש סידור",
+      "queued": "בתור לעיבוד...",
+      "running": "מחשב סידור חדש...",
+      "completed": "הסידור החדש מוכן",
+      "failed": "חידוש הסידור נכשל",
+      "unknownError": "אירעה שגיאה לא ידועה",
+      "pollError": "שגיאה בבדיקת מצב הריצה",
+      "reviewDraft": "סקירת טיוטה",
+      "dismiss": "סגור"
+    }
+  },
+  "scheduleRegeneration": {
+    "title": "חידוש סידור",
+    "description": "פעולה זו תיצור טיוטת סידור חדשה מהיום והלאה. הסידור הנוכחי ימשיך לפעול עד שתבדוק ותפרסם את הטיוטה החדשה.",
+    "confirm": "אישור",
+    "confirming": "מחדש סידור...",
+    "cancel": "ביטול",
+    "close": "סגור",
+    "errorSubscriptionExpired": "המנוי שלך פג תוקף. יש לחדש את המנוי כדי להשתמש בחידוש סידור.",
+    "errorAlreadyInProgress": "חידוש סידור כבר מתבצע עבור קבוצה זו. יש להמתין לסיומו.",
+    "errorPermissionDenied": "אין לך הרשאה לחדש את הסידור.",
+    "errorGeneric": "משהו השתבש. נסה שוב."
+  },
+  "spaceHomeLeave": {
+    "title": "הגדרות זמן בבית",
+    "description": "הגדרת פרמטרי תזמון זמן בבית עבור כל הקבוצות הסגורות במרחב.",
+    "loading": "טוען הגדרות...",
+    "loadError": "לא ניתן לטעון את הגדרות זמן הבית.",
+    "retry": "נסה שוב",
+    "modeLabel": "מצב",
+    "modeAutomatic": "אוטומטי",
+    "modeManual": "ידני",
+    "modeDisabled": "מושבת",
+    "balanceLabel": "יחס איזון",
+    "moreBase": "יותר בבסיס",
+    "moreHome": "יותר בבית",
+    "baseDaysLabel": "ימי בסיס",
+    "homeDaysLabel": "ימי בית",
+    "minPeopleLabel": "מינימום בבסיס",
+    "emergencyFreezeLabel": "הקפאת חירום",
+    "emergencyFreezeHint": "הקפאת כל שיבוצי זמן הבית באופן מיידי.",
+    "useForSchedulingLabel": "שימוש באנשי הקפאה לשיבוץ משימות",
+    "saving": "שומר...",
+    "save": "שמור",
+    "saved": "נשמר",
+    "saveError": "שמירת ההגדרות נכשלה."
   }
 }

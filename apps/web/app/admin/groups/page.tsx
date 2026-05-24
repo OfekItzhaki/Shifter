@@ -145,7 +145,7 @@ export default function GroupsPage() {
     return <AppShell><p className="text-slate-500 text-sm p-8">{t("adminRequired")}</p></AppShell>;
   }
 
-  const inp = "border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent";
+  const inp = "border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent";
 
   const complexityNote = (days: number) => {
     if (days <= 3) return { text: t("complexityLow"), color: "text-emerald-600" };
@@ -178,7 +178,7 @@ export default function GroupsPage() {
               <input value={newGroupName} onChange={e => setNewGroupName(e.target.value)}
                 placeholder={t("newGroup")} className={`flex-1 ${inp}`} />
               <button type="submit" disabled={savingGroup}
-                className="bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-3 py-2.5 rounded-xl disabled:opacity-50 whitespace-nowrap">
+                className="bg-sky-500 hover:bg-sky-600 text-white text-sm font-medium px-3 py-2.5 rounded-xl disabled:opacity-50 whitespace-nowrap">
                 {savingGroup ? "..." : t("add")}
               </button>
             </form>
@@ -189,7 +189,7 @@ export default function GroupsPage() {
                   <button key={g.id} onClick={() => selectGroup(g)}
                     className={`w-full text-start px-3.5 py-3 rounded-xl border text-sm transition-all ${
                       selectedGroup?.id === g.id
-                        ? "border-blue-300 bg-blue-50 shadow-sm"
+                        ? "border-sky-300 bg-sky-50 shadow-sm"
                         : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50"
                     }`}>
                     <div className="font-semibold text-slate-900">{g.name}</div>
@@ -218,7 +218,7 @@ export default function GroupsPage() {
                   {(["members", "schedule", "settings"] as Tab[]).map(tabKey => (
                     <button key={tabKey} onClick={() => handleTabChange(tabKey)}
                       className={`px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors ${
-                        tab === tabKey ? "border-blue-500 text-blue-600" : "border-transparent text-slate-500 hover:text-slate-700"
+                        tab === tabKey ? "border-sky-500 text-sky-600" : "border-transparent text-slate-500 hover:text-slate-700"
                       }`}>
                       {TAB_LABELS[tabKey]}
                     </button>
@@ -232,7 +232,7 @@ export default function GroupsPage() {
                         <input value={emailInput} onChange={e => setEmailInput(e.target.value)}
                           placeholder={t("addByEmail")} type="email" required className={`flex-1 ${inp}`} />
                         <button type="submit" disabled={addingPerson}
-                          className="bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl disabled:opacity-50 whitespace-nowrap">
+                          className="bg-sky-500 hover:bg-sky-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl disabled:opacity-50 whitespace-nowrap">
                           {addingPerson ? "..." : t("add")}
                         </button>
                       </form>
@@ -243,8 +243,8 @@ export default function GroupsPage() {
                           {members.map(m => (
                             <div key={m.personId}
                               className="flex items-center gap-2.5 px-3 py-2.5 bg-slate-50 border border-slate-100 rounded-xl">
-                              <div className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
-                                <span className="text-xs font-semibold text-blue-600">
+                              <div className="w-7 h-7 rounded-full bg-sky-100 flex items-center justify-center shrink-0">
+                                <span className="text-xs font-semibold text-sky-600">
                                   {(m.displayName ?? m.fullName).charAt(0).toUpperCase()}
                                 </span>
                               </div>
@@ -253,7 +253,7 @@ export default function GroupsPage() {
                                 {m.displayName && <p className="text-xs text-slate-400 truncate">{m.fullName}</p>}
                               </div>
                               <Link href={`/admin/people/${m.personId}`}
-                                className="text-xs text-blue-500 hover:text-blue-700 shrink-0">{t("details")}</Link>
+                                className="text-xs text-sky-500 hover:text-sky-700 shrink-0">{t("details")}</Link>
                               <button onClick={() => handleRemoveMember(m.personId)}
                                 className="text-xs text-red-400 hover:text-red-600 shrink-0 px-1">{t("remove")}</button>
                             </div>
@@ -297,7 +297,7 @@ export default function GroupsPage() {
                         <p className="text-xs text-slate-400 mt-1">{t("horizonHint")}</p>
                       </div>
                       <button type="submit" disabled={savingSettings}
-                        className="bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl disabled:opacity-50">
+                        className="bg-sky-500 hover:bg-sky-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl disabled:opacity-50">
                         {savingSettings ? t("saving") : t("saveSettings")}
                       </button>
                     </form>

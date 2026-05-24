@@ -272,7 +272,7 @@ function SectionCreateForm({
     return (
       <button
         onClick={() => setOpen(true)}
-        className="flex items-center gap-2 text-sm font-medium text-blue-600 border border-blue-200 bg-blue-50 hover:bg-blue-100 px-4 py-2 rounded-xl transition-colors"
+        className="flex items-center gap-2 text-sm font-medium text-sky-600 border border-sky-200 bg-sky-50 hover:bg-sky-100 px-4 py-2 rounded-xl transition-colors"
       >
         + {scopeType === "group" ? t("newGroupConstraint") : scopeType === "role" ? t("newRoleConstraint") : t("newPersonalConstraint")}
       </button>
@@ -288,7 +288,7 @@ function SectionCreateForm({
             value={scopeId}
             onChange={e => setScopeId(e.target.value)}
             required
-            className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
           >
             <option value="">{t("role")}...</option>
             {activeRoles.map(r => (
@@ -304,7 +304,7 @@ function SectionCreateForm({
             value={scopeId}
             onChange={e => setScopeId(e.target.value)}
             required
-            className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
           >
             <option value="">{t("member")}...</option>
             {registeredMembers.map(m => (
@@ -317,13 +317,13 @@ function SectionCreateForm({
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className="block text-xs text-slate-500 mb-1">{t("constraintType")}</label>
-          <select value={ruleType} onChange={e => setRuleType(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <select value={ruleType} onChange={e => setRuleType(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500">
             {RULE_TYPES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
           </select>
         </div>
         <div>
           <label className="block text-xs text-slate-500 mb-1">{t("severity")}</label>
-          <select value={severity} onChange={e => setSeverity(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <select value={severity} onChange={e => setSeverity(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500">
             <option value="hard">{t("hard")}</option>
             <option value="soft">{t("soft")}</option>
             <option value="emergency">{t("emergency")}</option>
@@ -336,18 +336,18 @@ function SectionCreateForm({
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className="block text-xs text-slate-500 mb-1">{t("effectiveFrom")}</label>
-          <input type="date" value={from} onChange={e => setFrom(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          <input type="date" value={from} onChange={e => setFrom(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" />
         </div>
         <div>
           <label className="block text-xs text-slate-500 mb-1">{t("effectiveUntil")}</label>
-          <input type="date" value={until} onChange={e => setUntil(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          <input type="date" value={until} onChange={e => setUntil(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" />
         </div>
       </div>
 
       {error && <p className="text-sm text-red-600">{error}</p>}
 
       <div className="flex gap-2">
-        <button type="submit" disabled={saving} className="bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-4 py-2 rounded-xl disabled:opacity-50 transition-colors">
+        <button type="submit" disabled={saving} className="bg-sky-500 hover:bg-sky-600 text-white text-sm font-medium px-4 py-2 rounded-xl disabled:opacity-50 transition-colors">
           {saving ? t("saving") : t("create")}
         </button>
         <button type="button" onClick={() => setOpen(false)} className="text-sm text-slate-500 border border-slate-200 px-4 py-2 rounded-xl hover:bg-slate-50 transition-colors">{t("cancel")}</button>
@@ -411,7 +411,7 @@ export default function ConstraintsTab({
           />
         )}
         {isAdmin && !onCreateWithScope && (
-          <button onClick={onOpenCreate} className="flex items-center gap-2 text-sm font-medium text-blue-600 border border-blue-200 bg-blue-50 hover:bg-blue-100 px-4 py-2 rounded-xl transition-colors">
+          <button onClick={onOpenCreate} className="flex items-center gap-2 text-sm font-medium text-sky-600 border border-sky-200 bg-sky-50 hover:bg-sky-100 px-4 py-2 rounded-xl transition-colors">
             + {t("newGroupConstraint")}
           </button>
         )}
@@ -473,13 +473,13 @@ export default function ConstraintsTab({
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs text-slate-500 mb-1">{t("constraintType")}</label>
-              <select value={newConstraintRuleType} onChange={e => onRuleTypeChange(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <select value={newConstraintRuleType} onChange={e => onRuleTypeChange(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500">
                 {RULE_TYPES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
               </select>
             </div>
             <div>
               <label className="block text-xs text-slate-500 mb-1">{t("severity")}</label>
-              <select value={newConstraintSeverity} onChange={e => onSeverityChange(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <select value={newConstraintSeverity} onChange={e => onSeverityChange(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500">
                 <option value="hard">{t("hard")}</option>
                 <option value="soft">{t("soft")}</option>
                 <option value="emergency">{t("emergency")}</option>
@@ -490,16 +490,16 @@ export default function ConstraintsTab({
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs text-slate-500 mb-1">{t("effectiveFrom")}</label>
-              <input type="date" value={newConstraintFrom} onChange={e => onFromChange(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              <input type="date" value={newConstraintFrom} onChange={e => onFromChange(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" />
             </div>
             <div>
               <label className="block text-xs text-slate-500 mb-1">{t("effectiveUntil")}</label>
-              <input type="date" value={newConstraintUntil} onChange={e => onUntilChange(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              <input type="date" value={newConstraintUntil} onChange={e => onUntilChange(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" />
             </div>
           </div>
           {constraintError && <p className="text-sm text-red-600">{constraintError}</p>}
           <div className="flex gap-2">
-            <button type="submit" disabled={constraintSaving} className="bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl disabled:opacity-50 transition-colors">
+            <button type="submit" disabled={constraintSaving} className="bg-sky-500 hover:bg-sky-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl disabled:opacity-50 transition-colors">
               {constraintSaving ? t("saving") : t("create")}
             </button>
             <button type="button" onClick={onCloseCreate} className="text-sm text-slate-500 border border-slate-200 px-4 py-2.5 rounded-xl hover:bg-slate-50 transition-colors">{t("cancel")}</button>
@@ -533,7 +533,7 @@ export default function ConstraintsTab({
             )}
             <div>
               <label className="block text-xs text-slate-500 mb-1">{t("severity")}</label>
-              <select value={editConstraintSeverity} onChange={e => onEditSeverityChange(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <select value={editConstraintSeverity} onChange={e => onEditSeverityChange(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500">
                 <option value="hard">{t("hard")}</option>
                 <option value="soft">{t("soft")}</option>
                 <option value="emergency">{t("emergency")}</option>
@@ -543,16 +543,16 @@ export default function ConstraintsTab({
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs text-slate-500 mb-1">{t("effectiveFrom")}</label>
-                <input type="date" value={editConstraintFrom} onChange={e => onEditFromChange(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                <input type="date" value={editConstraintFrom} onChange={e => onEditFromChange(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" />
               </div>
               <div>
                 <label className="block text-xs text-slate-500 mb-1">{t("effectiveUntil")}</label>
-                <input type="date" value={editConstraintUntil} onChange={e => onEditUntilChange(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                <input type="date" value={editConstraintUntil} onChange={e => onEditUntilChange(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" />
               </div>
             </div>
             {editConstraintError && <p className="text-sm text-red-600">{editConstraintError}</p>}
             <div className="flex gap-2">
-              <button onClick={() => onUpdateConstraint(editingConstraint.id)} disabled={editConstraintSaving} className="bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl disabled:opacity-50 transition-colors">
+              <button onClick={() => onUpdateConstraint(editingConstraint.id)} disabled={editConstraintSaving} className="bg-sky-500 hover:bg-sky-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl disabled:opacity-50 transition-colors">
                 {editConstraintSaving ? t("saving") : tCommon("save")}
               </button>
               <button onClick={onCloseEdit} className="text-sm text-slate-500 border border-slate-200 px-4 py-2.5 rounded-xl hover:bg-slate-50 transition-colors">{t("cancel")}</button>

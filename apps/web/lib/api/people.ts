@@ -87,12 +87,16 @@ export async function searchPeople(
 export async function createPerson(
   spaceId: string,
   fullName: string,
+  phoneNumber?: string | null,
+  email?: string | null,
   displayName?: string | null | undefined
 ): Promise<{ id: string }> {
   const { data } = await apiClient.post(`/spaces/${spaceId}/people`, {
     fullName,
     displayName: displayName || null,
     linkedUserId: null,
+    phoneNumber: phoneNumber || null,
+    email: email || null,
   });
   return data as { id: string };
 }

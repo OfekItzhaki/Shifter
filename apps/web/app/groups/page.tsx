@@ -9,6 +9,7 @@ import { getAvatarColor, getAvatarLetter } from "@/lib/utils/groupAvatar";
 import { useGroups, useDeletedGroups, useCreateGroup, useRestoreGroup } from "@/lib/query/hooks/useGroups";
 import Modal from "@/components/Modal";
 import GroupTemplatePicker from "@/components/GroupTemplatePicker";
+import CreateGroupWizard from "@/components/CreateGroupWizard";
 import { ONBOARDING_STEPS } from "@/lib/onboarding/steps";
 import { useOnboardingStore } from "@/lib/store/onboardingStore";
 import { getCurrentStepIndex } from "@/lib/onboarding/decisions";
@@ -30,15 +31,15 @@ function GroupsPage() {
   const searchParams = useSearchParams();
   const deletedRef = useRef<HTMLDivElement>(null);
 
-  const [newGroupName, setNewGroupName] = useState("");
   const [createError, setCreateError] = useState<string | null>(null);
   const [templateGroupId, setTemplateGroupId] = useState<string | null>(null);
+  const [showCreateWizard, setShowCreateWizard] = useState(false);
 
   const tOnboarding = useTranslations("onboarding");
   const { steps: onboardingSteps } = useOnboardingStore();
   const currentStepIndex = getCurrentStepIndex(onboardingSteps);
 
-  const { data: groups = [], isLoading: loading } = useGroups(currentSpaceId);
+  const { data: groups = [], isLoading: loading, isError: groupsError } = useGroups(currentSpaceId);
   const { data: deletedGroups = [], isLoading: deletedLoading } = useDeletedGroups(currentSpaceId);
   const createGroup = useCreateGroup(currentSpaceId);
   const restoreGroup = useRestoreGroup(currentSpaceId);
@@ -50,23 +51,23 @@ function GroupsPage() {
     }
   }, [searchParams, deletedLoading]);
 
-  async function handleCreate(e: React.FormEvent) {
-    e.preventDefault();
-    if (!currentSpaceId || !newGroupName.trim()) return;
+  async function handleCreateWithWizard(name: string, templateId: string) {
+    if (!currentSpaceId) return;
     setCreateError(null);
     try {
-      const result = await createGroup.mutateAsync(newGroupName.trim());
-      setNewGroupName("");
-      // Show template picker for the new group
+      const result = await createGroup.mutateAsync(name);
       const newGroupId = (result as { data?: { id?: string } })?.data?.id;
       if (newGroupId) {
-        setTemplateGroupId(newGroupId);
+        setShowCreateWizard(false);
+        // Always redirect to the new group — template settings can be configured there
+        router.push(`/groups/${newGroupId}`);
       }
     } catch (err: unknown) {
       setCreateError(
         (err as { response?: { data?: { error?: string } } })?.response?.data?.error ||
         tErrors("errorCreateGroup")
       );
+      throw err; // re-throw so the wizard knows it failed
     }
   }
 
@@ -87,24 +88,36 @@ function GroupsPage() {
           </div>
         </div>
 
-        {/* Create group */}
-        <form onSubmit={handleCreate} className="flex gap-2 w-full sm:max-w-sm">
-          <input
-            value={newGroupName}
-            onChange={e => setNewGroupName(e.target.value)}
-            placeholder={t("newGroupPlaceholder")}
-            className="flex-1 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
+        {/* Create group button — only show when API is working */}
+        {!groupsError && (
           <button
-            type="submit"
-            disabled={createGroup.isPending}
-            className="bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl disabled:opacity-50 whitespace-nowrap flex-shrink-0"
+            type="button"
+            onClick={() => setShowCreateWizard(true)}
+            className="bg-sky-500 hover:bg-sky-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl transition-colors whitespace-nowrap"
           >
-            {createGroup.isPending ? "..." : t("newGroup")}
+            {t("newGroup")}
           </button>
-        </form>
+        )}
 
         {createError && <p className="text-sm text-red-600">{createError}</p>}
+
+        {/* Error state */}
+        {groupsError && !loading && (
+          <div className="bg-amber-50 dark:bg-amber-900/30 border border-amber-300 dark:border-amber-600 rounded-xl p-4 flex items-center gap-3">
+            <span className="text-amber-600 dark:text-amber-400 text-lg flex-shrink-0">⚠️</span>
+            <div className="flex-1 min-w-0">
+              <p className="text-amber-800 dark:text-amber-200 text-sm font-medium">
+                השרת לא זמין כרגע — נסה שוב בעוד כמה שניות
+              </p>
+            </div>
+            <button
+              onClick={() => window.location.reload()}
+              className="flex-shrink-0 px-3 py-1.5 text-xs font-semibold rounded-lg bg-amber-200 dark:bg-amber-700 text-amber-900 dark:text-amber-100 hover:bg-amber-300 dark:hover:bg-amber-600 transition-colors cursor-pointer border-none"
+            >
+              נסה שוב
+            </button>
+          </div>
+        )}
 
         {/* Active groups */}
         {loading ? (
@@ -126,9 +139,9 @@ function GroupsPage() {
                   const isCompleted = onboardingSteps[step.key];
                   const isCurrent = index === currentStepIndex;
                   return (
-                    <li key={step.key} className={`flex items-center gap-3 rounded-lg px-3 py-2.5 ${isCurrent ? "bg-blue-50 border border-blue-200" : ""}`}>
+                    <li key={step.key} className={`flex items-center gap-3 rounded-lg px-3 py-2.5 ${isCurrent ? "bg-sky-50 border border-sky-200" : ""}`}>
                       <div className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-                        isCompleted ? "bg-green-100 text-green-600" : isCurrent ? "bg-blue-500 text-white" : "bg-slate-100 text-slate-400"
+                        isCompleted ? "bg-green-100 text-green-600" : isCurrent ? "bg-sky-500 text-white" : "bg-slate-100 text-slate-400"
                       }`}>
                         {isCompleted ? (
                           <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
@@ -159,7 +172,7 @@ function GroupsPage() {
                 key={g.id}
                 onClick={() => router.push(`/groups/${g.id}`)}
                 aria-label={`${g.name} — ${g.memberCount} ${t("members")}`}
-                className="text-start bg-white border border-slate-200 rounded-2xl p-5 hover:border-blue-300 hover:shadow-md transition-all group"
+                className="text-start bg-white border border-slate-200 rounded-2xl p-5 hover:border-sky-300 hover:shadow-md transition-all group"
               >
                 <div className="flex items-start justify-between mb-3">
                   <div
@@ -168,7 +181,7 @@ function GroupsPage() {
                   >
                     {getAvatarLetter(g.name)}
                   </div>
-                  <svg className="w-4 h-4 text-slate-300 group-hover:text-blue-400 transition-colors mt-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <svg className="w-4 h-4 text-slate-300 group-hover:text-sky-400 transition-colors mt-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                   </svg>
                 </div>
@@ -194,7 +207,7 @@ function GroupsPage() {
                   <button
                     onClick={() => handleRestore(g.id)}
                     disabled={restoreGroup.isPending}
-                    className="text-xs text-blue-600 border border-blue-200 hover:bg-blue-50 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
+                    className="text-xs text-sky-600 border border-sky-200 hover:bg-sky-50 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
                   >
                     {t("restore")}
                   </button>
@@ -205,7 +218,15 @@ function GroupsPage() {
         </div>
       </div>
 
-      {/* Template picker modal — shown after creating a new group */}
+      {/* Create group wizard modal */}
+      <CreateGroupWizard
+        open={showCreateWizard}
+        onClose={() => setShowCreateWizard(false)}
+        onCreateGroup={handleCreateWithWizard}
+        isPending={createGroup.isPending}
+      />
+
+      {/* Template picker modal — shown after creating a new group with a non-custom template */}
       {templateGroupId && currentSpaceId && (
         <Modal
           open={true}

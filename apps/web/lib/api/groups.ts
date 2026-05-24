@@ -291,11 +291,12 @@ export async function getGroupSchedule(
   groupId: string
 ): Promise<GroupScheduleResponseDto> {
   const { data } = await apiClient.get(`/spaces/${spaceId}/groups/${groupId}/schedule`);
+  if (!data) return { assignments: [], taskConfigurations: {} };
   // Handle both new response shape and legacy flat array for backward compatibility
   if (Array.isArray(data)) {
     return { assignments: data as GroupScheduleAssignmentDto[], taskConfigurations: {} };
   }
-  return data as GroupScheduleResponseDto;
+  return { assignments: data.assignments ?? [], taskConfigurations: data.taskConfigurations ?? {} };
 }
 
 // ── Live Status ───────────────────────────────────────────────────────────────

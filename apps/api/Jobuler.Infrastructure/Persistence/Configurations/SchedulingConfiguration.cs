@@ -1,3 +1,4 @@
+using Jobuler.Domain.Groups;
 using Jobuler.Domain.Scheduling;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -27,7 +28,23 @@ public class ScheduleRunConfiguration : IEntityTypeConfiguration<ScheduleRun>
         builder.Property(r => r.ResultSummaryJson).HasColumnName("result_summary_json")
             .HasColumnType("jsonb");
         builder.Property(r => r.ErrorSummary).HasColumnName("error_summary");
+        builder.Property(r => r.GroupId).HasColumnName("group_id");
+        builder.Property(r => r.ResultVersionId).HasColumnName("result_version_id");
         builder.Property(r => r.CreatedAt).HasColumnName("created_at");
+
+        builder.HasOne<Group>()
+            .WithMany()
+            .HasForeignKey(r => r.GroupId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        builder.HasOne<ScheduleVersion>()
+            .WithMany()
+            .HasForeignKey(r => r.ResultVersionId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        builder.HasIndex(r => new { r.SpaceId, r.GroupId, r.Status })
+            .HasFilter("trigger_type = 'regeneration' AND status IN ('queued', 'running')")
+            .HasDatabaseName("ix_schedule_runs_group_regeneration");
     }
 }
 
@@ -55,8 +72,15 @@ public class ScheduleVersionConfiguration : IEntityTypeConfiguration<ScheduleVer
         builder.Property(v => v.PublishedByUserId).HasColumnName("published_by_user_id");
         builder.Property(v => v.PublishedAt).HasColumnName("published_at");
         builder.Property(v => v.SummaryJson).HasColumnName("summary_json").HasColumnType("jsonb");
+        builder.Property(v => v.SupersedesVersionId).HasColumnName("supersedes_version_id");
+        builder.Property(v => v.SourceType).HasColumnName("source_type").HasMaxLength(50);
         builder.Property(v => v.CreatedAt).HasColumnName("created_at");
         builder.HasIndex(v => new { v.SpaceId, v.VersionNumber }).IsUnique();
+
+        builder.HasOne<ScheduleVersion>()
+            .WithMany()
+            .HasForeignKey(v => v.SupersedesVersionId)
+            .OnDelete(DeleteBehavior.SetNull);
     }
 }
 

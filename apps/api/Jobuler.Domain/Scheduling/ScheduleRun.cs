@@ -2,7 +2,7 @@ using Jobuler.Domain.Common;
 
 namespace Jobuler.Domain.Scheduling;
 
-public enum ScheduleRunTrigger { Standard, Emergency, Manual, Rollback }
+public enum ScheduleRunTrigger { Standard, Emergency, Manual, Rollback, Regeneration }
 public enum ScheduleRunStatus  { Queued, Running, Completed, Failed, TimedOut }
 
 public class ScheduleRun : Entity, ITenantScoped
@@ -19,23 +19,31 @@ public class ScheduleRun : Entity, ITenantScoped
     public int? DurationMs { get; private set; }
     public string? ResultSummaryJson { get; private set; }
     public string? ErrorSummary { get; private set; }
+    public Guid? GroupId { get; private set; }
+    public Guid? ResultVersionId { get; private set; }
 
     private ScheduleRun() { }
 
     public static ScheduleRun Create(
         Guid spaceId, ScheduleRunTrigger trigger,
-        Guid? baselineVersionId, Guid? requestedByUserId) =>
+        Guid? baselineVersionId, Guid? requestedByUserId, Guid? groupId = null) =>
         new()
         {
             SpaceId = spaceId,
             TriggerType = trigger,
             BaselineVersionId = baselineVersionId,
-            RequestedByUserId = requestedByUserId
+            RequestedByUserId = requestedByUserId,
+            GroupId = groupId
         };
 
     public void SetProgressPhase(string phase)
     {
         ProgressPhase = phase;
+    }
+
+    public void SetResultVersion(Guid versionId)
+    {
+        ResultVersionId = versionId;
     }
 
     public void MarkRunning(string inputHash)

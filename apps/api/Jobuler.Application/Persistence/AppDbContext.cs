@@ -1,3 +1,4 @@
+using Jobuler.Domain.Auth;
 using Jobuler.Domain.Constraints;
 using Jobuler.Domain.Feedback;
 using Jobuler.Domain.Groups;using Jobuler.Domain.Identity;
@@ -27,13 +28,18 @@ public class AppDbContext : DbContext
     public DbSet<EmailVerificationToken> EmailVerificationTokens => Set<EmailVerificationToken>();
     public DbSet<WebAuthnCredential> WebAuthnCredentials => Set<WebAuthnCredential>();
 
+    // Auth
+    public DbSet<ReAuthAttempt> ReAuthAttempts => Set<ReAuthAttempt>();
+
     // Spaces
     public DbSet<Space> Spaces => Set<Space>();
     public DbSet<SpaceMembership> SpaceMemberships => Set<SpaceMembership>();
     public DbSet<SpacePermissionGrant> SpacePermissionGrants => Set<SpacePermissionGrant>();
     public DbSet<SpaceRole> SpaceRoles => Set<SpaceRole>();
     public DbSet<OwnershipTransferHistory> OwnershipTransferHistory => Set<OwnershipTransferHistory>();
+    public DbSet<SpaceHomeLeaveConfig> SpaceHomeLeaveConfigs => Set<SpaceHomeLeaveConfig>();
     public DbSet<UnavailabilityReason> UnavailabilityReasons => Set<UnavailabilityReason>();
+    public DbSet<UserSpaceMigration> UserSpaceMigrations => Set<UserSpaceMigration>();
 
     // People
     public DbSet<Person> People => Set<Person>();
@@ -93,7 +99,7 @@ public class AppDbContext : DbContext
 
     // Billing
     public DbSet<Jobuler.Domain.Billing.GroupSubscription> GroupSubscriptions => Set<Jobuler.Domain.Billing.GroupSubscription>();
-    public DbSet<Jobuler.Domain.Billing.Coupon> Coupons => Set<Jobuler.Domain.Billing.Coupon>();
+    public DbSet<Jobuler.Domain.Billing.SpaceSubscription> SpaceSubscriptions => Set<Jobuler.Domain.Billing.SpaceSubscription>();
     public DbSet<Jobuler.Domain.Billing.WebhookEventLog> WebhookEventLogs => Set<Jobuler.Domain.Billing.WebhookEventLog>();
 
     // Feedback

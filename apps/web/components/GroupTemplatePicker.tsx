@@ -108,7 +108,7 @@ export default function GroupTemplatePicker({ spaceId, groupId, onComplete, onSk
             onClick={() => setSelected(template.id)}
             className={`text-start p-4 rounded-xl border-2 transition-all ${
               selected === template.id
-                ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20 shadow-sm"
+                ? "border-sky-500 bg-sky-50 dark:bg-sky-900/20 shadow-sm"
                 : "border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600"
             }`}
           >
@@ -149,7 +149,7 @@ export default function GroupTemplatePicker({ spaceId, groupId, onComplete, onSk
         <button
           onClick={handleApply}
           disabled={!selected || applying}
-          className="bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-6 py-2.5 rounded-xl disabled:opacity-50 transition-colors"
+          className="bg-sky-500 hover:bg-sky-600 text-white text-sm font-medium px-6 py-2.5 rounded-xl disabled:opacity-50 transition-colors"
         >
           {applying ? t("applying") : t("apply")}
         </button>

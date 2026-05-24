@@ -65,9 +65,9 @@ export default function TodayPage() {
             <h1 className="text-2xl font-bold text-slate-900">{t("title")} — {tNav("today")}</h1>
             <p className="text-sm text-slate-500 mt-1 capitalize">{todayLabel}</p>
           </div>
-          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 border border-blue-100 rounded-full">
-            <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
-            <span className="text-xs font-medium text-blue-600">{t("live")}</span>
+          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-sky-50 border border-sky-100 rounded-full">
+            <span className="w-2 h-2 rounded-full bg-sky-500 animate-pulse" />
+            <span className="text-xs font-medium text-sky-600">{t("live")}</span>
           </div>
         </div>
 
@@ -77,7 +77,7 @@ export default function TodayPage() {
           <select
             value={selectedGroupId}
             onChange={e => setSelectedGroupId(e.target.value)}
-            className="flex-1 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="flex-1 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
           >
             <option value="">{t("selectGroup")}</option>
             {groups.map(g => (

@@ -58,7 +58,7 @@ export default function LandingPage() {
             {/* Language switcher */}
             <div className="hidden sm:flex items-center gap-1 mr-2">
               {(["en", "he", "ru"] as LandingLang[]).map(l => (
-                <button key={l} onClick={() => switchLang(l)} className={`text-xs px-2 py-1 rounded ${lang === l ? "bg-blue-500/30 text-blue-300 font-bold" : "text-slate-400 hover:text-white"}`}>
+                <button key={l} onClick={() => switchLang(l)} className={`text-xs px-2 py-1 rounded ${lang === l ? "bg-sky-500/30 text-sky-300 font-bold" : "text-slate-400 hover:text-white"}`}>
                   {l === "en" ? "EN" : l === "he" ? "עב" : "RU"}
                 </button>
               ))}
@@ -66,7 +66,7 @@ export default function LandingPage() {
             <Link href="/login" className="text-sm text-slate-300 hover:text-white transition-colors px-4 py-2 border border-slate-600 hover:border-slate-400 rounded-xl hidden sm:inline-block">
               {c.nav.signIn}
             </Link>
-            <Link href="/register" className="text-sm font-medium bg-blue-500 hover:bg-blue-600 text-white px-5 py-2.5 rounded-xl transition-colors">
+            <Link href="/register" className="text-sm font-medium bg-sky-500 hover:bg-sky-600 text-white px-5 py-2.5 rounded-xl transition-colors">
               {c.nav.getStarted}
             </Link>
             <button onClick={() => setMobileMenuOpen(o => !o)} className="sm:hidden p-2 text-slate-300" aria-label="Menu">
@@ -80,10 +80,10 @@ export default function LandingPage() {
             <a href="#how-it-works" onClick={() => setMobileMenuOpen(false)} className="block text-sm text-slate-300">{c.nav.howItWorks}</a>
             <a href="#about" onClick={() => setMobileMenuOpen(false)} className="block text-sm text-slate-300">{c.nav.about}</a>
             <a href="#faq" onClick={() => setMobileMenuOpen(false)} className="block text-sm text-slate-300">{c.nav.faq}</a>
-            <Link href="/login" onClick={() => setMobileMenuOpen(false)} className="block text-sm text-blue-400 font-medium">{c.nav.signIn}</Link>
+            <Link href="/login" onClick={() => setMobileMenuOpen(false)} className="block text-sm text-sky-400 font-medium">{c.nav.signIn}</Link>
             <div className="flex gap-2 pt-2">
               {(["en", "he", "ru"] as LandingLang[]).map(l => (
-                <button key={l} onClick={() => { switchLang(l); setMobileMenuOpen(false); }} className={`text-xs px-3 py-1.5 rounded ${lang === l ? "bg-blue-500/30 text-blue-300 font-bold" : "text-slate-400"}`}>
+                <button key={l} onClick={() => { switchLang(l); setMobileMenuOpen(false); }} className={`text-xs px-3 py-1.5 rounded ${lang === l ? "bg-sky-500/30 text-sky-300 font-bold" : "text-slate-400"}`}>
                   {l === "en" ? "EN" : l === "he" ? "עב" : "RU"}
                 </button>
               ))}
@@ -95,11 +95,11 @@ export default function LandingPage() {
       {/* Hero */}
       <section className="px-6 pt-16 pb-20 sm:pt-24 sm:pb-28 max-w-4xl mx-auto text-center">
         <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-tight mb-6">
-          {c.hero.title1}<br /><span className="text-blue-400">{c.hero.title2}</span>
+          {c.hero.title1}<br /><span className="text-sky-400">{c.hero.title2}</span>
         </h1>
         <p className="text-lg sm:text-xl text-slate-300 max-w-2xl mx-auto mb-10 leading-relaxed">{c.hero.subtitle}</p>
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-          <Link href="/register" className="w-full sm:w-auto text-center bg-blue-500 hover:bg-blue-600 text-white font-semibold px-8 py-4 rounded-2xl text-base transition-all shadow-lg shadow-blue-500/25">{c.hero.cta}</Link>
+          <Link href="/register" className="w-full sm:w-auto text-center bg-sky-500 hover:bg-sky-600 text-white font-semibold px-8 py-4 rounded-2xl text-base transition-all shadow-lg shadow-sky-500/25">{c.hero.cta}</Link>
           <Link href="/login" className="w-full sm:w-auto text-center text-slate-300 hover:text-white border border-slate-600 hover:border-slate-400 px-8 py-4 rounded-2xl text-base transition-all">{c.hero.signIn}</Link>
         </div>
       </section>
@@ -126,8 +126,8 @@ export default function LandingPage() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
             {c.howItWorks.steps.map((s, i) => (
               <div key={i} className="text-center">
-                <div className="w-12 h-12 rounded-full bg-blue-500/20 border border-blue-500/30 flex items-center justify-center mx-auto mb-4">
-                  <span className="text-blue-400 font-bold text-lg">{i + 1}</span>
+                <div className="w-12 h-12 rounded-full bg-sky-500/20 border border-sky-500/30 flex items-center justify-center mx-auto mb-4">
+                  <span className="text-sky-400 font-bold text-lg">{i + 1}</span>
                 </div>
                 <h3 className="text-base font-semibold mb-2">{s.title}</h3>
                 <p className="text-sm text-slate-400">{s.desc}</p>
@@ -147,7 +147,7 @@ export default function LandingPage() {
         <div className="grid grid-cols-3 gap-6 mt-12">
           {c.about.stats.map(s => (
             <div key={s.label} className="text-center">
-              <p className="text-3xl sm:text-4xl font-bold text-blue-400">{s.value}</p>
+              <p className="text-3xl sm:text-4xl font-bold text-sky-400">{s.value}</p>
               <p className="text-sm text-slate-400 mt-1">{s.label}</p>
             </div>
           ))}
@@ -175,12 +175,12 @@ export default function LandingPage() {
 
       {/* CTA */}
       <section className="px-6 py-20 text-center">
-        <div className="max-w-2xl mx-auto bg-gradient-to-br from-blue-600 to-blue-700 rounded-3xl p-10 sm:p-14 shadow-2xl shadow-blue-500/20">
+        <div className="max-w-2xl mx-auto bg-gradient-to-br from-sky-600 to-sky-700 rounded-3xl p-10 sm:p-14 shadow-2xl shadow-sky-500/20">
           <h2 className="text-2xl sm:text-3xl font-bold mb-4">{c.cta.title}</h2>
-          <p className="text-blue-100 mb-8">{c.cta.subtitle}</p>
+          <p className="text-sky-100 mb-8">{c.cta.subtitle}</p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link href="/register" className="w-full sm:w-auto inline-block bg-white text-blue-700 font-bold px-8 py-4 rounded-2xl text-base hover:bg-blue-50 transition-colors shadow-lg">{c.cta.primary}</Link>
-            <Link href="/login" className="w-full sm:w-auto inline-block text-blue-100 hover:text-white border border-blue-400/50 hover:border-white px-8 py-4 rounded-2xl text-base transition-colors">{c.cta.secondary}</Link>
+            <Link href="/register" className="w-full sm:w-auto inline-block bg-white text-sky-700 font-bold px-8 py-4 rounded-2xl text-base hover:bg-sky-50 transition-colors shadow-lg">{c.cta.primary}</Link>
+            <Link href="/login" className="w-full sm:w-auto inline-block text-sky-100 hover:text-white border border-sky-400/50 hover:border-white px-8 py-4 rounded-2xl text-base transition-colors">{c.cta.secondary}</Link>
           </div>
         </div>
       </section>

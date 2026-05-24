@@ -27,7 +27,7 @@ export default function RecommendationBanner({ spaceId, runId, groupId }: Props)
   const { data, isLoading } = useRecommendationsForRun(spaceId, runId);
 
   // Render nothing while loading or if no recommendations exist
-  if (isLoading || !data || data.recommendations.length === 0) {
+  if (isLoading || !data || !data.recommendations || data.recommendations.length === 0) {
     return null;
   }
 

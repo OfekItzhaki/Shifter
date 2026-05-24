@@ -161,7 +161,7 @@ function MinRestHoursSection({
           max={24}
           value={displayValue}
           onChange={(e) => handleChange(Number(e.target.value))}
-          className={`w-16 border rounded-lg px-2 py-1.5 text-sm text-center focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+          className={`w-16 border rounded-lg px-2 py-1.5 text-sm text-center focus:outline-none focus:ring-2 focus:ring-sky-500 ${
             isOverridden
               ? "border-amber-300 dark:border-amber-600 bg-amber-50 dark:bg-amber-900/20"
               : "border-slate-200 dark:border-slate-600"
@@ -315,7 +315,7 @@ function MinPeopleAtBaseSection({
           max={maxValue}
           value={displayValue}
           onChange={(e) => handleChange(Number(e.target.value))}
-          className={`w-20 border rounded-lg px-3 py-1.5 text-sm text-center focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+          className={`w-20 border rounded-lg px-3 py-1.5 text-sm text-center focus:outline-none focus:ring-2 focus:ring-sky-500 ${
             isOverridden
               ? "border-amber-300 dark:border-amber-600 bg-amber-50 dark:bg-amber-900/20"
               : "border-slate-200 dark:border-slate-600"
@@ -444,7 +444,7 @@ function QualificationSlotEditor({
                 max={slot.requiredHeadcount}
                 value={req.count}
                 onChange={(e) => handleCountChange(idx, Number(e.target.value))}
-                className="w-12 border border-slate-200 dark:border-slate-600 rounded px-1.5 py-1 text-xs text-center focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="w-12 border border-slate-200 dark:border-slate-600 rounded px-1.5 py-1 text-xs text-center focus:outline-none focus:ring-1 focus:ring-sky-500"
               />
               <button
                 onClick={() => handleMandatoryToggle(idx)}
@@ -530,7 +530,7 @@ function NumberField({
           value={displayValue}
           placeholder={baselineValue?.toString()}
           onChange={(e) => handleChange(Number(e.target.value))}
-          className={`w-20 border rounded-lg px-2.5 py-1.5 text-sm text-center focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+          className={`w-20 border rounded-lg px-2.5 py-1.5 text-sm text-center focus:outline-none focus:ring-2 focus:ring-sky-500 ${
             isOverridden
               ? "border-amber-300 dark:border-amber-600 bg-amber-50 dark:bg-amber-900/20"
               : "border-slate-200 dark:border-slate-600"

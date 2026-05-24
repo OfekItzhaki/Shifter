@@ -336,8 +336,8 @@ export default function SandboxSettingsPanel() {
           disabled={isSimulating || isPublishing || isDiscarding}
           className={`w-full py-2.5 px-4 rounded-xl text-sm font-semibold transition-all ${
             isSimulating || isPublishing || isDiscarding
-              ? "bg-blue-300 dark:bg-blue-800 text-white cursor-not-allowed opacity-60"
-              : "bg-blue-500 hover:bg-blue-600 text-white shadow-sm hover:shadow"
+              ? "bg-sky-300 dark:bg-sky-800 text-white cursor-not-allowed opacity-60"
+              : "bg-sky-500 hover:bg-sky-600 text-white shadow-sm hover:shadow"
           }`}
         >
           {isSimulating ? t("runningSimulation") : t("runSimulation")}

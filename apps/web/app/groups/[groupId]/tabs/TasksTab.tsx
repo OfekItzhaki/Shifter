@@ -121,7 +121,7 @@ function SubShiftEditor({ totalMinutes, splitCount: initialSplitCount, onChange,
           <button
             type="button"
             onClick={addSubShift}
-            className="w-7 h-7 rounded-lg border border-blue-200 bg-blue-50 text-blue-600 hover:bg-blue-100 text-sm font-bold transition-colors flex items-center justify-center"
+            className="w-7 h-7 rounded-lg border border-sky-200 bg-sky-50 text-sky-600 hover:bg-sky-100 text-sm font-bold transition-colors flex items-center justify-center"
           >
             +
           </button>
@@ -154,7 +154,7 @@ export default function TasksTab({
     <div className="space-y-4">
       {isAdmin && (
         <div className="flex items-center gap-2">
-          <button onClick={onOpenCreate} className="flex items-center gap-2 text-sm font-medium text-blue-600 border border-blue-200 bg-blue-50 hover:bg-blue-100 px-4 py-2.5 rounded-xl transition-colors">
+          <button onClick={onOpenCreate} className="flex items-center gap-2 text-sm font-medium text-sky-600 border border-sky-200 bg-sky-50 hover:bg-sky-100 px-4 py-2.5 rounded-xl transition-colors">
             {t("newTask")}
           </button>
         </div>
@@ -240,7 +240,7 @@ export default function TasksTab({
               onChange={e => onFormChange({ ...taskForm, name: e.target.value })}
               placeholder={t("taskNamePlaceholder")}
               required
-              className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
             />
           </div>
 
@@ -252,7 +252,7 @@ export default function TasksTab({
                 type="datetime-local"
                 value={taskForm.startsAt}
                 onChange={e => onFormChange({ ...taskForm, startsAt: e.target.value })}
-                className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
               />
             </div>
             <div>
@@ -261,7 +261,7 @@ export default function TasksTab({
                 type="datetime-local"
                 value={taskForm.endsAt}
                 onChange={e => onFormChange({ ...taskForm, endsAt: e.target.value })}
-                className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
               />
             </div>
           </div>
@@ -288,7 +288,7 @@ export default function TasksTab({
                         min={0}
                         value={durHours}
                         onChange={e => setDuration(Number(e.target.value), durMins)}
-                        className="w-16 border border-slate-200 rounded-xl px-2.5 py-2.5 text-sm text-center focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-16 border border-slate-200 rounded-xl px-2.5 py-2.5 text-sm text-center focus:outline-none focus:ring-2 focus:ring-sky-500"
                       />
                       <span className="text-xs text-slate-500">{t("hours")}</span>
                     </div>
@@ -300,7 +300,7 @@ export default function TasksTab({
                         step={5}
                         value={durMins}
                         onChange={e => setDuration(durHours, Number(e.target.value))}
-                        className="w-16 border border-slate-200 rounded-xl px-2.5 py-2.5 text-sm text-center focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-16 border border-slate-200 rounded-xl px-2.5 py-2.5 text-sm text-center focus:outline-none focus:ring-2 focus:ring-sky-500"
                       />
                       <span className="text-xs text-slate-500">{t("minutes")}</span>
                     </div>
@@ -327,7 +327,7 @@ export default function TasksTab({
                 min={1}
                 value={taskForm.requiredHeadcount}
                 onChange={e => onFormChange({ ...taskForm, requiredHeadcount: Number(e.target.value) })}
-                className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
               />
             </div>
             <div>
@@ -335,7 +335,7 @@ export default function TasksTab({
               <select
                 value={taskForm.burdenLevel}
                 onChange={e => onFormChange({ ...taskForm, burdenLevel: e.target.value })}
-                className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
               >
                 {BURDEN_OPTIONS.map(b => <option key={b} value={b}>{burdenLabels[b] ?? b}</option>)}
               </select>
@@ -357,7 +357,7 @@ export default function TasksTab({
                         updated[idx] = { ...req, qualificationName: e.target.value };
                         onFormChange({ ...taskForm, qualificationRequirements: updated });
                       }}
-                      className="flex-1 border border-slate-200 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="flex-1 border border-slate-200 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
                     >
                       {groupQualifications.map(q => (
                         <option key={q.id} value={q.name}>{q.name}</option>
@@ -374,7 +374,7 @@ export default function TasksTab({
                         updated[idx] = { ...req, count: Number(e.target.value) };
                         onFormChange({ ...taskForm, qualificationRequirements: updated });
                       }}
-                      className="w-14 border border-slate-200 rounded-lg px-2 py-1.5 text-sm text-center focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-14 border border-slate-200 rounded-lg px-2 py-1.5 text-sm text-center focus:outline-none focus:ring-2 focus:ring-sky-500"
                     />
                     {/* Mandatory toggle */}
                     <button
@@ -421,7 +421,7 @@ export default function TasksTab({
                         ]
                       });
                     }}
-                    className="text-sm text-blue-600 border border-blue-200 bg-blue-50 hover:bg-blue-100 px-3 py-2 rounded-xl transition-colors w-full"
+                    className="text-sm text-sky-600 border border-sky-200 bg-sky-50 hover:bg-sky-100 px-3 py-2 rounded-xl transition-colors w-full"
                   >
                     + הוסף דרישת כישור
                   </button>
@@ -498,7 +498,7 @@ export default function TasksTab({
                   type="time"
                   value={taskForm.dailyStartTime}
                   onChange={e => onFormChange({ ...taskForm, dailyStartTime: e.target.value })}
-                  className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
                 />
               </div>
               <div>
@@ -507,7 +507,7 @@ export default function TasksTab({
                   type="time"
                   value={taskForm.dailyEndTime}
                   onChange={e => onFormChange({ ...taskForm, dailyEndTime: e.target.value })}
-                  className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
                 />
               </div>
             </div>
@@ -515,7 +515,7 @@ export default function TasksTab({
 
           {taskError && <p className="text-sm text-red-600">{taskError}</p>}
           <div className="flex gap-2 pt-1">
-            <button type="submit" disabled={taskSaving} className="bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl disabled:opacity-50 transition-colors">
+            <button type="submit" disabled={taskSaving} className="bg-sky-500 hover:bg-sky-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl disabled:opacity-50 transition-colors">
               {taskSaving ? t("saving") : editingTask ? t("update") : t("create")}
             </button>
             <button type="button" onClick={onCloseForm} className="text-sm text-slate-500 border border-slate-200 px-4 py-2.5 rounded-xl hover:bg-slate-50 transition-colors">{t("cancel")}</button>

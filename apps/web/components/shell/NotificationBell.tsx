@@ -75,7 +75,7 @@ export default function NotificationBell({ variant = "dark" }: { variant?: "ligh
   const dropdown = open && mounted ? createPortal(
     <div
       ref={dropdownRef}
-      className="bg-white border border-gray-200 rounded-xl shadow-xl"
+      className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl shadow-xl"
       style={{
         position: "fixed",
         top: dropdownPos.top,
@@ -88,29 +88,29 @@ export default function NotificationBell({ variant = "dark" }: { variant?: "ligh
       }}
       onClick={e => e.stopPropagation()}
     >
-      <div className="flex items-center justify-between px-4 py-3 border-b" style={{ direction: "ltr" }}>
-        <span className="text-sm font-semibold">{t("title")}</span>
+      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-slate-700" style={{ direction: "ltr" }}>
+        <span className="text-sm font-semibold text-slate-900 dark:text-white">{t("title")}</span>
         {unreadCount > 0 && (
           <button
             type="button"
             onClick={(e) => { e.preventDefault(); e.stopPropagation(); dismissAll.mutate(); }}
-            className="text-xs text-blue-600 hover:underline">
+            className="text-xs text-sky-600 dark:text-sky-400 hover:underline">
             {t("markAllRead")}
           </button>
         )}
       </div>
 
-      <div className="divide-y divide-gray-100" style={{ direction: "ltr" }}>
+      <div className="divide-y divide-gray-100 dark:divide-slate-700" style={{ direction: "ltr" }}>
         {filteredNotifications.length === 0 ? (
-          <p className="text-xs text-gray-400 text-center py-6">{t("noNotifications")}</p>
+          <p className="text-xs text-gray-400 dark:text-slate-500 text-center py-6">{t("noNotifications")}</p>
         ) : filteredNotifications.map(n => (
           <div key={n.id}
-            className={`px-4 py-3 flex gap-3 ${n.isRead ? "opacity-50" : "bg-blue-50/40"}`}>
+            className={`px-4 py-3 flex gap-3 ${n.isRead ? "opacity-50" : "bg-sky-50/40 dark:bg-sky-900/20"}`}>
             <span className="text-base mt-0.5 flex-shrink-0">{eventIcon(n.eventType)}</span>
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-semibold text-gray-800">{n.title}</p>
-              <p className="text-xs text-gray-600 mt-0.5 leading-relaxed">{n.body}</p>
-              <p className="text-[10px] text-gray-400 mt-1.5">
+              <p className="text-xs font-semibold text-gray-800 dark:text-slate-100">{n.title}</p>
+              <p className="text-xs text-gray-600 dark:text-slate-300 mt-0.5 leading-relaxed">{n.body}</p>
+              <p className="text-[10px] text-gray-400 dark:text-slate-500 mt-1.5">
                 {fDateTime(n.createdAt)}
               </p>
             </div>
@@ -118,7 +118,7 @@ export default function NotificationBell({ variant = "dark" }: { variant?: "ligh
               <button
                 type="button"
                 onClick={(e) => { e.preventDefault(); e.stopPropagation(); dismissOne.mutate(n.id); }}
-                className="text-gray-300 hover:text-gray-500 flex-shrink-0 self-start mt-0.5 text-base leading-none"
+                className="text-gray-300 dark:text-slate-500 hover:text-gray-500 dark:hover:text-slate-300 flex-shrink-0 self-start mt-0.5 text-base leading-none"
                 aria-label="Dismiss">×</button>
             )}
           </div>

@@ -16,7 +16,7 @@ function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const justRegistered = searchParams.get("registered") === "1";
-  const redirectTo = searchParams.get("redirect") ?? "/schedule/my-missions";
+  const redirectTo = searchParams.get("redirect") ?? "/home";
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -194,7 +194,7 @@ function LoginForm() {
             </div>
 
             <div style={{ textAlign: "left" }}>
-              <Link href="/forgot-password" style={{ fontSize: "0.75rem", color: "#3b82f6", textDecoration: "none" }}>
+              <Link href="/forgot-password" style={{ fontSize: "0.75rem", color: "#0ea5e9", textDecoration: "none" }}>
                 {t("forgotPassword")}?
               </Link>
             </div>
@@ -211,7 +211,7 @@ function LoginForm() {
             <button
               type="submit"
               disabled={loading}
-              style={{ width: "100%", background: loading ? "#93c5fd" : "#3b82f6", color: "white", border: "none", borderRadius: "10px", padding: "0.75rem", fontSize: "0.875rem", fontWeight: 600, cursor: loading ? "not-allowed" : "pointer", marginTop: "0.5rem" }}
+              style={{ width: "100%", background: loading ? "#7dd3fc" : "#0ea5e9", color: "white", border: "none", borderRadius: "10px", padding: "0.75rem", fontSize: "0.875rem", fontWeight: 600, cursor: loading ? "not-allowed" : "pointer", marginTop: "0.5rem" }}
             >
               {loading ? t("signingIn") : t("loginButton")}
             </button>
@@ -219,7 +219,7 @@ function LoginForm() {
 
           <p style={{ textAlign: "center", fontSize: "0.875rem", color: "#64748b", marginTop: "1.25rem" }}>
             {t("noAccount")}{" "}
-            <Link href="/register" style={{ color: "#3b82f6", fontWeight: 500, textDecoration: "none" }}>
+            <Link href="/register" style={{ color: "#0ea5e9", fontWeight: 500, textDecoration: "none" }}>
               {t("registerButton")}
             </Link>
           </p>
@@ -237,6 +237,17 @@ function LoginForm() {
             >
               Built by <span style={{ fontWeight: 600, color: "#64748b" }}>ofeklabs.com</span>
             </a>
+          </div>
+
+          {/* Legal links */}
+          <div style={{ textAlign: "center", marginTop: "0.75rem", display: "flex", justifyContent: "center", gap: "12px" }}>
+            <Link href="/terms" style={{ fontSize: "0.6875rem", color: "#94a3b8", textDecoration: "none" }}>
+              תנאי שימוש
+            </Link>
+            <span style={{ fontSize: "0.6875rem", color: "#64748b" }}>·</span>
+            <Link href="/privacy" style={{ fontSize: "0.6875rem", color: "#94a3b8", textDecoration: "none" }}>
+              מדיניות פרטיות
+            </Link>
           </div>
         </div>
       </div>

@@ -149,7 +149,7 @@ export default function UnavailabilityReasonsPanel({ spaceId }: UnavailabilityRe
                   value={editingName}
                   onChange={(e) => setEditingName(e.target.value)}
                   maxLength={MAX_DISPLAY_NAME_LENGTH}
-                  className="flex-1 border border-slate-200 rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="flex-1 border border-slate-200 rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
                   onKeyDown={(e) => {
                     if (e.key === "Enter") handleSaveEdit();
                     if (e.key === "Escape") cancelEditing();
@@ -158,7 +158,7 @@ export default function UnavailabilityReasonsPanel({ spaceId }: UnavailabilityRe
                 />
                 <button
                   onClick={handleSaveEdit}
-                  className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+                  className="text-xs text-sky-600 hover:text-sky-700 font-medium"
                 >
                   {t("save")}
                 </button>
@@ -174,7 +174,7 @@ export default function UnavailabilityReasonsPanel({ spaceId }: UnavailabilityRe
                 <span className="flex-1 text-sm text-slate-700">{reason.displayName}</span>
                 <button
                   onClick={() => startEditing(reason)}
-                  className="text-xs text-slate-400 hover:text-blue-600 transition-colors"
+                  className="text-xs text-slate-400 hover:text-sky-600 transition-colors"
                   title={t("edit")}
                 >
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
@@ -208,7 +208,7 @@ export default function UnavailabilityReasonsPanel({ spaceId }: UnavailabilityRe
           onChange={(e) => setNewReasonName(e.target.value)}
           placeholder={t("placeholder")}
           maxLength={MAX_DISPLAY_NAME_LENGTH}
-          className="flex-1 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="flex-1 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
           onKeyDown={(e) => {
             if (e.key === "Enter") handleAdd();
           }}
@@ -216,7 +216,7 @@ export default function UnavailabilityReasonsPanel({ spaceId }: UnavailabilityRe
         <button
           onClick={handleAdd}
           disabled={adding || !newReasonName.trim() || reasons.length >= MAX_REASONS}
-          className="bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl disabled:opacity-50 transition-colors whitespace-nowrap"
+          className="bg-sky-500 hover:bg-sky-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl disabled:opacity-50 transition-colors whitespace-nowrap"
         >
           {adding ? t("adding") : t("addReason")}
         </button>

@@ -51,7 +51,7 @@ export default function ScheduleTable({ assignments, filterDate, title }: Schedu
           value={search}
           onChange={e => setSearch(e.target.value)}
           placeholder={t("filterByName")}
-          className="w-full border border-slate-200 rounded-xl pl-9 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full border border-slate-200 rounded-xl pl-9 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
         />
       </div>
 

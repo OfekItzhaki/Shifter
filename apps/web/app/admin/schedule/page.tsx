@@ -104,7 +104,7 @@ function VersionListSidebar({ versions, selectedId, loading, onSelect }: Version
             className={clsx(
               "w-full text-start px-3.5 py-3 rounded-xl border text-sm transition-all",
               selectedId === v.id
-                ? "border-blue-300 bg-blue-50 shadow-sm"
+                ? "border-sky-300 bg-sky-50 shadow-sm"
                 : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50"
             )}
           >
@@ -150,7 +150,7 @@ function VersionListSidebar({ versions, selectedId, loading, onSelect }: Version
                         className={clsx(
                           "w-full text-start px-3 py-2 rounded-lg border text-xs transition-all",
                           selectedId === v.id
-                            ? "border-blue-300 bg-blue-50 shadow-sm"
+                            ? "border-sky-300 bg-sky-50 shadow-sm"
                             : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50"
                         )}
                       >
@@ -353,7 +353,7 @@ function VersionDetailPanel({ selected, actionLoading, spaceId, onPublish, onRol
         <button
           onClick={() => setSelectedDate(today)}
           className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
-            selectedDate === today ? "bg-blue-500 text-white border-blue-500" : "border-slate-200 text-slate-600 hover:bg-slate-50"
+            selectedDate === today ? "bg-sky-500 text-white border-sky-500" : "border-slate-200 text-slate-600 hover:bg-slate-50"
           }`}
         >
           {t("today")}
@@ -621,7 +621,7 @@ export default function AdminSchedulePage() {
             <button
               onClick={handleTrigger}
               disabled={actionLoading}
-              className="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl shadow-sm shadow-blue-500/20 disabled:opacity-50 transition-all"
+              className="flex items-center gap-2 bg-sky-500 hover:bg-sky-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl shadow-sm shadow-sky-500/20 disabled:opacity-50 transition-all"
             >
               {actionLoading ? (
                 <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">

@@ -178,7 +178,7 @@ export default function SmartImportModal({ groupId, open, onClose }: Props) {
               onDrop={handleDrop}
               onClick={() => fileInputRef.current?.click()}
               className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-colors ${
-                dragOver ? "border-blue-400 bg-blue-50" : "border-slate-200 hover:border-slate-300 hover:bg-slate-50"
+                dragOver ? "border-sky-400 bg-sky-50" : "border-slate-200 hover:border-slate-300 hover:bg-slate-50"
               }`}
             >
               <svg className="mx-auto h-10 w-10 text-slate-300 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -207,7 +207,7 @@ export default function SmartImportModal({ groupId, open, onClose }: Props) {
               <button
                 onClick={handleDownloadTemplate}
                 type="button"
-                className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 font-medium mt-1"
+                className="inline-flex items-center gap-1 text-xs text-sky-600 hover:text-sky-700 font-medium mt-1"
               >
                 <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
@@ -222,7 +222,7 @@ export default function SmartImportModal({ groupId, open, onClose }: Props) {
                 <button
                   onClick={handleDownloadTemplate}
                   type="button"
-                  className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 font-medium"
+                  className="inline-flex items-center gap-1 text-xs text-sky-600 hover:text-sky-700 font-medium"
                 >
                   {t("downloadTemplate")}
                 </button>
@@ -234,7 +234,7 @@ export default function SmartImportModal({ groupId, open, onClose }: Props) {
         {/* Parsing — spinner */}
         {state === "parsing" && (
           <div className="flex flex-col items-center py-12 gap-3">
-            <svg className="animate-spin h-8 w-8 text-blue-500" fill="none" viewBox="0 0 24 24">
+            <svg className="animate-spin h-8 w-8 text-sky-500" fill="none" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
             </svg>
@@ -245,8 +245,8 @@ export default function SmartImportModal({ groupId, open, onClose }: Props) {
         {/* Preview — show parsed data */}
         {state === "preview" && preview && (
           <div className="space-y-4">
-            <div className="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3">
-              <p className="text-sm text-blue-800 font-medium">
+            <div className="bg-sky-50 border border-sky-200 rounded-xl px-4 py-3">
+              <p className="text-sm text-sky-800 font-medium">
                 {t("found", {
                   people: String(preview.people.length),
                   tasks: String(preview.tasks.length),
@@ -254,7 +254,7 @@ export default function SmartImportModal({ groupId, open, onClose }: Props) {
                 })}
               </p>
               {preview.aiConfidence && (
-                <p className="text-xs text-blue-600 mt-1">
+                <p className="text-xs text-sky-600 mt-1">
                   AI confidence: {preview.aiConfidence}
                 </p>
               )}
@@ -291,7 +291,7 @@ export default function SmartImportModal({ groupId, open, onClose }: Props) {
                         type="checkbox"
                         checked={includedPeople.has(name)}
                         onChange={() => togglePerson(name)}
-                        className="rounded border-slate-300 text-blue-500 focus:ring-blue-500"
+                        className="rounded border-slate-300 text-sky-500 focus:ring-sky-500"
                       />
                       {name}
                     </label>
@@ -367,7 +367,7 @@ export default function SmartImportModal({ groupId, open, onClose }: Props) {
             <div className="flex gap-2 pt-2">
               <button
                 onClick={handleConfirm}
-                className="flex-1 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl transition-colors"
+                className="flex-1 bg-sky-500 hover:bg-sky-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl transition-colors"
               >
                 {t("confirm")}
               </button>
@@ -384,7 +384,7 @@ export default function SmartImportModal({ groupId, open, onClose }: Props) {
         {/* Confirming — spinner */}
         {state === "confirming" && (
           <div className="flex flex-col items-center py-12 gap-3">
-            <svg className="animate-spin h-8 w-8 text-blue-500" fill="none" viewBox="0 0 24 24">
+            <svg className="animate-spin h-8 w-8 text-sky-500" fill="none" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
             </svg>
@@ -404,7 +404,7 @@ export default function SmartImportModal({ groupId, open, onClose }: Props) {
             {draftVersionId && (
               <button
                 onClick={handleClose}
-                className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                className="text-sm text-sky-600 hover:text-sky-700 font-medium"
               >
                 {t("viewDraft")}
               </button>

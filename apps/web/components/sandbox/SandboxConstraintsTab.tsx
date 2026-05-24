@@ -248,7 +248,7 @@ export default function SandboxConstraintsTab({
       {!showForm && (
         <button
           onClick={() => setShowForm(true)}
-          className="flex items-center gap-1.5 text-xs font-medium text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-900/50 px-3 py-1.5 rounded-lg transition-colors"
+          className="flex items-center gap-1.5 text-xs font-medium text-sky-600 dark:text-sky-400 border border-sky-200 dark:border-sky-700 bg-sky-50 dark:bg-sky-900/30 hover:bg-sky-100 dark:hover:bg-sky-900/50 px-3 py-1.5 rounded-lg transition-colors"
         >
           <span>+</span>
           <span>{tConstraints("addConstraint")}</span>
@@ -367,7 +367,7 @@ function ConstraintRow({
           {isRemoved ? (
             <button
               onClick={onUndoRemove}
-              className="text-[10px] text-blue-600 dark:text-blue-400 hover:text-blue-700 border border-blue-200 dark:border-blue-700 px-2 py-1 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors"
+              className="text-[10px] text-sky-600 dark:text-sky-400 hover:text-sky-700 border border-sky-200 dark:border-sky-700 px-2 py-1 rounded-lg hover:bg-sky-50 dark:hover:bg-sky-900/30 transition-colors"
             >
               {tConstraints("undo")}
             </button>
@@ -433,7 +433,7 @@ function ConstraintForm({
           onChange={(e) => setRuleType(e.target.value)}
           required
           placeholder={tConstraints("ruleTypePlaceholder")}
-          className="w-full border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-sky-500"
         />
       </div>
 
@@ -445,7 +445,7 @@ function ConstraintForm({
         <select
           value={severity}
           onChange={(e) => setSeverity(e.target.value as "hard" | "soft")}
-          className="w-full border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-sky-500"
         >
           <option value="hard">{tConstraints("hard")}</option>
           <option value="soft">{tConstraints("soft")}</option>
@@ -463,7 +463,7 @@ function ConstraintForm({
             value={scopeType}
             onChange={(e) => setScopeType(e.target.value)}
             placeholder="group"
-            className="w-full border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-sky-500"
           />
         </div>
         <div>
@@ -475,7 +475,7 @@ function ConstraintForm({
             value={scopeId}
             onChange={(e) => setScopeId(e.target.value)}
             placeholder={tConstraints("scopeIdPlaceholder")}
-            className="w-full border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-sky-500"
           />
         </div>
       </div>
@@ -496,7 +496,7 @@ function ConstraintForm({
       <div className="flex gap-2">
         <button
           type="submit"
-          className="bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
+          className="bg-sky-500 hover:bg-sky-600 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
         >
           {initialData ? tConstraints("save") : tConstraints("add")}
         </button>

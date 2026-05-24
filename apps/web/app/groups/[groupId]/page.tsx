@@ -13,6 +13,7 @@ import TrialBanner from "@/components/billing/TrialBanner";
 import ReAuthDialog from "@/components/admin/ReAuthDialog";
 import ScheduleTab from "./tabs/ScheduleTab";
 import MembersTab, { MemberProfileModal } from "./tabs/MembersTab";
+import BulkAddMembers from "@/components/BulkAddMembers";
 
 // Lazy-load less-frequently-used tabs for faster initial load
 const AlertsTab = lazy(() => import("./tabs/AlertsTab"));
@@ -171,6 +172,19 @@ export default function GroupDetailPage() {
   const [hasCredentials, setHasCredentials] = useState<boolean | null>(null); // null = loading
   const { enterElevatedMode } = useAdminSessionStore();
 
+  // ── Re-enter elevated session on page load if admin mode was persisted ──
+  // This restarts the inactivity timeout after a refresh.
+  useEffect(() => {
+    if (adminGroupId === groupId && group) {
+      const { isElevated } = useAdminSessionStore.getState();
+      if (!isElevated) {
+        const timeoutMinutes = group.managementTimeoutMinutes ?? 15;
+        enterElevatedMode("management", groupId, timeoutMinutes);
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [group, adminGroupId, groupId]);
+
   // Check if user has credentials configured (password or WebAuthn)
   useEffect(() => {
     let cancelled = false;
@@ -181,7 +195,7 @@ export default function GroupDetailPage() {
       if (isWebAuthnSupported()) {
         try {
           const creds = await listCredentials();
-          hasWebAuthn = creds.length > 0;
+          hasWebAuthn = (creds?.length ?? 0) > 0;
         } catch {
           hasWebAuthn = false;
         }
@@ -533,7 +547,7 @@ export default function GroupDetailPage() {
           `/spaces/${spaceId}/schedule-versions?status=draft`
         ).catch(() => ({ data: [] as Array<{ id: string; status: string }> })),
       ]);
-      const groupAssignments = groupScheduleResponse.assignments;
+      const groupAssignments = groupScheduleResponse?.assignments ?? [];
       setScheduleData(groupAssignments.length > 0 ? groupAssignments : scheduleData);
       const drafts = Array.isArray(draftRes?.data) ? draftRes.data : [];
       setDraftVersion(drafts.length > 0 ? drafts[0] : null);
@@ -575,6 +589,43 @@ export default function GroupDetailPage() {
     if (!currentSpaceId || !addMemberName.trim()) return;
     setAddMemberSaving(true);
     setAddMemberError(null);
+
+    // ── Client-side duplicate check against current group members ──────────
+    const nameTrimmed = addMemberName.trim().toLowerCase();
+    const phoneTrimmed = addMemberPhone.trim();
+    const emailTrimmed = addMemberEmail.trim().toLowerCase();
+
+    const duplicateByName = members.find(m =>
+      m.fullName.toLowerCase() === nameTrimmed
+    );
+    if (duplicateByName) {
+      setAddMemberError(tErrors("memberAlreadyExists"));
+      setAddMemberSaving(false);
+      return;
+    }
+
+    if (phoneTrimmed) {
+      const duplicateByPhone = members.find(m =>
+        m.phoneNumber && m.phoneNumber.replace(/\s+/g, "") === phoneTrimmed.replace(/\s+/g, "")
+      );
+      if (duplicateByPhone) {
+        setAddMemberError(tErrors("memberPhoneExists"));
+        setAddMemberSaving(false);
+        return;
+      }
+    }
+
+    if (emailTrimmed) {
+      const duplicateByEmail = members.find(m =>
+        m.email && m.email.toLowerCase() === emailTrimmed
+      );
+      if (duplicateByEmail) {
+        setAddMemberError(tErrors("memberEmailExists"));
+        setAddMemberSaving(false);
+        return;
+      }
+    }
+
     try {
       let personId: string;
 
@@ -596,10 +647,10 @@ export default function GroupDetailPage() {
       // Add to group by ID (idempotent on the backend)
       await addGroupMemberById(currentSpaceId, groupId, personId);
       // If phone or email provided, send invitation
-      if (addMemberPhone.trim()) {
-        try { await invitePerson(currentSpaceId, personId, addMemberPhone.trim(), "whatsapp"); } catch { /* non-fatal */ }
-      } else if (addMemberEmail.trim()) {
-        try { await invitePerson(currentSpaceId, personId, addMemberEmail.trim(), "email"); } catch { /* non-fatal */ }
+      if (phoneTrimmed) {
+        try { await invitePerson(currentSpaceId, personId, phoneTrimmed, "whatsapp"); } catch { /* non-fatal */ }
+      } else if (emailTrimmed) {
+        try { await invitePerson(currentSpaceId, personId, emailTrimmed, "email"); } catch { /* non-fatal */ }
       }
       setAddMemberName(""); setAddMemberPhone(""); setAddMemberEmail("");
       setShowAddMember(false);
@@ -620,6 +671,45 @@ export default function GroupDetailPage() {
     try {
       await invitePerson(currentSpaceId, personId, contact, "whatsapp");
     } catch { /* non-fatal */ }
+  }
+
+  // ── Bulk add members ─────────────────────────────────────────────────────
+  const [addMemberMode, setAddMemberMode] = useState<"single" | "bulk">("single");
+
+  async function handleBulkAdd(members: { name: string; phone?: string; email?: string }[], onProgress: (current: number, total: number) => void): Promise<{ success: number; errors: number }> {
+    if (!currentSpaceId) return { success: 0, errors: members.length };
+    let success = 0;
+    let errors = 0;
+
+    for (let i = 0; i < members.length; i++) {
+      onProgress(i + 1, members.length);
+      try {
+        const m = members[i];
+        let personId: string;
+        const existingResults = await searchPeople(currentSpaceId, m.name);
+        const existingMatch = existingResults.find(p =>
+          p.fullName.toLowerCase() === m.name.toLowerCase()
+        );
+        if (existingMatch) {
+          personId = existingMatch.id;
+        } else {
+          const person = await createPerson(currentSpaceId, m.name, m.phone, m.email);
+          personId = person.id;
+        }
+        await addGroupMemberById(currentSpaceId, groupId, personId);
+        success++;
+      } catch {
+        errors++;
+      }
+    }
+
+    // Refresh members list
+    try {
+      const updated = await getGroupMembers(currentSpaceId, groupId);
+      setMembers(updated);
+    } catch { /* non-fatal */ }
+
+    return { success, errors };
   }
 
   async function handleSaveMemberEdit(personId: string) {
@@ -1157,7 +1247,7 @@ export default function GroupDetailPage() {
     return (
       <AppShell>
         <div className="flex items-center justify-center min-h-[60vh]">
-          <svg className="animate-spin h-8 w-8 text-blue-400" fill="none" viewBox="0 0 24 24">
+          <svg className="animate-spin h-8 w-8 text-sky-400" fill="none" viewBox="0 0 24 24">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
           </svg>
@@ -1179,7 +1269,7 @@ export default function GroupDetailPage() {
 
   return (
     <AppShell>
-      <div className="max-w-4xl mx-auto px-2 sm:px-4 py-4 sm:py-6 space-y-4 sm:space-y-6" dir="rtl">
+      <div className="max-w-6xl w-full mx-auto px-2 sm:px-4 py-4 sm:py-6 space-y-4 sm:space-y-6" dir="rtl">
         {/* Header */}
         <div className="flex items-center gap-3 sm:gap-4">
           <Link href="/groups" className="text-slate-400 hover:text-slate-600 transition-colors flex-shrink-0">
@@ -1197,17 +1287,7 @@ export default function GroupDetailPage() {
             <h1 className="text-lg sm:text-xl font-bold text-slate-900 truncate">{group.name}</h1>
             <p className="text-xs sm:text-sm text-slate-400">{group.memberCount ?? 0} {tGroups("members")}</p>
           </div>
-          {/* Admin mode toggle — always visible to group owner */}
-          <Link
-            href="/changelog"
-            className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium text-purple-600 bg-purple-50 border border-purple-200 hover:bg-purple-100 transition-colors flex-shrink-0"
-            title={tGroups("whatsNew")}
-          >
-            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <span className="hidden sm:inline">{tGroups("whatsNew")}</span>
-          </Link>
+          {/* Admin mode toggle */}
           <div className="relative group/admin-btn flex-shrink-0">
             <button
               onClick={handleAdminModeToggle}
@@ -1240,7 +1320,7 @@ export default function GroupDetailPage() {
         </div>
 
         {/* Trial/subscription banner */}
-        <TrialBanner groupId={groupId} />
+        <TrialBanner />
 
         {/* Tabs */}
         <div className="flex gap-1 bg-slate-100 p-1 rounded-xl overflow-x-auto -mx-2 px-2 sm:mx-0 sm:px-1" style={{ scrollbarWidth: "thin" }}>
@@ -1260,7 +1340,7 @@ export default function GroupDetailPage() {
         </div>
 
         {/* Tab content */}
-        <Suspense fallback={<div className="flex justify-center py-12"><svg className="animate-spin h-6 w-6 text-blue-400" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg></div>}>
+        <Suspense fallback={<div className="flex justify-center py-12"><svg className="animate-spin h-6 w-6 text-sky-400" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg></div>}>
         <div>
           {activeTab === "schedule" && (
             <ScheduleTab
@@ -1597,47 +1677,69 @@ export default function GroupDetailPage() {
       )}
 
       {/* Add member modal */}
-      <Modal title={tGroups("members_tab.addMember")} open={showAddMember} onClose={() => { setShowAddMember(false); setAddMemberName(""); setAddMemberPhone(""); setAddMemberEmail(""); setAddMemberError(null); }}>
-        <form onSubmit={handleAddMember} className="space-y-4">
-          <div>
-            <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">{tGroups("members_tab.fullName")} *</label>
-            <input
-              type="text"
-              value={addMemberName}
-              onChange={e => setAddMemberName(e.target.value)}
-              placeholder={tGroups("members_tab.fullName")}
-              required
-              className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">{tGroups("members_tab.phone")} <span className="text-slate-400 normal-case font-normal">({tGroups("members_tab.optionalInvite")})</span></label>
-            <input
-              type="tel"
-              value={addMemberPhone}
-              onChange={e => setAddMemberPhone(e.target.value)}
-              placeholder="+1..."
-              dir="ltr"
-              className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">{tGroups("members_tab.email")} <span className="text-slate-400 normal-case font-normal">({tGroups("members_tab.optionalInvite")})</span></label>
-            <input
-              type="email"
-              value={addMemberEmail}
-              onChange={e => setAddMemberEmail(e.target.value)}
-              placeholder="example@email.com"
-              dir="ltr"
-              className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-          {addMemberError && <p className="text-sm text-red-600">{addMemberError}</p>}
-          <button type="submit" disabled={addMemberSaving}
-            className="w-full bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl disabled:opacity-50 transition-colors">
-            {addMemberSaving ? tGroups("members_tab.adding") : tGroups("members_tab.addMember")}
+      <Modal title={tGroups("members_tab.addMember")} open={showAddMember} onClose={() => { setShowAddMember(false); setAddMemberName(""); setAddMemberPhone(""); setAddMemberEmail(""); setAddMemberError(null); setAddMemberMode("single"); }}>
+        {/* Mode toggle */}
+        <div className="flex gap-1 bg-slate-200 dark:bg-slate-700 p-1 rounded-xl mb-4">
+          <button
+            type="button"
+            onClick={() => setAddMemberMode("single")}
+            className={`flex-1 py-1.5 rounded-lg text-sm font-medium transition-all ${addMemberMode === "single" ? "bg-white dark:bg-slate-600 text-slate-900 dark:text-white shadow-sm" : "text-slate-600 dark:text-slate-300"}`}
+          >
+            {tGroups("members_tab.singleAdd")}
           </button>
-        </form>
+          <button
+            type="button"
+            onClick={() => setAddMemberMode("bulk")}
+            className={`flex-1 py-1.5 rounded-lg text-sm font-medium transition-all ${addMemberMode === "bulk" ? "bg-white dark:bg-slate-600 text-slate-900 dark:text-white shadow-sm" : "text-slate-600 dark:text-slate-300"}`}
+          >
+            {tGroups("members_tab.bulkAdd")}
+          </button>
+        </div>
+
+        {addMemberMode === "single" ? (
+          <form onSubmit={handleAddMember} className="space-y-4">
+            <div>
+              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">{tGroups("members_tab.fullName")} *</label>
+              <input
+                type="text"
+                value={addMemberName}
+                onChange={e => setAddMemberName(e.target.value)}
+                placeholder={tGroups("members_tab.fullName")}
+                required
+                className="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">{tGroups("members_tab.phone")} <span className="text-slate-400 normal-case font-normal">({tGroups("members_tab.optionalInvite")})</span></label>
+              <input
+                type="tel"
+                value={addMemberPhone}
+                onChange={e => setAddMemberPhone(e.target.value)}
+                placeholder="+1..."
+                dir="ltr"
+                className="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">{tGroups("members_tab.email")} <span className="text-slate-400 normal-case font-normal">({tGroups("members_tab.optionalInvite")})</span></label>
+              <input
+                type="email"
+                value={addMemberEmail}
+                onChange={e => setAddMemberEmail(e.target.value)}
+                placeholder="example@email.com"
+                dir="ltr"
+                className="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+              />
+            </div>
+            {addMemberError && <p className="text-sm text-red-600">{addMemberError}</p>}
+            <button type="submit" disabled={addMemberSaving}
+              className="w-full bg-sky-500 hover:bg-sky-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl disabled:opacity-50 transition-colors">
+              {addMemberSaving ? tGroups("members_tab.adding") : tGroups("members_tab.addMember")}
+            </button>
+          </form>
+        ) : (
+          <BulkAddMembers onBulkAdd={handleBulkAdd} />
+        )}
       </Modal>
 
       {/* Member profile modal */}

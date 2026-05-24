@@ -51,7 +51,7 @@ public class GetPlatformStatsQueryHandler : IRequestHandler<GetPlatformStatsQuer
             .CountAsync(ct);
 
         // ── Space / Group / People stats ──────────────────────────────────────
-        var totalSpaces = await _db.Spaces.CountAsync(ct);
+        var totalSpaces = await _db.Spaces.Where(s => s.DeletedAt == null).CountAsync(ct);
         var totalGroups = await _db.Groups.Where(g => g.DeletedAt == null).CountAsync(ct);
         var totalPeople = await _db.People.Where(p => p.IsActive).CountAsync(ct);
 

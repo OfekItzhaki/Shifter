@@ -1,0 +1,124 @@
+"use client";
+
+import { useState, useCallback } from "react";
+import { useTranslations } from "next-intl";
+
+export interface ParsedMember {
+  name: string;
+  phone?: string;
+  email?: string;
+}
+
+interface Props {
+  onBulkAdd: (members: ParsedMember[], onProgress: (current: number, total: number) => void) => Promise<{ success: number; errors: number }>;
+}
+
+export default function BulkAddMembers({ onBulkAdd }: Props) {
+  const t = useTranslations("groups.members_tab");
+  const [text, setText] = useState("");
+  const [adding, setAdding] = useState(false);
+  const [progress, setProgress] = useState<{ current: number; total: number } | null>(null);
+  const [result, setResult] = useState<{ success: number; errors: number } | null>(null);
+
+  const members: ParsedMember[] = text
+    .split("\n")
+    .map(line => line.trim())
+    .filter(line => line.length > 0)
+    .map(line => {
+      const parts = line.split(",").map(p => p.trim());
+      return {
+        name: parts[0] || "",
+        phone: parts[1] || undefined,
+        email: parts[2] || undefined,
+      };
+    })
+    .filter(m => m.name.length > 0);
+
+  const handleProgress = useCallback((current: number, total: number) => {
+    setProgress({ current, total });
+  }, []);
+
+  async function handleBulkAdd() {
+    if (members.length === 0) return;
+    setAdding(true);
+    setResult(null);
+    setProgress({ current: 0, total: members.length });
+
+    try {
+      const res = await onBulkAdd(members, handleProgress);
+      setResult(res);
+      if (res.errors === 0) {
+        setText("");
+      }
+    } finally {
+      setAdding(false);
+      setProgress(null);
+    }
+  }
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <p className="text-xs text-slate-500 dark:text-slate-400 mb-2 leading-relaxed">
+          שם, טלפון, אימייל — שורה לכל חבר. טלפון ואימייל אופציונליים.
+        </p>
+        <textarea
+          value={text}
+          onChange={e => { setText(e.target.value); setResult(null); }}
+          placeholder={"יוסי לוי, 0501234567\nדניאל כהן, , daniel@email.com\nאלכס"}
+          rows={6}
+          disabled={adding}
+          className="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 placeholder:text-slate-400 dark:placeholder:text-slate-500 resize-none font-mono"
+          dir="rtl"
+        />
+      </div>
+
+      {members.length > 0 && !adding && !result && (
+        <p className="text-xs text-slate-500 dark:text-slate-400">
+          {t("bulkCount", { count: members.length })}
+        </p>
+      )}
+
+      {progress && adding && (
+        <div className="space-y-2">
+          <p className="text-xs text-sky-600 dark:text-sky-400 font-medium">
+            {t("bulkProgress", { current: progress.current, total: progress.total })}
+          </p>
+          <div className="w-full h-1.5 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-sky-500 rounded-full transition-all duration-300"
+              style={{ width: `${(progress.current / progress.total) * 100}%` }}
+            />
+          </div>
+        </div>
+      )}
+
+      {result && (
+        <div className="flex items-center gap-2 flex-wrap">
+          {result.success > 0 && (
+            <span className="text-xs text-green-600 dark:text-green-400 font-medium">
+              ✓ {t("bulkSuccess", { count: result.success })}
+            </span>
+          )}
+          {result.errors > 0 && (
+            <span className="text-xs text-red-600 dark:text-red-400 font-medium">
+              ✕ {t("bulkErrors", { count: result.errors })}
+            </span>
+          )}
+        </div>
+      )}
+
+      <button
+        type="button"
+        onClick={handleBulkAdd}
+        disabled={members.length === 0 || adding}
+        className="w-full bg-sky-500 hover:bg-sky-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl disabled:opacity-50 transition-colors"
+      >
+        {adding
+          ? t("bulkProgress", { current: progress?.current ?? 0, total: progress?.total ?? 0 })
+          : t("bulkAddAll")
+        }
+      </button>
+    </div>
+  );
+}

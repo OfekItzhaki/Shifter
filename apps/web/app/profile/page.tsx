@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { useRouter } from "next/navigation";
 import AppShell from "@/components/shell/AppShell";
 import Modal from "@/components/Modal";
@@ -11,14 +11,6 @@ import ImageUpload from "@/components/ImageUpload";
 import ErrorState from "@/components/shared/ErrorState";
 import { useAuthStore } from "@/lib/store/authStore";
 import { formatLocalDate } from "@/lib/utils/formatTime";
-import {
-  isWebAuthnSupported,
-  registerCredential,
-  listCredentials,
-  deleteCredential,
-  updateCredentialNickname,
-  WebAuthnCredential,
-} from "@/lib/webauthn";
 function getInitials(name: string): string {
   return name
     .split(" ")
@@ -38,17 +30,13 @@ function formatMemberSince(dateStr: string, timezoneId: string | null): string {
 }
 
 const cardStyle: React.CSSProperties = {
-  background: "white",
   borderRadius: 16,
-  border: "1px solid #e2e8f0",
-  boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
   padding: "1.5rem",
 };
 
 const labelStyle: React.CSSProperties = {
   fontSize: "0.75rem",
   fontWeight: 600,
-  color: "#94a3b8",
   textTransform: "uppercase",
   letterSpacing: "0.05em",
   marginBottom: "0.25rem",
@@ -58,7 +46,6 @@ const labelStyle: React.CSSProperties = {
 
 const valueStyle: React.CSSProperties = {
   fontSize: "0.9375rem",
-  color: "#0f172a",
   fontWeight: 500,
   cursor: "default",
 };
@@ -77,6 +64,8 @@ const inputStyle: React.CSSProperties = {
 
 export default function ProfilePage() {
   const t = useTranslations("profile");
+  const locale = useLocale();
+  const isRtl = locale === "he";
   const timezoneId = useAuthStore(s => s.timezoneId);
   const [me, setMe] = useState<MeDto | null>(null);
   const [loading, setLoading] = useState(true);
@@ -176,7 +165,7 @@ export default function ProfilePage() {
   ) : (
     <div style={{
       width: 96, height: 96, borderRadius: "50%",
-      background: "linear-gradient(135deg, #3b82f6, #6366f1)",
+      background: "linear-gradient(135deg, #0ea5e9, #6366f1)",
       display: "flex", alignItems: "center", justifyContent: "center",
       color: "white", fontSize: "2rem", fontWeight: 700,
     }}>
@@ -186,24 +175,20 @@ export default function ProfilePage() {
 
   return (
     <AppShell>
-      <div style={{ maxWidth: 720, direction: "rtl" }}>
+      <div style={{ maxWidth: 720, direction: isRtl ? "rtl" : "ltr" }}>
         {/* Hero section */}
-        <div style={{ ...cardStyle, marginBottom: "1.5rem" }}>
+        <div style={cardStyle} className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm mb-6">
           <div className="flex flex-col sm:flex-row items-center sm:items-center gap-4 sm:gap-6">
             {avatarContent}
             <div style={{ flex: 1 }} className="text-center sm:text-start">
-              <h1 style={{ fontSize: "1.5rem", fontWeight: 700, color: "#0f172a", margin: "0 0 0.25rem" }}>
+              <h1 className="text-2xl font-bold text-slate-900 dark:text-white" style={{ margin: "0 0 0.25rem" }}>
                 {me.displayName}
               </h1>
-              <p style={{ fontSize: "0.875rem", color: "#64748b", margin: 0 }}>{me.email}</p>
+              <p className="text-sm text-slate-500 dark:text-slate-400" style={{ margin: 0 }}>{me.email}</p>
             </div>
             <button
               onClick={openEdit}
-              style={{
-                background: "none", border: "1px solid #e2e8f0", borderRadius: 10,
-                padding: "0.5rem 1rem", fontSize: "0.875rem", fontWeight: 500,
-                color: "#374151", cursor: "pointer", flexShrink: 0,
-              }}
+              className="border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors flex-shrink-0 bg-transparent cursor-pointer"
             >
               {t("edit")}
             </button>
@@ -213,43 +198,41 @@ export default function ProfilePage() {
         {/* Info cards grid */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }} className="mobile-stack">
           {/* Contact info */}
-          <div style={cardStyle}>
-            <h2 style={{ fontSize: "0.875rem", fontWeight: 600, color: "#0f172a", margin: "0 0 1rem" }}>{t("contactInfo")}</h2>
+          <div style={cardStyle} className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm">
+            <h2 className="text-sm font-semibold text-slate-900 dark:text-white" style={{ margin: "0 0 1rem" }}>{t("contactInfo")}</h2>
             <div style={{ display: "flex", flexDirection: "column", gap: "0.875rem" }}>
               <div>
-                <p style={labelStyle}>{t("phone")}</p>
+                <p style={labelStyle} className="text-slate-400 dark:text-slate-500">{t("phone")}</p>
                 <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                  <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="#94a3b8" strokeWidth={2}>
+                  <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} className="text-slate-400">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                   </svg>
-                  <p style={{ ...valueStyle, direction: "ltr", textAlign: "left" }}>{me.phoneNumber ?? "—"}</p>
+                  <p style={{ ...valueStyle, direction: "ltr", textAlign: "left" }} className="text-slate-900 dark:text-white">{me.phoneNumber ?? "—"}</p>
                 </div>
               </div>
               <div>
-                <p style={labelStyle}>{t("email")}</p>
-                <p style={valueStyle}>{me.email}</p>
+                <p style={labelStyle} className="text-slate-400 dark:text-slate-500">{t("email")}</p>
+                <p style={valueStyle} className="text-slate-900 dark:text-white">{me.email}</p>
               </div>
             </div>
           </div>
 
           {/* Personal info */}
-          <div style={cardStyle}>
-            <h2 style={{ fontSize: "0.875rem", fontWeight: 600, color: "#0f172a", margin: "0 0 1rem" }}>{t("personalInfo")}</h2>
+          <div style={cardStyle} className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm">
+            <h2 className="text-sm font-semibold text-slate-900 dark:text-white" style={{ margin: "0 0 1rem" }}>{t("personalInfo")}</h2>
             <div style={{ display: "flex", flexDirection: "column", gap: "0.875rem" }}>
               <div>
-                <p style={labelStyle}>{t("birthday")}</p>
-                <p style={valueStyle}>{formatBirthday(me.birthday, timezoneId)}</p>
+                <p style={labelStyle} className="text-slate-400 dark:text-slate-500">{t("birthday")}</p>
+                <p style={valueStyle} className="text-slate-900 dark:text-white">{formatBirthday(me.birthday, timezoneId)}</p>
               </div>
               <div>
-                <p style={labelStyle}>{t("memberSince")}</p>
-                <p style={valueStyle}>{formatMemberSince(me.createdAt, timezoneId)}</p>
+                <p style={labelStyle} className="text-slate-400 dark:text-slate-500">{t("memberSince")}</p>
+                <p style={valueStyle} className="text-slate-900 dark:text-white">{formatMemberSince(me.createdAt, timezoneId)}</p>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Biometric Login Management */}
-        <BiometricSection />
 
         {/* Export My Data */}
         <ExportDataSection />
@@ -316,7 +299,7 @@ export default function ProfilePage() {
               type="submit"
               disabled={saving}
               style={{
-                background: saving ? "#93c5fd" : "#3b82f6",
+                background: saving ? "#7dd3fc" : "#0ea5e9",
                 color: "white", border: "none", borderRadius: 10,
                 padding: "0.625rem 1.25rem", fontSize: "0.875rem",
                 fontWeight: 600, cursor: saving ? "not-allowed" : "pointer",
@@ -365,21 +348,17 @@ function ExportDataSection() {
   }
 
   return (
-    <div style={{ ...cardStyle, marginTop: "1rem" }}>
-      <h2 style={{ fontSize: "0.875rem", fontWeight: 600, color: "#0f172a", margin: "0 0 0.5rem" }}>
+    <div style={{ ...cardStyle, marginTop: "1rem" }} className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm">
+      <h2 className="text-sm font-semibold text-slate-900 dark:text-white" style={{ margin: "0 0 0.5rem" }}>
         {t("exportData")}
       </h2>
-      <p style={{ fontSize: "0.75rem", color: "#64748b", margin: "0 0 1rem" }}>
+      <p className="text-xs text-slate-500 dark:text-slate-400" style={{ margin: "0 0 1rem" }}>
         {t("exportDataDesc")}
       </p>
       <button
         onClick={handleExport}
         disabled={exporting}
-        style={{
-          background: "none", border: "1px solid #e2e8f0", borderRadius: 10,
-          padding: "0.5rem 1rem", fontSize: "0.8125rem", color: "#374151",
-          cursor: exporting ? "not-allowed" : "pointer", opacity: exporting ? 0.6 : 1,
-        }}
+        className="border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors bg-transparent cursor-pointer disabled:opacity-60"
       >
         {exporting ? t("exporting") : t("exportButton")}
       </button>
@@ -392,28 +371,16 @@ function FeedbackSection() {
   const t = useTranslations("profile");
 
   return (
-    <div style={{ ...cardStyle, marginTop: "1rem" }}>
-      <h2 style={{ fontSize: "0.875rem", fontWeight: 600, color: "#0f172a", margin: "0 0 0.5rem" }}>
+    <div style={{ ...cardStyle, marginTop: "1rem" }} className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm">
+      <h2 className="text-sm font-semibold text-slate-900 dark:text-white" style={{ margin: "0 0 0.5rem" }}>
         {t("feedback")}
       </h2>
-      <p style={{ fontSize: "0.75rem", color: "#64748b", margin: "0 0 1rem" }}>
+      <p className="text-xs text-slate-500 dark:text-slate-400" style={{ margin: "0 0 1rem" }}>
         {t("feedbackDesc")}
       </p>
       <a
         href="mailto:support@shifter.app?subject=Bug Report / Feedback"
-        style={{
-          display: "inline-flex",
-          alignItems: "center",
-          gap: "0.5rem",
-          background: "none",
-          border: "1px solid #e2e8f0",
-          borderRadius: 10,
-          padding: "0.5rem 1rem",
-          fontSize: "0.8125rem",
-          color: "#374151",
-          textDecoration: "none",
-          cursor: "pointer",
-        }}
+        className="inline-flex items-center gap-2 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors no-underline"
       >
         <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
@@ -448,49 +415,37 @@ function DeleteAccountSection() {
   }
 
   return (
-    <div style={{ ...cardStyle, marginTop: "1.5rem", borderColor: "#e2a4a4" }}>
-      <h2 style={{ fontSize: "0.875rem", fontWeight: 600, color: "#dc2626", margin: "0 0 0.5rem" }}>
+    <div style={{ ...cardStyle, marginTop: "1.5rem" }} className="bg-white dark:bg-slate-800 border border-red-200 dark:border-red-900/50 shadow-sm">
+      <h2 className="text-sm font-semibold text-red-600 dark:text-red-400" style={{ margin: "0 0 0.5rem" }}>
         {t("deleteAccount") ?? "Delete Account"}
       </h2>
-      <p style={{ fontSize: "0.75rem", color: "#64748b", margin: "0 0 1rem" }}>
+      <p className="text-xs text-slate-500 dark:text-slate-400" style={{ margin: "0 0 1rem" }}>
         {t("deleteAccountDesc") ?? "Permanently delete your account and all associated data. This cannot be undone."}
       </p>
       {!showConfirm ? (
         <button
           onClick={() => setShowConfirm(true)}
-          style={{
-            background: "none", border: "1px solid #fecaca", borderRadius: 10,
-            padding: "0.5rem 1rem", fontSize: "0.8125rem", color: "#dc2626",
-            cursor: "pointer",
-          }}
+          className="border border-red-200 dark:border-red-800 rounded-xl px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors bg-transparent cursor-pointer"
         >
           {t("deleteAccountButton") ?? "Delete My Account"}
         </button>
       ) : (
-        <div style={{ background: "#fef2f2", borderRadius: 10, padding: "1rem", display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-          <p style={{ fontSize: "0.8125rem", color: "#dc2626", fontWeight: 600, margin: 0 }}>
+        <div className="bg-red-50 dark:bg-red-900/20 rounded-xl p-4 flex flex-col gap-3">
+          <p className="text-sm text-red-700 dark:text-red-300 font-semibold" style={{ margin: 0 }}>
             {t("deleteConfirmText") ?? "Are you sure? This will permanently delete your account, all your data, and remove you from all groups."}
           </p>
-          {error && <p style={{ fontSize: "0.75rem", color: "#dc2626", margin: 0 }}>{error}</p>}
+          {error && <p className="text-xs text-red-600 dark:text-red-400" style={{ margin: 0 }}>{error}</p>}
           <div style={{ display: "flex", gap: "0.5rem" }}>
             <button
               onClick={handleDelete}
               disabled={deleting}
-              style={{
-                background: "#dc2626", color: "white", border: "none", borderRadius: 8,
-                padding: "0.5rem 1rem", fontSize: "0.8125rem", fontWeight: 600,
-                cursor: deleting ? "not-allowed" : "pointer", opacity: deleting ? 0.6 : 1,
-              }}
+              className="bg-red-600 hover:bg-red-700 text-white rounded-lg px-4 py-2 text-sm font-semibold disabled:opacity-60 cursor-pointer border-none"
             >
               {deleting ? "..." : (t("yesDelete") ?? "Yes, Delete Everything")}
             </button>
             <button
               onClick={() => setShowConfirm(false)}
-              style={{
-                background: "none", border: "1px solid #e2e8f0", borderRadius: 8,
-                padding: "0.5rem 1rem", fontSize: "0.8125rem", color: "#64748b",
-                cursor: "pointer",
-              }}
+              className="border border-slate-200 dark:border-slate-600 rounded-lg px-4 py-2 text-sm text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors bg-transparent cursor-pointer"
             >
               {t("cancel")}
             </button>
@@ -502,356 +457,3 @@ function DeleteAccountSection() {
 }
 
 
-function BiometricSection() {
-  const timezoneId = useAuthStore(s => s.timezoneId);
-  const [supported, setSupported] = useState(false);
-  const [credentials, setCredentials] = useState<WebAuthnCredential[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [registering, setRegistering] = useState(false);
-  const [nicknameInput, setNicknameInput] = useState("");
-  const [showNicknamePrompt, setShowNicknamePrompt] = useState(false);
-  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
-  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editNickname, setEditNickname] = useState("");
-
-  useEffect(() => {
-    const webAuthnSupported = isWebAuthnSupported();
-    setSupported(webAuthnSupported);
-    if (webAuthnSupported) {
-      loadCredentials();
-    } else {
-      setLoading(false);
-    }
-  }, []);
-
-  async function loadCredentials() {
-    try {
-      const creds = await listCredentials();
-      setCredentials(creds);
-    } catch {
-      // silently fail — section just won't show credentials
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function handleRegister() {
-    setMessage(null);
-    setRegistering(true);
-    try {
-      await registerCredential(nicknameInput || undefined);
-      setMessage({ type: "success", text: "המכשיר נרשם בהצלחה!" });
-      setShowNicknamePrompt(false);
-      setNicknameInput("");
-      await loadCredentials();
-    } catch (err: any) {
-      if (err?.message === "USER_CANCELLED") {
-        setMessage({ type: "error", text: "הרישום בוטל. ניתן לנסות שוב." });
-      } else {
-        setMessage({ type: "error", text: "שגיאה ברישום המכשיר. נסה שוב." });
-      }
-    } finally {
-      setRegistering(false);
-    }
-  }
-
-  async function handleDelete(id: string) {
-    try {
-      await deleteCredential(id);
-      setCredentials(prev => prev.filter(c => c.id !== id));
-      setConfirmDeleteId(null);
-      setMessage({ type: "success", text: "המכשיר הוסר בהצלחה." });
-    } catch {
-      setMessage({ type: "error", text: "שגיאה בהסרת המכשיר." });
-    }
-  }
-
-  async function handleUpdateNickname(id: string) {
-    try {
-      await updateCredentialNickname(id, editNickname || null);
-      setCredentials(prev =>
-        prev.map(c => (c.id === id ? { ...c, nickname: editNickname || null } : c))
-      );
-      setEditingId(null);
-      setEditNickname("");
-    } catch {
-      setMessage({ type: "error", text: "שגיאה בעדכון השם." });
-    }
-  }
-
-  if (!supported) return null;
-
-  return (
-    <div style={{ ...cardStyle, marginTop: "1rem" }}>
-      <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.75rem" }}>
-        {/* Fingerprint icon */}
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M2 12C2 6.5 6.5 2 12 2a10 10 0 0 1 8 4" />
-          <path d="M5 19.5C5.5 18 6 15 6 12c0-3.5 2.5-6 6-6 3.5 0 6 2.5 6 6 0 1.5-.5 3-1 4" />
-          <path d="M9 12c0-1.5 1.5-3 3-3s3 1.5 3 3-1 4-2 6" />
-          <path d="M12 12v4" />
-          <path d="M2 16c1 2 2.5 3.5 4.5 4.5" />
-          <path d="M15 17c1 1.5 2 3 2.5 4.5" />
-          <path d="M19.5 8c.5 1 .5 2 .5 4 0 2-.5 4-1 6" />
-        </svg>
-        <h2 style={{ fontSize: "0.875rem", fontWeight: 600, color: "#0f172a", margin: 0 }}>
-          כניסה ביומטרית
-        </h2>
-      </div>
-
-      {/* Status message */}
-      {message && (
-        <div style={{
-          marginBottom: "0.75rem",
-          padding: "0.5rem 0.75rem",
-          borderRadius: 8,
-          background: message.type === "success" ? "#f0fdf4" : "#fef2f2",
-          border: `1px solid ${message.type === "success" ? "#bbf7d0" : "#fecaca"}`,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-        }}>
-          <p style={{ fontSize: "0.8125rem", color: message.type === "success" ? "#15803d" : "#dc2626", margin: 0 }}>
-            {message.text}
-          </p>
-          <button
-            onClick={() => setMessage(null)}
-            style={{ background: "none", border: "none", cursor: "pointer", color: "#94a3b8", padding: 0 }}
-            aria-label="סגור"
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-      )}
-
-      {loading ? (
-        <p style={{ fontSize: "0.8125rem", color: "#94a3b8" }}>טוען...</p>
-      ) : credentials.length === 0 && !showNicknamePrompt ? (
-        /* No credentials — show enable button */
-        <div>
-          <p style={{ fontSize: "0.8125rem", color: "#64748b", margin: "0 0 0.75rem" }}>
-            הפעל כניסה ביומטרית כדי להתחבר מהר יותר עם טביעת אצבע או זיהוי פנים.
-          </p>
-          <button
-            onClick={() => setShowNicknamePrompt(true)}
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "0.5rem",
-              background: "linear-gradient(135deg, #7c3aed, #4f46e5)",
-              color: "white",
-              border: "none",
-              borderRadius: 10,
-              padding: "0.625rem 1.25rem",
-              fontSize: "0.8125rem",
-              fontWeight: 600,
-              cursor: "pointer",
-            }}
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-            </svg>
-            הפעל כניסה ביומטרית
-          </button>
-        </div>
-      ) : showNicknamePrompt ? (
-        /* Nickname prompt before registration */
-        <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-          <p style={{ fontSize: "0.8125rem", color: "#64748b", margin: 0 }}>
-            תן שם למכשיר (אופציונלי):
-          </p>
-          <input
-            type="text"
-            value={nicknameInput}
-            onChange={e => setNicknameInput(e.target.value)}
-            placeholder='לדוגמה: "האייפון שלי"'
-            maxLength={100}
-            style={{
-              width: "100%",
-              border: "1px solid #e2e8f0",
-              borderRadius: 10,
-              padding: "0.625rem 0.875rem",
-              fontSize: "0.875rem",
-              color: "#0f172a",
-              outline: "none",
-              boxSizing: "border-box",
-            }}
-          />
-          <div style={{ display: "flex", gap: "0.5rem" }}>
-            <button
-              onClick={handleRegister}
-              disabled={registering}
-              style={{
-                background: registering ? "#a78bfa" : "linear-gradient(135deg, #7c3aed, #4f46e5)",
-                color: "white",
-                border: "none",
-                borderRadius: 8,
-                padding: "0.5rem 1rem",
-                fontSize: "0.8125rem",
-                fontWeight: 600,
-                cursor: registering ? "not-allowed" : "pointer",
-              }}
-            >
-              {registering ? "רושם..." : "רשום מכשיר"}
-            </button>
-            <button
-              onClick={() => { setShowNicknamePrompt(false); setNicknameInput(""); }}
-              style={{
-                background: "none",
-                border: "1px solid #e2e8f0",
-                borderRadius: 8,
-                padding: "0.5rem 1rem",
-                fontSize: "0.8125rem",
-                color: "#64748b",
-                cursor: "pointer",
-              }}
-            >
-              ביטול
-            </button>
-          </div>
-        </div>
-      ) : (
-        /* Credential list + management */
-        <div>
-          <div style={{ display: "flex", flexDirection: "column", gap: "0.625rem" }}>
-            {credentials.map(cred => (
-              <div
-                key={cred.id}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  padding: "0.625rem 0.75rem",
-                  borderRadius: 10,
-                  border: "1px solid #e2e8f0",
-                  background: cred.isDisabled ? "#fef2f2" : "#fafafa",
-                }}
-              >
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  {editingId === cred.id ? (
-                    <div style={{ display: "flex", alignItems: "center", gap: "0.375rem" }}>
-                      <input
-                        type="text"
-                        value={editNickname}
-                        onChange={e => setEditNickname(e.target.value)}
-                        maxLength={100}
-                        style={{
-                          flex: 1,
-                          border: "1px solid #c7d2fe",
-                          borderRadius: 6,
-                          padding: "0.25rem 0.5rem",
-                          fontSize: "0.8125rem",
-                          outline: "none",
-                        }}
-                        onKeyDown={e => {
-                          if (e.key === "Enter") handleUpdateNickname(cred.id);
-                          if (e.key === "Escape") { setEditingId(null); setEditNickname(""); }
-                        }}
-                        autoFocus
-                      />
-                      <button
-                        onClick={() => handleUpdateNickname(cred.id)}
-                        style={{ background: "none", border: "none", cursor: "pointer", color: "#16a34a", padding: "2px" }}
-                        aria-label="שמור"
-                      >
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                        </svg>
-                      </button>
-                      <button
-                        onClick={() => { setEditingId(null); setEditNickname(""); }}
-                        style={{ background: "none", border: "none", cursor: "pointer", color: "#94a3b8", padding: "2px" }}
-                        aria-label="ביטול"
-                      >
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                      </button>
-                    </div>
-                  ) : (
-                    <div>
-                      <p
-                        style={{
-                          fontSize: "0.8125rem",
-                          fontWeight: 600,
-                          color: cred.isDisabled ? "#dc2626" : "#0f172a",
-                          margin: 0,
-                          cursor: "pointer",
-                        }}
-                        onClick={() => { setEditingId(cred.id); setEditNickname(cred.nickname || ""); }}
-                        title="לחץ לעריכה"
-                      >
-                        {cred.nickname || "מכשיר ללא שם"}
-                        {cred.isDisabled && " (מושבת)"}
-                      </p>
-                      <p style={{ fontSize: "0.6875rem", color: "#94a3b8", margin: "2px 0 0" }}>
-                        נרשם: {formatLocalDate(cred.createdAt, timezoneId)}
-                        {cred.lastUsedAt && ` · שימוש אחרון: ${formatLocalDate(cred.lastUsedAt, timezoneId)}`}
-                      </p>
-                    </div>
-                  )}
-                </div>
-
-                {/* Delete button */}
-                {editingId !== cred.id && (
-                  confirmDeleteId === cred.id ? (
-                    <div style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>
-                      <button
-                        onClick={() => handleDelete(cred.id)}
-                        style={{ background: "#dc2626", color: "white", border: "none", borderRadius: 6, padding: "0.25rem 0.5rem", fontSize: "0.6875rem", fontWeight: 600, cursor: "pointer" }}
-                      >
-                        מחק
-                      </button>
-                      <button
-                        onClick={() => setConfirmDeleteId(null)}
-                        style={{ background: "none", border: "1px solid #e2e8f0", borderRadius: 6, padding: "0.25rem 0.5rem", fontSize: "0.6875rem", color: "#64748b", cursor: "pointer" }}
-                      >
-                        ביטול
-                      </button>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => setConfirmDeleteId(cred.id)}
-                      style={{ background: "none", border: "none", cursor: "pointer", color: "#94a3b8", padding: "4px" }}
-                      aria-label="מחק מכשיר"
-                    >
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
-                    </button>
-                  )
-                )}
-              </div>
-            ))}
-          </div>
-
-          {/* Add another device button */}
-          <button
-            onClick={() => setShowNicknamePrompt(true)}
-            style={{
-              marginTop: "0.75rem",
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "0.375rem",
-              background: "none",
-              border: "1px solid #e2e8f0",
-              borderRadius: 8,
-              padding: "0.5rem 0.875rem",
-              fontSize: "0.8125rem",
-              color: "#374151",
-              cursor: "pointer",
-            }}
-          >
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-            </svg>
-            הוסף מכשיר נוסף
-          </button>
-        </div>
-      )}
-    </div>
-  );
-}
