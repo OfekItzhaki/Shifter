@@ -18,6 +18,8 @@ public class SpaceConfiguration : IEntityTypeConfiguration<Space>
         builder.Property(s => s.Locale).HasColumnName("locale");
         builder.Property(s => s.InviteCode).HasColumnName("invite_code").HasMaxLength(8).IsRequired(false);
         builder.HasIndex(s => s.InviteCode).IsUnique().HasFilter("invite_code IS NOT NULL");
+        builder.Property(s => s.DeletedAt).HasColumnName("deleted_at");
+        builder.Property(s => s.ManagementTimeoutMinutes).HasColumnName("management_timeout_minutes").HasDefaultValue(15);
         builder.Property(s => s.CreatedAt).HasColumnName("created_at");
         builder.Property(s => s.UpdatedAt).HasColumnName("updated_at");
     }
@@ -34,6 +36,9 @@ public class SpaceMembershipConfiguration : IEntityTypeConfiguration<SpaceMember
         builder.Property(m => m.UserId).HasColumnName("user_id");
         builder.Property(m => m.JoinedAt).HasColumnName("joined_at");
         builder.Property(m => m.IsActive).HasColumnName("is_active");
+        builder.Property(m => m.PermissionLevel).HasColumnName("permission_level")
+            .HasConversion<int>()
+            .HasDefaultValue(SpacePermissionLevel.Member);
         builder.Ignore(m => m.CreatedAt); // table uses joined_at, no created_at column
         builder.HasIndex(m => new { m.SpaceId, m.UserId }).IsUnique();
     }

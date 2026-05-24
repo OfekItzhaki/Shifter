@@ -937,7 +937,55 @@
     "save": "Save",
     "saving": "Saving...",
     "saved": "Saved ✓",
-    "ownerOnly": "Only the space owner can edit settings"
+    "ownerOnly": "Only the space owner can edit settings",
+    "managementTimeout": {
+      "title": "Management Mode Timeout",
+      "description": "Minutes of inactivity before admin sessions expire across all groups in this space.",
+      "inputLabel": "Timeout in minutes",
+      "minutes": "minutes",
+      "validationError": "Timeout must be a whole number between 5 and 120 minutes.",
+      "saveError": "Failed to update management timeout. Please try again.",
+      "saved": "Management timeout updated successfully."
+    },
+    "roleAssignment": {
+      "title": "Role Assignment",
+      "description": "Assign permission levels to space members",
+      "loading": "Loading members...",
+      "loadError": "Error loading members",
+      "retry": "Retry",
+      "saved": "Role updated successfully",
+      "saveError": "Error updating role",
+      "noMembers": "No members in this space",
+      "selectLabel": "Role for {name}",
+      "levels": {
+        "spaceOwner": "Space Owner",
+        "groupOwner": "Group Owner",
+        "admin": "Admin",
+        "member": "Member"
+      }
+    },
+    "dangerZone": {
+      "title": "Danger Zone",
+      "description": "Irreversible and destructive actions. Proceed with caution.",
+      "deleteTitle": "Delete Space",
+      "deleteDescription": "Soft-delete this space and all its groups. The space can be restored later.",
+      "deleteButton": "Delete Space",
+      "deleteConfirm": "Are you sure? The space and all its groups will be archived.",
+      "confirmDelete": "Yes, delete",
+      "deleting": "Deleting...",
+      "deleteSuccess": "Space deleted successfully.",
+      "deleteError": "Failed to delete space. Please try again.",
+      "transferTitle": "Transfer Ownership",
+      "transferDescription": "Transfer space ownership to another member. You will lose owner privileges.",
+      "selectMember": "Select a member...",
+      "selectMemberLabel": "Select transfer target",
+      "transferButton": "Transfer",
+      "confirmTransfer": "Yes, transfer",
+      "transferring": "Transferring...",
+      "transferSuccess": "Ownership transferred successfully.",
+      "transferError": "Failed to transfer ownership. Please try again.",
+      "cancel": "Cancel"
+    }
   },
   "spaceOnboarding": {
     "title": "Welcome to Shifter",
@@ -1576,5 +1624,29 @@
     "errorAlreadyInProgress": "A regeneration is already in progress for this group. Please wait for it to complete.",
     "errorPermissionDenied": "You do not have permission to regenerate the schedule.",
     "errorGeneric": "Something went wrong. Please try again."
+  },
+  "spaceHomeLeave": {
+    "title": "Home Leave Configuration",
+    "description": "Configure home-leave scheduling parameters for all closed-base groups in this space.",
+    "loading": "Loading configuration...",
+    "loadError": "Could not load home-leave configuration.",
+    "retry": "Retry",
+    "modeLabel": "Mode",
+    "modeAutomatic": "Automatic",
+    "modeManual": "Manual",
+    "modeDisabled": "Disabled",
+    "balanceLabel": "Balance ratio",
+    "moreBase": "More at base",
+    "moreHome": "More at home",
+    "baseDaysLabel": "Base days",
+    "homeDaysLabel": "Home days",
+    "minPeopleLabel": "Min at base",
+    "emergencyFreezeLabel": "Emergency Freeze",
+    "emergencyFreezeHint": "Freeze all home-leave assignments immediately.",
+    "useForSchedulingLabel": "Use frozen personnel for task scheduling",
+    "saving": "Saving...",
+    "save": "Save",
+    "saved": "Saved",
+    "saveError": "Failed to save configuration."
   }
 }

@@ -37,6 +37,7 @@ public class AppDbContext : DbContext
     public DbSet<SpacePermissionGrant> SpacePermissionGrants => Set<SpacePermissionGrant>();
     public DbSet<SpaceRole> SpaceRoles => Set<SpaceRole>();
     public DbSet<OwnershipTransferHistory> OwnershipTransferHistory => Set<OwnershipTransferHistory>();
+    public DbSet<SpaceHomeLeaveConfig> SpaceHomeLeaveConfigs => Set<SpaceHomeLeaveConfig>();
     public DbSet<UnavailabilityReason> UnavailabilityReasons => Set<UnavailabilityReason>();
     public DbSet<UserSpaceMigration> UserSpaceMigrations => Set<UserSpaceMigration>();
 

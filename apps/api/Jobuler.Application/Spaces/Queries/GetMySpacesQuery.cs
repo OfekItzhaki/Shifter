@@ -17,7 +17,7 @@ public class GetMySpacesQueryHandler : IRequestHandler<GetMySpacesQuery, List<Sp
         return await _db.SpaceMemberships
             .AsNoTracking()
             .Where(m => m.UserId == request.UserId && m.IsActive)
-            .Join(_db.Spaces.Where(s => s.IsActive),
+            .Join(_db.Spaces.Where(s => s.IsActive && s.DeletedAt == null),
                 m => m.SpaceId,
                 s => s.Id,
                 (m, s) => new SpaceDto(s.Id, s.Name, s.Description, s.OwnerUserId, s.Locale, s.IsActive, s.CreatedAt))

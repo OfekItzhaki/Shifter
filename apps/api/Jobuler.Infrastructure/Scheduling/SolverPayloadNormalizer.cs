@@ -5,6 +5,7 @@ using Jobuler.Domain.Constraints;
 using Jobuler.Domain.Groups;
 using Jobuler.Domain.People;
 using Jobuler.Domain.Scheduling;
+using Jobuler.Domain.Spaces;
 using Jobuler.Domain.Tasks;
 using Jobuler.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -85,30 +86,45 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
         maxHorizon = Math.Max(SchedulingConstants.MinHorizonDays, maxHorizon);
 
         // ── Home-leave config (closed-base groups only) ───────────────────────
+        // Space-level config takes precedence over group-level config (Req 6.3, 6.5).
         HomeLeaveConfigDto? homeLeaveConfigDto = null;
         bool emergencyBypass = false;
         if (groupId.HasValue && isClosedBase)
         {
-            var hlConfig = await _db.HomeLeaveConfigs.AsNoTracking()
-                .FirstOrDefaultAsync(c => c.GroupId == groupId.Value && c.SpaceId == spaceId, ct);
+            // Check for space-level home-leave config first
+            var spaceHlConfig = await _db.SpaceHomeLeaveConfigs.AsNoTracking()
+                .FirstOrDefaultAsync(c => c.SpaceId == spaceId, ct);
 
-            if (hlConfig is not null
-                && hlConfig.LeaveDurationHours > 0)
+            if (spaceHlConfig is not null && spaceHlConfig.LeaveDurationHours > 0)
             {
-                // Compute member count for deriving leave_capacity from min_people_at_base
+                // Use space-level config — overrides group-level values
                 var hlMemberCount = await _db.GroupMemberships.AsNoTracking()
                     .CountAsync(m => m.GroupId == groupId.Value && m.SpaceId == spaceId, ct);
-                homeLeaveConfigDto = BuildHomeLeaveConfigDto(hlConfig, hlMemberCount);
+                homeLeaveConfigDto = BuildHomeLeaveConfigDto(spaceHlConfig, hlMemberCount);
 
-                // Emergency bypass: when freeze is active AND use-for-scheduling is true,
-                // all people remain in the solver pool regardless of AtHome windows.
-                emergencyBypass = hlConfig.EmergencyFreezeActive && hlConfig.EmergencyUseForScheduling;
+                emergencyBypass = spaceHlConfig.EmergencyFreezeActive && spaceHlConfig.EmergencyUseForScheduling;
             }
             else
             {
-                _logger.LogWarning(
-                    "Closed-base group {GroupId} has no complete home-leave configuration; omitting home_leave_config from solver payload.",
-                    groupId.Value);
+                // Fall back to group-level config
+                var hlConfig = await _db.HomeLeaveConfigs.AsNoTracking()
+                    .FirstOrDefaultAsync(c => c.GroupId == groupId.Value && c.SpaceId == spaceId, ct);
+
+                if (hlConfig is not null
+                    && hlConfig.LeaveDurationHours > 0)
+                {
+                    var hlMemberCount = await _db.GroupMemberships.AsNoTracking()
+                        .CountAsync(m => m.GroupId == groupId.Value && m.SpaceId == spaceId, ct);
+                    homeLeaveConfigDto = BuildHomeLeaveConfigDto(hlConfig, hlMemberCount);
+
+                    emergencyBypass = hlConfig.EmergencyFreezeActive && hlConfig.EmergencyUseForScheduling;
+                }
+                else
+                {
+                    _logger.LogWarning(
+                        "Closed-base group {GroupId} has no complete home-leave configuration; omitting home_leave_config from solver payload.",
+                        groupId.Value);
+                }
             }
         }
 
@@ -616,21 +632,22 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
         {
             // If home-leave config was omitted (e.g. due to emergency freeze with no scheduling),
             // rebuild it from the stored config for preview purposes.
-            var hlConfig = await _db.HomeLeaveConfigs.AsNoTracking()
-                .FirstOrDefaultAsync(c => c.GroupId == groupId && c.SpaceId == spaceId, ct);
+            // Check space-level config first, then fall back to group-level.
+            var spaceHlConfig = await _db.SpaceHomeLeaveConfigs.AsNoTracking()
+                .FirstOrDefaultAsync(c => c.SpaceId == spaceId, ct);
 
-            if (hlConfig is not null && hlConfig.LeaveDurationHours > 0)
+            if (spaceHlConfig is not null && spaceHlConfig.LeaveDurationHours > 0)
             {
                 var previewMemberCount = await _db.GroupMemberships.AsNoTracking()
                     .CountAsync(m => m.GroupId == groupId && m.SpaceId == spaceId, ct);
-                var previewLeaveCapacity = Math.Max(1, previewMemberCount - hlConfig.MinPeopleAtBase);
+                var previewLeaveCapacity = Math.Max(1, previewMemberCount - spaceHlConfig.MinPeopleAtBase);
 
                 var previewDto = new HomeLeaveConfigDto(
                     Enabled: true,
                     MinRestHours: 0,
-                    EligibilityThresholdHours: (double)(hlConfig.BaseDays * 24),
+                    EligibilityThresholdHours: (double)(spaceHlConfig.BaseDays * 24),
                     LeaveCapacity: previewLeaveCapacity,
-                    LeaveDurationHours: (double)hlConfig.LeaveDurationHours,
+                    LeaveDurationHours: (double)spaceHlConfig.LeaveDurationHours,
                     BalanceValue: balanceValue);
 
                 payload = payload with
@@ -641,7 +658,33 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
             }
             else
             {
-                payload = payload with { PreviewMode = true };
+                var hlConfig = await _db.HomeLeaveConfigs.AsNoTracking()
+                    .FirstOrDefaultAsync(c => c.GroupId == groupId && c.SpaceId == spaceId, ct);
+
+                if (hlConfig is not null && hlConfig.LeaveDurationHours > 0)
+                {
+                    var previewMemberCount = await _db.GroupMemberships.AsNoTracking()
+                        .CountAsync(m => m.GroupId == groupId && m.SpaceId == spaceId, ct);
+                    var previewLeaveCapacity = Math.Max(1, previewMemberCount - hlConfig.MinPeopleAtBase);
+
+                    var previewDto = new HomeLeaveConfigDto(
+                        Enabled: true,
+                        MinRestHours: 0,
+                        EligibilityThresholdHours: (double)(hlConfig.BaseDays * 24),
+                        LeaveCapacity: previewLeaveCapacity,
+                        LeaveDurationHours: (double)hlConfig.LeaveDurationHours,
+                        BalanceValue: balanceValue);
+
+                    payload = payload with
+                    {
+                        HomeLeaveConfig = previewDto,
+                        PreviewMode = true
+                    };
+                }
+                else
+                {
+                    payload = payload with { PreviewMode = true };
+                }
             }
         }
 
@@ -681,6 +724,44 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
     /// Always sets min_rest_hours = 0.
     /// </summary>
     private static HomeLeaveConfigDto? BuildHomeLeaveConfigDto(HomeLeaveConfig hlConfig, int memberCount)
+    {
+        // Derive leave_capacity from min_people_at_base
+        var leaveCapacity = Math.Max(1, memberCount - hlConfig.MinPeopleAtBase);
+
+        // Emergency freeze: don't use for scheduling → omit entirely
+        if (hlConfig.EmergencyFreezeActive && !hlConfig.EmergencyUseForScheduling)
+        {
+            return null;
+        }
+
+        // Emergency freeze: use for scheduling → balance=0, threshold=9999
+        if (hlConfig.EmergencyFreezeActive && hlConfig.EmergencyUseForScheduling)
+        {
+            return new HomeLeaveConfigDto(
+                Enabled: true,
+                MinRestHours: 0,
+                EligibilityThresholdHours: 9999,
+                LeaveCapacity: leaveCapacity,
+                LeaveDurationHours: (double)hlConfig.LeaveDurationHours,
+                BalanceValue: 0);
+        }
+
+        // Normal operation: mode-based construction
+        var eligibilityThresholdHours = (double)(hlConfig.BaseDays * 24);
+        var balanceValue = hlConfig.Mode == HomeLeaveMode.Manual
+            ? 50
+            : hlConfig.BalanceValue;
+
+        return new HomeLeaveConfigDto(
+            Enabled: true,
+            MinRestHours: 0,
+            EligibilityThresholdHours: eligibilityThresholdHours,
+            LeaveCapacity: leaveCapacity,
+            LeaveDurationHours: (double)hlConfig.LeaveDurationHours,
+            BalanceValue: balanceValue);
+    }
+
+    private static HomeLeaveConfigDto? BuildHomeLeaveConfigDto(SpaceHomeLeaveConfig hlConfig, int memberCount)
     {
         // Derive leave_capacity from min_people_at_base
         var leaveCapacity = Math.Max(1, memberCount - hlConfig.MinPeopleAtBase);

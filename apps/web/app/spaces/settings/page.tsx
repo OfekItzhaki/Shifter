@@ -3,22 +3,28 @@
 import { useState, useEffect, useCallback } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import AppShell from "@/components/shell/AppShell";
+import { useAuthStore } from "@/lib/store/authStore";
 import { useSpaceStore } from "@/lib/store/spaceStore";
 import {
   getSpaceDetail,
   updateSpace,
-  regenerateInviteCode,
   getSpaceMembers,
   SpaceDetailDto,
   SpaceMemberDto,
 } from "@/lib/api/spaces";
 import SpaceBillingCard from "@/components/billing/SpaceBillingCard";
+import HomeLeaveConfigCard from "@/components/spaces/HomeLeaveConfigCard";
+import InviteCodeCard from "@/components/spaces/InviteCodeCard";
+import RoleAssignmentCard from "@/components/spaces/RoleAssignmentCard";
+import ManagementTimeoutCard from "@/components/spaces/ManagementTimeoutCard";
+import DangerZoneCard from "@/components/spaces/DangerZoneCard";
 
 export default function SpaceSettingsPage() {
   const t = useTranslations("spaces");
   const locale = useLocale();
   const isRtl = locale === "he";
   const { currentSpaceId, setCurrentSpace } = useSpaceStore();
+  const { userId } = useAuthStore();
 
   const [space, setSpace] = useState<SpaceDetailDto | null>(null);
   const [members, setMembers] = useState<SpaceMemberDto[]>([]);
@@ -26,7 +32,6 @@ export default function SpaceSettingsPage() {
   const [description, setDescription] = useState("");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
 
@@ -57,21 +62,6 @@ export default function SpaceSettingsPage() {
     } catch { /* handled by interceptor */ }
     finally { setSaving(false); }
   }, [currentSpaceId, name, description, space, setCurrentSpace]);
-
-  const handleRegenerate = useCallback(async () => {
-    if (!currentSpaceId || !confirm(t("regenerateConfirm"))) return;
-    try {
-      const { inviteCode } = await regenerateInviteCode(currentSpaceId);
-      setSpace(prev => prev ? { ...prev, inviteCode } : prev);
-    } catch { /* handled by interceptor */ }
-  }, [currentSpaceId, t]);
-
-  const handleCopy = useCallback(() => {
-    if (!space?.inviteCode) return;
-    navigator.clipboard.writeText(space.inviteCode);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  }, [space?.inviteCode]);
 
   if (loading) {
     return (
@@ -181,30 +171,14 @@ export default function SpaceSettingsPage() {
           </div>
 
           {/* Invite Code */}
-          {space.isOwner && space.inviteCode && (
-            <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-5 shadow-sm">
-              <h2 className="text-sm font-semibold text-slate-900 dark:text-white mb-3">
-                {t("inviteCode")}
-              </h2>
-              <div className="flex items-center gap-3">
-                <code className="flex-1 px-4 py-2.5 rounded-lg bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-center font-mono text-lg tracking-widest text-slate-900 dark:text-white">
-                  {space.inviteCode}
-                </code>
-                <button
-                  onClick={handleCopy}
-                  className="px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600 text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
-                >
-                  {copied ? t("copied") : t("copyCode")}
-                </button>
-              </div>
-              <button
-                onClick={handleRegenerate}
-                className="mt-3 text-xs text-slate-500 dark:text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-colors"
-              >
-                {t("regenerateCode")}
-              </button>
-            </div>
-          )}
+          <InviteCodeCard
+            spaceId={currentSpaceId!}
+            inviteCode={space.inviteCode}
+            isOwner={space.isOwner}
+            onCodeRegenerated={(newCode) =>
+              setSpace(prev => prev ? { ...prev, inviteCode: newCode } : prev)
+            }
+          />
 
           {/* Members */}
           <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-5 shadow-sm">
@@ -236,10 +210,37 @@ export default function SpaceSettingsPage() {
             </div>
           </div>
 
+          {/* Role Assignment — permission-gated to space owner */}
+          <RoleAssignmentCard
+            spaceId={currentSpaceId!}
+            isOwner={space.isOwner}
+          />
+
+          {/* Management Timeout — permission-gated to space owner */}
+          <ManagementTimeoutCard
+            spaceId={currentSpaceId!}
+            currentTimeout={space.managementTimeoutMinutes}
+            isOwner={space.isOwner}
+          />
+
           {/* Billing — permission-gated to space owner (BillingManage) */}
           <SpaceBillingCard
             spaceId={currentSpaceId!}
             hasBillingPermission={space.isOwner}
+          />
+
+          {/* Home Leave Config — permission-gated to space owner */}
+          <HomeLeaveConfigCard
+            spaceId={currentSpaceId!}
+            isOwner={space.isOwner}
+          />
+
+          {/* Danger Zone — permission-gated to space owner */}
+          <DangerZoneCard
+            spaceId={currentSpaceId!}
+            isOwner={space.isOwner}
+            members={members}
+            currentOwnerId={userId ?? ""}
           />
         </div>
       </div>
