@@ -10,6 +10,12 @@ public interface ILemonSqueezyClient
     /// Creates a checkout session on LemonSqueezy and returns the hosted checkout URL.
     /// </summary>
     Task<string> CreateCheckoutAsync(CreateCheckoutRequest request, CancellationToken ct = default);
+
+    /// <summary>
+    /// Fetches all published subscription variants from LemonSqueezy.
+    /// Results are cached in-memory for 1 hour.
+    /// </summary>
+    Task<List<PlanDto>> GetPlansAsync(CancellationToken ct = default);
 }
 
 /// <summary>

@@ -2,6 +2,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Jobuler.Application.Billing;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -16,6 +17,10 @@ public class LemonSqueezyClient : ILemonSqueezyClient
     private readonly HttpClient _httpClient;
     private readonly LemonSqueezySettings _settings;
     private readonly ILogger<LemonSqueezyClient> _logger;
+    private readonly IMemoryCache _cache;
+
+    private const string PlansCacheKey = "lemonsqueezy:plans";
+    private static readonly TimeSpan PlansCacheDuration = TimeSpan.FromHours(1);
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -26,11 +31,13 @@ public class LemonSqueezyClient : ILemonSqueezyClient
     public LemonSqueezyClient(
         HttpClient httpClient,
         IOptions<LemonSqueezySettings> settings,
-        ILogger<LemonSqueezyClient> logger)
+        ILogger<LemonSqueezyClient> logger,
+        IMemoryCache cache)
     {
         _httpClient = httpClient;
         _settings = settings.Value;
         _logger = logger;
+        _cache = cache;
 
         // Configure default headers for LemonSqueezy API authentication
         _httpClient.DefaultRequestHeaders.Authorization =
@@ -81,6 +88,86 @@ public class LemonSqueezyClient : ILemonSqueezyClient
             request.VariantId);
 
         return checkoutUrl;
+    }
+
+    /// <inheritdoc />
+    public async Task<List<PlanDto>> GetPlansAsync(CancellationToken ct = default)
+    {
+        if (_cache.TryGetValue(PlansCacheKey, out List<PlanDto>? cached) && cached is not null)
+        {
+            return cached;
+        }
+
+        var response = await _httpClient.GetAsync(
+            "https://api.lemonsqueezy.com/v1/variants", ct);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorBody = await response.Content.ReadAsStringAsync(ct);
+            _logger.LogError(
+                "LemonSqueezy variants fetch failed: Status={Status} Body={Body}",
+                (int)response.StatusCode, errorBody);
+
+            throw new InvalidOperationException(
+                "Failed to fetch plans from LemonSqueezy.");
+        }
+
+        var json = await response.Content.ReadAsStringAsync(ct);
+        var plans = ParseVariantsResponse(json);
+
+        _cache.Set(PlansCacheKey, plans, PlansCacheDuration);
+
+        _logger.LogInformation("Fetched {Count} plans from LemonSqueezy", plans.Count);
+
+        return plans;
+    }
+
+    private static List<PlanDto> ParseVariantsResponse(string json)
+    {
+        using var doc = JsonDocument.Parse(json);
+        var plans = new List<PlanDto>();
+
+        if (!doc.RootElement.TryGetProperty("data", out var dataArray))
+            return plans;
+
+        foreach (var item in dataArray.EnumerateArray())
+        {
+            if (!item.TryGetProperty("attributes", out var attrs))
+                continue;
+
+            // Only include published subscription variants
+            var status = attrs.TryGetProperty("status", out var statusProp)
+                ? statusProp.GetString() : null;
+            if (status != "published")
+                continue;
+
+            var isSubscription = attrs.TryGetProperty("is_subscription", out var isSub)
+                && isSub.GetBoolean();
+            if (!isSubscription)
+                continue;
+
+            var variantId = item.TryGetProperty("id", out var idProp)
+                ? idProp.GetString() ?? "" : "";
+
+            var name = attrs.TryGetProperty("name", out var nameProp)
+                ? nameProp.GetString() ?? "" : "";
+
+            var price = attrs.TryGetProperty("price", out var priceProp)
+                ? priceProp.GetInt32() : 0;
+
+            var interval = attrs.TryGetProperty("interval", out var intervalProp)
+                ? intervalProp.GetString() ?? "month" : "month";
+
+            var description = attrs.TryGetProperty("description", out var descProp)
+                ? descProp.GetString() : null;
+
+            var sort = attrs.TryGetProperty("sort", out var sortProp)
+                ? sortProp.GetInt32() : 0;
+
+            plans.Add(new PlanDto(variantId, name, price, interval, description, sort));
+        }
+
+        return plans.OrderBy(p => p.SortOrder).ThenBy(p => p.PriceInCents).ToList();
     }
 
     private object BuildCheckoutPayload(CreateCheckoutRequest request)

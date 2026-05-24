@@ -2,6 +2,15 @@ import { apiClient } from "./client";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
+export interface PlanDto {
+  variantId: string;
+  name: string;
+  priceInCents: number;
+  interval: string;
+  description: string | null;
+  sortOrder: number;
+}
+
 export interface SpaceSubscriptionDto {
   status: "trialing" | "active" | "past_due" | "canceled" | "expired";
   tierId: string | null;
@@ -20,6 +29,11 @@ export interface CheckoutResponse {
 }
 
 // ── API Functions ─────────────────────────────────────────────────────────────
+
+export async function getPlans(): Promise<PlanDto[]> {
+  const { data } = await apiClient.get("/billing/plans");
+  return data as PlanDto[];
+}
 
 export async function getSpaceSubscription(
   spaceId: string

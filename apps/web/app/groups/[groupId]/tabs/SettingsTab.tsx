@@ -6,7 +6,6 @@ import type { GroupMemberDto } from "@/lib/api/groups";
 import { getJoinCode, regenerateJoinCode } from "@/lib/api/groups";
 import SmartImportModal from "@/components/SmartImportModal";
 import HomeLeaveConfigPanel from "@/components/home-leave/HomeLeaveConfigPanel";
-import HomeLeaveConfigCard from "@/components/spaces/HomeLeaveConfigCard";
 import LinkedGroupSelector from "@/components/groups/LinkedGroupSelector";
 import DateTimePicker from "@/components/shared/DateTimePicker";
 import { FEATURE_VISIBILITY_MAP, type GroupTemplateType } from "@/lib/utils/templateFeatureConfig";
@@ -324,6 +323,22 @@ export default function SettingsTab({
         </div>
       </Section>
       )}
+
+      {/* Import schedule */}
+      <Section title={tImport("title")}>
+        <div className="space-y-2">
+          <p className="text-sm text-slate-500 dark:text-slate-400">{tImport("subtitle")}</p>
+          <button
+            onClick={() => setImportModalOpen(true)}
+            className="flex items-center gap-2 text-sm font-medium text-white bg-sky-500 hover:bg-sky-600 px-4 py-2.5 rounded-xl transition-colors"
+          >
+            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+            </svg>
+            {tImport("title")}
+          </button>
+        </div>
+      </Section>
       </div>
 
       {/* ═══ PERMISSIONS ═══ */}
@@ -444,28 +459,6 @@ export default function SettingsTab({
         isAdmin={isAdmin}
       />
       )}
-
-      {/* Home Leave Config — space-level settings */}
-      <HomeLeaveConfigCard
-        spaceId={spaceId}
-        isOwner={isAdmin}
-      />
-
-      {/* Smart Import */}
-      <Section title={tImport("title")}>
-        <div className="space-y-2">
-          <p className="text-sm text-slate-500 dark:text-slate-400">{tImport("subtitle")}</p>
-          <button
-            onClick={() => setImportModalOpen(true)}
-            className="flex items-center gap-2 text-sm font-medium text-white bg-sky-500 hover:bg-sky-600 px-4 py-2.5 rounded-xl transition-colors"
-          >
-            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-            </svg>
-            {tImport("title")}
-          </button>
-        </div>
-      </Section>
       </div>
 
       {/* ═══ DANGER ZONE ═══ */}

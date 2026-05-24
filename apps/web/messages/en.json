@@ -1186,7 +1186,10 @@
     "selectPlan": "Select Plan",
     "allPlansInclude": "All plans include: Auto-scheduling · Smart import · Notifications · Constraint management · Chat support",
     "back": "Back",
-    "comingSoon": "Payment will be available soon! Contact us via chat for details."
+    "comingSoon": "Payment will be available soon! Contact us via chat for details.",
+    "loading": "Loading plans...",
+    "fetchError": "Could not load current pricing. Showing estimated prices.",
+    "checkoutError": "Failed to create checkout. Please try again."
   },
   "onboarding": {
     "title": "Getting Started",
