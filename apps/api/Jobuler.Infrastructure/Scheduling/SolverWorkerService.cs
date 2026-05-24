@@ -663,7 +663,7 @@ public class SolverWorkerService : BackgroundService
             _logger.LogError(ex, "Solver job failed: run_id={RunId}", job.RunId);
 
             // Store a user-friendly error message based on the space's locale
-            var spaceLocale = input?.Locale ?? "he";
+            var spaceLocale = input?.Locale ?? "en";
             string userFriendlyError;
             if (ex.Message.Contains("Timeout") || ex.Message.Contains("canceled"))
             {
@@ -710,35 +710,17 @@ public class SolverWorkerService : BackgroundService
             // In-app notification — failure
             var notifier2 = scope.ServiceProvider.GetRequiredService<INotificationService>();
 
-            // Translate technical error to a user-friendly message in the space's locale
-            var notifLocale = input?.Locale ?? "en";
-            var friendlyError = notifLocale switch {
-                "he" => ex.Message.Contains("422") || ex.Message.Contains("Unprocessable")
-                    ? "הסולבר דחה את הנתונים — ייתכן שיש בעיה בפורמט המשימות או האילוצים."
-                    : ex.Message.Contains("connect") || ex.Message.Contains("refused")
-                        ? "שירות הסידור אינו זמין כרגע. ודא שהוא פועל ונסה שוב."
-                        : "אירעה שגיאה בעת הרצת הסידור. נסה שוב מאוחר יותר.",
-                "ru" => ex.Message.Contains("422") || ex.Message.Contains("Unprocessable")
-                    ? "Решатель отклонил данные — возможно, проблема в формате задач или ограничений."
-                    : ex.Message.Contains("connect") || ex.Message.Contains("refused")
-                        ? "Служба планирования недоступна. Убедитесь, что она запущена, и повторите попытку."
-                        : "Произошла ошибка при составлении расписания. Повторите попытку позже.",
-                _ => ex.Message.Contains("422") || ex.Message.Contains("Unprocessable")
-                    ? "The solver rejected the data — there may be an issue with the task or constraint format."
-                    : ex.Message.Contains("connect") || ex.Message.Contains("refused")
-                        ? "The scheduling service is unavailable. Ensure it is running and try again."
-                        : "An error occurred while running the scheduler. Please try again later."
-            };
-            var (failTitle, _) = notifLocale switch {
-                "he" => ("הרצת הסידור נכשלה", ""),
-                "ru" => ("Ошибка составления расписания", ""),
-                _    => ("Scheduling run failed", "")
+            // Reuse the same locale and user-friendly error already computed above
+            var failTitle = spaceLocale switch {
+                "he" => "הרצת הסידור נכשלה",
+                "ru" => "Ошибка составления расписания",
+                _    => "Scheduling run failed"
             };
 
             await notifier2.NotifySpaceAdminsAsync(
                 job.SpaceId, "solver_failed",
                 failTitle,
-                friendlyError,
+                userFriendlyError,
                 groupId: job.GroupId, ct: ct);
         }
     }
