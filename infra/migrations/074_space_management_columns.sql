@@ -54,3 +54,19 @@ END $$;
 CREATE INDEX IF NOT EXISTS idx_spaces_deleted_at
     ON spaces (deleted_at)
     WHERE deleted_at IS NOT NULL;
+
+-- ─── 4. Add permission_level to space_memberships ─────────────────────────────
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'space_memberships' AND column_name = 'permission_level'
+    ) THEN
+        ALTER TABLE space_memberships
+            ADD COLUMN permission_level INTEGER NOT NULL DEFAULT 0;
+
+        RAISE NOTICE 'Added permission_level column to space_memberships';
+    ELSE
+        RAISE NOTICE 'Column permission_level already exists on space_memberships — skipping';
+    END IF;
+END $$;
