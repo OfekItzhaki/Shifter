@@ -25,7 +25,22 @@ export type ActiveAuthMethod = "webauthn" | "password";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-/** Check if the browser supports WebAuthn credentials.get */
+/** Check if the browser supports WebAuthn credentials.get AND a platform authenticator is available */
+async function isWebAuthnPlatformAvailable(): Promise<boolean> {
+  if (typeof window === "undefined") return false;
+  if (!window.navigator?.credentials || typeof window.navigator.credentials.get !== "function") return false;
+  // Check if a platform authenticator (fingerprint, Face ID, Windows Hello) is actually available
+  try {
+    if (typeof window.PublicKeyCredential?.isUserVerifyingPlatformAuthenticatorAvailable === "function") {
+      return await window.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+    }
+  } catch {
+    // If the check fails, fall back to basic API support check
+  }
+  return false;
+}
+
+/** Basic check if WebAuthn API exists (doesn't verify platform authenticator) */
 function isWebAuthnSupported(): boolean {
   return typeof window !== "undefined" &&
     !!window.navigator?.credentials &&
@@ -97,11 +112,12 @@ export default function ReAuthDialog({ open, onSuccess, onCancel, mode, spaceId 
   const submitButtonRef = useRef<HTMLButtonElement>(null);
   const passwordInputRef = useRef<HTMLInputElement>(null);
   const biometricButtonRef = useRef<HTMLButtonElement>(null);
+  const autoTriggeredRef = useRef(false);
 
-  // ── Check WebAuthn browser support ────────────────────────────────────────
+  // ── Check WebAuthn platform authenticator availability ──────────────────
 
   useEffect(() => {
-    setWebAuthnSupported(isWebAuthnSupported());
+    isWebAuthnPlatformAvailable().then(setWebAuthnSupported);
   }, []);
 
   // ── Lockout countdown timer ───────────────────────────────────────────────
@@ -165,18 +181,19 @@ export default function ReAuthDialog({ open, onSuccess, onCancel, mode, spaceId 
 
     apiClient
       .get("/auth/webauthn/credentials", { signal: controller.signal })
-      .then((response) => {
+      .then(async (response) => {
         clearTimeout(timeoutId);
         const credentialsList = response.data;
         const hasWebAuthn = Array.isArray(credentialsList) && credentialsList.length > 0;
+        const platformAvailable = await isWebAuthnPlatformAvailable();
         setCredentials({
           hasPassword: true,
           loading: false,
           hasWebAuthnCredentials: hasWebAuthn,
           credentialCheckLoading: false,
         });
-        // Set active method based on credential availability and browser support
-        if (hasWebAuthn && isWebAuthnSupported()) {
+        // Set active method based on credential availability AND platform authenticator
+        if (hasWebAuthn && platformAvailable) {
           setActiveMethod("webauthn");
         } else {
           setActiveMethod("password");
@@ -218,6 +235,7 @@ export default function ReAuthDialog({ open, onSuccess, onCancel, mode, spaceId 
       setIsLockedOut(false);
       setLockoutRemainingSeconds(0);
       setIsReadonly(true);
+      autoTriggeredRef.current = false;
     } else {
       setCredentials({
         hasPassword: false,
@@ -248,6 +266,28 @@ export default function ReAuthDialog({ open, onSuccess, onCancel, mode, spaceId 
 
     return () => clearTimeout(timer);
   }, [open, credentials.credentialCheckLoading, credentials.hasPassword, activeMethod]);
+
+  // ── Auto-trigger biometric on mobile ─────────────────────────────────────
+  // On touch devices (phones/tablets), automatically start the WebAuthn ceremony
+  // when the dialog opens and biometrics are available — no button click needed.
+
+  useEffect(() => {
+    if (!open || credentials.credentialCheckLoading || autoTriggeredRef.current) return;
+    if (activeMethod !== "webauthn" || !webAuthnSupported) return;
+    if (!credentials.hasWebAuthnCredentials) return;
+
+    // Detect touch device (mobile/tablet)
+    const isTouchDevice = "ontouchstart" in window || navigator.maxTouchPoints > 0;
+    if (!isTouchDevice) return;
+
+    // Auto-trigger after a short delay to let the dialog render
+    autoTriggeredRef.current = true;
+    const timer = setTimeout(() => {
+      biometricButtonRef.current?.click();
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [open, credentials.credentialCheckLoading, activeMethod, webAuthnSupported, credentials.hasWebAuthnCredentials]);
 
   // ── Focus trap ───────────────────────────────────────────────────────────
 
