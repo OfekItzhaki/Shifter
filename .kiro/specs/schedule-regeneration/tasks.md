@@ -56,17 +56,17 @@ This plan implements the "Regenerate Schedule" feature, allowing admins to re-ru
     - Validate `RequestedByUserId` is not empty
     - _Requirements: 1.3_
 
-  - [ ]* 4.3 Write property test for concurrent regeneration rejection
+  - [x] 4.3 Write property test for concurrent regeneration rejection
     - **Property 5: Concurrent regeneration rejection**
     - For any group that has a regeneration run with status "Queued" or "Running", a new regeneration request SHALL be rejected with 409 and no new ScheduleRun created
     - **Validates: Requirements 9.1**
 
-  - [ ]* 4.4 Write property test for subscription gating
+  - [x] 4.4 Write property test for subscription gating
     - **Property 9: Subscription gating**
     - For any group whose trial has expired and has no active subscription, a regeneration request SHALL be rejected with 402. For any group with active subscription or within trial, the request SHALL proceed
     - **Validates: Requirements 10.2, 10.3**
 
-  - [ ]* 4.5 Write property test for stale run timeout recovery
+  - [x] 4.5 Write property test for stale run timeout recovery
     - **Property 6: Stale run timeout recovery**
     - For any regeneration run in "Running" status longer than (solver_timeout + grace_period), the system SHALL treat it as failed and allow new regeneration requests
     - **Validates: Requirements 9.3**
@@ -80,7 +80,7 @@ This plan implements the "Regenerate Schedule" feature, allowing admins to re-ru
     - Return `202 Accepted` with `{ runId }`
     - _Requirements: 1.3, 7.1, 7.2, 7.4, 8.1_
 
-  - [ ]* 5.2 Write property test for permission enforcement
+  - [x] 5.2 Write property test for permission enforcement
     - **Property 8: Permission enforcement**
     - For any user without ScheduleRecalculate permission, a regeneration request SHALL be rejected with HTTP 403 and no ScheduleRun created
     - **Validates: Requirements 7.1, 7.2**
@@ -102,22 +102,22 @@ This plan implements the "Regenerate Schedule" feature, allowing admins to re-ru
       - Leave published version unchanged
     - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 3.1, 3.2, 3.3, 3.4, 4.1, 4.2, 4.3_
 
-  - [ ]* 7.2 Write property test for successful regeneration creating a correctly linked draft
+  - [x] 7.2 Write property test for successful regeneration creating a correctly linked draft
     - **Property 2: Successful regeneration creates a correctly linked draft**
     - For any valid solver output, the system SHALL create exactly one ScheduleVersion with status=Draft, SourceRunId matching run ID, SupersedesVersionId matching published version ID, SourceType="regeneration"
     - **Validates: Requirements 2.3, 3.1, 4.3, 8.3**
 
-  - [ ]* 7.3 Write property test for failed regeneration recording error without side effects
+  - [x] 7.3 Write property test for failed regeneration recording error without side effects
     - **Property 3: Failed regeneration records error without side effects**
     - For any solver failure, the run SHALL have status=Failed, non-empty ErrorSummary, and no new ScheduleVersion created
     - **Validates: Requirements 3.3, 3.4, 8.4**
 
-  - [ ]* 7.4 Write property test for regeneration period assignment bounds
+  - [x] 7.4 Write property test for regeneration period assignment bounds
     - **Property 4: All regeneration draft assignments are within the regeneration period**
     - For any draft version created by regeneration with start date S, every assignment SHALL have slot start date >= S
     - **Validates: Requirements 2.2, 4.2**
 
-  - [ ]* 7.5 Write property test for published version immutability
+  - [x] 7.5 Write property test for published version immutability
     - **Property 1: Published version immutability during regeneration lifecycle**
     - For any regeneration lifecycle event, the published version's status SHALL remain "Published" and assignment rows unchanged
     - **Validates: Requirements 3.2, 3.3, 3.5, 5.4, 6.2**
@@ -134,12 +134,12 @@ This plan implements the "Regenerate Schedule" feature, allowing admins to re-ru
     - Existing publish flow (archive old version, set new as Published) already handles the version transition
     - _Requirements: 5.1, 5.2, 5.3, 5.4_
 
-  - [ ]* 9.2 Write property test for audit log completeness on regeneration publish
+  - [x] 9.2 Write property test for audit log completeness on regeneration publish
     - **Property 10: Audit log completeness on regeneration publish**
     - For any regeneration draft that is published, the audit log entry SHALL contain superseded version ID, regeneration run ID, and publishing user ID
     - **Validates: Requirements 5.3**
 
-  - [ ]* 9.3 Write property test for regeneration not blocking standard runs
+  - [x] 9.3 Write property test for regeneration not blocking standard runs
     - **Property 7: Regeneration does not block standard runs**
     - For any group with an in-progress regeneration run, triggering a standard or emergency solver run SHALL succeed without conflict
     - **Validates: Requirements 9.4**
