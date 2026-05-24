@@ -662,8 +662,20 @@ public class SolverWorkerService : BackgroundService
         {
             _logger.LogError(ex, "Solver job failed: run_id={RunId}", job.RunId);
 
+            // Determine the space's locale — prefer input.Locale (already resolved),
+            // fall back to querying the space entity directly so notifications are
+            // always in the user's language even if input wasn't built yet.
+            var spaceLocale = input?.Locale;
+            if (string.IsNullOrEmpty(spaceLocale))
+            {
+                var space = await db.Spaces.AsNoTracking()
+                    .Where(s => s.Id == job.SpaceId)
+                    .Select(s => s.Locale)
+                    .FirstOrDefaultAsync(ct);
+                spaceLocale = space ?? "en";
+            }
+
             // Store a user-friendly error message based on the space's locale
-            var spaceLocale = input?.Locale ?? "en";
             string userFriendlyError;
             if (ex.Message.Contains("Timeout") || ex.Message.Contains("canceled"))
             {
