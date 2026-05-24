@@ -25,7 +25,7 @@ public class GetSpaceQueryHandler : IRequestHandler<GetSpaceQuery, SpaceDto?>
     {
         var space = await _db.Spaces
             .AsNoTracking()
-            .FirstOrDefaultAsync(s => s.Id == request.SpaceId && s.IsActive, ct);
+            .FirstOrDefaultAsync(s => s.Id == request.SpaceId && s.IsActive && s.DeletedAt == null, ct);
 
         return space is null ? null : new SpaceDto(
             space.Id, space.Name, space.Description,

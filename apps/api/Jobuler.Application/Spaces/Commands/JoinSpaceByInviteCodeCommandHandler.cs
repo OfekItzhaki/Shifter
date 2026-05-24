@@ -16,7 +16,7 @@ public class JoinSpaceByInviteCodeCommandHandler : IRequestHandler<JoinSpaceByIn
         var code = request.InviteCode.Trim().ToUpperInvariant();
 
         var space = await _db.Spaces
-            .FirstOrDefaultAsync(s => s.InviteCode == code && s.IsActive, ct)
+            .FirstOrDefaultAsync(s => s.InviteCode == code && s.IsActive && s.DeletedAt == null, ct)
             ?? throw new KeyNotFoundException("Invalid invite code.");
 
         // Check if already a member

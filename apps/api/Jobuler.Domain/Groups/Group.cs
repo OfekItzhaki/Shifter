@@ -17,6 +17,7 @@ public class Group : AuditableEntity, ITenantScoped
     public int MinRestBetweenShiftsHours { get; private set; } = 8;
     public string? JoinCode { get; private set; }
     public DateTime? DeletedAt { get; private set; }
+    public bool DeletedBySpaceDeletion { get; private set; }
     public GroupTemplateType TemplateType { get; private set; } = GroupTemplateType.Custom;
     public bool AllowMembersViewHistory { get; private set; } = true;
     public bool AllowMembersViewStats { get; private set; } = false;
@@ -94,6 +95,22 @@ public class Group : AuditableEntity, ITenantScoped
 
     public void SoftDelete() { DeletedAt = DateTime.UtcNow; Touch(); }
     public void Restore() { DeletedAt = null; Touch(); }
+
+    public void SoftDeleteBySpace()
+    {
+        if (DeletedAt != null) return; // Already individually deleted — skip
+        DeletedAt = DateTime.UtcNow;
+        DeletedBySpaceDeletion = true;
+        Touch();
+    }
+
+    public void RestoreFromSpaceDeletion()
+    {
+        if (!DeletedBySpaceDeletion) return; // Was individually deleted — don't restore
+        DeletedAt = null;
+        DeletedBySpaceDeletion = false;
+        Touch();
+    }
 
     public void SetParentGroup(Guid? parentGroupId)
     {

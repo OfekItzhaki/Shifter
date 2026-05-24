@@ -941,7 +941,55 @@
     "save": "שמור",
     "saving": "שומר...",
     "saved": "נשמר ✓",
-    "ownerOnly": "רק בעל המרחב יכול לערוך הגדרות"
+    "ownerOnly": "רק בעל המרחב יכול לערוך הגדרות",
+    "managementTimeout": {
+      "title": "זמן קצוב למצב ניהול",
+      "description": "דקות חוסר פעילות לפני שמפגשי ניהול יפוגו בכל הקבוצות במרחב.",
+      "inputLabel": "זמן קצוב בדקות",
+      "minutes": "דקות",
+      "validationError": "הזמן הקצוב חייב להיות מספר שלם בין 5 ל-120 דקות.",
+      "saveError": "שגיאה בעדכון הזמן הקצוב. נסה שוב.",
+      "saved": "הזמן הקצוב עודכן בהצלחה."
+    },
+    "roleAssignment": {
+      "title": "הקצאת תפקידים",
+      "description": "הקצה רמות הרשאה לחברי המרחב",
+      "loading": "טוען חברים...",
+      "loadError": "שגיאה בטעינת חברים",
+      "retry": "נסה שוב",
+      "saved": "התפקיד עודכן בהצלחה",
+      "saveError": "שגיאה בעדכון התפקיד",
+      "noMembers": "אין חברים במרחב זה",
+      "selectLabel": "תפקיד עבור {name}",
+      "levels": {
+        "spaceOwner": "בעל מרחב",
+        "groupOwner": "בעל קבוצה",
+        "admin": "מנהל",
+        "member": "חבר"
+      }
+    },
+    "dangerZone": {
+      "title": "אזור סכנה",
+      "description": "פעולות בלתי הפיכות והרסניות. יש להמשיך בזהירות.",
+      "deleteTitle": "מחיקת מרחב",
+      "deleteDescription": "מחיקה רכה של המרחב וכל הקבוצות שלו. ניתן לשחזר מאוחר יותר.",
+      "deleteButton": "מחק מרחב",
+      "deleteConfirm": "האם אתה בטוח? המרחב וכל הקבוצות שלו יועברו לארכיון.",
+      "confirmDelete": "כן, מחק",
+      "deleting": "מוחק...",
+      "deleteSuccess": "המרחב נמחק בהצלחה.",
+      "deleteError": "שגיאה במחיקת המרחב. נסה שוב.",
+      "transferTitle": "העברת בעלות",
+      "transferDescription": "העבר את בעלות המרחב לחבר אחר. תאבד את הרשאות הבעלים.",
+      "selectMember": "בחר חבר...",
+      "selectMemberLabel": "בחר יעד להעברה",
+      "transferButton": "העבר",
+      "confirmTransfer": "כן, העבר",
+      "transferring": "מעביר...",
+      "transferSuccess": "הבעלות הועברה בהצלחה.",
+      "transferError": "שגיאה בהעברת הבעלות. נסה שוב.",
+      "cancel": "ביטול"
+    }
   },
   "spaceOnboarding": {
     "title": "ברוכים הבאים ל-Shifter",
@@ -1588,5 +1636,29 @@
     "errorAlreadyInProgress": "חידוש סידור כבר מתבצע עבור קבוצה זו. יש להמתין לסיומו.",
     "errorPermissionDenied": "אין לך הרשאה לחדש את הסידור.",
     "errorGeneric": "משהו השתבש. נסה שוב."
+  },
+  "spaceHomeLeave": {
+    "title": "הגדרות זמן בבית",
+    "description": "הגדרת פרמטרי תזמון זמן בבית עבור כל הקבוצות הסגורות במרחב.",
+    "loading": "טוען הגדרות...",
+    "loadError": "לא ניתן לטעון את הגדרות זמן הבית.",
+    "retry": "נסה שוב",
+    "modeLabel": "מצב",
+    "modeAutomatic": "אוטומטי",
+    "modeManual": "ידני",
+    "modeDisabled": "מושבת",
+    "balanceLabel": "יחס איזון",
+    "moreBase": "יותר בבסיס",
+    "moreHome": "יותר בבית",
+    "baseDaysLabel": "ימי בסיס",
+    "homeDaysLabel": "ימי בית",
+    "minPeopleLabel": "מינימום בבסיס",
+    "emergencyFreezeLabel": "הקפאת חירום",
+    "emergencyFreezeHint": "הקפאת כל שיבוצי זמן הבית באופן מיידי.",
+    "useForSchedulingLabel": "שימוש באנשי הקפאה לשיבוץ משימות",
+    "saving": "שומר...",
+    "save": "שמור",
+    "saved": "נשמר",
+    "saveError": "שמירת ההגדרות נכשלה."
   }
 }

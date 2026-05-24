@@ -375,6 +375,12 @@ namespace Jobuler.Application.Persistence.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("deleted_at");
 
+                    b.Property<bool>("DeletedBySpaceDeletion")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("deleted_by_space_deletion");
+
                     b.Property<string>("Description")
                         .HasColumnType("text")
                         .HasColumnName("description");
@@ -2614,6 +2620,10 @@ namespace Jobuler.Application.Persistence.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deleted_at");
+
                     b.Property<string>("Description")
                         .HasColumnType("text")
                         .HasColumnName("description");
@@ -2631,6 +2641,12 @@ namespace Jobuler.Application.Persistence.Migrations
                         .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("locale");
+
+                    b.Property<int>("ManagementTimeoutMinutes")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(15)
+                        .HasColumnName("management_timeout_minutes");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -2654,6 +2670,85 @@ namespace Jobuler.Application.Persistence.Migrations
                     b.ToTable("spaces", (string)null);
                 });
 
+            modelBuilder.Entity("Jobuler.Domain.Spaces.SpaceHomeLeaveConfig", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<int>("BalanceValue")
+                        .HasColumnType("integer")
+                        .HasColumnName("balance_value");
+
+                    b.Property<int>("BaseDays")
+                        .HasColumnType("integer")
+                        .HasColumnName("base_days");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<decimal>("EligibilityThresholdHours")
+                        .HasColumnType("numeric")
+                        .HasColumnName("eligibility_threshold_hours");
+
+                    b.Property<bool>("EmergencyFreezeActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("emergency_freeze_active");
+
+                    b.Property<bool>("EmergencyUseForScheduling")
+                        .HasColumnType("boolean")
+                        .HasColumnName("emergency_use_for_scheduling");
+
+                    b.Property<DateTime?>("FreezeStartedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("freeze_started_at");
+
+                    b.Property<int>("HomeDays")
+                        .HasColumnType("integer")
+                        .HasColumnName("home_days");
+
+                    b.Property<int>("LeaveCapacity")
+                        .HasColumnType("integer")
+                        .HasColumnName("leave_capacity");
+
+                    b.Property<decimal>("LeaveDurationHours")
+                        .HasColumnType("numeric")
+                        .HasColumnName("leave_duration_hours");
+
+                    b.Property<int>("MinPeopleAtBase")
+                        .HasColumnType("integer")
+                        .HasColumnName("min_people_at_base");
+
+                    b.Property<decimal>("MinRestHours")
+                        .HasColumnType("numeric")
+                        .HasColumnName("min_rest_hours");
+
+                    b.Property<int>("Mode")
+                        .HasColumnType("integer")
+                        .HasColumnName("mode");
+
+                    b.Property<int>("PreFreezeMode")
+                        .HasColumnType("integer")
+                        .HasColumnName("pre_freeze_mode");
+
+                    b.Property<Guid>("SpaceId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("space_id");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SpaceId")
+                        .IsUnique();
+
+                    b.ToTable("space_home_leave_configs", (string)null);
+                });
+
             modelBuilder.Entity("Jobuler.Domain.Spaces.SpaceMembership", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2668,6 +2763,12 @@ namespace Jobuler.Application.Persistence.Migrations
                     b.Property<DateTime>("JoinedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("joined_at");
+
+                    b.Property<int>("PermissionLevel")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasColumnName("permission_level");
 
                     b.Property<Guid>("SpaceId")
                         .HasColumnType("uuid")

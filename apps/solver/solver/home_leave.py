@@ -28,6 +28,112 @@ def _to_timestamp(dt) -> int:
     return int(dt.timestamp())
 
 
+def _compute_max_concurrent_mission_headcount(
+    slots: list[TaskSlot],
+    horizon_start_ts: int,
+    horizon_duration_hours: int,
+) -> int:
+    """
+    Compute the maximum total mission headcount needed at any single hour
+    across the scheduling horizon.
+
+    For each hour in the horizon, sums the required_headcount of all slots
+    that overlap that hour. Returns the maximum across all hours.
+    """
+    if not slots:
+        return 0
+
+    max_headcount = 0
+    for hour in range(horizon_duration_hours):
+        hour_start_ts = horizon_start_ts + hour * 3600
+        hour_end_ts = hour_start_ts + 3600
+        headcount_at_hour = 0
+        for slot in slots:
+            slot_start = _to_timestamp(slot.starts_at)
+            slot_end = _to_timestamp(slot.ends_at)
+            # Slot overlaps this hour if slot_start < hour_end AND hour_start < slot_end
+            if slot_start < hour_end_ts and hour_start_ts < slot_end:
+                headcount_at_hour += slot.required_headcount
+        if headcount_at_hour > max_headcount:
+            max_headcount = headcount_at_hour
+
+    return max_headcount
+
+
+def _add_dynamic_concurrent_leave_cap(
+    model: cp_model.CpModel,
+    home_leave_vars: dict[tuple[int, int], "cp_model.IntVar"],
+    slots: list[TaskSlot],
+    people: list,
+    num_people: int,
+    horizon_start_ts: int,
+    horizon_duration_hours: int,
+    leave_duration_hours_int: int,
+    possible_start_hours: list[int],
+    emergency_person_ids: set[str],
+    presence_windows: list[PresenceWindow],
+) -> None:
+    """
+    Add a dynamic concurrent-leave cap constraint to the model.
+
+    The cap ensures that at any hour, the number of people on home-leave
+    does not exceed: len(people) - max_concurrent_mission_headcount.
+
+    This guarantees enough people are always available for missions regardless
+    of the leave_capacity setting.
+
+    If max_concurrent_leave <= 0, it is set to 1 (at least 1 person can be on leave).
+
+    People already at home (presence_window.state = "at_home") are counted
+    against the cap but cannot be recalled — they retain priority.
+    """
+    max_mission_headcount = _compute_max_concurrent_mission_headcount(
+        slots, horizon_start_ts, horizon_duration_hours
+    )
+    max_concurrent_leave = num_people - max_mission_headcount
+    if max_concurrent_leave <= 0:
+        max_concurrent_leave = 1
+
+    logger.info(
+        "Dynamic concurrent-leave cap: %d (people=%d, max_mission_headcount=%d)",
+        max_concurrent_leave, num_people, max_mission_headcount
+    )
+
+    # Count people already at home per hour — they occupy cap slots but
+    # cannot be recalled, so the effective cap for NEW leave vars is reduced.
+    already_at_home_per_hour: dict[int, int] = {}
+    for hour in range(horizon_duration_hours):
+        hour_start_ts = horizon_start_ts + hour * 3600
+        hour_end_ts = hour_start_ts + 3600
+        count = 0
+        for pw in presence_windows:
+            if pw.state != "at_home":
+                continue
+            pw_start = _to_timestamp(pw.starts_at)
+            pw_end = _to_timestamp(pw.ends_at)
+            # Presence window overlaps this hour
+            if pw_start < hour_end_ts and hour_start_ts < pw_end:
+                count += 1
+        already_at_home_per_hour[hour] = count
+
+    # Apply the cap per hour: active_leave_vars + already_at_home <= max_concurrent_leave
+    for hour in range(horizon_duration_hours):
+        active_vars = []
+        for p_idx in range(num_people):
+            if people[p_idx].person_id in emergency_person_ids:
+                continue
+            for start_h in possible_start_hours:
+                if start_h <= hour < start_h + leave_duration_hours_int:
+                    if (p_idx, start_h) in home_leave_vars:
+                        active_vars.append(home_leave_vars[(p_idx, start_h)])
+        if active_vars:
+            at_home_count = already_at_home_per_hour.get(hour, 0)
+            effective_cap = max_concurrent_leave - at_home_count
+            if effective_cap < 0:
+                effective_cap = 0
+            model.add(sum(active_vars) <= effective_cap)
+
+
 def add_home_leave_constraints(
     model: cp_model.CpModel,
     assign: dict,
@@ -126,6 +232,27 @@ def add_home_leave_constraints(
                         active_vars.append(home_leave_vars[(p_idx, start_h)])
         if active_vars:
             model.add(sum(active_vars) <= config.leave_capacity)
+
+    # ── Constraint 1b: Dynamic concurrent-leave cap ───────────────────────────
+    # Ensures enough people are always available for missions regardless of
+    # the leave_capacity setting. The cap is:
+    #   max_concurrent_leave = len(people) - max_concurrent_mission_headcount
+    # This is ADDITIVE to the per-hour leave_capacity constraint above.
+    # People already at home (presence_window.state = "at_home") are counted
+    # against the cap but cannot be recalled (they retain priority).
+    _add_dynamic_concurrent_leave_cap(
+        model=model,
+        home_leave_vars=home_leave_vars,
+        slots=slots,
+        people=people,
+        num_people=num_people,
+        horizon_start_ts=horizon_start_ts,
+        horizon_duration_hours=horizon_duration_hours,
+        leave_duration_hours_int=leave_duration_hours_int,
+        possible_start_hours=possible_start_hours,
+        emergency_person_ids=emergency_person_ids,
+        presence_windows=presence_windows,
+    )
 
     # ── Constraint 2: No-overlap with mission assignments ─────────────────────
     # If a person is on leave during a time window, they cannot be assigned to
@@ -359,14 +486,16 @@ def add_home_leave_eligibility_preference(
         return []
 
     # Weight for the eligibility preference — derived from balance_value (0–100).
-    # Formula: weight = balance_value × 20, giving range [0, 2000].
-    # Default balance_value is 50 → weight 1000.
-    # This is on the SAME level as task assignment penalties (1000), so the solver
-    # treats home-leave and task coverage as equally important and finds the best balance.
+    # Formula: weight = min(balance_value × 10, 999), giving range [0, 999].
+    # Default balance_value is 50 → weight 500.
+    # Capped at coverage_weight - 1 (999) to ensure mission coverage (weight 1000)
+    # ALWAYS takes priority over sending additional people home.
     # When balance_value is 0, weight is 0 (preference disabled).
-    # When balance_value is 100, weight is 2000 (home-leave prioritized over tasks).
+    # When balance_value is 100, weight is 999 (max, still below coverage).
+    # People already at home (presence_window.state = "at_home") retain highest
+    # priority via the existing availability constraint — they are not affected.
     balance = config.balance_value if config.balance_value is not None else 50
-    ELIGIBILITY_WEIGHT = balance * 20
+    ELIGIBILITY_WEIGHT = min(balance * 10, 999)
 
     # Build cumulative hours lookup: person_id → consecutive_hours_at_base (in seconds)
     cumulative_seconds_lookup: dict[str, int] = {}
