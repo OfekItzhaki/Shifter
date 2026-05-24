@@ -6,6 +6,7 @@ import type { GroupMemberDto } from "@/lib/api/groups";
 import { getJoinCode, regenerateJoinCode } from "@/lib/api/groups";
 import SmartImportModal from "@/components/SmartImportModal";
 import HomeLeaveConfigPanel from "@/components/home-leave/HomeLeaveConfigPanel";
+import HomeLeaveConfigCard from "@/components/spaces/HomeLeaveConfigCard";
 import LinkedGroupSelector from "@/components/groups/LinkedGroupSelector";
 import DateTimePicker from "@/components/shared/DateTimePicker";
 import { FEATURE_VISIBILITY_MAP, type GroupTemplateType } from "@/lib/utils/templateFeatureConfig";
@@ -443,6 +444,12 @@ export default function SettingsTab({
         isAdmin={isAdmin}
       />
       )}
+
+      {/* Home Leave Config — space-level settings */}
+      <HomeLeaveConfigCard
+        spaceId={spaceId}
+        isOwner={isAdmin}
+      />
 
       {/* Smart Import */}
       <Section title={tImport("title")}>

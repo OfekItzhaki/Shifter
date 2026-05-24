@@ -82,16 +82,42 @@ export default function SpaceBillingCard({ spaceId, hasBillingPermission }: Prop
     );
   }
 
-  // No subscription exists
+  // No subscription exists — space is on free trial
   if (!subscription) {
     return (
       <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-5 shadow-sm">
-        <h2 className="text-sm font-semibold text-slate-900 dark:text-white mb-3">
-          {t("title")}
-        </h2>
-        <p className="text-sm text-slate-500 dark:text-slate-400">
-          {t("noSubscription")}
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-sm font-semibold text-slate-900 dark:text-white">
+            {t("title")}
+          </h2>
+          <span className="text-xs font-medium px-2.5 py-1 rounded-full border bg-sky-50 dark:bg-sky-900/20 text-sky-700 dark:text-sky-300 border-sky-200 dark:border-sky-700">
+            {t("status.trialing")}
+          </span>
+        </div>
+        <p className="text-sm text-slate-600 dark:text-slate-300 mb-4">
+          {t("trialPeriod")}
         </p>
+        <UpgradeButton spaceId={spaceId} />
+      </div>
+    );
+  }
+
+  // Subscription exists but expired — trial ended
+  if (subscription.status === "expired") {
+    return (
+      <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-5 shadow-sm">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-sm font-semibold text-slate-900 dark:text-white">
+            {t("title")}
+          </h2>
+          <span className="text-xs font-medium px-2.5 py-1 rounded-full border bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-600">
+            {t("status.expired")}
+          </span>
+        </div>
+        <p className="text-sm text-slate-600 dark:text-slate-300 mb-4">
+          {t("trialExpired")}
+        </p>
+        <UpgradeButton spaceId={spaceId} />
       </div>
     );
   }
@@ -333,6 +359,40 @@ function ActionButtons({ spaceId, status, onSubscriptionChange }: ActionButtonsP
       </div>
 
       <ErrorToast message={error} onDismiss={() => setError(null)} />
+    </>
+  );
+}
+
+// ── Upgrade Button ─────────────────────────────────────────────────────────────
+
+function UpgradeButton({ spaceId }: { spaceId: string }) {
+  const t = useTranslations("billing");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleUpgrade = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const { checkoutUrl } = await createSpaceCheckout(spaceId);
+      window.location.href = checkoutUrl;
+    } catch {
+      setError(t("errors.checkout"));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <>
+      <button
+        onClick={handleUpgrade}
+        disabled={loading}
+        className="bg-sky-500 hover:bg-sky-600 text-white text-sm font-medium px-4 py-2 rounded-lg disabled:opacity-50 transition-colors"
+      >
+        {loading ? t("actions.loading") : t("upgradeNow")}
+      </button>
+      {error && <p className="text-xs text-red-500 mt-2">{error}</p>}
     </>
   );
 }

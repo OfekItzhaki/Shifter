@@ -13,7 +13,6 @@ import {
   SpaceMemberDto,
 } from "@/lib/api/spaces";
 import SpaceBillingCard from "@/components/billing/SpaceBillingCard";
-import HomeLeaveConfigCard from "@/components/spaces/HomeLeaveConfigCard";
 import InviteCodeCard from "@/components/spaces/InviteCodeCard";
 import RoleAssignmentCard from "@/components/spaces/RoleAssignmentCard";
 import ManagementTimeoutCard from "@/components/spaces/ManagementTimeoutCard";
@@ -232,12 +231,6 @@ export default function SpaceSettingsPage() {
           <SpaceBillingCard
             spaceId={currentSpaceId!}
             hasBillingPermission={space.isOwner}
-          />
-
-          {/* Home Leave Config — permission-gated to space owner */}
-          <HomeLeaveConfigCard
-            spaceId={currentSpaceId!}
-            isOwner={space.isOwner}
           />
 
           {/* Danger Zone — permission-gated to space owner */}
