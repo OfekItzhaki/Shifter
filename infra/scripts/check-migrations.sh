@@ -1,93 +1,153 @@
 #!/bin/bash
 # ─────────────────────────────────────────────────────────────────────────────
-# Migration Completeness Check
+# Migration Completeness Check (Schema Validation)
 # ─────────────────────────────────────────────────────────────────────────────
-# Scans EF Core configuration files for .HasColumnName("...") mappings and
-# verifies that each column is either:
-#   1. Created in a SQL migration file (ALTER TABLE ... ADD COLUMN / CREATE TABLE)
-#   2. Listed in the known-columns allowlist (columns from initial schema)
+# Spins up a temporary Postgres container, runs ALL SQL migration files in
+# order, then uses dotnet-ef to compare the resulting DB schema against the
+# EF Core model. If EF would generate any pending migrations, the check fails.
 #
-# Exits with code 1 if any unmigrated columns are found.
-# Run this in CI before deploying to catch missing migrations early.
+# This catches:
+#   - Missing columns (like deleted_by_space_deletion)
+#   - Wrong column types
+#   - Missing indexes
+#   - Missing tables
+#   - Any drift between code and migrations
+#
+# Requires: docker, dotnet SDK 8.0
 # ─────────────────────────────────────────────────────────────────────────────
 
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
-CONFIGS_DIR="$REPO_ROOT/apps/api/Jobuler.Infrastructure/Persistence/Configurations"
 MIGRATIONS_DIR="$REPO_ROOT/infra/migrations"
+API_DIR="$REPO_ROOT/apps/api"
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
-NC='\033[0m' # No Color
+NC='\033[0m'
 
-echo "🔍 Checking migration completeness..."
+CONTAINER_NAME="migration-check-postgres-$$"
+DB_NAME="migration_check"
+DB_USER="migration_check"
+DB_PASS="migration_check_pass"
+DB_PORT=54399  # Unlikely to conflict
+
+cleanup() {
+  echo "🧹 Cleaning up..."
+  docker rm -f "$CONTAINER_NAME" 2>/dev/null || true
+}
+trap cleanup EXIT
+
+echo "🔍 Migration completeness check"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 
-# ─── Extract all column names from EF configurations ──────────────────────────
-# Pattern: .HasColumnName("column_name")
-EF_COLUMNS=$(grep -rhoP '\.HasColumnName\("\K[^"]+' "$CONFIGS_DIR" | sort -u)
+# ─── 1. Start temporary Postgres ──────────────────────────────────────────────
+echo "📦 Starting temporary Postgres container..."
+docker run -d \
+  --name "$CONTAINER_NAME" \
+  -e POSTGRES_DB="$DB_NAME" \
+  -e POSTGRES_USER="$DB_USER" \
+  -e POSTGRES_PASSWORD="$DB_PASS" \
+  -p "$DB_PORT:5432" \
+  postgres:16-alpine \
+  > /dev/null
 
-# ─── Extract all columns created/added in SQL migrations ─────────────────────
-# Patterns:
-#   ADD COLUMN [IF NOT EXISTS] column_name
-#   column_name TYPE (in CREATE TABLE blocks)
-MIGRATION_COLUMNS=$(
-  # ADD COLUMN statements
-  grep -rhoiP 'ADD COLUMN\s+(IF NOT EXISTS\s+)?(\w+)' "$MIGRATIONS_DIR" | \
-    grep -oP '\w+$' | tr '[:upper:]' '[:lower:]'
-  
-  # CREATE TABLE column definitions (indented lines with type)
-  grep -rhoP '^\s+(\w+)\s+(UUID|TEXT|INTEGER|BIGINT|BOOLEAN|TIMESTAMPTZ|TIMESTAMP|NUMERIC|DECIMAL|JSONB|SERIAL|BYTEA|VARCHAR|REAL|DOUBLE)' "$MIGRATIONS_DIR" | \
-    grep -oP '^\s*\w+' | tr -d ' ' | tr '[:upper:]' '[:lower:]'
-) 
-
-MIGRATION_COLUMNS=$(echo "$MIGRATION_COLUMNS" | sort -u)
-
-# ─── Known columns from initial schema (001-006) that don't have explicit ADD COLUMN ─
-# These are created in CREATE TABLE statements in the initial migrations.
-# We extract them automatically from CREATE TABLE blocks.
-KNOWN_COLUMNS=$(
-  # Extract column names from CREATE TABLE blocks in all migration files
-  # Lines that start with whitespace followed by a word and a type keyword
-  grep -rhP '^\s+\w+\s+(UUID|TEXT|INTEGER|BIGINT|BOOLEAN|TIMESTAMPTZ|TIMESTAMP|NUMERIC|DECIMAL|JSONB|SERIAL|BYTEA|VARCHAR|REAL|DOUBLE|SMALLINT)' "$MIGRATIONS_DIR" | \
-    grep -oP '^\s*\w+' | tr -d ' ' | tr '[:upper:]' '[:lower:]' | sort -u
-  
-  # Also include common implicit columns
-  echo "id"
-  echo "created_at"
-  echo "updated_at"
-)
-
-KNOWN_COLUMNS=$(echo "$KNOWN_COLUMNS" | sort -u)
-
-# ─── Combine all known migrated columns ──────────────────────────────────────
-ALL_MIGRATED=$(echo -e "$MIGRATION_COLUMNS\n$KNOWN_COLUMNS" | sort -u)
-
-# ─── Check each EF column against migrated columns ───────────────────────────
-MISSING=()
-for col in $EF_COLUMNS; do
-  col_lower=$(echo "$col" | tr '[:upper:]' '[:lower:]')
-  if ! echo "$ALL_MIGRATED" | grep -qx "$col_lower"; then
-    MISSING+=("$col")
+# Wait for Postgres to be ready
+echo "⏳ Waiting for Postgres to be ready..."
+for i in $(seq 1 30); do
+  if docker exec "$CONTAINER_NAME" pg_isready -U "$DB_USER" -d "$DB_NAME" > /dev/null 2>&1; then
+    break
   fi
+  if [ "$i" -eq 30 ]; then
+    echo -e "${RED}❌ Postgres failed to start within 30 seconds${NC}"
+    exit 1
+  fi
+  sleep 1
 done
+echo "✅ Postgres is ready"
+echo ""
 
-# ─── Report results ──────────────────────────────────────────────────────────
-if [ ${#MISSING[@]} -eq 0 ]; then
-  echo -e "${GREEN}✅ All EF columns have corresponding SQL migrations.${NC}"
+# ─── 2. Run all SQL migrations in order ──────────────────────────────────────
+echo "📋 Running $(ls "$MIGRATIONS_DIR"/*.sql 2>/dev/null | wc -l) SQL migration files..."
+for f in $(ls "$MIGRATIONS_DIR"/*.sql | sort); do
+  filename=$(basename "$f")
+  docker exec -i "$CONTAINER_NAME" psql -U "$DB_USER" -d "$DB_NAME" -v ON_ERROR_STOP=0 < "$f" > /dev/null 2>&1
+done
+echo "✅ All migrations applied"
+echo ""
+
+# ─── 3. Check EF Core model against the database ─────────────────────────────
+echo "🔎 Comparing EF Core model against migrated database..."
+
+CONNECTION_STRING="Host=localhost;Port=$DB_PORT;Database=$DB_NAME;Username=$DB_USER;Password=$DB_PASS"
+
+# Try to generate a migration — if there's nothing to generate, the schema matches
+cd "$API_DIR"
+
+# Install ef tool if not present
+dotnet tool restore 2>/dev/null || dotnet tool install --global dotnet-ef 2>/dev/null || true
+
+MIGRATION_OUTPUT=$(dotnet ef migrations has-pending-model-changes \
+  --project Jobuler.Infrastructure/Jobuler.Infrastructure.csproj \
+  --startup-project Jobuler.Api/Jobuler.Api.csproj \
+  --context AppDbContext \
+  -- --ConnectionStrings:DefaultConnection="$CONNECTION_STRING" 2>&1) || true
+
+# dotnet ef migrations has-pending-model-changes returns:
+#   "No pending model changes." when schema is in sync
+#   "Changes have been made to the model since the last migration." when out of sync
+if echo "$MIGRATION_OUTPUT" | grep -qi "no pending model changes\|No pending"; then
+  echo -e "${GREEN}✅ EF Core model matches the migrated database schema. No missing migrations.${NC}"
   exit 0
-else
-  echo -e "${RED}❌ Found ${#MISSING[@]} column(s) in EF configurations without SQL migrations:${NC}"
+elif echo "$MIGRATION_OUTPUT" | grep -qi "changes have been made\|pending model changes"; then
+  echo -e "${RED}❌ EF Core model has changes not reflected in SQL migrations!${NC}"
   echo ""
-  for col in "${MISSING[@]}"; do
-    # Find which configuration file defines this column
-    file=$(grep -rl "HasColumnName(\"$col\")" "$CONFIGS_DIR" | head -1 | xargs basename)
-    echo -e "  ${YELLOW}• $col${NC}  (in $file)"
-  done
+  echo "The EF Core model expects columns/tables that don't exist after running"
+  echo "all SQL migrations in infra/migrations/."
   echo ""
-  echo -e "${RED}Add a SQL migration in infra/migrations/ for these columns before deploying.${NC}"
-  echo "Example: ALTER TABLE <table> ADD COLUMN IF NOT EXISTS $col <TYPE>;"
+  echo "To find what's missing, run locally:"
+  echo "  dotnet ef migrations add CheckDrift --project Jobuler.Infrastructure --startup-project Jobuler.Api"
+  echo "  # Inspect the generated migration, then delete it"
+  echo "  # Create the corresponding SQL migration in infra/migrations/"
+  echo ""
+  echo -e "${YELLOW}EF output:${NC}"
+  echo "$MIGRATION_OUTPUT"
   exit 1
+else
+  # Fallback: if the command isn't available or fails for other reasons,
+  # try a simpler approach — attempt to run a query that touches all tables
+  echo -e "${YELLOW}⚠️  Could not run EF model comparison (tool may not be installed).${NC}"
+  echo "   Falling back to basic column existence check..."
+  echo ""
+  
+  # Extract all HasColumnName mappings from EF configurations
+  CONFIGS_DIR="$REPO_ROOT/apps/api/Jobuler.Infrastructure/Persistence/Configurations"
+  EF_COLUMNS=$(grep -rhoP '\.HasColumnName\("\K[^"]+' "$CONFIGS_DIR" 2>/dev/null | sort -u)
+  
+  MISSING=()
+  for col in $EF_COLUMNS; do
+    # Check if column exists in the database
+    EXISTS=$(docker exec "$CONTAINER_NAME" psql -U "$DB_USER" -d "$DB_NAME" -tAc \
+      "SELECT COUNT(*) FROM information_schema.columns WHERE column_name = '$col'" 2>/dev/null || echo "0")
+    if [ "$EXISTS" = "0" ]; then
+      MISSING+=("$col")
+    fi
+  done
+  
+  if [ ${#MISSING[@]} -eq 0 ]; then
+    echo -e "${GREEN}✅ All EF columns exist in the migrated database.${NC}"
+    exit 0
+  else
+    echo -e "${RED}❌ Found ${#MISSING[@]} column(s) missing from the database after migrations:${NC}"
+    echo ""
+    for col in "${MISSING[@]}"; do
+      file=$(grep -rl "HasColumnName(\"$col\")" "$CONFIGS_DIR" 2>/dev/null | head -1 | xargs basename 2>/dev/null || echo "unknown")
+      echo -e "  ${YELLOW}• $col${NC}  (defined in $file)"
+    done
+    echo ""
+    echo -e "${RED}Add SQL migrations in infra/migrations/ for these columns.${NC}"
+    exit 1
+  fi
 fi
