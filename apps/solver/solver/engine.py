@@ -40,6 +40,69 @@ logger = logging.getLogger(__name__)
 
 SOLVER_TIMEOUT = int(os.getenv("SOLVER_TIMEOUT_SECONDS", "15"))
 
+# Absolute minimum rest hours for closed-base groups — prevents misconfigured
+# hard constraints from allowing unsafe rest gaps.
+_CLOSED_BASE_MIN_REST_FLOOR = 8.0
+
+
+def _resolve_min_rest_hours_closed_base(
+    config_value: float,
+    hard_constraint_value: float | None,
+    run_id: str,
+) -> float:
+    """
+    Resolve min_rest_hours for a closed-base group using an explicit fallback chain:
+      1. config value (home_leave_config.min_rest_hours) — if > 0
+      2. hard constraint rule value — if a min_rest_hours rule exists
+      3. 8.0 absolute default
+
+    Additionally, the resolved value is clamped to a minimum of 8.0 for closed-base
+    groups. If a hard constraint rule provides a value less than 8.0, it is overridden
+    to 8.0 and a warning is logged.
+
+    Returns the resolved min_rest_hours (always >= 8.0).
+    """
+    # Step 1: Config value takes priority (explicit admin setting)
+    if config_value > 0:
+        resolved = config_value
+        source = "home_leave_config"
+    # Step 2: Fall back to hard constraint rule
+    elif hard_constraint_value is not None:
+        resolved = hard_constraint_value
+        source = "hard_constraint_rule"
+        logger.warning(
+            "[run=%s] min_rest_hours: home_leave_config.min_rest_hours is 0 — "
+            "falling back to hard constraint rule value (%.1fh). "
+            "Configure min_rest_hours explicitly in home_leave_config to avoid this fallback.",
+            run_id, hard_constraint_value,
+        )
+    # Step 3: Absolute default
+    else:
+        resolved = _CLOSED_BASE_MIN_REST_FLOOR
+        source = "default"
+        logger.warning(
+            "[run=%s] min_rest_hours: home_leave_config.min_rest_hours is 0 and no "
+            "hard constraint rule exists — using absolute default of %.1fh. "
+            "Configure min_rest_hours explicitly in home_leave_config.",
+            run_id, _CLOSED_BASE_MIN_REST_FLOOR,
+        )
+
+    # Enforce minimum floor for closed-base groups
+    if resolved < _CLOSED_BASE_MIN_REST_FLOOR:
+        logger.warning(
+            "[run=%s] min_rest_hours: resolved value %.1fh (from %s) is below the "
+            "closed-base minimum of %.1fh — overriding to %.1fh. "
+            "This prevents misconfigured constraints from allowing unsafe rest gaps.",
+            run_id, resolved, source, _CLOSED_BASE_MIN_REST_FLOOR, _CLOSED_BASE_MIN_REST_FLOOR,
+        )
+        resolved = _CLOSED_BASE_MIN_REST_FLOOR
+
+    logger.info(
+        "[run=%s] min_rest_hours resolved to %.1fh (source: %s, closed-base mode)",
+        run_id, resolved, source,
+    )
+    return resolved
+
 
 def solve(input: SolverInput) -> SolverOutput:
     t0 = time.time()
@@ -106,17 +169,23 @@ def solve(input: SolverInput) -> SolverOutput:
 
     # Extract min_rest_hours from hard constraints if configured
     rest_rules = [c for c in input.hard_constraints if c.rule_type == "min_rest_hours"]
-    rest_hours = float(rest_rules[0].payload.get("hours", 8)) if rest_rules else 8.0
+    hard_constraint_rest_hours = float(rest_rules[0].payload.get("hours", 8)) if rest_rules else None
 
-    # For closed-base groups with home_leave_config enabled, override rest_hours
-    # with the config value (if > 0) and disable the long-shift soft exception (strictly hard).
-    # If home_leave_config.min_rest_hours is 0, keep the group's configured rest_hours.
+    # ── Min-rest resolution ───────────────────────────────────────────────────
+    # For closed-base groups (home_leave_config enabled), use explicit fallback chain:
+    #   config value > hard constraint rule > 8.0 default
+    # For non-closed-base groups, use existing logic unchanged.
     home_leave_cfg = input.home_leave_config
     if home_leave_cfg and home_leave_cfg.enabled:
-        if home_leave_cfg.min_rest_hours > 0:
-            rest_hours = home_leave_cfg.min_rest_hours
+        rest_hours = _resolve_min_rest_hours_closed_base(
+            config_value=home_leave_cfg.min_rest_hours,
+            hard_constraint_value=hard_constraint_rest_hours,
+            run_id=input.run_id,
+        )
         rest_soft_penalties = None  # None disables soft penalty path — all rest is hard
     else:
+        # Non-closed-base: use hard constraint rule value or 8.0 default (unchanged)
+        rest_hours = hard_constraint_rest_hours if hard_constraint_rest_hours is not None else 8.0
         rest_soft_penalties = []
 
     add_min_rest_constraints(model, assign, slots, people, num_people, rest_hours, emergency_person_ids, rest_soft_penalties)
@@ -528,7 +597,15 @@ def _build_hard_conflicts(input: SolverInput, people, slots) -> list[HardConflic
     home_leave_cfg = input.home_leave_config
     if home_leave_cfg and home_leave_cfg.enabled:
         emergency_person_ids, _ = _build_emergency_bypass(input)
-        min_rest_seconds = int(home_leave_cfg.min_rest_hours * 3600)
+        # Use the same fallback chain as the constraint builder
+        rest_rules = [c for c in input.hard_constraints if c.rule_type == "min_rest_hours"]
+        hard_constraint_rest_hours = float(rest_rules[0].payload.get("hours", 8)) if rest_rules else None
+        resolved_rest_hours = _resolve_min_rest_hours_closed_base(
+            config_value=home_leave_cfg.min_rest_hours,
+            hard_constraint_value=hard_constraint_rest_hours,
+            run_id=input.run_id,
+        )
+        min_rest_seconds = int(resolved_rest_hours * 3600)
 
         for p_idx, person in enumerate(people):
             if person.person_id in emergency_person_ids:
