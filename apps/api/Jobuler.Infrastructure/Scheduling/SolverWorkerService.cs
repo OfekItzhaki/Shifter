@@ -339,14 +339,33 @@ public class SolverWorkerService : BackgroundService
                 "Solver output: feasible={Feasible} timedOut={TimedOut} rawAssignments={Raw} parsedAssignments={Parsed}",
                 output.Feasible, output.TimedOut, output.Assignments.Count, parsedAssignmentDtos.Count);
 
+            // ── Post-solve hard constraint validation ─────────────────────────
+            // Even when the solver reports feasible, validate assignments against
+            // input constraints. CP-SAT guarantees feasibility only for constraints
+            // actually added to the model — if a constraint was missed, the result
+            // may violate business rules. Catch those here before creating a draft.
+            var postSolveViolations = new List<string>();
+            if (output.Feasible && parsedAssignmentDtos.Count > 0)
+            {
+                postSolveViolations = ValidateHardConstraints(input, parsedAssignmentDtos);
+                if (postSolveViolations.Count > 0)
+                {
+                    _logger.LogWarning(
+                        "Post-solve validation found {Count} hard constraint violation(s) for run {RunId}.",
+                        postSolveViolations.Count, job.RunId);
+                }
+            }
+
             // Do NOT persist a version if there's nothing useful to show the admin:
             // - solver proved infeasible, OR
             // - feasible but zero assignments (solver bug / all slots unparseable)
             // - feasible but has uncovered slots (all tasks MUST be fully assigned)
+            // - post-solve validation detected hard constraint violations
             // In all these cases, mark the run failed and notify the admin with
             // actionable guidance (e.g. reduce planning horizon, add members).
             var hasUncoveredSlots = output.UncoveredSlotIds.Count > 0;
-            var shouldDiscard = !output.Feasible || parsedAssignmentDtos.Count == 0 || hasUncoveredSlots;
+            var hasPostSolveViolations = postSolveViolations.Count > 0;
+            var shouldDiscard = !output.Feasible || parsedAssignmentDtos.Count == 0 || hasUncoveredSlots || hasPostSolveViolations;
 
             // Only create the ScheduleVersion AFTER confirming the solver succeeded
             // with valid assignments. This prevents empty drafts from lingering in the DB.
@@ -440,13 +459,26 @@ public class SolverWorkerService : BackgroundService
 
                 // No version created — just update the run status
                 _logger.LogWarning(
-                    "Skipping version creation: feasible={Feasible} assignments={Count} uncovered={Uncovered}",
-                    output.Feasible, parsedAssignmentDtos.Count, output.UncoveredSlotIds.Count);
+                    "Skipping version creation: feasible={Feasible} assignments={Count} uncovered={Uncovered} postSolveViolations={Violations}",
+                    output.Feasible, parsedAssignmentDtos.Count, output.UncoveredSlotIds.Count, postSolveViolations.Count);
 
                 if (output.TimedOut)
                     run.MarkTimedOut(summaryJson);
                 else if (!output.Feasible)
                     run.MarkFailed($"Solver returned infeasible. Hard conflicts: {output.HardConflicts.Count}");
+                else if (hasPostSolveViolations)
+                {
+                    // Post-solve validation detected hard constraint violations in a "feasible" result.
+                    // This means the solver's model was missing constraints — treat as failed.
+                    var violationLocale = input.Locale ?? "he";
+                    var violationList = string.Join("\n", postSolveViolations.Select(v => $"• {v}"));
+                    var violationError = violationLocale switch {
+                        "he" => $"הסולבר החזיר תוצאה שמפרה אילוצים קשיחים ({postSolveViolations.Count} הפרות). לא נוצרה טיוטה.\n\n{violationList}\n\nבדוק את הגדרות האילוצים ונסה שוב.",
+                        "ru" => $"Решатель вернул результат с нарушениями жёстких ограничений ({postSolveViolations.Count} нарушений). Черновик не создан.\n\n{violationList}\n\nПроверьте настройки ограничений и повторите попытку.",
+                        _    => $"Solver returned a result that violates hard constraints ({postSolveViolations.Count} violation(s)). No draft was created.\n\n{violationList}\n\nReview constraint settings and try again."
+                    };
+                    run.MarkFailed(violationError);
+                }
                 else if (hasUncoveredSlots)
                 {
                     // Identify which tasks have uncovered slots and suggest fixes
@@ -571,14 +603,34 @@ public class SolverWorkerService : BackgroundService
                 var conflictDetails = output.HardConflicts.Count > 0
                     ? "\n\n" + string.Join("\n", output.HardConflicts.Select(c => $"• {c.Description}"))
                     : "";
-                (notifTitle, notifBody) = locale switch {
-                    "he" => ("לא נמצא סידור אפשרי",
-                             $"לא ניתן היה ליצור סידור עם האילוצים הנוכחיים.{conflictDetails}\n\nבדוק שיש מספיק חברים ומשימות עתידיות, ונסה שוב."),
-                    "ru" => ("Расписание невозможно составить",
-                             $"Не удалось создать расписание при текущих ограничениях.{conflictDetails}\n\nПроверьте наличие достаточного количества участников и будущих задач, затем повторите попытку."),
-                    _    => ("Schedule is infeasible",
-                             $"Could not create a schedule under the current constraints.{conflictDetails}\n\nCheck that there are enough members and future tasks, then try again.")
-                };
+
+                // Include post-solve violation details in the notification
+                var postSolveDetails = hasPostSolveViolations
+                    ? "\n\n" + string.Join("\n", postSolveViolations.Select(v => $"• {v}"))
+                    : "";
+
+                if (hasPostSolveViolations)
+                {
+                    (notifTitle, notifBody) = locale switch {
+                        "he" => ("הסידור הפר אילוצים קשיחים",
+                                 $"הסולבר החזיר תוצאה שמפרה {postSolveViolations.Count} אילוצים קשיחים. לא נוצרה טיוטה.{postSolveDetails}\n\nבדוק את הגדרות האילוצים, ודא שיש מספיק חברים מוסמכים, ונסה שוב."),
+                        "ru" => ("Расписание нарушает жёсткие ограничения",
+                                 $"Решатель вернул результат с {postSolveViolations.Count} нарушениями жёстких ограничений. Черновик не создан.{postSolveDetails}\n\nПроверьте настройки ограничений, убедитесь в наличии квалифицированных участников, и повторите попытку."),
+                        _    => ("Schedule violates hard constraints",
+                                 $"Solver returned a result with {postSolveViolations.Count} hard constraint violation(s). No draft was created.{postSolveDetails}\n\nReview constraint settings, ensure enough qualified members, and try again.")
+                    };
+                }
+                else
+                {
+                    (notifTitle, notifBody) = locale switch {
+                        "he" => ("לא נמצא סידור אפשרי",
+                                 $"לא ניתן היה ליצור סידור עם האילוצים הנוכחיים.{conflictDetails}\n\nבדוק שיש מספיק חברים ומשימות עתידיות, ונסה שוב."),
+                        "ru" => ("Расписание невозможно составить",
+                                 $"Не удалось создать расписание при текущих ограничениях.{conflictDetails}\n\nПроверьте наличие достаточного количества участников и будущих задач, затем повторите попытку."),
+                        _    => ("Schedule is infeasible",
+                                 $"Could not create a schedule under the current constraints.{conflictDetails}\n\nCheck that there are enough members and future tasks, then try again.")
+                    };
+                }
             }
             await notifier.NotifySpaceAdminsAsync(
                 job.SpaceId, evt, notifTitle, notifBody,
@@ -697,6 +749,195 @@ public class SolverWorkerService : BackgroundService
         var bytes = System.Security.Cryptography.SHA256.HashData(
             System.Text.Encoding.UTF8.GetBytes(json));
         return Convert.ToHexString(bytes).ToLowerInvariant();
+    }
+
+    /// <summary>
+    /// Post-solve validation: checks solver output assignments against input constraints.
+    /// Returns a list of human-readable violation descriptions. Empty list = all good.
+    /// Emergency-bypassed people are excluded from all checks.
+    /// </summary>
+    private static List<string> ValidateHardConstraints(SolverInputDto input, List<AssignmentResultDto> assignments)
+    {
+        var violations = new List<string>();
+
+        // Build lookup of emergency-bypassed person IDs.
+        // Emergency constraints with scope "person" bypass all checks for that person.
+        var emergencyPersonIds = input.EmergencyConstraints
+            .Where(c => c.ScopeType == "person" && c.ScopeId is not null)
+            .Select(c => c.ScopeId!)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        // Build slot lookup by slot ID
+        var slotLookup = input.TaskSlots.ToDictionary(s => s.SlotId, StringComparer.OrdinalIgnoreCase);
+
+        // Build person lookup by person ID
+        var personLookup = input.People.ToDictionary(p => p.PersonId, StringComparer.OrdinalIgnoreCase);
+
+        // Build availability windows grouped by person
+        var availabilityByPerson = input.AvailabilityWindows
+            .GroupBy(a => a.PersonId, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(g => g.Key, g => g.ToList(), StringComparer.OrdinalIgnoreCase);
+
+        // ── 1. Min-rest violations ────────────────────────────────────────────
+        // Resolve min_rest_hours from input constraints (same logic as pre-flight)
+        var resolvedMinRestHours = ResolveMinRestHours(input);
+
+        if (resolvedMinRestHours > 0)
+        {
+            // Group assignments by person
+            var assignmentsByPerson = assignments
+                .Where(a => !emergencyPersonIds.Contains(a.PersonId))
+                .Where(a => slotLookup.ContainsKey(a.SlotId))
+                .GroupBy(a => a.PersonId, StringComparer.OrdinalIgnoreCase);
+
+            foreach (var personGroup in assignmentsByPerson)
+            {
+                var personSlots = personGroup
+                    .Select(a => slotLookup[a.SlotId])
+                    .Where(s => TryParseSlotTimes(s, out _, out _))
+                    .OrderBy(s => { TryParseSlotTimes(s, out var start, out _); return start; })
+                    .ToList();
+
+                for (int i = 0; i < personSlots.Count - 1; i++)
+                {
+                    TryParseSlotTimes(personSlots[i], out _, out var end1);
+                    TryParseSlotTimes(personSlots[i + 1], out var start2, out _);
+
+                    var gapHours = (start2 - end1).TotalHours;
+                    if (gapHours >= 0 && gapHours < resolvedMinRestHours)
+                    {
+                        var personName = personGroup.Key;
+                        violations.Add(
+                            $"Min-rest violation: person {personName} has only {gapHours:F1}h rest between " +
+                            $"'{personSlots[i].TaskTypeName}' (ends {personSlots[i].EndsAt}) and " +
+                            $"'{personSlots[i + 1].TaskTypeName}' (starts {personSlots[i + 1].StartsAt}). " +
+                            $"Required: {resolvedMinRestHours}h.");
+                    }
+                }
+            }
+        }
+
+        // ── 2. Qualification mismatches ───────────────────────────────────────
+        foreach (var assignment in assignments)
+        {
+            if (emergencyPersonIds.Contains(assignment.PersonId)) continue;
+            if (!slotLookup.TryGetValue(assignment.SlotId, out var slot)) continue;
+            if (!personLookup.TryGetValue(assignment.PersonId, out var person)) continue;
+
+            if (slot.RequiredQualificationIds.Count > 0)
+            {
+                var personQualIds = person.QualificationIds.ToHashSet(StringComparer.OrdinalIgnoreCase);
+                var missingQuals = slot.RequiredQualificationIds
+                    .Where(q => !personQualIds.Contains(q))
+                    .ToList();
+
+                if (missingQuals.Count > 0)
+                {
+                    violations.Add(
+                        $"Qualification mismatch: person {assignment.PersonId} assigned to " +
+                        $"'{slot.TaskTypeName}' ({slot.StartsAt}) but missing required qualification(s). " +
+                        $"Ensure the person has all required qualifications for this task.");
+                }
+            }
+        }
+
+        // ── 3. Role mismatches ────────────────────────────────────────────────
+        foreach (var assignment in assignments)
+        {
+            if (emergencyPersonIds.Contains(assignment.PersonId)) continue;
+            if (!slotLookup.TryGetValue(assignment.SlotId, out var slot)) continue;
+            if (!personLookup.TryGetValue(assignment.PersonId, out var person)) continue;
+
+            if (slot.RequiredRoleIds.Count > 0)
+            {
+                var personRoleIds = person.RoleIds.ToHashSet(StringComparer.OrdinalIgnoreCase);
+                var missingRoles = slot.RequiredRoleIds
+                    .Where(r => !personRoleIds.Contains(r))
+                    .ToList();
+
+                if (missingRoles.Count > 0)
+                {
+                    violations.Add(
+                        $"Role mismatch: person {assignment.PersonId} assigned to " +
+                        $"'{slot.TaskTypeName}' ({slot.StartsAt}) but missing required role(s). " +
+                        $"Ensure the person has the correct role for this task.");
+                }
+            }
+        }
+
+        // ── 4. Availability conflicts ─────────────────────────────────────────
+        foreach (var assignment in assignments)
+        {
+            if (emergencyPersonIds.Contains(assignment.PersonId)) continue;
+            if (!slotLookup.TryGetValue(assignment.SlotId, out var slot)) continue;
+            if (!TryParseSlotTimes(slot, out var slotStart, out var slotEnd)) continue;
+
+            // If no availability windows defined for this person, they're assumed always available
+            if (!availabilityByPerson.TryGetValue(assignment.PersonId, out var windows)) continue;
+            if (windows.Count == 0) continue;
+
+            // Check if the slot is fully covered by at least one availability window
+            var isCovered = windows.Any(w =>
+            {
+                if (!DateTime.TryParse(w.StartsAt, null, System.Globalization.DateTimeStyles.RoundtripKind, out var wStart)) return false;
+                if (!DateTime.TryParse(w.EndsAt, null, System.Globalization.DateTimeStyles.RoundtripKind, out var wEnd)) return false;
+                return wStart <= slotStart && wEnd >= slotEnd;
+            });
+
+            if (!isCovered)
+            {
+                violations.Add(
+                    $"Availability conflict: person {assignment.PersonId} assigned to " +
+                    $"'{slot.TaskTypeName}' ({slot.StartsAt} – {slot.EndsAt}) but is not available during this time. " +
+                    $"Check the person's availability settings.");
+            }
+        }
+
+        return violations;
+    }
+
+    /// <summary>
+    /// Resolves the effective min_rest_hours from input constraints.
+    /// Priority: HomeLeaveConfig value > hard constraint rule > 8.0 default.
+    /// </summary>
+    private static double ResolveMinRestHours(SolverInputDto input)
+    {
+        // If home leave config specifies a positive value, use it
+        if (input.HomeLeaveConfig is not null && input.HomeLeaveConfig.Enabled && input.HomeLeaveConfig.MinRestHours > 0)
+            return input.HomeLeaveConfig.MinRestHours;
+
+        // Fall back to hard constraint rule
+        var hardRestRule = input.HardConstraints.FirstOrDefault(c => c.RuleType == "min_rest_hours");
+        if (hardRestRule is not null && hardRestRule.Payload.TryGetValue("hours", out var hoursVal))
+        {
+            var hours = ToDouble(hoursVal);
+            if (hours > 0) return hours;
+        }
+
+        // Fall back to soft constraint rule
+        var softRestRule = input.SoftConstraints.FirstOrDefault(c => c.RuleType == "min_rest_hours");
+        if (softRestRule is not null && softRestRule.Payload.TryGetValue("hours", out var softHoursVal))
+        {
+            var hours = ToDouble(softHoursVal);
+            if (hours > 0) return hours;
+        }
+
+        // Default: 8 hours for closed-base groups with home leave, 0 otherwise
+        if (input.HomeLeaveConfig is not null && input.HomeLeaveConfig.Enabled)
+            return 8.0;
+
+        return 0.0;
+    }
+
+    /// <summary>
+    /// Attempts to parse slot start/end times from ISO 8601 strings.
+    /// </summary>
+    private static bool TryParseSlotTimes(TaskSlotDto slot, out DateTime start, out DateTime end)
+    {
+        start = default;
+        end = default;
+        return DateTime.TryParse(slot.StartsAt, null, System.Globalization.DateTimeStyles.RoundtripKind, out start)
+            && DateTime.TryParse(slot.EndsAt, null, System.Globalization.DateTimeStyles.RoundtripKind, out end);
     }
 
     /// <summary>
