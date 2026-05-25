@@ -10,7 +10,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: {
-    default: "Shifter — Smart Shift Scheduling",
+    default: "Shifter | Smart Shift Scheduling",
     template: "%s | Shifter",
   },
   description: "Automatic, fair shift scheduling for teams. No spreadsheets, no headaches. Works for military, security, hospitals, restaurants and more.",
@@ -21,13 +21,13 @@ export const metadata: Metadata = {
     locale: "en_US",
     url: "https://shifter.ofeklabs.com",
     siteName: "Shifter",
-    title: "Shifter — Smart Shift Scheduling",
+    title: "Shifter | Smart Shift Scheduling",
     description: "Automatic, fair shift scheduling for teams. No spreadsheets, no headaches.",
     images: [{ url: "/shifter-favicon.png", width: 192, height: 192, alt: "Shifter Logo" }],
   },
   twitter: {
     card: "summary",
-    title: "Shifter — Smart Shift Scheduling",
+    title: "Shifter | Smart Shift Scheduling",
     description: "Automatic, fair shift scheduling for teams.",
   },
   robots: { index: true, follow: true },
