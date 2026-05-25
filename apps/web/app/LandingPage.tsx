@@ -180,7 +180,7 @@ export default function LandingPage() {
           <p className="text-sky-100 mb-8">{c.cta.subtitle}</p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link href="/register" className="w-full sm:w-auto inline-block bg-white text-sky-700 font-bold px-8 py-4 rounded-2xl text-base hover:bg-sky-50 transition-colors shadow-lg">{c.cta.primary}</Link>
-            <Link href="/login" className="w-full sm:w-auto inline-block text-sky-100 hover:text-white border border-sky-400/50 hover:border-white px-8 py-4 rounded-2xl text-base transition-colors">{c.cta.secondary}</Link>
+            <Link href="/login" className="w-full sm:w-auto inline-block text-white hover:text-white border-2 border-white/70 hover:border-white px-8 py-4 rounded-2xl text-base transition-colors backdrop-blur-sm">{c.cta.secondary}</Link>
           </div>
         </div>
       </section>
