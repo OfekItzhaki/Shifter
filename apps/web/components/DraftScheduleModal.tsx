@@ -30,6 +30,7 @@ interface Props {
   /** Set of personIds belonging to this group — filters out cross-group assignments */
   groupMemberIds: Set<string>;
   isAdmin: boolean;
+  subscriptionActive?: boolean;
   onPublish: () => Promise<void>;
   onDiscard: () => Promise<void>;
   onRunAgain: () => void;
@@ -54,7 +55,7 @@ function getWeekDates(anchor: string): string[] {
 
 export default function DraftScheduleModal({
   open, onClose, spaceId, groupId, draftVersionId, sourceRunId, groupMemberIds,
-  isAdmin, onPublish, onDiscard, onRunAgain,
+  isAdmin, subscriptionActive = true, onPublish, onDiscard, onRunAgain,
 }: Props) {
   const t = useTranslations("draftModal");
   const tSchedule = useTranslations("schedule");
@@ -270,6 +271,7 @@ export default function DraftScheduleModal({
                   spaceId={spaceId}
                   runId={sourceRunId}
                   groupId={groupId}
+                  subscriptionActive={subscriptionActive}
                 />
               )}
 

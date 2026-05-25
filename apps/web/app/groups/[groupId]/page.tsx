@@ -10,6 +10,7 @@ import DraftScheduleModal from "@/components/DraftScheduleModal";
 import SandboxView from "@/components/sandbox/SandboxView";
 import ImportModal from "@/components/ImportModal";
 import TrialBanner from "@/components/billing/TrialBanner";
+import { getSpaceSubscription } from "@/lib/api/billing";
 import ReAuthDialog from "@/components/admin/ReAuthDialog";
 import ScheduleTab from "./tabs/ScheduleTab";
 import MembersTab, { MemberProfileModal } from "./tabs/MembersTab";
@@ -170,6 +171,7 @@ export default function GroupDetailPage() {
   // ── Re-authentication dialog state for management mode entry ────────────
   const [showReAuthDialog, setShowReAuthDialog] = useState(false);
   const [hasCredentials, setHasCredentials] = useState<boolean | null>(null); // null = loading
+  const [subscriptionActive, setSubscriptionActive] = useState(true);
   const { enterElevatedMode } = useAdminSessionStore();
 
   // ── Re-enter elevated session on page load if admin mode was persisted ──
@@ -209,6 +211,19 @@ export default function GroupDetailPage() {
     checkCredentials();
     return () => { cancelled = true; };
   }, []);
+
+  // ── Fetch subscription status for the space ─────────────────────────────
+  useEffect(() => {
+    if (!currentSpaceId) return;
+    getSpaceSubscription(currentSpaceId)
+      .then((sub) => {
+        setSubscriptionActive(sub?.isActive ?? true);
+      })
+      .catch(() => {
+        // Fail open — assume active if we can't fetch
+        setSubscriptionActive(true);
+      });
+  }, [currentSpaceId]);
 
   // Handle management mode toggle with re-authentication
   const handleAdminModeToggle = () => {
@@ -1361,6 +1376,7 @@ export default function GroupDetailPage() {
               groupName={group?.name}
               spaceId={currentSpaceId ?? undefined}
               allowMembersViewHistory={group?.allowMembersViewHistory ?? true}
+              subscriptionActive={subscriptionActive}
               onOpenDraftModal={() => setShowDraftModal(true)}
               onPublish={handlePublish}
               onDiscard={handleDiscard}
@@ -1652,6 +1668,7 @@ export default function GroupDetailPage() {
           sourceRunId={draftVersion.sourceRunId}
           groupMemberIds={new Set(members.map(m => m.personId))}
           isAdmin={isAdmin}
+          subscriptionActive={subscriptionActive}
           onPublish={async () => { await handlePublish(); setShowDraftModal(false); }}
           onDiscard={async () => { await handleDiscard(); setShowDraftModal(false); }}
           onRunAgain={() => { setShowDraftModal(false); setActiveTab("settings"); handleTriggerSolver(); }}

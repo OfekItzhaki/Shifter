@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useTranslations, useLocale } from "next-intl";
+import Link from "next/link";
 import { useDateFormat } from "@/lib/hooks/useDateFormat";
 import { useAuthStore } from "@/lib/store/authStore";
 import { formatLocalTime, formatLocalDate } from "@/lib/utils/formatTime";
@@ -32,6 +33,7 @@ interface Props {
   groupName?: string;
   spaceId?: string;
   allowMembersViewHistory?: boolean;
+  subscriptionActive?: boolean;
   onOpenDraftModal: () => void;
   onPublish: () => Promise<void>;
   onDiscard: () => Promise<void>;
@@ -60,7 +62,7 @@ function getWeekDates(fromDate: string): string[] {
 export default function ScheduleTab({
   groupId, solverHorizonDays, scheduleData, scheduleLoading, scheduleError, scheduleIsOffline = false,
   draftVersion, lastRunSummary, solverError, isAdmin, publishSaving, discardSaving, scheduleVersionError,
-  currentUserName, groupName, spaceId, allowMembersViewHistory = true,
+  currentUserName, groupName, spaceId, allowMembersViewHistory = true, subscriptionActive = true,
   onOpenDraftModal, onPublish, onDiscard, onTriggerSolver,
 }: Props) {
   const t = useTranslations("groups.schedule_tab");
@@ -329,26 +331,37 @@ export default function ScheduleTab({
       })()}
 
       {/* Solver error banner — shows when the last run crashed (admin only) */}
-      {isAdmin && solverError && !draftVersion && (
-        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-2xl p-4 space-y-2">
-          <div className="flex items-center gap-2">
-            <svg className="w-5 h-5 text-red-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <span className="text-sm font-semibold text-red-800 dark:text-red-300">{tAdmin("solverLastFailed")}</span>
+      {isAdmin && solverError && !draftVersion && (() => {
+        const subscriptionKeywords = ["trial", "subscription", "expired", "שדרג", "תקופת הניסיון", "ניסיון", "מנוי", "подписк"];
+        const isSubscriptionError = subscriptionKeywords.some(kw => solverError.toLowerCase().includes(kw.toLowerCase()));
+        return (
+          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-2xl p-4 space-y-2">
+            <div className="flex items-center gap-2">
+              <svg className="w-5 h-5 text-red-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span className="text-sm font-semibold text-red-800 dark:text-red-300">{tAdmin("solverLastFailed")}</span>
+            </div>
+            <p className="text-sm text-red-700 dark:text-red-400">{solverError}</p>
+            <p className="text-xs text-slate-600 dark:text-slate-400">{tAdmin("solverSolutions")}</p>
+            {isSubscriptionError ? (
+              <Link
+                href="/pricing"
+                className="mt-2 inline-block text-xs font-medium bg-sky-500 hover:bg-sky-600 text-white px-3 py-1.5 rounded-lg transition-colors"
+              >
+                {t("upgrade") || "שדרג"}
+              </Link>
+            ) : onTriggerSolver ? (
+              <button
+                onClick={onTriggerSolver}
+                className="mt-2 text-xs font-medium text-red-700 dark:text-red-300 border border-red-300 dark:border-red-700 hover:bg-red-100 dark:hover:bg-red-900/30 px-3 py-1.5 rounded-lg transition-colors"
+              >
+                {t("runAgain") || tAdmin("runSolver")}
+              </button>
+            ) : null}
           </div>
-          <p className="text-sm text-red-700 dark:text-red-400">{solverError}</p>
-          <p className="text-xs text-slate-600 dark:text-slate-400">{tAdmin("solverSolutions")}</p>
-          {onTriggerSolver && (
-            <button
-              onClick={onTriggerSolver}
-              className="mt-2 text-xs font-medium text-red-700 dark:text-red-300 border border-red-300 dark:border-red-700 hover:bg-red-100 dark:hover:bg-red-900/30 px-3 py-1.5 rounded-lg transition-colors"
-            >
-              {t("runAgain") || tAdmin("runSolver")}
-            </button>
-          )}
-        </div>
-      )}
+        );
+      })()}
 
       {/* Draft banner — admin only */}
       {isAdmin && draftVersion && (
@@ -391,6 +404,7 @@ export default function ScheduleTab({
           spaceId={spaceId}
           runId={draftVersion.sourceRunId}
           groupId={groupId}
+          subscriptionActive={subscriptionActive}
         />
       )}
 

@@ -9,6 +9,7 @@ interface Props {
   spaceId: string;
   runId: string;
   groupId: string;
+  subscriptionActive?: boolean;
 }
 
 /**
@@ -20,11 +21,14 @@ interface Props {
  *
  * Validates: Requirements 3.2
  */
-export default function RecommendationBanner({ spaceId, runId, groupId }: Props) {
+export default function RecommendationBanner({ spaceId, runId, groupId, subscriptionActive = true }: Props) {
   const t = useTranslations("recommendations");
   const router = useRouter();
   const { fDateShort } = useDateFormat();
   const { data, isLoading } = useRecommendationsForRun(spaceId, runId);
+
+  // Don't render if subscription is expired
+  if (!subscriptionActive) return null;
 
   // Render nothing while loading or if no recommendations exist
   if (isLoading || !data || !data.recommendations || data.recommendations.length === 0) {

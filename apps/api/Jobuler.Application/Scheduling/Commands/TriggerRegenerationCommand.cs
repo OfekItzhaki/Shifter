@@ -59,12 +59,12 @@ public class TriggerRegenerationCommandHandler : IRequestHandler<TriggerRegenera
                 request.RequestedByUserId.ToString());
         }
 
-        // 2. Check group subscription status — reject with 402 if trial expired and no active subscription
-        var subscription = await _db.GroupSubscriptions
+        // 2. Check space subscription status — reject with 402 if trial expired and no active subscription
+        var spaceSubscription = await _db.SpaceSubscriptions
             .AsNoTracking()
-            .FirstOrDefaultAsync(s => s.GroupId == request.GroupId && s.SpaceId == request.SpaceId, ct);
+            .FirstOrDefaultAsync(s => s.SpaceId == request.SpaceId, ct);
 
-        if (subscription != null && !subscription.IsActive)
+        if (spaceSubscription != null && !spaceSubscription.IsAccessGranted)
         {
             throw new PaymentRequiredException(
                 "תקופת הניסיון הסתיימה. שדרג את התוכנית כדי להפעיל סידור מחדש.");

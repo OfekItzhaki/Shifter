@@ -42,20 +42,28 @@ export default function TrialBanner() {
       )
     );
 
-    if (daysUntilExpiry > 7) return null;
+    if (daysUntilExpiry > 14) return null;
 
     const colorClass =
       daysUntilExpiry <= 3
         ? "bg-red-50 border-red-200"
-        : "bg-amber-50 border-amber-200";
+        : daysUntilExpiry <= 7
+          ? "bg-amber-50 border-amber-200"
+          : "bg-sky-50 border-sky-200";
 
     const textClass =
-      daysUntilExpiry <= 3 ? "text-red-800" : "text-amber-800";
+      daysUntilExpiry <= 3
+        ? "text-red-800"
+        : daysUntilExpiry <= 7
+          ? "text-amber-800"
+          : "text-sky-800";
 
     const btnClass =
       daysUntilExpiry <= 3
         ? "text-red-700 border-red-300 hover:bg-red-100"
-        : "text-amber-700 border-amber-300 hover:bg-amber-100";
+        : daysUntilExpiry <= 7
+          ? "text-amber-700 border-amber-300 hover:bg-amber-100"
+          : "text-sky-700 border-sky-300 hover:bg-sky-100";
 
     return (
       <div
