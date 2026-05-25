@@ -1352,6 +1352,7 @@ export default function GroupDetailPage() {
               scheduleIsOffline={scheduleIsOffline}
               draftVersion={draftVersion}
               lastRunSummary={lastRunSummary}
+              solverError={solverError}
               isAdmin={isAdmin}
               publishSaving={publishSaving}
               discardSaving={discardSaving}
