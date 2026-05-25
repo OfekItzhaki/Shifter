@@ -79,7 +79,7 @@ public class SolverWorkerService : BackgroundService
                 foreach (var draft in orphanedDrafts)
                     draft.Discard();
 
-                run.MarkFailed("Orphaned — API restarted while run was in progress.");
+                run.MarkFailed("Orphaned - API restarted while run was in progress.");
             }
 
             await db.SaveChangesAsync(ct);
@@ -270,9 +270,9 @@ public class SolverWorkerService : BackgroundService
                     _    => $"At least {totalMinPeople} members are needed to cover all tasks 24/7 ({taskSummary}), but only {input.People.Count} active members are in groups. Add more members and try again."
                 };
                 var preflightTitle = preflightLocale switch {
-                    "he" => "לא ניתן ליצור סידור — אין מספיק חברים",
-                    "ru" => "Невозможно составить расписание — недостаточно участников",
-                    _    => "Cannot schedule — not enough members"
+                    "he" => "לא ניתן ליצור סידור - אין מספיק חברים",
+                    "ru" => "Невозможно составить расписание - недостаточно участников",
+                    _    => "Cannot schedule - not enough members"
                 };
                 run.MarkFailed(reason);
                 await db.SaveChangesAsync(ct);
@@ -581,19 +581,19 @@ public class SolverWorkerService : BackgroundService
                     "he" => (
                         output.TimedOut ? "הסידור הושלם (חלקי)" : "הסידור מוכן לעיון",
                         output.TimedOut
-                            ? $"הסידור הגיע לגבול הזמן — שובצו {uniquePeople} אנשים ל-{uniqueSlots} משמרות.{coverageNote} בדוק ופרסם כשמוכן."
+                            ? $"הסידור הגיע לגבול הזמן. שובצו {uniquePeople} אנשים ל-{uniqueSlots} משמרות.{coverageNote} בדוק ופרסם כשמוכן."
                             : $"שובצו {uniquePeople} אנשים ל-{uniqueSlots} משמרות.{coverageNote} בדוק ופרסם כשמוכן."
                     ),
                     "ru" => (
                         output.TimedOut ? "Расписание составлено (частично)" : "Расписание готово к проверке",
                         output.TimedOut
-                            ? $"Решатель достиг лимита — назначено {uniquePeople} человек на {uniqueSlots} смен.{coverageNote} Проверьте и опубликуйте."
+                            ? $"Решатель достиг лимита. Назначено {uniquePeople} человек на {uniqueSlots} смен.{coverageNote} Проверьте и опубликуйте."
                             : $"Назначено {uniquePeople} человек на {uniqueSlots} смен.{coverageNote} Проверьте и опубликуйте."
                     ),
                     _ => (
                         output.TimedOut ? "Schedule ready (partial)" : "Schedule ready for review",
                         output.TimedOut
-                            ? $"Solver reached time limit — {uniquePeople} people assigned to {uniqueSlots} shifts.{coverageNote} Review and publish when ready."
+                            ? $"Solver reached time limit. {uniquePeople} people assigned to {uniqueSlots} shifts.{coverageNote} Review and publish when ready."
                             : $"{uniquePeople} people assigned to {uniqueSlots} shifts.{coverageNote} Review and publish when ready."
                     )
                 };
@@ -688,9 +688,9 @@ public class SolverWorkerService : BackgroundService
             else if (ex.Message.Contains("422") || ex.Message.Contains("Unprocessable"))
             {
                 userFriendlyError = spaceLocale switch {
-                    "he" => "הסולבר דחה את הנתונים — ייתכן שיש בעיה בפורמט המשימות או האילוצים.",
-                    "ru" => "Решатель отклонил данные — возможно, проблема в формате задач или ограничений.",
-                    _ => "The solver rejected the data — there may be an issue with the task or constraint format."
+                    "he" => "הסולבר דחה את הנתונים. ייתכן שיש בעיה בפורמט המשימות או האילוצים.",
+                    "ru" => "Решатель отклонил данные. Возможно, проблема в формате задач или ограничений.",
+                    _ => "The solver rejected the data. There may be an issue with the task or constraint format."
                 };
             }
             else if (ex.Message.Contains("connect") || ex.Message.Contains("refused"))
