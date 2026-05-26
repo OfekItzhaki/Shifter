@@ -10,7 +10,6 @@ namespace Jobuler.Api.Controllers;
 
 [ApiController]
 [Route("health")]
-[AllowAnonymous]
 public class HealthController : ControllerBase
 {
     private readonly AppDbContext _db;
@@ -31,6 +30,7 @@ public class HealthController : ControllerBase
     }
 
     [HttpGet]
+    [AllowAnonymous]
     public async Task<IActionResult> Get(CancellationToken ct)
     {
         var version = Assembly.GetExecutingAssembly()
@@ -80,6 +80,7 @@ public class HealthController : ControllerBase
 
     /// <summary>Lightweight liveness probe — no dependency checks.</summary>
     [HttpGet("live")]
+    [AllowAnonymous]
     public IActionResult Live()
     {
         return Ok(new { status = "alive" });
@@ -88,8 +89,10 @@ public class HealthController : ControllerBase
     /// <summary>
     /// Detailed health check endpoint reporting per-service status for all monitored services.
     /// Returns 200 when all services are healthy, 503 when any service is degraded.
+    /// Requires authentication to prevent exposing infrastructure details publicly.
     /// </summary>
     [HttpGet("detailed")]
+    [Authorize]
     public async Task<IActionResult> Detailed(CancellationToken ct)
     {
         var report = await _healthCheckRunner.RunAllAsync(ct);
