@@ -1,0 +1,6 @@
+logs.shifter.ofeklabs.com {
+    basicauth * {
+        {$SEQ_UI_USERNAME} {$SEQ_UI_PASSWORD_HASH}
+    }
+    reverse_proxy seq:80
+}

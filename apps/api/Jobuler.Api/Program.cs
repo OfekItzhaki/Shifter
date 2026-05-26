@@ -41,8 +41,6 @@ var builder = WebApplication.CreateBuilder(args);
 // ─── Serilog ─────────────────────────────────────────────────────────────────
 Log.Logger = new LoggerConfiguration()
     .ReadFrom.Configuration(builder.Configuration)
-    .Enrich.FromLogContext()
-    .WriteTo.Console(new Serilog.Formatting.Json.JsonFormatter())
     .CreateLogger();
 
 builder.Host.UseSerilog();
