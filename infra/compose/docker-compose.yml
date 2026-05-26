@@ -94,6 +94,7 @@ services:
       HealthCheck__PushoverAppToken: ${PUSHOVER_APP_TOKEN:-}
       HealthCheck__IntervalSeconds: ${HEALTH_CHECK_INTERVAL_SECONDS:-300}
       HealthCheck__AlertCooldownSeconds: ${HEALTH_CHECK_ALERT_COOLDOWN_SECONDS:-3600}
+      Seq__ServerUrl: "http://seq:5341"
     ports:
       - "${API_PORT}:8080"
     volumes:
@@ -140,8 +141,47 @@ services:
     depends_on:
       - api
 
+  # ─── Seq (Structured Log Server) ──────────────────────────────
+  seq:
+    image: datalust/seq:latest
+    restart: unless-stopped
+    environment:
+      ACCEPT_EULA: "Y"
+      SEQ_FIRSTRUN_ADMINPASSWORD: ${SEQ_ADMIN_PASSWORD}
+    expose:
+      - "5341"
+      - "80"
+    volumes:
+      - seq_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5341/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 15s
+
+  # ─── Caddy (Reverse Proxy for Seq UI) ──────────────────────────
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    environment:
+      SEQ_UI_USERNAME: ${SEQ_UI_USERNAME}
+      SEQ_UI_PASSWORD_HASH: ${SEQ_UI_PASSWORD_HASH}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - seq
+
 volumes:
   postgres_data:
   redis_data:
   minio_data:
   uploads_data:
+  seq_data:
+  caddy_data:
+  caddy_config:
