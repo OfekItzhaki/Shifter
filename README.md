@@ -1,4 +1,4 @@
-# Shifter — Shift Scheduling SaaS
+# Shifter - Shift Scheduling SaaS
 
 A secure, multilingual, multi-tenant shift scheduling SaaS for force/platoon/shift-based organizations.
 
