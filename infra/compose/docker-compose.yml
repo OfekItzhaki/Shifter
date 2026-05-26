@@ -150,7 +150,8 @@ services:
       SEQ_FIRSTRUN_ADMINPASSWORD: ${SEQ_ADMIN_PASSWORD}
     expose:
       - "5341"
-      - "80"
+    ports:
+      - "8080:80"
     volumes:
       - seq_data:/data
     healthcheck:
@@ -160,27 +161,9 @@ services:
       retries: 5
       start_period: 15s
 
-  # ─── Caddy (Reverse Proxy for Seq UI) ──────────────────────────
-  caddy:
-    image: caddy:2-alpine
-    restart: unless-stopped
-    environment:
-      SEQ_UI_USERNAME: ${SEQ_UI_USERNAME}
-      SEQ_UI_PASSWORD_HASH: ${SEQ_UI_PASSWORD_HASH}
-    ports:
-      - "443:443"
-    volumes:
-      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
-      - caddy_data:/data
-      - caddy_config:/config
-    depends_on:
-      - seq
-
 volumes:
   postgres_data:
   redis_data:
   minio_data:
   uploads_data:
   seq_data:
-  caddy_data:
-  caddy_config:
