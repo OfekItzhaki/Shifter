@@ -1,4 +1,4 @@
-logs.shifter.ofeklabs.com {
+:80 {
     basicauth * {
         {$SEQ_UI_USERNAME} {$SEQ_UI_PASSWORD_HASH}
     }

@@ -168,7 +168,7 @@ services:
       SEQ_UI_USERNAME: ${SEQ_UI_USERNAME}
       SEQ_UI_PASSWORD_HASH: ${SEQ_UI_PASSWORD_HASH}
     ports:
-      - "443:443"
+      - "8080:80"
     volumes:
       - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
