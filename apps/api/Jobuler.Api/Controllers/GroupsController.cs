@@ -1,7 +1,9 @@
 using Jobuler.Application.Common;
 using Jobuler.Application.Groups.Commands;
 using Jobuler.Application.Groups.Queries;
+using Jobuler.Application.Scheduling.Commands;
 using Jobuler.Application.Scheduling.Queries;
+using Jobuler.Domain.Groups;
 using Jobuler.Domain.Spaces;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -80,6 +82,16 @@ public class GroupsController : ControllerBase
             await _mediator.Send(new SetGroupTemplateTypeCommand(spaceId, groupId, CurrentUserId, templateType), ct);
         }
 
+        return NoContent();
+    }
+
+    [HttpPut("spaces/{spaceId:guid}/groups/{groupId:guid}/scheduling-mode")]
+    public async Task<IActionResult> ChangeSchedulingMode(Guid spaceId, Guid groupId,
+        [FromBody] ChangeSchedulingModeRequest req, CancellationToken ct)
+    {
+        await _permissions.RequirePermissionAsync(CurrentUserId, spaceId, Permissions.SchedulePublish, ct);
+        await _mediator.Send(
+            new ChangeSchedulingModeCommand(spaceId, groupId, CurrentUserId, req.Mode), ct);
         return NoContent();
     }
 
@@ -372,3 +384,4 @@ public record UpdateMemberRoleRequest(Guid? RoleId);
 public record JoinByCodeRequest(string Code);
 
 public record SetHomeLeavePriorityRequest(decimal Priority);
+public record ChangeSchedulingModeRequest(SchedulingMode Mode);

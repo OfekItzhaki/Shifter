@@ -59,6 +59,15 @@ public class TriggerSolverCommandHandler : IRequestHandler<TriggerSolverCommand,
                 .FirstOrDefaultAsync(g => g.Id == request.GroupId.Value && g.SpaceId == request.SpaceId, ct);
 
             group?.EnsureActive();
+
+            // ── SelfService guard ─────────────────────────────────────────────
+            // Self-service groups bypass the solver entirely (Requirement 1.2).
+            if (group?.SchedulingMode == SchedulingMode.SelfService)
+            {
+                throw new InvalidOperationException(
+                    "Cannot trigger solver for a group in SelfService scheduling mode. " +
+                    "Self-service groups manage shifts through the request-based flow.");
+            }
         }
 
         // ── Stale-task guard ──────────────────────────────────────────────────
