@@ -87,50 +87,8 @@ export default function DangerZoneCard({
         {t("dangerZone.description")}
       </p>
 
-      {/* Delete Space Section */}
-      <div className="mb-5">
-        <h3 className="text-xs font-medium text-slate-700 dark:text-slate-300 mb-2">
-          {t("dangerZone.deleteTitle")}
-        </h3>
-        <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">
-          {t("dangerZone.deleteDescription")}
-        </p>
-
-        {!showDeleteConfirm ? (
-          <button
-            onClick={() => setShowDeleteConfirm(true)}
-            className="px-4 py-2 rounded-lg border border-red-300 dark:border-red-700 text-red-600 dark:text-red-400 text-sm font-medium hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
-          >
-            {t("dangerZone.deleteButton")}
-          </button>
-        ) : (
-          <div className="flex items-center gap-2">
-            <p className="text-xs text-red-600 dark:text-red-400 flex-1">
-              {t("dangerZone.deleteConfirm")}
-            </p>
-            <button
-              onClick={handleDelete}
-              disabled={deleting}
-              className="px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 disabled:bg-red-300 dark:disabled:bg-red-800 text-white text-xs font-medium transition-colors"
-            >
-              {deleting ? t("dangerZone.deleting") : t("dangerZone.confirmDelete")}
-            </button>
-            <button
-              onClick={() => setShowDeleteConfirm(false)}
-              disabled={deleting}
-              className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600 text-xs text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
-            >
-              {t("dangerZone.cancel")}
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* Divider */}
-      <div className="border-t border-red-200 dark:border-red-800 my-4" />
-
       {/* Transfer Ownership Section */}
-      <div>
+      <div className="mb-5">
         <h3 className="text-xs font-medium text-slate-700 dark:text-slate-300 mb-2">
           {t("dangerZone.transferTitle")}
         </h3>
@@ -183,6 +141,48 @@ export default function DangerZoneCard({
             </div>
           )}
         </div>
+      </div>
+
+      {/* Divider */}
+      <div className="border-t border-red-200 dark:border-red-800 my-4" />
+
+      {/* Delete Space Section */}
+      <div>
+        <h3 className="text-xs font-medium text-slate-700 dark:text-slate-300 mb-2">
+          {t("dangerZone.deleteTitle")}
+        </h3>
+        <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">
+          {t("dangerZone.deleteDescription")}
+        </p>
+
+        {!showDeleteConfirm ? (
+          <button
+            onClick={() => setShowDeleteConfirm(true)}
+            className="px-4 py-2 rounded-lg border border-red-300 dark:border-red-700 text-red-600 dark:text-red-400 text-sm font-medium hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
+          >
+            {t("dangerZone.deleteButton")}
+          </button>
+        ) : (
+          <div className="flex items-center gap-2">
+            <p className="text-xs text-red-600 dark:text-red-400 flex-1">
+              {t("dangerZone.deleteConfirm")}
+            </p>
+            <button
+              onClick={handleDelete}
+              disabled={deleting}
+              className="px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 disabled:bg-red-300 dark:disabled:bg-red-800 text-white text-xs font-medium transition-colors"
+            >
+              {deleting ? t("dangerZone.deleting") : t("dangerZone.confirmDelete")}
+            </button>
+            <button
+              onClick={() => setShowDeleteConfirm(false)}
+              disabled={deleting}
+              className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600 text-xs text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+            >
+              {t("dangerZone.cancel")}
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Toast notification */}

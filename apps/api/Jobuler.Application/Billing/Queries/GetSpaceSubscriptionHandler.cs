@@ -27,7 +27,32 @@ public class GetSpaceSubscriptionHandler : IRequestHandler<GetSpaceSubscriptionQ
             .FirstOrDefaultAsync(s => s.SpaceId == request.SpaceId, ct);
 
         if (subscription is null)
-            return null;
+        {
+            // No subscription record — derive trial info from space creation date
+            var space = await _db.Spaces
+                .AsNoTracking()
+                .FirstOrDefaultAsync(s => s.Id == request.SpaceId, ct);
+
+            if (space is null)
+                return null;
+
+            var trialStart = space.CreatedAt;
+            var trialEnd = trialStart.AddDays(14);
+            var daysRemaining = Math.Max(0, (int)Math.Ceiling((trialEnd - DateTime.UtcNow).TotalDays));
+            var isExpired = DateTime.UtcNow > trialEnd;
+
+            return new SpaceSubscriptionDto(
+                Status: isExpired ? "expired" : "trialing",
+                TierId: null,
+                TrialStartsAt: trialStart,
+                TrialEndsAt: trialEnd,
+                CurrentPeriodStart: null,
+                CurrentPeriodEnd: null,
+                CanceledAt: null,
+                AutoRenew: false,
+                IsActive: !isExpired,
+                DaysRemaining: isExpired ? 0 : daysRemaining);
+        }
 
         return new SpaceSubscriptionDto(
             Status: subscription.Status.ToString().ToLowerInvariant(),
