@@ -118,7 +118,7 @@
 - [ ] Ensure setup guide works independently per space
 
 ## Task 16: Solver Integration — Parent Schedule Cascading
-- [~] When building solver payload for a child group, include parent's published assignments
-- [~] Add `parent_schedule` field to solver input payload
-- [~] Update `SolverPayloadNormalizer` to fetch parent schedule data
-- [~] Solver uses parent assignments as constraints (no conflicts)
+- [ ] When building solver payload for a child group, include parent's published assignments
+- [ ] Add `parent_schedule` field to solver input payload
+- [ ] Update `SolverPayloadNormalizer` to fetch parent schedule data
+- [ ] Solver uses parent assignments as constraints (no conflicts)

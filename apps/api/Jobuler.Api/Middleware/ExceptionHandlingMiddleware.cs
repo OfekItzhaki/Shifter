@@ -1,23 +1,34 @@
 using FluentValidation;
+using Jobuler.Application.Common;
 using Jobuler.Application.Feedback.Exceptions;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System.Net;
 using System.Text.Json;
 
 namespace Jobuler.Api.Middleware;
 
 /// <summary>
-/// Converts unhandled exceptions into consistent JSON error responses.
-/// Prevents stack traces from leaking to clients in production.
+/// Converts unhandled exceptions into RFC 7807 ProblemDetails responses.
+/// Uses ProblemDetailsFactory for consistent structure and ProductionSafetyGuard
+/// to strip sensitive data in production environments.
 /// </summary>
 public class ExceptionHandlingMiddleware
 {
     private readonly RequestDelegate _next;
     private readonly ILogger<ExceptionHandlingMiddleware> _logger;
+    private readonly IHostEnvironment _environment;
 
-    public ExceptionHandlingMiddleware(RequestDelegate next, ILogger<ExceptionHandlingMiddleware> logger)
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+    };
+
+    public ExceptionHandlingMiddleware(RequestDelegate next, ILogger<ExceptionHandlingMiddleware> logger, IHostEnvironment environment)
     {
         _next = next;
         _logger = logger;
+        _environment = environment;
     }
 
     public async Task InvokeAsync(HttpContext context)
@@ -34,90 +45,194 @@ public class ExceptionHandlingMiddleware
 
     private async Task HandleExceptionAsync(HttpContext context, Exception ex)
     {
-        // ── Special case: ValidationException → 400 with field-keyed errors ──
-        if (ex is ValidationException ve)
-        {
-            _logger.LogWarning(ex, "Handled exception: {Message}", ex.Message);
-
-            context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
-            context.Response.ContentType = "application/json";
-
-            // Group errors by property name for field-level display
-            var fieldErrors = ve.Errors
-                .GroupBy(e => e.PropertyName ?? "")
-                .ToDictionary(
-                    g => g.Key,
-                    g => g.Select(e => e.ErrorMessage).ToArray());
-
-            var body = JsonSerializer.Serialize(new
-            {
-                message = "אימות הנתונים נכשל.",
-                errors = fieldErrors
-            });
-            await context.Response.WriteAsync(body);
-            return;
-        }
-
-        // ── Special case: RateLimitExceededException → 429 with Retry-After ──
-        if (ex is RateLimitExceededException rle)
-        {
-            _logger.LogWarning(ex, "Handled exception: {Message}", ex.Message);
-
-            context.Response.StatusCode = 429;
-            context.Response.ContentType = "application/json";
-            context.Response.Headers.Append("Retry-After", rle.RetryAfterSeconds.ToString());
-
-            var body = JsonSerializer.Serialize(new
-            {
-                message = "Rate limit exceeded. Try again later."
-            });
-            await context.Response.WriteAsync(body);
-            return;
-        }
-
-        // ── All other exceptions ─────────────────────────────────────────────
-        var (statusCode, message, errors) = ex switch
-        {
-            UnauthorizedAccessException => (HttpStatusCode.Forbidden, "אין לך הרשאה לבצע פעולה זו.", (List<string>?)[]),
-            KeyNotFoundException        => (HttpStatusCode.NotFound, "הפריט המבוקש לא נמצא.", (List<string>?)[]),
-            Jobuler.Application.Common.PaymentRequiredException => ((HttpStatusCode)402, ex.Message, (List<string>?)[]),
-            Jobuler.Application.Common.ConflictException => (HttpStatusCode.Conflict, ex.Message, (List<string>?)[]),
-            Jobuler.Application.Common.DomainValidationException => ((HttpStatusCode)422, ex.Message, (List<string>?)[]),
-            InvalidOperationException   => (HttpStatusCode.BadRequest, ex.Message, (List<string>?)[]),
-            ArgumentException           => (HttpStatusCode.BadRequest, ex.Message, (List<string>?)[]),
-            // EF unique constraint violations → 409 Conflict
-            Microsoft.EntityFrameworkCore.DbUpdateException dbe when dbe.InnerException?.Message.Contains("unique") == true ||
-                dbe.InnerException?.Message.Contains("23505") == true ||
-                dbe.InnerException?.Message.Contains("duplicate key") == true
-                => (HttpStatusCode.Conflict, "רשומה עם שם או מזהה זה כבר קיימת.", (List<string>?)[]),
-            // EF check constraint violations → 400 Bad Request
-            Microsoft.EntityFrameworkCore.DbUpdateException dbe2 when dbe2.InnerException?.Message.Contains("23514") == true ||
-                dbe2.InnerException?.Message.Contains("violates check constraint") == true
-                => (HttpStatusCode.BadRequest, ExtractCheckConstraintMessage(dbe2), (List<string>?)[]),
-            // All other EF/DB exceptions → 500, never expose DB internals to client
-            Microsoft.EntityFrameworkCore.DbUpdateException
-                => (HttpStatusCode.InternalServerError, "אירעה שגיאה בלתי צפויה. נסה שוב מאוחר יותר.", (List<string>?)[]),
-            _   => (HttpStatusCode.InternalServerError, "אירעה שגיאה בלתי צפויה. נסה שוב מאוחר יותר.", (List<string>?)[])
-        };
+        var (statusCode, title, detail, typeSlug, extensions) = MapException(ex);
 
         // Always log the full exception server-side
-        if (statusCode == HttpStatusCode.InternalServerError)
+        if (statusCode == 500)
             _logger.LogError(ex, "Unhandled exception: {Message}", ex.Message);
         else
             _logger.LogWarning(ex, "Handled exception: {Message}", ex.Message);
 
-        context.Response.StatusCode = (int)statusCode;
-        context.Response.ContentType = "application/json";
-
-        var responseBody = JsonSerializer.Serialize(new
+        // If the response has already started, we cannot write to it
+        if (context.Response.HasStarted)
         {
-            error = message,
-            errors = errors?.Count > 0 ? errors : null
-        });
-        await context.Response.WriteAsync(responseBody);
+            _logger.LogError(ex, "Response has already started, cannot write ProblemDetails for exception: {Message}", ex.Message);
+            return;
+        }
+
+        try
+        {
+            // Set Retry-After header for rate limit exceptions
+            if (ex is RateLimitExceededException rle)
+            {
+                context.Response.Headers.Append("Retry-After", rle.RetryAfterSeconds.ToString());
+            }
+
+            // Build ProblemDetails via factory
+            var problem = ProblemDetailsFactory.Create(
+                context,
+                statusCode,
+                title,
+                detail,
+                typeSlug,
+                extensions);
+
+            // In development mode, add debug extensions before sanitization
+            if (_environment.IsDevelopment())
+            {
+                problem.Extensions["exceptionType"] = ex.GetType().FullName;
+                problem.Extensions["stackTrace"] = ex.StackTrace;
+                if (ex.InnerException is not null)
+                {
+                    problem.Extensions["innerException"] = ex.InnerException.Message;
+                }
+            }
+
+            // Sanitize sensitive data (strips debug info in production)
+            ProductionSafetyGuard.Sanitize(problem, _environment);
+
+            // Write response atomically
+            context.Response.StatusCode = statusCode;
+            context.Response.ContentType = "application/problem+json";
+            await context.Response.WriteAsJsonAsync(problem, JsonOptions, contentType: "application/problem+json");
+        }
+        catch (Exception innerEx)
+        {
+            // Fallback safety net: if ProblemDetails creation or serialization fails,
+            // write a minimal valid JSON response preserving the original status code
+            _logger.LogCritical(innerEx, "Failed to write ProblemDetails response for exception: {Message}", ex.Message);
+
+            if (!context.Response.HasStarted)
+            {
+                context.Response.StatusCode = statusCode;
+                context.Response.ContentType = "application/problem+json";
+                await context.Response.WriteAsync(
+                    $"{{\"type\":\"about:blank\",\"title\":\"Error\",\"status\":{statusCode}}}");
+            }
+            else
+            {
+                _logger.LogError(innerEx, "Response has already started during fallback, cannot write minimal ProblemDetails");
+            }
+        }
     }
 
-    private static string ExtractCheckConstraintMessage(Microsoft.EntityFrameworkCore.DbUpdateException ex)
+    private (int StatusCode, string Title, string Detail, string TypeSlug, IDictionary<string, object?>? Extensions) MapException(Exception ex)
+    {
+        return ex switch
+        {
+            ValidationException ve => (
+                400,
+                "Validation Failed",
+                "אימות הנתונים נכשל.",
+                "validation-failed",
+                new Dictionary<string, object?>
+                {
+                    ["errors"] = ve.Errors
+                        .GroupBy(e => e.PropertyName ?? "")
+                        .ToDictionary(
+                            g => g.Key,
+                            g => g.Select(e => e.ErrorMessage).ToArray())
+                }),
+
+            RateLimitExceededException rle => (
+                429,
+                "Too Many Requests",
+                "Rate limit exceeded. Try again later.",
+                "rate-limit-exceeded",
+                new Dictionary<string, object?>
+                {
+                    ["retryAfterSeconds"] = rle.RetryAfterSeconds
+                }),
+
+            UnauthorizedAccessException => (
+                403,
+                "Forbidden",
+                "אין לך הרשאה לבצע פעולה זו.",
+                "forbidden",
+                null),
+
+            KeyNotFoundException => (
+                404,
+                "Not Found",
+                "הפריט המבוקש לא נמצא.",
+                "not-found",
+                null),
+
+            PaymentRequiredException => (
+                402,
+                "Payment Required",
+                ex.Message,
+                "payment-required",
+                null),
+
+            ConflictException => (
+                409,
+                "Conflict",
+                ex.Message,
+                "conflict",
+                null),
+
+            DomainValidationException => (
+                422,
+                "Unprocessable Entity",
+                ex.Message,
+                "unprocessable-entity",
+                null),
+
+            InvalidOperationException => (
+                400,
+                "Bad Request",
+                ex.Message,
+                "bad-request",
+                null),
+
+            ArgumentException => (
+                400,
+                "Bad Request",
+                ex.Message,
+                "bad-request",
+                null),
+
+            // EF unique constraint violations → 409 Conflict
+            DbUpdateException dbe when dbe.InnerException?.Message.Contains("unique") == true ||
+                dbe.InnerException?.Message.Contains("23505") == true ||
+                dbe.InnerException?.Message.Contains("duplicate key") == true
+                => (
+                409,
+                "Conflict",
+                "רשומה עם שם או מזהה זה כבר קיימת.",
+                "conflict",
+                null),
+
+            // EF check constraint violations → 409 Conflict
+            DbUpdateException dbe2 when dbe2.InnerException?.Message.Contains("23514") == true ||
+                dbe2.InnerException?.Message.Contains("violates check constraint") == true
+                => (
+                409,
+                "Conflict",
+                ExtractCheckConstraintMessage(dbe2),
+                "conflict",
+                null),
+
+            // All other EF/DB exceptions → 500, never expose DB internals to client
+            DbUpdateException => (
+                500,
+                "Internal Server Error",
+                "אירעה שגיאה בלתי צפויה. נסה שוב מאוחר יותר.",
+                "internal-server-error",
+                null),
+
+            // Unhandled exceptions → 500
+            _ => (
+                500,
+                "Internal Server Error",
+                "אירעה שגיאה בלתי צפויה. נסה שוב מאוחר יותר.",
+                "internal-server-error",
+                null)
+        };
+    }
+
+    private static string ExtractCheckConstraintMessage(DbUpdateException ex)
     {
         var msg = ex.InnerException?.Message ?? "";
         if (msg.Contains("chk_task_ends_after_starts")) return "זמן הסיום חייב להיות אחרי זמן ההתחלה.";

@@ -1,3 +1,4 @@
+using Jobuler.Api.Middleware;
 using Jobuler.Application.Common;
 using Jobuler.Application.Scheduling.SelfService;
 using Jobuler.Application.Scheduling.SelfService.Queries;
@@ -54,9 +55,17 @@ public class ShiftRequestsController : ControllerBase
 
         if (!result.Success)
         {
-            return UnprocessableEntity(new ShiftRequestErrorResponse(
-                Error: result.RejectionReason!,
-                AlternativeSlots: result.AlternativeSlots));
+            var extensions = result.AlternativeSlots is not null
+                ? new Dictionary<string, object?> { ["alternativeSlots"] = result.AlternativeSlots }
+                : null;
+
+            return ProblemDetailsResults.Problem(
+                HttpContext,
+                statusCode: 422,
+                title: "Unprocessable Entity",
+                detail: result.RejectionReason!,
+                typeSlug: "shift-request-rejected",
+                extensions: extensions);
         }
 
         return Created("", new ShiftRequestSuccessResponse(
@@ -81,7 +90,12 @@ public class ShiftRequestsController : ControllerBase
 
         if (!result.Success)
         {
-            return UnprocessableEntity(new { error = result.ErrorMessage });
+            return ProblemDetailsResults.Problem(
+                HttpContext,
+                statusCode: 422,
+                title: "Unprocessable Entity",
+                detail: result.ErrorMessage!,
+                typeSlug: "shift-request-rejected");
         }
 
         return NoContent();
@@ -131,7 +145,3 @@ public record CancelShiftRequestRequest(string Reason);
 // --- Response DTOs ---
 
 public record ShiftRequestSuccessResponse(Guid ShiftRequestId);
-
-public record ShiftRequestErrorResponse(
-    string Error,
-    IReadOnlyList<Application.Scheduling.SelfService.Models.AvailableSlotDto>? AlternativeSlots);

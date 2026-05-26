@@ -107,12 +107,13 @@ public class SubscriptionGatingPropertyTests
     }
 
     /// <summary>
-    /// Seeds a subscription with the given scenario state.
+    /// Seeds a SpaceSubscription with the given scenario state.
+    /// The handler checks SpaceSubscriptions (not GroupSubscriptions).
     /// </summary>
     private static async Task SeedSubscription(
         AppDbContext db, Guid spaceId, Guid groupId, SubscriptionScenario scenario, int trialDaysOffset)
     {
-        var subscription = GroupSubscription.CreateTrial(spaceId, groupId, trialDays: 14);
+        var subscription = SpaceSubscription.CreateTrial(spaceId, trialDays: 14);
 
         switch (scenario)
         {
@@ -126,15 +127,15 @@ public class SubscriptionGatingPropertyTests
                 break;
 
             case SubscriptionScenario.WithinTrial:
-                // Trial ends in the future (1 to 30 days from now)
+                // Trial ends in the future (1 to 30 days from now) — already set by CreateTrial
                 var futureTrialEnd = DateTime.UtcNow.AddDays(Math.Max(1, Math.Abs(trialDaysOffset) % 30 + 1));
-                db.Entry(subscription).Property(nameof(GroupSubscription.TrialEndsAt)).CurrentValue = futureTrialEnd;
+                db.Entry(subscription).Property(nameof(SpaceSubscription.TrialEndsAt)).CurrentValue = futureTrialEnd;
                 break;
 
             case SubscriptionScenario.ExpiredTrial:
                 // Trial ended in the past (1 to 365 days ago)
                 var pastTrialEnd = DateTime.UtcNow.AddDays(-(Math.Abs(trialDaysOffset) % 365 + 1));
-                db.Entry(subscription).Property(nameof(GroupSubscription.TrialEndsAt)).CurrentValue = pastTrialEnd;
+                db.Entry(subscription).Property(nameof(SpaceSubscription.TrialEndsAt)).CurrentValue = pastTrialEnd;
                 break;
 
             case SubscriptionScenario.CanceledSubscription:
@@ -159,7 +160,7 @@ public class SubscriptionGatingPropertyTests
                 break;
         }
 
-        db.GroupSubscriptions.Add(subscription);
+        db.SpaceSubscriptions.Add(subscription);
         await db.SaveChangesAsync();
     }
 

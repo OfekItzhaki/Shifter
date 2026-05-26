@@ -62,7 +62,12 @@ public class ReAuthAuditLogCompletenessPropertyTests
     // ── Property 5 ───────────────────────────────────────────────────────────
 
     [Property(MaxTest = 100, Arbitrary = new[] { typeof(ReAuthAuditCompletenessArbitrary) })]
-    public async Task<bool> Property5_AuditLogEntry_ContainsAllRequiredFields(ReAuthAuditCompletenessInput input)
+    public bool Property5_AuditLogEntry_ContainsAllRequiredFields(ReAuthAuditCompletenessInput input)
+    {
+        return Property5TestAsync(input).GetAwaiter().GetResult();
+    }
+
+    private async Task<bool> Property5TestAsync(ReAuthAuditCompletenessInput input)
     {
         // Arrange
         var db = CreateDb();

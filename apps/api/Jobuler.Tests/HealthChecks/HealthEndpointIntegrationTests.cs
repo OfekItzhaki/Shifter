@@ -162,18 +162,17 @@ public class HealthEndpointIntegrationTests
         objectResult.StatusCode.Should().Be(503);
     }
 
-    // Validates: Requirement 1.6 — endpoint is accessible without authentication
+    // Validates: Requirement 1.6 — /health/detailed requires authentication (exposes infrastructure details)
     [Fact]
     public void Detailed_Endpoint_HasAllowAnonymousAttribute()
     {
-        // The [AllowAnonymous] attribute is on the controller class level,
-        // which means all actions including Detailed are accessible without auth.
-        var controllerType = typeof(HealthController);
-        var allowAnonymousAttrs = controllerType.GetCustomAttributes(
-            typeof(Microsoft.AspNetCore.Authorization.AllowAnonymousAttribute), true);
+        // The Detailed endpoint exposes infrastructure details and requires authentication.
+        var method = typeof(HealthController).GetMethod(nameof(HealthController.Detailed));
+        var authorizeAttrs = method!.GetCustomAttributes(
+            typeof(Microsoft.AspNetCore.Authorization.AuthorizeAttribute), true);
 
-        allowAnonymousAttrs.Should().NotBeEmpty(
-            because: "the HealthController must be accessible without authentication (Req 1.6)");
+        authorizeAttrs.Should().NotBeEmpty(
+            because: "the /health/detailed endpoint must require authentication to protect infrastructure details (Req 1.6)");
     }
 
     // Validates: Requirement 1.1 — each check entry contains serviceName and status
@@ -315,9 +314,9 @@ public class HealthEndpointIntegrationTests
     [Fact]
     public void Health_Endpoint_HasAllowAnonymousAttribute()
     {
-        // The [AllowAnonymous] attribute is on the controller class level
-        var controllerType = typeof(HealthController);
-        var allowAnonymousAttrs = controllerType.GetCustomAttributes(
+        // The [AllowAnonymous] attribute is on the Get action method
+        var method = typeof(HealthController).GetMethod(nameof(HealthController.Get));
+        var allowAnonymousAttrs = method!.GetCustomAttributes(
             typeof(Microsoft.AspNetCore.Authorization.AllowAnonymousAttribute), true);
 
         allowAnonymousAttrs.Should().NotBeEmpty(

@@ -1,3 +1,4 @@
+using Jobuler.Api.Middleware;
 using Jobuler.Application.Common;
 using Jobuler.Application.Scheduling.SelfService;
 using Jobuler.Application.Scheduling.SelfService.Commands;
@@ -58,7 +59,12 @@ public class WaitlistController : ControllerBase
 
         if (!result.Success)
         {
-            return UnprocessableEntity(new WaitlistErrorResponse(Error: result.ErrorMessage!));
+            return ProblemDetailsResults.Problem(
+                HttpContext,
+                statusCode: 422,
+                title: "Unprocessable Entity",
+                detail: result.ErrorMessage!,
+                typeSlug: "waitlist-rejected");
         }
 
         return Created("", new JoinWaitlistResponse(
@@ -88,7 +94,12 @@ public class WaitlistController : ControllerBase
 
         if (!result.Success)
         {
-            return UnprocessableEntity(new WaitlistErrorResponse(Error: result.ErrorMessage!));
+            return ProblemDetailsResults.Problem(
+                HttpContext,
+                statusCode: 422,
+                title: "Unprocessable Entity",
+                detail: result.ErrorMessage!,
+                typeSlug: "waitlist-rejected");
         }
 
         return Ok(new AcceptWaitlistOfferResponse(ShiftRequestId: result.ShiftRequestId!.Value));
@@ -162,5 +173,3 @@ public record AcceptWaitlistOfferRequest(Guid ShiftSlotId);
 public record JoinWaitlistResponse(int Position, Guid ShiftSlotId);
 
 public record AcceptWaitlistOfferResponse(Guid ShiftRequestId);
-
-public record WaitlistErrorResponse(string Error);
