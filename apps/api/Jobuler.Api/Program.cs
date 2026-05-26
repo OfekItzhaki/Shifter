@@ -13,6 +13,7 @@ using Jobuler.Application.AI;
 using Jobuler.Application.Auth.Commands;
 using Jobuler.Application.Common;
 using Jobuler.Application.Scheduling;
+using Jobuler.Application.Scheduling.SelfService;
 using Jobuler.Infrastructure.AI;
 using Jobuler.Infrastructure.Auth;
 using Jobuler.Infrastructure.Caching;
@@ -254,6 +255,14 @@ builder.Services.AddScoped<IPeriodManager, PeriodManager>();
 builder.Services.AddScoped<ISolverPayloadNormalizer, SolverPayloadNormalizer>();
 builder.Services.AddScoped<IRecommendationEngine, RecommendationEngine>();
 
+// ─── Self-service scheduling services ─────────────────────────────────────────
+builder.Services.AddScoped<ISlotGenerationService, SlotGenerationService>();
+builder.Services.AddScoped<IShiftRequestService, ShiftRequestService>();
+builder.Services.AddScoped<ISlotAvailabilityEngine, SlotAvailabilityEngine>();
+builder.Services.AddScoped<IWaitlistService, WaitlistService>();
+builder.Services.AddScoped<IShiftSwapService, ShiftSwapService>();
+builder.Services.AddScoped<ISlotLockService, PostgresAdvisoryLockService>();
+
 // ─── Conflict detection ──────────────────────────────────────────────────────
 // ConflictDetectionDbContext uses the same connection string but WITHOUT the RLS
 // session variable interceptor — it needs cross-space read access for LinkedUserId resolution.
@@ -316,6 +325,21 @@ builder.Services.AddHostedService<SubscriptionCleanupService>();
 
 // Subscription expiry — transitions canceled subscriptions past their billing period to Expired
 builder.Services.AddHostedService<ExpireSubscriptionsJob>();
+
+// Self-service slot generation — generates shift slots for upcoming cycles daily at midnight UTC
+builder.Services.AddHostedService<GenerateCycleSlotsJob>();
+
+// Waitlist offer expiry — expires timed-out waitlist offers and cascades to next member
+builder.Services.AddHostedService<ProcessExpiredWaitlistOffersJob>();
+
+// Request window open notifications — notifies group members when request windows open
+builder.Services.AddHostedService<NotifyRequestWindowOpenJob>();
+
+// Under-scheduled member detection — checks for members below Min_Shifts when request windows close
+builder.Services.AddHostedService<CheckUnderScheduledMembersJob>();
+
+// Swap request expiry — marks pending swap requests older than 72h as expired
+builder.Services.AddHostedService<ExpireSwapRequestsJob>();
 
 // ─── Health check monitoring & alerting ──────────────────────────────────────
 builder.Services.Configure<Jobuler.Application.Common.HealthChecks.HealthCheckOptions>(options =>

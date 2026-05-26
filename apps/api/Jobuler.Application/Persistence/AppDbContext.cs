@@ -1,12 +1,14 @@
 using Jobuler.Domain.Auth;
 using Jobuler.Domain.Constraints;
 using Jobuler.Domain.Feedback;
-using Jobuler.Domain.Groups;using Jobuler.Domain.Identity;
+using Jobuler.Domain.Groups;
+using Jobuler.Domain.Identity;
 using Jobuler.Domain.Logs;
 using Jobuler.Domain.Notifications;
 using Jobuler.Domain.People;
 using Jobuler.Domain.Platform;
-using Jobuler.Domain.Scheduling;using Jobuler.Domain.Spaces;
+using Jobuler.Domain.Scheduling;
+using Jobuler.Domain.Spaces;
 using Jobuler.Domain.Tasks;
 using Microsoft.EntityFrameworkCore;
 
@@ -85,6 +87,15 @@ public class AppDbContext : DbContext
     public DbSet<CumulativeRecord> CumulativeRecords => Set<CumulativeRecord>();
     public DbSet<DailySnapshot> DailySnapshots => Set<DailySnapshot>();
     public DbSet<DoubleShiftRecommendation> DoubleShiftRecommendations => Set<DoubleShiftRecommendation>();
+
+    // Self-Service Scheduling
+    public DbSet<SelfServiceConfig> SelfServiceConfigs => Set<SelfServiceConfig>();
+    public DbSet<SchedulingCycle> SchedulingCycles => Set<SchedulingCycle>();
+    public DbSet<ShiftTemplate> ShiftTemplates => Set<ShiftTemplate>();
+    public DbSet<ShiftSlot> ShiftSlots => Set<ShiftSlot>();
+    public DbSet<ShiftRequest> ShiftRequests => Set<ShiftRequest>();
+    public DbSet<WaitlistEntry> WaitlistEntries => Set<WaitlistEntry>();
+    public DbSet<SwapRequest> SwapRequests => Set<SwapRequest>();
 
     // Logs
     public DbSet<SystemLog> SystemLogs => Set<SystemLog>();
