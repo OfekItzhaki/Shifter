@@ -16,6 +16,6 @@ RUN dotnet publish Jobuler.Api/Jobuler.Api.csproj -c Release -o /app/publish
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
 WORKDIR /app
 COPY --from=build /app/publish .
-RUN mkdir -p /app/wwwroot/uploads
+RUN mkdir -p /app/wwwroot/uploads /app/logs
 EXPOSE 8080
 ENTRYPOINT ["dotnet", "Jobuler.Api.dll"]
