@@ -68,7 +68,7 @@ jobs:
 
             echo "=== Rebuilding API and restarting services ==="
             cd /opt/shifter/infra/compose
-            docker compose up -d --build api solver --force-recreate web --remove-orphans
+            docker compose up -d --build api solver seq --force-recreate web --remove-orphans
             
             echo "=== Waiting for services to start ==="
             sleep 10
