@@ -161,9 +161,10 @@ export default function PricingPage() {
                   {t("perMonth")}
                 </div>
                 {plan.description && (
-                  <div style={{ fontSize: "0.75rem", color: "#64748b", marginBottom: "0.75rem" }}>
-                    {plan.description}
-                  </div>
+                  <div
+                    style={{ fontSize: "0.75rem", color: "#64748b", marginBottom: "0.75rem" }}
+                    dangerouslySetInnerHTML={{ __html: plan.description }}
+                  />
                 )}
                 <button
                   onClick={() => handleSelectPlan(plan)}
