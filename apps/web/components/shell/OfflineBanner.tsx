@@ -56,8 +56,8 @@ export default function OfflineBanner() {
 
       {visibleStatus === "server-unavailable" && (
         <div
-          role="alert"
-          className="fixed top-0 left-0 right-0 z-[100] bg-red-600 text-white text-center py-1.5 px-4 text-xs font-medium flex items-center justify-center gap-2"
+          role="status"
+          className="fixed top-0 left-0 right-0 z-[100] bg-amber-500/90 text-white text-center py-1.5 px-4 text-xs font-medium flex items-center justify-center gap-2"
         >
           <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path
@@ -66,7 +66,7 @@ export default function OfflineBanner() {
               d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
             />
           </svg>
-          <span>השרת אינו זמין כרגע, נסה שוב מאוחר יותר</span>
+          <span>השרת לא זמין כרגע — נסה שוב בעוד כמה שניות</span>
         </div>
       )}
 
