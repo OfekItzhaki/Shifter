@@ -1,63 +1,56 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useServiceWorker } from "@/lib/hooks/useServiceWorker";
 import { useConnectivityStore, ConnectivityStatus } from "@/lib/store/connectivityStore";
+import { queryClient } from "@/lib/query/queryClient";
 
 /**
  * Shows contextual banners:
- * - Offline: amber bar at top — "אתה לא מחובר לאינטרנט"
- * - Server unavailable: red bar at top — "השרת אינו זמין כרגע, נסה שוב מאוחר יותר"
+ * - Offline: amber inline bar — "אתה לא מחובר לאינטרנט"
+ * - Server unavailable: amber inline bar — "השרת לא זמין כרגע"
  * - Update available: floating toast at bottom-right (unchanged, from useServiceWorker)
  *
- * The banner dismisses within 2 seconds of connectivity returning to online.
+ * The banner is INLINE (not fixed/overlay) — it pushes content down with a smooth
+ * slide animation. When connectivity returns, it slides out and triggers a silent refresh.
  */
 export default function OfflineBanner() {
   const { updateAvailable, update } = useServiceWorker();
   const status = useConnectivityStore((s) => s.status);
 
-  // Track the visible banner state with a dismiss delay
-  const [visibleStatus, setVisibleStatus] = useState<ConnectivityStatus>(status);
+  const [showBanner, setShowBanner] = useState(false);
+  const [bannerText, setBannerText] = useState("");
+  const prevStatusRef = useRef<ConnectivityStatus>(status);
 
   useEffect(() => {
     if (status !== "online") {
-      // Show banner immediately when going offline or server-unavailable
-      setVisibleStatus(status);
-    } else {
-      // Dismiss banner after 2 seconds when returning to online
-      const timer = setTimeout(() => {
-        setVisibleStatus("online");
-      }, 2000);
-      return () => clearTimeout(timer);
+      // Show banner with appropriate text
+      setBannerText(
+        status === "offline"
+          ? "אתה לא מחובר לאינטרנט"
+          : "השרת לא זמין כרגע"
+      );
+      setShowBanner(true);
+    } else if (prevStatusRef.current !== "online") {
+      // Transitioning back to online — hide banner and refresh data
+      setShowBanner(false);
+      // Silently refetch all active queries so the UI updates with fresh data
+      queryClient.refetchQueries({ type: "active" });
     }
+
+    prevStatusRef.current = status;
   }, [status]);
-
-  const showBanner = visibleStatus !== "online";
-
-  if (!showBanner && !updateAvailable) return null;
 
   return (
     <>
-      {visibleStatus === "offline" && (
-        <div
-          role="alert"
-          className="fixed top-0 left-0 right-0 z-[100] bg-amber-500 text-white text-center py-1.5 px-4 text-xs font-medium flex items-center justify-center gap-2"
-        >
-          <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M18.364 5.636a9 9 0 010 12.728M5.636 18.364a9 9 0 010-12.728"
-            />
-          </svg>
-          <span>אתה לא מחובר לאינטרנט</span>
-        </div>
-      )}
-
-      {visibleStatus === "server-unavailable" && (
+      {/* Inline connectivity banner — slides in/out, pushes content down */}
+      <div
+        className="overflow-hidden transition-all duration-300 ease-in-out"
+        style={{ maxHeight: showBanner ? "40px" : "0px" }}
+      >
         <div
           role="status"
-          className="fixed top-0 left-0 right-0 z-[100] bg-amber-500/90 text-white text-center py-1.5 px-4 text-xs font-medium flex items-center justify-center gap-2"
+          className="bg-amber-500 text-white text-center py-2 px-4 text-xs font-medium flex items-center justify-center gap-2"
         >
           <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path
@@ -66,11 +59,12 @@ export default function OfflineBanner() {
               d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
             />
           </svg>
-          <span>השרת לא זמין כרגע — נסה שוב בעוד כמה שניות</span>
+          <span>{bannerText}</span>
         </div>
-      )}
+      </div>
 
-      {updateAvailable && visibleStatus === "online" && (
+      {/* Update available toast — floating, unchanged */}
+      {updateAvailable && !showBanner && (
         <div className="fixed bottom-6 right-6 z-[100] animate-in slide-in-from-bottom-4 fade-in duration-300">
           <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 px-5 py-4 flex items-center gap-4 max-w-sm">
             <div className="w-10 h-10 rounded-xl bg-sky-50 dark:bg-sky-900/30 flex items-center justify-center flex-shrink-0">
