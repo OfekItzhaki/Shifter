@@ -12,7 +12,7 @@ import { detectBrowserLocale } from "@/lib/utils/detectLocale";
 
 function LoginForm() {
   const t = useTranslations("auth");
-  const { login } = useAuthStore();
+  const { login, isAuthenticated } = useAuthStore();
   const router = useRouter();
   const searchParams = useSearchParams();
   const justRegistered = searchParams.get("registered") === "1";
@@ -26,6 +26,13 @@ function LoginForm() {
 
   // Biometric login state
   const [biometricError, setBiometricError] = useState<string | null>(null);
+
+  // Redirect authenticated users away from login page
+  useEffect(() => {
+    if (isAuthenticated) {
+      router.replace("/home");
+    }
+  }, [isAuthenticated, router]);
 
   // Start conditional mediation (passkey autofill) on mount
   useEffect(() => {
