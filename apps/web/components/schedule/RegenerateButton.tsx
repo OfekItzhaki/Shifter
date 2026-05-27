@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
+import { useWriteGuard } from "@/lib/api/writeGuard";
 
 export interface RegenerateButtonProps {
   /** The space ID for the current space */
@@ -34,6 +35,7 @@ export default function RegenerateButton({
   onRegenerate,
 }: RegenerateButtonProps) {
   const t = useTranslations("admin.regeneration");
+  const { isDisabled: writeGuardDisabled, tooltipText: writeGuardTooltip } = useWriteGuard();
 
   // Hide button when user lacks permission
   if (!hasPermission) return null;
@@ -41,13 +43,16 @@ export default function RegenerateButton({
   // Hide button when no published version exists
   if (!hasPublishedVersion) return null;
 
+  const buttonDisabled = isRegenerationInProgress || writeGuardDisabled;
+
   return (
-    <button
-      onClick={onRegenerate}
-      disabled={isRegenerationInProgress}
-      aria-busy={isRegenerationInProgress}
-      className="flex items-center gap-2 bg-violet-500 hover:bg-violet-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl shadow-sm shadow-violet-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-    >
+    <span title={writeGuardDisabled ? writeGuardTooltip : undefined}>
+      <button
+        onClick={onRegenerate}
+        disabled={buttonDisabled}
+        aria-busy={isRegenerationInProgress}
+        className="flex items-center gap-2 bg-violet-500 hover:bg-violet-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl shadow-sm shadow-violet-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+      >
       {isRegenerationInProgress ? (
         <>
           <svg
@@ -92,5 +97,6 @@ export default function RegenerateButton({
         </>
       )}
     </button>
+    </span>
   );
 }

@@ -2,6 +2,9 @@
  * Shifter Service Worker
  * 
  * Strategy:
+ * - Cached API endpoints (groups, members, tasks, schedule-versions, billing):
+ *   Stale-while-revalidate with per-user cache. Returns cached response immediately,
+ *   fetches fresh data in background, notifies clients when data changes.
  * - Schedule data (GET /spaces/{id}/schedule-versions/current, /my-assignments):
  *   Network-first with cache fallback. Soldiers can view their schedule offline.
  * - Static assets (JS, CSS, images): Cache-first for fast loads.
@@ -12,6 +15,18 @@
 const CACHE_VERSION = "1.9.0";
 const CACHE_NAME = "shifter-" + CACHE_VERSION;
 const STATIC_CACHE = "shifter-static-" + CACHE_VERSION;
+
+// Active user ID for per-user cache partitioning
+let currentUserId = null;
+
+// Patterns for API endpoints to cache with stale-while-revalidate strategy
+const CACHED_API_PATTERNS = [
+  /\/spaces\/[^/]+\/groups$/,
+  /\/spaces\/[^/]+\/groups\/[^/]+\/members$/,
+  /\/spaces\/[^/]+\/groups\/[^/]+\/tasks$/,
+  /\/spaces\/[^/]+\/schedule-versions$/,
+  /\/spaces\/[^/]+\/billing\/subscription$/,
+];
 
 // Patterns for schedule-related GET requests to cache
 const SCHEDULE_PATTERNS = [
@@ -38,12 +53,16 @@ self.addEventListener("install", (event) => {
 });
 
 self.addEventListener("activate", (event) => {
-  // Clean up old caches
+  // Clean up old caches but preserve per-user API caches (shifter-api-{userId})
   event.waitUntil(
     caches.keys().then((keys) =>
       Promise.all(
         keys
-          .filter((key) => key !== CACHE_NAME && key !== STATIC_CACHE)
+          .filter((key) =>
+            key !== CACHE_NAME &&
+            key !== STATIC_CACHE &&
+            !key.startsWith("shifter-api-")
+          )
           .map((key) => caches.delete(key))
       )
     ).then(() => self.clients.claim())
@@ -66,6 +85,12 @@ self.addEventListener("fetch", (event) => {
   // Static assets: cache-first
   if (STATIC_EXTENSIONS.test(url.pathname)) {
     event.respondWith(cacheFirst(request, STATIC_CACHE));
+    return;
+  }
+
+  // Cached API endpoints: stale-while-revalidate (per-user cache)
+  if (currentUserId && CACHED_API_PATTERNS.some((p) => p.test(url.pathname))) {
+    event.respondWith(staleWhileRevalidate(request));
     return;
   }
 
@@ -116,6 +141,143 @@ async function networkFirstWithCache(request, cacheName) {
       }
     );
   }
+}
+
+/**
+ * Stale-while-revalidate strategy for per-user cached API endpoints.
+ * Returns cached response immediately, fetches fresh data in background.
+ * Posts CACHE_UPDATED message to all clients when fresh data differs from cached.
+ * Returns 503 with {"error": "offline"} when no cache exists and network fails.
+ */
+async function staleWhileRevalidate(request) {
+  const cacheName = getUserCacheName();
+  const cache = await caches.open(cacheName);
+  const cached = await cache.match(request);
+
+  if (cached) {
+    // Return cached response immediately, then revalidate in background
+    revalidateInBackground(request, cache, cached.clone());
+    return cached;
+  }
+
+  // No cache — try network directly
+  try {
+    const response = await fetch(request);
+    if (response.ok) {
+      await putWithMetadata(cache, request, response.clone());
+    }
+    return response;
+  } catch (error) {
+    // No cache and network failed — return 503 offline indicator
+    return new Response(
+      JSON.stringify({ error: "offline" }),
+      {
+        status: 503,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+  }
+}
+
+/**
+ * Fetch fresh data in background and update cache.
+ * Posts CACHE_UPDATED message to all clients if data differs.
+ */
+async function revalidateInBackground(request, cache, cachedResponse) {
+  try {
+    const freshResponse = await fetch(request);
+    if (!freshResponse.ok) return;
+
+    // Compare response bodies to detect changes
+    const [cachedBody, freshBody] = await Promise.all([
+      cachedResponse.text(),
+      freshResponse.clone().text(),
+    ]);
+
+    // Update cache with fresh response
+    await putWithMetadata(cache, request, freshResponse.clone());
+
+    // Notify clients if data changed
+    if (cachedBody !== freshBody) {
+      const clients = await self.clients.matchAll();
+      const message = {
+        type: "CACHE_UPDATED",
+        url: request.url,
+        timestamp: Date.now(),
+      };
+      clients.forEach((client) => client.postMessage(message));
+    }
+  } catch (error) {
+    // Network failed during background revalidation — silently ignore,
+    // the cached response was already served to the client
+  }
+}
+
+/**
+ * Store a response in cache with X-Cache-Timestamp and X-Cache-Size metadata headers.
+ * After storing, evicts least-recently-used entries if total cache size exceeds 50MB.
+ */
+async function putWithMetadata(cache, request, response) {
+  const body = await response.arrayBuffer();
+  const headers = new Headers(response.headers);
+  headers.set("X-Cache-Timestamp", String(Date.now()));
+  headers.set("X-Cache-Size", String(body.byteLength));
+
+  const metadataResponse = new Response(body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers: headers,
+  });
+
+  await cache.put(request, metadataResponse);
+  await evictIfNeeded(cache);
+}
+
+// Maximum per-user cache size: 50MB
+const MAX_CACHE_SIZE_BYTES = 50 * 1024 * 1024;
+
+/**
+ * Evict least-recently-used cache entries when total cache size exceeds 50MB.
+ * Uses X-Cache-Timestamp to determine LRU ordering and X-Cache-Size to track total size.
+ */
+async function evictIfNeeded(cache) {
+  const keys = await cache.keys();
+  if (keys.length === 0) return;
+
+  // Collect metadata for all entries
+  const entries = [];
+  let totalSize = 0;
+
+  for (const request of keys) {
+    const response = await cache.match(request);
+    if (!response) continue;
+
+    const size = parseInt(response.headers.get("X-Cache-Size") || "0", 10);
+    const timestamp = parseInt(response.headers.get("X-Cache-Timestamp") || "0", 10);
+
+    entries.push({ request, size, timestamp });
+    totalSize += size;
+  }
+
+  // If within limit, no eviction needed
+  if (totalSize <= MAX_CACHE_SIZE_BYTES) return;
+
+  // Sort by timestamp ascending (oldest first = least recently used)
+  entries.sort((a, b) => a.timestamp - b.timestamp);
+
+  // Evict oldest entries until total size is within limit
+  for (const entry of entries) {
+    if (totalSize <= MAX_CACHE_SIZE_BYTES) break;
+    await cache.delete(entry.request);
+    totalSize -= entry.size;
+  }
+}
+
+/**
+ * Get the per-user cache name for the current user.
+ */
+function getUserCacheName() {
+  return `shifter-api-${currentUserId}`;
 }
 
 /**
@@ -263,10 +425,24 @@ self.addEventListener("message", (event) => {
   if (event.data === "skipWaiting") {
     self.skipWaiting();
   }
+
   // Allow the app to request cache clearing
   if (event.data === "clearCache") {
     caches.keys().then((keys) =>
       Promise.all(keys.map((key) => caches.delete(key)))
     );
+  }
+
+  // Set the current user ID for per-user cache partitioning
+  if (event.data && event.data.type === "SET_CURRENT_USER") {
+    currentUserId = event.data.userId;
+  }
+
+  // Clear a specific user's cache (e.g., on logout)
+  if (event.data && event.data.type === "CLEAR_USER_CACHE") {
+    const userId = event.data.userId;
+    if (userId) {
+      caches.delete(`shifter-api-${userId}`);
+    }
   }
 });

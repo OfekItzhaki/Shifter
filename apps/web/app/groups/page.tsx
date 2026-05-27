@@ -13,6 +13,7 @@ import CreateGroupWizard from "@/components/CreateGroupWizard";
 import { ONBOARDING_STEPS } from "@/lib/onboarding/steps";
 import { useOnboardingStore } from "@/lib/store/onboardingStore";
 import { getCurrentStepIndex } from "@/lib/onboarding/decisions";
+import { useWriteGuard } from "@/lib/api/writeGuard";
 
 export default function GroupsPageWrapper() {
   return (
@@ -38,6 +39,8 @@ function GroupsPage() {
   const tOnboarding = useTranslations("onboarding");
   const { steps: onboardingSteps } = useOnboardingStore();
   const currentStepIndex = getCurrentStepIndex(onboardingSteps);
+
+  const { isDisabled: writeGuardDisabled, tooltipText: writeGuardTooltip } = useWriteGuard();
 
   const { data: groups = [], isLoading: loading, isError: groupsError } = useGroups(currentSpaceId);
   const { data: deletedGroups = [], isLoading: deletedLoading } = useDeletedGroups(currentSpaceId);
@@ -90,13 +93,16 @@ function GroupsPage() {
 
         {/* Create group button — only show when API is working */}
         {!groupsError && (
-          <button
-            type="button"
-            onClick={() => setShowCreateWizard(true)}
-            className="bg-sky-500 hover:bg-sky-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl transition-colors whitespace-nowrap"
-          >
-            {t("newGroup")}
-          </button>
+          <span title={writeGuardDisabled ? writeGuardTooltip : undefined}>
+            <button
+              type="button"
+              onClick={() => setShowCreateWizard(true)}
+              disabled={writeGuardDisabled}
+              className="bg-sky-500 hover:bg-sky-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl transition-colors whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {t("newGroup")}
+            </button>
+          </span>
         )}
 
         {createError && <p className="text-sm text-red-600">{createError}</p>}
