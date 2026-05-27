@@ -203,6 +203,26 @@ public class AuthController : ControllerBase
     {
         var userId = CurrentUserId;
 
+        // Guard: prevent deletion if user owns any space
+        var ownsSpace = await db.Spaces
+            .AnyAsync(s => s.OwnerUserId == userId && s.DeletedAt == null, ct);
+        if (ownsSpace)
+            return BadRequest(new { error = "Cannot delete account while you own a space. Transfer ownership first." });
+
+        // Guard: prevent deletion if user owns any group
+        var linkedPerson = await db.People
+            .Where(p => p.LinkedUserId == userId && p.IsActive)
+            .Select(p => p.Id)
+            .ToListAsync(ct);
+
+        if (linkedPerson.Count > 0)
+        {
+            var ownsGroup = await db.GroupMemberships
+                .AnyAsync(gm => linkedPerson.Contains(gm.PersonId) && gm.IsOwner, ct);
+            if (ownsGroup)
+                return BadRequest(new { error = "Cannot delete account while you own a group. Transfer group ownership first." });
+        }
+
         // Remove all linked person records
         var linkedPeople = await db.People
             .Where(p => p.LinkedUserId == userId)

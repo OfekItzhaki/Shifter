@@ -1,18 +1,29 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { forgotPassword } from "@/lib/api/auth";
+import { useAuthStore } from "@/lib/store/authStore";
 import ShifterLogo from "@/components/shell/ShifterLogo";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 export default function ForgotPasswordPage() {
   const t = useTranslations("auth");
+  const router = useRouter();
+  const { isAuthenticated } = useAuthStore();
   const [email, setEmail] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
+
+  // Redirect authenticated users away from forgot-password page
+  useEffect(() => {
+    if (isAuthenticated) {
+      router.replace("/home");
+    }
+  }, [isAuthenticated, router]);
   const [resendCount, setResendCount] = useState(0);
 
   async function handleSubmit(e: React.FormEvent) {
