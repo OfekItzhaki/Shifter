@@ -75,7 +75,8 @@ export function getStepRoute(
 
 /**
  * Computes step completion from application state counts.
- * Each step is true if its corresponding count exceeds the threshold:
+ * Each step is true only if its corresponding count exceeds the threshold
+ * AND all prior steps are also complete (enforces sequential order).
  * - createGroup: groupCount > 0
  * - addMembers: memberCount > 1 (owner + at least 1 member)
  * - defineTasks: taskCount > 0
@@ -89,11 +90,17 @@ export function computeStepCompletion(appState: {
   constraintCount: number;
   solverRunCount: number;
 }): StepCompletionMap {
+  const createGroup = appState.groupCount > 0;
+  const addMembers = createGroup && appState.memberCount > 1;
+  const defineTasks = addMembers && appState.taskCount > 0;
+  const setConstraints = defineTasks && appState.constraintCount > 0;
+  const runSolver = setConstraints && appState.solverRunCount > 0;
+
   return {
-    createGroup: appState.groupCount > 0,
-    addMembers: appState.memberCount > 1,
-    defineTasks: appState.taskCount > 0,
-    setConstraints: appState.constraintCount > 0,
-    runSolver: appState.solverRunCount > 0,
+    createGroup,
+    addMembers,
+    defineTasks,
+    setConstraints,
+    runSolver,
   };
 }

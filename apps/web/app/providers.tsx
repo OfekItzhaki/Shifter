@@ -9,12 +9,25 @@ import AdminSessionGuard from "@/components/admin/AdminSessionGuard";
 import FeedbackFab from "@/components/shell/FeedbackFab";
 import { useAuthStore } from "@/lib/store/authStore";
 import { initPostHog } from "@/lib/analytics/posthog";
+import { initConnectivity } from "@/lib/api/client";
+import { initBackgroundRefresh } from "@/lib/cache/backgroundRefresh";
+import { useCacheLifecycle } from "@/lib/hooks/useCacheLifecycle";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
+  // Manage per-user cache lifecycle (SET_CURRENT_USER, CLEAR_USER_CACHE, CACHE_UPDATED)
+  // The hook subscribes to authStore.userId internally, so it reacts when auth state changes.
+  useCacheLifecycle();
+
   useEffect(() => {
     initPostHog();
+    const cleanupConnectivity = initConnectivity();
+    const cleanupBackgroundRefresh = initBackgroundRefresh();
+    return () => {
+      cleanupConnectivity();
+      cleanupBackgroundRefresh();
+    };
   }, []);
 
   return (
