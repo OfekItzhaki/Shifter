@@ -1,0 +1,395 @@
+import { apiClient } from "./client";
+
+// ── Shift Template ───────────────────────────────────────────────────────────
+
+export interface ShiftTemplateDto {
+  id: string;
+  groupId: string;
+  groupTaskId: string;
+  groupTaskName: string;
+  dayOfWeek: number; // 0=Sunday, 6=Saturday
+  startTime: string; // "HH:mm:ss"
+  endTime: string;   // "HH:mm:ss"
+  requiredHeadcount: number;
+  isDeleted: boolean;
+  createdAt: string;
+}
+
+export interface CreateShiftTemplatePayload {
+  groupTaskId: string;
+  dayOfWeek: number;
+  startTime: string; // "HH:mm"
+  endTime: string;   // "HH:mm"
+  requiredHeadcount: number;
+}
+
+export interface UpdateShiftTemplatePayload {
+  dayOfWeek: number;
+  startTime: string;
+  endTime: string;
+  requiredHeadcount: number;
+  groupTaskId?: string;
+}
+
+// ── Self-Service Config ──────────────────────────────────────────────────────
+
+export interface SelfServiceConfigDto {
+  id: string | null;
+  groupId: string;
+  minShiftsPerCycle: number;
+  maxShiftsPerCycle: number;
+  requestWindowOpenOffsetHours: number;
+  requestWindowCloseOffsetHours: number;
+  cancellationCutoffHours: number;
+  waitlistOfferMinutes: number;
+  cycleDurationDays: number;
+}
+
+export interface UpdateSelfServiceConfigPayload {
+  minShiftsPerCycle: number;
+  maxShiftsPerCycle: number;
+  requestWindowOpenOffsetHours: number;
+  requestWindowCloseOffsetHours: number;
+  cancellationCutoffHours: number;
+  waitlistOfferMinutes: number;
+  cycleDurationDays: number;
+}
+
+
+// ── Shift Slot ───────────────────────────────────────────────────────────────
+
+export interface AvailableSlotDto {
+  id: string;
+  date: string;         // "YYYY-MM-DD"
+  startTime: string;    // "HH:mm"
+  endTime: string;      // "HH:mm"
+  taskName: string;
+  capacity: number;
+  currentFillCount: number;
+  schedulingCycleId: string;
+}
+
+export interface AvailableSlotsResponse {
+  slots: AvailableSlotDto[];
+  requestWindowOpen: boolean;
+  requestWindowOpensAt: string | null;
+  requestWindowClosesAt: string | null;
+  currentCycleId: string;
+}
+
+// ── Shift Request ────────────────────────────────────────────────────────────
+
+export interface ShiftRequestDto {
+  id: string;
+  shiftSlotId: string;
+  slotDate: string;
+  slotStartTime: string;
+  slotEndTime: string;
+  taskName: string;
+  status: "Pending" | "Approved" | "Rejected" | "Cancelled";
+  isAdminOverride: boolean;
+  rejectionReason: string | null;
+  cancellationReason: string | null;
+  cancelledAt: string | null;
+  createdAt: string;
+}
+
+export interface MyShiftsResponse {
+  requests: ShiftRequestDto[];
+  currentShiftCount: number;
+  minShiftsPerCycle: number;
+  maxShiftsPerCycle: number;
+  cancellationCutoffHours: number;
+}
+
+// ── Waitlist ─────────────────────────────────────────────────────────────────
+
+export interface WaitlistEntryDto {
+  id: string;
+  shiftSlotId: string;
+  slotDate: string;
+  slotStartTime: string;
+  slotEndTime: string;
+  taskName: string;
+  position: number;
+  status: "Waiting" | "Offered" | "Accepted" | "Expired" | "Declined" | "Removed";
+  offeredAt: string | null;
+  expiresAt: string | null;
+}
+
+// ── Swap Request ─────────────────────────────────────────────────────────────
+
+export interface SwapRequestDto {
+  id: string;
+  initiatorPersonId: string;
+  targetPersonId: string;
+  initiatorPersonName: string;
+  targetPersonName: string;
+  initiatorShiftRequestId: string;
+  targetShiftRequestId: string;
+  initiatorSlotDate: string;
+  initiatorSlotTime: string;
+  initiatorTaskName: string;
+  targetSlotDate: string;
+  targetSlotTime: string;
+  targetTaskName: string;
+  status: "Pending" | "Accepted" | "Declined" | "Cancelled" | "Expired";
+  expiresAt: string | null;
+  createdAt: string;
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// API Functions
+// ══════════════════════════════════════════════════════════════════════════════
+
+// ── Shift Templates ──────────────────────────────────────────────────────────
+
+export async function listShiftTemplates(
+  spaceId: string,
+  groupId: string
+): Promise<ShiftTemplateDto[]> {
+  const { data } = await apiClient.get(
+    `/spaces/${spaceId}/groups/${groupId}/shift-templates`
+  );
+  return data;
+}
+
+export async function createShiftTemplate(
+  spaceId: string,
+  groupId: string,
+  payload: CreateShiftTemplatePayload
+): Promise<{ id: string }> {
+  const { data } = await apiClient.post(
+    `/spaces/${spaceId}/groups/${groupId}/shift-templates`,
+    payload
+  );
+  return data;
+}
+
+export async function updateShiftTemplate(
+  spaceId: string,
+  groupId: string,
+  templateId: string,
+  payload: UpdateShiftTemplatePayload
+): Promise<ShiftTemplateDto> {
+  const { data } = await apiClient.put(
+    `/spaces/${spaceId}/groups/${groupId}/shift-templates/${templateId}`,
+    payload
+  );
+  return data;
+}
+
+export async function deleteShiftTemplate(
+  spaceId: string,
+  groupId: string,
+  templateId: string
+): Promise<void> {
+  await apiClient.delete(
+    `/spaces/${spaceId}/groups/${groupId}/shift-templates/${templateId}`
+  );
+}
+
+// ── Self-Service Config ──────────────────────────────────────────────────────
+
+export async function getSelfServiceConfig(
+  spaceId: string,
+  groupId: string
+): Promise<SelfServiceConfigDto> {
+  const { data } = await apiClient.get(
+    `/spaces/${spaceId}/groups/${groupId}/self-service-config`
+  );
+  return data;
+}
+
+export async function updateSelfServiceConfig(
+  spaceId: string,
+  groupId: string,
+  payload: UpdateSelfServiceConfigPayload
+): Promise<SelfServiceConfigDto> {
+  const { data } = await apiClient.put(
+    `/spaces/${spaceId}/groups/${groupId}/self-service-config`,
+    payload
+  );
+  return data;
+}
+
+// ── Available Slots ──────────────────────────────────────────────────────────
+
+export async function getAvailableSlots(
+  spaceId: string,
+  groupId: string,
+  cycleId: string
+): Promise<AvailableSlotsResponse> {
+  const { data } = await apiClient.get(
+    `/spaces/${spaceId}/groups/${groupId}/shift-slots/available`,
+    { params: { cycleId } }
+  );
+  return data;
+}
+
+// ── Shift Requests ───────────────────────────────────────────────────────────
+
+export async function submitShiftRequest(
+  spaceId: string,
+  groupId: string,
+  shiftSlotId: string
+): Promise<{ shiftRequestId: string }> {
+  const { data } = await apiClient.post(
+    `/spaces/${spaceId}/groups/${groupId}/shift-requests`,
+    { shiftSlotId }
+  );
+  return data;
+}
+
+export async function cancelShiftRequest(
+  spaceId: string,
+  groupId: string,
+  shiftRequestId: string,
+  reason: string
+): Promise<void> {
+  await apiClient.post(
+    `/spaces/${spaceId}/groups/${groupId}/shift-requests/${shiftRequestId}/cancel`,
+    { reason }
+  );
+}
+
+export async function getMyShiftRequests(
+  spaceId: string,
+  groupId: string,
+  schedulingCycleId?: string
+): Promise<MyShiftsResponse> {
+  const { data } = await apiClient.get(
+    `/spaces/${spaceId}/groups/${groupId}/shift-requests/mine`,
+    { params: schedulingCycleId ? { schedulingCycleId } : undefined }
+  );
+  return data;
+}
+
+// ── Waitlist ─────────────────────────────────────────────────────────────────
+
+export async function joinWaitlist(
+  spaceId: string,
+  groupId: string,
+  shiftSlotId: string
+): Promise<{ position: number; shiftSlotId: string }> {
+  const { data } = await apiClient.post(
+    `/spaces/${spaceId}/groups/${groupId}/waitlist`,
+    { shiftSlotId }
+  );
+  return data;
+}
+
+export async function leaveWaitlist(
+  spaceId: string,
+  groupId: string,
+  shiftSlotId: string
+): Promise<void> {
+  await apiClient.delete(
+    `/spaces/${spaceId}/groups/${groupId}/waitlist/${shiftSlotId}`
+  );
+}
+
+export async function acceptWaitlistOffer(
+  spaceId: string,
+  groupId: string,
+  shiftSlotId: string
+): Promise<{ shiftRequestId: string }> {
+  const { data } = await apiClient.post(
+    `/spaces/${spaceId}/groups/${groupId}/waitlist/accept`,
+    { shiftSlotId }
+  );
+  return data;
+}
+
+export async function getMyWaitlistEntries(
+  spaceId: string,
+  groupId: string
+): Promise<WaitlistEntryDto[]> {
+  const { data } = await apiClient.get(
+    `/spaces/${spaceId}/groups/${groupId}/waitlist/mine`
+  );
+  return data;
+}
+
+// ── Shift Swaps ──────────────────────────────────────────────────────────────
+
+export async function proposeSwap(
+  spaceId: string,
+  groupId: string,
+  initiatorShiftRequestId: string,
+  targetShiftRequestId: string
+): Promise<{ swapRequestId: string }> {
+  const { data } = await apiClient.post(
+    `/spaces/${spaceId}/groups/${groupId}/shift-swaps/propose`,
+    { initiatorShiftRequestId, targetShiftRequestId }
+  );
+  return data;
+}
+
+export async function acceptSwap(
+  spaceId: string,
+  groupId: string,
+  swapRequestId: string
+): Promise<{ swapRequestId: string }> {
+  const { data } = await apiClient.post(
+    `/spaces/${spaceId}/groups/${groupId}/shift-swaps/${swapRequestId}/accept`
+  );
+  return data;
+}
+
+export async function declineSwap(
+  spaceId: string,
+  groupId: string,
+  swapRequestId: string
+): Promise<void> {
+  await apiClient.post(
+    `/spaces/${spaceId}/groups/${groupId}/shift-swaps/${swapRequestId}/decline`
+  );
+}
+
+export async function cancelSwap(
+  spaceId: string,
+  groupId: string,
+  swapRequestId: string
+): Promise<void> {
+  await apiClient.post(
+    `/spaces/${spaceId}/groups/${groupId}/shift-swaps/${swapRequestId}/cancel`
+  );
+}
+
+export async function getMySwaps(
+  spaceId: string,
+  groupId: string
+): Promise<SwapRequestDto[]> {
+  const { data } = await apiClient.get(
+    `/spaces/${spaceId}/groups/${groupId}/shift-swaps/my`
+  );
+  return data;
+}
+
+// ── Admin Overrides ──────────────────────────────────────────────────────────
+
+export async function adminAssignMember(
+  spaceId: string,
+  groupId: string,
+  shiftSlotId: string,
+  personId: string
+): Promise<{ shiftRequestId: string }> {
+  const { data } = await apiClient.post(
+    `/spaces/${spaceId}/groups/${groupId}/shift-slots/${shiftSlotId}/admin-overrides/assign`,
+    { personId }
+  );
+  return data;
+}
+
+export async function adminRemoveMember(
+  spaceId: string,
+  groupId: string,
+  shiftSlotId: string,
+  personId: string
+): Promise<void> {
+  await apiClient.post(
+    `/spaces/${spaceId}/groups/${groupId}/shift-slots/${shiftSlotId}/admin-overrides/remove`,
+    { personId }
+  );
+}

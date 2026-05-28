@@ -27,7 +27,15 @@ const QualificationsTab = lazy(() => import("./tabs/QualificationsTab"));
 const RolesTab = lazy(() => import("./tabs/RolesTab"));
 const LiveStatusPanel = lazy(() => import("@/components/schedule/LiveStatusPanel"));
 const HomeLeaveScheduleTable = lazy(() => import("@/components/home-leave/HomeLeaveScheduleTable"));
-import { ActiveTab, ADMIN_ONLY_TABS, ScheduleAssignment } from "./types";
+// Self-service tabs (lazy-loaded)
+const SlotBrowserTab = lazy(() => import("./tabs/SlotBrowserTab"));
+const MyShiftsTab = lazy(() => import("@/components/groups/selfService/MyShiftsTab"));
+const WaitlistTab = lazy(() => import("./tabs/WaitlistTab"));
+const SwapsTab = lazy(() => import("./tabs/SwapsTab"));
+const ShiftTemplatesTab = lazy(() => import("@/components/groups/selfService/ShiftTemplatesTab"));
+const SelfServiceConfigTab = lazy(() => import("@/components/groups/selfService/SelfServiceConfigTab"));
+const AdminOverridesTab = lazy(() => import("./tabs/AdminOverridesTab"));
+import { ActiveTab, ADMIN_ONLY_TABS, AUTO_GENERATED_TABS, SELF_SERVICE_MEMBER_TABS, SELF_SERVICE_ADMIN_TABS, ScheduleAssignment } from "./types";
 import { useSpaceStore } from "@/lib/store/spaceStore";
 import { useAuthStore } from "@/lib/store/authStore";
 import { useAdminSessionStore } from "@/lib/store/adminSessionStore";
@@ -60,7 +68,7 @@ import { DEFAULT_TASK_HORIZON_DAYS, MS_PER_DAY } from "@/lib/utils/constants";
 import type { TaskForm } from "./tabs/TasksTab";
 import { useGroupPageState, DEFAULT_TASK_FORM } from "./useGroupPageState";
 // ── Tab labels ───────────────────────────────────────────────────────────────
-function getTabLabels(t: (key: string) => string): Record<ActiveTab, string> {
+function getTabLabels(t: (key: string) => string, tSelfService: (key: string) => string): Record<ActiveTab, string> {
   return {
     schedule: t("tabs.schedule"),
     members: t("tabs.members"),
@@ -73,6 +81,14 @@ function getTabLabels(t: (key: string) => string): Record<ActiveTab, string> {
     settings: t("tabs.settings"),
     stats: t("tabs.stats"),
     "live-status": t("tabs.liveStatus"),
+    // Self-service tabs
+    "available-slots": tSelfService("tabs.availableSlots"),
+    "my-shifts": tSelfService("tabs.myShifts"),
+    "waitlist": tSelfService("tabs.waitlist"),
+    "swaps": tSelfService("tabs.swaps"),
+    "shift-templates": tSelfService("tabs.shiftTemplates"),
+    "self-service-config": tSelfService("tabs.selfServiceConfig"),
+    "admin-overrides": tSelfService("tabs.adminOverrides"),
   };
 }
 
@@ -90,7 +106,8 @@ export default function GroupDetailPage() {
   const tErrors = useTranslations("errors");
   const tAdmin = useTranslations("admin");
   const tReAuth = useTranslations("reAuth");
-  const TAB_LABELS = getTabLabels(tGroups);
+  const tSelfService = useTranslations("selfService");
+  const TAB_LABELS = getTabLabels(tGroups, tSelfService);
 
   // ── All state via hook ───────────────────────────────────────────────────
   const s = useGroupPageState();
@@ -279,6 +296,12 @@ export default function GroupDetailPage() {
         // Use adminGroupId directly — isAdminForGroup is a derived function that
         // changes reference on every render and would cause an infinite loop in deps.
         setIsAdmin(adminGroupId === groupId);
+        // Set default tab based on scheduling mode
+        if (found.schedulingMode === "SelfService") {
+          setActiveTab("available-slots");
+        } else {
+          setActiveTab("schedule");
+        }
       })
       .catch(() => router.push("/groups"))
       .finally(() => setGroupLoading(false));
@@ -390,8 +413,8 @@ export default function GroupDetailPage() {
   // ── Load members ─────────────────────────────────────────────────────────
   useEffect(() => {
     if (!currentSpaceId || !groupId) return;
-    // Load members eagerly — needed for schedule tab filtering AND members tab
-    if (activeTab !== "members" && activeTab !== "schedule" && members.length > 0) return;
+    // Load members eagerly — needed for schedule tab filtering, members tab, and self-service tabs
+    if (activeTab !== "members" && activeTab !== "schedule" && activeTab !== "swaps" && activeTab !== "admin-overrides" && members.length > 0) return;
     setMembersLoading(true);
     setMembersError(null);
     getGroupMembers(currentSpaceId, groupId)
@@ -439,7 +462,7 @@ export default function GroupDetailPage() {
 
   // ── Load tasks ───────────────────────────────────────────────────────────
   useEffect(() => {
-    if (!currentSpaceId || !groupId || activeTab !== "tasks") return;
+    if (!currentSpaceId || !groupId || (activeTab !== "tasks" && activeTab !== "shift-templates")) return;
     setGroupTasksLoading(true);
     Promise.all([
       listGroupTasks(currentSpaceId, groupId),
@@ -1273,12 +1296,20 @@ export default function GroupDetailPage() {
 
   if (!group) return null;
 
-  const visibleTabs = ALL_TABS.filter(t => {
-    if (isAdmin) return true;
-    if (ADMIN_ONLY_TABS.includes(t)) return false;
-    if (t === "stats" && !group.allowMembersViewStats) return false;
-    return true;
-  });
+  const isSelfService = group.schedulingMode === "SelfService";
+
+  const visibleTabs = (() => {
+    if (isSelfService) {
+      return isAdmin ? SELF_SERVICE_ADMIN_TABS : SELF_SERVICE_MEMBER_TABS;
+    }
+    // Auto-generated mode: filter based on admin status
+    return ALL_TABS.filter(t => {
+      if (isAdmin) return true;
+      if (ADMIN_ONLY_TABS.includes(t)) return false;
+      if (t === "stats" && !group.allowMembersViewStats) return false;
+      return true;
+    });
+  })();
   const avatarColor = getAvatarColor(group.name);
   const avatarLetter = getAvatarLetter(group.name);
 
@@ -1652,6 +1683,35 @@ export default function GroupDetailPage() {
                 <HomeLeaveScheduleTable spaceId={currentSpaceId} groupId={groupId} />
               )}
             </>
+          )}
+
+          {/* Self-service tabs */}
+          {activeTab === "available-slots" && currentSpaceId && (
+            <SlotBrowserTab spaceId={currentSpaceId} groupId={groupId} isAdmin={isAdmin} />
+          )}
+
+          {activeTab === "my-shifts" && currentSpaceId && (
+            <MyShiftsTab spaceId={currentSpaceId} groupId={groupId} />
+          )}
+
+          {activeTab === "waitlist" && currentSpaceId && (
+            <WaitlistTab spaceId={currentSpaceId} groupId={groupId} />
+          )}
+
+          {activeTab === "swaps" && currentSpaceId && (
+            <SwapsTab spaceId={currentSpaceId} groupId={groupId} members={members} />
+          )}
+
+          {activeTab === "shift-templates" && currentSpaceId && (
+            <ShiftTemplatesTab spaceId={currentSpaceId} groupId={groupId} tasks={groupTasks} />
+          )}
+
+          {activeTab === "self-service-config" && currentSpaceId && (
+            <SelfServiceConfigTab spaceId={currentSpaceId} groupId={groupId} />
+          )}
+
+          {activeTab === "admin-overrides" && currentSpaceId && (
+            <AdminOverridesTab spaceId={currentSpaceId} groupId={groupId} members={members} hasSchedulePublishPermission={isAdmin} />
           )}
         </div>
         </Suspense>
