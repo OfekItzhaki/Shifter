@@ -1020,6 +1020,8 @@
     "notFound": "Not found",
     "serverError": "Server error",
     "generic": "Something went wrong. Please try again.",
+    "connectionError": "Unable to connect to server",
+    "tryAgainLater": "Please try again later",
     "errorLoadMembers": "Error loading members",
     "errorLoadAlerts": "Error loading alerts",
     "errorLoadMessages": "Error loading messages",

@@ -118,6 +118,14 @@ function GroupsPage() {
         {/* Active groups */}
         {loading ? (
           <p className="text-slate-400 text-sm py-8">{tCommon("loading")}</p>
+        ) : groupsError ? (
+          <div className="bg-white rounded-xl border border-slate-200 p-8 flex flex-col items-center text-center">
+            <svg className="w-10 h-10 text-slate-200 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+            </svg>
+            <p className="text-sm text-slate-600 mb-1">{tErrors("connectionError")}</p>
+            <p className="text-xs text-slate-400 mb-4">{tErrors("tryAgainLater")}</p>
+          </div>
         ) : groups.length === 0 ? (
           <div className="bg-white rounded-xl border border-slate-200 p-6 space-y-5">
             <div className="flex flex-col items-center text-center">
@@ -188,7 +196,8 @@ function GroupsPage() {
           </div>
         )}
 
-        {/* Deleted groups */}
+        {/* Deleted groups — only show when API is working */}
+        {!groupsError && (
         <div ref={deletedRef} className="border-t border-slate-100 pt-6">
           <h2 className="text-base font-semibold text-slate-700 mb-3">{t("deletedGroups")}</h2>
           {deletedLoading ? (
@@ -212,6 +221,7 @@ function GroupsPage() {
             </div>
           )}
         </div>
+        )}
       </div>
 
       {/* Create group wizard modal */}

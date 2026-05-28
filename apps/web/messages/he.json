@@ -1025,6 +1025,8 @@
     "notFound": "לא נמצא",
     "serverError": "שגיאת שרת",
     "generic": "אירעה שגיאה. נסה שוב.",
+    "connectionError": "לא ניתן להתחבר לשרת",
+    "tryAgainLater": "נסה שוב מאוחר יותר",
     "errorLoadMembers": "שגיאה בטעינת חברים",
     "errorLoadAlerts": "שגיאה בטעינת התראות",
     "errorLoadMessages": "שגיאה בטעינת הודעות",
