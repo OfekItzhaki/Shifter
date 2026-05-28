@@ -213,7 +213,6 @@ export default function MyShiftsTab({ spaceId, groupId }: MyShiftsTabProps) {
           statusKey="Approved"
           cancellationCutoffHours={cancellationCutoffHours}
           onCancel={openCancelDialog}
-          t={t}
         />
       )}
 
@@ -225,7 +224,6 @@ export default function MyShiftsTab({ spaceId, groupId }: MyShiftsTabProps) {
           statusKey="Pending"
           cancellationCutoffHours={cancellationCutoffHours}
           onCancel={openCancelDialog}
-          t={t}
         />
       )}
 
@@ -237,7 +235,6 @@ export default function MyShiftsTab({ spaceId, groupId }: MyShiftsTabProps) {
           statusKey="Cancelled"
           cancellationCutoffHours={cancellationCutoffHours}
           onCancel={openCancelDialog}
-          t={t}
         />
       )}
 
@@ -312,10 +309,9 @@ interface ShiftSectionProps {
   statusKey: ShiftRequestDto["status"];
   cancellationCutoffHours: number;
   onCancel: (request: ShiftRequestDto) => void;
-  t: (key: string, values?: Record<string, unknown>) => string;
 }
 
-function ShiftSection({ title, requests, statusKey, cancellationCutoffHours, onCancel, t }: ShiftSectionProps) {
+function ShiftSection({ title, requests, statusKey, cancellationCutoffHours, onCancel }: ShiftSectionProps) {
   return (
     <div>
       <div className="flex items-center gap-2 mb-2">
@@ -331,7 +327,6 @@ function ShiftSection({ title, requests, statusKey, cancellationCutoffHours, onC
             request={request}
             cancellationCutoffHours={cancellationCutoffHours}
             onCancel={onCancel}
-            t={t}
           />
         ))}
       </div>
@@ -345,10 +340,10 @@ interface ShiftCardProps {
   request: ShiftRequestDto;
   cancellationCutoffHours: number;
   onCancel: (request: ShiftRequestDto) => void;
-  t: (key: string, values?: Record<string, unknown>) => string;
 }
 
-function ShiftCard({ request, cancellationCutoffHours, onCancel, t }: ShiftCardProps) {
+function ShiftCard({ request, cancellationCutoffHours, onCancel }: ShiftCardProps) {
+  const t = useTranslations("selfService.myShifts");
   const style = STATUS_BADGE_STYLES[request.status];
   const showCancelButton = canCancelShift(request, cancellationCutoffHours);
 
