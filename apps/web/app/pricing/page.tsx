@@ -107,7 +107,10 @@ export default function PricingPage() {
     setCheckoutLoading(plan.variantId);
     try {
       const { checkoutUrl } = await createSpaceCheckout(spaceId, plan.variantId);
-      window.location.href = checkoutUrl;
+      // Open checkout in a new tab so the user's auth state is preserved
+      // in this tab. If they cancel/go back, they're still logged in here.
+      window.open(checkoutUrl, "_blank");
+      setCheckoutLoading(null);
     } catch (err: unknown) {
       setCheckoutLoading(null);
       const status = (err as { response?: { status?: number } })?.response?.status;
