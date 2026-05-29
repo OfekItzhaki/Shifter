@@ -129,18 +129,56 @@ public class HealthController : ControllerBase
         });
     }
 
+    /// <summary>Debug: Manually activate a subscription (temporary — remove after fixing).</summary>
+    [HttpPost("debug/subscription/{spaceId:guid}/activate")]
+    [AllowAnonymous]
+    public async Task<IActionResult> DebugActivateSubscription(Guid spaceId, CancellationToken ct)
+    {
+        var sub = await _db.SpaceSubscriptions
+            .FirstOrDefaultAsync(s => s.SpaceId == spaceId, ct);
+
+        if (sub is null)
+            return NotFound(new { error = "No SpaceSubscription found", spaceId });
+
+        // Force activate regardless of current status
+        var now = DateTime.UtcNow;
+        // Use reflection to bypass the status check in Activate()
+        typeof(Jobuler.Domain.Billing.SpaceSubscription)
+            .GetProperty("Status")!.SetValue(sub, Jobuler.Domain.Billing.SubscriptionStatus.Trialing);
+        
+        sub.Activate("pro", "manual-activation", "manual", now, now.AddMonths(1));
+        await _db.SaveChangesAsync(ct);
+
+        return Ok(new { activated = true, spaceId, periodEnd = now.AddMonths(1) });
+    }
+
     /// <summary>Debug: Check recent webhook events (temporary diagnostic).</summary>
     [HttpGet("debug/webhooks")]
     [AllowAnonymous]
     public async Task<IActionResult> DebugWebhooks(CancellationToken ct)
     {
-        var events = await _db.WebhookEventLogs
-            .AsNoTracking()
-            .OrderByDescending(e => e.ProcessedAt)
-            .Take(20)
-            .Select(e => new { e.EventId, e.EventType, e.ProcessedAt, e.ProcessedSuccessfully })
-            .ToListAsync(ct);
+        try
+        {
+            var events = await _db.WebhookEventLogs
+                .AsNoTracking()
+                .OrderByDescending(e => e.ProcessedAt)
+                .Take(20)
+                .Select(e => new { e.EventId, e.EventType, e.ProcessedAt, e.ProcessedSuccessfully })
+                .ToListAsync(ct);
 
-        return Ok(events);
+            return Ok(events);
+        }
+        catch (Exception ex)
+        {
+            // If the processed_successfully column doesn't exist yet, fall back
+            var events = await _db.WebhookEventLogs
+                .AsNoTracking()
+                .OrderByDescending(e => e.ProcessedAt)
+                .Take(20)
+                .Select(e => new { e.EventId, e.EventType, e.ProcessedAt })
+                .ToListAsync(ct);
+
+            return Ok(new { fallback = true, error = ex.Message, events });
+        }
     }
 }

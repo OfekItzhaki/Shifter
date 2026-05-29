@@ -40,22 +40,19 @@ public class HandleWebhookCommandHandler : IRequestHandler<HandleWebhookCommand>
     public async Task Handle(HandleWebhookCommand req, CancellationToken ct)
     {
         // ── Idempotency check ────────────────────────────────────────────────
-        var existingLog = await _db.WebhookEventLogs
-            .FirstOrDefaultAsync(e => e.EventId == req.EventId, ct);
+        var alreadyProcessed = await _db.WebhookEventLogs
+            .AnyAsync(e => e.EventId == req.EventId, ct);
 
-        if (existingLog is not null && existingLog.ProcessedSuccessfully)
+        if (alreadyProcessed)
         {
-            _logger.LogInformation("Webhook event {EventId} already processed successfully, skipping", req.EventId);
+            _logger.LogInformation("Webhook event {EventId} already processed, skipping", req.EventId);
             return;
         }
 
-        // ── Store event ID (or update existing failed attempt) ───────────────
-        if (existingLog is null)
-        {
-            existingLog = WebhookEventLog.Create(req.EventId, req.EventType);
-            _db.WebhookEventLogs.Add(existingLog);
-            await _db.SaveChangesAsync(ct);
-        }
+        // ── Store event ID before processing ─────────────────────────────────
+        var eventLog = WebhookEventLog.Create(req.EventId, req.EventType);
+        _db.WebhookEventLogs.Add(eventLog);
+        await _db.SaveChangesAsync(ct);
 
         // ── Test charge isolation ────────────────────────────────────────────
         if (req.Metadata.TryGetValue("charge_type", out var chargeType)
@@ -90,10 +87,6 @@ public class HandleWebhookCommandHandler : IRequestHandler<HandleWebhookCommand>
         {
             await DispatchGroupLevelEventAsync(req, ct);
         }
-
-        // ── Mark as successfully processed ───────────────────────────────────
-        existingLog.MarkSuccessful();
-        await _db.SaveChangesAsync(ct);
     }
 
     /// <summary>

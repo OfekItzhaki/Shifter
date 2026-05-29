@@ -5,7 +5,7 @@ import { useTranslations, useLocale } from "next-intl";
 import { useRouter } from "next/navigation";
 import ShifterLogo from "@/components/shell/ShifterLogo";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
-import { getPlans, createSpaceCheckout, PlanDto } from "@/lib/api/billing";
+import { getPlans, createSpaceCheckout, getSpaceSubscription, PlanDto } from "@/lib/api/billing";
 import { useAuthStore } from "@/lib/store/authStore";
 import { useSpaceStore } from "@/lib/store/spaceStore";
 
@@ -111,6 +111,22 @@ export default function PricingPage() {
       // in this tab. If they cancel/go back, they're still logged in here.
       window.open(checkoutUrl, "_blank");
       setCheckoutLoading(null);
+
+      // Poll for subscription activation — when the user completes payment in the
+      // other tab, the webhook will activate the subscription. We poll every 5s and
+      // redirect to settings once it's active.
+      const pollInterval = setInterval(async () => {
+        try {
+          const sub = await getSpaceSubscription(spaceId);
+          if (sub && (sub.status === "active" || sub.isActive)) {
+            clearInterval(pollInterval);
+            router.push("/spaces/settings");
+          }
+        } catch { /* ignore polling errors */ }
+      }, 5000);
+
+      // Stop polling after 5 minutes
+      setTimeout(() => clearInterval(pollInterval), 300000);
     } catch (err: unknown) {
       setCheckoutLoading(null);
       const status = (err as { response?: { status?: number } })?.response?.status;
