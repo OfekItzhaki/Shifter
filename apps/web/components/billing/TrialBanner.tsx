@@ -32,6 +32,80 @@ export default function TrialBanner() {
   // Req 3.3: Hide when active + auto-renewing
   if (sub.status === "active" && sub.autoRenew) return null;
 
+  // Canceled subscription — show days remaining until access expires
+  if (sub.status === "canceled" && sub.currentPeriodEnd) {
+    const daysUntilExpiry = Math.max(
+      0,
+      Math.ceil(
+        (new Date(sub.currentPeriodEnd).getTime() - Date.now()) /
+          (1000 * 60 * 60 * 24)
+      )
+    );
+
+    if (daysUntilExpiry <= 0) {
+      // Period ended — show renew prompt
+      return (
+        <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <svg className="w-5 h-5 text-red-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+            </svg>
+            <span className="text-sm text-red-800 font-medium">
+              המנוי שלך הסתיים. חדש את המנוי כדי להמשיך להשתמש בסידור האוטומטי.
+            </span>
+          </div>
+          <button
+            onClick={() => router.push("/pricing")}
+            className="flex-shrink-0 bg-red-500 hover:bg-red-600 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
+          >
+            חדש מנוי
+          </button>
+        </div>
+      );
+    }
+
+    // Still has access — show warning
+    const colorClass = daysUntilExpiry <= 3 ? "bg-red-50 border-red-200" : daysUntilExpiry <= 7 ? "bg-amber-50 border-amber-200" : "bg-sky-50 border-sky-200";
+    const textClass = daysUntilExpiry <= 3 ? "text-red-800" : daysUntilExpiry <= 7 ? "text-amber-800" : "text-sky-800";
+    const btnClass = daysUntilExpiry <= 3 ? "text-red-700 border-red-300 hover:bg-red-100" : daysUntilExpiry <= 7 ? "text-amber-700 border-amber-300 hover:bg-amber-100" : "text-sky-700 border-sky-300 hover:bg-sky-100";
+
+    return (
+      <div className={`border rounded-xl px-4 py-2.5 flex items-center justify-between gap-3 ${colorClass}`}>
+        <span className={`text-sm ${textClass}`}>
+          ⚠️ המנוי שלך בוטל. הגישה תסתיים בעוד <strong>{daysUntilExpiry}</strong> ימים.
+        </span>
+        <button
+          onClick={() => router.push("/pricing")}
+          className={`flex-shrink-0 text-xs border px-3 py-1.5 rounded-lg transition-colors font-medium ${btnClass}`}
+        >
+          חדש מנוי
+        </button>
+      </div>
+    );
+  }
+
+  // Expired subscription — show renew prompt
+  if (sub.status === "expired") {
+    return (
+      <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <svg className="w-5 h-5 text-red-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+          </svg>
+          <span className="text-sm text-red-800 font-medium">
+            המנוי שלך הסתיים. חדש את המנוי כדי להמשיך להשתמש בסידור האוטומטי.
+          </span>
+        </div>
+        <button
+          onClick={() => router.push("/pricing")}
+          className="flex-shrink-0 bg-red-500 hover:bg-red-600 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
+        >
+          חדש מנוי
+        </button>
+      </div>
+    );
+  }
+
   // Req 3.4: Active + not auto-renewing + within 7 days of expiry
   if (sub.status === "active" && !sub.autoRenew && sub.currentPeriodEnd) {
     const daysUntilExpiry = Math.max(
@@ -107,8 +181,7 @@ export default function TrialBanner() {
                 />
               </svg>
               <span className="text-sm text-red-800 font-medium">
-                תקופת הניסיון הסתיימה. שדרג כדי להמשיך להשתמש בסידור
-                האוטומטי.
+                תקופת הניסיון הסתיימה. שדרג כדי להמשיך להשתמש בסידור האוטומטי.
               </span>
             </div>
             <button

@@ -2,9 +2,11 @@ using Jobuler.Application.Common;
 using Jobuler.Application.Scheduling.Commands;
 using Jobuler.Application.Scheduling.Queries;
 using Jobuler.Domain.Spaces;
+using Jobuler.Infrastructure.Persistence;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 
 namespace Jobuler.Api.Controllers;
@@ -16,11 +18,13 @@ public class ScheduleRunsController : ControllerBase
 {
     private readonly IMediator _mediator;
     private readonly IPermissionService _permissions;
+    private readonly AppDbContext _db;
 
-    public ScheduleRunsController(IMediator mediator, IPermissionService permissions)
+    public ScheduleRunsController(IMediator mediator, IPermissionService permissions, AppDbContext db)
     {
         _mediator = mediator;
         _permissions = permissions;
+        _db = db;
     }
 
     private Guid CurrentUserId =>
@@ -38,14 +42,35 @@ public class ScheduleRunsController : ControllerBase
         await _permissions.RequirePermissionAsync(
             CurrentUserId, spaceId, Permissions.ScheduleRecalculate, ct);
 
-        // Check subscription status — block if trial expired and no active subscription
+        // Check subscription status — block if no active subscription (space-level or group-level)
         if (req.GroupId.HasValue)
         {
-            var sub = await _mediator.Send(
-                new Application.Scheduling.Queries.CheckGroupSubscriptionQuery(spaceId, req.GroupId.Value), ct);
-            if (sub != null && !sub.IsActive)
-                return StatusCode(402, new { error = "תקופת הניסיון הסתיימה. שדרג את התוכנית כדי להפעיל סידור." });
-            // If sub is null, no subscription exists yet — allow (grace period)
+            // First check space-level subscription (new billing system)
+            var spaceSub = await _db.SpaceSubscriptions
+                .AsNoTracking()
+                .FirstOrDefaultAsync(s => s.SpaceId == spaceId, ct);
+
+            if (spaceSub != null)
+            {
+                // Space has a subscription record — check if access is granted
+                if (!spaceSub.IsAccessGranted)
+                {
+                    var msg = spaceSub.Status == Domain.Billing.SubscriptionStatus.Trialing
+                        ? "תקופת הניסיון הסתיימה. שדרג את התוכנית כדי להפעיל סידור."
+                        : "המנוי שלך אינו פעיל. חדש או שדרג את המנוי כדי להפעיל סידור.";
+                    return StatusCode(402, new { error = msg });
+                }
+                // Access granted — proceed
+            }
+            else
+            {
+                // No space subscription — fall back to group-level check (legacy)
+                var groupSub = await _mediator.Send(
+                    new Application.Scheduling.Queries.CheckGroupSubscriptionQuery(spaceId, req.GroupId.Value), ct);
+                if (groupSub != null && !groupSub.IsActive)
+                    return StatusCode(402, new { error = "תקופת הניסיון הסתיימה. שדרג את התוכנית כדי להפעיל סידור." });
+                // If groupSub is null, no subscription exists yet — allow (grace period)
+            }
         }
 
         // Validate trigger mode — only "standard" and "emergency" are accepted
