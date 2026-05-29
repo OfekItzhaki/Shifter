@@ -54,8 +54,14 @@ public class GetSpaceSubscriptionHandler : IRequestHandler<GetSpaceSubscriptionQ
                 DaysRemaining: isExpired ? 0 : daysRemaining);
         }
 
+        // Determine the effective status for the frontend
+        // If trialing but trial has expired, report as "expired" (not "trialing")
+        var effectiveStatus = subscription.IsTrialExpired
+            ? "expired"
+            : subscription.Status.ToString().ToLowerInvariant();
+
         return new SpaceSubscriptionDto(
-            Status: subscription.Status.ToString().ToLowerInvariant(),
+            Status: effectiveStatus,
             TierId: subscription.TierId,
             TrialStartsAt: subscription.TrialStartsAt,
             TrialEndsAt: subscription.TrialEndsAt,
