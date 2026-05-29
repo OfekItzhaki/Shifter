@@ -120,10 +120,14 @@ public class HandleSpaceSubscriptionCreatedCommandHandler : IRequestHandler<Hand
 
         if (sub is null)
         {
+            // No SpaceSubscription exists — create one and activate it directly.
+            // This handles cases where the trial record wasn't created during space setup.
             _logger.LogWarning(
-                "No SpaceSubscription found for SpaceId={SpaceId}. Skipping subscription_created",
+                "No SpaceSubscription found for SpaceId={SpaceId}. Creating and activating one",
                 spaceId);
-            return;
+            sub = SpaceSubscription.CreateTrial(spaceId, 1); // 1-day trial (will be immediately activated below)
+            _db.SpaceSubscriptions.Add(sub);
+            await _db.SaveChangesAsync(ct);
         }
 
         // ── Already active with LS ID — no-op (idempotency) ─────────────────

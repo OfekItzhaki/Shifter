@@ -108,7 +108,7 @@ apiClient.interceptors.response.use(
 
         localStorage.setItem("access_token", refreshData.accessToken);
         localStorage.setItem("refresh_token", refreshData.refreshToken);
-        document.cookie = `access_token=${refreshData.accessToken}; path=/; max-age=900; SameSite=Strict`;
+        document.cookie = `access_token=${refreshData.accessToken}; path=/; max-age=2592000; SameSite=Strict`;
 
         // Update timezone from refresh response (handles DST changes between sessions)
         if (refreshData.timezoneId !== undefined || refreshData.timezoneOffsetMinutes !== undefined) {

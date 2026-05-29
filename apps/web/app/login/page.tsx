@@ -48,8 +48,7 @@ function LoginForm() {
         if (cancelled) return;
         localStorage.setItem("access_token", tokens.accessToken);
         localStorage.setItem("refresh_token", tokens.refreshToken);
-        localStorage.removeItem("jobuler-space");
-        document.cookie = `access_token=${tokens.accessToken}; path=/; max-age=900; SameSite=Strict`;
+        document.cookie = `access_token=${tokens.accessToken}; path=/; max-age=2592000; SameSite=Strict`;
         const locale = tokens.preferredLocale || detectBrowserLocale();
         document.cookie = `locale=${locale}; path=/; max-age=31536000; SameSite=Strict`;
         useAuthStore.setState({

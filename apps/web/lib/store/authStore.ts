@@ -47,8 +47,9 @@ export const useAuthStore = create<AuthState>()(
         const result = await apiLogin(identifier, password);
         localStorage.setItem("access_token", result.accessToken);
         localStorage.setItem("refresh_token", result.refreshToken);
-        localStorage.removeItem("jobuler-space");
-        document.cookie = `access_token=${result.accessToken}; path=/; max-age=900; SameSite=Strict`;
+        // Don't clear jobuler-space on re-login — preserve the user's space selection.
+        // Only clear on logout (different user scenario).
+        document.cookie = `access_token=${result.accessToken}; path=/; max-age=2592000; SameSite=Strict`;
         // Use server-returned locale, or fall back to browser detection
         const locale = result.preferredLocale || detectBrowserLocale();
         document.cookie = `locale=${locale}; path=/; max-age=31536000; SameSite=Strict`;
