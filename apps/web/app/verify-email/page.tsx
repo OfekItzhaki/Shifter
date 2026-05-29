@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense, useEffect, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { verifyEmail, resendVerification } from "@/lib/api/auth";
@@ -9,8 +9,10 @@ import ShifterLogo from "@/components/shell/ShifterLogo";
 
 function VerifyEmailContent() {
   const t = useTranslations("verifyEmail");
+  const locale = useLocale();
   const searchParams = useSearchParams();
   const token = searchParams.get("token") ?? "";
+  const backArrow = locale === "he" ? "→" : "←";
 
   const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
   const [resendStatus, setResendStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
@@ -96,7 +98,7 @@ function VerifyEmailContent() {
 
       <p style={{ fontSize: "0.875rem", color: "#64748b" }}>
         <Link href="/login" style={{ color: "#0ea5e9", fontWeight: 500, textDecoration: "none" }}>
-          ← {t("goToLogin")}
+          {backArrow} {t("goToLogin")}
         </Link>
       </p>
     </div>

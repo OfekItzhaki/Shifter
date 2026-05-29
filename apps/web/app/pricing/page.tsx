@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { useRouter } from "next/navigation";
 import ShifterLogo from "@/components/shell/ShifterLogo";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
@@ -20,9 +20,11 @@ const FALLBACK_PLANS: PlanDto[] = [
 
 export default function PricingPage() {
   const t = useTranslations("pricing");
+  const locale = useLocale();
   const router = useRouter();
   const { isAuthenticated } = useAuthStore();
   const { currentSpaceId } = useSpaceStore();
+  const backArrow = locale === "he" ? "→" : "←";
 
   const [plans, setPlans] = useState<PlanDto[]>([]);
   const [loading, setLoading] = useState(true);
@@ -223,7 +225,7 @@ export default function PricingPage() {
               padding: 0,
             }}
           >
-            ← {t("back")}
+            {backArrow} {t("back")}
           </button>
           <div style={{ marginTop: "1rem" }}>
             <LanguageSwitcher variant="auth" />

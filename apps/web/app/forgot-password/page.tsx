@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { forgotPassword } from "@/lib/api/auth";
@@ -11,8 +11,10 @@ import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 export default function ForgotPasswordPage() {
   const t = useTranslations("auth");
+  const locale = useLocale();
   const router = useRouter();
   const { isAuthenticated } = useAuthStore();
+  const backArrow = locale === "he" ? "→" : "←";
   const [email, setEmail] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -128,7 +130,7 @@ export default function ForgotPasswordPage() {
 
           <p style={{ textAlign: "center", fontSize: "0.875rem", color: "#64748b", marginTop: "1.25rem" }}>
             <Link href="/login" style={{ color: "#0ea5e9", fontWeight: 500, textDecoration: "none" }}>
-              ← {t("backToLogin")}
+              {backArrow} {t("backToLogin")}
             </Link>
           </p>
 

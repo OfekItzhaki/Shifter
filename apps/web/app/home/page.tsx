@@ -164,7 +164,7 @@ function HomePage() {
           className="inline-flex items-center gap-1 text-sm text-sky-600 dark:text-sky-400 hover:underline bg-transparent border-none cursor-pointer p-0"
         >
           {t("viewFullGuide")}
-          <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} className="rtl:rotate-180">
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
           </svg>
         </button>
@@ -226,7 +226,7 @@ function HomePage() {
           className="inline-flex items-center gap-1 text-sm text-sky-600 dark:text-sky-400 hover:underline"
         >
           {t("viewAllUpdates")}
-          <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} className="rtl:rotate-180">
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
           </svg>
         </Link>

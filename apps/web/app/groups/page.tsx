@@ -177,7 +177,7 @@ function GroupsPage() {
                   >
                     {getAvatarLetter(g.name)}
                   </div>
-                  <svg className="w-4 h-4 text-slate-300 group-hover:text-sky-400 transition-colors mt-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <svg className="w-4 h-4 text-slate-300 group-hover:text-sky-400 transition-colors mt-1 rtl:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                   </svg>
                 </div>

@@ -18,6 +18,7 @@ export default function OnboardingPage() {
   const { setCurrentSpace } = useSpaceStore();
   const { userId } = useAuthStore();
   const isRtl = locale === "he";
+  const backArrow = locale === "he" ? "→" : "←";
 
   const [step, setStep] = useState<Step>("choose");
   const [spaceName, setSpaceName] = useState("");
@@ -178,7 +179,7 @@ export default function OnboardingPage() {
                 onClick={() => { setStep("choose"); setError(null); }}
                 className="text-xs text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
               >
-                ← {t("back")}
+                {backArrow} {t("back")}
               </button>
             </div>
           )}
@@ -218,7 +219,7 @@ export default function OnboardingPage() {
                 onClick={() => { setStep("choose"); setError(null); }}
                 className="text-xs text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
               >
-                ← {t("back")}
+                {backArrow} {t("back")}
               </button>
             </div>
           )}

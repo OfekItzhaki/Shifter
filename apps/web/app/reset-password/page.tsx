@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, Suspense } from "react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { resetPassword } from "@/lib/api/auth";
@@ -98,6 +98,8 @@ function ResetPasswordForm() {
 
 export default function ResetPasswordPage() {
   const t = useTranslations("auth");
+  const locale = useLocale();
+  const backArrow = locale === "he" ? "→" : "←";
   return (
     <main style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#f8fafc", padding: "1rem" }}>
       <div style={{ width: "100%", maxWidth: "380px" }}>
@@ -118,7 +120,7 @@ export default function ResetPasswordPage() {
           </Suspense>
           <p style={{ textAlign: "center", fontSize: "0.875rem", color: "#64748b", marginTop: "1.25rem" }}>
             <Link href="/login" style={{ color: "#0ea5e9", fontWeight: 500, textDecoration: "none" }}>
-              ← {t("backToLogin")}
+              {backArrow} {t("backToLogin")}
             </Link>
           </p>
         </div>
