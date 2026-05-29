@@ -123,8 +123,7 @@ apiClient.interceptors.response.use(
 
         original.headers.Authorization = `Bearer ${refreshData.accessToken}`;
         return apiClient(original);
-      } catch (refreshErr) {
-        console.error("[Auth Interceptor] Refresh failed:", refreshErr);
+      } catch {
         isRefreshing = false;
         refreshSubscribers = [];
         // Refresh failed — clear tokens and cookie, redirect to login

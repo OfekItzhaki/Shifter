@@ -74,34 +74,31 @@ export default function PricingPage() {
     const authState = useAuthStore.getState();
     const spaceState = useSpaceStore.getState();
 
-    console.log("[Pricing] handleSelectPlan:", {
-      variantId: plan.variantId,
-      isAuthenticated: authState.isAuthenticated,
-      userId: authState.userId,
-      currentSpaceId: spaceState.currentSpaceId,
-      hasAccessToken: !!localStorage.getItem("access_token"),
-      hasRefreshToken: !!localStorage.getItem("refresh_token"),
-    });
+    // Determine if user is authenticated: check both Zustand state AND localStorage tokens.
+    // After returning from an external redirect (e.g., LemonSqueezy checkout), the Zustand
+    // store may not have rehydrated yet, but tokens are still in localStorage.
+    const hasTokens = !!localStorage.getItem("access_token") && !!localStorage.getItem("refresh_token");
+    const isLoggedIn = authState.isAuthenticated || hasTokens;
 
     // If not logged in, redirect to login with return URL
-    if (!authState.isAuthenticated) {
-      console.warn("[Pricing] NOT authenticated — redirecting to login");
-      // Persist debug info so it survives the navigation
-      sessionStorage.setItem("pricing_debug", JSON.stringify({
-        isAuthenticated: authState.isAuthenticated,
-        userId: authState.userId,
-        currentSpaceId: spaceState.currentSpaceId,
-        hasAccessToken: !!localStorage.getItem("access_token"),
-        hasRefreshToken: !!localStorage.getItem("refresh_token"),
-        zustandRaw: localStorage.getItem("jobuler-auth"),
-        timestamp: new Date().toISOString(),
-      }));
+    if (!isLoggedIn) {
       router.push("/login?redirect=/pricing");
       return;
     }
 
-    // If no space selected, redirect to spaces
-    if (!spaceState.currentSpaceId) {
+    // If no space selected, try to get it from localStorage (same rehydration issue)
+    let spaceId = spaceState.currentSpaceId;
+    if (!spaceId) {
+      try {
+        const raw = localStorage.getItem("jobuler-space");
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          spaceId = parsed?.state?.currentSpaceId ?? null;
+        }
+      } catch { /* ignore parse errors */ }
+    }
+
+    if (!spaceId) {
       router.push("/spaces");
       return;
     }
@@ -109,8 +106,7 @@ export default function PricingPage() {
     // Create checkout with the selected variant ID
     setCheckoutLoading(plan.variantId);
     try {
-      console.log("[Pricing] Creating checkout:", { spaceId: spaceState.currentSpaceId, variantId: plan.variantId, isAuthenticated: authState.isAuthenticated });
-      const { checkoutUrl } = await createSpaceCheckout(spaceState.currentSpaceId, plan.variantId);
+      const { checkoutUrl } = await createSpaceCheckout(spaceId, plan.variantId);
       window.location.href = checkoutUrl;
     } catch (err: unknown) {
       console.error("[Pricing] Checkout failed:", err);
