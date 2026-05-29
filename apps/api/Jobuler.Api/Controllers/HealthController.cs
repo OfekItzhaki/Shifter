@@ -99,4 +99,48 @@ public class HealthController : ControllerBase
         var statusCode = report.OverallStatus == "healthy" ? 200 : 503;
         return StatusCode(statusCode, report);
     }
+
+    /// <summary>Debug: Check subscription state for a space directly from DB (temporary diagnostic).</summary>
+    [HttpGet("debug/subscription/{spaceId:guid}")]
+    [AllowAnonymous]
+    public async Task<IActionResult> DebugSubscription(Guid spaceId, CancellationToken ct)
+    {
+        var sub = await _db.SpaceSubscriptions
+            .AsNoTracking()
+            .FirstOrDefaultAsync(s => s.SpaceId == spaceId, ct);
+
+        if (sub is null)
+            return Ok(new { exists = false, spaceId });
+
+        return Ok(new
+        {
+            exists = true,
+            spaceId,
+            status = sub.Status.ToString(),
+            tierId = sub.TierId,
+            lsSubscriptionId = sub.LemonSqueezySubscriptionId,
+            lsCustomerId = sub.LemonSqueezyCustomerId,
+            trialStartsAt = sub.TrialStartsAt,
+            trialEndsAt = sub.TrialEndsAt,
+            currentPeriodStart = sub.CurrentPeriodStart,
+            currentPeriodEnd = sub.CurrentPeriodEnd,
+            isAccessGranted = sub.IsAccessGranted,
+            isTrialExpired = sub.IsTrialExpired,
+        });
+    }
+
+    /// <summary>Debug: Check recent webhook events (temporary diagnostic).</summary>
+    [HttpGet("debug/webhooks")]
+    [AllowAnonymous]
+    public async Task<IActionResult> DebugWebhooks(CancellationToken ct)
+    {
+        var events = await _db.WebhookEventLogs
+            .AsNoTracking()
+            .OrderByDescending(e => e.ProcessedAt)
+            .Take(20)
+            .Select(e => new { e.EventId, e.EventType, e.ProcessedAt, e.ProcessedSuccessfully })
+            .ToListAsync(ct);
+
+        return Ok(events);
+    }
 }
