@@ -1189,7 +1189,13 @@
     "comingSoon": "Payment will be available soon! Contact us via chat for details.",
     "loading": "Loading plans...",
     "fetchError": "Could not load current pricing. Showing estimated prices.",
-    "checkoutError": "Failed to create checkout. Please try again."
+    "checkoutError": "Failed to create checkout. Please try again.",
+    "waitingForPayment": "Waiting for payment completion...",
+    "selectedPlan": "Plan: {name}",
+    "waitingHint": "Complete the payment in the new tab. This page will update automatically.",
+    "cancelWaiting": "Cancel",
+    "paymentSuccess": "Payment successful!",
+    "redirecting": "Redirecting to settings..."
   },
   "onboarding": {
     "title": "Getting Started",
@@ -1273,6 +1279,9 @@
     "trialStart": "Trial Start",
     "trialEnd": "Trial End",
     "daysRemaining": "Days Remaining",
+    "daysRemainingValue": "{count} days",
+    "planLabel": "Plan",
+    "paymentMethod": "Payment Method",
     "periodStart": "Period Start",
     "periodEnd": "Period End",
     "canceledAt": "Cancellation Date",

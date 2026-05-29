@@ -1201,7 +1201,13 @@
     "comingSoon": "תשלום יהיה זמין בקרוב! צור קשר דרך הצ׳אט לפרטים.",
     "loading": "טוען תוכניות...",
     "fetchError": "לא ניתן לטעון מחירים עדכניים. מוצגים מחירים משוערים.",
-    "checkoutError": "שגיאה ביצירת עמוד תשלום. נסה שוב."
+    "checkoutError": "שגיאה ביצירת עמוד תשלום. נסה שוב.",
+    "waitingForPayment": "ממתין להשלמת התשלום...",
+    "selectedPlan": "תוכנית: {name}",
+    "waitingHint": "השלם את התשלום בלשונית החדשה. הדף יתעדכן אוטומטית.",
+    "cancelWaiting": "ביטול",
+    "paymentSuccess": "התשלום בוצע בהצלחה!",
+    "redirecting": "מעביר להגדרות..."
   },
   "onboarding": {
     "title": "תחילת העבודה",
@@ -1285,6 +1291,9 @@
     "trialStart": "תחילת ניסיון",
     "trialEnd": "סיום ניסיון",
     "daysRemaining": "ימים שנותרו",
+    "daysRemainingValue": "{count} ימים",
+    "planLabel": "תוכנית",
+    "paymentMethod": "אמצעי תשלום",
     "periodStart": "תחילת תקופה",
     "periodEnd": "סיום תקופה",
     "canceledAt": "תאריך ביטול",

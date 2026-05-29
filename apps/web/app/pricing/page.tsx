@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import { useRouter } from "next/navigation";
 import ShifterLogo from "@/components/shell/ShifterLogo";
@@ -18,6 +18,11 @@ const FALLBACK_PLANS: PlanDto[] = [
   { variantId: "", name: "Unlimited", priceInCents: 35000, interval: "month", description: null, sortOrder: 5 },
 ];
 
+type PaymentState =
+  | { phase: "idle" }
+  | { phase: "polling"; planName: string }
+  | { phase: "success"; planName: string };
+
 export default function PricingPage() {
   const t = useTranslations("pricing");
   const locale = useLocale();
@@ -30,6 +35,18 @@ export default function PricingPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
+  const [paymentState, setPaymentState] = useState<PaymentState>({ phase: "idle" });
+
+  const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const pollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Cleanup polling on unmount
+  useEffect(() => {
+    return () => {
+      if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+      if (pollTimeoutRef.current) clearTimeout(pollTimeoutRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -55,6 +72,18 @@ export default function PricingPage() {
     return () => { cancelled = true; };
   }, []);
 
+  const cancelPolling = useCallback(() => {
+    if (pollIntervalRef.current) {
+      clearInterval(pollIntervalRef.current);
+      pollIntervalRef.current = null;
+    }
+    if (pollTimeoutRef.current) {
+      clearTimeout(pollTimeoutRef.current);
+      pollTimeoutRef.current = null;
+    }
+    setPaymentState({ phase: "idle" });
+  }, []);
+
   function handleBack() {
     if (typeof window !== "undefined" && window.history.length <= 1) {
       router.push("/");
@@ -75,8 +104,6 @@ export default function PricingPage() {
     const spaceState = useSpaceStore.getState();
 
     // Determine if user is authenticated: check both Zustand state AND localStorage tokens.
-    // After returning from an external redirect (e.g., LemonSqueezy checkout), the Zustand
-    // store may not have rehydrated yet, but tokens are still in localStorage.
     const hasTokens = !!localStorage.getItem("access_token") && !!localStorage.getItem("refresh_token");
     const isLoggedIn = authState.isAuthenticated || hasTokens;
 
@@ -108,36 +135,48 @@ export default function PricingPage() {
     try {
       const { checkoutUrl } = await createSpaceCheckout(spaceId, plan.variantId);
       // Open checkout in a new tab so the user's auth state is preserved
-      // in this tab. If they cancel/go back, they're still logged in here.
       window.open(checkoutUrl, "_blank");
       setCheckoutLoading(null);
 
-      // Poll for subscription activation — when the user completes payment in the
-      // other tab, the webhook will activate the subscription. We poll every 5s and
-      // redirect to settings once it's active.
-      const pollInterval = setInterval(async () => {
+      // Show the "waiting for payment" state
+      setPaymentState({ phase: "polling", planName: plan.name });
+
+      // Poll for subscription activation
+      pollIntervalRef.current = setInterval(async () => {
         try {
           const sub = await getSpaceSubscription(spaceId);
           if (sub && (sub.status === "active" || sub.isActive)) {
-            clearInterval(pollInterval);
-            router.push("/spaces/settings");
+            if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+            if (pollTimeoutRef.current) clearTimeout(pollTimeoutRef.current);
+            pollIntervalRef.current = null;
+            pollTimeoutRef.current = null;
+
+            // Show success briefly before redirecting
+            setPaymentState({ phase: "success", planName: plan.name });
+            setTimeout(() => {
+              router.push("/spaces/settings");
+            }, 2000);
           }
         } catch { /* ignore polling errors */ }
       }, 5000);
 
       // Stop polling after 5 minutes
-      setTimeout(() => clearInterval(pollInterval), 300000);
+      pollTimeoutRef.current = setTimeout(() => {
+        if (pollIntervalRef.current) {
+          clearInterval(pollIntervalRef.current);
+          pollIntervalRef.current = null;
+        }
+        setPaymentState({ phase: "idle" });
+      }, 300000);
     } catch (err: unknown) {
       setCheckoutLoading(null);
       const status = (err as { response?: { status?: number } })?.response?.status;
       if (status === 401) {
-        // Token expired and refresh failed — ask user to reload
         alert(t("sessionExpiredReload") ?? "Your session expired. Please reload the page and try again.");
         window.location.reload();
       } else {
         alert(t("checkoutError"));
       }
-      setCheckoutLoading(null);
     }
   }
 
@@ -147,34 +186,85 @@ export default function PricingPage() {
 
   if (loading) {
     return (
-      <main style={{ minHeight: "100vh", background: "#f8fafc", padding: "2rem 1rem", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <div style={{ textAlign: "center", color: "#64748b" }}>
-          <div style={{ fontSize: "1.5rem", marginBottom: "0.5rem" }}>⏳</div>
+      <main className="min-h-screen bg-slate-50 dark:bg-slate-900 p-8 flex items-center justify-center">
+        <div className="text-center text-slate-500 dark:text-slate-400">
+          <div className="text-2xl mb-2">⏳</div>
           <p>{t("loading")}</p>
         </div>
       </main>
     );
   }
 
+  // Payment waiting overlay
+  if (paymentState.phase !== "idle") {
+    return (
+      <main className="min-h-screen bg-slate-50 dark:bg-slate-900 p-8 flex items-center justify-center">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-lg p-8 max-w-sm w-full text-center">
+          {paymentState.phase === "polling" && (
+            <>
+              {/* Spinner */}
+              <div className="flex justify-center mb-5">
+                <div className="w-10 h-10 border-3 border-sky-200 dark:border-sky-800 border-t-sky-500 rounded-full animate-spin" />
+              </div>
+              <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">
+                {t("waitingForPayment")}
+              </h2>
+              <p className="text-sm text-slate-500 dark:text-slate-400 mb-1">
+                {t("selectedPlan", { name: paymentState.planName })}
+              </p>
+              <p className="text-xs text-slate-400 dark:text-slate-500 mb-6">
+                {t("waitingHint")}
+              </p>
+              <button
+                onClick={cancelPolling}
+                className="px-5 py-2.5 rounded-lg border border-slate-200 dark:border-slate-600 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+              >
+                {t("cancelWaiting")}
+              </button>
+            </>
+          )}
+          {paymentState.phase === "success" && (
+            <>
+              {/* Success icon */}
+              <div className="flex justify-center mb-5">
+                <div className="w-14 h-14 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+                  <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="#22c55e" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+              </div>
+              <h2 className="text-lg font-semibold text-green-700 dark:text-green-300 mb-2">
+                {t("paymentSuccess")}
+              </h2>
+              <p className="text-sm text-slate-500 dark:text-slate-400">
+                {t("redirecting")}
+              </p>
+            </>
+          )}
+        </div>
+      </main>
+    );
+  }
+
   return (
-    <main style={{ minHeight: "100vh", background: "#f8fafc", padding: "2rem 1rem" }}>
-      <div style={{ maxWidth: 900, margin: "0 auto" }}>
+    <main className="min-h-screen bg-slate-50 dark:bg-slate-900 p-8">
+      <div className="max-w-[900px] mx-auto">
         {/* Header */}
-        <div style={{ textAlign: "center", marginBottom: "2.5rem" }}>
-          <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 10, marginBottom: "1rem" }}>
+        <div className="text-center mb-10">
+          <div className="flex justify-center items-center gap-2.5 mb-4">
             <ShifterLogo size={36} />
-            <span style={{ fontSize: "1.5rem", fontWeight: 700, color: "#0f172a" }}>Shifter</span>
+            <span className="text-2xl font-bold text-slate-900 dark:text-white">Shifter</span>
           </div>
-          <h1 style={{ fontSize: "1.75rem", fontWeight: 700, color: "#0f172a", margin: 0 }}>
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-white m-0">
             {t("title")}
           </h1>
-          <p style={{ color: "#64748b", fontSize: "0.95rem", marginTop: "0.5rem" }}>
+          <p className="text-slate-500 dark:text-slate-400 text-sm mt-2">
             {t("subtitle")}
           </p>
         </div>
 
         {/* Plans grid */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "1rem" }}>
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(160px,1fr))] gap-4">
           {plans.map((plan, i) => {
             const isPopular = i === Math.floor(plans.length / 2);
             const isLoadingCheckout = checkoutLoading === plan.variantId;
@@ -182,55 +272,40 @@ export default function PricingPage() {
             return (
               <div
                 key={plan.variantId || `fallback-${i}`}
-                style={{
-                  background: "white",
-                  borderRadius: 16,
-                  border: isPopular ? "2px solid #0ea5e9" : "1px solid #e2e8f0",
-                  padding: "1.5rem 1.25rem",
-                  textAlign: "center",
-                  position: "relative",
-                  boxShadow: isPopular ? "0 4px 24px rgba(14,165,233,0.12)" : "0 2px 8px rgba(0,0,0,0.04)",
-                }}
+                className={`bg-white dark:bg-slate-800 rounded-2xl p-6 text-center relative ${
+                  isPopular
+                    ? "border-2 border-sky-500 shadow-[0_4px_24px_rgba(14,165,233,0.12)]"
+                    : "border border-slate-200 dark:border-slate-700 shadow-sm"
+                }`}
               >
                 {isPopular && (
-                  <span style={{
-                    position: "absolute", top: -12, left: "50%", transform: "translateX(-50%)",
-                    background: "#0ea5e9", color: "white", fontSize: "0.7rem", fontWeight: 600,
-                    padding: "2px 10px", borderRadius: 20,
-                  }}>
+                  <span className="absolute -top-3 start-1/2 -translate-x-1/2 bg-sky-500 text-white text-[0.7rem] font-semibold px-2.5 py-0.5 rounded-full">
                     {t("popular")}
                   </span>
                 )}
-                <div style={{ fontSize: "0.85rem", fontWeight: 600, color: "#374151", marginBottom: "0.5rem" }}>
+                <div className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">
                   {plan.name}
                 </div>
-                <div style={{ fontSize: "2rem", fontWeight: 700, color: "#0f172a" }}>
+                <div className="text-3xl font-bold text-slate-900 dark:text-white">
                   {t("price", { amount: formatPrice(plan.priceInCents) })}
                 </div>
-                <div style={{ fontSize: "0.8rem", color: "#94a3b8", marginBottom: "1rem" }}>
+                <div className="text-xs text-slate-400 dark:text-slate-500 mb-4">
                   {t("perMonth")}
                 </div>
                 {plan.description && (
                   <div
-                    style={{ fontSize: "0.75rem", color: "#64748b", marginBottom: "0.75rem" }}
+                    className="text-xs text-slate-500 dark:text-slate-400 mb-3"
                     dangerouslySetInnerHTML={{ __html: plan.description }}
                   />
                 )}
                 <button
                   onClick={() => handleSelectPlan(plan)}
                   disabled={isLoadingCheckout}
-                  style={{
-                    width: "100%",
-                    padding: "0.6rem",
-                    borderRadius: 10,
-                    border: isPopular ? "none" : "1px solid #e2e8f0",
-                    background: isPopular ? "#0ea5e9" : "white",
-                    color: isPopular ? "white" : "#374151",
-                    fontWeight: 600,
-                    fontSize: "0.85rem",
-                    cursor: isLoadingCheckout ? "wait" : "pointer",
-                    opacity: isLoadingCheckout ? 0.6 : 1,
-                  }}
+                  className={`w-full py-2.5 rounded-xl text-sm font-semibold transition-colors disabled:opacity-60 disabled:cursor-wait ${
+                    isPopular
+                      ? "bg-sky-500 hover:bg-sky-600 text-white border-none"
+                      : "bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-600"
+                  }`}
                 >
                   {isLoadingCheckout ? "..." : t("selectPlan")}
                 </button>
@@ -240,38 +315,30 @@ export default function PricingPage() {
         </div>
 
         {/* Features */}
-        <div style={{ marginTop: "2.5rem", textAlign: "center" }}>
-          <p style={{ color: "#64748b", fontSize: "0.875rem" }}>
+        <div className="mt-10 text-center">
+          <p className="text-slate-500 dark:text-slate-400 text-sm">
             {t("allPlansInclude")}
           </p>
         </div>
 
         {/* Error notice */}
         {error && (
-          <div style={{ marginTop: "1rem", textAlign: "center" }}>
-            <p style={{ color: "#f59e0b", fontSize: "0.8rem" }}>
+          <div className="mt-4 text-center">
+            <p className="text-amber-500 text-xs">
               {t("fetchError")}
             </p>
           </div>
         )}
 
         {/* Back + Language */}
-        <div style={{ marginTop: "2rem", textAlign: "center" }}>
+        <div className="mt-8 text-center">
           <button
             onClick={handleBack}
-            style={{
-              color: "#0ea5e9",
-              fontSize: "0.875rem",
-              textDecoration: "none",
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-              padding: 0,
-            }}
+            className="text-sky-500 text-sm bg-transparent border-none cursor-pointer p-0 hover:underline"
           >
             {backArrow} {t("back")}
           </button>
-          <div style={{ marginTop: "1rem" }}>
+          <div className="mt-4">
             <LanguageSwitcher variant="auth" />
           </div>
         </div>

@@ -1,13 +1,15 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import {
   getSpaceSubscription,
   createSpaceCheckout,
   cancelSpaceSubscription,
   renewSpaceSubscription,
+  getPlans,
   SpaceSubscriptionDto,
+  PlanDto,
 } from "@/lib/api/billing";
 
 interface Props {
@@ -24,15 +26,21 @@ type LoadingState = "loading" | "loaded" | "error";
  */
 export default function SpaceBillingCard({ spaceId, hasBillingPermission }: Props) {
   const t = useTranslations("billing");
+  const locale = useLocale();
   const [subscription, setSubscription] = useState<SpaceSubscriptionDto | null>(null);
+  const [plans, setPlans] = useState<PlanDto[]>([]);
   const [loadingState, setLoadingState] = useState<LoadingState>("loading");
 
   const fetchSubscription = useCallback(async () => {
     if (!spaceId) return;
     setLoadingState("loading");
     try {
-      const data = await getSpaceSubscription(spaceId);
+      const [data, plansData] = await Promise.all([
+        getSpaceSubscription(spaceId),
+        getPlans().catch(() => [] as PlanDto[]),
+      ]);
       setSubscription(data);
+      setPlans(plansData);
       setLoadingState("loaded");
     } catch {
       setLoadingState("error");
@@ -122,16 +130,30 @@ export default function SpaceBillingCard({ spaceId, hasBillingPermission }: Prop
     );
   }
 
+  // Resolve plan name from tierId
+  const planName = resolvePlanName(subscription.tierId, plans);
+
   return (
-    <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-5 shadow-sm">
+    <div className={`rounded-2xl p-5 shadow-sm border ${
+      subscription.status === "active"
+        ? "bg-green-50/50 dark:bg-green-900/10 border-green-200 dark:border-green-800"
+        : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700"
+    }`}>
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-sm font-semibold text-slate-900 dark:text-white">
-          {t("title")}
-        </h2>
+        <div className="flex items-center gap-2">
+          <h2 className="text-sm font-semibold text-slate-900 dark:text-white">
+            {t("title")}
+          </h2>
+          {planName && subscription.status === "active" && (
+            <span className="text-xs font-medium px-2 py-0.5 rounded-md bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300">
+              {planName}
+            </span>
+          )}
+        </div>
         <StatusBadge status={subscription.status} />
       </div>
 
-      <SubscriptionDetails subscription={subscription} />
+      <SubscriptionDetails subscription={subscription} locale={locale} planName={planName} />
 
       <ActionButtons
         spaceId={spaceId}
@@ -140,6 +162,16 @@ export default function SpaceBillingCard({ spaceId, hasBillingPermission }: Prop
       />
     </div>
   );
+}
+
+// ── Plan Name Resolution ──────────────────────────────────────────────────────
+
+function resolvePlanName(tierId: string | null, plans: PlanDto[]): string | null {
+  if (!tierId || tierId === "trial") return null;
+  const matchedPlan = plans.find((p) => p.variantId === tierId);
+  if (matchedPlan) return matchedPlan.name;
+  // Fallback: format the tierId nicely
+  return null;
 }
 
 // ── Status Badge ──────────────────────────────────────────────────────────────
@@ -192,16 +224,24 @@ function getStatusBadgeConfig(status: SpaceSubscriptionDto["status"], t: (key: s
 
 // ── Subscription Details ──────────────────────────────────────────────────────
 
-function SubscriptionDetails({ subscription }: { subscription: SpaceSubscriptionDto }) {
+function SubscriptionDetails({
+  subscription,
+  locale,
+  planName,
+}: {
+  subscription: SpaceSubscriptionDto;
+  locale: string;
+  planName: string | null;
+}) {
   switch (subscription.status) {
     case "trialing":
-      return <TrialingDetails subscription={subscription} />;
+      return <TrialingDetails subscription={subscription} locale={locale} />;
     case "active":
-      return <ActiveDetails subscription={subscription} />;
+      return <ActiveDetails subscription={subscription} locale={locale} planName={planName} />;
     case "canceled":
-      return <CanceledDetails subscription={subscription} />;
+      return <CanceledDetails subscription={subscription} locale={locale} />;
     case "past_due":
-      return <PastDueDetails subscription={subscription} />;
+      return <PastDueDetails subscription={subscription} locale={locale} />;
     case "expired":
       return <ExpiredDetails />;
     default:
@@ -209,45 +249,76 @@ function SubscriptionDetails({ subscription }: { subscription: SpaceSubscription
   }
 }
 
-function TrialingDetails({ subscription }: { subscription: SpaceSubscriptionDto }) {
+function TrialingDetails({ subscription, locale }: { subscription: SpaceSubscriptionDto; locale: string }) {
   const t = useTranslations("billing");
   return (
     <div className="space-y-2">
-      <DetailRow label={t("trialStart")} value={formatDate(subscription.trialStartsAt)} />
-      <DetailRow label={t("trialEnd")} value={formatDate(subscription.trialEndsAt)} />
+      <DetailRow label={t("trialStart")} value={formatDateLocalized(subscription.trialStartsAt, locale)} />
+      <DetailRow label={t("trialEnd")} value={formatDateLocalized(subscription.trialEndsAt, locale)} />
       {subscription.daysRemaining !== null && (
-        <DetailRow label={t("daysRemaining")} value={String(subscription.daysRemaining)} />
+        <DetailRow
+          label={t("daysRemaining")}
+          value={t("daysRemainingValue", { count: subscription.daysRemaining })}
+          highlight={subscription.daysRemaining <= 3}
+        />
       )}
     </div>
   );
 }
 
-function ActiveDetails({ subscription }: { subscription: SpaceSubscriptionDto }) {
+function ActiveDetails({
+  subscription,
+  locale,
+  planName,
+}: {
+  subscription: SpaceSubscriptionDto;
+  locale: string;
+  planName: string | null;
+}) {
   const t = useTranslations("billing");
   return (
     <div className="space-y-2">
-      <DetailRow label={t("periodStart")} value={formatDate(subscription.currentPeriodStart)} />
-      <DetailRow label={t("periodEnd")} value={formatDate(subscription.currentPeriodEnd)} />
+      {planName && (
+        <DetailRow label={t("planLabel")} value={planName} />
+      )}
+      <DetailRow label={t("periodStart")} value={formatDateLocalized(subscription.currentPeriodStart, locale)} />
+      <DetailRow label={t("periodEnd")} value={formatDateLocalized(subscription.currentPeriodEnd, locale)} />
+      {subscription.daysRemaining !== null && subscription.daysRemaining > 0 && (
+        <DetailRow
+          label={t("daysRemaining")}
+          value={t("daysRemainingValue", { count: subscription.daysRemaining })}
+        />
+      )}
+      {subscription.cardLast4 && (
+        <DetailRow label={t("paymentMethod")} value={`•••• ${subscription.cardLast4}`} />
+      )}
     </div>
   );
 }
 
-function CanceledDetails({ subscription }: { subscription: SpaceSubscriptionDto }) {
+function CanceledDetails({ subscription, locale }: { subscription: SpaceSubscriptionDto; locale: string }) {
   const t = useTranslations("billing");
   return (
     <div className="space-y-2">
-      <DetailRow label={t("canceledAt")} value={formatDate(subscription.canceledAt)} />
-      <DetailRow label={t("accessExpires")} value={formatDate(subscription.currentPeriodEnd)} />
+      <DetailRow label={t("canceledAt")} value={formatDateLocalized(subscription.canceledAt, locale)} />
+      <DetailRow label={t("accessExpires")} value={formatDateLocalized(subscription.currentPeriodEnd, locale)} />
+      {subscription.daysRemaining !== null && subscription.daysRemaining > 0 && (
+        <DetailRow
+          label={t("daysRemaining")}
+          value={t("daysRemainingValue", { count: subscription.daysRemaining })}
+          highlight
+        />
+      )}
     </div>
   );
 }
 
-function PastDueDetails({ subscription }: { subscription: SpaceSubscriptionDto }) {
+function PastDueDetails({ subscription, locale }: { subscription: SpaceSubscriptionDto; locale: string }) {
   const t = useTranslations("billing");
   return (
     <div className="space-y-2">
-      <DetailRow label={t("periodStart")} value={formatDate(subscription.currentPeriodStart)} />
-      <DetailRow label={t("periodEnd")} value={formatDate(subscription.currentPeriodEnd)} />
+      <DetailRow label={t("periodStart")} value={formatDateLocalized(subscription.currentPeriodStart, locale)} />
+      <DetailRow label={t("periodEnd")} value={formatDateLocalized(subscription.currentPeriodEnd, locale)} />
       <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
         {t("pastDueWarning")}
       </p>
@@ -393,7 +464,7 @@ function ErrorToast({ message, onDismiss }: { message: string | null; onDismiss:
     <div
       role="alert"
       aria-live="assertive"
-      className="fixed bottom-6 right-6 z-[100] animate-in slide-in-from-bottom-4 fade-in duration-300"
+      className="fixed bottom-6 end-6 z-[100] animate-in slide-in-from-bottom-4 fade-in duration-300"
     >
       <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-red-200 dark:border-red-700 px-5 py-4 flex items-center gap-3 max-w-sm">
         <div className="w-10 h-10 rounded-xl bg-red-50 dark:bg-red-900/30 flex items-center justify-center flex-shrink-0">
@@ -431,25 +502,35 @@ function ErrorToast({ message, onDismiss }: { message: string | null; onDismiss:
 
 // ── Shared UI ─────────────────────────────────────────────────────────────────
 
-function DetailRow({ label, value }: { label: string; value: string }) {
+function DetailRow({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
   return (
     <div className="flex items-center justify-between">
       <span className="text-xs text-slate-500 dark:text-slate-400">{label}</span>
-      <span className="text-sm font-medium text-slate-900 dark:text-white">{value}</span>
+      <span className={`text-sm font-medium ${
+        highlight
+          ? "text-amber-600 dark:text-amber-400"
+          : "text-slate-900 dark:text-white"
+      }`}>
+        {value}
+      </span>
     </div>
   );
 }
 
 /**
- * Formats an ISO date string to YYYY-MM-DD.
+ * Formats an ISO date string using the browser's Intl.DateTimeFormat for localized display.
  * Returns "—" if the value is null or invalid.
  */
-function formatDate(isoDate: string | null): string {
+function formatDateLocalized(isoDate: string | null, locale: string): string {
   if (!isoDate) return "—";
   try {
     const date = new Date(isoDate);
     if (isNaN(date.getTime())) return "—";
-    return date.toISOString().split("T")[0];
+    return new Intl.DateTimeFormat(locale, {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    }).format(date);
   } catch {
     return "—";
   }

@@ -31,6 +31,8 @@ export interface SpaceSubscriptionDto {
   autoRenew: boolean;
   isActive: boolean;
   daysRemaining: number | null;
+  /** Last 4 digits of the payment card, if available from the provider */
+  cardLast4?: string | null;
 }
 
 export interface CheckoutResponse {
