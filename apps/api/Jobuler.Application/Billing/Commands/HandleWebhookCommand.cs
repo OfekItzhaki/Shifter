@@ -73,20 +73,18 @@ public class HandleWebhookCommandHandler : IRequestHandler<HandleWebhookCommand>
             return;
         }
 
-        // ── Route: space-level vs group-level ────────────────────────────────
-        // Space-level events have space_id in metadata WITHOUT group_id.
-        // Group-level events have both space_id AND group_id (legacy).
-        var isSpaceLevel = req.Metadata.ContainsKey("space_id")
-                           && !req.Metadata.ContainsKey("group_id");
+        // ── Route to space-level handlers ────────────────────────────────────
+        // All subscription events are space-level. Events with group_id in metadata
+        // are from the deprecated group billing system and are ignored.
+        if (!req.Metadata.ContainsKey("space_id"))
+        {
+            _logger.LogWarning(
+                "Webhook event '{EventType}' (EventId: {EventId}) has no space_id in metadata. Ignoring",
+                req.EventType, req.EventId);
+            return;
+        }
 
-        if (isSpaceLevel)
-        {
-            await DispatchSpaceLevelEventAsync(req, ct);
-        }
-        else
-        {
-            await DispatchGroupLevelEventAsync(req, ct);
-        }
+        await DispatchSpaceLevelEventAsync(req, ct);
     }
 
     /// <summary>
@@ -116,26 +114,10 @@ public class HandleWebhookCommandHandler : IRequestHandler<HandleWebhookCommand>
 
             case "subscription_payment_success":
                 _logger.LogInformation(
-                    "Space-level subscription_payment_success received (EventId: {EventId}). No handler required",
+                    "subscription_payment_success received (EventId: {EventId}). No handler required",
                     req.EventId);
                 break;
         }
-    }
-
-    /// <summary>
-    /// Group-level subscription webhooks are no longer processed.
-    /// Subscriptions are now managed exclusively at the space level.
-    /// This method is kept as a no-op for backward compatibility with any
-    /// in-flight webhook events that still carry group_id metadata.
-    /// </summary>
-    private Task DispatchGroupLevelEventAsync(HandleWebhookCommand req, CancellationToken ct)
-    {
-        _logger.LogWarning(
-            "Received group-level webhook event '{EventType}' (EventId: {EventId}). " +
-            "Group-level subscriptions are deprecated — ignoring",
-            req.EventType, req.EventId);
-
-        return Task.CompletedTask;
     }
 
     /// <summary>
