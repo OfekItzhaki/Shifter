@@ -4,10 +4,12 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSpaceStore } from "@/lib/store/spaceStore";
 import { getSpaceSubscription, SpaceSubscriptionDto } from "@/lib/api/billing";
+import { useTranslations } from "next-intl";
 
 export default function TrialBanner() {
   const { currentSpaceId } = useSpaceStore();
   const router = useRouter();
+  const t = useTranslations("trialBanner");
   const [sub, setSub] = useState<SpaceSubscriptionDto | null>(null);
   const [loaded, setLoaded] = useState(false);
 
@@ -51,14 +53,14 @@ export default function TrialBanner() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
             </svg>
             <span className="text-sm text-red-800 font-medium">
-              המנוי שלך הסתיים. חדש את המנוי כדי להמשיך להשתמש בסידור האוטומטי.
+              {t("subscriptionEnded")}
             </span>
           </div>
           <button
             onClick={() => router.push("/pricing")}
             className="flex-shrink-0 bg-red-500 hover:bg-red-600 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
           >
-            חדש מנוי
+            {t("renewSubscription")}
           </button>
         </div>
       );
@@ -72,13 +74,13 @@ export default function TrialBanner() {
     return (
       <div className={`border rounded-xl px-4 py-2.5 flex items-center justify-between gap-3 ${colorClass}`}>
         <span className={`text-sm ${textClass}`}>
-          ⚠️ המנוי שלך בוטל. הגישה תסתיים בעוד <strong>{daysUntilExpiry}</strong> ימים.
+          ⚠️ {t("canceledAccessExpires", { days: daysUntilExpiry })}
         </span>
         <button
           onClick={() => router.push("/pricing")}
           className={`flex-shrink-0 text-xs border px-3 py-1.5 rounded-lg transition-colors font-medium ${btnClass}`}
         >
-          חדש מנוי
+          {t("renewSubscription")}
         </button>
       </div>
     );
@@ -93,14 +95,14 @@ export default function TrialBanner() {
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
           </svg>
           <span className="text-sm text-red-800 font-medium">
-            המנוי שלך הסתיים. חדש את המנוי כדי להמשיך להשתמש בסידור האוטומטי.
+            {t("subscriptionEnded")}
           </span>
         </div>
         <button
           onClick={() => router.push("/pricing")}
           className="flex-shrink-0 bg-red-500 hover:bg-red-600 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
         >
-          חדש מנוי
+          {t("renewSubscription")}
         </button>
       </div>
     );
@@ -144,14 +146,13 @@ export default function TrialBanner() {
         className={`border rounded-xl px-4 py-2.5 flex items-center justify-between gap-3 ${colorClass}`}
       >
         <span className={`text-sm ${textClass}`}>
-          ⚠️ המנוי שלך יסתיים בעוד{" "}
-          <strong>{daysUntilExpiry}</strong> ימים ולא יתחדש אוטומטית.
+          ⚠️ {t("expiresNoRenew", { days: daysUntilExpiry })}
         </span>
         <button
           onClick={() => router.push("/pricing")}
           className={`flex-shrink-0 text-xs border px-3 py-1.5 rounded-lg transition-colors font-medium ${btnClass}`}
         >
-          חדש מנוי
+          {t("renewSubscription")}
         </button>
       </div>
     );
@@ -181,14 +182,14 @@ export default function TrialBanner() {
                 />
               </svg>
               <span className="text-sm text-red-800 font-medium">
-                תקופת הניסיון הסתיימה. שדרג כדי להמשיך להשתמש בסידור האוטומטי.
+                {t("trialEnded")}
               </span>
             </div>
             <button
               onClick={() => router.push("/pricing")}
               className="flex-shrink-0 bg-red-500 hover:bg-red-600 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
             >
-              שדרג עכשיו
+              {t("upgradeNow")}
             </button>
           </div>
         </div>
@@ -222,13 +223,13 @@ export default function TrialBanner() {
         className={`border rounded-xl px-4 py-2.5 flex items-center justify-between gap-3 ${colorClass}`}
       >
         <span className={`text-sm ${textClass}`}>
-          ⏳ נותרו <strong>{daysLeft}</strong> ימים לתקופת הניסיון
+          ⏳ {t("trialDaysRemaining", { days: daysLeft })}
         </span>
         <button
           onClick={() => router.push("/pricing")}
           className={`flex-shrink-0 text-xs border px-3 py-1.5 rounded-lg transition-colors font-medium ${btnClass}`}
         >
-          צפה בתוכניות
+          {t("viewPlans")}
         </button>
       </div>
     );

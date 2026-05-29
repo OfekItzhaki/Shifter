@@ -77,8 +77,8 @@ public class ResendVerificationCommandHandler : IRequestHandler<ResendVerificati
 
     private static string GetSubject(string locale) => locale switch
     {
-        "he" => "אימות כתובת אימייל — Shifter",
-        "ru" => "Подтверждение email — Shifter",
+        "he" => "Shifter — Email Verification",
+        "ru" => "Shifter — Подтверждение email",
         _ => "Verify your email — Shifter"
     };
 
@@ -87,10 +87,10 @@ public class ResendVerificationCommandHandler : IRequestHandler<ResendVerificati
         var (dir, greeting, body, buttonText, footer) = locale switch
         {
             "he" => ("rtl",
-                $"שלום {displayName},",
-                "אנא אמת את כתובת האימייל שלך על ידי לחיצה על הכפתור למטה:",
-                "אמת אימייל",
-                "הקישור תקף ל-24 שעות. אם לא נרשמת ל-Shifter, ניתן להתעלם מהודעה זו."),
+                $"Hi {displayName},",
+                "Please verify your email address by clicking the button below:",
+                "Verify Email",
+                "This link is valid for 24 hours. If you did not sign up for Shifter, you can ignore this message."),
             "ru" => ("ltr",
                 $"Здравствуйте, {displayName},",
                 "Пожалуйста, подтвердите ваш email, нажав на кнопку ниже:",

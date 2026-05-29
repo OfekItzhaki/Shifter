@@ -58,7 +58,7 @@ public class PreviewHomeLeaveHandler : IRequestHandler<PreviewHomeLeaveCommand, 
             .Where(g => g.Id == req.GroupId && g.SpaceId == req.SpaceId && g.DeletedAt == null)
             .Select(g => new { g.Id, g.IsClosedBase })
             .FirstOrDefaultAsync(ct)
-            ?? throw new InvalidOperationException("הקבוצה לא נמצאה.");
+            ?? throw new InvalidOperationException("Group not found.");
 
         if (!group.IsClosedBase)
             return new HomeLeavePreviewResponse(

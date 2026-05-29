@@ -56,8 +56,8 @@ public class ScheduleRunsController : ControllerBase
                 if (!spaceSub.IsAccessGranted)
                 {
                     var msg = spaceSub.Status == Domain.Billing.SubscriptionStatus.Trialing
-                        ? "תקופת הניסיון הסתיימה. שדרג את התוכנית כדי להפעיל סידור."
-                        : "המנוי שלך אינו פעיל. חדש או שדרג את המנוי כדי להפעיל סידור.";
+                        ? "trial_expired"
+                        : "subscription_inactive";
                     return StatusCode(402, new { error = msg });
                 }
                 // Access granted — proceed
@@ -68,7 +68,7 @@ public class ScheduleRunsController : ControllerBase
                 var groupSub = await _mediator.Send(
                     new Application.Scheduling.Queries.CheckGroupSubscriptionQuery(spaceId, req.GroupId.Value), ct);
                 if (groupSub != null && !groupSub.IsActive)
-                    return StatusCode(402, new { error = "תקופת הניסיון הסתיימה. שדרג את התוכנית כדי להפעיל סידור." });
+                    return StatusCode(402, new { error = "trial_expired" });
                 // If groupSub is null, no subscription exists yet — allow (grace period)
             }
         }
@@ -76,7 +76,7 @@ public class ScheduleRunsController : ControllerBase
         // Validate trigger mode — only "standard" and "emergency" are accepted
         var mode = (req.TriggerMode ?? "standard").ToLowerInvariant();
         if (mode != "standard" && mode != "emergency")
-            return BadRequest(new { error = $"מצב הפעלה '{req.TriggerMode}' לא תקין. חייב להיות 'standard' או 'emergency'." });
+            return BadRequest(new { error = $"Invalid trigger mode '{req.TriggerMode}'. Must be 'standard' or 'emergency'." });
 
         var runId = await _mediator.Send(
             new TriggerSolverCommand(spaceId, mode, CurrentUserId, req.GroupId, req.StartTime), ct);

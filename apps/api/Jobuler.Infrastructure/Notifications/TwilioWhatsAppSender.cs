@@ -43,7 +43,7 @@ public class TwilioWhatsAppSender : INotificationSender
         // Phone numbers start with + or are all digits
         if (IsPhoneNumber(to))
         {
-            var message = $"שלום! קישור לאיפוס הסיסמה שלך ב-Shifter:\n{token}\n\nהקישור תקף לשעה אחת.";
+            var message = $"Hi! Here is your Shifter password reset link:\n{token}\n\nThis link is valid for one hour.";
             await SendWhatsAppAsync(to, message, ct);
         }
         else

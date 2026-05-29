@@ -39,7 +39,7 @@ public class OpenAiAssistant : IAiAssistant
         string naturalLanguageInput, string locale, CancellationToken ct = default)
     {
         var systemPrompt = locale == "he"
-            ? "אתה עוזר לניהול לוח זמנים. המשתמש מזין הוראה בשפה טבעית. המר אותה לאילוץ מובנה."
+            ? "You are a scheduling assistant. The user enters an instruction in natural language. Convert it into a structured constraint."
             : "You are a scheduling assistant. Convert the user's natural language instruction into a structured constraint.";
 
         var userPrompt = $$"""

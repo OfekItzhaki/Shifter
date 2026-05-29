@@ -186,7 +186,7 @@ public class ExceptionHandlingMiddlewarePropertyTests
                     new[] { new ValidationFailure("Prop", s.Get) }),
                 ExpectedStatus: 400,
                 ExpectedTitle: "Validation Failed",
-                ExpectedDetail: "אימות הנתונים נכשל.",
+                ExpectedDetail: "Validation failed.",
                 IsDynamic: false
             )),
             // UnauthorizedAccessException → 403, "Forbidden", hardcoded detail
@@ -194,7 +194,7 @@ public class ExceptionHandlingMiddlewarePropertyTests
                 Exception: (Exception)new UnauthorizedAccessException(s.Get),
                 ExpectedStatus: 403,
                 ExpectedTitle: "Forbidden",
-                ExpectedDetail: "אין לך הרשאה לבצע פעולה זו.",
+                ExpectedDetail: "You do not have permission to perform this action.",
                 IsDynamic: false
             )),
             // KeyNotFoundException → 404, "Not Found", hardcoded detail
@@ -202,7 +202,7 @@ public class ExceptionHandlingMiddlewarePropertyTests
                 Exception: (Exception)new KeyNotFoundException(s.Get),
                 ExpectedStatus: 404,
                 ExpectedTitle: "Not Found",
-                ExpectedDetail: "הפריט המבוקש לא נמצא.",
+                ExpectedDetail: "The requested item was not found.",
                 IsDynamic: false
             )),
             // ConflictException → 409, "Conflict", dynamic detail

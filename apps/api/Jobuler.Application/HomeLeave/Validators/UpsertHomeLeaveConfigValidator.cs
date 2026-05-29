@@ -31,7 +31,7 @@ public class UpsertHomeLeaveConfigValidator : AbstractValidator<UpsertHomeLeaveC
         RuleFor(x => x.BalanceValue)
             .InclusiveBetween(0, 100)
             .When(x => x.BalanceValue.HasValue)
-            .WithMessage("ערך האיזון חייב להיות בין 0 ל-100");
+            .WithMessage("Balance value must be between 0 and 100");
 
         // Mode validation
         RuleFor(x => x.Mode)
@@ -43,7 +43,7 @@ public class UpsertHomeLeaveConfigValidator : AbstractValidator<UpsertHomeLeaveC
         RuleFor(x => x.BaseDays)
             .GreaterThanOrEqualTo(1)
             .When(x => x.BaseDays.HasValue)
-            .WithMessage("ימים בבסיס חייבים להיות לפחות 1");
+            .WithMessage("Base days must be at least 1");
 
         RuleFor(x => x.BaseDays)
             .NotNull()
@@ -54,7 +54,7 @@ public class UpsertHomeLeaveConfigValidator : AbstractValidator<UpsertHomeLeaveC
         RuleFor(x => x.HomeDays)
             .GreaterThanOrEqualTo(1)
             .When(x => x.HomeDays.HasValue)
-            .WithMessage("ימים בבית חייבים להיות לפחות 1");
+            .WithMessage("Home days must be at least 1");
 
         RuleFor(x => x.HomeDays)
             .NotNull()

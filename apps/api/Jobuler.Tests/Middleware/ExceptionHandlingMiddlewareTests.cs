@@ -175,12 +175,12 @@ public class ExceptionHandlingMiddlewareTests
     // ── DbUpdateException with specific constraint names (Req 5.3) ───────────
 
     [Theory]
-    [InlineData("chk_task_ends_after_starts", "זמן הסיום חייב להיות אחרי זמן ההתחלה.")]
-    [InlineData("chk_task_shift_duration", "משך המשמרת חייב להיות לפחות דקה אחת.")]
-    [InlineData("chk_task_headcount_positive", "מספר האנשים הנדרש חייב להיות לפחות 1.")]
-    [InlineData("chk_task_daily_window_both_or_neither", "יש להגדיר גם שעת התחלה וגם שעת סיום יומית, או להשאיר את שניהם ריקים.")]
-    [InlineData("chk_slot_order", "זמן הסיום חייב להיות אחרי זמן ההתחלה.")]
-    [InlineData("chk_constraint_severity", "ערך חומרת אילוץ לא תקין.")]
+    [InlineData("chk_task_ends_after_starts", "End time must be after start time.")]
+    [InlineData("chk_task_shift_duration", "Shift duration must be at least one minute.")]
+    [InlineData("chk_task_headcount_positive", "Required headcount must be at least 1.")]
+    [InlineData("chk_task_daily_window_both_or_neither", "Both daily start and end times must be set, or both left empty.")]
+    [InlineData("chk_slot_order", "End time must be after start time.")]
+    [InlineData("chk_constraint_severity", "Invalid constraint severity value.")]
     public async Task DbUpdateException_CheckConstraint_ProducesCorrectHebrewMessage(
         string constraintName, string expectedMessage)
     {
@@ -222,7 +222,7 @@ public class ExceptionHandlingMiddlewareTests
         var root = doc.RootElement;
 
         context.Response.StatusCode.Should().Be(409);
-        root.GetProperty("detail").GetString().Should().Be("הנתונים מפרים כלל עסקי. בדוק את הקלט.");
+        root.GetProperty("detail").GetString().Should().Be("Data violates a business rule. Please check your input.");
     }
 
     [Fact]
@@ -244,7 +244,7 @@ public class ExceptionHandlingMiddlewareTests
 
         context.Response.StatusCode.Should().Be(409);
         root.GetProperty("title").GetString().Should().Be("Conflict");
-        root.GetProperty("detail").GetString().Should().Be("רשומה עם שם או מזהה זה כבר קיימת.");
+        root.GetProperty("detail").GetString().Should().Be("A record with this name or identifier already exists.");
     }
 
     [Fact]
@@ -266,7 +266,7 @@ public class ExceptionHandlingMiddlewareTests
 
         context.Response.StatusCode.Should().Be(500);
         root.GetProperty("title").GetString().Should().Be("Internal Server Error");
-        root.GetProperty("detail").GetString().Should().Be("אירעה שגיאה בלתי צפויה. נסה שוב מאוחר יותר.");
+        root.GetProperty("detail").GetString().Should().Be("An unexpected error occurred. Please try again later.");
     }
 
     // ── Atomic write — single response operation (Req 3.4) ───────────────────

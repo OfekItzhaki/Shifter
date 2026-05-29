@@ -67,7 +67,7 @@ public class TriggerRegenerationCommandHandler : IRequestHandler<TriggerRegenera
         if (spaceSubscription != null && !spaceSubscription.IsAccessGranted)
         {
             throw new PaymentRequiredException(
-                "תקופת הניסיון הסתיימה. שדרג את התוכנית כדי להפעיל סידור מחדש.");
+                "Your trial has expired. Please upgrade your plan to run the scheduler.");
         }
 
         // 3. Check for in-progress regeneration runs for this group (status Queued or Running)

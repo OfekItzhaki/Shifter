@@ -54,8 +54,8 @@ public class InitiateOwnershipTransferCommandHandler : IRequestHandler<InitiateO
             var confirmUrl = $"http://localhost:3000/groups/confirm-transfer?token={transfer.ConfirmationToken}";
             await _email.SendAsync(
                 proposedUser.Email,
-                $"העברת בעלות על קבוצה: {group?.Name}",
-                $"<p>הוזמנת לקבל בעלות על הקבוצה <strong>{group?.Name}</strong>.</p><p><a href='{confirmUrl}'>לחץ כאן לאישור</a></p>",
+                $"Group ownership transfer: {group?.Name}",
+                $"<p>You have been invited to take ownership of the group <strong>{group?.Name}</strong>.</p><p><a href='{confirmUrl}'>Click here to confirm</a></p>",
                 ct);
         }
     }

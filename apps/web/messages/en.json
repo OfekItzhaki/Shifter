@@ -1896,5 +1896,22 @@
     "memberCount": "{count} members",
     "error": "Error loading data",
     "retry": "Retry"
+  },
+  "trialBanner": {
+    "subscriptionEnded": "Your subscription has ended. Renew to continue using the automatic scheduler.",
+    "renewSubscription": "Renew",
+    "canceledAccessExpires": "Your subscription was canceled. Access ends in {days} days.",
+    "expiresNoRenew": "Your subscription expires in {days} days and will not auto-renew.",
+    "trialEnded": "Your trial has ended. Upgrade to continue using the automatic scheduler.",
+    "upgradeNow": "Upgrade Now",
+    "trialDaysRemaining": "{days} days left in your trial",
+    "viewPlans": "View Plans"
+  },
+  "offlineBanner": {
+    "noInternet": "You are not connected to the internet",
+    "serverUnavailable": "The server is currently unavailable",
+    "newVersionAvailable": "New version available",
+    "clickToUpdate": "Click to update to the latest version",
+    "update": "Update"
   }
 }

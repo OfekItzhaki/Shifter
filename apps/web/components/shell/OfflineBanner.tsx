@@ -4,11 +4,12 @@ import { useEffect, useState, useRef } from "react";
 import { useServiceWorker } from "@/lib/hooks/useServiceWorker";
 import { useConnectivityStore, ConnectivityStatus } from "@/lib/store/connectivityStore";
 import { queryClient } from "@/lib/query/queryClient";
+import { useTranslations } from "next-intl";
 
 /**
  * Shows contextual banners:
- * - Offline: amber inline bar — "אתה לא מחובר לאינטרנט"
- * - Server unavailable: amber inline bar — "השרת לא זמין כרגע"
+ * - Offline: amber inline bar
+ * - Server unavailable: amber inline bar
  * - Update available: floating toast at bottom-right (unchanged, from useServiceWorker)
  *
  * The banner is INLINE (not fixed/overlay) — it pushes content down with a smooth
@@ -17,6 +18,7 @@ import { queryClient } from "@/lib/query/queryClient";
 export default function OfflineBanner() {
   const { updateAvailable, update } = useServiceWorker();
   const status = useConnectivityStore((s) => s.status);
+  const t = useTranslations("offlineBanner");
 
   const [showBanner, setShowBanner] = useState(false);
   const [bannerText, setBannerText] = useState("");
@@ -24,22 +26,19 @@ export default function OfflineBanner() {
 
   useEffect(() => {
     if (status !== "online") {
-      // Show banner with appropriate text
       setBannerText(
         status === "offline"
-          ? "אתה לא מחובר לאינטרנט"
-          : "השרת לא זמין כרגע"
+          ? t("noInternet")
+          : t("serverUnavailable")
       );
       setShowBanner(true);
     } else if (prevStatusRef.current !== "online") {
-      // Transitioning back to online — hide banner and refresh data
       setShowBanner(false);
-      // Silently refetch all active queries so the UI updates with fresh data
       queryClient.refetchQueries({ type: "active" });
     }
 
     prevStatusRef.current = status;
-  }, [status]);
+  }, [status, t]);
 
   return (
     <>
@@ -77,14 +76,14 @@ export default function OfflineBanner() {
               </svg>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-slate-900 dark:text-white">גרסה חדשה זמינה</p>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">לחץ לעדכון לגרסה האחרונה</p>
+              <p className="text-sm font-semibold text-slate-900 dark:text-white">{t("newVersionAvailable")}</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{t("clickToUpdate")}</p>
             </div>
             <button
               onClick={update}
               className="flex-shrink-0 bg-sky-500 hover:bg-sky-600 text-white text-xs font-semibold px-4 py-2 rounded-xl transition-colors"
             >
-              עדכן
+              {t("update")}
             </button>
           </div>
         </div>

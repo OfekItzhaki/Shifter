@@ -32,7 +32,7 @@ public class ScheduleNotificationSender : IScheduleNotificationSender
         {
             var (subject, greeting, body, buttonText, dir) = locale switch
             {
-                "he" => ($"סידור חדש פורסם — {groupName}", $"שלום {personName},", $"סידור חדש פורסם עבור הקבוצה <strong>{groupName}</strong>.", "צפה בסידור", "rtl"),
+                "he" => ($"New schedule published — {groupName}", $"Hi {personName},", $"A new schedule has been published for group <strong>{groupName}</strong>.", "View Schedule", "rtl"),
                 "ru" => ($"Новое расписание — {groupName}", $"Здравствуйте, {personName},", $"Новое расписание опубликовано для группы <strong>{groupName}</strong>.", "Посмотреть расписание", "ltr"),
                 _ => ($"New schedule published — {groupName}", $"Hi {personName},", $"A new schedule has been published for group <strong>{groupName}</strong>.", "View Schedule", "ltr"),
             };
@@ -53,7 +53,7 @@ public class ScheduleNotificationSender : IScheduleNotificationSender
         {
             var message = locale switch
             {
-                "he" => $"שלום {personName}! 📋\n\nסידור חדש פורסם עבור הקבוצה *{groupName}*.\n\nלצפייה בסידור:\n{scheduleUrl}",
+                "he" => $"Hi {personName}! 📋\n\nA new schedule has been published for *{groupName}*.\n\nView schedule:\n{scheduleUrl}",
                 "ru" => $"Здравствуйте, {personName}! 📋\n\nНовое расписание для группы *{groupName}*.\n\nПосмотреть:\n{scheduleUrl}",
                 _ => $"Hi {personName}! 📋\n\nA new schedule has been published for *{groupName}*.\n\nView schedule:\n{scheduleUrl}",
             };
@@ -70,7 +70,7 @@ public class ScheduleNotificationSender : IScheduleNotificationSender
         {
             var (subject, dir, greeting, body, taskLabel, startLabel, endLabel) = locale switch
             {
-                "he" => ($"שיבוץ חדש — {groupName}", "rtl", $"שלום {personName},", $"שובצת למשימה חדשה בקבוצה <strong>{groupName}</strong>:", "משימה", "התחלה", "סיום"),
+                "he" => ($"New assignment — {groupName}", "rtl", $"Hi {personName},", $"You've been assigned a new task in group <strong>{groupName}</strong>:", "Task", "Start", "End"),
                 "ru" => ($"Новое назначение — {groupName}", "ltr", $"Здравствуйте, {personName},", $"Вам назначена новая задача в группе <strong>{groupName}</strong>:", "Задача", "Начало", "Конец"),
                 _ => ($"New assignment — {groupName}", "ltr", $"Hi {personName},", $"You've been assigned a new task in group <strong>{groupName}</strong>:", "Task", "Start", "End"),
             };
@@ -100,7 +100,7 @@ public class ScheduleNotificationSender : IScheduleNotificationSender
         {
             var message = locale switch
             {
-                "he" => $"שלום {personName}! ✅\n\nשיבוץ חדש בקבוצה *{groupName}*:\n\n📌 משימה: {taskName}\n🕐 התחלה: {startsAt}\n🕐 סיום: {endsAt}",
+                "he" => $"Hi {personName}! ✅\n\nNew assignment in *{groupName}*:\n\n📌 Task: {taskName}\n🕐 Start: {startsAt}\n🕐 End: {endsAt}",
                 "ru" => $"Здравствуйте, {personName}! ✅\n\nНовое назначение в группе *{groupName}*:\n\n📌 Задача: {taskName}\n🕐 Начало: {startsAt}\n🕐 Конец: {endsAt}",
                 _ => $"Hi {personName}! ✅\n\nNew assignment in *{groupName}*:\n\n📌 Task: {taskName}\n🕐 Start: {startsAt}\n🕐 End: {endsAt}",
             };

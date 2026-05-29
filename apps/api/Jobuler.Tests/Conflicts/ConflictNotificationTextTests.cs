@@ -11,8 +11,8 @@ public class ConflictNotificationTextTests
     {
         var (title, body) = ConflictNotificationText.Get("he");
 
-        title.Should().Be("התנגשות שיבוצים");
-        body.Should().Be("יש לך חפיפה בין שיבוצים — עדכן את המנהל");
+        title.Should().Be("Schedule Conflict");
+        body.Should().Be("You have overlapping assignments — notify your manager");
     }
 
     [Fact]

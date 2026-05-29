@@ -165,13 +165,13 @@ public class HomeLeaveConfig : AuditableEntity, ITenantScoped
     public void SetSliderPosition(int sliderValue, int optimalBaseDays, int optimalHomeDays)
     {
         if (sliderValue < 0 || sliderValue > 100)
-            throw new InvalidOperationException("ערך המחוון חייב להיות בין 0 ל-100.");
+            throw new InvalidOperationException("Slider value must be between 0 and 100.");
 
         if (optimalBaseDays < 1)
-            throw new InvalidOperationException("ימי בסיס אופטימליים חייבים להיות לפחות 1.");
+            throw new InvalidOperationException("Optimal base days must be at least 1.");
 
         if (optimalHomeDays < 1)
-            throw new InvalidOperationException("ימי בית אופטימליים חייבים להיות לפחות 1.");
+            throw new InvalidOperationException("Optimal home days must be at least 1.");
 
         int baseDays;
         int homeDays;
@@ -246,48 +246,48 @@ public class HomeLeaveConfig : AuditableEntity, ITenantScoped
     private static void ValidateMinRestHours(decimal value)
     {
         if (value < 0 || value > 16)
-            throw new InvalidOperationException("שעות מנוחה חייבות להיות בין 0 ל-16.");
+            throw new InvalidOperationException("Rest hours must be between 0 and 16.");
     }
 
     private static void ValidateEligibilityThresholdHours(decimal value)
     {
         if (value < 0 || value > 9999)
-            throw new InvalidOperationException("זמן בבסיס לפני יציאה חייב להיות בין 0 ל-9999 שעות.");
+            throw new InvalidOperationException("Base time before leave must be between 0 and 9999 hours.");
     }
 
     private static void ValidateLeaveCapacity(int value)
     {
         if (value < 1)
-            throw new InvalidOperationException("מכסת היוצאים חייבת להיות לפחות 1.");
+            throw new InvalidOperationException("Leave capacity must be at least 1.");
     }
 
     private static void ValidateLeaveDurationHours(decimal value)
     {
         if (value < 12 || value > 168)
-            throw new InvalidOperationException("משך החופשה חייב להיות בין 12 ל-168 שעות.");
+            throw new InvalidOperationException("Leave duration must be between 12 and 168 hours.");
     }
 
     private static void ValidateBalanceValue(int value)
     {
         if (value < 0 || value > 100)
-            throw new InvalidOperationException("ערך האיזון חייב להיות בין 0 ל-100");
+            throw new InvalidOperationException("Balance value must be between 0 and 100.");
     }
 
     private static void ValidateBaseDays(int value)
     {
         if (value < 1)
-            throw new InvalidOperationException("ימים בבסיס חייבים להיות לפחות 1");
+            throw new InvalidOperationException("Base days must be at least 1.");
     }
 
     private static void ValidateHomeDays(int value)
     {
         if (value < 1)
-            throw new InvalidOperationException("ימים בבית חייבים להיות לפחות 1");
+            throw new InvalidOperationException("Home days must be at least 1.");
     }
 
     private static void ValidateMinPeopleAtBase(int value)
     {
         if (value < 1)
-            throw new InvalidOperationException("מינימום אנשים בבסיס חייב להיות לפחות 1.");
+            throw new InvalidOperationException("Minimum people at base must be at least 1.");
     }
 }

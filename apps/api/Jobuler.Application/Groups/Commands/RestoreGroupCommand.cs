@@ -47,14 +47,14 @@ public class RestoreGroupCommandHandler : IRequestHandler<RestoreGroupCommand>
             _db.Notifications.Add(Notification.Create(
                 req.SpaceId, member.Id,
                 "group_restored",
-                $"הקבוצה {group.Name} שוחזרה",
-                $"הקבוצה \"{group.Name}\" שוחזרה על ידי הבעלים.",
+                $"Group {group.Name} restored",
+                $"The group \"{group.Name}\" was restored by the owner.",
                 System.Text.Json.JsonSerializer.Serialize(new { groupId = req.GroupId })));
 
             await _email.SendAsync(
                 member.Email,
-                $"הקבוצה {group.Name} שוחזרה",
-                $"<p>הקבוצה <strong>{group.Name}</strong> שוחזרה. אתה שוב חבר בקבוצה.</p>",
+                $"Group {group.Name} restored",
+                $"<p>The group <strong>{group.Name}</strong> has been restored. You are a member again.</p>",
                 ct);
         }
 

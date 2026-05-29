@@ -81,7 +81,7 @@ public class AddPersonToGroupByIdCommandHandler : IRequestHandler<AddPersonToGro
                 .AnyAsync(p => existingMemberIds.Contains(p.Id) && p.IsActive
                     && p.FullName.ToLower() == personName, ct);
             if (duplicateNameInGroup)
-                throw new InvalidOperationException($"אדם בשם '{person.FullName}' כבר קיים בקבוצה זו.");
+                throw new InvalidOperationException($"A person named '{person.FullName}' already exists in this group.");
 
             // Check member limit based on subscription tier
             var sub = await _db.GroupSubscriptions
@@ -109,13 +109,13 @@ public class AddPersonToGroupByIdCommandHandler : IRequestHandler<AddPersonToGro
             {
                 var group = await _db.Groups.AsNoTracking()
                     .FirstOrDefaultAsync(g => g.Id == req.GroupId, ct);
-                var groupName = group?.Name ?? "קבוצה";
+                var groupName = group?.Name ?? "Group";
 
                 _db.Notifications.Add(Notification.Create(
                     req.SpaceId, person.LinkedUserId.Value,
                     "group.member_added",
-                    $"נוספת לקבוצה: {groupName}",
-                    $"הוספת לקבוצה \"{groupName}\".",
+                    $"Added to group: {groupName}",
+                    $"You were added to the group \"{groupName}\".",
                     System.Text.Json.JsonSerializer.Serialize(new { groupId = req.GroupId })));
             }
         }

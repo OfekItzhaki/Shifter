@@ -115,13 +115,13 @@ public class AddPersonByPhoneCommandHandler : IRequestHandler<AddPersonByPhoneCo
         {
             var group = await _db.Groups.AsNoTracking()
                 .FirstOrDefaultAsync(g => g.Id == req.GroupId, ct);
-            var groupName = group?.Name ?? "קבוצה";
+            var groupName = group?.Name ?? "Group";
 
             var notification = Notification.Create(
                 req.SpaceId, user.Id,
                 "group_added",
-                $"נוספת לקבוצה: {groupName}",
-                $"הוספת לקבוצה \"{groupName}\" באמצעות מספר הטלפון שלך. אם זו טעות, תוכל לעזוב את הקבוצה.",
+                $"Added to group: {groupName}",
+                $"You were added to the group \"{groupName}\" via your phone number. If this was a mistake, you can leave the group.",
                 System.Text.Json.JsonSerializer.Serialize(new
                 {
                     groupId = req.GroupId,

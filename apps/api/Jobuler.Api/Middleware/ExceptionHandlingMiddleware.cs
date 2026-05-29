@@ -123,7 +123,7 @@ public class ExceptionHandlingMiddleware
             ValidationException ve => (
                 400,
                 "Validation Failed",
-                "אימות הנתונים נכשל.",
+                "Validation failed.",
                 "validation-failed",
                 new Dictionary<string, object?>
                 {
@@ -147,14 +147,14 @@ public class ExceptionHandlingMiddleware
             UnauthorizedAccessException => (
                 403,
                 "Forbidden",
-                "אין לך הרשאה לבצע פעולה זו.",
+                "You do not have permission to perform this action.",
                 "forbidden",
                 null),
 
             KeyNotFoundException => (
                 404,
                 "Not Found",
-                "הפריט המבוקש לא נמצא.",
+                "The requested item was not found.",
                 "not-found",
                 null),
 
@@ -200,7 +200,7 @@ public class ExceptionHandlingMiddleware
                 => (
                 409,
                 "Conflict",
-                "רשומה עם שם או מזהה זה כבר קיימת.",
+                "A record with this name or identifier already exists.",
                 "conflict",
                 null),
 
@@ -218,7 +218,7 @@ public class ExceptionHandlingMiddleware
             DbUpdateException => (
                 500,
                 "Internal Server Error",
-                "אירעה שגיאה בלתי צפויה. נסה שוב מאוחר יותר.",
+                "An unexpected error occurred. Please try again later.",
                 "internal-server-error",
                 null),
 
@@ -226,7 +226,7 @@ public class ExceptionHandlingMiddleware
             _ => (
                 500,
                 "Internal Server Error",
-                "אירעה שגיאה בלתי צפויה. נסה שוב מאוחר יותר.",
+                "An unexpected error occurred. Please try again later.",
                 "internal-server-error",
                 null)
         };
@@ -235,12 +235,12 @@ public class ExceptionHandlingMiddleware
     private static string ExtractCheckConstraintMessage(DbUpdateException ex)
     {
         var msg = ex.InnerException?.Message ?? "";
-        if (msg.Contains("chk_task_ends_after_starts")) return "זמן הסיום חייב להיות אחרי זמן ההתחלה.";
-        if (msg.Contains("chk_task_shift_duration")) return "משך המשמרת חייב להיות לפחות דקה אחת.";
-        if (msg.Contains("chk_task_headcount_positive")) return "מספר האנשים הנדרש חייב להיות לפחות 1.";
-        if (msg.Contains("chk_task_daily_window_both_or_neither")) return "יש להגדיר גם שעת התחלה וגם שעת סיום יומית, או להשאיר את שניהם ריקים.";
-        if (msg.Contains("chk_slot_order")) return "זמן הסיום חייב להיות אחרי זמן ההתחלה.";
-        if (msg.Contains("chk_constraint_severity")) return "ערך חומרת אילוץ לא תקין.";
-        return "הנתונים מפרים כלל עסקי. בדוק את הקלט.";
+        if (msg.Contains("chk_task_ends_after_starts")) return "End time must be after start time.";
+        if (msg.Contains("chk_task_shift_duration")) return "Shift duration must be at least one minute.";
+        if (msg.Contains("chk_task_headcount_positive")) return "Required headcount must be at least 1.";
+        if (msg.Contains("chk_task_daily_window_both_or_neither")) return "Both daily start and end times must be set, or both left empty.";
+        if (msg.Contains("chk_slot_order")) return "End time must be after start time.";
+        if (msg.Contains("chk_constraint_severity")) return "Invalid constraint severity value.";
+        return "Data violates a business rule. Please check your input.";
     }
 }

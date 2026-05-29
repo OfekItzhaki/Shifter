@@ -44,8 +44,8 @@ public class ConfirmOwnershipTransferCommandHandler : IRequestHandler<ConfirmOwn
             _db.Notifications.Add(Notification.Create(
                 transfer.SpaceId, newOwnerPerson.LinkedUserId.Value,
                 "group.ownership_transferred",
-                "הבעלות על הקבוצה הועברה אליך",
-                $"אתה כעת הבעלים של הקבוצה \"{group?.Name ?? "הקבוצה"}\".",
+                "Group ownership transferred to you",
+                $"You are now the owner of the group \"{group?.Name ?? "the group"}\".",
                 System.Text.Json.JsonSerializer.Serialize(new { groupId = transfer.GroupId })));
         }
 

@@ -18,7 +18,7 @@ public class GroupOptOutController : ControllerBase
     public async Task<IActionResult> OptOut(string token, CancellationToken ct)
     {
         var result = await _mediator.Send(new LeaveGroupByTokenCommand(token), ct);
-        if (!result.Success) return NotFound(new { error = "טוקן לא תקין או כבר בוצעה יציאה." });
+        if (!result.Success) return NotFound(new { error = "invalid_or_used_token" });
         return Ok(new { groupName = result.GroupName });
     }
 }

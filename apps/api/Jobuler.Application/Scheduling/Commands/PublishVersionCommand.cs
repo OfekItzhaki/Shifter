@@ -115,7 +115,7 @@ public class PublishVersionCommandHandler : IRequestHandler<PublishVersionComman
 
         var (notifTitle, notifBody) = locale switch
         {
-            "he" => ($"סידור חדש פורסם", $"גרסה {version.VersionNumber} פורסמה ומוכנה לצפייה."),
+            "he" => ($"New schedule published", $"Version {version.VersionNumber} has been published and is ready to view."),
             "ru" => ($"Новое расписание опубликовано", $"Версия {version.VersionNumber} опубликована и доступна для просмотра."),
             _ => ($"New schedule published", $"Schedule version {version.VersionNumber} has been published and is ready to view.")
         };

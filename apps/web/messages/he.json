@@ -1909,5 +1909,22 @@
     "memberCount": "{count} חברים",
     "error": "שגיאה בטעינת הנתונים",
     "retry": "נסה שוב"
+  },
+  "trialBanner": {
+    "subscriptionEnded": "המנוי שלך הסתיים. חדש את המנוי כדי להמשיך להשתמש בסידור האוטומטי.",
+    "renewSubscription": "חדש מנוי",
+    "canceledAccessExpires": "המנוי שלך בוטל. הגישה תסתיים בעוד {days} ימים.",
+    "expiresNoRenew": "המנוי שלך יסתיים בעוד {days} ימים ולא יתחדש אוטומטית.",
+    "trialEnded": "תקופת הניסיון הסתיימה. שדרג כדי להמשיך להשתמש בסידור האוטומטי.",
+    "upgradeNow": "שדרג עכשיו",
+    "trialDaysRemaining": "נותרו {days} ימים לתקופת הניסיון",
+    "viewPlans": "צפה בתוכניות"
+  },
+  "offlineBanner": {
+    "noInternet": "אתה לא מחובר לאינטרנט",
+    "serverUnavailable": "השרת לא זמין כרגע",
+    "newVersionAvailable": "גרסה חדשה זמינה",
+    "clickToUpdate": "לחץ לעדכון לגרסה האחרונה",
+    "update": "עדכן"
   }
 }

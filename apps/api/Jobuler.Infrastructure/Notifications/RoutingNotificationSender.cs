@@ -34,19 +34,19 @@ public class RoutingNotificationSender : INotificationSender
         if (IsEmail(to))
         {
             var resetUrl = $"{_frontendBaseUrl}/reset-password?token={token}";
-            var subject = "איפוס סיסמה — Shifter";
+            var subject = "Password Reset — Shifter";
             var html = $"""
-                <div dir="rtl" style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-                  <h2>איפוס סיסמה</h2>
-                  <p>קיבלנו בקשה לאיפוס הסיסמה שלך ב-Shifter.</p>
-                  <p>לחץ על הכפתור למטה כדי לאפס את הסיסמה:</p>
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                  <h2>Password Reset</h2>
+                  <p>We received a request to reset your Shifter password.</p>
+                  <p>Click the button below to reset your password:</p>
                   <a href="{resetUrl}"
                      style="display:inline-block;background:#3b82f6;color:white;padding:12px 24px;
                             border-radius:8px;text-decoration:none;font-weight:bold;margin:16px 0;">
-                    אפס סיסמה
+                    Reset Password
                   </a>
                   <p style="color:#64748b;font-size:12px;">
-                    הקישור תקף לשעה אחת. אם לא ביקשת איפוס סיסמה, ניתן להתעלם מהודעה זו.
+                    This link is valid for one hour. If you did not request a password reset, you can ignore this message.
                   </p>
                 </div>
                 """;

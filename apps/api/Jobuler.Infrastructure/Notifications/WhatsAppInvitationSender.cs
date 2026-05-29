@@ -21,10 +21,10 @@ public class WhatsAppInvitationSender : IInvitationSender
     {
         if (channel != "whatsapp") return Task.CompletedTask;
 
-        var message = $"שלום {personName}! 👋\n\n" +
-                      $"הוזמנת להצטרף לקבוצה ב-Shifter.\n\n" +
-                      $"לחץ על הקישור כדי לאשר את ההזמנה:\n{inviteUrl}\n\n" +
-                      $"הקישור תקף ל-7 ימים.";
+        var message = $"Hi {personName}! 👋\n\n" +
+                      $"You've been invited to join a group on Shifter.\n\n" +
+                      $"Click the link to accept the invitation:\n{inviteUrl}\n\n" +
+                      $"This link is valid for 7 days.";
 
         return _twilio.SendRawAsync(contact, message, ct);
     }

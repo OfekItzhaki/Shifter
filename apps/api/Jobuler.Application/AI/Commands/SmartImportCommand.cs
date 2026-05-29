@@ -131,7 +131,7 @@ public class ParseScheduleImportCommandHandler : IRequestHandler<ParseScheduleIm
                     "AI is not configured. Image/PDF import requires AI. Please set up the AI:ApiKey or upload a structured CSV/Excel file.");
 
             throw new InvalidOperationException(
-                "Could not detect columns. Expected: שם (person_name), משימה (task_name), יום (day_of_week), שעת_התחלה (start_hour), שעת_סיום (end_hour)");
+                "Could not detect columns. Expected: person_name, task_name, day_of_week, start_hour, end_hour");
         }
 
         // Strip markdown code fences if present

@@ -79,8 +79,8 @@ public class ImportController : ControllerBase
 
         // UTF-8 BOM for proper Hebrew display in Excel
         var bom = new byte[] { 0xEF, 0xBB, 0xBF };
-        var csvContent = "שם,משימה,יום,שעת_התחלה,שעת_סיום,משך_משמרת,נדרשים\n" +
-                         "ישראל ישראלי,שמירה,א׳,8,16,8,2\n";
+        var csvContent = "name,task,day,start_hour,end_hour,shift_duration,headcount\n" +
+                         "John Doe,Guard,Sun,8,16,8,2\n";
 
         var bytes = bom.Concat(System.Text.Encoding.UTF8.GetBytes(csvContent)).ToArray();
 

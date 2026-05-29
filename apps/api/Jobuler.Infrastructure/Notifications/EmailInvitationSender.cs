@@ -20,19 +20,19 @@ public class EmailInvitationSender : IInvitationSender
     {
         if (channel != "email") return Task.CompletedTask;
 
-        var subject = $"הוזמנת להצטרף ל-Shifter";
+        var subject = $"You've been invited to join Shifter";
         var html = $"""
-            <div dir="rtl" style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-              <h2>שלום {personName},</h2>
-              <p>הוזמנת להצטרף למרחב עבודה ב-Shifter.</p>
-              <p>לחץ על הכפתור למטה כדי לאשר את ההזמנה:</p>
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+              <h2>Hi {personName},</h2>
+              <p>You've been invited to join a workspace on Shifter.</p>
+              <p>Click the button below to accept the invitation:</p>
               <a href="{inviteUrl}"
                  style="display:inline-block;background:#3b82f6;color:white;padding:12px 24px;
                         border-radius:8px;text-decoration:none;font-weight:bold;margin:16px 0;">
-                אשר הזמנה
+                Accept Invitation
               </a>
               <p style="color:#64748b;font-size:12px;">
-                הקישור תקף ל-7 ימים. אם לא ביקשת הזמנה זו, ניתן להתעלם מהודעה זו.
+                This link is valid for 7 days. If you did not request this invitation, you can ignore this message.
               </p>
             </div>
             """;
