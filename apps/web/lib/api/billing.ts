@@ -1,4 +1,13 @@
+import axios from "axios";
 import { apiClient } from "./client";
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000";
+
+/** Unauthenticated axios instance for public endpoints (no token, no interceptors). */
+const publicClient = axios.create({
+  baseURL: API_URL,
+  headers: { "Content-Type": "application/json" },
+});
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -31,7 +40,7 @@ export interface CheckoutResponse {
 // ── API Functions ─────────────────────────────────────────────────────────────
 
 export async function getPlans(): Promise<PlanDto[]> {
-  const { data } = await apiClient.get("/billing/plans");
+  const { data } = await publicClient.get("/billing/plans");
   return data as PlanDto[];
 }
 
