@@ -1319,7 +1319,7 @@ export default function GroupDetailPage() {
         {/* Header */}
         <div className="flex items-center gap-3 sm:gap-4">
           <Link href="/groups" className="text-slate-400 hover:text-slate-600 transition-colors flex-shrink-0">
-            <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} className="rtl:rotate-180">
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
             </svg>
           </Link>
