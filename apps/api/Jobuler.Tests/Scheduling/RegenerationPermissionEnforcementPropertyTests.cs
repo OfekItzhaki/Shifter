@@ -56,7 +56,11 @@ public class RegenerationPermissionEnforcementPropertyTests
     private static ScheduleRunsController CreateController(
         Guid userId, IMediator mediator, IPermissionService permissions)
     {
-        var controller = new ScheduleRunsController(mediator, permissions);
+        var dbOptions = new DbContextOptionsBuilder<AppDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .Options;
+        var db = new AppDbContext(dbOptions);
+        var controller = new ScheduleRunsController(mediator, permissions, db);
 
         // Set up the HttpContext with the user's claims
         var claims = new[] { new Claim(ClaimTypes.NameIdentifier, userId.ToString()) };

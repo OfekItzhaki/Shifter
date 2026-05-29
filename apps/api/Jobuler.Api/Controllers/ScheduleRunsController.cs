@@ -42,36 +42,19 @@ public class ScheduleRunsController : ControllerBase
         await _permissions.RequirePermissionAsync(
             CurrentUserId, spaceId, Permissions.ScheduleRecalculate, ct);
 
-        // Check subscription status — block if no active subscription (space-level or group-level)
-        if (req.GroupId.HasValue)
-        {
-            // First check space-level subscription (new billing system)
-            var spaceSub = await _db.SpaceSubscriptions
-                .AsNoTracking()
-                .FirstOrDefaultAsync(s => s.SpaceId == spaceId, ct);
+        // Check space subscription — block if not active
+        var spaceSub = await _db.SpaceSubscriptions
+            .AsNoTracking()
+            .FirstOrDefaultAsync(s => s.SpaceId == spaceId, ct);
 
-            if (spaceSub != null)
-            {
-                // Space has a subscription record — check if access is granted
-                if (!spaceSub.IsAccessGranted)
-                {
-                    var msg = spaceSub.Status == Domain.Billing.SubscriptionStatus.Trialing
-                        ? "trial_expired"
-                        : "subscription_inactive";
-                    return StatusCode(402, new { error = msg });
-                }
-                // Access granted — proceed
-            }
-            else
-            {
-                // No space subscription — fall back to group-level check (legacy)
-                var groupSub = await _mediator.Send(
-                    new Application.Scheduling.Queries.CheckGroupSubscriptionQuery(spaceId, req.GroupId.Value), ct);
-                if (groupSub != null && !groupSub.IsActive)
-                    return StatusCode(402, new { error = "trial_expired" });
-                // If groupSub is null, no subscription exists yet — allow (grace period)
-            }
+        if (spaceSub != null && !spaceSub.IsAccessGranted)
+        {
+            var msg = spaceSub.Status == Domain.Billing.SubscriptionStatus.Trialing
+                ? "Your trial has expired. Upgrade to continue using the scheduler."
+                : "Your subscription is not active. Please renew or upgrade.";
+            return StatusCode(402, new { error = msg });
         }
+        // If spaceSub is null, allow (no subscription record = grace period)
 
         // Validate trigger mode — only "standard" and "emergency" are accepted
         var mode = (req.TriggerMode ?? "standard").ToLowerInvariant();

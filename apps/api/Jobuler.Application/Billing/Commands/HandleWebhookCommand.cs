@@ -123,28 +123,19 @@ public class HandleWebhookCommandHandler : IRequestHandler<HandleWebhookCommand>
     }
 
     /// <summary>
-    /// Dispatches webhook events to existing group-level subscription handlers (backward compatibility).
+    /// Group-level subscription webhooks are no longer processed.
+    /// Subscriptions are now managed exclusively at the space level.
+    /// This method is kept as a no-op for backward compatibility with any
+    /// in-flight webhook events that still carry group_id metadata.
     /// </summary>
-    private async Task DispatchGroupLevelEventAsync(HandleWebhookCommand req, CancellationToken ct)
+    private Task DispatchGroupLevelEventAsync(HandleWebhookCommand req, CancellationToken ct)
     {
-        switch (req.EventType.ToLowerInvariant())
-        {
-            case "subscription_created":
-                await _mediator.Send(new HandleSubscriptionCreatedCommand(req.Payload, req.Metadata), ct);
-                break;
+        _logger.LogWarning(
+            "Received group-level webhook event '{EventType}' (EventId: {EventId}). " +
+            "Group-level subscriptions are deprecated — ignoring",
+            req.EventType, req.EventId);
 
-            case "subscription_updated":
-                await _mediator.Send(new HandleSubscriptionUpdatedCommand(req.Payload, req.Metadata), ct);
-                break;
-
-            case "subscription_cancelled":
-                await _mediator.Send(new HandleSubscriptionCancelledCommand(req.Payload, req.Metadata), ct);
-                break;
-
-            case "subscription_payment_success":
-                await _mediator.Send(new HandlePaymentSuccessCommand(req.Payload, req.Metadata), ct);
-                break;
-        }
+        return Task.CompletedTask;
     }
 
     /// <summary>
