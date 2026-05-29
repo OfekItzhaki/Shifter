@@ -74,8 +74,28 @@ export default function PricingPage() {
     const authState = useAuthStore.getState();
     const spaceState = useSpaceStore.getState();
 
+    console.log("[Pricing] handleSelectPlan:", {
+      variantId: plan.variantId,
+      isAuthenticated: authState.isAuthenticated,
+      userId: authState.userId,
+      currentSpaceId: spaceState.currentSpaceId,
+      hasAccessToken: !!localStorage.getItem("access_token"),
+      hasRefreshToken: !!localStorage.getItem("refresh_token"),
+    });
+
     // If not logged in, redirect to login with return URL
     if (!authState.isAuthenticated) {
+      console.warn("[Pricing] NOT authenticated — redirecting to login");
+      // Persist debug info so it survives the navigation
+      sessionStorage.setItem("pricing_debug", JSON.stringify({
+        isAuthenticated: authState.isAuthenticated,
+        userId: authState.userId,
+        currentSpaceId: spaceState.currentSpaceId,
+        hasAccessToken: !!localStorage.getItem("access_token"),
+        hasRefreshToken: !!localStorage.getItem("refresh_token"),
+        zustandRaw: localStorage.getItem("jobuler-auth"),
+        timestamp: new Date().toISOString(),
+      }));
       router.push("/login?redirect=/pricing");
       return;
     }
