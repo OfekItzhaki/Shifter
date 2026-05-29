@@ -57,9 +57,11 @@ public class CreateSpaceCheckoutCommandHandler : IRequestHandler<CreateSpaceChec
             ["space_id"] = req.SpaceId.ToString()
         };
 
-        // Redirect back to space settings after successful payment
+        // Redirect back to a lightweight billing success page after payment.
+        // This page doesn't make authenticated API calls immediately, avoiding
+        // token expiry issues from time spent on the external checkout page.
         var frontendBaseUrl = "https://shifter.ofeklabs.com";
-        var redirectUrl = $"{frontendBaseUrl}/spaces/settings";
+        var redirectUrl = $"{frontendBaseUrl}/billing/success";
 
         var checkoutRequest = new CreateCheckoutRequest(
             VariantId: variantId,
