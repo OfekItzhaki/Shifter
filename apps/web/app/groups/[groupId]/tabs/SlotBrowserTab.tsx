@@ -16,6 +16,7 @@ import {
   HEBREW_DAY_NAMES,
 } from "@/lib/utils/selfServiceFormat";
 import { getSelfServiceErrorMessage } from "@/lib/utils/selfServiceErrors";
+import { sortSlotsByDateTime } from "@/lib/utils/pickSlotSort";
 import { LoadingCard, ErrorRetry } from "@/components/groups/selfService";
 
 interface SlotBrowserTabProps {
@@ -58,13 +59,7 @@ export default function SlotBrowserTab({ spaceId, groupId }: SlotBrowserTabProps
   // ── Sorted and filtered slots ────────────────────────────────────────────
   const sortedSlots = useMemo(() => {
     if (!slotsResponse) return [];
-    const slots = [...slotsResponse.slots];
-    slots.sort((a, b) => {
-      const dateCompare = a.date.localeCompare(b.date);
-      if (dateCompare !== 0) return dateCompare;
-      return a.startTime.localeCompare(b.startTime);
-    });
-    return slots;
+    return sortSlotsByDateTime(slotsResponse.slots);
   }, [slotsResponse]);
 
   const filteredSlots = useMemo(() => {
