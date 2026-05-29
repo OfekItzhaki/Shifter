@@ -80,7 +80,7 @@ export default function PricingPage() {
       return;
     }
 
-    // If no space selected, redirect to spaces
+    // If no space selected, redirect to space selection
     if (!spaceState.currentSpaceId) {
       router.push("/spaces");
       return;
@@ -91,8 +91,14 @@ export default function PricingPage() {
     try {
       const { checkoutUrl } = await createSpaceCheckout(spaceState.currentSpaceId, plan.variantId);
       window.location.href = checkoutUrl;
-    } catch {
-      alert(t("checkoutError"));
+    } catch (err: unknown) {
+      const status = (err as { response?: { status?: number } })?.response?.status;
+      if (status === 401 || status === 403) {
+        // Session expired — don't redirect, show inline message
+        alert(t("sessionExpired") ?? "Session expired. Please refresh the page and try again.");
+      } else {
+        alert(t("checkoutError"));
+      }
       setCheckoutLoading(null);
     }
   }
