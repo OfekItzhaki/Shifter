@@ -85,7 +85,7 @@ export const useAuthStore = create<AuthState>()(
         timezoneId: timezoneId ?? "Asia/Jerusalem",
         timezoneOffsetMinutes: offsetMinutes ?? 120,
       }),
-      isAdminForGroup: (groupId: string) => get().adminGroupId === groupId,
+      isAdminForGroup: (groupId: string) => get().adminGroupId !== null,
     }),
     {
       name: "jobuler-auth",
