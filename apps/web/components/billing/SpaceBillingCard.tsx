@@ -349,6 +349,7 @@ function ActionButtons({ spaceId, status, onSubscriptionChange }: ActionButtonsP
   const t = useTranslations("billing");
   const [loadingAction, setLoadingAction] = useState<ActionType | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
 
   const showUpgrade = status === "trialing" || status === "active";
   const showCancel = status === "active" || status === "trialing";
@@ -374,6 +375,7 @@ function ActionButtons({ spaceId, status, onSubscriptionChange }: ActionButtonsP
     setError(null);
     try {
       await cancelSpaceSubscription(spaceId);
+      setShowCancelConfirm(false);
       onSubscriptionChange();
     } catch {
       setError(t("errors.cancel"));
@@ -418,16 +420,44 @@ function ActionButtons({ spaceId, status, onSubscriptionChange }: ActionButtonsP
             {loadingAction === "renew" ? t("actions.loading") : t("actions.renew")}
           </button>
         )}
-        {showCancel && (
+        {showCancel && !showCancelConfirm && (
           <button
-            onClick={handleCancel}
+            onClick={() => setShowCancelConfirm(true)}
             disabled={isLoading}
             className="bg-red-500 hover:bg-red-600 text-white text-sm font-medium px-4 py-2 rounded-lg disabled:opacity-50 transition-colors"
           >
-            {loadingAction === "cancel" ? t("actions.loading") : t("actions.cancel")}
+            {t("actions.cancel")}
           </button>
         )}
       </div>
+
+      {/* Cancel confirmation modal */}
+      {showCancelConfirm && (
+        <div className="mt-4 p-4 rounded-xl border-2 border-red-200 dark:border-red-800 bg-red-50/50 dark:bg-red-900/10">
+          <p className="text-sm font-medium text-slate-900 dark:text-white mb-1">
+            {t("cancelConfirm.title")}
+          </p>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
+            {t("cancelConfirm.description")}
+          </p>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleCancel}
+              disabled={isLoading}
+              className="bg-red-500 hover:bg-red-600 text-white text-sm font-medium px-4 py-2 rounded-lg disabled:opacity-50 transition-colors"
+            >
+              {loadingAction === "cancel" ? t("actions.loading") : t("cancelConfirm.confirm")}
+            </button>
+            <button
+              onClick={() => setShowCancelConfirm(false)}
+              disabled={isLoading}
+              className="border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-300 text-sm font-medium px-4 py-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+            >
+              {t("cancelConfirm.keepSubscription")}
+            </button>
+          </div>
+        </div>
+      )}
 
       <ErrorToast message={error} onDismiss={() => setError(null)} />
     </>

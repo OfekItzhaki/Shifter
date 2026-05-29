@@ -1297,9 +1297,15 @@
     },
     "actions": {
       "upgrade": "Upgrade",
-      "cancel": "Cancel",
+      "cancel": "Cancel Subscription",
       "renew": "Renew",
       "loading": "Loading…"
+    },
+    "cancelConfirm": {
+      "title": "Are you sure you want to cancel?",
+      "description": "Your subscription will remain active until the end of the current billing period. After that, your space will be limited.",
+      "confirm": "Yes, Cancel Subscription",
+      "keepSubscription": "Keep Subscription"
     },
     "errors": {
       "checkout": "Could not create checkout. Please try again.",
