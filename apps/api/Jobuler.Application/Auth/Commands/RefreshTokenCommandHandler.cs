@@ -31,10 +31,59 @@ public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, L
             .Include(t => t.User)
             .FirstOrDefaultAsync(t => t.TokenHash == tokenHash, ct);
 
-        if (existing is null || !existing.IsActive)
+        if (existing is null || existing.IsExpired)
             throw new UnauthorizedAccessException("Invalid or expired refresh token.");
 
-        // Rotate: revoke old, issue new
+        // Grace period: if the token was revoked within the last 30 seconds,
+        // the client likely didn't receive the previous refresh response (network
+        // failure, server restart mid-request). Find and return the replacement token
+        // that was issued when this one was revoked, rather than forcing re-login.
+        if (existing.IsRevoked)
+        {
+            var gracePeriod = TimeSpan.FromSeconds(30);
+            var revokedRecently = existing.RevokedAt.HasValue
+                && (DateTime.UtcNow - existing.RevokedAt.Value) < gracePeriod;
+
+            if (!revokedRecently)
+                throw new UnauthorizedAccessException("Invalid or expired refresh token.");
+
+            // Find the replacement token that was created around the same time
+            var replacement = await _db.RefreshTokens
+                .Include(t => t.User)
+                .Where(t => t.UserId == existing.UserId
+                    && t.CreatedAt >= existing.RevokedAt.Value.AddSeconds(-2)
+                    && t.CreatedAt <= existing.RevokedAt.Value.AddSeconds(2)
+                    && t.TokenHash != existing.TokenHash
+                    && t.RevokedAt == null)
+                .OrderByDescending(t => t.CreatedAt)
+                .FirstOrDefaultAsync(ct);
+
+            if (replacement is null || !replacement.IsActive)
+                throw new UnauthorizedAccessException("Invalid or expired refresh token.");
+
+            // Re-rotate: revoke the replacement and issue a fresh one
+            replacement.Revoke();
+
+            var graceRawRefresh = _jwt.GenerateRefreshTokenRaw();
+            var graceNewHash = _jwt.HashToken(graceRawRefresh);
+            var graceNewToken = RefreshToken.Create(existing.UserId, graceNewHash, _refreshTokenExpiryDays);
+
+            _db.RefreshTokens.Add(graceNewToken);
+            await _db.SaveChangesAsync(ct);
+
+            var graceAccessToken = _jwt.GenerateAccessToken(
+                existing.User.Id, existing.User.Email, existing.User.DisplayName);
+
+            var graceTz = _timezoneResolver.Resolve(existing.User.CountryCode, existing.User.StateCode);
+
+            return new LoginResult(
+                graceAccessToken, graceRawRefresh,
+                DateTime.UtcNow.AddMinutes(15),
+                existing.User.Id, existing.User.DisplayName, existing.User.PreferredLocale, existing.User.IsPlatformAdmin,
+                graceTz.IanaTimezoneId, graceTz.OffsetMinutes);
+        }
+
+        // Normal rotation: revoke old, issue new
         existing.Revoke();
 
         var rawRefresh = _jwt.GenerateRefreshTokenRaw();

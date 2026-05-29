@@ -89,23 +89,39 @@ apiClient.interceptors.response.use(
         const refreshToken = localStorage.getItem("refresh_token");
         if (!refreshToken) throw new Error("No refresh token");
 
-        const { data } = await axios.post(`${API_URL}/auth/refresh`, { refreshToken });
-        localStorage.setItem("access_token", data.accessToken);
-        localStorage.setItem("refresh_token", data.refreshToken);
-        document.cookie = `access_token=${data.accessToken}; path=/; max-age=900; SameSite=Strict`;
+        // Attempt refresh with retry for network failures
+        let refreshData: any;
+        try {
+          const { data } = await axios.post(`${API_URL}/auth/refresh`, { refreshToken }, { timeout: 10000 });
+          refreshData = data;
+        } catch (firstErr: any) {
+          // If it's a network error (no response) or 5xx, retry once after a short delay
+          const isNetworkOrServerError = !firstErr.response || (firstErr.response?.status >= 500);
+          if (isNetworkOrServerError) {
+            await new Promise(r => setTimeout(r, 2000));
+            const { data } = await axios.post(`${API_URL}/auth/refresh`, { refreshToken }, { timeout: 10000 });
+            refreshData = data;
+          } else {
+            throw firstErr;
+          }
+        }
+
+        localStorage.setItem("access_token", refreshData.accessToken);
+        localStorage.setItem("refresh_token", refreshData.refreshToken);
+        document.cookie = `access_token=${refreshData.accessToken}; path=/; max-age=900; SameSite=Strict`;
 
         // Update timezone from refresh response (handles DST changes between sessions)
-        if (data.timezoneId !== undefined || data.timezoneOffsetMinutes !== undefined) {
+        if (refreshData.timezoneId !== undefined || refreshData.timezoneOffsetMinutes !== undefined) {
           useAuthStore.getState().setTimezone(
-            data.timezoneId ?? null,
-            data.timezoneOffsetMinutes ?? 120
+            refreshData.timezoneId ?? null,
+            refreshData.timezoneOffsetMinutes ?? 120
           );
         }
 
         isRefreshing = false;
-        onTokenRefreshed(data.accessToken);
+        onTokenRefreshed(refreshData.accessToken);
 
-        original.headers.Authorization = `Bearer ${data.accessToken}`;
+        original.headers.Authorization = `Bearer ${refreshData.accessToken}`;
         return apiClient(original);
       } catch {
         isRefreshing = false;
