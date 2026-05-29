@@ -41,7 +41,7 @@ public class WebhookEventLogConfiguration : IEntityTypeConfiguration<WebhookEven
         builder.Property(e => e.EventType).HasColumnName("event_type").HasMaxLength(100).IsRequired();
         builder.Property(e => e.ProcessedAt).HasColumnName("processed_at").IsRequired();
         builder.Ignore(e => e.ProcessedSuccessfully);
-        builder.Property(e => e.CreatedAt).HasColumnName("created_at");
+        builder.Ignore(e => e.CreatedAt); // Table doesn't have this column
 
         builder.HasIndex(e => e.EventId).IsUnique();
         builder.HasIndex(e => e.ProcessedAt);

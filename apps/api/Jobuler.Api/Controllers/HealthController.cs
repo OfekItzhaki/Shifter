@@ -163,22 +163,14 @@ public class HealthController : ControllerBase
                 .AsNoTracking()
                 .OrderByDescending(e => e.ProcessedAt)
                 .Take(20)
-                .Select(e => new { e.EventId, e.EventType, e.ProcessedAt, e.ProcessedSuccessfully })
+                .Select(e => new { e.EventId, e.EventType, e.ProcessedAt })
                 .ToListAsync(ct);
 
             return Ok(events);
         }
         catch (Exception ex)
         {
-            // If the processed_successfully column doesn't exist yet, fall back
-            var events = await _db.WebhookEventLogs
-                .AsNoTracking()
-                .OrderByDescending(e => e.ProcessedAt)
-                .Take(20)
-                .Select(e => new { e.EventId, e.EventType, e.ProcessedAt })
-                .ToListAsync(ct);
-
-            return Ok(new { fallback = true, error = ex.Message, events });
+            return Ok(new { error = ex.Message });
         }
     }
 }
