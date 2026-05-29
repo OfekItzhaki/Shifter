@@ -89,9 +89,11 @@ export default function PricingPage() {
     // Create checkout with the selected variant ID
     setCheckoutLoading(plan.variantId);
     try {
+      console.log("[Pricing] Creating checkout:", { spaceId: spaceState.currentSpaceId, variantId: plan.variantId, isAuthenticated: authState.isAuthenticated });
       const { checkoutUrl } = await createSpaceCheckout(spaceState.currentSpaceId, plan.variantId);
       window.location.href = checkoutUrl;
-    } catch {
+    } catch (err: unknown) {
+      console.error("[Pricing] Checkout failed:", err);
       alert(t("checkoutError"));
       setCheckoutLoading(null);
     }
