@@ -1,0 +1,121 @@
+-- Migration 077: Self-service scheduling tables
+-- Supports shift picking, swap requests, waitlists, and scheduling cycles.
+
+CREATE TABLE IF NOT EXISTS scheduling_cycles (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    space_id UUID NOT NULL,
+    group_id UUID NOT NULL,
+    starts_at TIMESTAMPTZ NOT NULL,
+    ends_at TIMESTAMPTZ NOT NULL,
+    request_window_opens_at TIMESTAMPTZ NOT NULL,
+    request_window_closes_at TIMESTAMPTZ NOT NULL,
+    is_generated BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS shift_templates (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    space_id UUID NOT NULL,
+    group_id UUID NOT NULL,
+    name TEXT NOT NULL,
+    starts_at_time TIME NOT NULL,
+    ends_at_time TIME NOT NULL,
+    days_of_week TEXT NOT NULL DEFAULT '[]',
+    required_headcount INTEGER NOT NULL DEFAULT 1,
+    max_headcount INTEGER,
+    required_qualification_ids TEXT NOT NULL DEFAULT '[]',
+    required_role_ids TEXT NOT NULL DEFAULT '[]',
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS shift_slots (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    space_id UUID NOT NULL,
+    group_id UUID NOT NULL,
+    cycle_id UUID REFERENCES scheduling_cycles(id),
+    template_id UUID REFERENCES shift_templates(id),
+    starts_at TIMESTAMPTZ NOT NULL,
+    ends_at TIMESTAMPTZ NOT NULL,
+    required_headcount INTEGER NOT NULL DEFAULT 1,
+    max_headcount INTEGER,
+    current_headcount INTEGER NOT NULL DEFAULT 0,
+    status TEXT NOT NULL DEFAULT 'Open',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS shift_requests (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    space_id UUID NOT NULL,
+    person_id UUID NOT NULL,
+    shift_slot_id UUID NOT NULL REFERENCES shift_slots(id),
+    status TEXT NOT NULL DEFAULT 'Pending',
+    requested_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    approved_at TIMESTAMPTZ,
+    rejected_at TIMESTAMPTZ,
+    cancelled_at TIMESTAMPTZ,
+    rejection_reason TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS swap_requests (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    space_id UUID NOT NULL,
+    requester_person_id UUID NOT NULL,
+    target_person_id UUID NOT NULL,
+    requester_slot_id UUID NOT NULL REFERENCES shift_slots(id),
+    target_slot_id UUID REFERENCES shift_slots(id),
+    status TEXT NOT NULL DEFAULT 'Pending',
+    message TEXT,
+    expires_at TIMESTAMPTZ,
+    responded_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS waitlist_entries (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    space_id UUID NOT NULL,
+    person_id UUID NOT NULL,
+    shift_slot_id UUID NOT NULL REFERENCES shift_slots(id),
+    position INTEGER NOT NULL DEFAULT 0,
+    status TEXT NOT NULL DEFAULT 'Waiting',
+    offered_at TIMESTAMPTZ,
+    expires_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS self_service_configs (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    space_id UUID NOT NULL,
+    group_id UUID NOT NULL UNIQUE,
+    is_enabled BOOLEAN NOT NULL DEFAULT FALSE,
+    auto_approve BOOLEAN NOT NULL DEFAULT FALSE,
+    max_shifts_per_cycle INTEGER NOT NULL DEFAULT 5,
+    min_hours_before_shift INTEGER NOT NULL DEFAULT 24,
+    allow_swaps BOOLEAN NOT NULL DEFAULT TRUE,
+    swap_expiry_hours INTEGER NOT NULL DEFAULT 48,
+    waitlist_enabled BOOLEAN NOT NULL DEFAULT TRUE,
+    waitlist_offer_expiry_hours INTEGER NOT NULL DEFAULT 24,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Add scheduling_mode to groups if missing
+ALTER TABLE groups ADD COLUMN IF NOT EXISTS scheduling_mode TEXT NOT NULL DEFAULT 'Solver';
+
+-- Indexes
+CREATE INDEX IF NOT EXISTS idx_scheduling_cycles_group ON scheduling_cycles (group_id);
+CREATE INDEX IF NOT EXISTS idx_shift_slots_cycle ON shift_slots (cycle_id);
+CREATE INDEX IF NOT EXISTS idx_shift_slots_group ON shift_slots (group_id);
+CREATE INDEX IF NOT EXISTS idx_shift_requests_slot ON shift_requests (shift_slot_id);
+CREATE INDEX IF NOT EXISTS idx_shift_requests_person ON shift_requests (person_id);
+CREATE INDEX IF NOT EXISTS idx_swap_requests_requester ON swap_requests (requester_person_id);
+CREATE INDEX IF NOT EXISTS idx_swap_requests_target ON swap_requests (target_person_id);
+CREATE INDEX IF NOT EXISTS idx_waitlist_entries_slot ON waitlist_entries (shift_slot_id);
+CREATE INDEX IF NOT EXISTS idx_waitlist_entries_person ON waitlist_entries (person_id);
