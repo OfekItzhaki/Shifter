@@ -127,10 +127,11 @@ apiClient.interceptors.response.use(
         isRefreshing = false;
         refreshSubscribers = [];
         // Refresh failed — clear tokens and cookie, redirect to login
+        // (unless the request opted out of redirect via _skipRedirect)
         localStorage.removeItem("access_token");
         localStorage.removeItem("refresh_token");
         document.cookie = "access_token=; path=/; max-age=0";
-        if (!isRedirecting) {
+        if (!original._skipRedirect && !isRedirecting) {
           isRedirecting = true;
           window.location.href = "/login?redirect=" + encodeURIComponent(window.location.pathname + window.location.search);
         }

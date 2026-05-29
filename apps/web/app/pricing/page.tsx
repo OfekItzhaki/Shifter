@@ -109,8 +109,15 @@ export default function PricingPage() {
       const { checkoutUrl } = await createSpaceCheckout(spaceId, plan.variantId);
       window.location.href = checkoutUrl;
     } catch (err: unknown) {
-      console.error("[Pricing] Checkout failed:", err);
-      alert(t("checkoutError"));
+      setCheckoutLoading(null);
+      const status = (err as { response?: { status?: number } })?.response?.status;
+      if (status === 401) {
+        // Token expired and refresh failed — ask user to reload
+        alert(t("sessionExpiredReload") ?? "Your session expired. Please reload the page and try again.");
+        window.location.reload();
+      } else {
+        alert(t("checkoutError"));
+      }
       setCheckoutLoading(null);
     }
   }

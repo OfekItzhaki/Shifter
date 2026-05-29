@@ -59,7 +59,8 @@ export async function createSpaceCheckout(
 ): Promise<CheckoutResponse> {
   const { data } = await apiClient.post(
     `/spaces/${spaceId}/billing/checkout`,
-    { variantId }
+    { variantId },
+    { _skipRedirect: true } as any
   );
   return data as CheckoutResponse;
 }
