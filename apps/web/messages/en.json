@@ -1867,5 +1867,19 @@
     "loading": "Loading...",
     "error": "Error loading data",
     "retry": "Retry"
+  },
+  "pick": {
+    "title": "Shift Picker",
+    "selectGroup": "Select Group",
+    "noGroups": "No self-service groups available",
+    "tabs": {
+      "slots": "Available Shifts",
+      "myShifts": "My Shifts"
+    },
+    "refresh": "Refresh",
+    "back": "Back",
+    "memberCount": "{count} members",
+    "error": "Error loading data",
+    "retry": "Retry"
   }
 }
