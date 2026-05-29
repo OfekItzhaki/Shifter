@@ -126,18 +126,11 @@ apiClient.interceptors.response.use(
       } catch {
         isRefreshing = false;
         refreshSubscribers = [];
-        // Refresh failed — clear tokens and redirect to login.
-        // Exception: don't redirect if we're on a public page (pricing, forgot-password, etc.)
-        // — those pages handle auth errors locally.
-        const publicPages = ["/pricing", "/forgot-password", "/reset-password", "/verify-email"];
-        const currentPath = typeof window !== "undefined" ? window.location.pathname : "";
-        const isPublicPage = publicPages.some(p => currentPath.startsWith(p));
-
+        // Refresh failed — clear tokens and cookie, redirect to login
         localStorage.removeItem("access_token");
         localStorage.removeItem("refresh_token");
         document.cookie = "access_token=; path=/; max-age=0";
-
-        if (!isPublicPage && !isRedirecting) {
+        if (!isRedirecting) {
           isRedirecting = true;
           window.location.href = "/login?redirect=" + encodeURIComponent(window.location.pathname + window.location.search);
         }
