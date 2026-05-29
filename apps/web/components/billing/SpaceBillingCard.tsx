@@ -130,8 +130,9 @@ export default function SpaceBillingCard({ spaceId, hasBillingPermission }: Prop
     );
   }
 
-  // Resolve plan name from tierId
+  // Resolve plan info from tierId
   const planName = resolvePlanName(subscription.tierId, plans);
+  const memberLimit = resolveMemberLimit(subscription.tierId, plans);
 
   return (
     <div className={`rounded-2xl p-5 shadow-sm border ${
@@ -144,16 +145,16 @@ export default function SpaceBillingCard({ spaceId, hasBillingPermission }: Prop
           <h2 className="text-sm font-semibold text-slate-900 dark:text-white">
             {t("title")}
           </h2>
-          {planName && subscription.status === "active" && (
+          {subscription.status === "active" && (
             <span className="text-xs font-medium px-2 py-0.5 rounded-md bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300">
-              {planName}
+              {memberLimit ? t("memberLimitBadge", { count: memberLimit }) : t("unlimited")}
             </span>
           )}
         </div>
         <StatusBadge status={subscription.status} />
       </div>
 
-      <SubscriptionDetails subscription={subscription} locale={locale} planName={planName} />
+      <SubscriptionDetails subscription={subscription} locale={locale} planName={planName} memberLimit={memberLimit} />
 
       <ActionButtons
         spaceId={spaceId}
@@ -169,9 +170,18 @@ export default function SpaceBillingCard({ spaceId, hasBillingPermission }: Prop
 function resolvePlanName(tierId: string | null, plans: PlanDto[]): string | null {
   if (!tierId || tierId === "trial") return null;
   const matchedPlan = plans.find((p) => p.variantId === tierId);
-  if (matchedPlan) return matchedPlan.name;
-  // Fallback: format the tierId nicely
+  if (matchedPlan) {
+    // Show member limit instead of plan name (more useful to the user)
+    if (matchedPlan.memberLimit === null) return null; // unlimited — shown via badge
+    return null; // We'll use resolveMemberLimit instead
+  }
   return null;
+}
+
+function resolveMemberLimit(tierId: string | null, plans: PlanDto[]): number | null {
+  if (!tierId || tierId === "trial") return null;
+  const matchedPlan = plans.find((p) => p.variantId === tierId);
+  return matchedPlan?.memberLimit ?? null;
 }
 
 // ── Status Badge ──────────────────────────────────────────────────────────────
@@ -228,16 +238,18 @@ function SubscriptionDetails({
   subscription,
   locale,
   planName,
+  memberLimit,
 }: {
   subscription: SpaceSubscriptionDto;
   locale: string;
   planName: string | null;
+  memberLimit: number | null;
 }) {
   switch (subscription.status) {
     case "trialing":
       return <TrialingDetails subscription={subscription} locale={locale} />;
     case "active":
-      return <ActiveDetails subscription={subscription} locale={locale} planName={planName} />;
+      return <ActiveDetails subscription={subscription} locale={locale} planName={planName} memberLimit={memberLimit} />;
     case "canceled":
       return <CanceledDetails subscription={subscription} locale={locale} />;
     case "past_due":
@@ -270,15 +282,20 @@ function ActiveDetails({
   subscription,
   locale,
   planName,
+  memberLimit,
 }: {
   subscription: SpaceSubscriptionDto;
   locale: string;
   planName: string | null;
+  memberLimit: number | null;
 }) {
   const t = useTranslations("billing");
   return (
     <div className="space-y-2">
-      {planName && (
+      {memberLimit && (
+        <DetailRow label={t("memberLimitLabel")} value={t("memberLimitValue", { count: memberLimit })} />
+      )}
+      {!memberLimit && planName && (
         <DetailRow label={t("planLabel")} value={planName} />
       )}
       <DetailRow label={t("periodStart")} value={formatDateLocalized(subscription.currentPeriodStart, locale)} />

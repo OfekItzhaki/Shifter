@@ -18,6 +18,7 @@ export interface PlanDto {
   interval: string;
   description: string | null;
   sortOrder: number;
+  memberLimit: number | null;
 }
 
 export interface SpaceSubscriptionDto {

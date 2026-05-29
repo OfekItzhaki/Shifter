@@ -9,10 +9,12 @@ namespace Jobuler.Application.Billing;
 /// <param name="Interval">Billing interval: "month" or "year".</param>
 /// <param name="Description">Optional plan description from LemonSqueezy.</param>
 /// <param name="SortOrder">Sort position for display ordering.</param>
+/// <param name="MemberLimit">Maximum number of members allowed on this plan. Null = unlimited.</param>
 public record PlanDto(
     string VariantId,
     string Name,
     int PriceInCents,
     string Interval,
     string? Description,
-    int SortOrder);
+    int SortOrder,
+    int? MemberLimit = null);

@@ -164,10 +164,41 @@ public class LemonSqueezyClient : ILemonSqueezyClient
             var sort = attrs.TryGetProperty("sort", out var sortProp)
                 ? sortProp.GetInt32() : 0;
 
-            plans.Add(new PlanDto(variantId, name, price, interval, description, sort));
+            plans.Add(new PlanDto(variantId, name, price, interval, description, sort,
+                ExtractMemberLimit(name, description)));
         }
 
         return plans.OrderBy(p => p.SortOrder).ThenBy(p => p.PriceInCents).ToList();
+    }
+
+    /// <summary>
+    /// Extracts the member limit from the plan name or description.
+    /// Looks for patterns like "up to 10 members", "for 20 members", or "unlimited".
+    /// Returns null for unlimited plans.
+    /// </summary>
+    private static int? ExtractMemberLimit(string name, string? description)
+    {
+        // Check if it's an unlimited plan
+        if (name.Contains("unlimited", StringComparison.OrdinalIgnoreCase) ||
+            (description?.Contains("unlimited", StringComparison.OrdinalIgnoreCase) ?? false))
+            return null;
+
+        // Try to extract number from description (e.g., "up to 10 members", "for up to 30 members")
+        var text = description ?? name;
+        var match = System.Text.RegularExpressions.Regex.Match(
+            text, @"(?:up\s+to|for|עד)\s+(\d+)", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+        if (match.Success && int.TryParse(match.Groups[1].Value, out var limit))
+            return limit;
+
+        // Try just finding a number followed by "members" or "חברים"
+        match = System.Text.RegularExpressions.Regex.Match(
+            text, @"(\d+)\s*(?:members|חברים)", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+        if (match.Success && int.TryParse(match.Groups[1].Value, out limit))
+            return limit;
+
+        return null;
     }
 
     private object BuildCheckoutPayload(CreateCheckoutRequest request)
