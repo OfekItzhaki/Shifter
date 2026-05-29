@@ -142,7 +142,6 @@ public class HealthController : ControllerBase
 
         // Force activate regardless of current status
         var now = DateTime.UtcNow;
-        // Use reflection to bypass the status check in Activate()
         typeof(Jobuler.Domain.Billing.SpaceSubscription)
             .GetProperty("Status")!.SetValue(sub, Jobuler.Domain.Billing.SubscriptionStatus.Trialing);
         
@@ -150,6 +149,34 @@ public class HealthController : ControllerBase
         await _db.SaveChangesAsync(ct);
 
         return Ok(new { activated = true, spaceId, periodEnd = now.AddMonths(1) });
+    }
+
+    /// <summary>Debug: Reset subscription to expired trial state for testing.</summary>
+    [HttpPost("debug/subscription/{spaceId:guid}/reset")]
+    [AllowAnonymous]
+    public async Task<IActionResult> DebugResetSubscription(Guid spaceId, CancellationToken ct)
+    {
+        var sub = await _db.SpaceSubscriptions
+            .FirstOrDefaultAsync(s => s.SpaceId == spaceId, ct);
+
+        if (sub is null)
+            return NotFound(new { error = "No SpaceSubscription found", spaceId });
+
+        // Reset to expired trial state via reflection
+        var type = typeof(Jobuler.Domain.Billing.SpaceSubscription);
+        type.GetProperty("Status")!.SetValue(sub, Jobuler.Domain.Billing.SubscriptionStatus.Trialing);
+        type.GetProperty("TierId")!.SetValue(sub, "trial");
+        type.GetProperty("LemonSqueezySubscriptionId")!.SetValue(sub, null);
+        type.GetProperty("LemonSqueezyCustomerId")!.SetValue(sub, null);
+        type.GetProperty("CurrentPeriodStart")!.SetValue(sub, (DateTime?)null);
+        type.GetProperty("CurrentPeriodEnd")!.SetValue(sub, (DateTime?)null);
+        type.GetProperty("CanceledAt")!.SetValue(sub, (DateTime?)null);
+        type.GetProperty("TrialStartsAt")!.SetValue(sub, DateTime.UtcNow.AddDays(-15));
+        type.GetProperty("TrialEndsAt")!.SetValue(sub, DateTime.UtcNow.AddDays(-1));
+
+        await _db.SaveChangesAsync(ct);
+
+        return Ok(new { reset = true, spaceId, status = "Trialing (expired)" });
     }
 
     /// <summary>Debug: Check recent webhook events (temporary diagnostic).</summary>
