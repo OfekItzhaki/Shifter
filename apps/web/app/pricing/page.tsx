@@ -62,28 +62,32 @@ export default function PricingPage() {
   }
 
   async function handleSelectPlan(plan: PlanDto) {
-    // If not logged in, redirect to login with return URL
-    if (!isAuthenticated) {
-      router.push("/login?redirect=/pricing");
-      return;
-    }
-
-    // If no space selected, prompt user to create one
-    if (!currentSpaceId) {
-      router.push("/spaces");
-      return;
-    }
-
     // If plan has no variant ID (fallback plans), show coming soon message
     if (!plan.variantId) {
       alert(t("comingSoon"));
       return;
     }
 
+    // Check auth state at click time (not render time)
+    const authState = useAuthStore.getState();
+    const spaceState = useSpaceStore.getState();
+
+    // If not logged in, redirect to login with return URL
+    if (!authState.isAuthenticated) {
+      router.push("/login?redirect=/pricing");
+      return;
+    }
+
+    // If no space selected, redirect to spaces
+    if (!spaceState.currentSpaceId) {
+      router.push("/spaces");
+      return;
+    }
+
     // Create checkout with the selected variant ID
     setCheckoutLoading(plan.variantId);
     try {
-      const { checkoutUrl } = await createSpaceCheckout(currentSpaceId, plan.variantId);
+      const { checkoutUrl } = await createSpaceCheckout(spaceState.currentSpaceId, plan.variantId);
       window.open(checkoutUrl, "_blank");
     } catch {
       alert(t("checkoutError"));
