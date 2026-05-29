@@ -38,6 +38,22 @@ public class HandleSpaceSubscriptionCreatedCommandHandler : IRequestHandler<Hand
             return;
         }
 
+        try
+        {
+            await ProcessSubscriptionCreatedAsync(req, spaceId, ct);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex,
+                "Failed to process subscription_created for SpaceId={SpaceId}. Payload may have unexpected format",
+                spaceId);
+            throw; // Re-throw so the webhook returns 500 and LemonSqueezy retries
+        }
+    }
+
+    private async Task ProcessSubscriptionCreatedAsync(HandleSpaceSubscriptionCreatedCommand req, Guid spaceId, CancellationToken ct)
+    {
+
         // ── Parse payload ────────────────────────────────────────────────────
         using var doc = JsonDocument.Parse(req.Payload);
         var root = doc.RootElement;
@@ -45,14 +61,28 @@ public class HandleSpaceSubscriptionCreatedCommandHandler : IRequestHandler<Hand
         var data = root.GetProperty("data");
         var attributes = data.GetProperty("attributes");
 
-        var lsSubscriptionId = data.GetProperty("id").GetString()!;
-        var lsCustomerId = attributes.GetProperty("customer_id").GetInt64().ToString();
+        var lsSubscriptionId = data.GetProperty("id").ToString();
+        
+        // customer_id can be either a number or string depending on LS API version
+        string lsCustomerId;
+        if (attributes.TryGetProperty("customer_id", out var customerIdProp))
+        {
+            lsCustomerId = customerIdProp.ValueKind == JsonValueKind.Number
+                ? customerIdProp.GetInt64().ToString()
+                : customerIdProp.GetString() ?? "";
+        }
+        else
+        {
+            lsCustomerId = "";
+        }
 
         // ── Determine tier from variant_id ───────────────────────────────────
         var tierId = "pro"; // Default tier
         if (attributes.TryGetProperty("variant_id", out var variantIdProp))
         {
-            tierId = variantIdProp.GetInt64().ToString();
+            tierId = variantIdProp.ValueKind == JsonValueKind.Number
+                ? variantIdProp.GetInt64().ToString()
+                : variantIdProp.GetString() ?? "pro";
         }
 
         // ── Extract period dates ─────────────────────────────────────────────

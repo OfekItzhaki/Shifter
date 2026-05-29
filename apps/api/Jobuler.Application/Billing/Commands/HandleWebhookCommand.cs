@@ -171,7 +171,9 @@ public class HandleWebhookCommandHandler : IRequestHandler<HandleWebhookCommand>
             var variantId = "pro";
             if (attributes.TryGetProperty("variant_id", out var variantIdProp))
             {
-                variantId = variantIdProp.GetInt64().ToString();
+                variantId = variantIdProp.ValueKind == JsonValueKind.Number
+                    ? variantIdProp.GetInt64().ToString()
+                    : variantIdProp.GetString() ?? "pro";
             }
 
             // ── Extract period dates ─────────────────────────────────────────
