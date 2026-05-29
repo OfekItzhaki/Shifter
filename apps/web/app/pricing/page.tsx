@@ -88,7 +88,7 @@ export default function PricingPage() {
     setCheckoutLoading(plan.variantId);
     try {
       const { checkoutUrl } = await createSpaceCheckout(spaceState.currentSpaceId, plan.variantId);
-      window.open(checkoutUrl, "_blank");
+      window.location.href = checkoutUrl;
     } catch {
       alert(t("checkoutError"));
       setCheckoutLoading(null);

@@ -57,9 +57,14 @@ public class CreateSpaceCheckoutCommandHandler : IRequestHandler<CreateSpaceChec
             ["space_id"] = req.SpaceId.ToString()
         };
 
+        // Redirect back to space settings after successful payment
+        var frontendBaseUrl = "https://shifter.ofeklabs.com";
+        var redirectUrl = $"{frontendBaseUrl}/spaces/settings";
+
         var checkoutRequest = new CreateCheckoutRequest(
             VariantId: variantId,
-            Metadata: metadata);
+            Metadata: metadata,
+            RedirectUrl: redirectUrl);
 
         var checkoutUrl = await _lemonSqueezy.CreateCheckoutAsync(checkoutRequest, ct);
 

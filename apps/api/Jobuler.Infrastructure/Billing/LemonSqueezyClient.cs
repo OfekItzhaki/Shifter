@@ -184,8 +184,20 @@ public class LemonSqueezyClient : ILemonSqueezyClient
 
         var attributes = new Dictionary<string, object>
         {
-            ["checkout_data"] = checkoutDataInner
+            ["checkout_data"] = checkoutDataInner,
+            ["product_options"] = new Dictionary<string, object>
+            {
+                ["redirect_url"] = request.RedirectUrl ?? ""
+            }
         };
+
+        // Remove empty redirect_url to avoid sending it when not set
+        if (string.IsNullOrWhiteSpace(request.RedirectUrl))
+        {
+            ((Dictionary<string, object>)attributes["product_options"]).Remove("redirect_url");
+            if (((Dictionary<string, object>)attributes["product_options"]).Count == 0)
+                attributes.Remove("product_options");
+        }
 
         return new
         {

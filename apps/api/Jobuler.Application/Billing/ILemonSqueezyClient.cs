@@ -24,7 +24,9 @@ public interface ILemonSqueezyClient
 /// <param name="VariantId">The product variant ID to check out.</param>
 /// <param name="Metadata">Custom metadata (e.g. spaceId, groupId) attached to the checkout for webhook correlation.</param>
 /// <param name="CustomerEmail">Optional pre-filled customer email for the checkout page.</param>
+/// <param name="RedirectUrl">Optional URL to redirect to after successful payment.</param>
 public record CreateCheckoutRequest(
     string VariantId,
     Dictionary<string, string> Metadata,
-    string? CustomerEmail = null);
+    string? CustomerEmail = null,
+    string? RedirectUrl = null);
