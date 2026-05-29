@@ -31,6 +31,7 @@ public class LemonSqueezyWebhookController : ControllerBase
     /// Security is enforced via HMAC signature verification (not bearer tokens).
     /// </summary>
     [HttpPost]
+    [AllowAnonymous]
     public async Task<IActionResult> HandleWebhook(CancellationToken ct)
     {
         // ── Read raw request body ────────────────────────────────────────────
