@@ -963,7 +963,7 @@
       "noMembers": "אין חברים במרחב זה",
       "selectLabel": "תפקיד עבור {name}",
       "levels": {
-        "spaceOwner": "בעל מרחב",
+        "spaceOwner": "בעל המרחב",
         "groupOwner": "בעל קבוצה",
         "admin": "מנהל",
         "member": "חבר"

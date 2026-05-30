@@ -958,7 +958,7 @@
       "noMembers": "No members in this space",
       "selectLabel": "Role for {name}",
       "levels": {
-        "spaceOwner": "Space Owner",
+        "spaceOwner": "Owner of the Space",
         "groupOwner": "Group Owner",
         "admin": "Admin",
         "member": "Member"
