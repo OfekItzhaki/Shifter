@@ -28,8 +28,9 @@ public class CreateSpaceCommandHandler : IRequestHandler<CreateSpaceCommand, Gui
         var space = Space.Create(request.Name, request.RequestingUserId, request.Description, request.Locale);
         _db.Spaces.Add(space);
 
-        // Owner automatically gets full membership and all permissions
+        // Owner automatically gets full membership with SpaceOwner permission level
         var membership = SpaceMembership.Create(space.Id, request.RequestingUserId);
+        membership.SetPermissionLevel(SpacePermissionLevel.SpaceOwner);
         _db.SpaceMemberships.Add(membership);
 
         foreach (var perm in AllPermissions())
