@@ -12,6 +12,7 @@ import ScheduleDiffView from "@/components/schedule/ScheduleDiffView";
 import ScheduleHistory from "@/components/schedule/ScheduleHistory";
 import RecommendationBanner from "@/components/recommendations/RecommendationBanner";
 import { getHistoricalSchedule } from "@/lib/api/stats";
+import { openFeedbackModal } from "@/components/shell/FeedbackFab";
 
 interface DraftVersion { id: string; status: string; summaryJson?: string | null; sourceRunId?: string | null; }
 
@@ -351,14 +352,28 @@ export default function ScheduleTab({
               >
                 {t("upgrade") || "שדרג"}
               </Link>
-            ) : onTriggerSolver ? (
-              <button
-                onClick={onTriggerSolver}
-                className="mt-2 text-xs font-medium text-red-700 dark:text-red-300 border border-red-300 dark:border-red-700 hover:bg-red-100 dark:hover:bg-red-900/30 px-3 py-1.5 rounded-lg transition-colors"
-              >
-                {t("runAgain") || tAdmin("runSolver")}
-              </button>
-            ) : null}
+            ) : (
+              <div className="flex items-center gap-3 mt-2">
+                {onTriggerSolver && (
+                  <button
+                    onClick={onTriggerSolver}
+                    className="text-xs font-medium text-red-700 dark:text-red-300 border border-red-300 dark:border-red-700 hover:bg-red-100 dark:hover:bg-red-900/30 px-3 py-1.5 rounded-lg transition-colors"
+                  >
+                    {t("runAgain") || tAdmin("runSolver")}
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => openFeedbackModal({
+                    type: "bug",
+                    initialDescription: `[Solver Error]\n${solverError}\n\nGroup: ${groupId}`,
+                  })}
+                  className="text-xs text-slate-500 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 underline underline-offset-2 transition-colors"
+                >
+                  {tAdmin("reportProblem")}
+                </button>
+              </div>
+            )}
           </div>
         );
       })()}

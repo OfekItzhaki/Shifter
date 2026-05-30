@@ -14,11 +14,11 @@ interface OnboardingStoreState {
 
   show: () => void;
   hide: () => void;
-  dismiss: (userId: string) => void;
-  completeStep: (userId: string, stepKey: keyof StepCompletionMap) => void;
-  reset: (userId: string) => void;
-  hydrate: (userId: string) => void;
-  setSteps: (userId: string, steps: StepCompletionMap) => void;
+  dismiss: (userId: string, spaceId?: string) => void;
+  completeStep: (userId: string, stepKey: keyof StepCompletionMap, spaceId?: string) => void;
+  reset: (userId: string, spaceId?: string) => void;
+  hydrate: (userId: string, spaceId?: string) => void;
+  setSteps: (userId: string, steps: StepCompletionMap, spaceId?: string) => void;
 }
 
 export const useOnboardingStore = create<OnboardingStoreState>()((set, get) => ({
@@ -30,28 +30,28 @@ export const useOnboardingStore = create<OnboardingStoreState>()((set, get) => (
 
   hide: () => set({ isVisible: false }),
 
-  dismiss: (userId: string) => {
+  dismiss: (userId: string, spaceId?: string) => {
     const steps = get().steps;
-    writeOnboardingState(userId, { status: "dismissed", steps });
+    writeOnboardingState(userId, { status: "dismissed", steps }, spaceId);
     set({ isVisible: false, status: "dismissed" });
   },
 
-  completeStep: (userId: string, stepKey: keyof StepCompletionMap) => {
+  completeStep: (userId: string, stepKey: keyof StepCompletionMap, spaceId?: string) => {
     const steps = { ...get().steps, [stepKey]: true };
     const status = computeStatus(steps);
-    writeOnboardingState(userId, { status, steps });
+    writeOnboardingState(userId, { status, steps }, spaceId);
     set({ steps, status });
   },
 
-  reset: (userId: string) => {
+  reset: (userId: string, spaceId?: string) => {
     const steps = { ...EMPTY_STEPS };
     const status: OnboardingStatus = "in-progress";
-    writeOnboardingState(userId, { status, steps });
+    writeOnboardingState(userId, { status, steps }, spaceId);
     set({ steps, status });
   },
 
-  hydrate: (userId: string) => {
-    const state = readOnboardingState(userId);
+  hydrate: (userId: string, spaceId?: string) => {
+    const state = readOnboardingState(userId, spaceId);
     if (state) {
       set({ steps: state.steps, status: state.status });
     } else {
@@ -59,9 +59,9 @@ export const useOnboardingStore = create<OnboardingStoreState>()((set, get) => (
     }
   },
 
-  setSteps: (userId: string, steps: StepCompletionMap) => {
+  setSteps: (userId: string, steps: StepCompletionMap, spaceId?: string) => {
     const status = computeStatus(steps);
-    writeOnboardingState(userId, { status, steps });
+    writeOnboardingState(userId, { status, steps }, spaceId);
     set({ steps, status });
   },
 }));

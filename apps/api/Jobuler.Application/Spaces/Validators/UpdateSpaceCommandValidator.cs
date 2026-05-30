@@ -11,8 +11,8 @@ public class UpdateSpaceCommandValidator : AbstractValidator<UpdateSpaceCommand>
             .NotEmpty().WithMessage("Space ID is required.");
 
         RuleFor(x => x.Name)
-            .Must(name => !string.IsNullOrWhiteSpace(name) && name.Trim().Length >= 1 && name.Trim().Length <= 100)
-            .WithMessage("Space name must be between 1 and 100 characters.");
+            .Must(name => !string.IsNullOrWhiteSpace(name) && name.Trim().Length >= 2 && name.Trim().Length <= 100)
+            .WithMessage("Space name must be between 2 and 100 characters.");
 
         RuleFor(x => x.RequestingUserId)
             .NotEmpty().WithMessage("Requesting user ID is required.");

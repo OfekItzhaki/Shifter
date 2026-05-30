@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import { useRouter } from "next/navigation";
 import { useSpaceStore } from "@/lib/store/spaceStore";
 import { useAuthStore } from "@/lib/store/authStore";
-import { createSpace, joinSpaceByCode, getMySpaces } from "@/lib/api/spaces";
+import { createSpace, joinSpaceByCode } from "@/lib/api/spaces";
+import { useSpaceGuard } from "@/lib/hooks/useSpaceGuard";
 import ShifterLogo from "@/components/shell/ShifterLogo";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 
@@ -28,15 +29,8 @@ export default function OnboardingPage() {
   const [attempts, setAttempts] = useState(0);
   const [cooldownUntil, setCooldownUntil] = useState<number | null>(null);
 
-  // Redirect if user already has spaces
-  useEffect(() => {
-    getMySpaces().then(spaces => {
-      if (spaces.length > 0) {
-        setCurrentSpace(spaces[0].id, spaces[0].name);
-        router.replace("/home");
-      }
-    }).catch(() => {});
-  }, []);
+  // Space guard handles redirect: if user already has spaces → /home
+  useSpaceGuard();
 
   const isCoolingDown = cooldownUntil !== null && Date.now() < cooldownUntil;
 

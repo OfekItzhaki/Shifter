@@ -172,6 +172,8 @@
     "noDeletedGroups": "No deleted groups",
     "restore": "Restore",
     "members": "members",
+    "childOf": "Child of",
+    "parentOf": "Parent of",
     "templates": {
       "title": "Choose a Template",
       "subtitle": "Get started quickly with a pre-configured setup",
@@ -482,7 +484,10 @@
     "linkedGroup": {
       "title": "Parent Group",
       "none": "None (independent group)",
-      "linkedTo": "Linked to"
+      "linkedTo": "Linked to",
+      "unlink": "Unlink",
+      "cannotBeChild": "This group is a parent of other groups and cannot become a child.",
+      "alreadyParent": "already a parent"
     },
     "stats_tab": {
       "loading": "Loading statistics...",
@@ -731,6 +736,7 @@
     "solverNotEnoughMembers": "Not enough members in the group. Add at least 2 members for the system to create a schedule.",
     "solverLastFailed": "⚠ Last schedule run failed",
     "solverSolutions": "Possible solutions: add more members, change home-time settings, or relax constraints.",
+    "reportProblem": "Report a problem",
     "solverPhase_building_payload": "Building schedule data...",
     "solverPhase_solving": "Finding optimal solution...",
     "solverPhase_storing_results": "Storing results...",

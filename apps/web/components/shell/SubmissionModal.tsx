@@ -8,6 +8,8 @@ interface SubmissionModalProps {
   submissionType: "bug" | "feedback";
   onClose: () => void;
   triggerRef: RefObject<HTMLButtonElement | null>;
+  /** Optional pre-filled description (e.g. error context from solver) */
+  initialDescription?: string;
 }
 
 /**
@@ -28,8 +30,9 @@ export default function SubmissionModal({
   submissionType,
   onClose,
   triggerRef,
+  initialDescription,
 }: SubmissionModalProps) {
-  const [description, setDescription] = useState("");
+  const [description, setDescription] = useState(initialDescription ?? "");
   const { submit, status, errorMessage, retryAfterSeconds, reset } = useFeedbackSubmission();
 
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -48,7 +51,7 @@ export default function SubmissionModal({
     }
 
     // Reset form state
-    setDescription("");
+    setDescription(initialDescription ?? "");
     reset();
 
     // Close the modal

@@ -23,7 +23,7 @@ export default function OnboardingProvider({ children }: OnboardingProviderProps
   useEffect(() => {
     if (!userId) return;
 
-    hydrate(userId);
+    hydrate(userId, currentSpaceId ?? undefined);
 
     if (!currentSpaceId) return;
 
@@ -33,7 +33,7 @@ export default function OnboardingProvider({ children }: OnboardingProviderProps
       try {
         const groups = await getGroups(currentSpaceId!);
         const groupCount = groups.length;
-        const storageState = readOnboardingState(userId!);
+        const storageState = readOnboardingState(userId!, currentSpaceId ?? undefined);
 
         if (cancelled) return;
 
@@ -60,9 +60,9 @@ export default function OnboardingProvider({ children }: OnboardingProviderProps
     // Only update if at least one step has a value (refresh has completed)
     const hasData = Object.values(completionSteps).some(Boolean);
     if (hasData) {
-      setSteps(userId, completionSteps);
+      setSteps(userId, completionSteps, currentSpaceId ?? undefined);
     }
-  }, [userId, completionSteps, setSteps]);
+  }, [userId, completionSteps, setSteps, currentSpaceId]);
 
   // Re-evaluate when panel becomes visible (user may have completed steps externally)
   useEffect(() => {

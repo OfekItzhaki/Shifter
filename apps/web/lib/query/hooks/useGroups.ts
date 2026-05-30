@@ -14,6 +14,7 @@ export interface GroupDto {
   solverHorizonDays: number;
   solverStartDateTime?: string | null;
   ownerPersonId: string | null;
+  parentGroupId: string | null;
 }
 
 export function useGroups(spaceId: string | null) {

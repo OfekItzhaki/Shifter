@@ -160,28 +160,51 @@ function GroupsPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-            {groups.map(g => (
-              <button
-                key={g.id}
-                onClick={() => router.push(`/groups/${g.id}`)}
-                aria-label={`${g.name} — ${g.memberCount} ${t("members")}`}
-                className="text-start bg-white border border-slate-200 rounded-2xl p-5 hover:border-sky-300 hover:shadow-md transition-all group"
-              >
-                <div className="flex items-start justify-between mb-3">
-                  <div
-                    className="w-10 h-10 rounded-xl flex items-center justify-center text-white text-base font-bold flex-shrink-0"
-                    style={{ background: getAvatarColor(g.name) }}
-                  >
-                    {getAvatarLetter(g.name)}
+            {groups.map(g => {
+              // Determine parent/child relationships
+              const parentGroup = g.parentGroupId ? groups.find(p => p.id === g.parentGroupId) : null;
+              const childGroups = groups.filter(c => c.parentGroupId === g.id);
+
+              return (
+                <button
+                  key={g.id}
+                  onClick={() => router.push(`/groups/${g.id}`)}
+                  aria-label={`${g.name} — ${g.memberCount} ${t("members")}`}
+                  className="text-start bg-white border border-slate-200 rounded-2xl p-5 hover:border-sky-300 hover:shadow-md transition-all group"
+                >
+                  <div className="flex items-start justify-between mb-3">
+                    <div
+                      className="w-10 h-10 rounded-xl flex items-center justify-center text-white text-base font-bold flex-shrink-0"
+                      style={{ background: getAvatarColor(g.name) }}
+                    >
+                      {getAvatarLetter(g.name)}
+                    </div>
+                    <svg className="w-4 h-4 text-slate-300 group-hover:text-sky-400 transition-colors mt-1 rtl:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                    </svg>
                   </div>
-                  <svg className="w-4 h-4 text-slate-300 group-hover:text-sky-400 transition-colors mt-1 rtl:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                  </svg>
-                </div>
-                <h2 className="text-base font-semibold text-slate-900">{g.name}</h2>
-                <p className="text-xs text-slate-400 mt-1">{g.memberCount} {t("members")}</p>
-              </button>
-            ))}
+                  <h2 className="text-base font-semibold text-slate-900">{g.name}</h2>
+                  <p className="text-xs text-slate-400 mt-1">{g.memberCount} {t("members")}</p>
+                  {/* Parent/child relationship indicators */}
+                  {parentGroup && (
+                    <p className="text-xs text-sky-600 dark:text-sky-400 mt-1.5 flex items-center gap-1">
+                      <svg className="w-3 h-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18" />
+                      </svg>
+                      {t("childOf")}: {parentGroup.name}
+                    </p>
+                  )}
+                  {childGroups.length > 0 && (
+                    <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-1.5 flex items-center gap-1">
+                      <svg className="w-3 h-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                      </svg>
+                      {t("parentOf")}: {childGroups.map(c => c.name).join(", ")}
+                    </p>
+                  )}
+                </button>
+              );
+            })}
           </div>
         )}
 

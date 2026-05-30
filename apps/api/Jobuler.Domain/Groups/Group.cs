@@ -113,6 +113,15 @@ public class Group : AuditableEntity, ITenantScoped
         Touch();
     }
 
+    /// <summary>
+    /// Reassigns this group to a different space. Used during user migration.
+    /// </summary>
+    public void ReassignToSpace(Guid spaceId)
+    {
+        SpaceId = spaceId;
+        Touch();
+    }
+
     public void SetParentGroup(Guid? parentGroupId)
     {
         ParentGroupId = parentGroupId;

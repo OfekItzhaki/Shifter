@@ -14,7 +14,7 @@ import VerificationBanner from "@/components/shell/VerificationBanner";
 import OnboardingProvider from "@/components/onboarding/OnboardingProvider";
 import OnboardingPanel from "@/components/onboarding/OnboardingPanel";
 import SpaceSwitcher from "@/components/shell/SpaceSwitcher";
-import { getMySpaces } from "@/lib/api/spaces";
+import { useSpaceGuard } from "@/lib/hooks/useSpaceGuard";
 import { getMe } from "@/lib/api/auth";
 
 interface AppShellProps { children: React.ReactNode; }
@@ -54,10 +54,13 @@ function NavItem({ href, label, icon, admin, onNavigate }: { href: string; label
 export default function AppShell({ children }: AppShellProps) {
   const t = useTranslations();
   const { displayName: storedDisplayName, logout, isPlatformAdmin } = useAuthStore();
-  const { currentSpaceId, currentSpaceName, setCurrentSpace } = useSpaceStore();
+  const { currentSpaceId } = useSpaceStore();
   const router = useRouter();
   const [resolvedName, setResolvedName] = useState<string | null>(storedDisplayName);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // Space membership guard — handles redirects, migration, and space validation
+  const { isReady: spaceGuardReady } = useSpaceGuard();
 
   // Fetch display name from API on mount, but only if not already in store
   useEffect(() => {
@@ -76,19 +79,6 @@ export default function AppShell({ children }: AppShellProps) {
   }, []);
 
   const displayName = resolvedName;
-
-  useEffect(() => {
-    getMySpaces().then(spaces => {
-      if (spaces.length === 0) {
-        router.replace("/onboarding");
-        return;
-      }
-      const storedIsValid = currentSpaceId && spaces.some(s => s.id === currentSpaceId);
-      if (!storedIsValid) {
-        setCurrentSpace(spaces[0].id, spaces[0].name);
-      }
-    }).catch(() => {});
-  }, [currentSpaceId]);
 
   async function handleLogout() { await logout(); router.push("/login"); }
 

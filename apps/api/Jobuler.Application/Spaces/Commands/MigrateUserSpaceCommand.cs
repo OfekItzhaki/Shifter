@@ -8,7 +8,7 @@ namespace Jobuler.Application.Spaces.Commands;
 
 public record MigrateUserSpaceCommand(Guid UserId) : IRequest<MigrateUserSpaceResult>;
 
-public record MigrateUserSpaceResult(Guid? SpaceId, string? SpaceName, bool AlreadyMigrated, int GroupsMigrated);
+public record MigrateUserSpaceResult(Guid SpaceId, string SpaceName, int GroupsMigrated);
 
 public class MigrateUserSpaceCommandHandler : IRequestHandler<MigrateUserSpaceCommand, MigrateUserSpaceResult>
 {
@@ -23,71 +23,93 @@ public class MigrateUserSpaceCommandHandler : IRequestHandler<MigrateUserSpaceCo
 
     public async Task<MigrateUserSpaceResult> Handle(MigrateUserSpaceCommand request, CancellationToken ct)
     {
-        // Check if already migrated
-        var existingMigration = await _db.UserSpaceMigrations
+        // Check if already migrated — throw if migration record exists
+        var alreadyMigrated = await _db.UserSpaceMigrations
             .AnyAsync(m => m.UserId == request.UserId, ct);
 
-        if (existingMigration)
-            return new MigrateUserSpaceResult(null, null, AlreadyMigrated: true, 0);
+        if (alreadyMigrated)
+            throw new InvalidOperationException("User has already been migrated.");
 
-        // Check if user already has a space membership
-        var hasMembership = await _db.SpaceMemberships
-            .AnyAsync(m => m.UserId == request.UserId && m.IsActive, ct);
-
-        if (hasMembership)
-            return new MigrateUserSpaceResult(null, null, AlreadyMigrated: true, 0);
-
-        // Find user's orphaned groups
-        var orphanedGroups = await _db.Groups
-            .Where(g => g.CreatedByUserId == request.UserId && g.DeletedAt == null)
+        // Find all groups where this user is a member (via group memberships)
+        // Person.LinkedUserId links a Person to an auth User
+        var personIds = await _db.People
+            .Where(p => p.LinkedUserId == request.UserId)
+            .Select(p => p.Id)
             .ToListAsync(ct);
 
-        if (orphanedGroups.Count == 0)
-            return new MigrateUserSpaceResult(null, null, AlreadyMigrated: false, 0);
+        var groupIds = await _db.GroupMemberships
+            .Where(gm => personIds.Contains(gm.PersonId))
+            .Select(gm => gm.GroupId)
+            .Distinct()
+            .ToListAsync(ct);
+
+        var groups = await _db.Groups
+            .Where(g => groupIds.Contains(g.Id) && g.DeletedAt == null)
+            .ToListAsync(ct);
 
         // Get user display name for space naming
         var user = await _db.Users.FirstOrDefaultAsync(u => u.Id == request.UserId, ct);
         var displayName = user?.DisplayName?.Trim();
         var locale = user?.PreferredLocale ?? "he";
         var spaceName = string.IsNullOrWhiteSpace(displayName)
-            ? locale == "he" ? "My Space" : locale == "ru" ? "Моё пространство" : "My Space"
-            : displayName;
+            ? "My Space"
+            : $"{displayName}'s Space";
 
         if (spaceName.Length > 100)
             spaceName = spaceName[..100];
 
-        // Create space
-        var space = Space.Create(spaceName, request.UserId, null, locale);
-        _db.Spaces.Add(space);
-
-        // Create membership
-        var membership = SpaceMembership.Create(space.Id, request.UserId);
-        _db.SpaceMemberships.Add(membership);
-
-        // Grant all permissions to owner
-        foreach (var perm in AllPermissions())
+        // Wrap everything in a transaction
+        var strategy = _db.Database.CreateExecutionStrategy();
+        return await strategy.ExecuteAsync(async () =>
         {
-            _db.SpacePermissionGrants.Add(
-                SpacePermissionGrant.Grant(space.Id, request.UserId, perm, request.UserId));
-        }
+            await using var transaction = await _db.Database.BeginTransactionAsync(ct);
+            try
+            {
+                // Create a new Space for the user
+                var space = Space.Create(spaceName, request.UserId, null, locale);
+                _db.Spaces.Add(space);
 
-        // Assign orphaned groups to the new space
-        // Note: Groups already have SpaceId set from creation, but if they reference
-        // a non-existent space or the same space, we update them
-        // For migration, we just record it — groups already have space_id from creation
-        var groupsMigrated = orphanedGroups.Count;
+                // Create a SpaceMembership for the user in the new space
+                var membership = SpaceMembership.Create(space.Id, request.UserId);
+                _db.SpaceMemberships.Add(membership);
 
-        // Record migration
-        var migration = UserSpaceMigration.Create(request.UserId, space.Id, groupsMigrated);
-        _db.UserSpaceMigrations.Add(migration);
+                // Grant owner permissions
+                foreach (var perm in AllPermissions())
+                {
+                    _db.SpacePermissionGrants.Add(
+                        SpacePermissionGrant.Grant(space.Id, request.UserId, perm, request.UserId));
+                }
 
-        await _db.SaveChangesAsync(ct);
+                // Move all groups into the new space (update their SpaceId)
+                foreach (var group in groups)
+                {
+                    group.ReassignToSpace(space.Id);
+                }
 
-        _logger.LogInformation(
-            "Migrated user {UserId} to new space {SpaceId} ({SpaceName}). Groups: {Count}",
-            request.UserId, space.Id, spaceName, groupsMigrated);
+                // Record the migration
+                var migration = UserSpaceMigration.Create(request.UserId, space.Id, groups.Count);
+                _db.UserSpaceMigrations.Add(migration);
 
-        return new MigrateUserSpaceResult(space.Id, spaceName, AlreadyMigrated: false, groupsMigrated);
+                await _db.SaveChangesAsync(ct);
+                await transaction.CommitAsync(ct);
+
+                _logger.LogInformation(
+                    "Migration completed for user {UserId}. Created space {SpaceId} ({SpaceName}), migrated {GroupCount} groups.",
+                    request.UserId, space.Id, spaceName, groups.Count);
+
+                return new MigrateUserSpaceResult(space.Id, spaceName, groups.Count);
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync(ct);
+
+                _logger.LogError(ex,
+                    "Migration failed for user {UserId}. Transaction rolled back. Error: {Message}",
+                    request.UserId, ex.Message);
+
+                throw;
+            }
+        });
     }
 
     private static IEnumerable<string> AllPermissions() =>

@@ -3,6 +3,7 @@ using Jobuler.Application.Groups.Commands;
 using Jobuler.Application.Groups.Queries;
 using Jobuler.Application.Scheduling.Commands;
 using Jobuler.Application.Scheduling.Queries;
+using Jobuler.Application.Spaces.Commands;
 using Jobuler.Domain.Groups;
 using Jobuler.Domain.Spaces;
 using MediatR;
@@ -362,6 +363,27 @@ public class GroupsController : ControllerBase
         var result = await _mediator.Send(new JoinGroupByCodeCommand(req.Code, CurrentUserId), ct);
         return Ok(result);
     }
+
+    // ── Parent Group Linking ──────────────────────────────────────────────────
+
+    /// <summary>Link a parent group to a child group (single-level hierarchy).</summary>
+    [HttpPost("spaces/{spaceId:guid}/groups/{groupId:guid}/link-parent")]
+    public async Task<IActionResult> LinkParentGroup(Guid spaceId, Guid groupId,
+        [FromBody] LinkParentGroupRequest req, CancellationToken ct)
+    {
+        await _mediator.Send(
+            new LinkParentGroupCommand(spaceId, groupId, req.ParentGroupId, CurrentUserId), ct);
+        return NoContent();
+    }
+
+    /// <summary>Remove the parent link from a child group.</summary>
+    [HttpDelete("spaces/{spaceId:guid}/groups/{groupId:guid}/link-parent")]
+    public async Task<IActionResult> UnlinkParentGroup(Guid spaceId, Guid groupId, CancellationToken ct)
+    {
+        await _mediator.Send(
+            new UnlinkParentGroupCommand(spaceId, groupId, CurrentUserId), ct);
+        return NoContent();
+    }
 }
 
 // ── Request records ───────────────────────────────────────────────────────────
@@ -385,3 +407,4 @@ public record JoinByCodeRequest(string Code);
 
 public record SetHomeLeavePriorityRequest(decimal Priority);
 public record ChangeSchedulingModeRequest(SchedulingMode Mode);
+public record LinkParentGroupRequest(Guid ParentGroupId);

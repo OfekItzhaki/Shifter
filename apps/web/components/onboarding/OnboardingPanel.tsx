@@ -26,9 +26,9 @@ export default function OnboardingPanel() {
 
   const handleDismiss = useCallback(() => {
     if (userId) {
-      dismiss(userId);
+      dismiss(userId, currentSpaceId ?? undefined);
     }
-  }, [userId, dismiss]);
+  }, [userId, currentSpaceId, dismiss]);
 
   // Keyboard: dismiss on Escape
   useEffect(() => {

@@ -175,6 +175,8 @@
     "noDeletedGroups": "אין קבוצות מחוקות",
     "restore": "שחזר",
     "members": "חברים",
+    "childOf": "קבוצת בת של",
+    "parentOf": "קבוצת אב של",
     "templates": {
       "title": "בחר תבנית",
       "subtitle": "התחל במהירות עם הגדרה מוכנה מראש",
@@ -511,7 +513,10 @@
     "linkedGroup": {
       "title": "קבוצת אב",
       "none": "ללא (קבוצה עצמאית)",
-      "linkedTo": "מקושרת ל"
+      "linkedTo": "מקושרת ל",
+      "unlink": "נתק",
+      "cannotBeChild": "קבוצה זו היא קבוצת אב של קבוצות אחרות ולא יכולה להפוך לקבוצת בת.",
+      "alreadyParent": "כבר קבוצת אב"
     },
     "schedule_tab": {
       "draftReady": "סידור טיוטה מוכן לעיון ופרסום",
@@ -736,6 +741,7 @@
     "solverNotEnoughMembers": "אין מספיק חברים בקבוצה. הוסף לפחות 2 חברים כדי שהמערכת תוכל ליצור סידור.",
     "solverLastFailed": "⚠ הסידור האחרון נכשל",
     "solverSolutions": "פתרונות אפשריים: הוסף חברים נוספים, שנה הגדרות זמן בית, או הקל אילוצים.",
+    "reportProblem": "דווח על בעיה",
     "solverPhase_building_payload": "בונה את הנתונים...",
     "solverPhase_solving": "מחפש פתרון אופטימלי...",
     "solverPhase_storing_results": "שומר תוצאות...",

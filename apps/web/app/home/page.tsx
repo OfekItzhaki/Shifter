@@ -58,7 +58,7 @@ function HomePage() {
 
   function handleRestartOnboarding() {
     if (!userId) return;
-    resetOnboarding(userId);
+    resetOnboarding(userId, currentSpaceId ?? undefined);
     showOnboarding();
     refreshSteps();
   }

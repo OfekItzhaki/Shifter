@@ -99,9 +99,9 @@ export default function SettingsTab({
     import("@/lib/api/groups").then(({ getGroups }) => {
       getGroups(spaceId).then(groups => {
         if (!Array.isArray(groups)) return; // safety check
-        setAllGroups(groups.map(g => ({ id: g.id, name: g.name, parentGroupId: (g as any).parentGroupId ?? null })));
+        setAllGroups(groups.map(g => ({ id: g.id, name: g.name, parentGroupId: g.parentGroupId ?? null })));
         const current = groups.find(g => g.id === groupId);
-        if (current) setCurrentParentId((current as any).parentGroupId ?? null);
+        if (current) setCurrentParentId(current.parentGroupId ?? null);
       }).catch(() => {});
     }).catch(() => {});
   }, [spaceId, groupId]);
@@ -167,9 +167,9 @@ export default function SettingsTab({
               onUpdate={() => {
                 import("@/lib/api/groups").then(({ getGroups }) => {
                   getGroups(spaceId).then(groups => {
-                    setAllGroups(groups.map(g => ({ id: g.id, name: g.name, parentGroupId: (g as any).parentGroupId ?? null })));
+                    setAllGroups(groups.map(g => ({ id: g.id, name: g.name, parentGroupId: g.parentGroupId ?? null })));
                     const current = groups.find(g => g.id === groupId);
-                    if (current) setCurrentParentId((current as any).parentGroupId ?? null);
+                    if (current) setCurrentParentId(current.parentGroupId ?? null);
                   }).catch(() => {});
                 });
               }}

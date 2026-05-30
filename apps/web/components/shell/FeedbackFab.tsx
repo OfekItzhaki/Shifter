@@ -1,9 +1,23 @@
 "use client";
 
-import { useRef, useState, useCallback } from "react";
+import { useRef, useState, useCallback, useEffect } from "react";
 import SubmissionModal from "@/components/shell/SubmissionModal";
 
 type SubmissionType = "bug" | "feedback";
+
+/** Event detail for programmatically opening the feedback modal */
+export interface OpenFeedbackEvent {
+  type: SubmissionType;
+  initialDescription?: string;
+}
+
+/**
+ * Opens the feedback/bug report modal programmatically from anywhere.
+ * Dispatches a custom event that FeedbackFab listens to.
+ */
+export function openFeedbackModal(detail: OpenFeedbackEvent) {
+  window.dispatchEvent(new CustomEvent("open-feedback-modal", { detail }));
+}
 
 /**
  * FeedbackFab — A fixed-position split FAB for bug reports and feedback.
@@ -13,6 +27,7 @@ type SubmissionType = "bug" | "feedback";
 export default function FeedbackFab() {
   const [modalOpen, setModalOpen] = useState(false);
   const [submissionType, setSubmissionType] = useState<SubmissionType | null>(null);
+  const [initialDescription, setInitialDescription] = useState<string | undefined>(undefined);
 
   // Refs for focus restoration
   const bugButtonRef = useRef<HTMLButtonElement>(null);
@@ -23,12 +38,27 @@ export default function FeedbackFab() {
     const ref = type === "bug" ? bugButtonRef : feedbackButtonRef;
     triggerRef.current = ref.current;
     setSubmissionType(type);
+    setInitialDescription(undefined);
     setModalOpen(true);
   }, []);
 
   const handleClose = useCallback(() => {
     setModalOpen(false);
     setSubmissionType(null);
+    setInitialDescription(undefined);
+  }, []);
+
+  // Listen for programmatic open events (e.g. from solver error banner)
+  useEffect(() => {
+    function handleOpenEvent(e: Event) {
+      const detail = (e as CustomEvent<OpenFeedbackEvent>).detail;
+      triggerRef.current = bugButtonRef.current;
+      setSubmissionType(detail.type);
+      setInitialDescription(detail.initialDescription);
+      setModalOpen(true);
+    }
+    window.addEventListener("open-feedback-modal", handleOpenEvent);
+    return () => window.removeEventListener("open-feedback-modal", handleOpenEvent);
   }, []);
 
   return (
@@ -107,6 +137,7 @@ export default function FeedbackFab() {
           submissionType={submissionType}
           onClose={handleClose}
           triggerRef={triggerRef}
+          initialDescription={initialDescription}
         />
       )}
     </>
