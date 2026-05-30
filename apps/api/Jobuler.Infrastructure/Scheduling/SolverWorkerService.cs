@@ -713,12 +713,11 @@ public class SolverWorkerService : BackgroundService
             }
             else
             {
-                // Include a sanitized hint about the error type for debugging
-                var errorHint = ex.GetType().Name;
+                // System error — not user-fixable. Keep it simple.
                 userFriendlyError = spaceLocale switch {
-                    "he" => $"אירעה שגיאה בהרצת מנוע הסידור ({errorHint}). נסה שוב מאוחר יותר.",
-                    "ru" => $"Произошла ошибка при составлении расписания ({errorHint}). Повторите попытку позже.",
-                    _ => $"An error occurred while running the scheduler ({errorHint}). Please try again later."
+                    "he" => "אירעה שגיאה בהרצת מנוע הסידור. נסה שוב מאוחר יותר. אם הבעיה חוזרת, דווח לנו.",
+                    "ru" => "Произошла ошибка при составлении расписания. Повторите попытку позже. Если проблема повторяется, сообщите нам.",
+                    _ => "An error occurred while running the scheduler. Please try again later. If the problem persists, report it to us."
                 };
             }
 
