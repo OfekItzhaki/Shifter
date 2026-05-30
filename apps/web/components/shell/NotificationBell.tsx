@@ -103,26 +103,32 @@ export default function NotificationBell({ variant = "dark" }: { variant?: "ligh
       <div className="divide-y divide-gray-100 dark:divide-slate-700" style={{ direction: "ltr" }}>
         {filteredNotifications.length === 0 ? (
           <p className="text-xs text-gray-400 dark:text-slate-500 text-center py-6">{t("noNotifications")}</p>
-        ) : filteredNotifications.map(n => (
-          <div key={n.id}
-            className={`px-4 py-3 flex gap-3 ${n.isRead ? "opacity-50" : "bg-sky-50/40 dark:bg-sky-900/20"}`}>
-            <span className="text-base mt-0.5 flex-shrink-0">{eventIcon(n.eventType)}</span>
-            <div className="flex-1 min-w-0">
-              <p className="text-xs font-semibold text-gray-800 dark:text-slate-100">{n.title}</p>
-              <p className="text-xs text-gray-600 dark:text-slate-300 mt-0.5 leading-relaxed">{n.body}</p>
-              <p className="text-[10px] text-gray-400 dark:text-slate-500 mt-1.5">
-                {fDateTime(n.createdAt)}
-              </p>
+        ) : filteredNotifications.map(n => {
+          // Use localized title/body based on eventType if translation exists
+          const localizedTitle = t(`events.${n.eventType}.title`, { defaultValue: "" }) || n.title;
+          const localizedBody = t(`events.${n.eventType}.body`, { defaultValue: "" }) || n.body;
+
+          return (
+            <div key={n.id}
+              className={`px-4 py-3 flex gap-3 ${n.isRead ? "opacity-50" : "bg-sky-50/40 dark:bg-sky-900/20"}`}>
+              <span className="text-base mt-0.5 flex-shrink-0">{eventIcon(n.eventType)}</span>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-semibold text-gray-800 dark:text-slate-100">{localizedTitle}</p>
+                <p className="text-xs text-gray-600 dark:text-slate-300 mt-0.5 leading-relaxed">{localizedBody}</p>
+                <p className="text-[10px] text-gray-400 dark:text-slate-500 mt-1.5">
+                  {fDateTime(n.createdAt)}
+                </p>
+              </div>
+              {!n.isRead && (
+                <button
+                  type="button"
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); dismissOne.mutate(n.id); }}
+                  className="text-gray-300 dark:text-slate-500 hover:text-gray-500 dark:hover:text-slate-300 flex-shrink-0 self-start mt-0.5 text-base leading-none"
+                  aria-label="Dismiss">×</button>
+              )}
             </div>
-            {!n.isRead && (
-              <button
-                type="button"
-                onClick={(e) => { e.preventDefault(); e.stopPropagation(); dismissOne.mutate(n.id); }}
-                className="text-gray-300 dark:text-slate-500 hover:text-gray-500 dark:hover:text-slate-300 flex-shrink-0 self-start mt-0.5 text-base leading-none"
-                aria-label="Dismiss">×</button>
-            )}
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>,
     document.body

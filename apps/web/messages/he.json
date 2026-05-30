@@ -1035,7 +1035,97 @@
     "markAllRead": "סמן הכל כנקרא",
     "noNotifications": "אין התראות",
     "unreadCount": "{count} לא נקראו",
-    "allRead": "הכל נקרא"
+    "allRead": "הכל נקרא",
+    "events": {
+      "schedule.published": {
+        "title": "סידור פורסם",
+        "body": "סידור חדש פורסם ומוכן לצפייה."
+      },
+      "group_added": {
+        "title": "נוספת לקבוצה",
+        "body": "נוספת לקבוצה חדשה."
+      },
+      "group.member_added": {
+        "title": "נוספת לקבוצה",
+        "body": "נוספת לקבוצה חדשה."
+      },
+      "group_restored": {
+        "title": "קבוצה שוחזרה",
+        "body": "הקבוצה שוחזרה על ידי הבעלים."
+      },
+      "group.ownership_transferred": {
+        "title": "בעלות הועברה",
+        "body": "בעלות הקבוצה הועברה אליך."
+      },
+      "group_deleted": {
+        "title": "קבוצה נמחקה",
+        "body": "קבוצה נמחקה מהמרחב."
+      },
+      "ownership_transfer": {
+        "title": "העברת בעלות",
+        "body": "בעלות על הקבוצה הועברה."
+      },
+      "solver_completed": {
+        "title": "הסידור מוכן",
+        "body": "הסידור האוטומטי נוצר בהצלחה."
+      },
+      "solver_failed": {
+        "title": "הסידור נכשל",
+        "body": "מנוע הסידור נתקל בשגיאה."
+      },
+      "solver_infeasible": {
+        "title": "אין סידור תקין",
+        "body": "לא ניתן למצוא סידור תקין עם האילוצים הנוכחיים."
+      },
+      "solver_no_tasks": {
+        "title": "אין משימות",
+        "body": "לא ניתן ליצור סידור — לא הוגדרו משימות."
+      },
+      "solver_no_people": {
+        "title": "אין חברים",
+        "body": "לא ניתן ליצור סידור — אין חברים בקבוצה."
+      },
+      "solver_preflight_failed": {
+        "title": "בדיקה מקדימה נכשלה",
+        "body": "מנוע הסידור לא הצליח להתחיל עקב בעיית הגדרות."
+      },
+      "double_shift_recommendation": {
+        "title": "משמרת כפולה מומלצת",
+        "body": "מומלצת משמרת כפולה לכיסוי כל המשימות."
+      },
+      "self_service.request_approved": {
+        "title": "משמרת אושרה",
+        "body": "בקשת המשמרת שלך אושרה."
+      },
+      "self_service.request_rejected": {
+        "title": "משמרת נדחתה",
+        "body": "בקשת המשמרת נדחתה — המשבצת מלאה."
+      },
+      "self_service.swap_proposal_received": {
+        "title": "הצעת החלפה",
+        "body": "מישהו רוצה להחליף איתך משמרת."
+      },
+      "self_service.swap_declined": {
+        "title": "החלפה נדחתה",
+        "body": "הצעת ההחלפה שלך נדחתה."
+      },
+      "self_service.waitlist_offer": {
+        "title": "משבצת פנויה",
+        "body": "התפנה מקום במשמרת שאתה ממתין לה."
+      },
+      "self_service.under_scheduled_members": {
+        "title": "חברים עם חוסר שיבוצים",
+        "body": "לחלק מהחברים יש פחות משמרות מהמינימום."
+      },
+      "self_service.under_scheduled_warning": {
+        "title": "חוסר שיבוצים",
+        "body": "יש לך פחות משמרות מהמינימום הנדרש."
+      },
+      "request_window_open": {
+        "title": "חלון בקשות נפתח",
+        "body": "חלון בקשות המשמרות נפתח כעת."
+      }
+    }
   },
   "errors": {
     "unauthorized": "אין הרשאה",

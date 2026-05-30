@@ -1030,7 +1030,97 @@
     "markAllRead": "Mark all as read",
     "noNotifications": "No notifications",
     "unreadCount": "{count} unread",
-    "allRead": "All caught up"
+    "allRead": "All caught up",
+    "events": {
+      "schedule.published": {
+        "title": "Schedule Published",
+        "body": "A new schedule has been published and is ready to view."
+      },
+      "group_added": {
+        "title": "Added to Group",
+        "body": "You were added to a group."
+      },
+      "group.member_added": {
+        "title": "Added to Group",
+        "body": "You were added to a group."
+      },
+      "group_restored": {
+        "title": "Group Restored",
+        "body": "A group was restored by the owner."
+      },
+      "group.ownership_transferred": {
+        "title": "Ownership Transferred",
+        "body": "Group ownership has been transferred to you."
+      },
+      "group_deleted": {
+        "title": "Group deleted",
+        "body": "A group has been deleted."
+      },
+      "ownership_transfer": {
+        "title": "Ownership transfer",
+        "body": "Group ownership has been transferred."
+      },
+      "solver_completed": {
+        "title": "Schedule Ready",
+        "body": "The automatic schedule has been generated successfully."
+      },
+      "solver_failed": {
+        "title": "Schedule Failed",
+        "body": "The automatic scheduler encountered an error."
+      },
+      "solver_infeasible": {
+        "title": "No Valid Schedule",
+        "body": "Could not find a valid schedule with the current constraints."
+      },
+      "solver_no_tasks": {
+        "title": "No Tasks Defined",
+        "body": "Cannot generate a schedule — no tasks are defined."
+      },
+      "solver_no_people": {
+        "title": "No Members",
+        "body": "Cannot generate a schedule — no members in the group."
+      },
+      "solver_preflight_failed": {
+        "title": "Preflight Check Failed",
+        "body": "The scheduler could not start due to a configuration issue."
+      },
+      "double_shift_recommendation": {
+        "title": "Double Shift Recommended",
+        "body": "A double shift is recommended to cover all tasks."
+      },
+      "self_service.request_approved": {
+        "title": "Shift Approved",
+        "body": "Your shift request has been approved."
+      },
+      "self_service.request_rejected": {
+        "title": "Shift Rejected",
+        "body": "Your shift request was rejected — the slot is full."
+      },
+      "self_service.swap_proposal_received": {
+        "title": "Swap Proposal",
+        "body": "Someone wants to swap shifts with you."
+      },
+      "self_service.swap_declined": {
+        "title": "Swap Declined",
+        "body": "Your shift swap proposal was declined."
+      },
+      "self_service.waitlist_offer": {
+        "title": "Slot Available",
+        "body": "A spot has opened for a shift you're waiting for."
+      },
+      "self_service.under_scheduled_members": {
+        "title": "Under-Scheduled Members",
+        "body": "Some members have fewer shifts than the minimum."
+      },
+      "self_service.under_scheduled_warning": {
+        "title": "Under-Scheduled",
+        "body": "You have fewer shifts than the minimum required."
+      },
+      "request_window_open": {
+        "title": "Request Window Open",
+        "body": "The shift request window is now open."
+      }
+    }
   },
   "errors": {
     "unauthorized": "Unauthorized",
