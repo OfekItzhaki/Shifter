@@ -25,31 +25,42 @@ export default function ActivityPromptModal({
   const dialogRef = useRef<HTMLDivElement>(null);
   const yesButtonRef = useRef<HTMLButtonElement>(null);
 
-  // ── Sync remaining when countdownSeconds prop changes ────────────────────
+  // ── Countdown timer (timestamp-based to survive tab throttling) ─────────
+
+  const startedAtRef = useRef<number>(Date.now());
 
   useEffect(() => {
     if (open) {
+      startedAtRef.current = Date.now();
       setRemaining(countdownSeconds);
     }
   }, [open, countdownSeconds]);
 
-  // ── Countdown timer ──────────────────────────────────────────────────────
-
   useEffect(() => {
     if (!open) return;
 
-    const interval = setInterval(() => {
-      setRemaining((prev) => {
-        if (prev <= 1) {
-          clearInterval(interval);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
+    function recalculate() {
+      const elapsed = Math.floor((Date.now() - startedAtRef.current) / 1000);
+      const newRemaining = Math.max(0, countdownSeconds - elapsed);
+      setRemaining(newRemaining);
+    }
 
-    return () => clearInterval(interval);
-  }, [open]);
+    // Tick every second for display
+    const interval = setInterval(recalculate, 1000);
+
+    // Also recalculate on visibility change (handles minimized browser)
+    function handleVisibility() {
+      if (document.visibilityState === "visible") {
+        recalculate();
+      }
+    }
+    document.addEventListener("visibilitychange", handleVisibility);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
+  }, [open, countdownSeconds]);
 
   // ── Auto-trigger onNo when countdown reaches zero ────────────────────────
 

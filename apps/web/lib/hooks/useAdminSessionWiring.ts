@@ -53,18 +53,27 @@ export function useAdminSessionWiring(): void {
     timerRef.current = timer;
 
     const timeoutMs = timeoutDuration * 60 * 1000;
+    const promptDurationMs = 60_000; // 60 seconds prompt countdown
+
     timer.start(timeoutMs, {
       onTick: (_remainingMs: number) => {
         // Timer's primary job is to detect when timeout occurs.
       },
       onTimeout: () => {
-        showPrompt();
-        syncRef.current?.broadcast({
-          type: "prompt_shown",
-          timestamp: Date.now(),
-          groupId: elevatedGroupId ?? undefined,
-          mode: elevatedMode ?? undefined,
-        });
+        // Check if we've been away so long that even the prompt period has passed
+        const elapsed = Date.now() - timer.getLastActivityTimestamp();
+        if (elapsed >= timeoutMs + promptDurationMs) {
+          // Session fully expired while tab was hidden — skip prompt, exit directly
+          exitElevatedMode("timeout");
+        } else {
+          showPrompt();
+          syncRef.current?.broadcast({
+            type: "prompt_shown",
+            timestamp: Date.now(),
+            groupId: elevatedGroupId ?? undefined,
+            mode: elevatedMode ?? undefined,
+          });
+        }
       },
     });
 
