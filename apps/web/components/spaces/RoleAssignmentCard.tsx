@@ -79,9 +79,15 @@ export default function RoleAssignmentCard({
       }));
 
       // Sort: higher permission levels first, then alphabetically
+      const levelOrder: Record<string, number> = {
+        [SpacePermissionLevel.SpaceOwner]: 3,
+        [SpacePermissionLevel.GroupOwner]: 2,
+        [SpacePermissionLevel.Admin]: 1,
+        [SpacePermissionLevel.Member]: 0,
+      };
       combined.sort((a, b) => {
         if (b.permissionLevel !== a.permissionLevel) {
-          return b.permissionLevel - a.permissionLevel;
+          return (levelOrder[b.permissionLevel] ?? 0) - (levelOrder[a.permissionLevel] ?? 0);
         }
         return (a.displayName ?? "").localeCompare(b.displayName ?? "");
       });
