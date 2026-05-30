@@ -1,30 +1,40 @@
 #!/bin/bash
-# Daily PostgreSQL backup script
+# Database backup script for Shifter
 # Run via cron: 0 3 * * * /opt/shifter/infra/scripts/backup-db.sh
+#
+# Keeps the last 7 daily backups. Older backups are automatically deleted.
 
-set -e
+set -euo pipefail
 
 BACKUP_DIR="/opt/shifter/backups"
-COMPOSE_DIR="/opt/shifter/infra/compose"
+CONTAINER_NAME="compose-postgres-1"
+DB_NAME="jobuler"
+DB_USER="jobuler"
 RETENTION_DAYS=7
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
-BACKUP_FILE="$BACKUP_DIR/shifter_db_$TIMESTAMP.sql.gz"
+BACKUP_FILE="${BACKUP_DIR}/shifter_${TIMESTAMP}.sql.gz"
 
-# Create backup directory
+# Ensure backup directory exists
 mkdir -p "$BACKUP_DIR"
 
-# Dump database via docker compose
-cd "$COMPOSE_DIR"
-docker compose exec -T postgres pg_dump -U jobuler -d jobuler | gzip > "$BACKUP_FILE"
+# Create compressed backup
+echo "[$(date)] Starting database backup..."
+docker exec "$CONTAINER_NAME" pg_dump -U "$DB_USER" "$DB_NAME" | gzip > "$BACKUP_FILE"
 
-# Verify backup was created and has content
+# Verify backup is not empty
 if [ ! -s "$BACKUP_FILE" ]; then
-  echo "ERROR: Backup file is empty or missing: $BACKUP_FILE"
-  exit 1
+    echo "[$(date)] ERROR: Backup file is empty!"
+    rm -f "$BACKUP_FILE"
+    exit 1
 fi
 
-echo "Backup created: $BACKUP_FILE ($(du -h "$BACKUP_FILE" | cut -f1))"
+BACKUP_SIZE=$(du -h "$BACKUP_FILE" | cut -f1)
+echo "[$(date)] Backup completed: $BACKUP_FILE ($BACKUP_SIZE)"
 
 # Remove backups older than retention period
-find "$BACKUP_DIR" -name "shifter_db_*.sql.gz" -mtime +$RETENTION_DAYS -delete
-echo "Cleaned up backups older than $RETENTION_DAYS days"
+find "$BACKUP_DIR" -name "shifter_*.sql.gz" -mtime +$RETENTION_DAYS -delete
+echo "[$(date)] Cleaned up backups older than $RETENTION_DAYS days"
+
+# List current backups
+echo "[$(date)] Current backups:"
+ls -lh "$BACKUP_DIR"/shifter_*.sql.gz 2>/dev/null || echo "  (none)"

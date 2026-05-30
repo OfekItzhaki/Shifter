@@ -73,13 +73,9 @@ public class CreateGroupCommandHandler : IRequestHandler<CreateGroupCommand, Gui
 
         _db.GroupMemberships.Add(GroupMembership.Create(req.SpaceId, group.Id, person.Id, isOwner: true));
 
-        // Auto-create a trial subscription for the new group
-        var subscription = Jobuler.Domain.Billing.GroupSubscription.CreateTrial(req.SpaceId, group.Id);
-        _db.GroupSubscriptions.Add(subscription);
-
         await _db.SaveChangesAsync(ct);
 
-        // Open a subscription period for the new group (trial counts as active)
+        // Open a statistics period for the new group
         await _periodManager.OpenPeriodAsync(req.SpaceId, group.Id, ct);
 
         return group.Id;
