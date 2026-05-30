@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState, lazy, Suspense } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
+import { useQueryClient } from "@tanstack/react-query";
 import AppShell from "@/components/shell/AppShell";
 import Modal from "@/components/Modal";
 import DraftScheduleModal from "@/components/DraftScheduleModal";
@@ -98,6 +99,7 @@ const ALL_TABS: ActiveTab[] = ["schedule", "live-status", "members", "qualificat
 export default function GroupDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const groupId = params?.groupId as string;
   const { currentSpaceId } = useSpaceStore();
   const { userId, displayName, isAdminForGroup, adminGroupId, enterAdminMode, exitAdminMode, timezoneId } = useAuthStore();
@@ -1272,6 +1274,9 @@ export default function GroupDetailPage() {
     setDeleteError(null);
     try {
       await softDeleteGroup(currentSpaceId, groupId);
+      // Invalidate the groups cache so the list refreshes when we navigate back
+      queryClient.invalidateQueries({ queryKey: ["groups", currentSpaceId] });
+      queryClient.invalidateQueries({ queryKey: ["deleted-groups", currentSpaceId] });
       router.push("/groups");
     } catch {
       setDeleteError(tErrors("generic"));
