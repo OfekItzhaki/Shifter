@@ -677,7 +677,9 @@ public class SolverWorkerService : BackgroundService
 
             // Store a user-friendly error message based on the space's locale
             string userFriendlyError;
-            if (ex.Message.Contains("Timeout") || ex.Message.Contains("canceled"))
+            var exMsg = ex.Message + (ex.InnerException?.Message ?? "");
+            
+            if (exMsg.Contains("Timeout") || exMsg.Contains("canceled") || exMsg.Contains("TaskCanceled") || ex is TaskCanceledException || ex is OperationCanceledException)
             {
                 userFriendlyError = spaceLocale switch {
                     "he" => "מנוע הסידור לא מצא פתרון בזמן המוקצב. נסה לצמצם את אופק התכנון או לפשט אילוצים.",
@@ -685,7 +687,7 @@ public class SolverWorkerService : BackgroundService
                     _ => "The solver could not find a solution within the time limit. Try reducing the planning horizon or simplifying constraints."
                 };
             }
-            else if (ex.Message.Contains("422") || ex.Message.Contains("Unprocessable"))
+            else if (exMsg.Contains("422") || exMsg.Contains("Unprocessable"))
             {
                 userFriendlyError = spaceLocale switch {
                     "he" => "מנוע הסידור דחה את הנתונים. ייתכן שיש בעיה בפורמט המשימות או האילוצים.",
@@ -693,7 +695,7 @@ public class SolverWorkerService : BackgroundService
                     _ => "The solver rejected the data. There may be an issue with the task or constraint format."
                 };
             }
-            else if (ex.Message.Contains("connect") || ex.Message.Contains("refused"))
+            else if (exMsg.Contains("connect") || exMsg.Contains("refused") || exMsg.Contains("No connection") || ex is HttpRequestException)
             {
                 userFriendlyError = spaceLocale switch {
                     "he" => "שירות הסידור אינו זמין. ודא שהוא פועל ונסה שוב.",
@@ -701,12 +703,22 @@ public class SolverWorkerService : BackgroundService
                     _ => "The scheduling service is unavailable. Ensure it is running and try again."
                 };
             }
-            else
+            else if (exMsg.Contains("500") || exMsg.Contains("Internal Server Error"))
             {
                 userFriendlyError = spaceLocale switch {
-                    "he" => "אירעה שגיאה בהרצת מנוע הסידור. נסה שוב מאוחר יותר.",
-                    "ru" => "Произошла ошибка при составлении расписания. Повторите попытку позже.",
-                    _ => "An error occurred while running the scheduler. Please try again later."
+                    "he" => "שירות הסידור נתקל בשגיאה פנימית. נסה שוב. אם הבעיה חוזרת, בדוק את הגדרות המשימות והאילוצים.",
+                    "ru" => "Служба планирования столкнулась с внутренней ошибкой. Повторите попытку. Если проблема повторяется, проверьте настройки задач и ограничений.",
+                    _ => "The scheduling service encountered an internal error. Try again. If the problem persists, review your task and constraint settings."
+                };
+            }
+            else
+            {
+                // Include a sanitized hint about the error type for debugging
+                var errorHint = ex.GetType().Name;
+                userFriendlyError = spaceLocale switch {
+                    "he" => $"אירעה שגיאה בהרצת מנוע הסידור ({errorHint}). נסה שוב מאוחר יותר.",
+                    "ru" => $"Произошла ошибка при составлении расписания ({errorHint}). Повторите попытку позже.",
+                    _ => $"An error occurred while running the scheduler ({errorHint}). Please try again later."
                 };
             }
 
