@@ -177,3 +177,22 @@ export function toUtcIsoString(dateOrIso: Date | string): string {
   }
   return dateOrIso.toISOString();
 }
+
+/**
+ * Get today's date as a YYYY-MM-DD string in the user's local timezone.
+ * This avoids the common bug where `new Date().toISOString().split("T")[0]`
+ * returns yesterday's date for users east of UTC after midnight local time.
+ *
+ * @param timezoneId - An IANA timezone identifier. Defaults to "Asia/Jerusalem" if null/undefined.
+ * @returns Today's date string in YYYY-MM-DD format (e.g. "2026-05-31")
+ */
+export function getLocalToday(timezoneId?: string | null): string {
+  const tz = timezoneId || DEFAULT_TIMEZONE;
+  const formatter = new Intl.DateTimeFormat("sv-SE", {
+    timeZone: tz,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
+  return formatter.format(new Date());
+}

@@ -5,7 +5,7 @@ import { useTranslations, useLocale } from "next-intl";
 import Link from "next/link";
 import { useDateFormat } from "@/lib/hooks/useDateFormat";
 import { useAuthStore } from "@/lib/store/authStore";
-import { formatLocalTime, formatLocalDate } from "@/lib/utils/formatTime";
+import { formatLocalTime, formatLocalDate, getLocalToday } from "@/lib/utils/formatTime";
 import type { ScheduleAssignment } from "../types";
 import ScheduleTaskTable from "@/components/schedule/ScheduleTaskTable";
 import ScheduleDiffView from "@/components/schedule/ScheduleDiffView";
@@ -71,13 +71,9 @@ export default function ScheduleTab({
   const tAdmin = useTranslations("admin");
   const locale = useLocale();
   const dayNames = locale === "he" ? DAY_NAMES_HE : DAY_NAMES_SHORT;
-  const today = (() => {
-    const now = new Date();
-    const y = now.getFullYear();
-    const m = String(now.getMonth() + 1).padStart(2, "0");
-    const d = String(now.getDate()).padStart(2, "0");
-    return `${y}-${m}-${d}`;
-  })();
+  const { fDateShort } = useDateFormat();
+  const timezoneId = useAuthStore(s => s.timezoneId);
+  const today = getLocalToday(timezoneId);
   const minDate = "2020-01-01"; // Allow viewing any past schedule
   const maxDate = (() => {
     // Allow viewing up to 30 days ahead (independent of solver horizon)
@@ -99,9 +95,6 @@ export default function ScheduleTab({
   const [historicalAssignments, setHistoricalAssignments] = useState<ScheduleAssignment[] | null>(null);
   const [historicalLoading, setHistoricalLoading] = useState(false);
   const [isViewingHistory, setIsViewingHistory] = useState(false);
-
-  const { fDateShort } = useDateFormat();
-  const timezoneId = useAuthStore(s => s.timezoneId);
 
   const weekDates = getWeekDates(weekAnchor);
 

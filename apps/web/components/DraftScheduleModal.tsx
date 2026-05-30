@@ -5,6 +5,7 @@ import { useTranslations, useLocale } from "next-intl";
 import { apiClient } from "@/lib/api/client";
 import { useDateFormat } from "@/lib/hooks/useDateFormat";
 import { useAuthStore } from "@/lib/store/authStore";
+import { getLocalToday } from "@/lib/utils/formatTime";
 import ScheduleTaskTable from "@/components/schedule/ScheduleTaskTable";
 import ScheduleDiffView from "@/components/schedule/ScheduleDiffView";
 import { useSandboxStore } from "@/lib/store/sandboxStore";
@@ -75,9 +76,12 @@ export default function DraftScheduleModal({
   const enterSandbox = useSandboxStore((s) => s.enterSandbox);
   const [enteringSimulation, setEnteringSimulation] = useState(false);
 
-  const today = new Date().toISOString().split("T")[0];
+  const today = getLocalToday(timezoneId);
   const [weekAnchor, setWeekAnchor] = useState(today);
-  const [selectedDay, setSelectedDay] = useState(new Date().getUTCDay());
+  const [selectedDay, setSelectedDay] = useState(() => {
+    const parts = today.split("-").map(Number);
+    return new Date(Date.UTC(parts[0], parts[1] - 1, parts[2])).getUTCDay();
+  });
 
   useEffect(() => {
     if (!open || !draftVersionId) return;
@@ -104,7 +108,7 @@ export default function DraftScheduleModal({
         // otherwise the first assignment date. Never jump backwards into the past.
         if (filtered.length > 0) {
           const dates = filtered.map(a => a.slotStartsAt.split("T")[0]).sort();
-          const todayDate = new Date().toISOString().split("T")[0];
+          const todayDate = today;
           const hasToday = dates.some(d => d === todayDate);
           const firstFuture = dates.find(d => d >= todayDate);
           const anchorDate = hasToday ? todayDate : (firstFuture ?? dates[0]);
@@ -173,7 +177,7 @@ export default function DraftScheduleModal({
     setWeekAnchor(next);
     // Select the first day of the new week that is today or in the future
     const newWeekDates = getWeekDates(next);
-    const todayStr = new Date().toISOString().split("T")[0];
+    const todayStr = today;
     const firstFutureIdx = newWeekDates.findIndex(d => d >= todayStr);
     setSelectedDay(firstFutureIdx >= 0 ? firstFutureIdx : 0);
   }

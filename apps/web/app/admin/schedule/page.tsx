@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import AppShell from "@/components/shell/AppShell";
 import { useAuthStore } from "@/lib/store/authStore";
-import { formatLocalTime, formatLocalDate } from "@/lib/utils/formatTime";
+import { formatLocalTime, formatLocalDate, getLocalToday } from "@/lib/utils/formatTime";
 import ScheduleTable2D from "@/components/schedule/ScheduleTable2D";
 import OverrideModal, { OverridePerson } from "@/components/schedule/OverrideModal";
 import DiffSummaryCard from "@/components/schedule/DiffSummaryCard";
@@ -242,7 +242,7 @@ interface VersionDetailPanelProps {
 function VersionDetailPanel({ selected, actionLoading, spaceId, onPublish, onRollback, onDiscard, onCellClick }: VersionDetailPanelProps) {
   const t = useTranslations("admin");
   const timezoneId = useAuthStore(s => s.timezoneId);
-  const today = new Date().toISOString().split("T")[0];
+  const today = getLocalToday(timezoneId);
   const [selectedDate, setSelectedDate] = useState(today);
 
   function prevDay() {

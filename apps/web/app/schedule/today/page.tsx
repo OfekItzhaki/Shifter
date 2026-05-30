@@ -8,6 +8,7 @@ import { useSpaceStore } from "@/lib/store/spaceStore";
 import { useAuthStore } from "@/lib/store/authStore";
 import { useGroups } from "@/lib/query/hooks/useGroups";
 import { useGroupSchedule } from "@/lib/query/hooks/useGroupSchedule";
+import { getLocalToday } from "@/lib/utils/formatTime";
 
 export default function TodayPage() {
   const t = useTranslations("schedule");
@@ -17,7 +18,7 @@ export default function TodayPage() {
   const [selectedGroupId, setSelectedGroupId] = useState("");
   const [todayLabel, setTodayLabel] = useState("");
 
-  const today = new Date().toISOString().split("T")[0];
+  const today = getLocalToday(timezoneId);
 
   // Hydration-safe date label
   useEffect(() => {

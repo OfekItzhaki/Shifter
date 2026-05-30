@@ -8,11 +8,14 @@ import { useSpaceStore } from "@/lib/store/spaceStore";
 import { useAuthStore } from "@/lib/store/authStore";
 import { useDateFormat } from "@/lib/hooks/useDateFormat";
 import { useMyAssignments, type AssignmentRange } from "@/lib/query/hooks/useMyAssignments";
+import { getLocalToday } from "@/lib/utils/formatTime";
 
-function getCurrentWeekDays(): string[] {
-  const today = new Date();
+function getCurrentWeekDays(timezoneId?: string | null): string[] {
+  const todayStr = getLocalToday(timezoneId);
+  const parts = todayStr.split("-").map(Number);
+  const today = new Date(Date.UTC(parts[0], parts[1] - 1, parts[2]));
   const dayOfWeek = today.getUTCDay();
-  const sunday = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate() - dayOfWeek));
+  const sunday = new Date(Date.UTC(parts[0], parts[1] - 1, parts[2] - dayOfWeek));
   return Array.from({ length: 7 }, (_, i) => {
     const d = new Date(sunday);
     d.setUTCDate(sunday.getUTCDate() + i);
@@ -24,14 +27,13 @@ export default function MyMissionsPage() {
   const t = useTranslations("schedule");
   const tMy = useTranslations("schedule.myMissions");
   const { currentSpaceId } = useSpaceStore();
-  const { displayName } = useAuthStore();
+  const { displayName, timezoneId } = useAuthStore();
   const { fDateLong } = useDateFormat();
   const [range, setRange] = useState<AssignmentRange>("week");
   const [search, setSearch] = useState("");
-  const [selectedDay, setSelectedDay] = useState<string>(new Date().toISOString().split("T")[0]);
-
-  const todayStr = new Date().toISOString().split("T")[0];
-  const weekDays = getCurrentWeekDays();
+  const todayStr = getLocalToday(timezoneId);
+  const [selectedDay, setSelectedDay] = useState<string>(todayStr);
+  const weekDays = getCurrentWeekDays(timezoneId);
 
   const { data: assignments = [], isLoading: loading } = useMyAssignments(currentSpaceId, range);
 
