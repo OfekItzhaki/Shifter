@@ -11,11 +11,11 @@ import { useSpaceStore } from "@/lib/store/spaceStore";
 
 // Fallback plans used when the API is unreachable
 const FALLBACK_PLANS: PlanDto[] = [
-  { variantId: "", name: "Starter", priceInCents: 5000, interval: "month", description: null, sortOrder: 1 },
-  { variantId: "", name: "Growth", priceInCents: 9000, interval: "month", description: null, sortOrder: 2 },
-  { variantId: "", name: "Team", priceInCents: 15000, interval: "month", description: null, sortOrder: 3 },
-  { variantId: "", name: "Organization", priceInCents: 25000, interval: "month", description: null, sortOrder: 4 },
-  { variantId: "", name: "Unlimited", priceInCents: 35000, interval: "month", description: null, sortOrder: 5 },
+  { variantId: "", name: "Starter", priceInCents: 5000, interval: "month", description: null, sortOrder: 1, memberLimit: 10 },
+  { variantId: "", name: "Growth", priceInCents: 9000, interval: "month", description: null, sortOrder: 2, memberLimit: 20 },
+  { variantId: "", name: "Team", priceInCents: 15000, interval: "month", description: null, sortOrder: 3, memberLimit: 30 },
+  { variantId: "", name: "Organization", priceInCents: 25000, interval: "month", description: null, sortOrder: 4, memberLimit: 50 },
+  { variantId: "", name: "Unlimited", priceInCents: 35000, interval: "month", description: null, sortOrder: 5, memberLimit: null },
 ];
 
 type PaymentState =
