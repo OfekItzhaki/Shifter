@@ -27,7 +27,7 @@ export default function ActivityPromptModal({
 
   // ── Countdown timer (timestamp-based to survive tab throttling) ─────────
 
-  const startedAtRef = useRef<number>(Date.now());
+  const startedAtRef = useRef<number>(0);
 
   useEffect(() => {
     if (open) {
