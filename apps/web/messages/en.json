@@ -186,8 +186,25 @@
       "namePlaceholder": "Enter a group name...",
       "templateLabel": "Choose a Template",
       "templateDescription": "The template will pre-configure tasks, constraints, and qualifications",
+      "selfServiceTemplateDescription": "Choose a shift pattern template for self-service scheduling",
       "continue": "Continue",
+      "back": "Back",
       "creating": "Creating...",
+      "createError": "Failed to create group. Please try again.",
+      "selfServiceTemplates": {
+        "weekly-shifts": {
+          "name": "Weekly Shifts",
+          "description": "Fixed weekly schedule with recurring shifts. Best for teams with predictable patterns."
+        },
+        "flexible": {
+          "name": "Flexible",
+          "description": "Members pick available slots. Best for teams with varying availability."
+        },
+        "custom": {
+          "name": "Custom",
+          "description": "Start from scratch. Define your own shift structure and rules."
+        }
+      },
       "templateCards": {
         "army-base": "24h guard shifts, kitchen duty, patrol. Designed for military platoons.",
         "restaurant": "Morning, afternoon, and evening shifts. Waiters, kitchen, bar.",

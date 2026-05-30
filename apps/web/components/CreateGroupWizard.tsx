@@ -11,19 +11,16 @@ import ModeWarningDialog from "@/components/groups/selfService/ModeWarningDialog
 const SELF_SERVICE_TEMPLATES = [
   {
     id: "weekly-shifts",
-    nameHe: "משמרות שבועיות",
     icon: "📅",
     color: "#8b5cf6",
   },
   {
     id: "flexible",
-    nameHe: "גמיש",
     icon: "🔄",
     color: "#06b6d4",
   },
   {
     id: "custom",
-    nameHe: "מותאם אישית",
     icon: "✏️",
     color: "#64748b",
   },
@@ -96,9 +93,11 @@ export default function CreateGroupWizard({ open, onClose, onCreateGroup, isPend
       const templateId = schedulingMode === "SelfService" ? selectedSelfServiceTemplate : selectedTemplate;
       await onCreateGroup(name.trim(), templateId, schedulingMode ?? undefined);
       setShowConfirmDialog(false);
-    } catch {
+    } catch (err: unknown) {
       setShowConfirmDialog(false);
-      setError(t("creating"));
+      const errorMsg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error
+        || t("createError");
+      setError(errorMsg);
     }
   }
 
@@ -223,7 +222,7 @@ export default function CreateGroupWizard({ open, onClose, onCreateGroup, isPend
                   {t("templateLabel")}
                 </label>
                 <p className="text-xs text-slate-400 dark:text-slate-500 mb-3">
-                  בחר תבנית משמרות לשירות עצמי
+                  {t("selfServiceTemplateDescription")}
                 </p>
 
                 <div className="grid grid-cols-1 gap-2.5">
@@ -246,7 +245,12 @@ export default function CreateGroupWizard({ open, onClose, onCreateGroup, isPend
                           {template.icon}
                         </span>
                         <div className="min-w-0 flex-1">
-                          <p className="text-sm font-semibold text-slate-900 dark:text-white">{template.nameHe}</p>
+                          <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                            {t(`selfServiceTemplates.${template.id}.name`)}
+                          </p>
+                          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 leading-relaxed">
+                            {t(`selfServiceTemplates.${template.id}.description`)}
+                          </p>
                         </div>
                       </div>
                     </button>

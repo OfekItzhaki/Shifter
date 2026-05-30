@@ -74,10 +74,7 @@ function GroupsPage() {
         router.push(`/groups/${newGroupId}`);
       }
     } catch (err: unknown) {
-      setCreateError(
-        (err as { response?: { data?: { error?: string } } })?.response?.data?.error ||
-        tErrors("errorCreateGroup")
-      );
+      // Don't show error on the page — the wizard modal handles its own error display
       throw err; // re-throw so the wizard knows it failed
     }
   }
