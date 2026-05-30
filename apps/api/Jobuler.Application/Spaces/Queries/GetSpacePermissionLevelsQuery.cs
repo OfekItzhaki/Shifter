@@ -17,10 +17,31 @@ public class GetSpacePermissionLevelsQueryHandler : IRequestHandler<GetSpacePerm
 
     public async Task<List<SpacePermissionLevelDto>> Handle(GetSpacePermissionLevelsQuery request, CancellationToken ct)
     {
-        return await _db.SpaceMemberships
+        // Get the space owner ID to ensure they always show as SpaceOwner
+        var space = await _db.Spaces
+            .AsNoTracking()
+            .Where(s => s.Id == request.SpaceId)
+            .Select(s => new { s.OwnerUserId })
+            .FirstOrDefaultAsync(ct);
+
+        var members = await _db.SpaceMemberships
             .AsNoTracking()
             .Where(m => m.SpaceId == request.SpaceId && m.IsActive)
             .Select(m => new SpacePermissionLevelDto(m.UserId, m.PermissionLevel))
             .ToListAsync(ct);
+
+        // Override: space owner always has SpaceOwner level regardless of what's in the membership table
+        if (space != null)
+        {
+            for (int i = 0; i < members.Count; i++)
+            {
+                if (members[i].UserId == space.OwnerUserId && members[i].PermissionLevel != SpacePermissionLevel.SpaceOwner)
+                {
+                    members[i] = new SpacePermissionLevelDto(members[i].UserId, SpacePermissionLevel.SpaceOwner);
+                }
+            }
+        }
+
+        return members;
     }
 }
