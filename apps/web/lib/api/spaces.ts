@@ -45,10 +45,10 @@ export interface MigrateResult {
 // ── Space Permission Level ────────────────────────────────────────────────────
 
 export enum SpacePermissionLevel {
-  Member = 0,
-  Admin = 1,
-  GroupOwner = 2,
-  SpaceOwner = 3,
+  Member = "Member",
+  Admin = "Admin",
+  GroupOwner = "GroupOwner",
+  SpaceOwner = "SpaceOwner",
 }
 
 export interface SpacePermissionLevelDto {

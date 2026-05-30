@@ -213,7 +213,7 @@ export default function RoleAssignmentCard({
                 <select
                   value={member.permissionLevel}
                   onChange={(e) =>
-                    handleRoleChange(member.userId, Number(e.target.value) as SpacePermissionLevel)
+                    handleRoleChange(member.userId, e.target.value as SpacePermissionLevel)
                   }
                   disabled={isSaving}
                   aria-label={t("roleAssignment.selectLabel", { name: member.displayName ?? "" })}
