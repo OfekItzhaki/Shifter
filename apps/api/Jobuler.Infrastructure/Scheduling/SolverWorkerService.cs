@@ -265,12 +265,12 @@ public class SolverWorkerService : BackgroundService
                 var taskSummary = string.Join(", ", taskTypeGroups.Select(t =>
                     $"{t.TaskTypeName} ({t.MinPeople}{(t.AllowsOverlap ? ", shared" : "")})"));
                 var reason = preflightLocale switch {
-                    "he" => $"At least {totalMinPeople} members are needed to cover all tasks 24/7 ({taskSummary}), but only {input.People.Count} active members are in groups. Add more members and try again.",
+                    "he" => $"נדרשים לפחות {totalMinPeople} חברים לכיסוי כל המשימות 24/7 ({taskSummary}), אך רק {input.People.Count} חברים פעילים בקבוצות. הוסף חברים ונסה שוב.",
                     "ru" => $"Для покрытия всех задач 24/7 ({taskSummary}) требуется минимум {totalMinPeople} участников, но активных только {input.People.Count}. Добавьте участников и повторите попытку.",
                     _    => $"At least {totalMinPeople} members are needed to cover all tasks 24/7 ({taskSummary}), but only {input.People.Count} active members are in groups. Add more members and try again."
                 };
                 var preflightTitle = preflightLocale switch {
-                    "he" => "Cannot schedule - not enough members",
+                    "he" => "לא ניתן לסדר - אין מספיק חברים",
                     "ru" => "Невозможно составить расписание - недостаточно участников",
                     _    => "Cannot schedule - not enough members"
                 };
@@ -473,7 +473,7 @@ public class SolverWorkerService : BackgroundService
                     var violationLocale = input.Locale ?? "en";
                     var violationList = string.Join("\n", postSolveViolations.Select(v => $"• {v}"));
                     var violationError = violationLocale switch {
-                        "he" => $"Solver returned a result that violates hard constraints ({postSolveViolations.Count} violation(s)). No draft was created.\n\n{violationList}\n\nReview constraint settings and try again.",
+                        "he" => $"מנוע הסידור החזיר תוצאה שמפרה אילוצים קשיחים ({postSolveViolations.Count} הפרות). לא נוצר טיוטה.\n\n{violationList}\n\nבדוק את הגדרות האילוצים ונסה שוב.",
                         "ru" => $"Решатель вернул результат с нарушениями жёстких ограничений ({postSolveViolations.Count} нарушений). Черновик не создан.\n\n{violationList}\n\nПроверьте настройки ограничений и повторите попытку.",
                         _    => $"Solver returned a result that violates hard constraints ({postSolveViolations.Count} violation(s)). No draft was created.\n\n{violationList}\n\nReview constraint settings and try again."
                     };
@@ -493,7 +493,7 @@ public class SolverWorkerService : BackgroundService
                     // Build a locale-aware error with actionable guidance
                     var uncoveredLocale = input.Locale ?? "en";
                     var uncoveredError = uncoveredLocale switch {
-                        "he" => $"Could not staff all shifts: {taskList} ({output.UncoveredSlotIds.Count} shifts unfilled). Try reducing the planning horizon, adding members, or relaxing constraints.",
+                        "he" => $"לא ניתן לאייש את כל המשמרות: {taskList} ({output.UncoveredSlotIds.Count} משמרות לא מאוישות). נסה לצמצם את אופק התכנון, להוסיף חברים, או להקל אילוצים.",
                         "ru" => $"Не удалось укомплектовать все смены: {taskList} ({output.UncoveredSlotIds.Count} смен не заполнены). Попробуйте уменьшить горизонт планирования, добавить участников или смягчить ограничения.",
                         _    => $"Could not staff all shifts: {taskList} ({output.UncoveredSlotIds.Count} shifts unfilled). Try reducing the planning horizon, adding members, or relaxing constraints."
                     };
@@ -533,13 +533,13 @@ public class SolverWorkerService : BackgroundService
                             "double_shift_recommendation",
                             recLocale switch
                             {
-                                "he" => "Recommendation: enable double shift",
+                                "he" => "המלצה: הפעל משמרת כפולה",
                                 "ru" => "Рекомендация: включить двойную смену",
                                 _ => "Recommendation: enable double shift"
                             },
                             recLocale switch
                             {
-                                "he" => $"{totalUncoveredSlots} uncovered slot(s) detected. Enabling double shift on {recommendationResult.Recommendations.Count} task(s) may improve coverage.",
+                                "he" => $"זוהו {totalUncoveredSlots} משבצות לא מכוסות. הפעלת משמרת כפולה ב-{recommendationResult.Recommendations.Count} משימות עשויה לשפר את הכיסוי.",
                                 "ru" => $"Обнаружено {totalUncoveredSlots} незаполненных смен. Включение двойной смены для {recommendationResult.Recommendations.Count} задач может улучшить покрытие.",
                                 _ => $"{totalUncoveredSlots} uncovered slot(s) detected. Enabling double shift on {recommendationResult.Recommendations.Count} task(s) may improve coverage."
                             },
@@ -572,17 +572,17 @@ public class SolverWorkerService : BackgroundService
                 var uniquePeople = assignments.Select(a => a.PersonId).Distinct().Count();
                 var uniqueSlots  = assignments.Select(a => a.TaskSlotId).Distinct().Count();
                 var coverageNote = output.UncoveredSlotIds.Count > 0
-                    ? (locale == "he" ? $" {output.UncoveredSlotIds.Count} shift(s) not fully staffed."
+                    ? (locale == "he" ? $" {output.UncoveredSlotIds.Count} משמרות לא מאוישות במלואן."
                        : locale == "ru" ? $" {output.UncoveredSlotIds.Count} смен не укомплектованы."
                        : $" {output.UncoveredSlotIds.Count} shift(s) not fully staffed.")
-                    : (locale == "he" ? " All shifts fully staffed." : locale == "ru" ? " Все смены укомплектованы." : " All shifts fully staffed.");
+                    : (locale == "he" ? " כל המשמרות מאוישות במלואן." : locale == "ru" ? " Все смены укомплектованы." : " All shifts fully staffed.");
 
                 (notifTitle, notifBody) = locale switch {
                     "he" => (
-                        output.TimedOut ? "Schedule ready (partial)" : "Schedule ready for review",
+                        output.TimedOut ? "הסידור מוכן (חלקי)" : "הסידור מוכן לבדיקה",
                         output.TimedOut
-                            ? $"Solver reached time limit. Assigned {uniquePeople} people to {uniqueSlots} shifts.{coverageNote} Review and publish when ready."
-                            : $"Assigned {uniquePeople} people to {uniqueSlots} shifts.{coverageNote} Review and publish when ready."
+                            ? $"מנוע הסידור הגיע למגבלת הזמן. שובצו {uniquePeople} חברים ל-{uniqueSlots} משמרות.{coverageNote} בדוק ופרסם כשמוכן."
+                            : $"שובצו {uniquePeople} חברים ל-{uniqueSlots} משמרות.{coverageNote} בדוק ופרסם כשמוכן."
                     ),
                     "ru" => (
                         output.TimedOut ? "Расписание составлено (частично)" : "Расписание готово к проверке",
@@ -612,8 +612,8 @@ public class SolverWorkerService : BackgroundService
                 if (hasPostSolveViolations)
                 {
                     (notifTitle, notifBody) = locale switch {
-                        "he" => ("Schedule violates hard constraints",
-                                 $"Solver returned a result with {postSolveViolations.Count} hard constraint violation(s). No draft was created.{postSolveDetails}\n\nReview constraint settings, ensure enough qualified members, and try again."),
+                        "he" => ("הסידור מפר אילוצים קשיחים",
+                                 $"מנוע הסידור החזיר תוצאה עם {postSolveViolations.Count} הפרות אילוצים קשיחים. לא נוצר טיוטה.{postSolveDetails}\n\nבדוק הגדרות אילוצים, ודא שיש מספיק חברים מוסמכים, ונסה שוב."),
                         "ru" => ("Расписание нарушает жёсткие ограничения",
                                  $"Решатель вернул результат с {postSolveViolations.Count} нарушениями жёстких ограничений. Черновик не создан.{postSolveDetails}\n\nПроверьте настройки ограничений, убедитесь в наличии квалифицированных участников, и повторите попытку."),
                         _    => ("Schedule violates hard constraints",
@@ -623,8 +623,8 @@ public class SolverWorkerService : BackgroundService
                 else
                 {
                     (notifTitle, notifBody) = locale switch {
-                        "he" => ("Schedule is infeasible",
-                                 $"Could not create a schedule under the current constraints.{conflictDetails}\n\nCheck that there are enough members and future tasks, then try again."),
+                        "he" => ("לא ניתן ליצור סידור",
+                                 $"לא ניתן ליצור סידור עם האילוצים הנוכחיים.{conflictDetails}\n\nודא שיש מספיק חברים ומשימות עתידיות, ונסה שוב."),
                         "ru" => ("Расписание невозможно составить",
                                  $"Не удалось создать расписание при текущих ограничениях.{conflictDetails}\n\nПроверьте наличие достаточного количества участников и будущих задач, затем повторите попытку."),
                         _    => ("Schedule is infeasible",
@@ -680,7 +680,7 @@ public class SolverWorkerService : BackgroundService
             if (ex.Message.Contains("Timeout") || ex.Message.Contains("canceled"))
             {
                 userFriendlyError = spaceLocale switch {
-                    "he" => "The solver could not find a solution within the time limit. Try reducing the planning horizon or simplifying constraints.",
+                    "he" => "מנוע הסידור לא מצא פתרון בזמן המוקצב. נסה לצמצם את אופק התכנון או לפשט אילוצים.",
                     "ru" => "Решатель не смог найти решение за отведённое время. Попробуйте уменьшить горизонт планирования.",
                     _ => "The solver could not find a solution within the time limit. Try reducing the planning horizon or simplifying constraints."
                 };
@@ -688,7 +688,7 @@ public class SolverWorkerService : BackgroundService
             else if (ex.Message.Contains("422") || ex.Message.Contains("Unprocessable"))
             {
                 userFriendlyError = spaceLocale switch {
-                    "he" => "The solver rejected the data. There may be an issue with the task or constraint format.",
+                    "he" => "מנוע הסידור דחה את הנתונים. ייתכן שיש בעיה בפורמט המשימות או האילוצים.",
                     "ru" => "Решатель отклонил данные. Возможно, проблема в формате задач или ограничений.",
                     _ => "The solver rejected the data. There may be an issue with the task or constraint format."
                 };
@@ -696,7 +696,7 @@ public class SolverWorkerService : BackgroundService
             else if (ex.Message.Contains("connect") || ex.Message.Contains("refused"))
             {
                 userFriendlyError = spaceLocale switch {
-                    "he" => "The scheduling service is unavailable. Ensure it is running and try again.",
+                    "he" => "שירות הסידור אינו זמין. ודא שהוא פועל ונסה שוב.",
                     "ru" => "Служба планирования недоступна. Убедитесь, что она запущена.",
                     _ => "The scheduling service is unavailable. Ensure it is running and try again."
                 };
@@ -704,7 +704,7 @@ public class SolverWorkerService : BackgroundService
             else
             {
                 userFriendlyError = spaceLocale switch {
-                    "he" => "An error occurred while running the scheduler. Please try again later.",
+                    "he" => "אירעה שגיאה בהרצת מנוע הסידור. נסה שוב מאוחר יותר.",
                     "ru" => "Произошла ошибка при составлении расписания. Повторите попытку позже.",
                     _ => "An error occurred while running the scheduler. Please try again later."
                 };
@@ -724,7 +724,7 @@ public class SolverWorkerService : BackgroundService
 
             // Reuse the same locale and user-friendly error already computed above
             var failTitle = spaceLocale switch {
-                "he" => "Scheduling run failed",
+                "he" => "הרצת הסידור נכשלה",
                 "ru" => "Ошибка составления расписания",
                 _    => "Scheduling run failed"
             };
