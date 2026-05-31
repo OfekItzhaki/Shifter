@@ -159,6 +159,11 @@
       "qualifications": "Required Qualifications",
       "splitCount": "Split Count",
       "defaultSettings": "Default settings"
+    },
+    "rest": {
+      "label": "rest",
+      "hoursAbbrev": "h",
+      "daysAbbrev": "d"
     }
   },
   "groups": {

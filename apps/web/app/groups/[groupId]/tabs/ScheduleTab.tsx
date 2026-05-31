@@ -35,6 +35,8 @@ interface Props {
   spaceId?: string;
   allowMembersViewHistory?: boolean;
   subscriptionActive?: boolean;
+  /** Min rest between shifts in hours — passed to ScheduleTaskTable for rest duration display */
+  minRestBetweenShiftsHours?: number;
   onOpenDraftModal: () => void;
   onPublish: () => Promise<void>;
   onDiscard: () => Promise<void>;
@@ -64,6 +66,7 @@ export default function ScheduleTab({
   groupId, solverHorizonDays, scheduleData, scheduleLoading, scheduleError, scheduleIsOffline = false,
   draftVersion, lastRunSummary, solverError, isAdmin, publishSaving, discardSaving, scheduleVersionError,
   currentUserName, groupName, spaceId, allowMembersViewHistory = true, subscriptionActive = true,
+  minRestBetweenShiftsHours,
   onOpenDraftModal, onPublish, onDiscard, onTriggerSolver,
 }: Props) {
   const t = useTranslations("groups.schedule_tab");
@@ -598,6 +601,7 @@ export default function ScheduleTab({
             currentUserName={currentUserName}
             isAdmin={isAdmin}
             spaceId={spaceId}
+            minRestHours={minRestBetweenShiftsHours}
             onPersonBlocked={(_personId, triggerRerun) => {
               if (triggerRerun && onTriggerSolver) onTriggerSolver();
             }}

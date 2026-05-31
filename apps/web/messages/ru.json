@@ -159,6 +159,11 @@
       "qualifications": "Требуемые квалификации",
       "splitCount": "Количество разделений",
       "defaultSettings": "Настройки по умолчанию"
+    },
+    "rest": {
+      "label": "отдых",
+      "hoursAbbrev": "ч",
+      "daysAbbrev": "д"
     }
   },
   "groups": {

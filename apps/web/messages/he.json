@@ -162,6 +162,11 @@
       "qualifications": "כישורים נדרשים",
       "splitCount": "מספר חלוקות",
       "defaultSettings": "הגדרות ברירת מחדל"
+    },
+    "rest": {
+      "label": "מנוחה",
+      "hoursAbbrev": "ש",
+      "daysAbbrev": "י"
     }
   },
   "groups": {

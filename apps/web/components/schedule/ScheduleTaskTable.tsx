@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import { useAuthStore } from "@/lib/store/authStore";
 import { formatLocalTime } from "@/lib/utils/formatTime";
+import { computeRestDurations, type RestDurationEntry } from "@/lib/utils/restDuration";
+import RestDurationBadge from "./RestDurationBadge";
 import CantMakeItModal from "./CantMakeItModal";
 
 /** Task type name used for home-leave assignments from the solver */
@@ -38,6 +40,8 @@ interface Props {
   roleColorMap?: Map<string, string | null>;
   /** Called after a presence window is saved — parent decides whether to re-run solver */
   onPersonBlocked?: (personId: string, triggerRerun: boolean) => void;
+  /** Min rest threshold in hours — enables rest duration display when provided with isAdmin */
+  minRestHours?: number;
 }
 
 function formatTime(iso: string, timezoneId: string | null): string {
@@ -88,11 +92,26 @@ function overlapsDate(a: TaskAssignment, dateStr: string): boolean {
  *
  * This cleanly handles tasks with different shift times and multiple people per shift.
  */
-export default function ScheduleTaskTable({ assignments, currentUserName, filterDate, isAdmin, spaceId, roleColorMap, onPersonBlocked }: Props) {
+export default function ScheduleTaskTable({ assignments, currentUserName, filterDate, isAdmin, spaceId, roleColorMap, onPersonBlocked, minRestHours }: Props) {
   const t = useTranslations("schedule");
   const locale = useLocale();
   const timezoneId = useAuthStore(s => s.timezoneId);
   const [cantMakeIt, setCantMakeIt] = useState<{ personId: string; personName: string } | null>(null);
+
+  // Compute rest durations between consecutive assignments (memoized)
+  const restDurationMap = useMemo(() => {
+    if (!isAdmin || minRestHours == null) return new Map<string, RestDurationEntry>();
+    const inputs = assignments
+      .filter((a): a is TaskAssignment & { personId: string } => !!a.personId)
+      .map(a => ({ personId: a.personId, slotStartsAt: a.slotStartsAt, slotEndsAt: a.slotEndsAt }));
+    const entries = computeRestDurations(inputs);
+    const map = new Map<string, RestDurationEntry>();
+    for (const entry of entries) {
+      map.set(`${entry.personId}|${entry.slotStartsAt}`, entry);
+    }
+    return map;
+  }, [assignments, isAdmin, minRestHours]);
+
   const visible = filterDate
     ? assignments.filter(a => overlapsDate(a, filterDate))
     : assignments;
@@ -191,28 +210,36 @@ export default function ScheduleTaskTable({ assignments, currentUserName, filter
                           return (
                             <td key={i} className={`px-2.5 sm:px-4 py-2.5 sm:py-3 text-center ${isCurrentUser && !isHomeLeave ? "bg-sky-50/60 dark:bg-sky-900/20" : ""} ${isCurrentUser && isHomeLeave ? "bg-emerald-100/60 dark:bg-emerald-900/30" : ""}`}>
                               {name ? (
-                                <div className="flex items-center justify-center gap-1.5 group">
-                                  <span
-                                    className={`text-xs sm:text-sm font-medium ${isHomeLeave ? "text-emerald-800 dark:text-emerald-200" : isCurrentUser ? "text-sky-700 dark:text-sky-300" : "text-slate-800 dark:text-slate-200"}`}
-                                    style={
-                                      personId && roleColorMap?.get(personId)
-                                        ? { borderLeft: `3px solid ${roleColorMap.get(personId)}`, paddingLeft: '6px' }
-                                        : undefined
-                                    }
-                                  >
-                                    {name}
-                                  </span>
-                                  {isAdmin && spaceId && personId && !isHomeLeave && (
-                                    <button
-                                      onClick={() => setCantMakeIt({ personId, personName: name })}
-                                      title="Can't make it"
-                                      className="opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 text-amber-500 hover:text-red-500"
+                                <div className="flex flex-col items-center gap-0.5">
+                                  <div className="flex items-center justify-center gap-1.5 group">
+                                    <span
+                                      className={`text-xs sm:text-sm font-medium ${isHomeLeave ? "text-emerald-800 dark:text-emerald-200" : isCurrentUser ? "text-sky-700 dark:text-sky-300" : "text-slate-800 dark:text-slate-200"}`}
+                                      style={
+                                        personId && roleColorMap?.get(personId)
+                                          ? { borderLeft: `3px solid ${roleColorMap.get(personId)}`, paddingLeft: '6px' }
+                                          : undefined
+                                      }
                                     >
-                                      <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
-                                      </svg>
-                                    </button>
-                                  )}
+                                      {name}
+                                    </span>
+                                    {isAdmin && spaceId && personId && !isHomeLeave && (
+                                      <button
+                                        onClick={() => setCantMakeIt({ personId, personName: name })}
+                                        title="Can't make it"
+                                        className="opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 text-amber-500 hover:text-red-500"
+                                      >
+                                        <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+                                        </svg>
+                                      </button>
+                                    )}
+                                  </div>
+                                  {isAdmin && minRestHours != null && personId && (() => {
+                                    const restEntry = restDurationMap.get(`${personId}|${slot.startsAt}`);
+                                    return restEntry ? (
+                                      <RestDurationBadge restHours={restEntry.restHours} minRestThresholdHours={minRestHours} />
+                                    ) : null;
+                                  })()}
                                 </div>
                               ) : (
                                 <span className={isHomeLeave ? "text-emerald-300" : "text-slate-300"}>—</span>
