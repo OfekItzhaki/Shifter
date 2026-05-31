@@ -60,6 +60,11 @@ services:
       context: ../../apps/api
       dockerfile: ../../infra/docker/api.Dockerfile
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '2.0'
     environment:
       ASPNETCORE_ENVIRONMENT: Production
       ConnectionStrings__DefaultConnection: "Host=${POSTGRES_HOST};Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}"
@@ -114,6 +119,11 @@ services:
       context: ../../apps/solver
       dockerfile: ../../infra/docker/solver.Dockerfile
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '2.0'
     environment:
       SOLVER_TIMEOUT_SECONDS: ${SOLVER_TIMEOUT_SECONDS}
       SOLVE_TIMEOUT_SECONDS: ${SOLVE_TIMEOUT_SECONDS:-120}
