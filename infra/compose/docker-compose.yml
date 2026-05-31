@@ -112,6 +112,12 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8080/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
 
   # ─── Solver (Python + OR-Tools) ─────────────────────────────
   solver:
@@ -153,6 +159,12 @@ services:
       - "127.0.0.1:${WEB_PORT}:3000"
     depends_on:
       - api
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
 
   # ─── Seq (Structured Log Server) ──────────────────────────────
   seq:
