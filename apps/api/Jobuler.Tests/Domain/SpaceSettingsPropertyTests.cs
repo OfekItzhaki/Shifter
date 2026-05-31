@@ -38,18 +38,18 @@ public class SpaceSettingsPropertyTests
     }
 
     /// <summary>
-    /// Generates valid space names: 1–100 printable characters (after trim).
+    /// Generates valid space names: 2–100 printable characters (after trim).
     /// </summary>
     private static Arbitrary<string> ValidNameArbitrary()
     {
-        // Generate strings of length 1-100 using printable non-whitespace chars,
+        // Generate strings of length 2-100 using printable non-whitespace chars,
         // optionally surrounded by whitespace (to test trim behavior)
-        var gen = from length in Gen.Choose(1, 100)
+        var gen = from length in Gen.Choose(2, 100)
                   from chars in Gen.ArrayOf(length, Gen.Elements(
                       "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_ ".ToCharArray()))
                   let core = new string(chars)
-                  // Ensure at least one non-whitespace character
-                  where core.Trim().Length >= 1 && core.Trim().Length <= 100
+                  // Ensure at least two non-whitespace characters after trim
+                  where core.Trim().Length >= 2 && core.Trim().Length <= 100
                   from leadingSpaces in Gen.Choose(0, 3)
                   from trailingSpaces in Gen.Choose(0, 3)
                   let padded = new string(' ', leadingSpaces) + core + new string(' ', trailingSpaces)
@@ -59,20 +59,24 @@ public class SpaceSettingsPropertyTests
     }
 
     /// <summary>
-    /// Generates invalid space names: empty, whitespace-only, or >100 chars after trim.
+    /// Generates invalid space names: empty, whitespace-only, single char, or >100 chars after trim.
     /// </summary>
     private static Arbitrary<string> InvalidNameArbitrary()
     {
         var empty = Gen.Constant(string.Empty);
         var whitespaceOnly = from count in Gen.Choose(1, 10)
                              select new string(' ', count);
+        var singleChar = from c in Gen.Elements("abcdefghijklmnopqrstuvwxyz".ToCharArray())
+                         from leadingSpaces in Gen.Choose(0, 3)
+                         from trailingSpaces in Gen.Choose(0, 3)
+                         select new string(' ', leadingSpaces) + c + new string(' ', trailingSpaces);
         var tooLong = from length in Gen.Choose(101, 200)
                       from chars in Gen.ArrayOf(length, Gen.Elements(
                           "abcdefghijklmnopqrstuvwxyz".ToCharArray()))
                       select new string(chars);
         var nullStr = Gen.Constant((string)null!);
 
-        var gen = Gen.OneOf(empty, whitespaceOnly, tooLong, nullStr);
+        var gen = Gen.OneOf(empty, whitespaceOnly, singleChar, tooLong, nullStr);
         return Arb.From(gen);
     }
 
