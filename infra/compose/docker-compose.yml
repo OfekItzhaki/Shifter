@@ -158,7 +158,7 @@ services:
     volumes:
       - seq_data:/data
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5341/api"]
+      test: ["CMD-SHELL", "curl -so /dev/null http://localhost:5341/ || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 5
