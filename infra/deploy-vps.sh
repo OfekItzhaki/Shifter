@@ -55,6 +55,17 @@ cat > /etc/caddy/Caddyfile << 'CADDYEOF'
 # Caddy automatically provisions HTTPS via Let's Encrypt
 
 YOUR_DOMAIN {
+    # Security headers
+    header {
+        X-Frame-Options "DENY"
+        X-Content-Type-Options "nosniff"
+        Referrer-Policy "no-referrer"
+        Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
+        Permissions-Policy "camera=(), microphone=(), geolocation=()"
+        -Server
+        -X-Powered-By
+    }
+
     # Maintenance page — served when backend containers are down (502/503/504)
     handle_errors {
         @maintenance expression {err.status_code} in [502, 503, 504]
