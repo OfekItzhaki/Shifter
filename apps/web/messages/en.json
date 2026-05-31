@@ -1045,7 +1045,7 @@
     "unreadCount": "{count} unread",
     "allRead": "All caught up",
     "events": {
-      "schedule.published": {
+      "schedule_published": {
         "title": "Schedule Published",
         "body": "A new schedule has been published and is ready to view."
       },
@@ -1053,7 +1053,7 @@
         "title": "Added to Group",
         "body": "You were added to a group."
       },
-      "group.member_added": {
+      "group_member_added": {
         "title": "Added to Group",
         "body": "You were added to a group."
       },
@@ -1061,7 +1061,7 @@
         "title": "Group Restored",
         "body": "A group was restored by the owner."
       },
-      "group.ownership_transferred": {
+      "group_ownership_transferred": {
         "title": "Ownership Transferred",
         "body": "Group ownership has been transferred to you."
       },

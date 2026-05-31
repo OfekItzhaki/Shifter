@@ -1050,7 +1050,7 @@
     "unreadCount": "{count} לא נקראו",
     "allRead": "הכל נקרא",
     "events": {
-      "schedule.published": {
+      "schedule_published": {
         "title": "סידור פורסם",
         "body": "סידור חדש פורסם ומוכן לצפייה."
       },
@@ -1058,7 +1058,7 @@
         "title": "נוספת לקבוצה",
         "body": "נוספת לקבוצה חדשה."
       },
-      "group.member_added": {
+      "group_member_added": {
         "title": "נוספת לקבוצה",
         "body": "נוספת לקבוצה חדשה."
       },
@@ -1066,7 +1066,7 @@
         "title": "קבוצה שוחזרה",
         "body": "הקבוצה שוחזרה על ידי הבעלים."
       },
-      "group.ownership_transferred": {
+      "group_ownership_transferred": {
         "title": "בעלות הועברה",
         "body": "בעלות הקבוצה הועברה אליך."
       },

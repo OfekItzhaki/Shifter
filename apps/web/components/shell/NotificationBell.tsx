@@ -105,8 +105,10 @@ export default function NotificationBell({ variant = "dark" }: { variant?: "ligh
           <p className="text-xs text-gray-400 dark:text-slate-500 text-center py-6">{t("noNotifications")}</p>
         ) : filteredNotifications.map(n => {
           // Use localized title/body based on eventType if translation exists
-          const localizedTitle = t(`events.${n.eventType}.title`, { defaultValue: "" }) || n.title;
-          const localizedBody = t(`events.${n.eventType}.body`, { defaultValue: "" }) || n.body;
+          // Replace dots with underscores for translation key lookup (next-intl uses dots as path separators)
+          const eventKey = n.eventType.replace(/\./g, "_");
+          const localizedTitle = t(`events.${eventKey}.title`, { defaultValue: "" }) || n.title;
+          const localizedBody = t(`events.${eventKey}.body`, { defaultValue: "" }) || n.body;
 
           return (
             <div key={n.id}
