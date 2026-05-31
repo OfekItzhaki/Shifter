@@ -14,8 +14,10 @@ COPY . .
 RUN dotnet publish Jobuler.Api/Jobuler.Api.csproj -c Release -o /app/publish
 
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
+RUN adduser --disabled-password --gecos '' appuser
 WORKDIR /app
 COPY --from=build /app/publish .
-RUN mkdir -p /app/wwwroot/uploads /app/logs
+RUN mkdir -p /app/wwwroot/uploads /app/logs && chown -R appuser:appuser /app
+USER appuser
 EXPOSE 8080
 ENTRYPOINT ["dotnet", "Jobuler.Api.dll"]
