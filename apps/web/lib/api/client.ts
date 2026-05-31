@@ -36,6 +36,48 @@ let apiOnline = true;
 /** @deprecated Use `useConnectivityStore().isConnected` instead. */
 export function isApiOnline(): boolean { return apiOnline; }
 
+/**
+ * Probes real internet connectivity by fetching a lightweight external resource.
+ * Used when navigator.onLine is true but an API call failed — distinguishes
+ * "server is down" from "connected to WiFi but no internet".
+ *
+ * Tries the app's own /health endpoint first (same-origin, fast).
+ * If that fails, tries a well-known external endpoint as a fallback.
+ * Returns true if the device has internet, false otherwise.
+ */
+let probeInFlight: Promise<boolean> | null = null;
+
+async function probeConnectivity(): Promise<boolean> {
+  // Deduplicate concurrent probes — if one is already running, reuse it
+  if (probeInFlight) return probeInFlight;
+
+  probeInFlight = (async () => {
+    try {
+      // Try fetching a tiny external resource (Google's generate_204 endpoint)
+      // This confirms internet access independent of our server's health.
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 3000);
+
+      const response = await fetch("https://www.gstatic.com/generate_204", {
+        method: "HEAD",
+        mode: "no-cors",
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeout);
+      // In no-cors mode, an opaque response (type "opaque") means the request succeeded
+      return response.type === "opaque" || response.ok;
+    } catch {
+      // External probe failed — no internet
+      return false;
+    }
+  })();
+
+  const result = await probeInFlight;
+  probeInFlight = null;
+  return result;
+}
+
 function redirectToErrorPage(path: string): void {
   if (isRedirecting) return;
   isRedirecting = true;
@@ -145,13 +187,25 @@ apiClient.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    // 5xx or network error: update connectivity store (only when device is online)
+    // 5xx or network error: determine if it's a client connectivity issue or server issue
     if ((status >= 500 && status <= 599 || !error.response) && typeof window !== "undefined") {
       apiOnline = false;
-      // Only mark server-unavailable if the device itself is online (navigator.onLine).
-      // If the device is offline, the offline event listener handles that state.
-      if (navigator.onLine) {
-        useConnectivityStore.getState().setServerUnavailable();
+
+      if (!navigator.onLine) {
+        // Browser already knows we're offline
+        useConnectivityStore.getState().goOffline();
+      } else {
+        // navigator.onLine is true but the request failed — probe real connectivity.
+        // This catches "connected to WiFi but no internet" scenarios.
+        probeConnectivity().then((hasInternet) => {
+          if (hasInternet) {
+            // Internet works, server is genuinely down
+            useConnectivityStore.getState().setServerUnavailable();
+          } else {
+            // No real internet despite navigator.onLine — treat as offline
+            useConnectivityStore.getState().goOffline();
+          }
+        });
       }
       return Promise.reject(error);
     }
@@ -173,7 +227,18 @@ export function initConnectivity(): () => void {
   const store = useConnectivityStore.getState;
 
   const handleOffline = () => store().goOffline();
-  const handleOnline = () => store().goOnline();
+  const handleOnline = () => {
+    // When the browser says we're back online, verify with a real probe
+    // before transitioning to "online" state. This prevents false positives
+    // when connected to a captive portal or WiFi with no internet.
+    probeConnectivity().then((hasInternet) => {
+      if (hasInternet) {
+        store().goOnline();
+      }
+      // If probe fails, stay in current state (offline) — the next successful
+      // API call will trigger setServerRecovered → online anyway.
+    });
+  };
 
   window.addEventListener("offline", handleOffline);
   window.addEventListener("online", handleOnline);
