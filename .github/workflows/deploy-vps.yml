@@ -113,13 +113,7 @@ jobs:
             echo "=== Running migrations ==="
             cd /opt/shifter
             chmod +x infra/scripts/run-migrations.sh 2>/dev/null || true
-            if [ -f infra/scripts/run-migrations.sh ]; then
-              bash infra/scripts/run-migrations.sh
-            else
-              for f in infra/migrations/*.sql; do
-                docker exec -i compose-postgres-1 psql -U jobuler -d jobuler < "$f" 2>&1 | grep -v "already exists" | grep -v "skipping" || true
-              done
-            fi
+            bash infra/scripts/run-migrations.sh
 
             echo "=== Rebuilding API and restarting services ==="
             cd /opt/shifter/infra/compose
