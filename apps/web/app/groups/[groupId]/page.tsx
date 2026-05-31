@@ -1413,7 +1413,6 @@ export default function GroupDetailPage() {
               spaceId={currentSpaceId ?? undefined}
               allowMembersViewHistory={group?.allowMembersViewHistory ?? true}
               subscriptionActive={subscriptionActive}
-              minRestBetweenShiftsHours={minRestBetweenShiftsHours}
               onOpenDraftModal={() => setShowDraftModal(true)}
               onPublish={handlePublish}
               onDiscard={handleDiscard}
