@@ -5,7 +5,7 @@
 # Usage: ssh root@YOUR_VPS_IP 'bash -s' < infra/deploy-vps.sh
 # =============================================================================
 
-set -e
+set -euo pipefail
 
 echo "=== Shifter VPS Deploy ==="
 echo "Installing Docker..."
