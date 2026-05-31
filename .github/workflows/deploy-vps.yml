@@ -6,9 +6,55 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-and-deploy:
-    name: Build & Deploy
+  # ── Verify: build + test gate before deploying ──────────────────────────────
+  verify:
+    name: Verify Build
     runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Restore & Build API
+        working-directory: apps/api
+        run: |
+          dotnet restore Jobuler.sln
+          dotnet build Jobuler.sln --no-restore --configuration Release
+
+      - name: Run API tests
+        working-directory: apps/api
+        run: |
+          dotnet test Jobuler.sln \
+            --no-build \
+            --configuration Release \
+            --verbosity normal \
+            --filter "Category!=RequiresSolver"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Build Frontend
+        working-directory: apps/web
+        run: |
+          npm ci
+          npx tsc --noEmit
+          npm run build
+        env:
+          NEXT_PUBLIC_API_URL: https://api.shifter.ofeklabs.com
+          NEXT_PUBLIC_APP_VERSION: ${{ github.sha }}
+
+  # ── Deploy: only runs after verify passes ───────────────────────────────────
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    needs: verify
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -58,15 +104,11 @@ jobs:
             docker load < /tmp/shifter-web.tar.gz
             rm -f /tmp/shifter-web.tar.gz
 
-            cd infra/compose
-
             echo "=== Running migrations ==="
-            cd /opt/shifter
             chmod +x infra/scripts/run-migrations.sh 2>/dev/null || true
             if [ -f infra/scripts/run-migrations.sh ]; then
               bash infra/scripts/run-migrations.sh
             else
-              # Fallback: run all migrations (legacy approach)
               for f in infra/migrations/*.sql; do
                 docker exec -i compose-postgres-1 psql -U jobuler -d jobuler < "$f" 2>&1 | grep -v "already exists" | grep -v "skipping" || true
               done
@@ -75,9 +117,12 @@ jobs:
             echo "=== Rebuilding API and restarting services ==="
             cd /opt/shifter/infra/compose
             docker compose up -d --build api solver seq --force-recreate web --remove-orphans
-            
+
             echo "=== Waiting for services to start ==="
             sleep 10
+
+            echo "=== Health check ==="
+            curl -sf http://localhost:5000/health || echo "⚠️ API health check failed"
 
             echo "=== Service status ==="
             docker compose ps
