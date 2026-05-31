@@ -799,7 +799,9 @@
     "atHome": "Дома",
     "blocked": "Недоступен",
     "freeInBase": "Свободен на базе",
-    "until": "до"
+    "until": "до",
+    "nextMissionIn": "Следующее задание через",
+    "homeLeaveIn": "Домой через"
   },
   "imageUpload": {
     "upload": "Загрузить фото",

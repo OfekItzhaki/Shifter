@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { useAuthStore } from "@/lib/store/authStore";
 import { formatLocalTime } from "@/lib/utils/formatTime";
 import { getGroupLiveStatus, MemberLiveStatusDto } from "@/lib/api/groups";
+import { formatRestDuration, type SupportedLocale } from "@/lib/utils/restDuration";
 
 interface LiveStatusPanelProps {
   spaceId: string;
@@ -16,8 +17,18 @@ function formatTime(iso: string | null, timezoneId: string | null): string {
   return formatLocalTime(iso, timezoneId, "24h");
 }
 
+function formatTimeUntil(isoDate: string, locale: SupportedLocale): string {
+  const now = Date.now();
+  const target = new Date(isoDate).getTime();
+  const diffMs = target - now;
+  if (diffMs <= 0) return "";
+  const hours = diffMs / 3_600_000;
+  return formatRestDuration(hours, locale);
+}
+
 export default function LiveStatusPanel({ spaceId, groupId }: LiveStatusPanelProps) {
   const t = useTranslations("liveStatus");
+  const locale = useLocale() as SupportedLocale;
   const timezoneId = useAuthStore(s => s.timezoneId);
   const [statuses, setStatuses] = useState<MemberLiveStatusDto[]>([]);
   const [loading, setLoading] = useState(true);
@@ -146,6 +157,14 @@ export default function LiveStatusPanel({ spaceId, groupId }: LiveStatusPanelPro
                               {m.slotEndsAt && (
                                 <span className="text-slate-400"> · {t("until")} {formatTime(m.slotEndsAt, timezoneId)}</span>
                               )}
+                            </p>
+                          )}
+                          {m.nextStartsAt && (
+                            <p className="text-[11px] text-slate-400 truncate">
+                              {m.isNextHomeLeave
+                                ? `🏠 ${t("homeLeaveIn")} ${formatTimeUntil(m.nextStartsAt, locale)}`
+                                : `⏭ ${t("nextMissionIn")} ${formatTimeUntil(m.nextStartsAt, locale)}`
+                              }
                             </p>
                           )}
                         </div>

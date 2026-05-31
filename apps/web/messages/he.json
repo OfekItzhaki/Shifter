@@ -844,7 +844,9 @@
     "atHome": "בבית",
     "blocked": "לא זמין",
     "freeInBase": "פנוי בבסיס",
-    "until": "עד"
+    "until": "עד",
+    "nextMissionIn": "משימה הבאה בעוד",
+    "homeLeaveIn": "חופשת בית בעוד"
   },
   "imageUpload": {
     "upload": "העלה תמונה",

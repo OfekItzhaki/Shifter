@@ -310,6 +310,9 @@ export interface MemberLiveStatusDto {
   taskName: string | null;
   slotEndsAt: string | null;
   location: string | null;
+  nextTaskName: string | null;
+  nextStartsAt: string | null;
+  isNextHomeLeave: boolean;
 }
 
 export async function getGroupLiveStatus(

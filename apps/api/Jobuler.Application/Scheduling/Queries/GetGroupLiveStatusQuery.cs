@@ -15,7 +15,10 @@ public record MemberLiveStatusDto(
     string Status,          // on_mission | at_home | blocked | free_in_base
     string? TaskName,
     DateTime? SlotEndsAt,
-    string? Location);
+    string? Location,
+    string? NextTaskName,
+    DateTime? NextStartsAt,
+    bool IsNextHomeLeave);
 
 // ── Query ─────────────────────────────────────────────────────────────────────
 
@@ -82,6 +85,7 @@ public class GetGroupLiveStatusQueryHandler
 
         // Map: personId → (taskName, slotEndsAt)
         var activeAssignments = new Dictionary<Guid, (string TaskName, DateTime SlotEndsAt)>();
+        var nextAssignments = new Dictionary<Guid, (string TaskName, DateTime StartsAt, bool IsHomeLeave)>();
 
         if (publishedVersion is not null)
         {
@@ -133,27 +137,44 @@ public class GetGroupLiveStatusQueryHandler
             }
 
             // Build active assignment map for members currently on a slot
+            // Also track next upcoming assignment per person
+
             foreach (var a in rawAssignments)
             {
                 string taskName;
+                DateTime slotStartsAt;
                 DateTime slotEndsAt;
+                bool isHomeLeave = false;
 
                 if (taskSlots.TryGetValue(a.TaskSlotId, out var slot))
                 {
-                    // Only include if the slot is active right now
-                    if (slot.StartsAt > now || slot.EndsAt < now) continue;
                     taskName = taskTypes.TryGetValue(slot.TaskTypeId, out var tn) ? tn : "Unknown";
+                    slotStartsAt = slot.StartsAt;
                     slotEndsAt = slot.EndsAt;
+                    isHomeLeave = taskName == "home_leave";
                 }
                 else if (shiftGuidToTask.TryGetValue(a.TaskSlotId, out var shiftInfo))
                 {
-                    if (shiftInfo.StartsAt > now || shiftInfo.EndsAt < now) continue;
                     taskName = shiftInfo.Name;
+                    slotStartsAt = shiftInfo.StartsAt;
                     slotEndsAt = shiftInfo.EndsAt;
+                    isHomeLeave = taskName == "home_leave";
                 }
                 else continue;
 
-                activeAssignments[a.PersonId] = (taskName, slotEndsAt);
+                // Active right now → add to active assignments
+                if (slotStartsAt <= now && slotEndsAt >= now)
+                {
+                    activeAssignments[a.PersonId] = (taskName, slotEndsAt);
+                }
+                // Upcoming (starts in the future) → track the nearest one
+                else if (slotStartsAt > now)
+                {
+                    if (!nextAssignments.TryGetValue(a.PersonId, out var existing) || slotStartsAt < existing.StartsAt)
+                    {
+                        nextAssignments[a.PersonId] = (taskName, slotStartsAt, isHomeLeave);
+                    }
+                }
             }
         }
 
@@ -166,6 +187,9 @@ public class GetGroupLiveStatusQueryHandler
             string? taskName = null;
             DateTime? slotEndsAt = null;
             string? location = null;
+            string? nextTaskName = null;
+            DateTime? nextStartsAt = null;
+            bool isNextHomeLeave = false;
 
             if (presenceByPerson.TryGetValue(member.Id, out var pw))
             {
@@ -188,13 +212,24 @@ public class GetGroupLiveStatusQueryHandler
                 status = "free_in_base";
             }
 
+            // Add next assignment info regardless of current status
+            if (publishedVersion is not null && nextAssignments.TryGetValue(member.Id, out var next))
+            {
+                nextTaskName = next.TaskName;
+                nextStartsAt = next.StartsAt;
+                isNextHomeLeave = next.IsHomeLeave;
+            }
+
             result.Add(new MemberLiveStatusDto(
                 member.Id.ToString(),
                 member.Name,
                 status,
                 taskName,
                 slotEndsAt,
-                location));
+                location,
+                nextTaskName,
+                nextStartsAt,
+                isNextHomeLeave));
         }
 
         var ordered = result.OrderBy(r => r.DisplayName).ToList();

@@ -839,7 +839,9 @@
     "atHome": "At Home",
     "blocked": "Unavailable",
     "freeInBase": "Free in Base",
-    "until": "until"
+    "until": "until",
+    "nextMissionIn": "Next mission in",
+    "homeLeaveIn": "Home leave in"
   },
   "imageUpload": {
     "upload": "Upload Image",

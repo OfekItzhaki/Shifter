@@ -1,11 +1,9 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import { useAuthStore } from "@/lib/store/authStore";
 import { formatLocalTime } from "@/lib/utils/formatTime";
-import { computeRestDurations, type RestDurationEntry } from "@/lib/utils/restDuration";
-import RestDurationBadge from "./RestDurationBadge";
 import CantMakeItModal from "./CantMakeItModal";
 
 /** Task type name used for home-leave assignments from the solver */
@@ -40,8 +38,6 @@ interface Props {
   roleColorMap?: Map<string, string | null>;
   /** Called after a presence window is saved — parent decides whether to re-run solver */
   onPersonBlocked?: (personId: string, triggerRerun: boolean) => void;
-  /** Min rest threshold in hours — enables rest duration display when provided with isAdmin */
-  minRestHours?: number;
 }
 
 function formatTime(iso: string, timezoneId: string | null): string {
@@ -92,25 +88,11 @@ function overlapsDate(a: TaskAssignment, dateStr: string): boolean {
  *
  * This cleanly handles tasks with different shift times and multiple people per shift.
  */
-export default function ScheduleTaskTable({ assignments, currentUserName, filterDate, isAdmin, spaceId, roleColorMap, onPersonBlocked, minRestHours }: Props) {
+export default function ScheduleTaskTable({ assignments, currentUserName, filterDate, isAdmin, spaceId, roleColorMap, onPersonBlocked }: Props) {
   const t = useTranslations("schedule");
   const locale = useLocale();
   const timezoneId = useAuthStore(s => s.timezoneId);
   const [cantMakeIt, setCantMakeIt] = useState<{ personId: string; personName: string } | null>(null);
-
-  // Compute rest durations between consecutive assignments (memoized)
-  const restDurationMap = useMemo(() => {
-    if (!isAdmin || minRestHours == null) return new Map<string, RestDurationEntry>();
-    const inputs = assignments
-      .filter((a): a is TaskAssignment & { personId: string } => !!a.personId)
-      .map(a => ({ personId: a.personId, slotStartsAt: a.slotStartsAt, slotEndsAt: a.slotEndsAt }));
-    const entries = computeRestDurations(inputs);
-    const map = new Map<string, RestDurationEntry>();
-    for (const entry of entries) {
-      map.set(`${entry.personId}|${entry.slotStartsAt}`, entry);
-    }
-    return map;
-  }, [assignments, isAdmin, minRestHours]);
 
   const visible = filterDate
     ? assignments.filter(a => overlapsDate(a, filterDate))
@@ -234,12 +216,6 @@ export default function ScheduleTaskTable({ assignments, currentUserName, filter
                                       </button>
                                     )}
                                   </div>
-                                  {isAdmin && minRestHours != null && personId && (() => {
-                                    const restEntry = restDurationMap.get(`${personId}|${slot.startsAt}`);
-                                    return restEntry ? (
-                                      <RestDurationBadge restHours={restEntry.restHours} minRestThresholdHours={minRestHours} />
-                                    ) : null;
-                                  })()}
                                 </div>
                               ) : (
                                 <span className={isHomeLeave ? "text-emerald-300" : "text-slate-300"}>—</span>
