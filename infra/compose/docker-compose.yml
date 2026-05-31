@@ -99,7 +99,7 @@ services:
       HealthCheck__AlertCooldownSeconds: ${HEALTH_CHECK_ALERT_COOLDOWN_SECONDS:-3600}
       Seq__ServerUrl: "http://seq:5341"
     ports:
-      - "${API_PORT}:8080"
+      - "127.0.0.1:${API_PORT}:8080"
     volumes:
       - uploads_data:/app/wwwroot/uploads
     depends_on:
@@ -140,7 +140,7 @@ services:
     environment:
       NEXT_PUBLIC_API_URL: "http://localhost:${API_PORT}"
     ports:
-      - "${WEB_PORT}:3000"
+      - "127.0.0.1:${WEB_PORT}:3000"
     depends_on:
       - api
 
