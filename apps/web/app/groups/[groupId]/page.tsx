@@ -1683,7 +1683,7 @@ export default function GroupDetailPage() {
 
           {activeTab === "live-status" && currentSpaceId && (
             <>
-              <LiveStatusPanel spaceId={currentSpaceId} groupId={groupId} />
+              <LiveStatusPanel spaceId={currentSpaceId} groupId={groupId} isAdmin={isAdmin} />
               {isClosedBase && (
                 <HomeLeaveScheduleTable spaceId={currentSpaceId} groupId={groupId} />
               )}

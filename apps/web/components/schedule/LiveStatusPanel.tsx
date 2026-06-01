@@ -10,6 +10,7 @@ import { formatRestDuration, type SupportedLocale } from "@/lib/utils/restDurati
 interface LiveStatusPanelProps {
   spaceId: string;
   groupId: string;
+  isAdmin?: boolean;
 }
 
 function formatTime(iso: string | null, timezoneId: string | null): string {
@@ -26,7 +27,7 @@ function formatTimeUntil(isoDate: string, locale: SupportedLocale): string {
   return formatRestDuration(hours, locale);
 }
 
-export default function LiveStatusPanel({ spaceId, groupId }: LiveStatusPanelProps) {
+export default function LiveStatusPanel({ spaceId, groupId, isAdmin = false }: LiveStatusPanelProps) {
   const t = useTranslations("liveStatus");
   const locale = useLocale() as SupportedLocale;
   const timezoneId = useAuthStore(s => s.timezoneId);
@@ -159,14 +160,18 @@ export default function LiveStatusPanel({ spaceId, groupId }: LiveStatusPanelPro
                               )}
                             </p>
                           )}
-                          {m.nextStartsAt && (
-                            <p className="text-[11px] text-slate-400 truncate">
-                              {m.isNextHomeLeave
-                                ? `🏠 ${t("homeLeaveIn")} ${formatTimeUntil(m.nextStartsAt, locale)}`
-                                : `⏭ ${t("nextMissionIn")} ${formatTimeUntil(m.nextStartsAt, locale)}`
-                              }
-                            </p>
-                          )}
+                          {m.nextStartsAt && isAdmin && (() => {
+                            const duration = formatTimeUntil(m.nextStartsAt, locale);
+                            const label = m.isNextHomeLeave ? t("homeLeaveIn") : t("nextMissionIn");
+                            const icon = m.isNextHomeLeave ? "🏠" : "⏭";
+                            return (
+                              <span className="flex items-center gap-1 text-[11px] text-slate-400 mt-0.5">
+                                <span>{icon}</span>
+                                <span>{label}</span>
+                                <span dir="ltr" className="font-medium text-slate-500 tabular-nums">{duration}</span>
+                              </span>
+                            );
+                          })()}
                         </div>
                       </div>
                       <span className={`flex-shrink-0 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium border ${cfg.badge}`}>
