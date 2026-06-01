@@ -20,13 +20,13 @@ function getInitials(name: string): string {
     .toUpperCase();
 }
 
-function formatBirthday(dateStr: string | null, timezoneId: string | null): string {
+function formatBirthday(dateStr: string | null, timezoneId: string | null, locale: string): string {
   if (!dateStr) return "—";
-  return formatLocalDate(dateStr, timezoneId);
+  return formatLocalDate(dateStr, timezoneId, locale);
 }
 
-function formatMemberSince(dateStr: string, timezoneId: string | null): string {
-  return formatLocalDate(dateStr, timezoneId);
+function formatMemberSince(dateStr: string, timezoneId: string | null, locale: string): string {
+  return formatLocalDate(dateStr, timezoneId, locale);
 }
 
 const cardStyle: React.CSSProperties = {
@@ -223,11 +223,11 @@ export default function ProfilePage() {
             <div style={{ display: "flex", flexDirection: "column", gap: "0.875rem" }}>
               <div>
                 <p style={labelStyle} className="text-slate-400 dark:text-slate-500">{t("birthday")}</p>
-                <p style={valueStyle} className="text-slate-900 dark:text-white">{formatBirthday(me.birthday, timezoneId)}</p>
+                <p style={valueStyle} className="text-slate-900 dark:text-white">{formatBirthday(me.birthday, timezoneId, locale)}</p>
               </div>
               <div>
                 <p style={labelStyle} className="text-slate-400 dark:text-slate-500">{t("memberSince")}</p>
-                <p style={valueStyle} className="text-slate-900 dark:text-white">{formatMemberSince(me.createdAt, timezoneId)}</p>
+                <p style={valueStyle} className="text-slate-900 dark:text-white">{formatMemberSince(me.createdAt, timezoneId, locale)}</p>
               </div>
             </div>
           </div>

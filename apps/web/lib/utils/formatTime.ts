@@ -15,6 +15,37 @@ export type TimeFormatOption = "24h" | "12h";
 const DEFAULT_TIMEZONE = "Asia/Jerusalem";
 
 /**
+ * Map app locale codes to BCP-47 tags for correct date ordering.
+ * "en" maps to "en-GB" (DD/MM/YYYY) rather than "en-US" (MM/DD/YYYY)
+ * since DD/MM is the international standard used in Israel and most of the world.
+ */
+const LOCALE_BCP47: Record<string, string> = {
+  he: "he-IL",
+  en: "en-GB",
+  ru: "ru-RU",
+};
+
+function toBcp47(locale?: string | null): string {
+  if (!locale) return "he-IL";
+  return LOCALE_BCP47[locale.toLowerCase()] ?? LOCALE_BCP47[locale.split("-")[0].toLowerCase()] ?? "he-IL";
+}
+
+/**
+ * Get the current app locale from the auth store without creating a React dependency.
+ * Used as a fallback when locale is not explicitly passed.
+ */
+function getStoredLocale(): string {
+  try {
+    // Access zustand store state directly (works outside React components)
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { useAuthStore } = require("@/lib/store/authStore");
+    return useAuthStore.getState().preferredLocale ?? "he";
+  } catch {
+    return "he";
+  }
+}
+
+/**
  * Format a UTC ISO datetime string into a localized time string
  * using the specified IANA timezone and 24h/12h format.
  *
@@ -37,7 +68,7 @@ export function formatLocalTime(
     const tz = timezoneId || DEFAULT_TIMEZONE;
     const hour12 = format === "12h";
 
-    const formatter = new Intl.DateTimeFormat("en-US", {
+    const formatter = new Intl.DateTimeFormat(toBcp47(getStoredLocale()), {
       timeZone: tz,
       hour: "2-digit",
       minute: "2-digit",
@@ -74,7 +105,7 @@ export function formatLocalDateTime(
     const tz = timezoneId || DEFAULT_TIMEZONE;
     const hour12 = format === "12h";
 
-    const formatter = new Intl.DateTimeFormat("en-US", {
+    const formatter = new Intl.DateTimeFormat(toBcp47(getStoredLocale()), {
       timeZone: tz,
       year: "numeric",
       month: "2-digit",
@@ -100,7 +131,8 @@ export function formatLocalDateTime(
  */
 export function formatLocalDate(
   utcIsoString: string | null | undefined,
-  timezoneId: string | null | undefined
+  timezoneId: string | null | undefined,
+  locale?: string
 ): string {
   if (!utcIsoString) return "—";
 
@@ -109,8 +141,9 @@ export function formatLocalDate(
     if (isNaN(date.getTime())) return "—";
 
     const tz = timezoneId || DEFAULT_TIMEZONE;
+    const effectiveLocale = locale ?? getStoredLocale();
 
-    const formatter = new Intl.DateTimeFormat("en-US", {
+    const formatter = new Intl.DateTimeFormat(toBcp47(effectiveLocale), {
       timeZone: tz,
       year: "numeric",
       month: "2-digit",
