@@ -65,7 +65,7 @@ export default function FeedbackFab() {
     <>
       <div
         className="fixed z-[1200] flex items-stretch opacity-40 hover:opacity-100 transition-opacity"
-        style={{ bottom: 12, left: 12 }}
+        style={{ bottom: 72, insetInlineStart: 12 }}
       >
         {/* Bug report half (left) */}
         <button
