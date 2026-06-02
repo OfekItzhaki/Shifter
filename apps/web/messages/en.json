@@ -74,7 +74,13 @@
     "myMissions": "My Missions",
     "myProfile": "My Profile",
     "myGroups": "My Groups",
-    "settings": "Settings",
+    "settings": "Personal Settings",
+    "sections": {
+      "work": "My Work",
+      "account": "My Account",
+      "space": "Space",
+      "admin": "Admin"
+    },
     "changelog": "What's New",
     "stats": "Statistics",
     "admin": "Admin",

@@ -74,7 +74,13 @@
     "myMissions": "המשימות שלי",
     "myProfile": "הפרופיל שלי",
     "myGroups": "הקבוצות שלי",
-    "settings": "הגדרות",
+    "settings": "הגדרות אישיות",
+    "sections": {
+      "work": "העבודה שלי",
+      "account": "החשבון שלי",
+      "space": "המרחב",
+      "admin": "ניהול"
+    },
     "changelog": "מה חדש",
     "stats": "סטטיסטיקות",
     "admin": "ניהול",
