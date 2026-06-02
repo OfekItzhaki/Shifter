@@ -1,3 +1,0 @@
-# Jobuler Handoff
-
-written

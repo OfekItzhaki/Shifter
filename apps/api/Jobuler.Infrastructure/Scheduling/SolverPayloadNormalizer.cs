@@ -100,7 +100,7 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
                 // Use space-level config — overrides group-level values
                 var hlMemberCount = await _db.GroupMemberships.AsNoTracking()
                     .CountAsync(m => m.GroupId == groupId.Value && m.SpaceId == spaceId, ct);
-                homeLeaveConfigDto = BuildHomeLeaveConfigDto(spaceHlConfig, hlMemberCount);
+                homeLeaveConfigDto = BuildHomeLeaveConfigDto(spaceHlConfig, hlMemberCount, minRestBetweenShiftsHours);
 
                 emergencyBypass = spaceHlConfig.EmergencyFreezeActive && spaceHlConfig.EmergencyUseForScheduling;
             }
@@ -115,7 +115,7 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
                 {
                     var hlMemberCount = await _db.GroupMemberships.AsNoTracking()
                         .CountAsync(m => m.GroupId == groupId.Value && m.SpaceId == spaceId, ct);
-                    homeLeaveConfigDto = BuildHomeLeaveConfigDto(hlConfig, hlMemberCount);
+                    homeLeaveConfigDto = BuildHomeLeaveConfigDto(hlConfig, hlMemberCount, minRestBetweenShiftsHours);
 
                     emergencyBypass = hlConfig.EmergencyFreezeActive && hlConfig.EmergencyUseForScheduling;
                 }
@@ -721,9 +721,10 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
     /// - Emergency freeze + use for scheduling: balance_value = 0, eligibility = 9999
     /// - Automatic mode: eligibility = baseDays × 24, balance from stored slider value
     /// - Manual mode: eligibility = baseDays × 24, balance = 50 (neutral)
-    /// Always sets min_rest_hours = 0.
+    /// Populates MinRestHours from the group's minRestBetweenShiftsHours setting so the
+    /// Python solver and C# post-solve validator both use the correct value.
     /// </summary>
-    private static HomeLeaveConfigDto? BuildHomeLeaveConfigDto(HomeLeaveConfig hlConfig, int memberCount)
+    private static HomeLeaveConfigDto? BuildHomeLeaveConfigDto(HomeLeaveConfig hlConfig, int memberCount, int minRestBetweenShiftsHours = 8)
     {
         // Derive leave_capacity from min_people_at_base
         var leaveCapacity = Math.Max(1, memberCount - hlConfig.MinPeopleAtBase);
@@ -739,7 +740,7 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
         {
             return new HomeLeaveConfigDto(
                 Enabled: true,
-                MinRestHours: 0,
+                MinRestHours: minRestBetweenShiftsHours,
                 EligibilityThresholdHours: 9999,
                 LeaveCapacity: leaveCapacity,
                 LeaveDurationHours: (double)hlConfig.LeaveDurationHours,
@@ -754,14 +755,14 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
 
         return new HomeLeaveConfigDto(
             Enabled: true,
-            MinRestHours: 0,
+            MinRestHours: minRestBetweenShiftsHours,
             EligibilityThresholdHours: eligibilityThresholdHours,
             LeaveCapacity: leaveCapacity,
             LeaveDurationHours: (double)hlConfig.LeaveDurationHours,
             BalanceValue: balanceValue);
     }
 
-    private static HomeLeaveConfigDto? BuildHomeLeaveConfigDto(SpaceHomeLeaveConfig hlConfig, int memberCount)
+    private static HomeLeaveConfigDto? BuildHomeLeaveConfigDto(SpaceHomeLeaveConfig hlConfig, int memberCount, int minRestBetweenShiftsHours = 8)
     {
         // Derive leave_capacity from min_people_at_base
         var leaveCapacity = Math.Max(1, memberCount - hlConfig.MinPeopleAtBase);
@@ -777,7 +778,7 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
         {
             return new HomeLeaveConfigDto(
                 Enabled: true,
-                MinRestHours: 0,
+                MinRestHours: minRestBetweenShiftsHours,
                 EligibilityThresholdHours: 9999,
                 LeaveCapacity: leaveCapacity,
                 LeaveDurationHours: (double)hlConfig.LeaveDurationHours,
@@ -792,7 +793,7 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
 
         return new HomeLeaveConfigDto(
             Enabled: true,
-            MinRestHours: 0,
+            MinRestHours: minRestBetweenShiftsHours,
             EligibilityThresholdHours: eligibilityThresholdHours,
             LeaveCapacity: leaveCapacity,
             LeaveDurationHours: (double)hlConfig.LeaveDurationHours,

@@ -12,6 +12,7 @@ apps/web/test-results/
 apps/web/tsc_output.txt
 apps/web/playwright-output.txt
 apps/web/playwright-final.txt
+apps/web/playwright-final*.txt
 
 # NSwag generated client (regenerate with: npm run generate:api)
 apps/web/lib/api/generated/client.ts
@@ -21,6 +22,9 @@ apps/web/lib/api/generated/client.ts
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+build_*.txt
+test-import-*.csv
+/npm
 
 # .NET
 bin/

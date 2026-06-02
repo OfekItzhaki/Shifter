@@ -4,7 +4,7 @@ Two options depending on your machine capabilities.
 
 ---
 
-## Option A — Without Docker (laptop, virtualization OFF)
+## Option A - Without Docker (laptop, virtualization OFF)
 
 This is the primary path for machines where Docker/virtualization is unavailable.
 
@@ -38,14 +38,14 @@ GRANT ALL PRIVILEGES ON DATABASE jobuler TO jobuler;
 ### 2. Run database migrations
 
 ```bash
-# From the repo root — runs all SQL migration files in order
+# From the repo root - runs all SQL migration files in order
 $env:PGPASSWORD="changeme_local"
 Get-ChildItem infra/migrations/*.sql | Sort-Object Name | ForEach-Object {
     psql -h localhost -U jobuler -d jobuler -f $_.FullName
 }
 ```
 
-Or run them one by one in pgAdmin by opening each file in `infra/migrations/` in order (000 → 028).
+Or run them one by one in pgAdmin by opening each file in `infra/migrations/` in filename order.
 
 ### 3. Load seed data (optional but recommended)
 
@@ -73,7 +73,7 @@ cd apps/solver && pip install -r requirements.txt
 
 ### 5. Start services (3 terminals)
 
-**Terminal 1 — API:**
+**Terminal 1 - API:**
 ```bash
 cd apps/api
 dotnet run --project Jobuler.Api
@@ -81,14 +81,14 @@ dotnet run --project Jobuler.Api
 # Swagger: http://localhost:5000/swagger
 ```
 
-**Terminal 2 — Solver:**
+**Terminal 2 - Solver:**
 ```bash
 cd apps/solver
 python -m uvicorn main:app --port 8000 --reload
 # Runs on http://localhost:8000
 ```
 
-**Terminal 3 — Frontend:**
+**Terminal 3 - Frontend:**
 ```bash
 cd apps/web
 npm run dev
@@ -97,14 +97,14 @@ npm run dev
 
 ### Notes for no-Docker setup
 
-- Redis is **not required** — the API uses an in-memory job queue automatically
+- Redis is **not required** - the API uses an in-memory job queue automatically
 - The solver queue works fine in single-process mode without Redis
-- Notifications (WhatsApp/email) work without Redis — they're sent directly from the publish command
+- Notifications (WhatsApp/email) work without Redis - they're sent directly from the publish command
 - File uploads use local disk storage (`apps/api/wwwroot/uploads/`) instead of S3
 
 ---
 
-## Option B — With Docker (requires virtualization)
+## Option B - With Docker (requires virtualization)
 
 If Docker Desktop is available and virtualization is enabled:
 

@@ -14,7 +14,7 @@ Shifter is a secure, multilingual, multi-tenant shift scheduling platform for sh
 | .NET SDK | 8.0+ |
 | Python | 3.11+ |
 | PostgreSQL | 16 (local install or Docker) |
-| Redis | 7 (optional — in-memory fallback available) |
+| Redis | 7 (optional - in-memory fallback available) |
 | Docker Desktop | Optional (for containerised DB/Redis) |
 
 > **No virtualization?** Docker is optional. See [docs/LOCAL-SETUP.md](docs/LOCAL-SETUP.md) for the no-Docker setup path.
@@ -25,38 +25,45 @@ See **[docs/LOCAL-SETUP.md](docs/LOCAL-SETUP.md)** for full setup instructions.
 
 **Quick start (no Docker):**
 
-```bash
+```powershell
 # 1. Install PostgreSQL 16 locally, create database:
 #    CREATE USER jobuler WITH PASSWORD 'changeme_local';
 #    CREATE DATABASE jobuler OWNER jobuler;
 
-# 2. Run migrations
-psql -h localhost -U jobuler -d jobuler -f infra/migrations/000_extensions.sql
-# ... run all files in infra/migrations/ in order
-rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr
-# 3. Install deps
-cd apps/web && npm install --legacy-peer-deps
-cd apps/solver && pip install -r requirements.txt
+# 2. Run all SQL migrations in order
+$env:PGPASSWORD="changeme_local"
+Get-ChildItem infra/migrations/*.sql | Sort-Object Name | ForEach-Object {
+    psql -h localhost -U jobuler -d jobuler -f $_.FullName
+}
 
-# 4. Start services (3 terminals) 
-dotnet run --project apps/api/Jobuler.Api   # http://localhost:5000
-python -m uvicorn main:app --port 8000       # http://localhost:8000 (from apps/solver)
-npm run dev                                   # http://localhost:3000 (from apps/web)
+# 3. Install deps
+cd apps/web
+npm install --legacy-peer-deps
+cd ../solver
+pip install -r requirements.txt
+cd ../..
+
+# 4. Start services in 3 terminals
+dotnet run --project apps/api/Jobuler.Api
+cd apps/solver; python -m uvicorn main:app --port 8000 --reload
+cd apps/web; npm run dev
 ```
 
 ## Configuration
 
-All configuration is via environment variables. Copy `.env.example` and fill in values:
+Configuration is read from `apps/api/Jobuler.Api/appsettings.json` and environment variables.
+For Docker Compose, copy `infra/compose/.env.example` to `infra/compose/.env` and fill in values.
 
 | Variable | Description |
 |---|---|
-| `DATABASE_URL` | PostgreSQL connection string |
-| `REDIS_URL` | Redis connection string |
-| `JWT_SECRET` | Secret key for JWT signing (min 32 chars) |
-| `JWT_ISSUER` | JWT issuer claim |
-| `JWT_AUDIENCE` | JWT audience claim |
-| `AI_API_KEY` | OpenAI API key (optional) |
-| `SOLVER_BASE_URL` | URL of the Python solver service |
+| `ConnectionStrings__DefaultConnection` | PostgreSQL connection string for local API runs |
+| `Redis__ConnectionString` | Redis connection string; Redis is optional for single-server dev |
+| `Jwt__Secret` | Secret key for JWT signing (min 32 chars) |
+| `Jwt__Issuer` | JWT issuer claim |
+| `Jwt__Audience` | JWT audience claim |
+| `AI__ApiKey` | OpenAI API key (optional) |
+| `Solver__BaseUrl` | URL of the Python solver service |
+| `NEXT_PUBLIC_API_URL` | Frontend base URL for the API |
 
 ## Usage
 
@@ -100,11 +107,11 @@ cd apps/api && dotnet test
 
 ## Deployment
 
-1. Build Docker images: `docker compose -f infra/compose/docker-compose.prod.yml build`
+1. Build Docker images: `docker compose -f infra/compose/docker-compose.yml build`
 2. Push images to your container registry
 3. Set all required environment variables in your hosting environment
 4. Run DB migrations against the production database
-5. Deploy containers — health check endpoint: `GET /health`
+5. Deploy containers - health check endpoint: `GET /health`
 
 The API returns structured JSON logs (Serilog) suitable for ingestion by Seq, ELK, or CloudWatch.
 
@@ -112,7 +119,7 @@ The API returns structured JSON logs (Serilog) suitable for ingestion by Seq, EL
 
 | Layer | Technology |
 |---|---|
-| Frontend | Next.js 14 + TypeScript |
+| Frontend | Next.js 16 + TypeScript |
 | Backend API | ASP.NET Core 8 |
 | Solver | Python 3.11 + OR-Tools CP-SAT |
 | Database | PostgreSQL 16 |
@@ -146,4 +153,4 @@ shifter/
 
 ## License
 
-Private — all rights reserved.
+Private - all rights reserved.
