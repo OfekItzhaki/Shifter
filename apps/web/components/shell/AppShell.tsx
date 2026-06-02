@@ -63,7 +63,6 @@ function NavSection({ label, admin }: { label: string; admin?: boolean }) {
         gap: 8,
       }}
     >
-      <div style={{ flex: 1, height: 1, backgroundColor: lineColor }} />
       <span
         style={{
           color: textColor,
