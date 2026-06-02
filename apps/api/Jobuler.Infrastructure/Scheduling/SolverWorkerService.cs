@@ -927,11 +927,14 @@ public class SolverWorkerService : BackgroundService
             if (hours > 0) return hours;
         }
 
-        // Default: 8 hours for closed-base groups with home leave, 0 otherwise
+        // Default: 8 hours for closed-base groups with home leave
         if (input.HomeLeaveConfig is not null && input.HomeLeaveConfig.Enabled)
             return 8.0;
 
-        return 0.0;
+        // Default: 8 hours for all groups — never skip rest validation entirely.
+        // Previously returned 0.0 here which caused post-solve validation to be skipped,
+        // allowing rest violations to slip through for non-closed-base groups.
+        return 8.0;
     }
 
     /// <summary>
