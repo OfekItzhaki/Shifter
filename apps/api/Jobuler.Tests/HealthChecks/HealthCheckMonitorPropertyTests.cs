@@ -279,18 +279,16 @@ public class HealthCheckMonitorPropertyTests
 
             var options = Options.Create(new HealthCheckOptions
             {
-                IntervalSeconds = 30
+                IntervalSeconds = 1
             });
 
-            var service = new HealthCheckMonitorService(scopeFactory, notifier, options, fakeLogger);
+            var service = new FastHealthCheckMonitorService(scopeFactory, notifier, options, fakeLogger);
 
             // Act: start the service and wait for the second call to complete
             using var cts = new CancellationTokenSource();
             service.StartAsync(cts.Token).GetAwaiter().GetResult();
 
-            // Wait for the second call with a generous timeout
-            // (initial delay up to 30s + interval 30s + buffer = 65s)
-            var completed = secondCallCompleted.Task.Wait(TimeSpan.FromSeconds(65));
+            var completed = secondCallCompleted.Task.Wait(TimeSpan.FromSeconds(2));
 
             cts.Cancel();
             try { service.StopAsync(CancellationToken.None).GetAwaiter().GetResult(); }
@@ -313,6 +311,22 @@ public class HealthCheckMonitorPropertyTests
                 .Label($"Service should continue after exception (got {Volatile.Read(ref callCount)} calls, expected >= 2, completed={completed})"));
         });
     }
+}
+
+internal sealed class FastHealthCheckMonitorService : HealthCheckMonitorService
+{
+    public FastHealthCheckMonitorService(
+        IServiceScopeFactory scopeFactory,
+        IPushoverNotifier notifier,
+        IOptions<HealthCheckOptions> options,
+        ILogger<HealthCheckMonitorService> logger)
+        : base(scopeFactory, notifier, options, logger)
+    {
+    }
+
+    protected override TimeSpan MinimumInterval => TimeSpan.FromMilliseconds(10);
+
+    protected override TimeSpan GetInitialDelay() => TimeSpan.Zero;
 }
 
 /// <summary>
