@@ -64,8 +64,7 @@ export default function FeedbackFab() {
   return (
     <>
       <div
-        className="fixed z-[1200] flex items-stretch opacity-60 hover:opacity-100 transition-opacity"
-        style={{ bottom: 80, insetInlineEnd: 16 }}
+        className="feedback-fab z-[1200] flex items-stretch opacity-60 hover:opacity-100 transition-opacity"
       >
         {/* Bug report half (left) */}
         <button
