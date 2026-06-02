@@ -102,9 +102,6 @@ export default function SpaceSwitcher() {
       });
   }
 
-  // Only show dropdown toggle if user has multiple spaces
-  const hasMultipleSpaces = spaces.length > 1;
-
   const displayName = currentSpaceName
     ? currentSpaceName.length > 30
       ? currentSpaceName.slice(0, 30) + "…"
@@ -114,7 +111,7 @@ export default function SpaceSwitcher() {
   return (
     <div ref={containerRef} style={{ position: "relative" }}>
       <button
-        onClick={() => hasMultipleSpaces && setIsOpen(!isOpen)}
+        onClick={() => setIsOpen(!isOpen)}
         aria-expanded={isOpen}
         aria-haspopup="listbox"
         style={{
@@ -125,7 +122,7 @@ export default function SpaceSwitcher() {
           borderRadius: 6,
           background: "transparent",
           border: "none",
-          cursor: hasMultipleSpaces ? "pointer" : "default",
+          cursor: "pointer",
           width: "100%",
           textAlign: "start",
         }}
@@ -157,22 +154,25 @@ export default function SpaceSwitcher() {
         >
           {displayName}
         </span>
-        {hasMultipleSpaces && (
-          <svg
-            width="10"
-            height="10"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="#64748b"
-            strokeWidth={2}
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M19 9l-7 7-7-7"
-            />
-          </svg>
-        )}
+        <svg
+          width="10"
+          height="10"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="#64748b"
+          strokeWidth={2}
+          style={{
+            flexShrink: 0,
+            transform: isOpen ? "rotate(180deg)" : "none",
+            transition: "transform 120ms ease",
+          }}
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M19 9l-7 7-7-7"
+          />
+        </svg>
       </button>
 
       {isOpen && (
