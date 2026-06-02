@@ -51,57 +51,50 @@ def _resolve_min_rest_hours_closed_base(
     run_id: str,
 ) -> float:
     """
-    Resolve min_rest_hours for a closed-base group using an explicit fallback chain:
-      1. config value (home_leave_config.min_rest_hours) — if > 0
-      2. hard constraint rule value — if a min_rest_hours rule exists
-      3. 8.0 absolute default
+    Resolve min_rest_hours for a closed-base group.
 
-    Additionally, the resolved value is clamped to a minimum of 8.0 for closed-base
-    groups. If a hard constraint rule provides a value less than 8.0, it is overridden
-    to 8.0 and a warning is logged.
+    The config_value is the admin's explicit setting from the group's
+    minRestBetweenShiftsHours field:
+      - 0   = admin explicitly disabled rest enforcement (allowed)
+      - > 0 = admin-configured rest requirement (always respected)
+      - < 0 = not set / use fallback chain with 8h floor
 
-    Returns the resolved min_rest_hours (always >= 8.0).
+    Only the fallback chain (steps 2 and 3) applies the 8h floor.
+    Explicit admin settings (>= 0) are always honored as-is.
+
+    Returns the resolved min_rest_hours (>= 0).
     """
-    # Step 1: Config value takes priority (explicit admin setting)
-    if config_value > 0:
-        resolved = config_value
-        source = "home_leave_config"
-    # Step 2: Fall back to hard constraint rule
-    elif hard_constraint_value is not None:
-        resolved = hard_constraint_value
-        source = "hard_constraint_rule"
-        logger.warning(
-            "[run=%s] min_rest_hours: home_leave_config.min_rest_hours is 0 — "
-            "falling back to hard constraint rule value (%.1fh). "
-            "Configure min_rest_hours explicitly in home_leave_config to avoid this fallback.",
-            run_id, hard_constraint_value,
-        )
-    # Step 3: Absolute default
-    else:
-        resolved = _CLOSED_BASE_MIN_REST_FLOOR
-        source = "default"
-        logger.warning(
-            "[run=%s] min_rest_hours: home_leave_config.min_rest_hours is 0 and no "
-            "hard constraint rule exists — using absolute default of %.1fh. "
-            "Configure min_rest_hours explicitly in home_leave_config.",
-            run_id, _CLOSED_BASE_MIN_REST_FLOOR,
-        )
+    # Step 1: Admin explicitly set a value (0 or positive) — always honor it
+    if config_value >= 0:
+        if config_value == 0:
+            logger.info(
+                "[run=%s] min_rest_hours = 0 (admin explicitly disabled rest enforcement).",
+                run_id,
+            )
+        else:
+            logger.info(
+                "[run=%s] min_rest_hours resolved to %.1fh (source: home_leave_config).",
+                run_id, config_value,
+            )
+        return config_value
 
-    # Enforce minimum floor for closed-base groups
-    if resolved < _CLOSED_BASE_MIN_REST_FLOOR:
+    # Step 2: No explicit config — fall back to hard constraint rule with 8h floor
+    if hard_constraint_value is not None:
+        resolved = max(hard_constraint_value, _CLOSED_BASE_MIN_REST_FLOOR)
         logger.warning(
-            "[run=%s] min_rest_hours: resolved value %.1fh (from %s) is below the "
-            "closed-base minimum of %.1fh — overriding to %.1fh. "
-            "This prevents misconfigured constraints from allowing unsafe rest gaps.",
-            run_id, resolved, source, _CLOSED_BASE_MIN_REST_FLOOR, _CLOSED_BASE_MIN_REST_FLOOR,
+            "[run=%s] min_rest_hours: no explicit config — "
+            "using hard constraint rule value (%.1fh), clamped to floor %.1fh.",
+            run_id, hard_constraint_value, resolved,
         )
-        resolved = _CLOSED_BASE_MIN_REST_FLOOR
+        return resolved
 
-    logger.info(
-        "[run=%s] min_rest_hours resolved to %.1fh (source: %s, closed-base mode)",
-        run_id, resolved, source,
+    # Step 3: No config, no constraint — use absolute default
+    logger.warning(
+        "[run=%s] min_rest_hours: no explicit config and no constraint rule — "
+        "using absolute default of %.1fh.",
+        run_id, _CLOSED_BASE_MIN_REST_FLOOR,
     )
-    return resolved
+    return _CLOSED_BASE_MIN_REST_FLOOR
 
 
 def solve(input: SolverInput) -> SolverOutput:

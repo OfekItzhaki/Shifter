@@ -907,9 +907,9 @@ public class SolverWorkerService : BackgroundService
     /// </summary>
     private static double ResolveMinRestHours(SolverInputDto input)
     {
-        // If home leave config specifies a positive value, use it
-        if (input.HomeLeaveConfig is not null && input.HomeLeaveConfig.Enabled && input.HomeLeaveConfig.MinRestHours > 0)
-            return input.HomeLeaveConfig.MinRestHours;
+        // If home leave config specifies a value (including 0 = disabled), use it directly
+        if (input.HomeLeaveConfig is not null && input.HomeLeaveConfig.Enabled)
+            return input.HomeLeaveConfig.MinRestHours; // 0 = admin disabled rest enforcement
 
         // Fall back to hard constraint rule
         var hardRestRule = input.HardConstraints.FirstOrDefault(c => c.RuleType == "min_rest_hours");
