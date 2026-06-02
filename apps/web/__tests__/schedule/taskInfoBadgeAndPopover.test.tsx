@@ -107,11 +107,11 @@ describe("TaskInfoBadge", () => {
 // ─── TaskInfoPopover Tests ───────────────────────────────────────────────────
 
 describe("TaskInfoPopover", () => {
-  let onClose: ReturnType<typeof vi.fn>;
+  let onClose: ReturnType<typeof vi.fn<() => void>>;
 
   beforeEach(() => {
     vi.clearAllMocks();
-    onClose = vi.fn();
+    onClose = vi.fn<() => void>();
   });
 
   it("shows 'default settings' message for default config (Req 6.4)", () => {

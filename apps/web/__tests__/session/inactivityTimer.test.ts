@@ -12,14 +12,14 @@ import { InactivityTimer } from "../../lib/session/inactivityTimer";
 
 describe("InactivityTimer", () => {
   let timer: InactivityTimer;
-  let onTick: ReturnType<typeof vi.fn>;
-  let onTimeout: ReturnType<typeof vi.fn>;
+  let onTick: ReturnType<typeof vi.fn<(remainingMs: number) => void>>;
+  let onTimeout: ReturnType<typeof vi.fn<() => void>>;
 
   beforeEach(() => {
     vi.useFakeTimers();
     timer = new InactivityTimer();
-    onTick = vi.fn();
-    onTimeout = vi.fn();
+    onTick = vi.fn<(remainingMs: number) => void>();
+    onTimeout = vi.fn<() => void>();
   });
 
   afterEach(() => {

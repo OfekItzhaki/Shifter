@@ -2,7 +2,6 @@ import { apiClient } from "./client";
 
 export interface LoginResponse {
   accessToken: string;
-  refreshToken: string;
   accessTokenExpiresAt: string;
   userId: string;
   displayName: string;
@@ -62,8 +61,8 @@ export async function updateMe(payload: {
   await apiClient.put("/auth/me", payload);
 }
 
-export async function logout(refreshToken: string): Promise<void> {
-  await apiClient.post("/auth/logout", { refreshToken });
+export async function logout(): Promise<void> {
+  await apiClient.post("/auth/logout", {});
 }
 
 export async function forgotPassword(email: string): Promise<void> {

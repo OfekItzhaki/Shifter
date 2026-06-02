@@ -1408,6 +1408,10 @@
   "billing": {
     "title": "מנוי",
     "loading": "טוען...",
+    "successTitle": "התשלום בוצע בהצלחה!",
+    "successDescription": "תודה על הרכישה. המנוי שלך מופעל.",
+    "redirecting": "מעביר בעוד",
+    "goToSettings": "עבור להגדרות",
     "errorLoad": "לא ניתן לטעון את פרטי החיוב.",
     "retry": "נסה שוב",
     "noSubscription": "לא נמצא מנוי למרחב זה.",

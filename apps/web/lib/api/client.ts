@@ -3,12 +3,14 @@ import { useAuthStore } from "@/lib/store/authStore";
 import { useConnectivityStore } from "@/lib/store/connectivityStore";
 import { writeGuardInterceptor } from "@/lib/api/writeGuard";
 import { notifyAuthTokenChanged } from "@/lib/auth/tokenState";
+import { clearAuthGuardCookie, setAuthGuardCookie } from "@/lib/auth/authGuardCookie";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000";
 
 export const apiClient = axios.create({
   baseURL: API_URL,
   headers: { "Content-Type": "application/json" },
+  withCredentials: true,
 });
 
 // Module-level redirect guard — prevents multiple concurrent API failures
@@ -129,20 +131,17 @@ apiClient.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        const refreshToken = localStorage.getItem("refresh_token");
-        if (!refreshToken) throw new Error("No refresh token");
-
         // Attempt refresh with retry for network failures
         let refreshData: any;
         try {
-          const { data } = await axios.post(`${API_URL}/auth/refresh`, { refreshToken }, { timeout: 10000 });
+          const { data } = await axios.post(`${API_URL}/auth/refresh`, {}, { timeout: 10000, withCredentials: true });
           refreshData = data;
         } catch (firstErr: any) {
           // If it's a network error (no response) or 5xx, retry once after a short delay
           const isNetworkOrServerError = !firstErr.response || (firstErr.response?.status >= 500);
           if (isNetworkOrServerError) {
             await new Promise(r => setTimeout(r, 2000));
-            const { data } = await axios.post(`${API_URL}/auth/refresh`, { refreshToken }, { timeout: 10000 });
+            const { data } = await axios.post(`${API_URL}/auth/refresh`, {}, { timeout: 10000, withCredentials: true });
             refreshData = data;
           } else {
             throw firstErr;
@@ -150,9 +149,8 @@ apiClient.interceptors.response.use(
         }
 
         localStorage.setItem("access_token", refreshData.accessToken);
-        localStorage.setItem("refresh_token", refreshData.refreshToken);
         notifyAuthTokenChanged();
-        document.cookie = `access_token=${refreshData.accessToken}; path=/; max-age=2592000; SameSite=Strict`;
+        setAuthGuardCookie();
 
         // Update timezone from refresh response (handles DST changes between sessions)
         if (refreshData.timezoneId !== undefined || refreshData.timezoneOffsetMinutes !== undefined) {
@@ -173,9 +171,8 @@ apiClient.interceptors.response.use(
         // Refresh failed — clear tokens and cookie, redirect to login
         // (unless the request opted out of redirect via _skipRedirect)
         localStorage.removeItem("access_token");
-        localStorage.removeItem("refresh_token");
         notifyAuthTokenChanged();
-        document.cookie = "access_token=; path=/; max-age=0";
+        clearAuthGuardCookie();
         useAuthStore.getState().clearAuthState();
         if (!original._skipRedirect && !isRedirecting) {
           isRedirecting = true;

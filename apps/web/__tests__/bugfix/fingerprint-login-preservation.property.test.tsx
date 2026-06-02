@@ -30,6 +30,8 @@ const mockIsWebAuthnSupported = vi.fn();
 const mockIsConditionalMediationAvailable = vi.fn();
 const mockAuthenticateWithBiometric = vi.fn();
 const mockRegisterCredential = vi.fn();
+const mockApiClientGet = vi.fn();
+const mockApiClientPost = vi.fn();
 
 vi.mock("@/lib/webauthn", () => ({
   listCredentials: (...args: any[]) => mockListCredentials(...args),
@@ -83,8 +85,8 @@ vi.mock("next-intl", () => ({
 
 vi.mock("@/lib/api/client", () => ({
   apiClient: {
-    post: vi.fn(),
-    get: vi.fn(),
+    post: (...args: any[]) => mockApiClientPost(...args),
+    get: (...args: any[]) => mockApiClientGet(...args),
   },
 }));
 
@@ -178,6 +180,8 @@ describe("Property 2: Preservation — Non-Buggy Login Flows & ReAuthDialog With
     vi.spyOn(Storage.prototype, "removeItem").mockImplementation((key) => { delete store[key]; });
     // Prevent conditional mediation from running
     mockIsConditionalMediationAvailable.mockResolvedValue(false);
+    mockApiClientGet.mockResolvedValue({ data: [] });
+    mockApiClientPost.mockResolvedValue({ data: {} });
   });
 
   afterEach(() => {
@@ -452,7 +456,6 @@ describe("Property 2: Preservation — Non-Buggy Login Flows & ReAuthDialog With
             // Simulate conditional mediation success
             const tokens = {
               accessToken: "token-" + userId,
-              refreshToken: "refresh-" + userId,
               userId,
               displayName,
               preferredLocale: "en",

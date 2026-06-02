@@ -92,7 +92,7 @@ export default function PrivacyPage() {
             <Section title="7. עוגיות ואחסון מקומי">
               <p>אנו משתמשים ב-localStorage ובעוגיות לצורך:</p>
               <ul className="list-disc pr-5 space-y-1">
-                <li>טוקן גישה (לאימות)</li>
+                <li>אימות: טוקן גישה קצר-תוקף ועוגיית רענון מאובטחת</li>
                 <li>העדפות שפה</li>
                 <li>מטמון סידור עבודה (לצפייה אופליין)</li>
               </ul>
@@ -217,7 +217,7 @@ export default function PrivacyPage() {
             <Section title="7. Cookies and Local Storage">
               <p>We use localStorage and cookies for:</p>
               <ul className="list-disc pl-5 space-y-1">
-                <li>Access tokens (authentication)</li>
+                <li>Authentication: short-lived access tokens and a secure refresh cookie</li>
                 <li>Language preferences</li>
                 <li>Schedule cache (offline viewing)</li>
               </ul>

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import ShifterLogo from "@/components/shell/ShifterLogo";
+import { clearAuthGuardCookie, setLocaleCookie } from "@/lib/auth/authGuardCookie";
 import { notifyAuthTokenChanged } from "@/lib/auth/tokenState";
 import { LANDING_CONTENT, type LandingLang } from "./landingContent";
 
@@ -32,7 +33,7 @@ export default function LandingPage() {
         localStorage.removeItem("access_token");
         localStorage.removeItem("refresh_token");
         notifyAuthTokenChanged();
-        document.cookie = "access_token=; path=/; max-age=0";
+        clearAuthGuardCookie();
         setChecking(false);
       }
     }).catch(() => { setChecking(false); });
@@ -43,7 +44,7 @@ export default function LandingPage() {
 
   function switchLang(l: LandingLang) {
     setLang(l);
-    document.cookie = `locale=${l}; path=/; max-age=31536000; SameSite=Strict`;
+    setLocaleCookie(l);
   }
 
   return (

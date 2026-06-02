@@ -11,6 +11,7 @@ import { isWebAuthnSupported, isConditionalMediationAvailable, authenticateWithB
 import { detectBrowserLocale } from "@/lib/utils/detectLocale";
 import { useEffectiveAuth } from "@/lib/hooks/useEffectiveAuth";
 import { notifyAuthTokenChanged } from "@/lib/auth/tokenState";
+import { setAuthGuardCookie, setLocaleCookie } from "@/lib/auth/authGuardCookie";
 
 function LoginForm() {
   const t = useTranslations("auth");
@@ -50,11 +51,11 @@ function LoginForm() {
         const tokens = await authenticateWithBiometric({ mediation: "conditional" });
         if (cancelled) return;
         localStorage.setItem("access_token", tokens.accessToken);
-        localStorage.setItem("refresh_token", tokens.refreshToken);
+        localStorage.removeItem("refresh_token");
         notifyAuthTokenChanged();
-        document.cookie = `access_token=${tokens.accessToken}; path=/; max-age=2592000; SameSite=Strict`;
+        setAuthGuardCookie();
         const locale = tokens.preferredLocale || detectBrowserLocale();
-        document.cookie = `locale=${locale}; path=/; max-age=31536000; SameSite=Strict`;
+        setLocaleCookie(locale);
         useAuthStore.setState({
           userId: tokens.userId,
           displayName: tokens.displayName,

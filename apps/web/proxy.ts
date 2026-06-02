@@ -16,7 +16,7 @@ const PUBLIC_PATHS = [
 
 /**
  * Next.js 16 proxy file (replaces middleware.ts).
- * Checks for access_token cookie on protected routes.
+ * Checks for a lightweight auth guard cookie on protected routes.
  * If missing → redirects to /login.
  */
 export function proxy(request: NextRequest) {
@@ -31,9 +31,13 @@ export function proxy(request: NextRequest) {
   // Allow static files
   if (pathname.includes(".")) return NextResponse.next();
 
-  // Check for access_token cookie
-  const token = request.cookies.get("access_token")?.value;
-  if (!token) {
+  // Keep a temporary access_token fallback so existing sessions survive rollout
+  // after the cookie format changes.
+  const hasAuthGuard =
+    request.cookies.get("auth_guard")?.value === "1" ||
+    !!request.cookies.get("access_token")?.value;
+
+  if (!hasAuthGuard) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 

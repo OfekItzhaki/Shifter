@@ -1,11 +1,27 @@
 import createNextIntlPlugin from "next-intl/plugin";
 import { withSentryConfig } from "@sentry/nextjs";
 import { createRequire } from "module";
+import { dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 
 const require = createRequire(import.meta.url);
 const { version } = require("./package.json");
+const appDir = dirname(fileURLToPath(import.meta.url));
 
 const withNextIntl = createNextIntlPlugin("./i18n/request.ts");
+const isDevelopment = process.env.NODE_ENV === "development";
+
+const scriptSrc = [
+  "'self'",
+  // Next.js App Router emits inline bootstrap/flight scripts. Removing this safely
+  // requires per-request nonce support in both headers and rendered scripts.
+  "'unsafe-inline'",
+  "https://client.crisp.chat",
+];
+
+if (isDevelopment) {
+  scriptSrc.push("'unsafe-eval'");
+}
 
 const securityHeaders = [
   { key: "X-Frame-Options", value: "DENY" },
@@ -20,14 +36,20 @@ const securityHeaders = [
     key: "Content-Security-Policy",
     value: [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-eval' 'unsafe-inline'",
+      `script-src ${scriptSrc.join(" ")}`,
       "style-src 'self' 'unsafe-inline'",
       // Allow images from: self, data URIs, blobs, local API, production API, and any HTTPS source for external profile images
       "img-src 'self' data: blob: http://localhost:5000 https://api.shifter.ofeklabs.com https:",
       "font-src 'self'",
-      "connect-src 'self' http://localhost:5000 https://api.shifter.ofeklabs.com https://*.ofeklabs.com ws://localhost:3000 wss: https://*.sentry.io https://*.ingest.sentry.io https://*.posthog.com https://us.i.posthog.com",
+      "connect-src 'self' http://localhost:5000 https://api.shifter.ofeklabs.com https://*.ofeklabs.com ws://localhost:3000 wss: https://*.sentry.io https://*.ingest.sentry.io https://*.posthog.com https://us.i.posthog.com https://*.crisp.chat wss://*.crisp.chat",
       "worker-src 'self'",
+      "frame-src https://client.crisp.chat https://*.crisp.chat",
       "frame-ancestors 'none'",
+      "object-src 'none'",
+      "base-uri 'self'",
+      "form-action 'self'",
+      "manifest-src 'self'",
+      ...(isDevelopment ? [] : ["upgrade-insecure-requests"]),
     ].join("; "),
   },
 ];
@@ -35,6 +57,9 @@ const securityHeaders = [
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: "standalone",
+  turbopack: {
+    root: appDir,
+  },
   env: {
     NEXT_PUBLIC_APP_VERSION: version,
   },

@@ -5,13 +5,13 @@ import { useTranslations } from "next-intl";
 import ErrorPageLayout from "@/components/errors/ErrorPageLayout";
 
 export default function NotFound() {
-  const t = useTranslations("errors");
+  const t = useTranslations("errorPages.notFound");
 
   return (
     <ErrorPageLayout
       statusCode={404}
-      heading={t("notFound.title")}
-      message={t("notFound.description")}
+      heading={t("heading")}
+      message={t("message")}
     >
       <Link
         href="/"

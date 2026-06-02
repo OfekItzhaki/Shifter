@@ -1396,6 +1396,10 @@
   "billing": {
     "title": "Subscription",
     "loading": "Loading...",
+    "successTitle": "Payment successful!",
+    "successDescription": "Thank you for your purchase. Your subscription is being activated.",
+    "redirecting": "Redirecting in",
+    "goToSettings": "Go to Settings",
     "errorLoad": "Could not load billing information.",
     "retry": "Retry",
     "noSubscription": "No subscription found for this space.",

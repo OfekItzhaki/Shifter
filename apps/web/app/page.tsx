@@ -5,8 +5,8 @@ import LandingPage from "./LandingPage";
  * - Authenticated users → client-side redirect to /spaces
  * - Unauthenticated users → show landing/marketing page
  * 
- * Since tokens are in localStorage (not cookies), the landing page
- * always renders on the server. The client checks for a token and redirects.
+ * The landing page always renders on the server. The client checks for a
+ * short-lived access token and redirects if the session is still valid.
  */
 export default function RootPage() {
   return <LandingPage />;

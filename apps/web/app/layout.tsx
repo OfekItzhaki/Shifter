@@ -5,10 +5,12 @@ import { isRtl } from "@/i18n/request";
 import type { Locale } from "@/i18n/request";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import CookieConsent from "@/components/CookieConsent";
+import CrispChat from "@/components/shell/CrispChat";
 import { Providers } from "./providers";
 import "./globals.css";
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://shifter.ofeklabs.com"),
   title: {
     default: "Shifter | Smart Shift Scheduling",
     template: "%s | Shifter",
@@ -62,15 +64,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           </Providers>
         </NextIntlClientProvider>
         {process.env.NEXT_PUBLIC_CRISP_WEBSITE_ID && (
-          <script
-            dangerouslySetInnerHTML={{
-              __html: `
-                window.$crisp=[];
-                window.CRISP_WEBSITE_ID="${process.env.NEXT_PUBLIC_CRISP_WEBSITE_ID}";
-                (function(){var d=document;var s=d.createElement("script");s.src="https://client.crisp.chat/l.js";s.async=1;d.getElementsByTagName("head")[0].appendChild(s);})();
-              `,
-            }}
-          />
+          <CrispChat websiteId={process.env.NEXT_PUBLIC_CRISP_WEBSITE_ID} />
         )}
       </body>
     </html>
