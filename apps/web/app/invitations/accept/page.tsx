@@ -4,20 +4,20 @@ import { useEffect, useState, Suspense } from "react";
 import { useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { useAuthStore } from "@/lib/store/authStore";
 import { apiClient } from "@/lib/api/client";
+import { useEffectiveAuth } from "@/lib/hooks/useEffectiveAuth";
 
 function AcceptInvitationContent() {
   const t = useTranslations("invitations");
   const searchParams = useSearchParams();
   const token = searchParams.get("token") ?? "";
-  const { isAuthenticated } = useAuthStore();
+  const { isLoggedIn, isHydrated } = useEffectiveAuth();
 
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!isAuthenticated || !token) return;
+    if (!isHydrated || !isLoggedIn || !token) return;
     setStatus("loading");
     apiClient
       .post(`/invitations/accept?token=${encodeURIComponent(token)}`)
@@ -30,7 +30,7 @@ function AcceptInvitationContent() {
         setErrorMessage(msg);
         setStatus("error");
       });
-  }, [isAuthenticated, token]);
+  }, [isHydrated, isLoggedIn, token]);
 
   if (!token) {
     return (
@@ -40,7 +40,7 @@ function AcceptInvitationContent() {
     );
   }
 
-  if (!isAuthenticated) {
+  if (!isHydrated || !isLoggedIn) {
     const redirectUrl = `/invitations/accept?token=${encodeURIComponent(token)}`;
     return (
       <div style={styles.card}>

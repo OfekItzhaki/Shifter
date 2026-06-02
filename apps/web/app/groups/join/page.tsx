@@ -4,17 +4,17 @@ import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { useAuthStore } from "@/lib/store/authStore";
 import { useSpaceStore } from "@/lib/store/spaceStore";
 import { joinGroupByCode } from "@/lib/api/groups";
 import ShifterLogo from "@/components/shell/ShifterLogo";
+import { useEffectiveAuth } from "@/lib/hooks/useEffectiveAuth";
 
 function JoinContent() {
   const t = useTranslations("groups.join");
   const router = useRouter();
   const searchParams = useSearchParams();
   const codeFromUrl = searchParams.get("code") ?? "";
-  const { isAuthenticated } = useAuthStore();
+  const { isLoggedIn, isHydrated } = useEffectiveAuth();
   const { setCurrentSpace } = useSpaceStore();
 
   const [code, setCode] = useState(codeFromUrl);
@@ -22,19 +22,6 @@ function JoinContent() {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<{ groupId: string; spaceId: string; groupName: string; alreadyMember: boolean } | null>(null);
   const [autoJoinDone, setAutoJoinDone] = useState(false);
-  const [hydrated, setHydrated] = useState(false);
-
-  // Check auth from both Zustand store AND localStorage (store may not be hydrated yet)
-  const hasToken = typeof window !== "undefined" && !!localStorage.getItem("access_token");
-  const loggedIn = isAuthenticated || hasToken;
-
-  // Wait for Zustand to rehydrate before checking auth
-  useEffect(() => {
-    if (useAuthStore.persist.hasHydrated()) { setHydrated(true); return; }
-    const unsub = useAuthStore.persist.onFinishHydration(() => setHydrated(true));
-    const fallback = setTimeout(() => setHydrated(true), 500);
-    return () => { unsub(); clearTimeout(fallback); };
-  }, []);
 
   async function handleJoin(e?: React.FormEvent) {
     e?.preventDefault();
@@ -58,13 +45,13 @@ function JoinContent() {
   // Auto-join when user is authenticated and code is provided in URL
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
-    if (hydrated && loggedIn && codeFromUrl && !autoJoinDone) {
+    if (isHydrated && isLoggedIn && codeFromUrl && !autoJoinDone) {
       setAutoJoinDone(true);
       handleJoin();
     }
-  }, [hydrated, loggedIn, codeFromUrl]);
+  }, [isHydrated, isLoggedIn, codeFromUrl]);
 
-  if (!hydrated) {
+  if (!isHydrated) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <svg className="animate-spin h-6 w-6 text-sky-400" fill="none" viewBox="0 0 24 24">
@@ -75,7 +62,7 @@ function JoinContent() {
     );
   }
 
-  if (!loggedIn) {
+  if (!isLoggedIn) {
     const redirectUrl = `/groups/join?code=${encodeURIComponent(code)}`;
     return (
       <div className="text-center space-y-4">

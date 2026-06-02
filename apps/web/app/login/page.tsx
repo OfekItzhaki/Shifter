@@ -9,10 +9,12 @@ import ShifterLogo from "@/components/shell/ShifterLogo";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { isWebAuthnSupported, isConditionalMediationAvailable, authenticateWithBiometric } from "@/lib/webauthn";
 import { detectBrowserLocale } from "@/lib/utils/detectLocale";
+import { useEffectiveAuth } from "@/lib/hooks/useEffectiveAuth";
 
 function LoginForm() {
   const t = useTranslations("auth");
-  const { login, isAuthenticated } = useAuthStore();
+  const login = useAuthStore((s) => s.login);
+  const { isLoggedIn } = useEffectiveAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const justRegistered = searchParams.get("registered") === "1";
@@ -29,10 +31,10 @@ function LoginForm() {
 
   // Redirect authenticated users away from login page
   useEffect(() => {
-    if (isAuthenticated) {
+    if (isLoggedIn) {
       router.replace("/home");
     }
-  }, [isAuthenticated, router]);
+  }, [isLoggedIn, router]);
 
   // Start conditional mediation (passkey autofill) on mount
   useEffect(() => {

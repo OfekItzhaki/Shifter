@@ -3,8 +3,8 @@
 import { useEffect, useState, useCallback, lazy, Suspense } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useAuthStore } from "@/lib/store/authStore";
 import { useSpaceStore } from "@/lib/store/spaceStore";
+import { useEffectiveAuth } from "@/lib/hooks/useEffectiveAuth";
 import { getGroups, type GroupWithMemberCountDto } from "@/lib/api/groups";
 import { filterSelfServiceGroups } from "@/lib/utils/pickGroupFilter";
 import {
@@ -35,7 +35,7 @@ type Phase = "loading" | "group-select" | "slot-browser";
 export default function PickPage() {
   const router = useRouter();
   const t = useTranslations("pick");
-  const { isAuthenticated } = useAuthStore();
+  const { isLoggedIn, isHydrated } = useEffectiveAuth();
   const { currentSpaceId } = useSpaceStore();
 
   const [phase, setPhase] = useState<Phase>("loading");
@@ -49,10 +49,10 @@ export default function PickPage() {
 
   // Auth guard: redirect to login if not authenticated
   useEffect(() => {
-    if (!isAuthenticated) {
+    if (isHydrated && !isLoggedIn) {
       router.replace("/login?redirect=/pick");
     }
-  }, [isAuthenticated, router]);
+  }, [isHydrated, isLoggedIn, router]);
 
   // Load groups and resolve last-group on mount
   const loadGroups = useCallback(async () => {
@@ -84,10 +84,10 @@ export default function PickPage() {
   }, [currentSpaceId, t]);
 
   useEffect(() => {
-    if (isAuthenticated && currentSpaceId) {
+    if (isLoggedIn && currentSpaceId) {
       loadGroups();
     }
-  }, [isAuthenticated, currentSpaceId, loadGroups]);
+  }, [isLoggedIn, currentSpaceId, loadGroups]);
 
   // Handle group selection from GroupSelector
   const handleGroupSelect = useCallback((groupId: string, groupName: string) => {
@@ -117,7 +117,7 @@ export default function PickPage() {
   }, []);
 
   // Don't render anything if not authenticated (redirect in progress)
-  if (!isAuthenticated) {
+  if (!isHydrated || !isLoggedIn) {
     return null;
   }
 

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { getMe, resendVerification } from "@/lib/api/auth";
-import { useAuthStore } from "@/lib/store/authStore";
+import { useEffectiveAuth } from "@/lib/hooks/useEffectiveAuth";
 
 /**
  * Non-blocking dismissible banner shown to unverified users.
@@ -12,23 +12,23 @@ import { useAuthStore } from "@/lib/store/authStore";
  */
 export default function VerificationBanner() {
   const t = useTranslations("verifyEmail.banner");
-  const { isAuthenticated } = useAuthStore();
+  const { isLoggedIn } = useEffectiveAuth();
   const [dismissed, setDismissed] = useState(false);
   const [emailVerified, setEmailVerified] = useState<boolean | null>(null);
   const [resendStatus, setResendStatus] = useState<"idle" | "sending" | "sent">("idle");
 
   useEffect(() => {
-    if (!isAuthenticated) return;
+    if (!isLoggedIn) return;
     getMe()
       .then((me) => setEmailVerified(me.emailVerified))
       .catch(() => {
         // If we can't fetch, don't show the banner
         setEmailVerified(true);
       });
-  }, [isAuthenticated]);
+  }, [isLoggedIn]);
 
   // Don't render if: not authenticated, still loading, already verified, or dismissed
-  if (!isAuthenticated || emailVerified === null || emailVerified || dismissed) {
+  if (!isLoggedIn || emailVerified === null || emailVerified || dismissed) {
     return null;
   }
 

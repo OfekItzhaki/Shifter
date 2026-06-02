@@ -173,6 +173,7 @@ apiClient.interceptors.response.use(
         localStorage.removeItem("access_token");
         localStorage.removeItem("refresh_token");
         document.cookie = "access_token=; path=/; max-age=0";
+        useAuthStore.getState().clearAuthState();
         if (!original._skipRedirect && !isRedirecting) {
           isRedirecting = true;
           window.location.href = "/login?redirect=" + encodeURIComponent(window.location.pathname + window.location.search);

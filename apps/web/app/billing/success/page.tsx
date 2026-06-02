@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import { useRouter } from "next/navigation";
 import ShifterLogo from "@/components/shell/ShifterLogo";
-import { useAuthStore } from "@/lib/store/authStore";
+import { useEffectiveAuth } from "@/lib/hooks/useEffectiveAuth";
 
 /**
  * Billing success page — shown after completing a LemonSqueezy checkout.
@@ -16,7 +16,7 @@ export default function BillingSuccessPage() {
   const t = useTranslations("billing");
   const locale = useLocale();
   const router = useRouter();
-  const { isAuthenticated } = useAuthStore();
+  const { isLoggedIn } = useEffectiveAuth();
   const [countdown, setCountdown] = useState(5);
 
   useEffect(() => {
@@ -25,7 +25,7 @@ export default function BillingSuccessPage() {
         if (prev <= 1) {
           clearInterval(timer);
           // Redirect to home or spaces/settings
-          if (isAuthenticated) {
+          if (isLoggedIn) {
             router.push("/spaces/settings");
           } else {
             router.push("/login");
@@ -37,7 +37,7 @@ export default function BillingSuccessPage() {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [isAuthenticated, router]);
+  }, [isLoggedIn, router]);
 
   return (
     <main style={{ minHeight: "100vh", background: "#f8fafc", display: "flex", alignItems: "center", justifyContent: "center", padding: "2rem 1rem" }}>

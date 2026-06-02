@@ -5,10 +5,18 @@ import { Providers } from "@/app/providers";
 let authenticated = false;
 
 vi.mock("@/lib/store/authStore", () => ({
-  useAuthStore: (selector?: (state: any) => any) => {
-    const state = { isAuthenticated: authenticated, userId: authenticated ? "user-1" : null };
-    return selector ? selector(state) : state;
-  },
+  useAuthStore: Object.assign(
+    (selector?: (state: any) => any) => {
+      const state = { isAuthenticated: authenticated, userId: authenticated ? "user-1" : null };
+      return selector ? selector(state) : state;
+    },
+    {
+      persist: {
+        hasHydrated: () => true,
+        onFinishHydration: () => vi.fn(),
+      },
+    }
+  ),
 }));
 
 vi.mock("@/lib/query/queryClient", () => ({
