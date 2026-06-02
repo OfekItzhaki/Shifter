@@ -2,6 +2,7 @@ import axios from "axios";
 import { useAuthStore } from "@/lib/store/authStore";
 import { useConnectivityStore } from "@/lib/store/connectivityStore";
 import { writeGuardInterceptor } from "@/lib/api/writeGuard";
+import { notifyAuthTokenChanged } from "@/lib/auth/tokenState";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000";
 
@@ -150,6 +151,7 @@ apiClient.interceptors.response.use(
 
         localStorage.setItem("access_token", refreshData.accessToken);
         localStorage.setItem("refresh_token", refreshData.refreshToken);
+        notifyAuthTokenChanged();
         document.cookie = `access_token=${refreshData.accessToken}; path=/; max-age=2592000; SameSite=Strict`;
 
         // Update timezone from refresh response (handles DST changes between sessions)
@@ -172,7 +174,9 @@ apiClient.interceptors.response.use(
         // (unless the request opted out of redirect via _skipRedirect)
         localStorage.removeItem("access_token");
         localStorage.removeItem("refresh_token");
+        notifyAuthTokenChanged();
         document.cookie = "access_token=; path=/; max-age=0";
+        useAuthStore.getState().clearAuthState();
         if (!original._skipRedirect && !isRedirecting) {
           isRedirecting = true;
           window.location.href = "/login?redirect=" + encodeURIComponent(window.location.pathname + window.location.search);

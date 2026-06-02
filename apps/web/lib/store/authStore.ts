@@ -1,7 +1,9 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { login as apiLogin, logout as apiLogout } from "@/lib/api/auth";
+import type { MeDto } from "@/lib/api/auth";
 import { detectBrowserLocale } from "@/lib/utils/detectLocale";
+import { notifyAuthTokenChanged } from "@/lib/auth/tokenState";
 
 interface AuthState {
   userId: string | null;
@@ -22,6 +24,8 @@ interface AuthState {
   exitAdminMode: () => void;
   setTimeFormat: (format: "24h" | "12h") => void;
   setTimezone: (timezoneId: string | null, offsetMinutes: number) => void;
+  syncFromMe: (me: Pick<MeDto, "userId" | "displayName" | "isPlatformAdmin">) => void;
+  clearAuthState: () => void;
   // Convenience: is the user in admin mode for a specific group?
   isAdminForGroup: (groupId: string) => boolean;
   // Legacy: global admin mode check (true if admin for ANY group)
@@ -47,6 +51,7 @@ export const useAuthStore = create<AuthState>()(
         const result = await apiLogin(identifier, password);
         localStorage.setItem("access_token", result.accessToken);
         localStorage.setItem("refresh_token", result.refreshToken);
+        notifyAuthTokenChanged();
         // Don't clear jobuler-space on re-login — preserve the user's space selection.
         // Only clear on logout (different user scenario).
         document.cookie = `access_token=${result.accessToken}; path=/; max-age=2592000; SameSite=Strict`;
@@ -72,11 +77,12 @@ export const useAuthStore = create<AuthState>()(
         }
         localStorage.removeItem("access_token");
         localStorage.removeItem("refresh_token");
+        notifyAuthTokenChanged();
         // Clear persisted space so the next user gets a fresh space resolution
         localStorage.removeItem("jobuler-space");
         document.cookie = "access_token=; path=/; max-age=0";
         document.cookie = "locale=; path=/; max-age=0";
-        set({ userId: null, displayName: null, isAuthenticated: false, isPlatformAdmin: false, adminGroupId: null });
+        get().clearAuthState();
       },
 
       enterAdminMode: (groupId: string) => set({ adminGroupId: groupId }),
@@ -85,6 +91,19 @@ export const useAuthStore = create<AuthState>()(
       setTimezone: (timezoneId: string | null, offsetMinutes: number) => set({
         timezoneId: timezoneId ?? "Asia/Jerusalem",
         timezoneOffsetMinutes: offsetMinutes ?? 120,
+      }),
+      syncFromMe: (me) => set({
+        userId: me.userId,
+        displayName: me.displayName,
+        isAuthenticated: true,
+        isPlatformAdmin: me.isPlatformAdmin ?? get().isPlatformAdmin,
+      }),
+      clearAuthState: () => set({
+        userId: null,
+        displayName: null,
+        isAuthenticated: false,
+        isPlatformAdmin: false,
+        adminGroupId: null,
       }),
       isAdminForGroup: (groupId: string) => get().adminGroupId !== null,
     }),

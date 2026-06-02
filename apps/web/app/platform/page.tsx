@@ -4,13 +4,13 @@ import { useEffect, useState, useCallback } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import AppShell from "@/components/shell/AppShell";
-import { useAuthStore } from "@/lib/store/authStore";
 import { getPlatformStats, PlatformStats } from "@/lib/api/platform";
 import { apiClient } from "@/lib/api/client";
 import BillingTestPanel from "@/components/platform/BillingTestPanel";
 import PlatformSettings from "@/components/platform/PlatformSettings";
 import ReAuthDialog from "@/components/admin/ReAuthDialog";
 import { useAdminSessionStore } from "@/lib/store/adminSessionStore";
+import { useEffectiveAuth } from "@/lib/hooks/useEffectiveAuth";
 
 function StatCard({ label, value, sub, accent }: { label: string; value: string | number; sub?: string; accent?: string }) {
   return (
@@ -54,14 +54,11 @@ function SolverHealthBar({ completed, failed, total }: { completed: number; fail
 
 export default function PlatformPage() {
   const t = useTranslations("platform");
-  const { isAuthenticated } = useAuthStore();
+  const { isLoggedIn, isHydrated } = useEffectiveAuth();
   const router = useRouter();
   const enterElevatedMode = useAdminSessionStore((s) => s.enterElevatedMode);
   const isElevated = useAdminSessionStore((s) => s.isElevated);
   const elevatedMode = useAdminSessionStore((s) => s.elevatedMode);
-
-  const hasToken = typeof window !== "undefined" && !!localStorage.getItem("access_token");
-  const loggedIn = isAuthenticated || hasToken;
 
   const [stats, setStats] = useState<PlatformStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -71,21 +68,9 @@ export default function PlatformPage() {
   const [showReAuth, setShowReAuth] = useState(false);
   const [platformAuthenticated, setPlatformAuthenticated] = useState(false);
   const [platformTimeoutMinutes, setPlatformTimeoutMinutes] = useState<number>(15);
-  const [hydrated, setHydrated] = useState(false);
-
   useEffect(() => {
-    if (useAuthStore.persist.hasHydrated()) {
-      setHydrated(true);
-      return;
-    }
-    const unsub = useAuthStore.persist.onFinishHydration(() => setHydrated(true));
-    const fallback = setTimeout(() => setHydrated(true), 500);
-    return () => { unsub(); clearTimeout(fallback); };
-  }, []);
-
-  useEffect(() => {
-    if (!hydrated) return;
-    if (!loggedIn) { router.push("/login"); return; }
+    if (!isHydrated) return;
+    if (!isLoggedIn) { router.push("/login"); return; }
 
     if (isElevated && elevatedMode === "platform") {
       setPlatformAuthenticated(true);
@@ -106,7 +91,7 @@ export default function PlatformPage() {
         else setError(err?.response?.data?.error ?? err?.message ?? "Error loading platform data");
       })
       .finally(() => { setLoading(false); clearTimeout(timeout); });
-  }, [hydrated, loggedIn, router, platformAuthenticated, isElevated, elevatedMode]);
+  }, [isHydrated, isLoggedIn, router, platformAuthenticated, isElevated, elevatedMode]);
 
   const handleReAuthSuccess = useCallback(() => {
     setShowReAuth(false);
@@ -119,7 +104,7 @@ export default function PlatformPage() {
     router.push("/");
   }, [router]);
 
-  if (!hydrated || !loggedIn) {
+  if (!isHydrated || !isLoggedIn) {
     return (
       <AppShell>
         <div className="flex items-center justify-center min-h-[60vh]">

@@ -12,19 +12,37 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Detect changed paths
+        id: changes
+        run: |
+          CHANGED=$(git diff --name-only HEAD~1 HEAD 2>/dev/null || echo "all")
+          echo "api=$(echo "$CHANGED" | grep -q '^apps/api/' && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
+          echo "web=$(echo "$CHANGED" | grep -q '^apps/web/' && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
+          echo "infra=$(echo "$CHANGED" | grep -q '^infra/' && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
+          # Always run on workflow_dispatch or if CI/infra files changed
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "api=true" >> $GITHUB_OUTPUT
+            echo "web=true" >> $GITHUB_OUTPUT
+          fi
 
       - name: Setup .NET
+        if: steps.changes.outputs.api == 'true'
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: "8.0.x"
 
       - name: Restore & Build API
+        if: steps.changes.outputs.api == 'true'
         working-directory: apps/api
         run: |
           dotnet restore Jobuler.sln
           dotnet build Jobuler.sln --no-restore --configuration Release
 
       - name: Run API tests
+        if: steps.changes.outputs.api == 'true'
         working-directory: apps/api
         run: |
           dotnet test Jobuler.sln \
@@ -34,6 +52,7 @@ jobs:
             --filter "Category!=RequiresSolver"
 
       - name: Setup Node.js
+        if: steps.changes.outputs.web == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: "20"
@@ -41,6 +60,7 @@ jobs:
           cache-dependency-path: apps/web/package-lock.json
 
       - name: Build Frontend
+        if: steps.changes.outputs.web == 'true'
         working-directory: apps/web
         run: |
           npm ci

@@ -3,8 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useSpaceStore } from "@/lib/store/spaceStore";
-import { useAuthStore } from "@/lib/store/authStore";
 import { getMySpaces, migrateUserSpace } from "@/lib/api/spaces";
+import { useEffectiveAuth } from "@/lib/hooks/useEffectiveAuth";
 
 /**
  * useSpaceGuard — Central redirect logic for space membership.
@@ -20,13 +20,15 @@ export function useSpaceGuard() {
   const router = useRouter();
   const pathname = usePathname();
   const { currentSpaceId, setCurrentSpace, clearSpace } = useSpaceStore();
-  const { isAuthenticated } = useAuthStore();
+  const { isLoggedIn, isHydrated } = useEffectiveAuth();
   const [isReady, setIsReady] = useState(false);
   const guardRan = useRef(false);
 
   useEffect(() => {
+    if (!isHydrated) return;
+
     // Only run for authenticated users
-    if (!isAuthenticated) {
+    if (!isLoggedIn) {
       setIsReady(true);
       return;
     }
@@ -97,7 +99,7 @@ export function useSpaceGuard() {
     return () => {
       guardRan.current = false;
     };
-  }, [isAuthenticated, pathname]);
+  }, [isHydrated, isLoggedIn, pathname]);
 
   return { isReady };
 }

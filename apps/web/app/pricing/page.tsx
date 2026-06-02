@@ -6,8 +6,9 @@ import { useRouter } from "next/navigation";
 import ShifterLogo from "@/components/shell/ShifterLogo";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { getPlans, createSpaceCheckout, getSpaceSubscription, PlanDto } from "@/lib/api/billing";
-import { useAuthStore } from "@/lib/store/authStore";
 import { useSpaceStore } from "@/lib/store/spaceStore";
+import { useEffectiveAuth } from "@/lib/hooks/useEffectiveAuth";
+import { hasStoredAccessToken } from "@/lib/auth/tokenState";
 
 // Fallback plans used when the API is unreachable
 const FALLBACK_PLANS: PlanDto[] = [
@@ -27,7 +28,7 @@ export default function PricingPage() {
   const t = useTranslations("pricing");
   const locale = useLocale();
   const router = useRouter();
-  const { isAuthenticated } = useAuthStore();
+  const { isLoggedIn } = useEffectiveAuth();
   const { currentSpaceId } = useSpaceStore();
   const backArrow = locale === "he" ? "→" : "←";
 
@@ -99,16 +100,10 @@ export default function PricingPage() {
       return;
     }
 
-    // Check auth state at click time (not render time)
-    const authState = useAuthStore.getState();
     const spaceState = useSpaceStore.getState();
 
-    // Determine if user is authenticated: check both Zustand state AND localStorage tokens.
-    const hasTokens = !!localStorage.getItem("access_token") && !!localStorage.getItem("refresh_token");
-    const isLoggedIn = authState.isAuthenticated || hasTokens;
-
     // If not logged in, redirect to login with return URL
-    if (!isLoggedIn) {
+    if (!isLoggedIn && !hasStoredAccessToken()) {
       router.push("/login?redirect=/pricing");
       return;
     }

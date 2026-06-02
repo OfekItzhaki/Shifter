@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { register } from "@/lib/api/auth";
-import { useAuthStore } from "@/lib/store/authStore";
+import { useEffectiveAuth } from "@/lib/hooks/useEffectiveAuth";
 import ShifterLogo from "@/components/shell/ShifterLogo";
 import ImageUpload from "@/components/ImageUpload";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
@@ -36,7 +36,7 @@ function RegisterForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirect = searchParams.get("redirect");
-  const { isAuthenticated } = useAuthStore();
+  const { isLoggedIn } = useEffectiveAuth();
 
   const [email, setEmail] = useState("");
   const [displayName, setDisplayName] = useState("");
@@ -51,10 +51,10 @@ function RegisterForm() {
 
   // Redirect authenticated users away from register page
   useEffect(() => {
-    if (isAuthenticated) {
+    if (isLoggedIn) {
       router.replace("/home");
     }
-  }, [isAuthenticated, router]);
+  }, [isLoggedIn, router]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

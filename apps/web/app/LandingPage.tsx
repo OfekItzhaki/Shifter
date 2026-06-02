@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import ShifterLogo from "@/components/shell/ShifterLogo";
+import { notifyAuthTokenChanged } from "@/lib/auth/tokenState";
 import { LANDING_CONTENT, type LandingLang } from "./landingContent";
 
 export default function LandingPage() {
@@ -27,7 +28,13 @@ export default function LandingPage() {
       signal: controller.signal,
     }).then(res => {
       if (res.ok) router.replace("/schedule/my-missions");
-      else { localStorage.removeItem("access_token"); localStorage.removeItem("refresh_token"); document.cookie = "access_token=; path=/; max-age=0"; setChecking(false); }
+      else {
+        localStorage.removeItem("access_token");
+        localStorage.removeItem("refresh_token");
+        notifyAuthTokenChanged();
+        document.cookie = "access_token=; path=/; max-age=0";
+        setChecking(false);
+      }
     }).catch(() => { setChecking(false); });
     return () => controller.abort();
   }, [router]);

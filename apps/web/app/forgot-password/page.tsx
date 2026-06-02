@@ -5,7 +5,7 @@ import { useTranslations, useLocale } from "next-intl";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { forgotPassword } from "@/lib/api/auth";
-import { useAuthStore } from "@/lib/store/authStore";
+import { useEffectiveAuth } from "@/lib/hooks/useEffectiveAuth";
 import ShifterLogo from "@/components/shell/ShifterLogo";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 
@@ -13,7 +13,7 @@ export default function ForgotPasswordPage() {
   const t = useTranslations("auth");
   const locale = useLocale();
   const router = useRouter();
-  const { isAuthenticated } = useAuthStore();
+  const { isLoggedIn } = useEffectiveAuth();
   const backArrow = locale === "he" ? "→" : "←";
   const [email, setEmail] = useState("");
   const [submitted, setSubmitted] = useState(false);
@@ -22,10 +22,10 @@ export default function ForgotPasswordPage() {
 
   // Redirect authenticated users away from forgot-password page
   useEffect(() => {
-    if (isAuthenticated) {
+    if (isLoggedIn) {
       router.replace("/home");
     }
-  }, [isAuthenticated, router]);
+  }, [isLoggedIn, router]);
   const [resendCount, setResendCount] = useState(0);
 
   async function handleSubmit(e: React.FormEvent) {

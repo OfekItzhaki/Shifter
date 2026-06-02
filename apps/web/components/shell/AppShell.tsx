@@ -87,9 +87,7 @@ export default function AppShell({ children }: AppShellProps) {
     }
     getMe().then(me => {
       if (me.displayName) setResolvedName(me.displayName);
-      if (me.isPlatformAdmin !== undefined) {
-        useAuthStore.setState({ isPlatformAdmin: me.isPlatformAdmin });
-      }
+      useAuthStore.getState().syncFromMe(me);
     }).catch(() => {
       if (storedDisplayName) setResolvedName(storedDisplayName);
     });

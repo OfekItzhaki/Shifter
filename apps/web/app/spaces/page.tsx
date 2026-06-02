@@ -6,12 +6,14 @@ import { useTranslations } from "next-intl";
 import { getMySpaces, createSpace, SpaceDto } from "@/lib/api/spaces";
 import { useSpaceStore } from "@/lib/store/spaceStore";
 import { useAuthStore } from "@/lib/store/authStore";
+import { useEffectiveAuth } from "@/lib/hooks/useEffectiveAuth";
 
 export default function SpacesPage() {
   const t = useTranslations();
   const router = useRouter();
   const { setCurrentSpace } = useSpaceStore();
   const { preferredLocale } = useAuthStore();
+  const { isLoggedIn, isHydrated } = useEffectiveAuth();
 
   const [spaces, setSpaces] = useState<SpaceDto[]>([]);
   const [loading, setLoading] = useState(true);
@@ -21,9 +23,9 @@ export default function SpacesPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Check if user has a valid token before making API calls
-    const token = localStorage.getItem("access_token");
-    if (!token) {
+    if (!isHydrated) return;
+
+    if (!isLoggedIn) {
       router.replace("/login");
       return;
     }
@@ -42,7 +44,7 @@ export default function SpacesPage() {
         // it means refresh also failed
       })
       .finally(() => setLoading(false));
-  }, []);
+  }, [isHydrated, isLoggedIn, router, setCurrentSpace]);
 
   function handleSelect(space: SpaceDto) {
     setCurrentSpace(space.id, space.name);

@@ -9,10 +9,13 @@ import ShifterLogo from "@/components/shell/ShifterLogo";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { isWebAuthnSupported, isConditionalMediationAvailable, authenticateWithBiometric } from "@/lib/webauthn";
 import { detectBrowserLocale } from "@/lib/utils/detectLocale";
+import { useEffectiveAuth } from "@/lib/hooks/useEffectiveAuth";
+import { notifyAuthTokenChanged } from "@/lib/auth/tokenState";
 
 function LoginForm() {
   const t = useTranslations("auth");
-  const { login, isAuthenticated } = useAuthStore();
+  const login = useAuthStore((s) => s.login);
+  const { isLoggedIn } = useEffectiveAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const justRegistered = searchParams.get("registered") === "1";
@@ -29,10 +32,10 @@ function LoginForm() {
 
   // Redirect authenticated users away from login page
   useEffect(() => {
-    if (isAuthenticated) {
+    if (isLoggedIn) {
       router.replace("/home");
     }
-  }, [isAuthenticated, router]);
+  }, [isLoggedIn, router]);
 
   // Start conditional mediation (passkey autofill) on mount
   useEffect(() => {
@@ -48,6 +51,7 @@ function LoginForm() {
         if (cancelled) return;
         localStorage.setItem("access_token", tokens.accessToken);
         localStorage.setItem("refresh_token", tokens.refreshToken);
+        notifyAuthTokenChanged();
         document.cookie = `access_token=${tokens.accessToken}; path=/; max-age=2592000; SameSite=Strict`;
         const locale = tokens.preferredLocale || detectBrowserLocale();
         document.cookie = `locale=${locale}; path=/; max-age=31536000; SameSite=Strict`;
