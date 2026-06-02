@@ -35,6 +35,7 @@ export interface ScheduleAssignment {
   id: string;
   personId: string;
   personName: string;
+  personPhoneNumber?: string | null;
   taskTypeName: string;
   slotStartsAt: string;
   slotEndsAt: string;

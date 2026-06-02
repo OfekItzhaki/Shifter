@@ -104,7 +104,7 @@
     "noMissionsToday": "No missions today",
     "noTasksThisDay": "No tasks on this day",
     "exportCsv": "Export CSV",
-    "filterByName": "Filter by name...",
+    "filterByName": "Filter by name or phone...",
     "thisWeek": "This Week",
     "offlineMessage": "No internet connection. Showing cached schedule from",
     "override": {
@@ -531,7 +531,7 @@
       "yesDiscard": "Yes, discard",
       "discarding": "Discarding...",
       "cancel": "Cancel",
-      "filterByName": "Filter by name...",
+      "filterByName": "Filter by name or phone...",
       "exportCsv": "Export CSV",
       "showDiff": "Changes",
       "history": "History",

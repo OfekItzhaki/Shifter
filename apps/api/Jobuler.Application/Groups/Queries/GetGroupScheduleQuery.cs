@@ -11,6 +11,7 @@ public record GroupScheduleAssignmentDto(
     Guid Id,
     Guid PersonId,
     string PersonName,
+    string? PersonPhoneNumber,
     string TaskTypeName,
     DateTime SlotStartsAt,
     DateTime SlotEndsAt,
@@ -91,10 +92,13 @@ public class GetGroupScheduleQueryHandler : IRequestHandler<GetGroupScheduleQuer
         if (rawAssignments.Count == 0)
             return new GroupScheduleResponseDto([], new Dictionary<string, TaskConfigSummaryDto>());
 
-        // Load people names
+        // Load people contact details used by the schedule search filter.
         var people = await _db.People.AsNoTracking()
             .Where(p => memberIds.Contains(p.Id))
-            .ToDictionaryAsync(p => p.Id, p => p.DisplayName ?? p.FullName, ct);
+            .ToDictionaryAsync(
+                p => p.Id,
+                p => new { Name = p.DisplayName ?? p.FullName, p.PhoneNumber },
+                ct);
 
         var slotIds = rawAssignments.Select(a => a.TaskSlotId).ToHashSet();
 
@@ -186,12 +190,13 @@ public class GetGroupScheduleQueryHandler : IRequestHandler<GetGroupScheduleQuer
                 continue;
             }
 
-            var personName = people.TryGetValue(a.PersonId, out var pn) ? pn : "Unknown";
+            var person = people.TryGetValue(a.PersonId, out var personInfo) ? personInfo : null;
+            var personName = person?.Name ?? "Unknown";
             // Convert UTC to Israel local time (+3h) so the frontend displays correct dates
             var localStartsAt = DateTime.SpecifyKind(startsAt.AddHours(3), DateTimeKind.Unspecified);
             var localEndsAt = DateTime.SpecifyKind(endsAt.AddHours(3), DateTimeKind.Unspecified);
             result.Add(new GroupScheduleAssignmentDto(
-                a.Id, a.PersonId, personName, taskName,
+                a.Id, a.PersonId, personName, person?.PhoneNumber, taskName,
                 localStartsAt, localEndsAt, a.Source.ToString()));
         }
 

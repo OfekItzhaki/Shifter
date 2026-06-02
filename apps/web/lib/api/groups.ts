@@ -266,6 +266,7 @@ export interface GroupScheduleAssignmentDto {
   id: string;
   personId: string;
   personName: string;
+  personPhoneNumber?: string | null;
   taskTypeName: string;
   slotStartsAt: string;
   slotEndsAt: string;

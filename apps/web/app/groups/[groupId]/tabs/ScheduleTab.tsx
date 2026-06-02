@@ -60,6 +60,27 @@ function getWeekDates(fromDate: string): string[] {
   return dates;
 }
 
+function assignmentAppearsOnDate(a: ScheduleAssignment, date: string): boolean {
+  const slotStart = new Date(a.slotStartsAt);
+  const slotEnd = new Date(a.slotEndsAt);
+  const slotStartMs = slotStart.getTime();
+  const slotEndMs = slotEnd.getTime();
+  if (Number.isNaN(slotStartMs) || Number.isNaN(slotEndMs)) return false;
+
+  const durationHours = (slotEndMs - slotStartMs) / (1000 * 60 * 60);
+  if (durationHours >= 12) {
+    return slotStart.toLocaleDateString("sv") === date;
+  }
+
+  const dayStart = new Date(`${date}T00:00:00`).getTime();
+  const dayEnd = new Date(`${date}T23:59:59`).getTime();
+  return slotStartMs <= dayEnd && slotEndMs > dayStart;
+}
+
+function normalizePhone(value: string | null | undefined): string {
+  return (value ?? "").replace(/[^\d+]/g, "");
+}
+
 export default function ScheduleTab({
   groupId, solverHorizonDays, scheduleData, scheduleLoading, scheduleError, scheduleIsOffline = false,
   draftVersion, lastRunSummary, solverError, isAdmin, publishSaving, discardSaving, scheduleVersionError,
@@ -208,12 +229,29 @@ export default function ScheduleTab({
   }
 
   // Data is already group-scoped from the API — just apply the optional text search filter
+  const normalizedPersonFilter = personFilter.trim().toLowerCase();
+  const normalizedPhoneFilter = normalizePhone(personFilter);
+
   // When viewing a past week, use historical data instead of live schedule
   const activeData = isViewingHistory ? (historicalAssignments ?? []) : (scheduleData ?? []);
   const filtered = activeData.filter(a => {
-    if (personFilter && !a.personName.toLowerCase().includes(personFilter.toLowerCase())) return false;
+    if (!normalizedPersonFilter) return true;
+    const matchesName = a.personName.toLowerCase().includes(normalizedPersonFilter);
+    const matchesPhone = normalizedPhoneFilter.length > 0
+      && normalizePhone(a.personPhoneNumber).includes(normalizedPhoneFilter);
+    if (!matchesName && !matchesPhone) return false;
     return true;
   });
+  const shouldShowShiftCount = normalizedPersonFilter.length > 0;
+  const selectedDayShiftCount = (() => {
+    if (!shouldShowShiftCount) return 0;
+    const slotKeys = new Set<string>();
+    for (const a of filtered) {
+      if (!assignmentAppearsOnDate(a, selectedDate)) continue;
+      slotKeys.add(`${a.taskTypeName}|${a.slotStartsAt}|${a.slotEndsAt}`);
+    }
+    return slotKeys.size;
+  })();
 
   function exportCSV() {
     if (!scheduleData || scheduleData.length === 0) return;
@@ -592,17 +630,11 @@ export default function ScheduleTab({
                 {tAdmin("today")}
               </span>
             )}
-            {(() => {
-              const dayShiftCount = filtered.filter(a => {
-                const d = new Date(a.slotStartsAt);
-                return d.toLocaleDateString("sv", { timeZone: timezoneId || "Asia/Jerusalem" }) === selectedDate;
-              }).length;
-              return dayShiftCount > 0 ? (
-                <span className="text-xs px-2 py-0.5 rounded-full text-slate-400 bg-slate-100 dark:bg-slate-700 dark:text-slate-300">
-                  {dayShiftCount} {tSchedule("shifts")}
-                </span>
-              ) : null;
-            })()}
+            {shouldShowShiftCount && selectedDayShiftCount > 0 && (
+              <span className="text-xs px-2 py-0.5 rounded-full text-slate-400 bg-slate-100 dark:bg-slate-700 dark:text-slate-300">
+                {selectedDayShiftCount} {tSchedule("shifts")}
+              </span>
+            )}
           </div>
           <ScheduleTaskTable
             assignments={filtered}

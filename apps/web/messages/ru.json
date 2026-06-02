@@ -104,7 +104,7 @@
     "noMissionsToday": "Нет заданий сегодня",
     "noTasksThisDay": "Нет задач в этот день",
     "exportCsv": "Экспорт CSV",
-    "filterByName": "Фильтр по имени...",
+    "filterByName": "Фильтр по имени или телефону...",
     "thisWeek": "Эта неделя",
     "offlineMessage": "Нет подключения к интернету. Показывается кэшированное расписание от",
     "override": {
@@ -499,7 +499,7 @@
       "yesDiscard": "Да, отменить",
       "discarding": "Отмена...",
       "cancel": "Отмена",
-      "filterByName": "Фильтр по имени...",
+      "filterByName": "Фильтр по имени или телефону...",
       "exportCsv": "Экспорт CSV",
       "showDiff": "Изменения",
       "history": "История",
