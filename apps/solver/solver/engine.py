@@ -53,18 +53,16 @@ def _resolve_min_rest_hours_closed_base(
     """
     Resolve min_rest_hours for a closed-base group.
 
-    The config_value is the admin's explicit setting from the group's
-    minRestBetweenShiftsHours field:
-      - 0   = admin explicitly disabled rest enforcement (allowed)
-      - > 0 = admin-configured rest requirement (always respected)
-      - < 0 = not set / use fallback chain with 8h floor
+    config_value is the admin's explicit setting (minRestBetweenShiftsHours from the group):
+      - 0   = admin explicitly disabled rest enforcement
+      - > 0 = admin-configured rest requirement
 
-    Only the fallback chain (steps 2 and 3) applies the 8h floor.
-    Explicit admin settings (>= 0) are always honored as-is.
+    The 8h floor is only applied when falling back to the hard constraint rule or the
+    absolute default (i.e., config_value < 0, which shouldn't happen with correct C# callers
+    but is kept as a safety net).
 
     Returns the resolved min_rest_hours (>= 0).
     """
-    # Step 1: Admin explicitly set a value (0 or positive) — always honor it
     if config_value >= 0:
         if config_value == 0:
             logger.info(
@@ -73,12 +71,12 @@ def _resolve_min_rest_hours_closed_base(
             )
         else:
             logger.info(
-                "[run=%s] min_rest_hours resolved to %.1fh (source: home_leave_config).",
+                "[run=%s] min_rest_hours resolved to %.1fh (source: group config).",
                 run_id, config_value,
             )
         return config_value
 
-    # Step 2: No explicit config — fall back to hard constraint rule with 8h floor
+    # Safety net: config_value < 0 means not set — fall back with 8h floor
     if hard_constraint_value is not None:
         resolved = max(hard_constraint_value, _CLOSED_BASE_MIN_REST_FLOOR)
         logger.warning(
@@ -88,10 +86,8 @@ def _resolve_min_rest_hours_closed_base(
         )
         return resolved
 
-    # Step 3: No config, no constraint — use absolute default
     logger.warning(
-        "[run=%s] min_rest_hours: no explicit config and no constraint rule — "
-        "using absolute default of %.1fh.",
+        "[run=%s] min_rest_hours: no config, no constraint — using default %.1fh.",
         run_id, _CLOSED_BASE_MIN_REST_FLOOR,
     )
     return _CLOSED_BASE_MIN_REST_FLOOR

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "@/lib/query/queryClient";
 import OfflineBanner from "@/components/shell/OfflineBanner";
@@ -15,6 +15,7 @@ import { useCacheLifecycle } from "@/lib/hooks/useCacheLifecycle";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const [hasAccessToken, setHasAccessToken] = useState(false);
 
   // Manage per-user cache lifecycle (SET_CURRENT_USER, CLEAR_USER_CACHE, CACHE_UPDATED)
   // The hook subscribes to authStore.userId internally, so it reacts when auth state changes.
@@ -30,12 +31,22 @@ export function Providers({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
+  useEffect(() => {
+    function syncAccessToken() {
+      setHasAccessToken(!!localStorage.getItem("access_token"));
+    }
+
+    syncAccessToken();
+    window.addEventListener("storage", syncAccessToken);
+    return () => window.removeEventListener("storage", syncAccessToken);
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
         <OfflineBanner />
         <AdminSessionGuard />
-        {isAuthenticated && <FeedbackFab />}
+        {(isAuthenticated || hasAccessToken) && <FeedbackFab />}
         {children}
       </ThemeProvider>
     </QueryClientProvider>
