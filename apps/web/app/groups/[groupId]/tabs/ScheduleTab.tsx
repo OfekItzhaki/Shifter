@@ -67,6 +67,7 @@ export default function ScheduleTab({
   onOpenDraftModal, onPublish, onDiscard, onTriggerSolver,
 }: Props) {
   const t = useTranslations("groups.schedule_tab");
+  const tSchedule = useTranslations("schedule");
   const tCommon = useTranslations("common");
   const tAdmin = useTranslations("admin");
   const locale = useLocale();
@@ -598,7 +599,7 @@ export default function ScheduleTab({
               }).length;
               return dayShiftCount > 0 ? (
                 <span className="text-xs px-2 py-0.5 rounded-full text-slate-400 bg-slate-100 dark:bg-slate-700 dark:text-slate-300">
-                  {dayShiftCount} {t("shifts")}
+                  {dayShiftCount} {tSchedule("shifts")}
                 </span>
               ) : null;
             })()}
