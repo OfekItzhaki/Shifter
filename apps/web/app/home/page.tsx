@@ -6,6 +6,7 @@ import { useAuthStore } from "@/lib/store/authStore";
 import { useSpaceStore } from "@/lib/store/spaceStore";
 import { useOnboardingStore } from "@/lib/store/onboardingStore";
 import { useStepCompletion } from "@/lib/hooks/useStepCompletion";
+import { useHasMounted } from "@/lib/hooks/useHasMounted";
 import AppShell from "@/components/shell/AppShell";
 import Link from "next/link";
 
@@ -20,14 +21,18 @@ function HomeIcon({ d, className }: { d: string; className?: string }) {
 function HomePage() {
   const t = useTranslations("home");
   const locale = useLocale();
+  const hasMounted = useHasMounted();
   const { displayName, userId } = useAuthStore();
   const { currentSpaceId } = useSpaceStore();
   const { show: showOnboarding, reset: resetOnboarding } = useOnboardingStore();
   const { refresh: refreshSteps } = useStepCompletion();
-  const [resolvedName, setResolvedName] = useState<string | null>(displayName);
+  const [resolvedName, setResolvedName] = useState<string | null>(null);
   const [hasGroups, setHasGroups] = useState(false);
+  const [formattedDate, setFormattedDate] = useState("");
 
   useEffect(() => {
+    if (!hasMounted) return;
+
     if (displayName) {
       setResolvedName(displayName);
     }
@@ -44,17 +49,19 @@ function HomePage() {
         }).catch(() => {});
       });
     }
-  }, [displayName]);
+  }, [displayName, currentSpaceId, hasMounted]);
 
-  const today = new Date();
-  const localeMap: Record<string, string> = { he: "he-IL", en: "en-US", ru: "ru-RU" };
-  const dateLocale = localeMap[locale] ?? "en-US";
-  const formattedDate = today.toLocaleDateString(dateLocale, {
-    weekday: "long",
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
+  useEffect(() => {
+    const today = new Date();
+    const localeMap: Record<string, string> = { he: "he-IL", en: "en-US", ru: "ru-RU" };
+    const dateLocale = localeMap[locale] ?? "en-US";
+    setFormattedDate(today.toLocaleDateString(dateLocale, {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    }));
+  }, [locale]);
 
   function handleRestartOnboarding() {
     if (!userId) return;

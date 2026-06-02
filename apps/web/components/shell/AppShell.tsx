@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useAuthStore } from "@/lib/store/authStore";
-import { useSpaceStore } from "@/lib/store/spaceStore";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import NotificationBell from "@/components/shell/NotificationBell";
@@ -15,6 +14,7 @@ import OnboardingProvider from "@/components/onboarding/OnboardingProvider";
 import OnboardingPanel from "@/components/onboarding/OnboardingPanel";
 import SpaceSwitcher from "@/components/shell/SpaceSwitcher";
 import { useSpaceGuard } from "@/lib/hooks/useSpaceGuard";
+import { useHasMounted } from "@/lib/hooks/useHasMounted";
 import { getMe } from "@/lib/api/auth";
 
 interface AppShellProps { children: React.ReactNode; }
@@ -83,10 +83,10 @@ function NavSection({ label, admin }: { label: string; admin?: boolean }) {
 
 export default function AppShell({ children }: AppShellProps) {
   const t = useTranslations();
+  const hasMounted = useHasMounted();
   const { displayName: storedDisplayName, logout, isPlatformAdmin } = useAuthStore();
-  const { currentSpaceId } = useSpaceStore();
   const router = useRouter();
-  const [resolvedName, setResolvedName] = useState<string | null>(storedDisplayName);
+  const [resolvedName, setResolvedName] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Space membership guard — handles redirects, migration, and space validation
@@ -94,6 +94,8 @@ export default function AppShell({ children }: AppShellProps) {
 
   // Fetch display name from API on mount, but only if not already in store
   useEffect(() => {
+    if (!hasMounted) return;
+
     if (storedDisplayName) {
       setResolvedName(storedDisplayName);
     }
@@ -103,10 +105,10 @@ export default function AppShell({ children }: AppShellProps) {
     }).catch(() => {
       if (storedDisplayName) setResolvedName(storedDisplayName);
     });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [hasMounted, storedDisplayName]);
 
   const displayName = resolvedName;
+  const showPlatformAdmin = hasMounted && isPlatformAdmin;
 
   async function handleLogout() { await logout(); router.push("/login"); }
 
@@ -163,7 +165,7 @@ export default function AppShell({ children }: AppShellProps) {
           <NavItem href="/spaces/settings" label={t("spaces.settings")} icon={ic("M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4")} onNavigate={() => setSidebarOpen(false)} />
 
           {/* Admin */}
-          {isPlatformAdmin && (
+          {showPlatformAdmin && (
             <>
               <NavSection label={t("nav.sections.admin")} admin />
               <NavItem href="/platform" label={t("nav.platform")} icon={ic("M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4")} admin onNavigate={() => setSidebarOpen(false)} />

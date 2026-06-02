@@ -5,12 +5,14 @@ import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { useSpaceStore } from "@/lib/store/spaceStore";
+import { useHasMounted } from "@/lib/hooks/useHasMounted";
 import { getMySpaces, SpaceDto } from "@/lib/api/spaces";
 
 export default function SpaceSwitcher() {
   const t = useTranslations("spaces");
   const router = useRouter();
   const queryClient = useQueryClient();
+  const hasMounted = useHasMounted();
   const { currentSpaceId, currentSpaceName, setCurrentSpace, clearSpace } =
     useSpaceStore();
   const [spaces, setSpaces] = useState<SpaceDto[]>([]);
@@ -19,6 +21,8 @@ export default function SpaceSwitcher() {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    if (!hasMounted) return;
+
     setLoadError(false);
     getMySpaces()
       .then((fetched) => {
@@ -44,7 +48,7 @@ export default function SpaceSwitcher() {
       });
     // Re-fetch when the active space changes (e.g. after creating a new one)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentSpaceId]);
+  }, [currentSpaceId, hasMounted]);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -102,10 +106,11 @@ export default function SpaceSwitcher() {
       });
   }
 
-  const displayName = currentSpaceName
-    ? currentSpaceName.length > 30
-      ? currentSpaceName.slice(0, 30) + "…"
-      : currentSpaceName
+  const mountedSpaceName = hasMounted ? currentSpaceName : null;
+  const displayName = mountedSpaceName
+    ? mountedSpaceName.length > 30
+      ? mountedSpaceName.slice(0, 30) + "…"
+      : mountedSpaceName
     : t("noSpace");
 
   return (
@@ -126,7 +131,7 @@ export default function SpaceSwitcher() {
           width: "100%",
           textAlign: "start",
         }}
-        title={currentSpaceName ?? undefined}
+        title={mountedSpaceName ?? undefined}
       >
         <svg
           width="14"
