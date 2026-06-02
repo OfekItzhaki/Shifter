@@ -51,19 +51,31 @@ function NavItem({ href, label, icon, admin, onNavigate }: { href: string; label
 }
 
 function NavSection({ label, admin }: { label: string; admin?: boolean }) {
+  const lineColor = admin ? "rgba(251,191,36,0.2)" : "rgba(255,255,255,0.06)";
+  const textColor = admin ? "rgba(251,191,36,0.75)" : "#64748b";
   return (
     <div
       style={{
         marginTop: 12,
         padding: "12px 12px 4px",
-        borderTop: `1px solid ${admin ? "rgba(251,191,36,0.2)" : "rgba(255,255,255,0.06)"}`,
-        color: admin ? "rgba(251,191,36,0.75)" : "#64748b",
-        fontSize: 11,
-        fontWeight: 700,
-        textTransform: "uppercase",
+        display: "flex",
+        alignItems: "center",
+        gap: 8,
       }}
     >
-      {label}
+      <div style={{ flex: 1, height: 1, backgroundColor: lineColor }} />
+      <span
+        style={{
+          color: textColor,
+          fontSize: 11,
+          fontWeight: 700,
+          textTransform: "uppercase",
+          flexShrink: 0,
+        }}
+      >
+        {label}
+      </span>
+      <div style={{ flex: 1, height: 1, backgroundColor: lineColor }} />
     </div>
   );
 }

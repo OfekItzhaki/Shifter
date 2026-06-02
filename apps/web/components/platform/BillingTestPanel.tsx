@@ -22,7 +22,7 @@ export default function BillingTestPanel() {
       const { data } = await apiClient.post(`/spaces/${currentSpaceId}/billing/test-charge`);
       if (data.checkoutUrl) {
         setResult(data.checkoutUrl);
-        window.open(data.checkoutUrl, "_blank");
+        window.open(data.checkoutUrl, "_blank", "noopener,noreferrer");
       } else {
         setError("No checkout URL received");
       }

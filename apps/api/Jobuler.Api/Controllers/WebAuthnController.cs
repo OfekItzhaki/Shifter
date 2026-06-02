@@ -14,8 +14,15 @@ namespace Jobuler.Api.Controllers;
 public class WebAuthnController : ControllerBase
 {
     private readonly IMediator _mediator;
+    private readonly IConfiguration _configuration;
+    private readonly IWebHostEnvironment _environment;
 
-    public WebAuthnController(IMediator mediator) => _mediator = mediator;
+    public WebAuthnController(IMediator mediator, IConfiguration configuration, IWebHostEnvironment environment)
+    {
+        _mediator = mediator;
+        _configuration = configuration;
+        _environment = environment;
+    }
 
     private Guid CurrentUserId =>
         Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
@@ -65,7 +72,8 @@ public class WebAuthnController : ControllerBase
             new WebAuthnLoginCompleteCommand(req.ChallengeId, req.AssertionResponseJson),
             ct);
 
-        return Ok(result);
+        AuthCookieHelper.SetRefreshTokenCookie(HttpContext, _configuration, _environment, result);
+        return Ok(AuthCookieHelper.ToClientLoginResult(result));
     }
 
     /// <summary>List all credentials for the authenticated user.</summary>

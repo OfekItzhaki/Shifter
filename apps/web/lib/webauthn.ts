@@ -66,7 +66,6 @@ export interface WebAuthnCredential {
 
 export interface LoginTokens {
   accessToken: string;
-  refreshToken: string;
   accessTokenExpiresAt: string;
   userId: string;
   displayName: string;

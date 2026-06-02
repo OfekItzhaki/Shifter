@@ -11,6 +11,7 @@ import ImageUpload from "@/components/ImageUpload";
 import ErrorState from "@/components/shared/ErrorState";
 import { useAuthStore } from "@/lib/store/authStore";
 import { formatLocalDate } from "@/lib/utils/formatTime";
+import { clearAuthGuardCookie } from "@/lib/auth/authGuardCookie";
 import { notifyAuthTokenChanged } from "@/lib/auth/tokenState";
 function getInitials(name: string): string {
   return name
@@ -407,6 +408,7 @@ function DeleteAccountSection() {
       await apiClient.delete("/auth/me");
       localStorage.removeItem("access_token");
       localStorage.removeItem("refresh_token");
+      clearAuthGuardCookie();
       notifyAuthTokenChanged();
       useAuthStore.getState().clearAuthState();
       router.push("/login");

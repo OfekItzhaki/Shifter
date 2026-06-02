@@ -2,6 +2,7 @@
 
 import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
+import { setLocaleCookie } from "@/lib/auth/authGuardCookie";
 
 const LOCALES = [
   { code: "he", label: "עב", full: "עברית" },
@@ -21,7 +22,7 @@ export default function LanguageSwitcher({ variant = "sidebar" }: Props) {
 
   function switchLocale(code: string) {
     if (code === locale) return;
-    document.cookie = `locale=${code}; path=/; max-age=31536000; SameSite=Strict`;
+    setLocaleCookie(code);
     // Use router.refresh() to update server components without full page reload
     // This preserves client state (admin mode, store data, etc.)
     router.refresh();

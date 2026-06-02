@@ -25,13 +25,13 @@ vi.mock("next-intl", () => ({
 }));
 
 describe("ActivityPromptModal", () => {
-  let onYes: ReturnType<typeof vi.fn>;
-  let onNo: ReturnType<typeof vi.fn>;
+  let onYes: ReturnType<typeof vi.fn<() => void>>;
+  let onNo: ReturnType<typeof vi.fn<() => void>>;
 
   beforeEach(() => {
     vi.useFakeTimers();
-    onYes = vi.fn();
-    onNo = vi.fn();
+    onYes = vi.fn<() => void>();
+    onNo = vi.fn<() => void>();
   });
 
   afterEach(() => {

@@ -1,9 +1,12 @@
 import createNextIntlPlugin from "next-intl/plugin";
 import { withSentryConfig } from "@sentry/nextjs";
 import { createRequire } from "module";
+import { dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 
 const require = createRequire(import.meta.url);
 const { version } = require("./package.json");
+const appDir = dirname(fileURLToPath(import.meta.url));
 
 const withNextIntl = createNextIntlPlugin("./i18n/request.ts");
 
@@ -16,25 +19,14 @@ const securityHeaders = [
     key: "Strict-Transport-Security",
     value: "max-age=63072000; includeSubDomains; preload",
   },
-  {
-    key: "Content-Security-Policy",
-    value: [
-      "default-src 'self'",
-      "script-src 'self' 'unsafe-eval' 'unsafe-inline'",
-      "style-src 'self' 'unsafe-inline'",
-      // Allow images from: self, data URIs, blobs, local API, production API, and any HTTPS source for external profile images
-      "img-src 'self' data: blob: http://localhost:5000 https://api.shifter.ofeklabs.com https:",
-      "font-src 'self'",
-      "connect-src 'self' http://localhost:5000 https://api.shifter.ofeklabs.com https://*.ofeklabs.com ws://localhost:3000 wss: https://*.sentry.io https://*.ingest.sentry.io https://*.posthog.com https://us.i.posthog.com",
-      "worker-src 'self'",
-      "frame-ancestors 'none'",
-    ].join("; "),
-  },
 ];
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: "standalone",
+  turbopack: {
+    root: appDir,
+  },
   env: {
     NEXT_PUBLIC_APP_VERSION: version,
   },

@@ -83,7 +83,7 @@ graph TD
 | Frontend language | TypeScript | 5.x | Strict mode, no `any` |
 | UI styling | Tailwind CSS | 3.4 | Utility-first, RTL-aware |
 | Data fetching | TanStack Query | 5.x | Cache, optimistic updates, background refetch |
-| Client state | Zustand | 4.x | Auth token, space context |
+| Client state | Zustand | 4.x | Access-token state, space context |
 | i18n | next-intl | 4.x | he (default, RTL), en, ru; cookie-based locale |
 | API client | Hand-written wrappers + NSwag-generated contracts | - | API calls live under `lib/api`; generated OpenAPI assets are kept under `lib/api/generated` |
 | Backend framework | ASP.NET Core | 8.0 | Minimal hosting model |
@@ -92,7 +92,7 @@ graph TD
 | Validation | FluentValidation | - | Application layer, wired via pipeline behavior |
 | ORM | Entity Framework Core | - | Code-first configs in Infrastructure |
 | Database | PostgreSQL | 16 | RLS, uuid-ossp, pg_trgm |
-| Auth | JWT Bearer | - | 15-min access tokens, 7-day refresh rotation |
+| Auth | JWT Bearer + HttpOnly refresh cookie | - | 15-min access tokens, 7-day refresh rotation |
 | Password hashing | BCrypt | work factor 12 | Never MD5/SHA1 |
 | Job queue | Redis + StackExchange.Redis | - | Solver job queue; falls back to in-memory single-server queue |
 | Solver | Python CP-SAT (OR-Tools) | - | Stateless HTTP service on port 8000 |
@@ -190,7 +190,7 @@ sequenceDiagram
     API->>DB: SELECT user WHERE email = ?
     API->>API: BCrypt.Verify(password, hash)
     API->>DB: INSERT refresh_token (hashed, expires 7d)
-    API-->>C: {accessToken (15min JWT), refreshToken}
+    API-->>C: {accessToken (15min JWT)} + HttpOnly refresh_token cookie
 
     Note over C,API: Subsequent requests
     C->>API: GET /spaces/{id}/... Bearer {accessToken}
@@ -199,16 +199,16 @@ sequenceDiagram
     API-->>C: 200 response
 
     Note over C,API: Token expiry
-    C->>API: POST /auth/refresh {refreshToken}
+    C->>API: POST /auth/refresh with HttpOnly refresh_token cookie
     API->>DB: SELECT refresh_token WHERE hash = ? AND revoked_at IS NULL
     API->>DB: UPDATE refresh_token SET revoked_at = NOW() (rotation)
     API->>DB: INSERT new refresh_token
-    API-->>C: {new accessToken, new refreshToken}
+    API-->>C: {new accessToken} + rotated HttpOnly refresh_token cookie
 ```
 
 Key properties:
 - Access tokens: 15-minute expiry, `ClockSkew = TimeSpan.Zero` (no tolerance)
-- Refresh tokens: 7-day expiry, rotate on every use (old token revoked, new token issued)
+- Refresh tokens: 7-day expiry, stored in an API-issued HttpOnly cookie, rotate on every use (old token revoked, new token issued)
 - Revoked tokens are retained in the DB for audit - never deleted
 - The frontend implements a 401 interceptor that transparently refreshes and retries the original request
 - `POST /auth/forgot-password` always returns 200 to prevent user enumeration

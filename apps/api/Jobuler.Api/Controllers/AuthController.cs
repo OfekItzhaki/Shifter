@@ -17,8 +17,15 @@ namespace Jobuler.Api.Controllers;
 public class AuthController : ControllerBase
 {
     private readonly IMediator _mediator;
+    private readonly IConfiguration _configuration;
+    private readonly IWebHostEnvironment _environment;
 
-    public AuthController(IMediator mediator) => _mediator = mediator;
+    public AuthController(IMediator mediator, IConfiguration configuration, IWebHostEnvironment environment)
+    {
+        _mediator = mediator;
+        _configuration = configuration;
+        _environment = environment;
+    }
 
     private Guid CurrentUserId =>
         Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
@@ -102,25 +109,35 @@ public class AuthController : ControllerBase
     public async Task<IActionResult> Login([FromBody] LoginRequest req, CancellationToken ct)
     {
         var result = await _mediator.Send(new LoginCommand(req.ResolvedIdentifier, req.Password), ct);
-        return Ok(result);
+        AuthCookieHelper.SetRefreshTokenCookie(HttpContext, _configuration, _environment, result);
+        return Ok(AuthCookieHelper.ToClientLoginResult(result));
     }
 
     /// <summary>Exchange a valid refresh token for a new token pair.</summary>
     [HttpPost("refresh")]
     [AllowAnonymous]
     [DisableRateLimiting]
-    public async Task<IActionResult> Refresh([FromBody] RefreshRequest req, CancellationToken ct)
+    public async Task<IActionResult> Refresh([FromBody] RefreshRequest? req, CancellationToken ct)
     {
-        var result = await _mediator.Send(new RefreshTokenCommand(req.RefreshToken), ct);
-        return Ok(result);
+        var refreshToken = AuthCookieHelper.GetRefreshToken(HttpContext, req?.RefreshToken);
+        if (string.IsNullOrWhiteSpace(refreshToken)) return Unauthorized();
+
+        var result = await _mediator.Send(new RefreshTokenCommand(refreshToken), ct);
+        AuthCookieHelper.SetRefreshTokenCookie(HttpContext, _configuration, _environment, result);
+        return Ok(AuthCookieHelper.ToClientLoginResult(result));
     }
 
     /// <summary>Revoke the current user's refresh token (logout).</summary>
     [HttpPost("logout")]
     [Authorize]
-    public async Task<IActionResult> Logout([FromBody] RefreshRequest req, CancellationToken ct)
+    public async Task<IActionResult> Logout([FromBody] RefreshRequest? req, CancellationToken ct)
     {
-        await _mediator.Send(new RevokeTokenCommand(req.RefreshToken), ct);
+        var refreshToken = AuthCookieHelper.GetRefreshToken(HttpContext, req?.RefreshToken);
+        if (!string.IsNullOrWhiteSpace(refreshToken))
+        {
+            await _mediator.Send(new RevokeTokenCommand(refreshToken), ct);
+        }
+        AuthCookieHelper.ClearRefreshTokenCookie(HttpContext, _environment);
         return NoContent();
     }
 
@@ -256,7 +273,7 @@ public record LoginRequest(string? Email, string? Identifier, string Password)
     /// <summary>Resolves the login identifier — supports both "email" (legacy) and "identifier" (new) fields.</summary>
     public string ResolvedIdentifier => Identifier ?? Email ?? "";
 }
-public record RefreshRequest(string RefreshToken);
+public record RefreshRequest(string? RefreshToken);
 public record ForgotPasswordRequest(string Email);
 public record ResetPasswordRequest(string Token, string NewPassword);
 public record UpdateMeRequest(string DisplayName, string? PhoneNumber, string? ProfileImageUrl, DateOnly? Birthday);

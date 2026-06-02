@@ -24,6 +24,10 @@ type PaymentState =
   | { phase: "polling"; planName: string }
   | { phase: "success"; planName: string };
 
+function formatPlanDescription(description: string): string {
+  return description.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+}
+
 export default function PricingPage() {
   const t = useTranslations("pricing");
   const locale = useLocale();
@@ -130,7 +134,7 @@ export default function PricingPage() {
     try {
       const { checkoutUrl } = await createSpaceCheckout(spaceId, plan.variantId);
       // Open checkout in a new tab so the user's auth state is preserved
-      window.open(checkoutUrl, "_blank");
+      window.open(checkoutUrl, "_blank", "noopener,noreferrer");
       setCheckoutLoading(null);
 
       // Show the "waiting for payment" state
@@ -288,10 +292,9 @@ export default function PricingPage() {
                   {t("perMonth")}
                 </div>
                 {plan.description && (
-                  <div
-                    className="text-xs text-slate-500 dark:text-slate-400 mb-3"
-                    dangerouslySetInnerHTML={{ __html: plan.description }}
-                  />
+                  <div className="text-xs text-slate-500 dark:text-slate-400 mb-3">
+                    {formatPlanDescription(plan.description)}
+                  </div>
                 )}
                 <button
                   onClick={() => handleSelectPlan(plan)}

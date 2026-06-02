@@ -14,8 +14,6 @@ namespace Jobuler.Infrastructure.HealthChecks;
 /// </summary>
 public class HealthCheckMonitorService : BackgroundService
 {
-    private static readonly TimeSpan MinInterval = TimeSpan.FromSeconds(30);
-
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly IPushoverNotifier _notifier;
     private readonly HealthCheckOptions _options;
@@ -34,12 +32,16 @@ public class HealthCheckMonitorService : BackgroundService
         _logger = logger;
     }
 
+    protected virtual TimeSpan MinimumInterval => TimeSpan.FromSeconds(30);
+
+    protected virtual TimeSpan GetInitialDelay() => TimeSpan.FromSeconds(Random.Shared.Next(5, 31));
+
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         var interval = GetEffectiveInterval();
 
         // Initial delay: random 5-30 seconds before first check
-        var initialDelay = TimeSpan.FromSeconds(Random.Shared.Next(5, 31));
+        var initialDelay = GetInitialDelay();
         await Task.Delay(initialDelay, stoppingToken);
 
         while (!stoppingToken.IsCancellationRequested)
@@ -76,13 +78,13 @@ public class HealthCheckMonitorService : BackgroundService
     {
         var configured = TimeSpan.FromSeconds(_options.IntervalSeconds);
 
-        if (configured < MinInterval)
+        if (configured < MinimumInterval)
         {
             _logger.LogWarning(
                 "Configured health check interval {ConfiguredSeconds}s is below minimum. Clamping to {MinSeconds}s",
                 _options.IntervalSeconds,
-                (int)MinInterval.TotalSeconds);
-            return MinInterval;
+                (int)MinimumInterval.TotalSeconds);
+            return MinimumInterval;
         }
 
         return configured;

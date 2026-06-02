@@ -25,6 +25,8 @@
     <PackageReference Include="Microsoft.IdentityModel.Tokens" Version="7.5.1" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="7.5.1" />
     <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="8.0.1" />
+    <PackageReference Include="System.Text.Json" Version="8.0.6" />
     <PackageReference Include="QuestPDF" Version="2024.3.4" />
     <!-- Messaging providers -->
     <PackageReference Include="SendGrid" Version="9.29.3" />

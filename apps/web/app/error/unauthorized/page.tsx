@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import ErrorPageLayout from "@/components/errors/ErrorPageLayout";
+import { clearAuthGuardCookie } from "@/lib/auth/authGuardCookie";
 import { notifyAuthTokenChanged } from "@/lib/auth/tokenState";
 import { useAuthStore } from "@/lib/store/authStore";
 
@@ -13,6 +14,7 @@ export default function UnauthorizedPage() {
   useEffect(() => {
     localStorage.removeItem("access_token");
     localStorage.removeItem("refresh_token");
+    clearAuthGuardCookie();
     notifyAuthTokenChanged();
     useAuthStore.getState().clearAuthState();
   }, []);

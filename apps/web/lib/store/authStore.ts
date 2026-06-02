@@ -4,6 +4,7 @@ import { login as apiLogin, logout as apiLogout } from "@/lib/api/auth";
 import type { MeDto } from "@/lib/api/auth";
 import { detectBrowserLocale } from "@/lib/utils/detectLocale";
 import { notifyAuthTokenChanged } from "@/lib/auth/tokenState";
+import { clearAuthGuardCookie, clearLocaleCookie, setAuthGuardCookie, setLocaleCookie } from "@/lib/auth/authGuardCookie";
 
 interface AuthState {
   userId: string | null;
@@ -50,14 +51,14 @@ export const useAuthStore = create<AuthState>()(
       login: async (identifier, password) => {
         const result = await apiLogin(identifier, password);
         localStorage.setItem("access_token", result.accessToken);
-        localStorage.setItem("refresh_token", result.refreshToken);
+        localStorage.removeItem("refresh_token");
         notifyAuthTokenChanged();
         // Don't clear jobuler-space on re-login — preserve the user's space selection.
         // Only clear on logout (different user scenario).
-        document.cookie = `access_token=${result.accessToken}; path=/; max-age=2592000; SameSite=Strict`;
+        setAuthGuardCookie();
         // Use server-returned locale, or fall back to browser detection
         const locale = result.preferredLocale || detectBrowserLocale();
-        document.cookie = `locale=${locale}; path=/; max-age=31536000; SameSite=Strict`;
+        setLocaleCookie(locale);
         set({
           userId: result.userId,
           displayName: result.displayName,
@@ -71,17 +72,14 @@ export const useAuthStore = create<AuthState>()(
       },
 
       logout: async () => {
-        const refreshToken = localStorage.getItem("refresh_token");
-        if (refreshToken) {
-          try { await apiLogout(refreshToken); } catch { /* best effort */ }
-        }
+        try { await apiLogout(); } catch { /* best effort */ }
         localStorage.removeItem("access_token");
         localStorage.removeItem("refresh_token");
         notifyAuthTokenChanged();
         // Clear persisted space so the next user gets a fresh space resolution
         localStorage.removeItem("jobuler-space");
-        document.cookie = "access_token=; path=/; max-age=0";
-        document.cookie = "locale=; path=/; max-age=0";
+        clearAuthGuardCookie();
+        clearLocaleCookie();
         get().clearAuthState();
       },
 
