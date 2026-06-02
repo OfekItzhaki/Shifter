@@ -340,7 +340,9 @@ public class AuditAndPropagationPropertyTests
             hlConfig.LeaveCapacity.Should().Be(expectedLeaveCapacity);
             hlConfig.EligibilityThresholdHours.Should().Be(expectedEligibilityThreshold);
             hlConfig.BalanceValue.Should().Be(expectedBalanceValue);
-            hlConfig.MinRestHours.Should().Be(0); // Always 0 per implementation
+            // MinRestHours is now populated from the group's MinRestBetweenShiftsHours (default 8)
+            // rather than hardcoded to 0 — this ensures the solver enforces the correct rest constraint
+            hlConfig.MinRestHours.Should().Be(8); // group default
         });
     }
 

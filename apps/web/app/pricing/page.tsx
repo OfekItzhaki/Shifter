@@ -7,7 +7,8 @@ import ShifterLogo from "@/components/shell/ShifterLogo";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { getPlans, createSpaceCheckout, getSpaceSubscription, PlanDto } from "@/lib/api/billing";
 import { useSpaceStore } from "@/lib/store/spaceStore";
-import { hasStoredAccessToken, useEffectiveAuth } from "@/lib/hooks/useEffectiveAuth";
+import { useEffectiveAuth } from "@/lib/hooks/useEffectiveAuth";
+import { hasStoredAccessToken } from "@/lib/auth/tokenState";
 
 // Fallback plans used when the API is unreachable
 const FALLBACK_PLANS: PlanDto[] = [

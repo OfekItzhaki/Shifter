@@ -2,10 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useAuthStore } from "@/lib/store/authStore";
-
-export function hasStoredAccessToken(): boolean {
-  return typeof window !== "undefined" && !!localStorage.getItem("access_token");
-}
+import { AUTH_TOKEN_CHANGED_EVENT, hasStoredAccessToken } from "@/lib/auth/tokenState";
 
 export function useEffectiveAuth() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -30,9 +27,11 @@ export function useEffectiveAuth() {
     });
 
     window.addEventListener("storage", syncAccessToken);
+    window.addEventListener(AUTH_TOKEN_CHANGED_EVENT, syncAccessToken);
     return () => {
       unsubHydration();
       window.removeEventListener("storage", syncAccessToken);
+      window.removeEventListener(AUTH_TOKEN_CHANGED_EVENT, syncAccessToken);
     };
   }, []);
 

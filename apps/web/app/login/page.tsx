@@ -10,6 +10,7 @@ import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { isWebAuthnSupported, isConditionalMediationAvailable, authenticateWithBiometric } from "@/lib/webauthn";
 import { detectBrowserLocale } from "@/lib/utils/detectLocale";
 import { useEffectiveAuth } from "@/lib/hooks/useEffectiveAuth";
+import { notifyAuthTokenChanged } from "@/lib/auth/tokenState";
 
 function LoginForm() {
   const t = useTranslations("auth");
@@ -50,6 +51,7 @@ function LoginForm() {
         if (cancelled) return;
         localStorage.setItem("access_token", tokens.accessToken);
         localStorage.setItem("refresh_token", tokens.refreshToken);
+        notifyAuthTokenChanged();
         document.cookie = `access_token=${tokens.accessToken}; path=/; max-age=2592000; SameSite=Strict`;
         const locale = tokens.preferredLocale || detectBrowserLocale();
         document.cookie = `locale=${locale}; path=/; max-age=31536000; SameSite=Strict`;
