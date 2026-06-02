@@ -68,7 +68,8 @@ export default function NotificationBell({ variant = "dark" }: { variant?: "ligh
     if (eventType === "solver_infeasible") return "⚠️";
     if (eventType === "solver_no_tasks") return "📋";
     if (eventType === "solver_no_people") return "👥";
-    if (eventType === "solver_completed") return "✅";
+    if (eventType === "solver_completed") return "🔔";   // draft ready — notify to review
+    if (eventType === "schedule.published" || eventType === "schedule_published") return "✅"; // published — confirmed
     return "🔔";
   }
 
