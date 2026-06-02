@@ -591,6 +591,17 @@ export default function ScheduleTab({
                 {tAdmin("today")}
               </span>
             )}
+            {(() => {
+              const dayShiftCount = filtered.filter(a => {
+                const d = new Date(a.slotStartsAt);
+                return d.toLocaleDateString("sv", { timeZone: timezoneId || "Asia/Jerusalem" }) === selectedDate;
+              }).length;
+              return dayShiftCount > 0 ? (
+                <span className="text-xs px-2 py-0.5 rounded-full text-slate-400 bg-slate-100 dark:bg-slate-700 dark:text-slate-300">
+                  {dayShiftCount} {t("shifts")}
+                </span>
+              ) : null;
+            })()}
           </div>
           <ScheduleTaskTable
             assignments={filtered}

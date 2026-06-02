@@ -156,9 +156,6 @@ export default function ScheduleTaskTable({ assignments, currentUserName, filter
               <span className={`text-sm font-semibold ${isHomeLeave ? "text-emerald-700 dark:text-emerald-300" : "text-slate-800 dark:text-slate-200"}`}>
                 {displayName}
               </span>
-              <span className={`text-xs px-2 py-0.5 rounded-full ${isHomeLeave ? "text-emerald-600 bg-emerald-100 dark:bg-emerald-900/40 dark:text-emerald-300" : "text-slate-400 bg-slate-100 dark:bg-slate-700 dark:text-slate-300"}`}>
-                {slots.length} {t("shifts")}
-              </span>
             </div>
 
             <div className={`overflow-x-auto rounded-xl border shadow-sm -mx-2 sm:mx-0 ${isHomeLeave ? "border-emerald-200 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-950/30" : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"}`}>
