@@ -58,8 +58,11 @@ export default function MyMissionsPage() {
   );
 
   // For the per-task table: convert to TaskAssignment shape
+  // personName uses a non-breaking space so the column renders blank (not "me" or "—")
+  // This is a personal view — showing the person name is redundant
+  const myName = displayName || "\u00A0";
   const tableAssignments: TaskAssignment[] = filtered.map(a => ({
-    personName: displayName ?? "me",
+    personName: myName,
     taskTypeName: `${a.taskTypeName} (${a.groupName})`,
     slotStartsAt: a.slotStartsAt,
     slotEndsAt: a.slotEndsAt,
