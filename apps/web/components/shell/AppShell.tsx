@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useAuthStore } from "@/lib/store/authStore";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
@@ -32,7 +32,7 @@ const S = {
   }),
   bottom: { padding: "12px", borderTop: "1px solid rgba(255,255,255,0.08)" },
   userInfo: { padding: "8px 12px", marginBottom: 4 },
-  logoutBtn: { display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "9px 12px", borderRadius: 8, background: "none", border: "none", cursor: "pointer", color: "#64748b", fontSize: 14, textAlign: "left" as const },
+  logoutBtn: { display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "9px 12px", borderRadius: 8, background: "none", border: "none", cursor: "pointer", color: "#64748b", fontSize: 14, textAlign: "start" as const },
   topbar: (admin: boolean) => ({ height: 56, display: "flex", alignItems: "center", justifyContent: "flex-end", padding: "0 24px", borderBottom: `1px solid ${admin ? "#fde68a" : "var(--border-color, #e2e8f0)"}`, background: admin ? "#fffbeb" : "var(--main-bg, #f8fafc)", position: "sticky" as const, top: 0, zIndex: 20 }),
   main: { marginLeft: 256, display: "flex", flexDirection: "column" as const, minHeight: "100vh", width: "calc(100vw - 256px)", background: "var(--main-bg, #f8fafc)" },
   content: { flex: 1, padding: "clamp(16px, 3vw, 32px)", width: "100%", maxWidth: "1400px", margin: "0 auto", display: "flex", flexDirection: "column" as const, alignItems: "center" },
@@ -45,19 +45,20 @@ function NavItem({ href, label, icon, admin, onNavigate }: { href: string; label
     <Link href={href} style={S.navLink(active, !!admin)} onClick={onNavigate}>
       <span style={{ flexShrink: 0, display: "flex" }}>{icon}</span>
       <span>{label}</span>
-      {active && <span style={{ marginLeft: "auto", width: 6, height: 6, borderRadius: "50%", background: admin ? "#fbbf24" : "#0ea5e9" }} />}
+      {active && <span style={{ marginInlineStart: "auto", width: 6, height: 6, borderRadius: "50%", background: admin ? "#fbbf24" : "#0ea5e9" }} />}
     </Link>
   );
 }
 
 function NavSection({ label, admin }: { label: string; admin?: boolean }) {
-  const lineColor = admin ? "rgba(251,191,36,0.2)" : "rgba(255,255,255,0.06)";
+  const lineColor = admin ? "rgba(251,191,36,0.35)" : "rgba(148,163,184,0.24)";
   const textColor = admin ? "rgba(251,191,36,0.75)" : "#64748b";
   return (
     <div
       style={{
-        marginTop: 12,
-        padding: "12px 12px 4px",
+        margin: "14px 4px 4px",
+        padding: "10px 8px 4px",
+        borderTop: `1px solid ${lineColor}`,
         display: "flex",
         alignItems: "center",
         gap: 8,
@@ -74,7 +75,6 @@ function NavSection({ label, admin }: { label: string; admin?: boolean }) {
       >
         {label}
       </span>
-      <div style={{ flex: 1, height: 1, backgroundColor: lineColor }} />
     </div>
   );
 }
@@ -82,6 +82,7 @@ function NavSection({ label, admin }: { label: string; admin?: boolean }) {
 
 export default function AppShell({ children }: AppShellProps) {
   const t = useTranslations();
+  const locale = useLocale();
   const hasMounted = useHasMounted();
   const { displayName: storedDisplayName, logout, isPlatformAdmin } = useAuthStore();
   const router = useRouter();
@@ -108,6 +109,7 @@ export default function AppShell({ children }: AppShellProps) {
 
   const displayName = resolvedName;
   const showPlatformAdmin = hasMounted && isPlatformAdmin;
+  const dir = locale === "he" ? "rtl" : "ltr";
 
   async function handleLogout() { await logout(); router.push("/login"); }
 
@@ -133,6 +135,7 @@ export default function AppShell({ children }: AppShellProps) {
         transform: sidebarOpen ? "translateX(0)" : undefined,
       }}
         className={`sidebar-nav ${sidebarOpen ? "sidebar-open" : ""}`}
+        dir={dir}
       >
         <div style={{ ...S.logo, textDecoration: "none" }}>
           <Link href="/home" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none", flex: 1, minWidth: 0 }}>
