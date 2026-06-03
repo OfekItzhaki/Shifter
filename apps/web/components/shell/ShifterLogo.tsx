@@ -1,46 +1,50 @@
 "use client";
 
+import Image from "next/image";
+
+type ShifterLogoVariant = "icon" | "full";
+
+interface ShifterLogoProps {
+  size?: number;
+  variant?: ShifterLogoVariant;
+  className?: string;
+}
+
+const LOGO_ASPECT_RATIOS: Record<ShifterLogoVariant, number> = {
+  icon: 369 / 396,
+  full: 1692 / 929,
+};
+
+const LOGO_SOURCES: Record<ShifterLogoVariant, string> = {
+  icon: "/shifter_icon.png",
+  full: "/shifter_full_logo.png",
+};
+
 /**
- * ShifterLogo — the Shifter app icon.
- * White background, blue "S" with sharper angles (less round than the old version).
+ * Image-backed Shifter brand mark.
  *
- * Usage:
- *   <ShifterLogo size={32} />   — sidebar (default)
- *   <ShifterLogo size={40} />   — auth pages
+ * size is the rendered height. The width is derived from the asset ratio.
  */
-export default function ShifterLogo({ size = 32 }: { size?: number }) {
-  const radius = Math.round(size * 0.25); // 25% corner radius
+export default function ShifterLogo({
+  size = 32,
+  variant = "icon",
+  className,
+}: ShifterLogoProps) {
+  const width = Math.round(size * LOGO_ASPECT_RATIOS[variant]);
+
   return (
-    <div
+    <Image
+      src={LOGO_SOURCES[variant]}
+      alt="Shifter"
+      width={width}
+      height={size}
+      className={className}
       style={{
-        width: size,
+        width,
         height: size,
-        borderRadius: radius,
-        background: "#ffffff",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
+        objectFit: "contain",
         flexShrink: 0,
-        boxShadow: "0 1px 3px rgba(0,0,0,0.18)",
       }}
-    >
-      {/* Sharp-cornered "S" — straight lines with only slight curves at the tips */}
-      <svg
-        width={Math.round(size * 0.58)}
-        height={Math.round(size * 0.58)}
-        viewBox="0 0 24 24"
-        fill="none"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <path
-          d="M17 7.5C17 6 15.5 5 12 5C8.5 5 7 6 7 8C7 10 9 10.5 12 11C15 11.5 17 12 17 14.5C17 17 15.5 18 12 18C8.5 18 7 17 7 15.5"
-          stroke="#3b82f6"
-          strokeWidth="2.2"
-          strokeLinecap="square"
-          strokeLinejoin="miter"
-          fill="none"
-        />
-      </svg>
-    </div>
+    />
   );
 }

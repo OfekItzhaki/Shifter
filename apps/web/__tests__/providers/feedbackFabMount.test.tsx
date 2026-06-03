@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Providers } from "@/app/providers";
 
 let authenticated = false;
+let pathname = "/home";
 
 vi.mock("@/lib/store/authStore", () => ({
   useAuthStore: Object.assign(
@@ -46,7 +47,13 @@ vi.mock("@/components/admin/AdminSessionGuard", () => ({
 }));
 
 vi.mock("@/components/shell/FeedbackFab", () => ({
-  default: () => <div data-testid="feedback-fab" />,
+  default: ({ variant }: { variant?: "app" | "auth" }) => (
+    <div data-testid="feedback-fab" data-variant={variant} />
+  ),
+}));
+
+vi.mock("next/navigation", () => ({
+  usePathname: () => pathname,
 }));
 
 vi.mock("@/lib/analytics/posthog", () => ({
@@ -68,6 +75,7 @@ vi.mock("@/lib/hooks/useCacheLifecycle", () => ({
 describe("Providers feedback FAB mount", () => {
   beforeEach(() => {
     authenticated = false;
+    pathname = "/home";
     localStorage.clear();
   });
 
@@ -81,6 +89,20 @@ describe("Providers feedback FAB mount", () => {
     );
 
     expect(await screen.findByTestId("feedback-fab")).toBeInTheDocument();
+    expect(screen.getByTestId("feedback-fab")).toHaveAttribute("data-variant", "app");
+  });
+
+  it("uses the auth placement variant on auth pages", async () => {
+    authenticated = true;
+    pathname = "/login";
+
+    render(
+      <Providers>
+        <div>content</div>
+      </Providers>
+    );
+
+    expect(await screen.findByTestId("feedback-fab")).toHaveAttribute("data-variant", "auth");
   });
 
   it("renders the feedback FAB when an access token exists but auth state is stale", async () => {
