@@ -24,7 +24,13 @@ export function openFeedbackModal(detail: OpenFeedbackEvent) {
  * Left half: bug icon, Right half: feedback icon.
  * Clicking either half opens the SubmissionModal with the appropriate type.
  */
-export default function FeedbackFab() {
+type FeedbackFabVariant = "app" | "auth";
+
+interface FeedbackFabProps {
+  variant?: FeedbackFabVariant;
+}
+
+export default function FeedbackFab({ variant = "app" }: FeedbackFabProps) {
   const [modalOpen, setModalOpen] = useState(false);
   const [submissionType, setSubmissionType] = useState<SubmissionType | null>(null);
   const [initialDescription, setInitialDescription] = useState<string | undefined>(undefined);
@@ -64,7 +70,7 @@ export default function FeedbackFab() {
   return (
     <>
       <div
-        className="feedback-fab z-[1200] flex items-stretch opacity-60 hover:opacity-100 transition-opacity"
+        className={`feedback-fab feedback-fab--${variant} z-[1200] flex items-stretch opacity-60 hover:opacity-100 transition-opacity`}
       >
         {/* Bug report half (left) */}
         <button

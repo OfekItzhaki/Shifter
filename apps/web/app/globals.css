@@ -107,6 +107,14 @@ button:disabled, input:disabled, textarea:disabled, select:disabled {
   right: auto;
 }
 
+.feedback-fab--auth {
+  bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+}
+
+.feedback-fab--app {
+  bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+}
+
 /* ── Sidebar responsive layout ───────────────────────────────────────────────
    On desktop (≥768px): sidebar always visible, main content offset by 256px.
    On mobile (<768px): sidebar hidden by default, slides in when .sidebar-open.
@@ -143,8 +151,11 @@ button:disabled, input:disabled, textarea:disabled, select:disabled {
     margin-left: 256px !important;
     width: calc(100vw - 256px) !important;
   }
-  .feedback-fab {
+  .feedback-fab--app {
     left: calc(var(--app-sidebar-width) + 16px);
+  }
+  .feedback-fab--auth {
+    left: 16px;
   }
   .mobile-topbar {
     display: none !important;
