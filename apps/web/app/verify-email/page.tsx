@@ -111,10 +111,7 @@ export default function VerifyEmailPage() {
     <main style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#f8fafc", padding: "1rem" }}>
       <div style={{ width: "100%", maxWidth: "380px" }}>
         <div style={{ display: "flex", justifyContent: "center", marginBottom: "2rem" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-            <ShifterLogo size={40} />
-            <span style={{ fontSize: "1.5rem", fontWeight: 700, color: "#0f172a" }}>Shifter</span>
-          </div>
+          <ShifterLogo size={132} variant="full" />
         </div>
 
         <div style={{ background: "white", borderRadius: 16, boxShadow: "0 4px 24px rgba(0,0,0,0.08)", border: "1px solid #e2e8f0", padding: "2rem" }}>
