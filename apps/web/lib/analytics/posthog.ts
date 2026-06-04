@@ -1,6 +1,7 @@
 "use client";
 
 import posthog from "posthog-js";
+import { getAnalyticsConsent } from "@/lib/privacy/consent";
 
 const POSTHOG_KEY = process.env.NEXT_PUBLIC_POSTHOG_KEY;
 const POSTHOG_HOST = process.env.NEXT_PUBLIC_POSTHOG_HOST || "https://us.i.posthog.com";
@@ -14,6 +15,7 @@ export function initPostHog() {
   if (typeof window === "undefined") return;
   if (!POSTHOG_KEY) return;
   if (process.env.NODE_ENV !== "production") return;
+  if (getAnalyticsConsent() !== "accepted") return;
 
   posthog.init(POSTHOG_KEY, {
     api_host: POSTHOG_HOST,
@@ -33,6 +35,7 @@ export function initPostHog() {
  */
 export function identifyUser(userId: string, properties?: Record<string, unknown>) {
   if (!POSTHOG_KEY) return;
+  if (getAnalyticsConsent() !== "accepted") return;
   posthog.identify(userId, properties);
 }
 
@@ -41,6 +44,7 @@ export function identifyUser(userId: string, properties?: Record<string, unknown
  */
 export function trackEvent(event: string, properties?: Record<string, unknown>) {
   if (!POSTHOG_KEY) return;
+  if (getAnalyticsConsent() !== "accepted") return;
   posthog.capture(event, properties);
 }
 

@@ -89,6 +89,13 @@
     "terms": "Terms",
     "privacy": "Privacy"
   },
+  "privacyConsent": {
+    "title": "Privacy preferences",
+    "body": "We use essential storage for login and app preferences. With your permission, we also use analytics and session diagnostics to improve Shifter.",
+    "privacyLink": "Privacy Policy",
+    "accept": "Allow analytics",
+    "decline": "Essential only"
+  },
   "schedule": {
     "title": "Schedule",
     "noAssignments": "No assignments",
