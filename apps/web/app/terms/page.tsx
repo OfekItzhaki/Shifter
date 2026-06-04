@@ -2,229 +2,233 @@ import Link from "next/link";
 import ShifterLogo from "@/components/shell/ShifterLogo";
 
 const CONTACT_EMAIL = process.env.NEXT_PUBLIC_LEGAL_EMAIL ?? "support@ofeklabs.com";
+const LAST_UPDATED = "June 4, 2026";
 
 export default function TermsPage() {
   return (
     <div className="min-h-screen bg-white dark:bg-slate-900">
-      {/* Header */}
       <header className="border-b border-slate-100 dark:border-slate-800 px-6 py-4">
-        <div className="max-w-3xl mx-auto flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2 text-slate-900 dark:text-white hover:text-sky-600 transition-colors">
+        <div className="mx-auto flex max-w-3xl items-center justify-between">
+          <Link href="/" className="flex items-center gap-2 text-slate-900 transition-colors hover:text-sky-600 dark:text-white">
             <ShifterLogo size={24} />
-            <span className="font-bold text-sm">Shifter</span>
+            <span className="text-sm font-bold">Shifter</span>
           </Link>
           <Link href="/privacy" className="text-sm text-sky-600 hover:underline">
-            מדיניות פרטיות / Privacy
+            Privacy Policy
           </Link>
         </div>
       </header>
 
-      {/* Hebrew Section */}
-      <main className="px-6 py-12 max-w-3xl mx-auto">
-        <div dir="rtl">
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">תנאי שימוש</h1>
-          <p className="text-sm text-slate-400 mb-8">עדכון אחרון: מאי 2026</p>
+      <main className="mx-auto max-w-3xl px-6 py-12" dir="ltr">
+        <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-sky-600">Legal</p>
+        <h1 className="mb-2 text-3xl font-bold text-slate-900 dark:text-white">Terms of Service</h1>
+        <p className="mb-8 text-sm text-slate-500 dark:text-slate-400">Last updated: {LAST_UPDATED}</p>
 
-          <div className="space-y-6 text-slate-700 dark:text-slate-300 leading-relaxed text-sm">
-            <Section title="1. הסכמה לתנאים">
-              <p>
-                בשימוש באפליקציית Shifter של Ofek Labs (להלן: &quot;השירות&quot;), אתה מסכים לתנאי שימוש אלה.
-                אם אינך מסכים לתנאים, אנא הפסק להשתמש בשירות.
-              </p>
-            </Section>
-
-            <Section title="2. תיאור השירות">
-              <p>
-                Shifter הוא כלי לניהול סידור משמרות ועבודה. השירות מאפשר יצירת סידורים אוטומטיים,
-                ניהול קבוצות, הגדרת אילוצים, צפייה בלוח זמנים, ושליחת התראות לחברי צוות.
-                השירות מיועד לצוותים צבאיים, ביטחוניים, רפואיים, מסעדות ועוד.
-              </p>
-            </Section>
-
-            <Section title="3. אחריות חשבון">
-              <ul className="list-disc pr-5 space-y-1">
-                <li>אתה אחראי לשמירה על סודיות הסיסמה שלך</li>
-                <li>אתה אחראי לכל הפעילות שמתבצעת תחת החשבון שלך</li>
-                <li>עליך לספק מידע מדויק ועדכני בעת ההרשמה</li>
-                <li>עליך להודיע לנו מיידית על כל שימוש לא מורשה בחשבונך</li>
-                <li>אנו שומרים את הזכות להשעות חשבונות שמפרים את התנאים</li>
-              </ul>
-            </Section>
-
-            <Section title="4. מנוי וחיוב">
-              <p>
-                השירות מציע תוכניות מנוי בתשלום דרך LemonSqueezy. פרטי התמחור מפורטים בעמוד התמחור.
-              </p>
-              <ul className="list-disc pr-5 space-y-1 mt-2">
-                <li>חיובים מתבצעים מראש לתקופת המנוי</li>
-                <li>ביטול מנוי ייכנס לתוקף בסוף תקופת החיוב הנוכחית</li>
-                <li>אין החזרים עבור תקופות חלקיות</li>
-                <li>אנו שומרים את הזכות לשנות מחירים עם הודעה מראש של 30 יום</li>
-              </ul>
-            </Section>
-
-            <Section title="5. הגבלת אחריות">
-              <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg p-4 my-3">
-                <p className="font-semibold text-amber-900 dark:text-amber-200 mb-1">⚠️ חשוב:</p>
-                <p className="text-amber-800 dark:text-amber-300">
-                  הסידור הוא כלי עזר — לא ערובה. המשתמשים אחראים לאמת את הסידורים שנוצרו.
-                  Shifter אינו אחראי לנזקים שנגרמו כתוצאה מסידור שגוי, חוסר כיסוי, או כל תקלה בשירות.
-                </p>
-              </div>
-              <p>
-                השירות מסופק &quot;כמות שהוא&quot; (AS IS). אנו לא מתחייבים לזמינות מלאה, דיוק מושלם של הסידורים,
-                או התאמה לכל מצב. האחריות הסופית על סידור העבודה היא של המנהל.
-              </p>
-            </Section>
-
-            <Section title="6. קניין רוחני">
-              <p>
-                כל הזכויות בשירות, כולל קוד המקור, העיצוב, הלוגו והאלגוריתמים, שייכות ל-Ofek Labs.
-                תוכן שאתה מזין לשירות (שמות, סידורים, אילוצים) נשאר בבעלותך.
-                אנו לא נשתמש בתוכן שלך למטרות שיווקיות.
-              </p>
-            </Section>
-
-            <Section title="7. סיום">
-              <ul className="list-disc pr-5 space-y-1">
-                <li>תוכל לבקש מחיקת החשבון שלך בכל עת</li>
-                <li>לאחר מחיקה, כל המידע האישי שלך יימחק תוך 30 יום</li>
-                <li>אנו שומרים את הזכות לסיים את השירות עם הודעה מראש של 30 יום</li>
-                <li>במקרה של הפרה חמורה, אנו רשאים להשעות את החשבון מיידית</li>
-              </ul>
-            </Section>
-
-            <Section title="8. דין חל">
-              <p>
-                תנאים אלה כפופים לחוקי מדינת ישראל. כל סכסוך יידון בבתי המשפט המוסמכים בישראל.
-              </p>
-            </Section>
-
-            <Section title="9. שינויים בתנאים">
-              <p>
-                אנו שומרים את הזכות לעדכן תנאים אלה. שינויים מהותיים יפורסמו באפליקציה ובאימייל
-                לפחות 14 יום לפני כניסתם לתוקף. המשך השימוש לאחר עדכון מהווה הסכמה לתנאים החדשים.
-              </p>
-            </Section>
-
-            <Section title="10. יצירת קשר">
-              <p>
-                לשאלות בנוגע לתנאי השימוש, ניתן לפנות אלינו:{" "}
-                <a href={`mailto:${CONTACT_EMAIL}`} className="text-sky-600 hover:underline">{CONTACT_EMAIL}</a>
-              </p>
-            </Section>
-          </div>
+        <div className="mb-8 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm leading-relaxed text-amber-900 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
+          <p className="font-semibold">Important scheduling notice</p>
+          <p className="mt-1">
+            Shifter helps teams create and manage schedules, but it does not replace human review. You are responsible for
+            verifying staffing, legal requirements, safety requirements, rest rules, emergency coverage, and operational
+            fitness before using or publishing a schedule.
+          </p>
         </div>
 
-        {/* Divider */}
-        <hr className="my-12 border-slate-200 dark:border-slate-700" />
+        <div className="space-y-7 text-sm leading-relaxed text-slate-700 dark:text-slate-300">
+          <Section title="1. Who we are">
+            <p>
+              These Terms of Service govern your access to and use of Shifter, a shift scheduling and workforce
+              coordination service operated by Ofek Labs ("Ofek Labs", "we", "us", or "our"). By accessing or using
+              Shifter, creating an account, joining a workspace, or purchasing a subscription, you agree to these Terms.
+            </p>
+          </Section>
 
-        {/* English Section */}
-        <div dir="ltr">
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Terms of Service</h1>
-          <p className="text-sm text-slate-400 mb-8">Last updated: May 2026</p>
+          <Section title="2. The service">
+            <p>
+              Shifter provides tools for workspace management, team and group management, shift planning, automated
+              scheduling, availability and constraint collection, self-service scheduling, notifications, exports, billing
+              management, analytics for operators, and related support features. We may add, change, suspend, or remove
+              features from time to time.
+            </p>
+          </Section>
 
-          <div className="space-y-6 text-slate-700 dark:text-slate-300 leading-relaxed text-sm">
-            <Section title="1. Acceptance of Terms">
-              <p>
-                By using the Shifter application by Ofek Labs (the &quot;Service&quot;), you agree to these Terms of Service.
-                If you do not agree, please discontinue use of the Service.
-              </p>
-            </Section>
+          <Section title="3. Accounts and eligibility">
+            <ul className="list-disc space-y-1 pl-5">
+              <li>You must provide accurate account information and keep it current.</li>
+              <li>You are responsible for maintaining the confidentiality of your credentials and passkeys.</li>
+              <li>You are responsible for activity performed through your account, workspace, or administrator role.</li>
+              <li>You must promptly notify us if you suspect unauthorized account access.</li>
+              <li>The service is intended for users who are at least 16 years old.</li>
+            </ul>
+          </Section>
 
-            <Section title="2. Service Description">
-              <p>
-                Shifter is a scheduling and shift management tool. The Service enables automatic schedule generation,
-                team management, constraint definition, schedule viewing, and team notifications.
-                It is designed for military, security, medical, restaurant, and other shift-based teams.
-              </p>
-            </Section>
+          <Section title="4. Workspaces, administrators, and users">
+            <p>
+              A workspace owner or administrator controls the workspace, invites users, assigns roles, configures billing,
+              manages schedules, and determines what data is entered into the service. If you use Shifter on behalf of an
+              organization, you represent that you have authority to bind that organization to these Terms. Workspace
+              administrators are responsible for obtaining any permissions or notices required before adding employee,
+              volunteer, contractor, or team-member data to Shifter.
+            </p>
+          </Section>
 
-            <Section title="3. Account Responsibilities">
-              <ul className="list-disc pl-5 space-y-1">
-                <li>You are responsible for maintaining the confidentiality of your password</li>
-                <li>You are responsible for all activity under your account</li>
-                <li>You must provide accurate and current information during registration</li>
-                <li>You must notify us immediately of any unauthorized use of your account</li>
-                <li>We reserve the right to suspend accounts that violate these terms</li>
-              </ul>
-            </Section>
+          <Section title="5. Acceptable use">
+            <p>You may not use Shifter to:</p>
+            <ul className="mt-2 list-disc space-y-1 pl-5">
+              <li>break applicable laws, employment rules, privacy rules, or safety rules;</li>
+              <li>upload unlawful, harmful, discriminatory, abusive, or infringing content;</li>
+              <li>attempt to access another user, workspace, tenant, system, or database without permission;</li>
+              <li>interfere with, reverse engineer, scrape, overload, or disrupt the service;</li>
+              <li>remove security controls, rate limits, audit trails, or access controls;</li>
+              <li>use the service to make fully automated decisions without appropriate human review.</li>
+            </ul>
+          </Section>
 
-            <Section title="4. Subscription and Billing">
-              <p>
-                The Service offers paid subscription plans through LemonSqueezy. Pricing details are available on the pricing page.
-              </p>
-              <ul className="list-disc pl-5 space-y-1 mt-2">
-                <li>Charges are billed in advance for the subscription period</li>
-                <li>Cancellation takes effect at the end of the current billing period</li>
-                <li>No refunds for partial periods</li>
-                <li>We reserve the right to change prices with 30 days advance notice</li>
-              </ul>
-            </Section>
+          <Section title="6. Scheduling results and operational decisions">
+            <p>
+              Shifter may generate recommendations, drafts, alerts, statistics, exports, and automatic schedules. These
+              outputs can be incomplete, inaccurate, delayed, or unsuitable for a specific operational environment. You
+              must review all generated schedules before relying on them. We are not responsible for missed shifts,
+              understaffing, overstaffing, labor-law violations, fatigue issues, safety incidents, loss of revenue,
+              discipline issues, or other consequences arising from schedules or recommendations.
+            </p>
+          </Section>
 
-            <Section title="5. Limitation of Liability">
-              <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg p-4 my-3">
-                <p className="font-semibold text-amber-900 dark:text-amber-200 mb-1">⚠️ Important:</p>
-                <p className="text-amber-800 dark:text-amber-300">
-                  The scheduling tool is a tool — not a guarantee. Users are responsible for verifying generated schedules.
-                  Shifter is not liable for damages resulting from incorrect schedules, coverage gaps, or any service disruption.
-                </p>
-              </div>
-              <p>
-                The Service is provided &quot;AS IS&quot;. We do not guarantee full availability, perfect schedule accuracy,
-                or suitability for every situation. Final responsibility for work schedules lies with the manager.
-              </p>
-            </Section>
+          <Section title="7. AI-assisted features">
+            <p>
+              Some Shifter features may use AI or automated parsing to help import data, summarize information, parse
+              constraints, or suggest actions. AI output may be wrong or incomplete. You are responsible for reviewing and
+              approving AI-assisted output before using it in operational workflows.
+            </p>
+          </Section>
 
-            <Section title="6. Intellectual Property">
-              <p>
-                All rights in the Service, including source code, design, logo, and algorithms, belong to Ofek Labs.
-                Content you enter into the Service (names, schedules, constraints) remains your property.
-                We will not use your content for marketing purposes.
-              </p>
-            </Section>
+          <Section title="8. User content and data">
+            <p>
+              You retain ownership of the names, schedules, availability, constraints, files, notes, feedback, and other
+              content that you or your workspace users submit to Shifter ("Customer Data"). You grant us a limited license
+              to host, process, transmit, display, back up, and otherwise use Customer Data as needed to provide, secure,
+              support, and improve the service. You represent that you have the rights and permissions needed to submit
+              Customer Data to Shifter.
+            </p>
+          </Section>
 
-            <Section title="7. Termination">
-              <ul className="list-disc pl-5 space-y-1">
-                <li>You may request account deletion at any time</li>
-                <li>After deletion, all personal data will be removed within 30 days</li>
-                <li>We reserve the right to terminate the Service with 30 days advance notice</li>
-                <li>In case of serious violation, we may suspend the account immediately</li>
-              </ul>
-            </Section>
+          <Section title="9. Subscriptions, trials, billing, and taxes">
+            <p>
+              Paid plans, trials, renewals, upgrades, downgrades, and cancellations may be managed through LemonSqueezy or
+              another payment processor. Prices, plan limits, trial periods, and included features are shown in the
+              product or checkout flow. Unless stated otherwise, subscriptions renew automatically until canceled. You are
+              responsible for taxes, payment details, and billing permissions. Cancellation generally takes effect at the
+              end of the current billing period unless the checkout or billing portal states otherwise.
+            </p>
+          </Section>
 
-            <Section title="8. Governing Law">
-              <p>
-                These terms are governed by the laws of the State of Israel. Any dispute shall be adjudicated
-                in the competent courts of Israel.
-              </p>
-            </Section>
+          <Section title="10. Refunds">
+            <p>
+              Except where required by law or expressly stated in the checkout flow, payments are non-refundable and we do
+              not provide credits for partial subscription periods, unused seats, unused workspace capacity, or unused
+              features. If you believe a charge was made in error, contact us promptly at{" "}
+              <a href={`mailto:${CONTACT_EMAIL}`} className="text-sky-600 hover:underline">{CONTACT_EMAIL}</a>.
+            </p>
+          </Section>
 
-            <Section title="9. Changes to Terms">
-              <p>
-                We reserve the right to update these terms. Material changes will be published in the application
-                and via email at least 14 days before taking effect. Continued use after an update constitutes
-                acceptance of the new terms.
-              </p>
-            </Section>
+          <Section title="11. Third-party services">
+            <p>
+              Shifter may interoperate with third-party providers for payments, email, WhatsApp or SMS delivery, error
+              monitoring, analytics, file storage, hosting, AI assistance, and infrastructure. Third-party services are
+              governed by their own terms and policies. We are not responsible for third-party outages, policy changes, or
+              processing outside our control.
+            </p>
+          </Section>
 
-            <Section title="10. Contact">
-              <p>
-                For questions regarding these Terms of Service, contact us at:{" "}
-                <a href={`mailto:${CONTACT_EMAIL}`} className="text-sky-600 hover:underline">{CONTACT_EMAIL}</a>
-              </p>
-            </Section>
-          </div>
+          <Section title="12. Intellectual property">
+            <p>
+              Shifter, including its software, design, workflows, branding, logos, documentation, and algorithms, is owned
+              by Ofek Labs or its licensors. These Terms do not transfer any intellectual-property rights to you. You may
+              not copy, modify, distribute, sell, lease, or create derivative works from the service except as expressly
+              permitted by us in writing.
+            </p>
+          </Section>
+
+          <Section title="13. Privacy and security">
+            <p>
+              Our Privacy Policy explains how we collect, use, store, and share personal information. We use reasonable
+              administrative, technical, and organizational safeguards, but no service can be guaranteed to be perfectly
+              secure or continuously available.
+            </p>
+          </Section>
+
+          <Section title="14. Service availability and changes">
+            <p>
+              We aim to keep Shifter reliable, but we do not guarantee uninterrupted, error-free, or permanent access. The
+              service may be unavailable because of maintenance, deployment, security events, third-party outages, internet
+              issues, force majeure events, or other causes. We may modify, suspend, or discontinue features or the entire
+              service where reasonably necessary.
+            </p>
+          </Section>
+
+          <Section title="15. Suspension and termination">
+            <p>
+              You may stop using Shifter at any time. We may suspend or terminate access if you violate these Terms,
+              create security or legal risk, fail to pay amounts due, misuse the service, or if we are required to do so by
+              law. After termination, we may retain data as described in the Privacy Policy and as required for legal,
+              security, backup, billing, and audit purposes.
+            </p>
+          </Section>
+
+          <Section title="16. Disclaimers">
+            <p>
+              To the fullest extent permitted by law, Shifter is provided "as is" and "as available" without warranties of
+              any kind, whether express, implied, statutory, or otherwise. We disclaim warranties of merchantability,
+              fitness for a particular purpose, non-infringement, accuracy, availability, and error-free operation.
+            </p>
+          </Section>
+
+          <Section title="17. Limitation of liability">
+            <p>
+              To the fullest extent permitted by law, Ofek Labs will not be liable for indirect, incidental, special,
+              consequential, exemplary, or punitive damages, or for lost profits, lost revenue, lost data, business
+              interruption, staffing failures, schedule errors, or operational losses. Our total liability for any claim
+              relating to the service is limited to the amount you paid to us for the service during the three months
+              before the event giving rise to the claim, or USD 100 if no amount was paid.
+            </p>
+          </Section>
+
+          <Section title="18. Indemnity">
+            <p>
+              You agree to defend, indemnify, and hold harmless Ofek Labs from claims, damages, liabilities, losses, and
+              expenses arising from your use of Shifter, your Customer Data, your violation of these Terms, your violation
+              of law, or your infringement of third-party rights.
+            </p>
+          </Section>
+
+          <Section title="19. Governing law and venue">
+            <p>
+              These Terms are governed by the laws of the State of Israel, without regard to conflict-of-law rules. The
+              competent courts in Israel will have exclusive jurisdiction over disputes arising from or relating to these
+              Terms or the service, unless applicable law requires otherwise.
+            </p>
+          </Section>
+
+          <Section title="20. Changes to these Terms">
+            <p>
+              We may update these Terms from time to time. If changes are material, we will provide reasonable notice in
+              the application, by email, or by another appropriate method. Your continued use after changes take effect
+              means you accept the updated Terms.
+            </p>
+          </Section>
+
+          <Section title="21. Contact">
+            <p>
+              For questions about these Terms, contact us at{" "}
+              <a href={`mailto:${CONTACT_EMAIL}`} className="text-sky-600 hover:underline">{CONTACT_EMAIL}</a>.
+            </p>
+          </Section>
         </div>
 
-        {/* Footer */}
-        <footer className="mt-12 pt-8 border-t border-slate-200 dark:border-slate-700 text-center text-xs text-slate-400 space-y-2">
-          <div className="flex items-center justify-center gap-4">
-            <Link href="/terms" className="text-sky-600 hover:underline">תנאי שימוש</Link>
-            <span>·</span>
-            <Link href="/privacy" className="text-sky-600 hover:underline">מדיניות פרטיות</Link>
-            <span>·</span>
-            <Link href="/" className="text-sky-600 hover:underline">חזרה לדף הבית</Link>
+        <footer className="mt-12 border-t border-slate-200 pt-8 text-center text-xs text-slate-500 dark:border-slate-700 dark:text-slate-400">
+          <div className="mb-2 flex items-center justify-center gap-4">
+            <Link href="/terms" className="text-sky-600 hover:underline">Terms</Link>
+            <Link href="/privacy" className="text-sky-600 hover:underline">Privacy</Link>
+            <Link href="/" className="text-sky-600 hover:underline">Home</Link>
           </div>
           <p>© {new Date().getFullYear()} Ofek Labs. All rights reserved.</p>
         </footer>
@@ -235,9 +239,9 @@ export default function TermsPage() {
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div>
-      <h2 className="text-base font-semibold text-slate-900 dark:text-white mb-2">{title}</h2>
+    <section>
+      <h2 className="mb-2 text-base font-semibold text-slate-900 dark:text-white">{title}</h2>
       {children}
-    </div>
+    </section>
   );
 }

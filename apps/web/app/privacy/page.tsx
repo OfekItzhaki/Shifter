@@ -2,279 +2,226 @@ import Link from "next/link";
 import ShifterLogo from "@/components/shell/ShifterLogo";
 
 const CONTACT_EMAIL = process.env.NEXT_PUBLIC_LEGAL_EMAIL ?? "support@ofeklabs.com";
+const LAST_UPDATED = "June 4, 2026";
 
 export default function PrivacyPage() {
   return (
     <div className="min-h-screen bg-white dark:bg-slate-900">
-      {/* Header */}
       <header className="border-b border-slate-100 dark:border-slate-800 px-6 py-4">
-        <div className="max-w-3xl mx-auto flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2 text-slate-900 dark:text-white hover:text-sky-600 transition-colors">
+        <div className="mx-auto flex max-w-3xl items-center justify-between">
+          <Link href="/" className="flex items-center gap-2 text-slate-900 transition-colors hover:text-sky-600 dark:text-white">
             <ShifterLogo size={24} />
-            <span className="font-bold text-sm">Shifter</span>
+            <span className="text-sm font-bold">Shifter</span>
           </Link>
           <Link href="/terms" className="text-sm text-sky-600 hover:underline">
-            תנאי שימוש / Terms
+            Terms of Service
           </Link>
         </div>
       </header>
 
-      {/* Hebrew Section */}
-      <main className="px-6 py-12 max-w-3xl mx-auto">
-        <div dir="rtl">
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">מדיניות פרטיות</h1>
-          <p className="text-sm text-slate-400 mb-8">עדכון אחרון: מאי 2026</p>
+      <main className="mx-auto max-w-3xl px-6 py-12" dir="ltr">
+        <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-sky-600">Legal</p>
+        <h1 className="mb-2 text-3xl font-bold text-slate-900 dark:text-white">Privacy Policy</h1>
+        <p className="mb-8 text-sm text-slate-500 dark:text-slate-400">Last updated: {LAST_UPDATED}</p>
 
-          <div className="space-y-6 text-slate-700 dark:text-slate-300 leading-relaxed text-sm">
-            <Section title="1. מידע שאנו אוספים">
-              <p>אנו אוספים את המידע הבא:</p>
-              <ul className="list-disc pr-5 space-y-1">
-                <li><strong>מידע הרשמה:</strong> שם, כתובת אימייל, מספר טלפון (אופציונלי)</li>
-                <li><strong>נתוני סידור:</strong> משמרות, אילוצים, זמינות, חברויות בקבוצות</li>
-                <li><strong>מידע טכני:</strong> כתובת IP, סוג דפדפן, זמני גישה (לצורכי אבטחה בלבד)</li>
-              </ul>
-            </Section>
-
-            <Section title="2. כיצד אנו משתמשים במידע">
-              <ul className="list-disc pr-5 space-y-1">
-                <li>אספקת השירות — יצירת סידורי עבודה ומשמרות</li>
-                <li>שליחת התראות על שינויים בסידור</li>
-                <li>אימות זהות ואבטחת החשבון</li>
-                <li>שיפור השירות ותיקון באגים</li>
-              </ul>
-              <p className="mt-2">
-                <strong>אנו לא:</strong> מוכרים מידע לצדדים שלישיים, משתמשים במידע לפרסום,
-                או חולקים מידע אישי עם גורמים חיצוניים ללא הסכמתך.
-              </p>
-            </Section>
-
-            <Section title="3. אחסון מידע">
-              <ul className="list-disc pr-5 space-y-1">
-                <li>המידע מאוחסן בשרת VPS מאובטח עם מסד נתונים PostgreSQL</li>
-                <li>סיסמאות מוצפנות באמצעות BCrypt ולא נשמרות בטקסט גלוי</li>
-                <li>תקשורת מוצפנת באמצעות TLS/HTTPS</li>
-                <li>בידוד מלא בין מרחבי עבודה (multi-tenancy)</li>
-                <li>גישה למסד הנתונים מוגבלת לצוות הפיתוח בלבד</li>
-              </ul>
-            </Section>
-
-            <Section title="4. צדדים שלישיים">
-              <p>אנו משתמשים בשירותים הבאים:</p>
-              <ul className="list-disc pr-5 space-y-1">
-                <li><strong>LemonSqueezy:</strong> עיבוד תשלומים וניהול מנויים</li>
-                <li><strong>SendGrid:</strong> שליחת אימיילים (אימות, התראות, איפוס סיסמה)</li>
-              </ul>
-              <p className="mt-2">
-                שירותים אלה מקבלים רק את המידע המינימלי הנדרש לתפקודם.
-                אנו לא משתמשים בכלי אנליטיקה או מעקב של צדדים שלישיים.
-              </p>
-            </Section>
-
-            <Section title="5. שמירת מידע">
-              <p>מידע אישי נשמר כל עוד החשבון שלך פעיל. לאחר מחיקת חשבון:</p>
-              <ul className="list-disc pr-5 space-y-1">
-                <li>מידע אישי נמחק תוך 30 יום</li>
-                <li>לוגים אנונימיים נשמרים עד 90 יום לצורכי אבטחה</li>
-                <li>גיבויים מוצפנים נמחקים תוך 60 יום</li>
-              </ul>
-            </Section>
-
-            <Section title="6. זכויותיך">
-              <p>יש לך את הזכות:</p>
-              <ul className="list-disc pr-5 space-y-1">
-                <li><strong>לצפות</strong> במידע האישי שלך (דרך עמוד הפרופיל)</li>
-                <li><strong>לייצא</strong> את הנתונים שלך (סידורים בפורמט CSV/PDF)</li>
-                <li><strong>למחוק</strong> את החשבון שלך ואת כל המידע הקשור</li>
-              </ul>
-              <p className="mt-2">כל הזכויות הללו כבר מיושמות בממשק האפליקציה.</p>
-            </Section>
-
-            <Section title="7. עוגיות ואחסון מקומי">
-              <p>אנו משתמשים ב-localStorage ובעוגיות לצורך:</p>
-              <ul className="list-disc pr-5 space-y-1">
-                <li>אימות: טוקן גישה קצר-תוקף ועוגיית רענון מאובטחת</li>
-                <li>העדפות שפה</li>
-                <li>מטמון סידור עבודה (לצפייה אופליין)</li>
-              </ul>
-              <p className="mt-2">
-                <strong>אנו לא משתמשים בעוגיות מעקב.</strong> אין אנליטיקה של צדדים שלישיים.
-              </p>
-            </Section>
-
-            <Section title="8. ילדים">
-              <p>
-                השירות אינו מיועד לילדים מתחת לגיל 16. אנו לא אוספים ביודעין מידע מילדים.
-                אם נודע לנו שנאסף מידע של קטין, נמחק אותו מיידית.
-              </p>
-            </Section>
-
-            <Section title="9. עמידה בחוק הגנת הפרטיות הישראלי">
-              <p>
-                אנו פועלים בהתאם לחוק הגנת הפרטיות, התשמ&quot;א-1981 ותקנותיו.
-                מאגר המידע רשום כנדרש. זכויותיך לעיון, תיקון ומחיקה מובטחות.
-              </p>
-            </Section>
-
-            <Section title="10. עמידה ב-GDPR (למשתמשים מהאיחוד האירופי)">
-              <p>למשתמשים מהאיחוד האירופי, אנו מבטיחים:</p>
-              <ul className="list-disc pr-5 space-y-1">
-                <li>הבסיס החוקי לעיבוד: הסכמה וביצוע חוזה</li>
-                <li>זכות לניידות מידע (ייצוא נתונים)</li>
-                <li>זכות למחיקה (&quot;הזכות להישכח&quot;)</li>
-                <li>זכות להגבלת עיבוד</li>
-                <li>זכות להתנגד לעיבוד</li>
-              </ul>
-            </Section>
-
-            <Section title="11. שינויים במדיניות">
-              <p>
-                אנו עשויים לעדכן מדיניות זו מעת לעת. שינויים מהותיים יפורסמו באפליקציה
-                ובאימייל. המשך השימוש לאחר עדכון מהווה הסכמה למדיניות החדשה.
-              </p>
-            </Section>
-
-            <Section title="12. יצירת קשר">
-              <p>
-                לשאלות בנוגע לפרטיות, ניתן לפנות אלינו:{" "}
-                <a href={`mailto:${CONTACT_EMAIL}`} className="text-sky-600 hover:underline">{CONTACT_EMAIL}</a>
-              </p>
-            </Section>
-          </div>
+        <div className="mb-8 rounded-lg border border-sky-200 bg-sky-50 p-4 text-sm leading-relaxed text-sky-900 dark:border-sky-800 dark:bg-sky-950/30 dark:text-sky-200">
+          <p className="font-semibold">Short version</p>
+          <p className="mt-1">
+            Shifter uses your data to operate scheduling workspaces, secure accounts, send notifications, process billing,
+            support the product, and improve reliability. We do not sell personal information.
+          </p>
         </div>
 
-        {/* Divider */}
-        <hr className="my-12 border-slate-200 dark:border-slate-700" />
+        <div className="space-y-7 text-sm leading-relaxed text-slate-700 dark:text-slate-300">
+          <Section title="1. Who controls your data">
+            <p>
+              Ofek Labs ("we", "us", or "our") operates Shifter and is responsible for the personal information described
+              in this Privacy Policy. For privacy questions or requests, contact{" "}
+              <a href={`mailto:${CONTACT_EMAIL}`} className="text-sky-600 hover:underline">{CONTACT_EMAIL}</a>.
+            </p>
+          </Section>
 
-        {/* English Section */}
-        <div dir="ltr">
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Privacy Policy</h1>
-          <p className="text-sm text-slate-400 mb-8">Last updated: May 2026</p>
+          <Section title="2. Scope">
+            <p>
+              This Policy applies to Shifter websites, web applications, APIs, scheduling tools, billing flows, support
+              channels, feedback tools, and related services. It does not apply to third-party websites or services that
+              have their own privacy policies.
+            </p>
+          </Section>
 
-          <div className="space-y-6 text-slate-700 dark:text-slate-300 leading-relaxed text-sm">
-            <Section title="1. What Data We Collect">
-              <p>We collect the following information:</p>
-              <ul className="list-disc pl-5 space-y-1">
-                <li><strong>Registration data:</strong> Name, email address, phone number (optional)</li>
-                <li><strong>Scheduling data:</strong> Shifts, constraints, availability, group memberships</li>
-                <li><strong>Technical data:</strong> IP address, browser type, access times (for security only)</li>
-              </ul>
-            </Section>
+          <Section title="3. Personal information we collect">
+            <p>Depending on how you use Shifter, we may collect:</p>
+            <ul className="mt-2 list-disc space-y-1 pl-5">
+              <li><strong>Account data:</strong> name, display name, email address, phone number, password hash, preferred language, timezone, and authentication state.</li>
+              <li><strong>Profile data:</strong> profile image, birthday if provided, role information, workspace membership, and permission level.</li>
+              <li><strong>Scheduling data:</strong> groups, tasks, shifts, assignments, availability, constraints, qualifications, home-leave settings, waitlists, swaps, requests, alerts, and schedule history.</li>
+              <li><strong>Workspace data:</strong> workspace name, settings, members, invitations, ownership, billing permissions, audit activity, and configuration choices.</li>
+              <li><strong>Billing data:</strong> plan, subscription status, checkout metadata, renewal/cancellation state, LemonSqueezy customer or subscription identifiers, and transaction-related webhook data. We do not store full payment card numbers.</li>
+              <li><strong>Communications:</strong> support requests, feedback, bug reports, notification preferences, email delivery events, and WhatsApp/SMS delivery metadata where configured.</li>
+              <li><strong>Files and exports:</strong> profile images, imported scheduling data, generated PDFs/CSVs, and other files you upload or generate.</li>
+              <li><strong>Technical data:</strong> IP address, device/browser data, logs, cookies, local storage identifiers, session data, API usage, errors, diagnostics, and security events.</li>
+              <li><strong>Analytics data:</strong> product usage events, page views, page leaves, feature usage, and session replay data when analytics is enabled in production.</li>
+            </ul>
+          </Section>
 
-            <Section title="2. How We Use It">
-              <ul className="list-disc pl-5 space-y-1">
-                <li>Provide the service — generate schedules and manage shifts</li>
-                <li>Send notifications about schedule changes</li>
-                <li>Authenticate identity and secure accounts</li>
-                <li>Improve the service and fix bugs</li>
-              </ul>
-              <p className="mt-2">
-                <strong>We do not:</strong> sell data to third parties, use data for advertising,
-                or share personal information with external parties without your consent.
-              </p>
-            </Section>
+          <Section title="4. How we collect information">
+            <ul className="list-disc space-y-1 pl-5">
+              <li>directly from you when you register, update your profile, submit forms, upload files, or contact us;</li>
+              <li>from workspace administrators who add or invite users and configure schedules;</li>
+              <li>automatically through the application, API, logs, cookies, local storage, and analytics/error-monitoring tools;</li>
+              <li>from payment, email, messaging, hosting, storage, and AI providers that support the service.</li>
+            </ul>
+          </Section>
 
-            <Section title="3. Data Storage">
-              <ul className="list-disc pl-5 space-y-1">
-                <li>Data is stored on a secured VPS with a PostgreSQL database</li>
-                <li>Passwords are hashed with BCrypt and never stored in plain text</li>
-                <li>All communication is encrypted via TLS/HTTPS</li>
-                <li>Full isolation between workspaces (multi-tenancy)</li>
-                <li>Database access is restricted to the development team only</li>
-              </ul>
-            </Section>
+          <Section title="5. How we use personal information">
+            <p>We use personal information to:</p>
+            <ul className="mt-2 list-disc space-y-1 pl-5">
+              <li>create accounts, authenticate users, manage sessions, and secure access;</li>
+              <li>operate workspaces, groups, schedules, assignments, self-service shifts, notifications, and exports;</li>
+              <li>process subscriptions, trials, billing changes, renewals, cancellations, and invoices;</li>
+              <li>send transactional messages such as verification, password reset, invitations, schedule updates, and recall notices;</li>
+              <li>provide support, respond to feedback, investigate bugs, and communicate service notices;</li>
+              <li>monitor reliability, detect abuse, prevent fraud, enforce access controls, and maintain audit logs;</li>
+              <li>analyze and improve product usability, performance, and feature quality;</li>
+              <li>comply with legal, tax, accounting, billing, security, and regulatory obligations.</li>
+            </ul>
+          </Section>
 
-            <Section title="4. Third Parties">
-              <p>We use the following services:</p>
-              <ul className="list-disc pl-5 space-y-1">
-                <li><strong>LemonSqueezy:</strong> Payment processing and subscription management</li>
-                <li><strong>SendGrid:</strong> Email delivery (verification, notifications, password reset)</li>
-              </ul>
-              <p className="mt-2">
-                These services receive only the minimum data required for their function.
-                We do not use third-party analytics or tracking tools.
-              </p>
-            </Section>
+          <Section title="6. Legal bases for processing">
+            <p>
+              Where a legal basis is required, we process personal information based on contract performance, legitimate
+              interests, consent, legal obligations, and protection of rights and security. You may withdraw consent where
+              processing depends on consent, but this will not affect processing that happened before withdrawal.
+            </p>
+          </Section>
 
-            <Section title="5. Data Retention">
-              <p>Personal data is retained as long as your account is active. After account deletion:</p>
-              <ul className="list-disc pl-5 space-y-1">
-                <li>Personal data is deleted within 30 days</li>
-                <li>Anonymous logs are retained up to 90 days for security</li>
-                <li>Encrypted backups are deleted within 60 days</li>
-              </ul>
-            </Section>
+          <Section title="7. Third-party processors and service providers">
+            <p>We may share necessary data with providers that help operate Shifter, including:</p>
+            <ul className="mt-2 list-disc space-y-1 pl-5">
+              <li><strong>LemonSqueezy:</strong> checkout, payment processing, invoices, tax handling, and subscription management.</li>
+              <li><strong>SendGrid:</strong> transactional email delivery.</li>
+              <li><strong>Twilio:</strong> WhatsApp or SMS notification delivery where configured.</li>
+              <li><strong>PostHog:</strong> product analytics, page events, usage events, and session replay when enabled in production.</li>
+              <li><strong>Sentry:</strong> error monitoring, performance traces, diagnostic context, and limited session replay for debugging.</li>
+              <li><strong>Hosting, database, and storage providers:</strong> application hosting, PostgreSQL databases, backups, local or S3-compatible file storage, and infrastructure operations.</li>
+              <li><strong>AI providers:</strong> AI-assisted parsing, import, summary, or recommendation features where enabled.</li>
+            </ul>
+            <p className="mt-2">
+              These providers may process information in countries other than your own. We use them to provide the
+              service and require them to protect information according to their agreements and applicable law.
+            </p>
+          </Section>
 
-            <Section title="6. User Rights">
-              <p>You have the right to:</p>
-              <ul className="list-disc pl-5 space-y-1">
-                <li><strong>Access</strong> your personal data (via the profile page)</li>
-                <li><strong>Export</strong> your data (schedules in CSV/PDF format)</li>
-                <li><strong>Delete</strong> your account and all associated data</li>
-              </ul>
-              <p className="mt-2">All of these rights are already implemented in the application interface.</p>
-            </Section>
+          <Section title="8. We do not sell personal information">
+            <p>
+              We do not sell personal information. We do not share personal information for third-party advertising
+              networks. If that changes, we will update this Policy and provide any required choices or notices.
+            </p>
+          </Section>
 
-            <Section title="7. Cookies and Local Storage">
-              <p>We use localStorage and cookies for:</p>
-              <ul className="list-disc pl-5 space-y-1">
-                <li>Authentication: short-lived access tokens and a secure refresh cookie</li>
-                <li>Language preferences</li>
-                <li>Schedule cache (offline viewing)</li>
-              </ul>
-              <p className="mt-2">
-                <strong>We do not use tracking cookies.</strong> No third-party analytics.
-              </p>
-            </Section>
+          <Section title="9. Cookies, local storage, and similar technologies">
+            <p>Shifter uses cookies, local storage, and similar technologies for:</p>
+            <ul className="mt-2 list-disc space-y-1 pl-5">
+              <li>authentication, token state, session continuity, and auth guards;</li>
+              <li>language, theme, timezone, and app preferences;</li>
+              <li>offline cache and background refresh behavior;</li>
+              <li>security, abuse prevention, diagnostics, and reliability;</li>
+              <li>analytics and product improvement when configured.</li>
+            </ul>
+            <p className="mt-2">
+              You can control cookies and local storage through your browser, but disabling them may break login,
+              preferences, offline access, or core app behavior.
+            </p>
+          </Section>
 
-            <Section title="8. Children&apos;s Privacy">
-              <p>
-                The Service is not intended for children under 16. We do not knowingly collect data from children.
-                If we learn that data from a minor has been collected, we will delete it immediately.
-              </p>
-            </Section>
+          <Section title="10. Security">
+            <p>
+              We use safeguards intended to protect personal information, including HTTPS/TLS, password hashing, role and
+              permission checks, workspace isolation, audit logs, production error handling, restricted administrative
+              access, and backups. No security system is perfect. You are responsible for using strong credentials,
+              protecting your devices, and limiting access to authorized workspace users.
+            </p>
+          </Section>
 
-            <Section title="9. Israeli Privacy Protection Law Compliance">
-              <p>
-                We operate in accordance with the Israeli Privacy Protection Law, 5741-1981 and its regulations.
-                The database is registered as required. Your rights to access, correction, and deletion are guaranteed.
-              </p>
-            </Section>
+          <Section title="11. Retention">
+            <p>
+              We keep personal information for as long as needed to provide Shifter, comply with legal obligations,
+              resolve disputes, maintain security, prevent abuse, and enforce agreements. Typical retention periods are:
+            </p>
+            <ul className="mt-2 list-disc space-y-1 pl-5">
+              <li>account and workspace data: while the account or workspace remains active;</li>
+              <li>deleted account personal data: generally deleted or anonymized within 30 days where technically and legally feasible;</li>
+              <li>security, audit, and diagnostic logs: retained as needed for security, reliability, and investigation;</li>
+              <li>billing records: retained as required for tax, accounting, chargeback, and compliance purposes;</li>
+              <li>backups: overwritten or deleted on normal backup cycles and may temporarily retain deleted data.</li>
+            </ul>
+          </Section>
 
-            <Section title="10. GDPR Compliance (for EU Users)">
-              <p>For users in the European Union, we ensure:</p>
-              <ul className="list-disc pl-5 space-y-1">
-                <li>Legal basis for processing: consent and contract performance</li>
-                <li>Right to data portability (data export)</li>
-                <li>Right to erasure (&quot;right to be forgotten&quot;)</li>
-                <li>Right to restriction of processing</li>
-                <li>Right to object to processing</li>
-              </ul>
-            </Section>
+          <Section title="12. Your choices and rights">
+            <p>
+              Depending on your location and relationship to a workspace, you may have rights to access, correct, export,
+              delete, restrict, or object to processing of personal information. Some requests may need to be handled by
+              your workspace administrator if they control the workspace. To exercise rights, use in-app controls where
+              available or contact{" "}
+              <a href={`mailto:${CONTACT_EMAIL}`} className="text-sky-600 hover:underline">{CONTACT_EMAIL}</a>.
+            </p>
+          </Section>
 
-            <Section title="11. Changes to Policy">
-              <p>
-                We may update this policy from time to time. Material changes will be published in the application
-                and via email. Continued use after an update constitutes acceptance of the new policy.
-              </p>
-            </Section>
+          <Section title="13. Workspace administrators">
+            <p>
+              Workspace administrators may access and manage data submitted by members of their workspace, including
+              schedule data, availability, constraints, assignments, profile details, and activity needed to operate the
+              workspace. If your organization uses Shifter, its internal policies may also apply to your use of the
+              service.
+            </p>
+          </Section>
 
-            <Section title="12. Contact">
-              <p>
-                For privacy-related questions, contact us at:{" "}
-                <a href={`mailto:${CONTACT_EMAIL}`} className="text-sky-600 hover:underline">{CONTACT_EMAIL}</a>
-              </p>
-            </Section>
-          </div>
+          <Section title="14. International users">
+            <p>
+              Shifter may process and store information in Israel, the United States, the European Economic Area, or other
+              locations where we or our providers operate. By using Shifter, you understand that information may be
+              transferred to countries with privacy laws different from those in your jurisdiction.
+            </p>
+          </Section>
+
+          <Section title="15. Children">
+            <p>
+              Shifter is not intended for children under 16. We do not knowingly collect personal information from
+              children under 16. If you believe a child provided personal information, contact us and we will take
+              appropriate action.
+            </p>
+          </Section>
+
+          <Section title="16. Israeli privacy law and GDPR">
+            <p>
+              We aim to handle personal information consistently with applicable Israeli privacy requirements and, where
+              applicable, GDPR principles for users in the European Economic Area or United Kingdom. This includes
+              transparency, purpose limitation, data minimization, security, and appropriate handling of access,
+              correction, portability, objection, restriction, and deletion requests.
+            </p>
+          </Section>
+
+          <Section title="17. Changes to this Policy">
+            <p>
+              We may update this Privacy Policy from time to time. If changes are material, we will provide reasonable
+              notice in the application, by email, or by another appropriate method. The updated Policy will apply from the
+              date shown above unless a later effective date is provided.
+            </p>
+          </Section>
+
+          <Section title="18. Contact">
+            <p>
+              For privacy questions, requests, or complaints, contact{" "}
+              <a href={`mailto:${CONTACT_EMAIL}`} className="text-sky-600 hover:underline">{CONTACT_EMAIL}</a>.
+            </p>
+          </Section>
         </div>
 
-        {/* Footer */}
-        <footer className="mt-12 pt-8 border-t border-slate-200 dark:border-slate-700 text-center text-xs text-slate-400 space-y-2">
-          <div className="flex items-center justify-center gap-4">
-            <Link href="/terms" className="text-sky-600 hover:underline">תנאי שימוש</Link>
-            <span>·</span>
-            <Link href="/privacy" className="text-sky-600 hover:underline">מדיניות פרטיות</Link>
-            <span>·</span>
-            <Link href="/" className="text-sky-600 hover:underline">חזרה לדף הבית</Link>
+        <footer className="mt-12 border-t border-slate-200 pt-8 text-center text-xs text-slate-500 dark:border-slate-700 dark:text-slate-400">
+          <div className="mb-2 flex items-center justify-center gap-4">
+            <Link href="/terms" className="text-sky-600 hover:underline">Terms</Link>
+            <Link href="/privacy" className="text-sky-600 hover:underline">Privacy</Link>
+            <Link href="/" className="text-sky-600 hover:underline">Home</Link>
           </div>
           <p>© {new Date().getFullYear()} Ofek Labs. All rights reserved.</p>
         </footer>
@@ -285,9 +232,9 @@ export default function PrivacyPage() {
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div>
-      <h2 className="text-base font-semibold text-slate-900 dark:text-white mb-2">{title}</h2>
+    <section>
+      <h2 className="mb-2 text-base font-semibold text-slate-900 dark:text-white">{title}</h2>
       {children}
-    </div>
+    </section>
   );
 }
