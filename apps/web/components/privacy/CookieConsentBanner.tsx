@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 import { initPostHog } from "@/lib/analytics/posthog";
+import { isRtl as isRtlLocale } from "@/lib/i18n/locales";
 import {
   getAnalyticsConsent,
   setAnalyticsConsent,
@@ -29,7 +30,7 @@ export default function CookieConsentBanner() {
 
   if (consent !== null) return null;
 
-  const isRtl = locale === "he";
+  const isRtl = isRtlLocale(locale);
 
   return (
     <aside

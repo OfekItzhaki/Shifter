@@ -15,6 +15,7 @@ import {
   getCountryName,
   getStateName,
 } from "@/lib/data/countries";
+import { isRtl as isRtlLocale } from "@/lib/i18n/locales";
 
 const cardStyle: React.CSSProperties = {
   borderRadius: 16,
@@ -377,7 +378,7 @@ function PushNotificationSection() {
 export default function SettingsPage() {
   const t = useTranslations("userSettings");
   const locale = useLocale();
-  const isRtl = locale === "he";
+  const isRtl = isRtlLocale(locale);
 
   return (
     <AppShell>

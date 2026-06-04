@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import { addPresenceWindow } from "@/lib/api/availability";
+import { isRtl as isRtlLocale } from "@/lib/i18n/locales";
 
 interface Props {
   open: boolean;
@@ -18,7 +19,7 @@ export default function CantMakeItModal({
   open, onClose, spaceId, personId, personName, onSaved,
 }: Props) {
   const locale = useLocale();
-  const isRtl = locale === "he";
+  const isRtl = isRtlLocale(locale);
 
   // Default: blocked from now until end of today
   const now = new Date();

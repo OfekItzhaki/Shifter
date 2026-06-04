@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useTranslations, useLocale } from "next-intl";
+import { isRtl as isRtlLocale } from "@/lib/i18n/locales";
 import {
   getHomeLeaveConfig,
   updateHomeLeaveConfig,
@@ -27,7 +28,7 @@ type LoadingState = "loading" | "loaded" | "error";
 export default function HomeLeaveConfigCard({ spaceId, isOwner }: Props) {
   const t = useTranslations("spaceHomeLeave");
   const locale = useLocale();
-  const isRtl = locale === "he";
+  const isRtl = isRtlLocale(locale);
 
   const [loadingState, setLoadingState] = useState<LoadingState>("loading");
   const [config, setConfig] = useState<SpaceHomeLeaveConfigDto | null>(null);

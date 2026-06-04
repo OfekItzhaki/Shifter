@@ -7,6 +7,7 @@ import { createPerson } from "@/lib/api/people";
 import { addGroupMemberById } from "@/lib/api/groups";
 import { createGroupTask } from "@/lib/api/tasks";
 import { DEFAULT_TASK_HORIZON_DAYS, MS_PER_DAY } from "@/lib/utils/constants";
+import { isRtl as isRtlLocale } from "@/lib/i18n/locales";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -146,7 +147,7 @@ function readWorkbook(file: File): Promise<Record<string, string>[]> {
 
 export default function ImportModal({ open, onClose, spaceId, groupId, onImported }: Props) {
   const locale = useLocale();
-  const isRtl = locale === "he";
+  const isRtl = isRtlLocale(locale);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const [mode, setMode] = useState<ImportMode>("members");
