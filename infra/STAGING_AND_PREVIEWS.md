@@ -10,6 +10,8 @@ This project is currently shaped for a single VPS deployment with Docker Compose
 
 Use the same Hetzner VPS if it has enough CPU/RAM, but run staging as a separate Compose project with separate data volumes and ports. For higher isolation, use a second small Hetzner VPS for staging.
 
+Recommended path: start with a separate staging VPS if the budget is acceptable. It keeps production safer, makes staging deploy failures less stressful, and lets you test VPS-level changes such as Caddy, Docker, backups, and firewall rules before touching production.
+
 Minimum recommended topology:
 
 | Environment | Git ref | URL | Data |
@@ -21,6 +23,8 @@ Minimum recommended topology:
 Do not point staging at the production database, Redis, S3 bucket, LemonSqueezy live keys, SendGrid production sender, or Twilio production sender.
 
 ## Persistent Staging on the VPS
+
+If staging runs on its own VPS, keep the default internal ports from `.env.staging.example` or switch them back to production-like ports. Port separation matters most when production and staging share one server. The important separation on a different VPS is secrets, data, DNS, and branch.
 
 1. Create DNS records:
    - `staging.example.com` -> VPS IP
@@ -100,14 +104,13 @@ docker run --rm caddy:2-alpine caddy hash-password --plaintext 'choose-a-strong-
 6. Deploy staging from `develop`:
 
 ```bash
-cd /opt/shifter-staging
-git fetch origin
-git checkout develop
-git pull --ff-only origin develop
-cd infra/compose
-docker compose --project-name shifter-staging up -d --build
-docker compose --project-name shifter-staging ps
+GIT_REF=develop \
+SHIFTER_DIR=/opt/shifter-staging \
+COMPOSE_PROJECT_NAME=shifter-staging \
+/opt/shifter-staging/infra/scripts/deploy-compose.sh
 ```
+
+See `infra/AVAILABILITY.md` for the backup, health verification, and rollback flow used by this script.
 
 ## Production Deploy Rule
 
