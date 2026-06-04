@@ -8,6 +8,7 @@ import { forgotPassword } from "@/lib/api/auth";
 import { useEffectiveAuth } from "@/lib/hooks/useEffectiveAuth";
 import ShifterLogo from "@/components/shell/ShifterLogo";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
+import LegalLinks from "@/components/legal/LegalLinks";
 
 export default function ForgotPasswordPage() {
   const t = useTranslations("auth");
@@ -134,6 +135,8 @@ export default function ForgotPasswordPage() {
           <div style={{ marginTop: "1.25rem", paddingTop: "1rem", borderTop: "1px solid #f1f5f9" }}>
             <LanguageSwitcher variant="auth" />
           </div>
+
+          <LegalLinks compact className="mt-3" />
         </div>
       </div>
     </main>

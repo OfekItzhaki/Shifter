@@ -9,6 +9,7 @@ import { useEffectiveAuth } from "@/lib/hooks/useEffectiveAuth";
 import ShifterLogo from "@/components/shell/ShifterLogo";
 import ImageUpload from "@/components/ImageUpload";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
+import LegalLinks from "@/components/legal/LegalLinks";
 
 /** Maps known backend validation errors to i18n keys */
 function translateValidationError(error: string, t: (key: string) => string): string {
@@ -284,6 +285,8 @@ function RegisterForm() {
               Built by <span style={{ fontWeight: 600, color: "#64748b" }}>ofeklabs.com</span>
             </a>
           </div>
+
+          <LegalLinks compact className="mt-3" />
         </div>
       </div>
     </main>

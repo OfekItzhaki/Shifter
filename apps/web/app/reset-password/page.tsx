@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { resetPassword } from "@/lib/api/auth";
 import ShifterLogo from "@/components/shell/ShifterLogo";
+import LegalLinks from "@/components/legal/LegalLinks";
 
 function ResetPasswordForm() {
   const t = useTranslations("auth");
@@ -120,6 +121,7 @@ export default function ResetPasswordPage() {
               {backArrow} {t("backToLogin")}
             </Link>
           </p>
+          <LegalLinks compact className="mt-3" />
         </div>
       </div>
     </main>

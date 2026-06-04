@@ -183,3 +183,24 @@ export const LANDING_CONTENT: Record<LandingLang, {
     footer: { about: "О нас", faq: "FAQ", terms: "Условия", privacy: "Конфиденциальность", signIn: "Войти" },
   },
 };
+
+export const LANDING_LEGAL_LINKS: Record<LandingLang, Array<{ href: string; label: string }>> = {
+  en: [
+    { href: "/terms", label: "Terms" },
+    { href: "/privacy", label: "Privacy" },
+    { href: "/security", label: "Security" },
+    { href: "/subprocessors", label: "Subprocessors" },
+  ],
+  he: [
+    { href: "/terms", label: "תנאי שימוש" },
+    { href: "/privacy", label: "פרטיות" },
+    { href: "/security", label: "אבטחה" },
+    { href: "/subprocessors", label: "מעבדי משנה" },
+  ],
+  ru: [
+    { href: "/terms", label: "Условия" },
+    { href: "/privacy", label: "Конфиденциальность" },
+    { href: "/security", label: "Безопасность" },
+    { href: "/subprocessors", label: "Субпроцессоры" },
+  ],
+};

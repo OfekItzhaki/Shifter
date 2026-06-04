@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { verifyEmail, resendVerification } from "@/lib/api/auth";
 import ShifterLogo from "@/components/shell/ShifterLogo";
+import LegalLinks from "@/components/legal/LegalLinks";
 
 function VerifyEmailContent() {
   const t = useTranslations("verifyEmail");
@@ -118,6 +119,7 @@ export default function VerifyEmailPage() {
           <Suspense fallback={<p style={{ color: "#64748b", fontSize: "0.875rem", textAlign: "center" }}>{t("loading")}</p>}>
             <VerifyEmailContent />
           </Suspense>
+          <LegalLinks compact className="mt-5" />
         </div>
       </div>
     </main>

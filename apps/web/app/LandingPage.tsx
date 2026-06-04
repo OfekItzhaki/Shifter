@@ -6,7 +6,7 @@ import Link from "next/link";
 import ShifterLogo from "@/components/shell/ShifterLogo";
 import { clearAuthGuardCookie, setLocaleCookie } from "@/lib/auth/authGuardCookie";
 import { notifyAuthTokenChanged } from "@/lib/auth/tokenState";
-import { LANDING_CONTENT, type LandingLang } from "./landingContent";
+import { LANDING_CONTENT, LANDING_LEGAL_LINKS, type LandingLang } from "./landingContent";
 
 export default function LandingPage() {
   const router = useRouter();
@@ -203,8 +203,11 @@ export default function LandingPage() {
           <div className="flex items-center gap-6 text-sm text-slate-400">
             <a href="#about" className="hover:text-white transition-colors">{c.footer.about}</a>
             <a href="#faq" className="hover:text-white transition-colors">{c.footer.faq}</a>
-            <Link href="/terms" className="hover:text-white transition-colors">{c.footer.terms}</Link>
-            <Link href="/privacy" className="hover:text-white transition-colors">{c.footer.privacy}</Link>
+            {LANDING_LEGAL_LINKS[lang].map(link => (
+              <Link key={link.href} href={link.href} className="hover:text-white transition-colors">
+                {link.label}
+              </Link>
+            ))}
             <Link href="/login" className="hover:text-white transition-colors">{c.footer.signIn}</Link>
           </div>
         </div>

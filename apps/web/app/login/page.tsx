@@ -7,6 +7,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import ShifterLogo from "@/components/shell/ShifterLogo";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
+import LegalLinks from "@/components/legal/LegalLinks";
 import { isWebAuthnSupported, isConditionalMediationAvailable, authenticateWithBiometric } from "@/lib/webauthn";
 import { detectBrowserLocale } from "@/lib/utils/detectLocale";
 import { useEffectiveAuth } from "@/lib/hooks/useEffectiveAuth";
@@ -247,16 +248,7 @@ function LoginForm() {
             </a>
           </div>
 
-          {/* Legal links */}
-          <div style={{ textAlign: "center", marginTop: "0.75rem", display: "flex", justifyContent: "center", gap: "12px" }}>
-            <Link href="/terms" style={{ fontSize: "0.6875rem", color: "#94a3b8", textDecoration: "none" }}>
-              תנאי שימוש
-            </Link>
-            <span style={{ fontSize: "0.6875rem", color: "#64748b" }}>·</span>
-            <Link href="/privacy" style={{ fontSize: "0.6875rem", color: "#94a3b8", textDecoration: "none" }}>
-              מדיניות פרטיות
-            </Link>
-          </div>
+          <LegalLinks compact className="mt-3" />
         </div>
       </div>
     </main>
