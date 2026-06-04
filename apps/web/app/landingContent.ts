@@ -1,4 +1,6 @@
-export type LandingLang = "en" | "he" | "ru";
+import type { Locale } from "@/lib/i18n/locales";
+
+export type LandingLang = Locale;
 
 export const LANDING_CONTENT: Record<LandingLang, {
   nav: { features: string; howItWorks: string; about: string; faq: string; signIn: string; getStarted: string };

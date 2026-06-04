@@ -1,4 +1,4 @@
-import type { Locale } from "@/i18n/request";
+import { getLocaleDirection, isSupportedLocale, type Locale } from "@/lib/i18n/locales";
 
 export type LegalPageKey = "terms" | "privacy" | "subprocessors" | "dpa" | "privacyRequests" | "security";
 
@@ -22,11 +22,11 @@ export const LEGAL_LAST_UPDATED = "June 4, 2026";
 export const LEGAL_CONTACT_EMAIL = process.env.NEXT_PUBLIC_LEGAL_EMAIL ?? "support@ofeklabs.com";
 
 export function legalDir(locale: string): "rtl" | "ltr" {
-  return locale === "he" ? "rtl" : "ltr";
+  return getLocaleDirection(locale);
 }
 
 export function getLegalContent(page: LegalPageKey, locale: string): LegalPageContent {
-  const safeLocale = (locale in legalContent ? locale : "en") as Locale;
+  const safeLocale = isSupportedLocale(locale) ? locale : "en";
   return legalContent[safeLocale][page];
 }
 

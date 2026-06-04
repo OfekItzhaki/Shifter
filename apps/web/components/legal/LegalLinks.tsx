@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
+import { getLocaleDirection } from "@/lib/i18n/locales";
 
 type LegalLinkKey = "terms" | "privacy" | "security" | "privacyRequests" | "dpa" | "subprocessors";
 
@@ -28,7 +29,7 @@ export default function LegalLinks({ compact = false, className }: LegalLinksPro
     <nav
       aria-label={t("label")}
       className={className}
-      dir={locale === "he" ? "rtl" : "ltr"}
+      dir={getLocaleDirection(locale)}
       style={{
         display: "flex",
         flexWrap: "wrap",

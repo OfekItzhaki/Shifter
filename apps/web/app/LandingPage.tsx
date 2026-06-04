@@ -7,17 +7,18 @@ import ShifterLogo from "@/components/shell/ShifterLogo";
 import { clearAuthGuardCookie, setLocaleCookie } from "@/lib/auth/authGuardCookie";
 import { notifyAuthTokenChanged } from "@/lib/auth/tokenState";
 import { LANDING_CONTENT, LANDING_LEGAL_LINKS, type LandingLang } from "./landingContent";
+import { LOCALE_META, PUBLIC_DEFAULT_LOCALE, SUPPORTED_LOCALES, getLocaleDirection, isSupportedLocale } from "@/lib/i18n/locales";
 
 export default function LandingPage() {
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [checking, setChecking] = useState(true);
-  const [lang, setLang] = useState<LandingLang>("en");
+  const [lang, setLang] = useState<LandingLang>(PUBLIC_DEFAULT_LOCALE);
 
   useEffect(() => {
     // Detect language from cookie or browser
     const cookieLang = document.cookie.match(/locale=(\w+)/)?.[1];
-    if (cookieLang === "he" || cookieLang === "ru") setLang(cookieLang);
+    if (isSupportedLocale(cookieLang)) setLang(cookieLang);
   }, []);
 
   useEffect(() => {
@@ -48,7 +49,7 @@ export default function LandingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 text-white" dir={c.dir}>
+    <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 text-white" dir={getLocaleDirection(lang)}>
       {/* Nav */}
       <nav className="sticky top-0 z-50 backdrop-blur-md bg-slate-900/80 border-b border-slate-700/50">
         <div className="flex items-center justify-between px-6 py-3 max-w-6xl mx-auto">
@@ -65,9 +66,9 @@ export default function LandingPage() {
           <div className="flex items-center gap-2">
             {/* Language switcher */}
             <div className="hidden sm:flex items-center gap-1 mr-2">
-              {(["en", "he", "ru"] as LandingLang[]).map(l => (
+              {SUPPORTED_LOCALES.map(l => (
                 <button key={l} onClick={() => switchLang(l)} className={`text-xs px-2 py-1 rounded ${lang === l ? "bg-sky-500/30 text-sky-300 font-bold" : "text-slate-400 hover:text-white"}`}>
-                  {l === "en" ? "EN" : l === "he" ? "עב" : "RU"}
+                  {LOCALE_META[l].label}
                 </button>
               ))}
             </div>
@@ -90,9 +91,9 @@ export default function LandingPage() {
             <a href="#faq" onClick={() => setMobileMenuOpen(false)} className="block text-sm text-slate-300">{c.nav.faq}</a>
             <Link href="/login" onClick={() => setMobileMenuOpen(false)} className="block text-sm text-sky-400 font-medium">{c.nav.signIn}</Link>
             <div className="flex gap-2 pt-2">
-              {(["en", "he", "ru"] as LandingLang[]).map(l => (
+              {SUPPORTED_LOCALES.map(l => (
                 <button key={l} onClick={() => { switchLang(l); setMobileMenuOpen(false); }} className={`text-xs px-3 py-1.5 rounded ${lang === l ? "bg-sky-500/30 text-sky-300 font-bold" : "text-slate-400"}`}>
-                  {l === "en" ? "EN" : l === "he" ? "עב" : "RU"}
+                  {LOCALE_META[l].label}
                 </button>
               ))}
             </div>
