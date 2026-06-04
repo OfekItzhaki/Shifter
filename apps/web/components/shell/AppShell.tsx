@@ -58,7 +58,6 @@ function NavSection({ label, admin }: { label: string; admin?: boolean }) {
       style={{
         margin: "14px 4px 4px",
         padding: "10px 8px 4px",
-        borderTop: `1px solid ${lineColor}`,
         display: "flex",
         alignItems: "center",
         gap: 8,
@@ -75,6 +74,7 @@ function NavSection({ label, admin }: { label: string; admin?: boolean }) {
       >
         {label}
       </span>
+      <div style={{ flex: 1, height: 1, backgroundColor: lineColor }} />
     </div>
   );
 }
