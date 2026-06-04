@@ -1,6 +1,6 @@
 import type { Locale } from "@/i18n/request";
 
-export type LegalPageKey = "terms" | "privacy" | "subprocessors" | "dpa" | "privacyRequests";
+export type LegalPageKey = "terms" | "privacy" | "subprocessors" | "dpa" | "privacyRequests" | "security";
 
 export interface LegalSection {
   title: string;
@@ -469,6 +469,80 @@ export const legalContent: Record<Locale, Record<LegalPageKey, LegalPageContent>
         },
       ],
     },
+    security: {
+      eyebrow: "Trust",
+      title: "Security",
+      lastUpdatedLabel: "Last updated",
+      calloutTitle: "Report a security issue",
+      calloutBody:
+        `If you believe you found a vulnerability in Shifter, contact ${LEGAL_CONTACT_EMAIL} with the subject “Security Report”. Please do not access, modify, delete, or exfiltrate data that is not yours.`,
+      relatedLinkLabel: "Privacy Policy",
+      sections: [
+        {
+          title: "1. Security approach",
+          paragraphs: [
+            "Shifter is built as a multi-tenant scheduling platform with role-based access, workspace isolation, audit-oriented operations, and production error handling. We use layered controls to reduce the risk of unauthorized access, data leakage, and operational disruption.",
+          ],
+        },
+        {
+          title: "2. Current safeguards",
+          bullets: [
+            "HTTPS/TLS for browser and API traffic.",
+            "Password hashing and support for passkey/biometric login flows where available.",
+            "Role-based access controls and admin re-authentication for sensitive actions.",
+            "Workspace-aware data access controls and tenant isolation.",
+            "Production safety guards that avoid exposing stack traces and internal exception details.",
+            "Audit logs and operational logs for important actions and troubleshooting.",
+            "Backups, health checks, monitoring, and dependency review as part of operational maintenance.",
+          ],
+        },
+        {
+          title: "3. Responsible disclosure",
+          paragraphs: [
+            "We welcome good-faith vulnerability reports. Please include a clear description, affected endpoint or page, reproduction steps, impact, screenshots or proof of concept if safe, and your contact details.",
+          ],
+          bullets: [
+            "Do not access, download, modify, delete, or disclose data that is not yours.",
+            "Do not perform denial-of-service, spam, brute-force, social-engineering, or physical attacks.",
+            "Do not test against customer workspaces without authorization.",
+            "Give us reasonable time to investigate and remediate before public disclosure.",
+          ],
+        },
+        {
+          title: "4. What to report",
+          bullets: [
+            "Authentication or authorization bypass.",
+            "Cross-workspace or cross-tenant data access.",
+            "Sensitive data exposure.",
+            "Server-side request forgery, injection, XSS, CSRF, or file upload abuse.",
+            "Broken access control in admin, billing, schedule, or profile workflows.",
+            "Security misconfiguration that creates realistic risk.",
+          ],
+        },
+        {
+          title: "5. Out of scope",
+          bullets: [
+            "Automated scanner output without verified impact.",
+            "Missing security headers that do not create practical exploitability.",
+            "Clickjacking on pages without sensitive actions.",
+            "Rate-limit findings without a demonstrated security impact.",
+            "Issues requiring a compromised device, browser extension, or account.",
+          ],
+        },
+        {
+          title: "6. Incident handling",
+          paragraphs: [
+            "If we confirm a security incident involving customer data, we will work to contain, investigate, remediate, and notify affected customers without undue delay, consistent with applicable law and our operational obligations.",
+          ],
+        },
+        {
+          title: "7. Contact",
+          paragraphs: [
+            `Send security reports to ${LEGAL_CONTACT_EMAIL} with the subject “Security Report”. For privacy requests, use the Privacy Requests page.`,
+          ],
+        },
+      ],
+    },
   },
   he: {
     terms: {
@@ -908,6 +982,80 @@ export const legalContent: Record<Locale, Record<LegalPageKey, LegalPageContent>
         },
       ],
     },
+    security: {
+      eyebrow: "אמון",
+      title: "אבטחה",
+      lastUpdatedLabel: "עדכון אחרון",
+      calloutTitle: "דיווח על בעיית אבטחה",
+      calloutBody:
+        `אם לדעתך מצאת חולשה ב-Shifter, פנה אל ${LEGAL_CONTACT_EMAIL} עם הנושא “Security Report”. אין לגשת, לשנות, למחוק או להוציא מידע שאינו שלך.`,
+      relatedLinkLabel: "מדיניות פרטיות",
+      sections: [
+        {
+          title: "1. גישת אבטחה",
+          paragraphs: [
+            "Shifter נבנה כפלטפורמת סידורים מרובת דיירים עם בקרת גישה לפי תפקיד, בידוד מרחבי עבודה, פעולות מוכוונות ביקורת וטיפול שגיאות בפרודקשן. אנו משתמשים בשכבות הגנה כדי לצמצם סיכון לגישה לא מורשית, דליפת מידע ושיבוש תפעולי.",
+          ],
+        },
+        {
+          title: "2. אמצעי הגנה קיימים",
+          bullets: [
+            "HTTPS/TLS לתעבורת דפדפן ו-API.",
+            "גיבוב סיסמאות ותמיכה ב-passkeys/כניסה ביומטרית כאשר זמינה.",
+            "בקרת גישה לפי תפקיד ואימות מחדש למנהלים בפעולות רגישות.",
+            "בקרות גישה מודעות-מרחב ובידוד דיירים.",
+            "מנגנוני בטיחות בפרודקשן שמונעים חשיפת stack traces ופרטי חריגות פנימיים.",
+            "יומני ביקורת ולוגים תפעוליים לפעולות חשובות ותקלות.",
+            "גיבויים, health checks, ניטור ובדיקת תלויות כחלק מתחזוקה תפעולית.",
+          ],
+        },
+        {
+          title: "3. גילוי אחראי",
+          paragraphs: [
+            "אנו מקבלים בברכה דיווחי חולשות בתום לב. אנא כלול תיאור ברור, endpoint או עמוד מושפע, צעדי שחזור, השפעה, צילומי מסך או הוכחת היתכנות אם בטוח, ופרטי קשר.",
+          ],
+          bullets: [
+            "אין לגשת, להוריד, לשנות, למחוק או לחשוף מידע שאינו שלך.",
+            "אין לבצע מניעת שירות, ספאם, brute force, הנדסה חברתית או התקפות פיזיות.",
+            "אין לבדוק מרחבי לקוחות ללא הרשאה.",
+            "יש לתת לנו זמן סביר לחקור ולתקן לפני פרסום ציבורי.",
+          ],
+        },
+        {
+          title: "4. מה לדווח",
+          bullets: [
+            "עקיפת אימות או הרשאות.",
+            "גישה למידע בין מרחבים או דיירים.",
+            "חשיפת מידע רגיש.",
+            "SSRF, injection, XSS, CSRF או שימוש לרעה בהעלאת קבצים.",
+            "בקרת גישה שבורה בתהליכי ניהול, חיוב, סידור או פרופיל.",
+            "תצורת אבטחה שגויה שיוצרת סיכון ממשי.",
+          ],
+        },
+        {
+          title: "5. מחוץ להיקף",
+          bullets: [
+            "פלט סורק אוטומטי ללא השפעה מאומתת.",
+            "כותרות אבטחה חסרות שאינן יוצרות ניצול מעשי.",
+            "Clickjacking בעמודים ללא פעולות רגישות.",
+            "ממצאי rate-limit ללא השפעה אבטחתית מוכחת.",
+            "בעיות שדורשות מכשיר, הרחבת דפדפן או חשבון שכבר נפרצו.",
+          ],
+        },
+        {
+          title: "6. טיפול באירועים",
+          paragraphs: [
+            "אם נאמת אירוע אבטחה הכולל נתוני לקוח, נפעל לבלימה, חקירה, תיקון והודעה ללקוחות מושפעים ללא עיכוב בלתי סביר, בהתאם לחוק החל ולחובות התפעוליות שלנו.",
+          ],
+        },
+        {
+          title: "7. יצירת קשר",
+          paragraphs: [
+            `דיווחי אבטחה יש לשלוח אל ${LEGAL_CONTACT_EMAIL} עם הנושא “Security Report”. לבקשות פרטיות, השתמש בעמוד בקשות פרטיות.`,
+          ],
+        },
+      ],
+    },
   },
   ru: {
     terms: {
@@ -1343,6 +1491,80 @@ export const legalContent: Record<Locale, Record<LegalPageKey, LegalPageContent>
           title: "6. Жалобы",
           paragraphs: [
             `Если вы считаете, что запрос обработан неправильно, напишите на ${LEGAL_CONTACT_EMAIL} и укажите “Privacy Complaint” в теме. В зависимости от вашего местоположения вы также можете иметь право обратиться в privacy regulator.`,
+          ],
+        },
+      ],
+    },
+    security: {
+      eyebrow: "Доверие",
+      title: "Безопасность",
+      lastUpdatedLabel: "Последнее обновление",
+      calloutTitle: "Сообщить о проблеме безопасности",
+      calloutBody:
+        `Если вы считаете, что нашли уязвимость в Shifter, напишите на ${LEGAL_CONTACT_EMAIL} с темой “Security Report”. Не получайте доступ, не изменяйте, не удаляйте и не извлекайте данные, которые вам не принадлежат.`,
+      relatedLinkLabel: "Политика конфиденциальности",
+      sections: [
+        {
+          title: "1. Подход к безопасности",
+          paragraphs: [
+            "Shifter построен как multi-tenant scheduling platform с role-based access, изоляцией рабочих пространств, audit-oriented operations и production error handling. Мы используем layered controls, чтобы снижать риск несанкционированного доступа, утечки данных и операционных сбоев.",
+          ],
+        },
+        {
+          title: "2. Текущие меры защиты",
+          bullets: [
+            "HTTPS/TLS для browser и API traffic.",
+            "Хеширование паролей и поддержка passkey/biometric login flows где доступно.",
+            "Role-based access controls и admin re-authentication для чувствительных действий.",
+            "Workspace-aware access controls и tenant isolation.",
+            "Production safety guards, которые не раскрывают stack traces и внутренние детали ошибок.",
+            "Audit logs и operational logs для важных действий и troubleshooting.",
+            "Backups, health checks, monitoring и dependency review как часть operational maintenance.",
+          ],
+        },
+        {
+          title: "3. Responsible disclosure",
+          paragraphs: [
+            "Мы приветствуем добросовестные отчеты об уязвимостях. Пожалуйста, укажите описание, endpoint или страницу, шаги воспроизведения, impact, screenshots или proof of concept если безопасно, и ваши контактные данные.",
+          ],
+          bullets: [
+            "Не получайте доступ, не скачивайте, не изменяйте, не удаляйте и не раскрывайте данные, которые вам не принадлежат.",
+            "Не выполняйте denial-of-service, spam, brute-force, social engineering или physical attacks.",
+            "Не тестируйте customer workspaces без authorization.",
+            "Дайте нам разумное время на investigation и remediation до публичного disclosure.",
+          ],
+        },
+        {
+          title: "4. Что сообщать",
+          bullets: [
+            "Authentication или authorization bypass.",
+            "Cross-workspace или cross-tenant data access.",
+            "Sensitive data exposure.",
+            "SSRF, injection, XSS, CSRF или file upload abuse.",
+            "Broken access control в admin, billing, schedule или profile workflows.",
+            "Security misconfiguration с реалистичным риском.",
+          ],
+        },
+        {
+          title: "5. Вне области",
+          bullets: [
+            "Automated scanner output без подтвержденного impact.",
+            "Отсутствующие security headers без практической exploitability.",
+            "Clickjacking на страницах без sensitive actions.",
+            "Rate-limit findings без demonstrated security impact.",
+            "Проблемы, требующие скомпрометированного устройства, browser extension или account.",
+          ],
+        },
+        {
+          title: "6. Обработка инцидентов",
+          paragraphs: [
+            "Если мы подтвердим security incident с customer data, мы будем работать над containment, investigation, remediation и уведомлением затронутых клиентов без неоправданной задержки, в соответствии с применимым законом и operational obligations.",
+          ],
+        },
+        {
+          title: "7. Контакт",
+          paragraphs: [
+            `Отчеты по безопасности отправляйте на ${LEGAL_CONTACT_EMAIL} с темой “Security Report”. Для privacy requests используйте страницу Privacy Requests.`,
           ],
         },
       ],
