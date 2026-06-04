@@ -104,7 +104,7 @@ function LoginForm() {
         <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 p-8">
           <div style={{ marginBottom: "1.5rem" }}>
             <h1 className="text-xl font-semibold text-slate-900 dark:text-white m-0">{t("login")}</h1>
-            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Sign in to your workspace</p>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{t("loginSubtitle")}</p>
           </div>
 
           {/* Biometric error (shown if conditional mediation fails silently) */}
@@ -125,7 +125,7 @@ function LoginForm() {
                 type="button"
                 onClick={() => setBiometricError(null)}
                 style={{ background: "none", border: "none", cursor: "pointer", color: "#dc2626", padding: 0, lineHeight: 1 }}
-                aria-label="סגור"
+                aria-label={t("close")}
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -162,7 +162,7 @@ function LoginForm() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="email@example.com / 0501234567"
+                placeholder={t("emailOrPhonePlaceholder")}
                 autoComplete="username"
                 style={{ width: "100%", border: "1px solid #e2e8f0", borderRadius: "10px", padding: "0.625rem 0.875rem", fontSize: "0.875rem", color: "#0f172a", outline: "none", boxSizing: "border-box" }}
               />
@@ -186,7 +186,7 @@ function LoginForm() {
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   style={{ position: "absolute", right: "0.75rem", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "#94a3b8", padding: 0, display: "flex", alignItems: "center" }}
-                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  aria-label={showPassword ? t("hidePassword") : t("showPassword")}
                 >
                   {showPassword ? (
                     <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">

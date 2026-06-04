@@ -64,7 +64,17 @@
     "enableBiometricDesc": "В следующий раз вы сможете войти по отпечатку пальца или распознаванию лица",
     "enableBiometricYes": "Да, включить",
     "enableBiometricSkip": "Не сейчас",
-    "noCredentialFound": "Зарегистрированное устройство не найдено. Войдите с паролем, чтобы включить биометрический вход."
+    "noCredentialFound": "Зарегистрированное устройство не найдено. Войдите с паролем, чтобы включить биометрический вход.",
+    "loginSubtitle": "Войдите в рабочее пространство",
+    "close": "Закрыть",
+    "showPassword": "Показать пароль",
+    "hidePassword": "Скрыть пароль",
+    "emailPlaceholder": "you@example.com",
+    "emailOrPhonePlaceholder": "email@example.com / 0501234567",
+    "phonePlaceholder": "+7 999 000 00 00",
+    "resend": "Отправить снова",
+    "resendWithSeconds": "Отправить снова ({seconds}s)",
+    "resendLimitReached": "Вы достигли лимита попыток. Попробуйте позже."
   },
   "nav": {
     "home": "Главная",

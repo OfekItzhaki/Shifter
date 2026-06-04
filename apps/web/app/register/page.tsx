@@ -164,7 +164,7 @@ function RegisterForm() {
                 type="email"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
-                placeholder="you@example.com"
+                placeholder={t("emailPlaceholder")}
                 style={{ width: "100%", border: "1px solid #e2e8f0", borderRadius: 10, padding: "0.625rem 0.875rem", fontSize: "0.875rem", color: "#0f172a", outline: "none", boxSizing: "border-box" }}
               />
             </div>
@@ -177,7 +177,7 @@ function RegisterForm() {
                 type="tel"
                 value={phoneNumber}
                 onChange={e => setPhoneNumber(e.target.value)}
-                placeholder="+1 555 000 0000"
+                placeholder={t("phonePlaceholder")}
                 style={{ width: "100%", border: "1px solid #e2e8f0", borderRadius: 10, padding: "0.625rem 0.875rem", fontSize: "0.875rem", color: "#0f172a", outline: "none", boxSizing: "border-box" }}
               />
             </div>
@@ -219,7 +219,7 @@ function RegisterForm() {
                   placeholder={t("passwordMinLength")}
                   style={{ width: "100%", border: "1px solid #e2e8f0", borderRadius: 10, padding: "0.625rem 2.5rem 0.625rem 0.875rem", fontSize: "0.875rem", color: "#0f172a", outline: "none", boxSizing: "border-box" }}
                 />
-                <button type="button" onClick={() => setShowPassword(!showPassword)}
+                <button type="button" onClick={() => setShowPassword(!showPassword)} aria-label={showPassword ? t("hidePassword") : t("showPassword")}
                   style={{ position: "absolute", right: "0.75rem", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "#94a3b8", padding: 0, display: "flex", alignItems: "center" }}>
                   {eyeIcon(showPassword)}
                 </button>
@@ -239,7 +239,7 @@ function RegisterForm() {
                   placeholder={t("confirmPasswordPlaceholder")}
                   style={{ width: "100%", border: "1px solid #e2e8f0", borderRadius: 10, padding: "0.625rem 2.5rem 0.625rem 0.875rem", fontSize: "0.875rem", color: "#0f172a", outline: "none", boxSizing: "border-box" }}
                 />
-                <button type="button" onClick={() => setShowPassword(!showPassword)}
+                <button type="button" onClick={() => setShowPassword(!showPassword)} aria-label={showPassword ? t("hidePassword") : t("showPassword")}
                   style={{ position: "absolute", right: "0.75rem", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "#94a3b8", padding: 0, display: "flex", alignItems: "center" }}>
                   {eyeIcon(showPassword)}
                 </button>

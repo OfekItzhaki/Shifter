@@ -92,12 +92,12 @@ export default function ForgotPasswordPage() {
                     cursor: resendCooldown > 0 ? "not-allowed" : "pointer",
                   }}
                 >
-                  {resendCooldown > 0 ? `שלח שוב (${resendCooldown}s)` : "שלח שוב"}
+                  {resendCooldown > 0 ? t("resendWithSeconds", { seconds: resendCooldown }) : t("resend")}
                 </button>
               )}
               {resendCount >= 3 && (
                 <p style={{ fontSize: "0.75rem", color: "#94a3b8", marginTop: "0.75rem" }}>
-                  הגעת למגבלת הניסיונות. נסה שוב מאוחר יותר.
+                  {t("resendLimitReached")}
                 </p>
               )}
             </div>
@@ -112,7 +112,7 @@ export default function ForgotPasswordPage() {
                   required
                   value={email}
                   onChange={e => setEmail(e.target.value)}
-                  placeholder="you@example.com"
+                  placeholder={t("emailPlaceholder")}
                   style={{ width: "100%", border: "1px solid #e2e8f0", borderRadius: 10, padding: "0.625rem 0.875rem", fontSize: "0.875rem", color: "#0f172a", outline: "none", boxSizing: "border-box" }}
                 />
               </div>

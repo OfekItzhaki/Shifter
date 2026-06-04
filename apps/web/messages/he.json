@@ -64,7 +64,17 @@
     "enableBiometricDesc": "בפעם הבאה תוכל להתחבר עם טביעת אצבע או זיהוי פנים",
     "enableBiometricYes": "כן, הפעל",
     "enableBiometricSkip": "לא עכשיו",
-    "noCredentialFound": "לא נמצא מכשיר רשום. התחבר עם סיסמה ותוכל להפעיל כניסה ביומטרית."
+    "noCredentialFound": "לא נמצא מכשיר רשום. התחבר עם סיסמה ותוכל להפעיל כניסה ביומטרית.",
+    "loginSubtitle": "התחברות לסביבת העבודה שלך",
+    "close": "סגור",
+    "showPassword": "הצג סיסמה",
+    "hidePassword": "הסתר סיסמה",
+    "emailPlaceholder": "you@example.com",
+    "emailOrPhonePlaceholder": "email@example.com / 0501234567",
+    "phonePlaceholder": "+972 50 000 0000",
+    "resend": "שלח שוב",
+    "resendWithSeconds": "שלח שוב ({seconds}s)",
+    "resendLimitReached": "הגעת למגבלת הניסיונות. נסה שוב מאוחר יותר."
   },
   "nav": {
     "home": "דף הבית",
