@@ -80,6 +80,9 @@ export default async function LegalPage({ page }: LegalPageProps) {
             <Link href="/dpa" className="text-sky-600 hover:underline">
               {page === "dpa" ? content.title : getLegalContent("dpa", locale).title}
             </Link>
+            <Link href="/privacy-requests" className="text-sky-600 hover:underline">
+              {page === "privacyRequests" ? content.title : getLegalContent("privacyRequests", locale).title}
+            </Link>
             <Link href="/" className="text-sky-600 hover:underline">
               Shifter
             </Link>

@@ -1,6 +1,6 @@
 import type { Locale } from "@/i18n/request";
 
-export type LegalPageKey = "terms" | "privacy" | "subprocessors" | "dpa";
+export type LegalPageKey = "terms" | "privacy" | "subprocessors" | "dpa" | "privacyRequests";
 
 export interface LegalSection {
   title: string;
@@ -416,6 +416,59 @@ export const legalContent: Record<Locale, Record<LegalPageKey, LegalPageContent>
         },
       ],
     },
+    privacyRequests: {
+      eyebrow: "Privacy",
+      title: "Privacy Requests",
+      lastUpdatedLabel: "Last updated",
+      calloutTitle: "Request help with your data",
+      calloutBody:
+        "Use this page to understand how to request access, correction, export, deletion, restriction, objection, or other privacy support for Shifter data.",
+      relatedLinkLabel: "Privacy Policy",
+      sections: [
+        {
+          title: "1. What you can request",
+          bullets: [
+            "Access to personal information associated with your account.",
+            "Correction of inaccurate profile or contact information.",
+            "Export of available account, workspace, schedule, or assignment data.",
+            "Deletion of your account or personal information, where legally and technically possible.",
+            "Restriction or objection to certain processing, where applicable.",
+            "Information about subprocessors, security, retention, or international transfers.",
+          ],
+        },
+        {
+          title: "2. Start in the product when possible",
+          paragraphs: [
+            "Many requests can be completed directly in Shifter: update your profile, export schedules where export is available, manage notification preferences, or request account deletion from the profile/settings area when available.",
+            "If you belong to a workspace controlled by your organization, your workspace administrator may need to handle some requests because they control the workspace data.",
+          ],
+        },
+        {
+          title: "3. Email request",
+          paragraphs: [
+            `If you cannot complete the request in the product, email ${LEGAL_CONTACT_EMAIL} with the subject “Privacy Request”. Include your account email or phone number, the workspace name if relevant, the type of request, and enough information for us to verify your identity.`,
+          ],
+        },
+        {
+          title: "4. Verification and timing",
+          paragraphs: [
+            "We may ask for additional information to verify your identity, confirm your authority, or route the request to the correct workspace administrator. We aim to respond within a reasonable time and within any deadline required by applicable law.",
+          ],
+        },
+        {
+          title: "5. Limits",
+          paragraphs: [
+            "Some information may be retained where needed for security, legal obligations, billing, tax, accounting, audits, backups, fraud prevention, dispute resolution, or legitimate business purposes. Some data may also be controlled by your organization rather than Ofek Labs directly.",
+          ],
+        },
+        {
+          title: "6. Complaints",
+          paragraphs: [
+            `If you believe your request was not handled properly, contact ${LEGAL_CONTACT_EMAIL} and include “Privacy Complaint” in the subject. Depending on your location, you may also have the right to contact a privacy regulator.`,
+          ],
+        },
+      ],
+    },
   },
   he: {
     terms: {
@@ -802,6 +855,59 @@ export const legalContent: Record<Locale, Record<LegalPageKey, LegalPageContent>
         },
       ],
     },
+    privacyRequests: {
+      eyebrow: "פרטיות",
+      title: "בקשות פרטיות",
+      lastUpdatedLabel: "עדכון אחרון",
+      calloutTitle: "בקשת עזרה עם המידע שלך",
+      calloutBody:
+        "עמוד זה מסביר כיצד לבקש גישה, תיקון, יצוא, מחיקה, הגבלה, התנגדות או סיוע פרטיות אחר לגבי נתוני Shifter.",
+      relatedLinkLabel: "מדיניות פרטיות",
+      sections: [
+        {
+          title: "1. מה ניתן לבקש",
+          bullets: [
+            "גישה למידע אישי הקשור לחשבונך.",
+            "תיקון פרטי פרופיל או קשר לא מדויקים.",
+            "יצוא של נתוני חשבון, מרחב, סידור או שיבוצים כאשר הם זמינים.",
+            "מחיקת חשבון או מידע אישי, ככל שהדבר אפשרי משפטית וטכנית.",
+            "הגבלה או התנגדות לעיבודים מסוימים, כאשר חל.",
+            "מידע לגבי ספקי משנה, אבטחה, שמירת מידע או העברות בינלאומיות.",
+          ],
+        },
+        {
+          title: "2. התחילו במוצר כאשר אפשר",
+          paragraphs: [
+            "בקשות רבות ניתן לבצע ישירות ב-Shifter: עדכון פרופיל, יצוא סידורים כאשר זמין, ניהול העדפות התראה או בקשת מחיקת חשבון מאזור הפרופיל/הגדרות כאשר זמין.",
+            "אם אתה שייך למרחב שנשלט על ידי ארגון, ייתכן שמנהל המרחב יצטרך לטפל בחלק מהבקשות משום שהוא שולט בנתוני המרחב.",
+          ],
+        },
+        {
+          title: "3. בקשה באימייל",
+          paragraphs: [
+            `אם לא ניתן להשלים את הבקשה במוצר, שלחו אימייל אל ${LEGAL_CONTACT_EMAIL} עם הנושא “Privacy Request”. כללו את אימייל או מספר הטלפון של החשבון, שם המרחב אם רלוונטי, סוג הבקשה ומידע מספיק לאימות זהות.`,
+          ],
+        },
+        {
+          title: "4. אימות וזמנים",
+          paragraphs: [
+            "ייתכן שנבקש מידע נוסף כדי לאמת את זהותך, לוודא סמכות או להעביר את הבקשה למנהל המרחב המתאים. נשאף להשיב בזמן סביר ובכל מועד שנדרש לפי חוק חל.",
+          ],
+        },
+        {
+          title: "5. מגבלות",
+          paragraphs: [
+            "מידע מסוים עשוי להישמר לצורכי אבטחה, חובה חוקית, חיוב, מס, חשבונאות, ביקורת, גיבויים, מניעת הונאה, פתרון מחלוקות או מטרות עסקיות לגיטימיות. חלק מהמידע עשוי להיות בשליטת הארגון שלך ולא בשליטת Ofek Labs ישירות.",
+          ],
+        },
+        {
+          title: "6. תלונות",
+          paragraphs: [
+            `אם לדעתך בקשתך לא טופלה כראוי, פנה אל ${LEGAL_CONTACT_EMAIL} וכלול “Privacy Complaint” בנושא. בהתאם למיקומך, ייתכן שיש לך גם זכות לפנות לרשות פרטיות מוסמכת.`,
+          ],
+        },
+      ],
+    },
   },
   ru: {
     terms: {
@@ -1184,6 +1290,59 @@ export const legalContent: Record<Locale, Record<LegalPageKey, LegalPageContent>
           title: "12. Контакт",
           paragraphs: [
             `По вопросам DPA или подписанных enterprise-документов пишите на ${LEGAL_CONTACT_EMAIL}.`,
+          ],
+        },
+      ],
+    },
+    privacyRequests: {
+      eyebrow: "Конфиденциальность",
+      title: "Запросы конфиденциальности",
+      lastUpdatedLabel: "Последнее обновление",
+      calloutTitle: "Помощь с вашими данными",
+      calloutBody:
+        "Эта страница объясняет, как запросить доступ, исправление, экспорт, удаление, ограничение, возражение или другую помощь по данным Shifter.",
+      relatedLinkLabel: "Политика конфиденциальности",
+      sections: [
+        {
+          title: "1. Что можно запросить",
+          bullets: [
+            "Доступ к персональной информации, связанной с вашим аккаунтом.",
+            "Исправление неточных данных профиля или контактов.",
+            "Экспорт доступных данных аккаунта, рабочего пространства, расписаний или назначений.",
+            "Удаление аккаунта или персональной информации, когда это юридически и технически возможно.",
+            "Ограничение или возражение против определенной обработки, где применимо.",
+            "Информацию о субобработчиках, безопасности, хранении или международных передачах.",
+          ],
+        },
+        {
+          title: "2. Начните в продукте, если возможно",
+          paragraphs: [
+            "Многие запросы можно выполнить прямо в Shifter: обновить профиль, экспортировать расписания где доступно, управлять уведомлениями или запросить удаление аккаунта в профиле/настройках, если такая функция доступна.",
+            "Если вы участник рабочего пространства, контролируемого вашей организацией, некоторые запросы может обрабатывать администратор рабочего пространства, потому что он контролирует эти данные.",
+          ],
+        },
+        {
+          title: "3. Запрос по email",
+          paragraphs: [
+            `Если запрос нельзя выполнить в продукте, напишите на ${LEGAL_CONTACT_EMAIL} с темой “Privacy Request”. Укажите email или телефон аккаунта, название рабочего пространства если применимо, тип запроса и достаточно информации для подтверждения личности.`,
+          ],
+        },
+        {
+          title: "4. Проверка и сроки",
+          paragraphs: [
+            "Мы можем запросить дополнительную информацию для подтверждения личности, полномочий или передачи запроса правильному администратору рабочего пространства. Мы стремимся отвечать в разумный срок и в сроки, требуемые применимым законом.",
+          ],
+        },
+        {
+          title: "5. Ограничения",
+          paragraphs: [
+            "Некоторая информация может сохраняться для безопасности, юридических обязательств, биллинга, налогов, бухгалтерии, аудита, backups, предотвращения мошенничества, разрешения споров или законных бизнес-целей. Некоторые данные также могут контролироваться вашей организацией, а не напрямую Ofek Labs.",
+          ],
+        },
+        {
+          title: "6. Жалобы",
+          paragraphs: [
+            `Если вы считаете, что запрос обработан неправильно, напишите на ${LEGAL_CONTACT_EMAIL} и укажите “Privacy Complaint” в теме. В зависимости от вашего местоположения вы также можете иметь право обратиться в privacy regulator.`,
           ],
         },
       ],
