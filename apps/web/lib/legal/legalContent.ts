@@ -1,6 +1,6 @@
 import type { Locale } from "@/i18n/request";
 
-export type LegalPageKey = "terms" | "privacy" | "subprocessors";
+export type LegalPageKey = "terms" | "privacy" | "subprocessors" | "dpa";
 
 export interface LegalSection {
   title: string;
@@ -319,6 +319,103 @@ export const legalContent: Record<Locale, Record<LegalPageKey, LegalPageContent>
         },
       ],
     },
+    dpa: {
+      eyebrow: "Legal",
+      title: "Data Processing Addendum",
+      lastUpdatedLabel: "Last updated",
+      calloutTitle: "How to use this DPA",
+      calloutBody:
+        "This Data Processing Addendum is intended for organizations that use Shifter to manage team-member or workforce data. It explains controller/processor roles and key data-processing commitments. For signed enterprise terms, contact Ofek Labs.",
+      relatedLinkLabel: "Privacy Policy",
+      sections: [
+        {
+          title: "1. Parties and scope",
+          paragraphs: [
+            "This Data Processing Addendum (DPA) supplements the Terms of Service and Privacy Policy when a customer uses Shifter to process personal information on behalf of a workspace, employer, team, unit, or organization.",
+            "The customer is generally the controller of Customer Data, and Ofek Labs is generally the processor or service provider that processes Customer Data to provide Shifter, unless applicable law or a specific written agreement states otherwise.",
+          ],
+        },
+        {
+          title: "2. Processing instructions",
+          paragraphs: [
+            "Ofek Labs will process Customer Data only to provide, secure, support, maintain, and improve Shifter; comply with documented customer instructions; comply with law; and protect rights, safety, and security.",
+            "The Terms, Privacy Policy, product settings, administrator actions, support requests, and this DPA are documented instructions for processing.",
+          ],
+        },
+        {
+          title: "3. Categories of data subjects and personal data",
+          bullets: [
+            "Data subjects may include workspace owners, administrators, employees, volunteers, contractors, team members, invitees, support contacts, and end users.",
+            "Personal data may include account data, contact details, profile data, roles, permissions, scheduling data, availability, constraints, assignments, messages, files, billing metadata, technical logs, and support communications.",
+            "Customers should not submit sensitive personal data unless necessary for their scheduling use case and legally permitted.",
+          ],
+        },
+        {
+          title: "4. Customer responsibilities",
+          bullets: [
+            "Customers are responsible for having a lawful basis to collect and process team-member data in Shifter.",
+            "Customers are responsible for providing required notices to users and team members.",
+            "Customers must configure roles and permissions appropriately and remove access when no longer needed.",
+            "Customers must avoid submitting unnecessary sensitive information.",
+          ],
+        },
+        {
+          title: "5. Confidentiality and personnel",
+          paragraphs: [
+            "Ofek Labs restricts access to Customer Data to personnel and service providers who need access to operate, secure, support, or improve Shifter. Personnel with access to Customer Data are expected to protect it and use it only for authorized purposes.",
+          ],
+        },
+        {
+          title: "6. Security measures",
+          bullets: [
+            "HTTPS/TLS for data in transit.",
+            "Password hashing and authentication controls.",
+            "Role and permission checks.",
+            "Workspace isolation and tenant-aware data access controls.",
+            "Production error handling and security-conscious logging.",
+            "Backups, monitoring, and operational controls appropriate to the service.",
+          ],
+        },
+        {
+          title: "7. Subprocessors",
+          paragraphs: [
+            "Ofek Labs may use subprocessors to provide payments, email, messaging, analytics, error monitoring, hosting, storage, AI assistance, and infrastructure. The current public list is available on the Subprocessors page.",
+            "We remain responsible for subprocessors we engage to process Customer Data on our behalf, subject to the limits in the Terms.",
+          ],
+        },
+        {
+          title: "8. Assistance with rights requests",
+          paragraphs: [
+            "Where legally required and reasonably possible, Ofek Labs will assist customers with data subject requests through product functionality, exports, deletion workflows, or support. Customers remain responsible for responding to requests where they are the controller.",
+          ],
+        },
+        {
+          title: "9. Security incidents",
+          paragraphs: [
+            "If Ofek Labs becomes aware of a confirmed security incident involving Customer Data, we will notify affected customers without undue delay, provide information reasonably available to us, and take reasonable steps to contain, investigate, and remediate the incident.",
+          ],
+        },
+        {
+          title: "10. Return, deletion, and audit",
+          paragraphs: [
+            "Upon termination or deletion, Customer Data will be deleted or anonymized according to the Privacy Policy, product behavior, backup cycles, and legal retention obligations.",
+            "Customers may request reasonable information about our security and privacy practices. Any audit right must be exercised in a way that protects other customers, security, confidential information, and service reliability.",
+          ],
+        },
+        {
+          title: "11. International transfers",
+          paragraphs: [
+            "Customer Data may be processed in Israel, the United States, the European Economic Area, and other locations where Ofek Labs or subprocessors operate. Where required, customers and Ofek Labs will rely on appropriate transfer mechanisms.",
+          ],
+        },
+        {
+          title: "12. Contact",
+          paragraphs: [
+            `For DPA questions or signed enterprise paperwork, contact ${LEGAL_CONTACT_EMAIL}.`,
+          ],
+        },
+      ],
+    },
   },
   he: {
     terms: {
@@ -608,6 +705,103 @@ export const legalContent: Record<Locale, Record<LegalPageKey, LegalPageContent>
         },
       ],
     },
+    dpa: {
+      eyebrow: "משפטי",
+      title: "נספח עיבוד מידע",
+      lastUpdatedLabel: "עדכון אחרון",
+      calloutTitle: "כיצד להשתמש בנספח זה",
+      calloutBody:
+        "נספח עיבוד מידע זה מיועד לארגונים שמשתמשים ב-Shifter לניהול נתוני חברי צוות או כוח אדם. הוא מסביר את תפקידי בעל השליטה והמעבד ואת התחייבויות העיבוד המרכזיות. לתנאים חתומים לארגונים, פנו אל Ofek Labs.",
+      relatedLinkLabel: "מדיניות פרטיות",
+      sections: [
+        {
+          title: "1. צדדים והיקף",
+          paragraphs: [
+            "נספח עיבוד מידע זה משלים את תנאי השימוש ומדיניות הפרטיות כאשר לקוח משתמש ב-Shifter לעיבוד מידע אישי בשם מרחב עבודה, מעסיק, צוות, יחידה או ארגון.",
+            "הלקוח הוא בדרך כלל בעל השליטה בנתוני הלקוח, ו-Ofek Labs היא בדרך כלל המעבדת או ספק השירות שמעבד את הנתונים לצורך אספקת Shifter, אלא אם חוק חל או הסכם כתוב קובע אחרת.",
+          ],
+        },
+        {
+          title: "2. הוראות עיבוד",
+          paragraphs: [
+            "Ofek Labs תעבד נתוני לקוח רק כדי לספק, לאבטח, לתמוך, לתחזק ולשפר את Shifter; לפעול לפי הוראות מתועדות של הלקוח; לעמוד בחוק; ולהגן על זכויות, בטיחות ואבטחה.",
+            "תנאי השימוש, מדיניות הפרטיות, הגדרות המוצר, פעולות מנהל, בקשות תמיכה ונספח זה הם הוראות מתועדות לעיבוד.",
+          ],
+        },
+        {
+          title: "3. קטגוריות נושאי מידע ומידע אישי",
+          bullets: [
+            "נושאי מידע עשויים לכלול בעלי מרחב, מנהלים, עובדים, מתנדבים, קבלנים, חברי צוות, מוזמנים, אנשי קשר לתמיכה ומשתמשי קצה.",
+            "מידע אישי עשוי לכלול נתוני חשבון, פרטי קשר, פרופיל, תפקידים, הרשאות, נתוני סידור, זמינות, אילוצים, שיבוצים, הודעות, קבצים, מטא-דאטה של חיוב, לוגים טכניים ותקשורת תמיכה.",
+            "אין למסור מידע אישי רגיש אלא אם הוא נחוץ לשימוש בסידור ומותר לפי חוק.",
+          ],
+        },
+        {
+          title: "4. אחריות הלקוח",
+          bullets: [
+            "הלקוח אחראי לבסיס חוקי לאיסוף ולעיבוד נתוני חברי צוות ב-Shifter.",
+            "הלקוח אחראי למסירת הודעות נדרשות למשתמשים ולחברי צוות.",
+            "הלקוח חייב להגדיר תפקידים והרשאות כראוי ולהסיר גישה כשאין בה עוד צורך.",
+            "הלקוח חייב להימנע מהזנת מידע רגיש שאינו נחוץ.",
+          ],
+        },
+        {
+          title: "5. סודיות ואנשי צוות",
+          paragraphs: [
+            "Ofek Labs מגבילה גישה לנתוני לקוח לאנשי צוות ולספקים שזקוקים לגישה לצורך תפעול, אבטחה, תמיכה או שיפור Shifter. מי שנחשף לנתוני לקוח מצופה להגן עליהם ולהשתמש בהם רק למטרות מורשות.",
+          ],
+        },
+        {
+          title: "6. אמצעי אבטחה",
+          bullets: [
+            "HTTPS/TLS למידע בתעבורה.",
+            "גיבוב סיסמאות ובקרות אימות.",
+            "בדיקות תפקידים והרשאות.",
+            "בידוד מרחבים ובקרות גישה מודעות-דייר.",
+            "טיפול שגיאות בפרודקשן ולוגים מודעי אבטחה.",
+            "גיבויים, ניטור ובקרות תפעוליות המתאימות לשירות.",
+          ],
+        },
+        {
+          title: "7. ספקי משנה",
+          paragraphs: [
+            "Ofek Labs עשויה להשתמש בספקי משנה לתשלומים, אימייל, הודעות, אנליטיקה, ניטור שגיאות, אירוח, אחסון, AI ותשתית. הרשימה הציבורית הנוכחית זמינה בעמוד ספקי המשנה.",
+            "אנו נשארים אחראים לספקי משנה שאנו מפעילים לעיבוד נתוני לקוח מטעמנו, בכפוף למגבלות בתנאי השימוש.",
+          ],
+        },
+        {
+          title: "8. סיוע בבקשות זכויות",
+          paragraphs: [
+            "כאשר נדרש לפי חוק וככל שסביר, Ofek Labs תסייע ללקוחות בבקשות נושאי מידע באמצעות יכולות מוצר, יצוא, מחיקה או תמיכה. הלקוח נשאר אחראי למענה לבקשות כאשר הוא בעל השליטה.",
+          ],
+        },
+        {
+          title: "9. אירועי אבטחה",
+          paragraphs: [
+            "אם Ofek Labs תגלה אירוע אבטחה מאומת הכולל נתוני לקוח, נודיע ללקוחות המושפעים ללא עיכוב בלתי סביר, נספק מידע שזמין לנו באופן סביר, וננקוט צעדים סבירים לבלימה, חקירה ותיקון.",
+          ],
+        },
+        {
+          title: "10. החזרה, מחיקה וביקורת",
+          paragraphs: [
+            "בעת סיום או מחיקה, נתוני לקוח יימחקו או יעברו אנונימיזציה לפי מדיניות הפרטיות, התנהגות המוצר, מחזורי גיבוי וחובות שמירה חוקיות.",
+            "לקוחות רשאים לבקש מידע סביר לגבי נוהלי האבטחה והפרטיות שלנו. כל זכות ביקורת תמומש באופן שמגן על לקוחות אחרים, אבטחה, מידע סודי ואמינות השירות.",
+          ],
+        },
+        {
+          title: "11. העברות בינלאומיות",
+          paragraphs: [
+            "נתוני לקוח עשויים להיות מעובדים בישראל, בארצות הברית, באזור הכלכלי האירופי ובמקומות אחרים שבהם Ofek Labs או ספקי משנה פועלים. כאשר נדרש, הלקוח ו-Ofek Labs יסתמכו על מנגנוני העברה מתאימים.",
+          ],
+        },
+        {
+          title: "12. יצירת קשר",
+          paragraphs: [
+            `לשאלות DPA או מסמכים ארגוניים חתומים ניתן לפנות אל ${LEGAL_CONTACT_EMAIL}.`,
+          ],
+        },
+      ],
+    },
   },
   ru: {
     terms: {
@@ -893,6 +1087,103 @@ export const legalContent: Record<Locale, Record<LegalPageKey, LegalPageContent>
           paragraphs: [
             "Мы можем обновлять эту страницу, когда провайдеры добавляются, удаляются, заменяются или существенно меняются.",
             `По вопросам субобработчиков пишите на ${LEGAL_CONTACT_EMAIL}.`,
+          ],
+        },
+      ],
+    },
+    dpa: {
+      eyebrow: "Юридическая информация",
+      title: "Дополнение об обработке данных",
+      lastUpdatedLabel: "Последнее обновление",
+      calloutTitle: "Как использовать это DPA",
+      calloutBody:
+        "Это Дополнение об обработке данных предназначено для организаций, которые используют Shifter для управления данными участников команды или персонала. Оно объясняет роли controller/processor и основные обязательства обработки. Для подписанных enterprise-документов свяжитесь с Ofek Labs.",
+      relatedLinkLabel: "Политика конфиденциальности",
+      sections: [
+        {
+          title: "1. Стороны и область действия",
+          paragraphs: [
+            "Это Дополнение об обработке данных (DPA) дополняет Условия использования и Политику конфиденциальности, когда клиент использует Shifter для обработки персональной информации от имени рабочего пространства, работодателя, команды, подразделения или организации.",
+            "Клиент обычно является controller данных клиента, а Ofek Labs обычно является processor или service provider, который обрабатывает данные для предоставления Shifter, если применимое право или отдельное письменное соглашение не предусматривает иное.",
+          ],
+        },
+        {
+          title: "2. Инструкции обработки",
+          paragraphs: [
+            "Ofek Labs будет обрабатывать данные клиента только для предоставления, защиты, поддержки, обслуживания и улучшения Shifter; выполнения документированных инструкций клиента; соблюдения закона; и защиты прав, безопасности и security.",
+            "Условия, Политика конфиденциальности, настройки продукта, действия администратора, запросы поддержки и это DPA являются документированными инструкциями обработки.",
+          ],
+        },
+        {
+          title: "3. Категории субъектов и персональных данных",
+          bullets: [
+            "Субъекты данных могут включать владельцев рабочих пространств, администраторов, сотрудников, волонтеров, подрядчиков, участников команды, приглашенных, контакты поддержки и конечных пользователей.",
+            "Персональные данные могут включать account data, contact details, profile data, roles, permissions, scheduling data, availability, constraints, assignments, messages, files, billing metadata, technical logs и support communications.",
+            "Клиенты не должны передавать sensitive personal data, если это не необходимо для scheduling use case и не разрешено законом.",
+          ],
+        },
+        {
+          title: "4. Обязанности клиента",
+          bullets: [
+            "Клиент отвечает за законное основание сбора и обработки данных участников команды в Shifter.",
+            "Клиент отвечает за предоставление необходимых уведомлений пользователям и участникам команды.",
+            "Клиент должен правильно настраивать роли и разрешения и удалять доступ, когда он больше не нужен.",
+            "Клиент должен избегать передачи ненужной sensitive information.",
+          ],
+        },
+        {
+          title: "5. Конфиденциальность и персонал",
+          paragraphs: [
+            "Ofek Labs ограничивает доступ к данным клиента персоналом и service providers, которым доступ нужен для эксплуатации, защиты, поддержки или улучшения Shifter. Персонал с доступом к данным клиента должен защищать их и использовать только для разрешенных целей.",
+          ],
+        },
+        {
+          title: "6. Меры безопасности",
+          bullets: [
+            "HTTPS/TLS для данных при передаче.",
+            "Хеширование паролей и authentication controls.",
+            "Проверки ролей и разрешений.",
+            "Изоляция рабочих пространств и tenant-aware controls.",
+            "Production error handling и security-conscious logging.",
+            "Backups, monitoring и operational controls, соответствующие сервису.",
+          ],
+        },
+        {
+          title: "7. Субобработчики",
+          paragraphs: [
+            "Ofek Labs может использовать субобработчиков для платежей, email, сообщений, analytics, error monitoring, hosting, storage, AI assistance и infrastructure. Актуальный публичный список доступен на странице Subprocessors.",
+            "Мы остаемся ответственными за субобработчиков, которых привлекаем для обработки данных клиента от нашего имени, с учетом ограничений в Условиях.",
+          ],
+        },
+        {
+          title: "8. Помощь с запросами прав",
+          paragraphs: [
+            "Когда это требуется законом и разумно возможно, Ofek Labs поможет клиентам с запросами субъектов данных через функции продукта, exports, deletion workflows или support. Клиенты остаются ответственными за ответы на запросы, когда они являются controller.",
+          ],
+        },
+        {
+          title: "9. Инциденты безопасности",
+          paragraphs: [
+            "Если Ofek Labs узнает о подтвержденном security incident с данными клиента, мы уведомим затронутых клиентов без неоправданной задержки, предоставим разумно доступную информацию и примем разумные меры по containment, investigation и remediation.",
+          ],
+        },
+        {
+          title: "10. Возврат, удаление и аудит",
+          paragraphs: [
+            "При termination или deletion данные клиента будут удалены или anonymized согласно Privacy Policy, поведению продукта, backup cycles и legal retention obligations.",
+            "Клиенты могут запросить разумную информацию о наших security и privacy practices. Любое audit right должно осуществляться так, чтобы защищать других клиентов, безопасность, confidential information и reliability сервиса.",
+          ],
+        },
+        {
+          title: "11. Международные передачи",
+          paragraphs: [
+            "Данные клиента могут обрабатываться в Израиле, США, Европейской экономической зоне и других местах, где работают Ofek Labs или subprocessors. Когда требуется, клиенты и Ofek Labs будут использовать подходящие transfer mechanisms.",
+          ],
+        },
+        {
+          title: "12. Контакт",
+          paragraphs: [
+            `По вопросам DPA или подписанных enterprise-документов пишите на ${LEGAL_CONTACT_EMAIL}.`,
           ],
         },
       ],
