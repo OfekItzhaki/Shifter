@@ -16,7 +16,7 @@ export default async function LegalPage({ page }: LegalPageProps) {
   const locale = await getLocale();
   const content = getLegalContent(page, locale);
   const dir = legalDir(locale);
-  const relatedHref = page === "terms" ? "/privacy" : "/terms";
+  const relatedHref = page === "terms" ? "/privacy" : page === "privacy" ? "/terms" : "/privacy";
 
   return (
     <div className="min-h-screen bg-white dark:bg-slate-900">
@@ -73,6 +73,9 @@ export default async function LegalPage({ page }: LegalPageProps) {
             </Link>
             <Link href="/privacy" className="text-sky-600 hover:underline">
               {page === "privacy" ? content.title : getLegalContent("privacy", locale).title}
+            </Link>
+            <Link href="/subprocessors" className="text-sky-600 hover:underline">
+              {page === "subprocessors" ? content.title : getLegalContent("subprocessors", locale).title}
             </Link>
             <Link href="/" className="text-sky-600 hover:underline">
               Shifter

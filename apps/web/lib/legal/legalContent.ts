@@ -1,6 +1,6 @@
 import type { Locale } from "@/i18n/request";
 
-export type LegalPageKey = "terms" | "privacy";
+export type LegalPageKey = "terms" | "privacy" | "subprocessors";
 
 export interface LegalSection {
   title: string;
@@ -268,6 +268,57 @@ export const legalContent: Record<Locale, Record<LegalPageKey, LegalPageContent>
         },
       ],
     },
+    subprocessors: {
+      eyebrow: "Legal",
+      title: "Subprocessors",
+      lastUpdatedLabel: "Last updated",
+      calloutTitle: "What this page covers",
+      calloutBody:
+        "This page lists third-party providers that may process personal information or customer data when Shifter is configured to use them. Availability may vary by environment, plan, and feature configuration.",
+      relatedLinkLabel: "Privacy Policy",
+      sections: [
+        {
+          title: "1. Payment and subscription processing",
+          bullets: [
+            "LemonSqueezy: checkout, payment processing, tax handling, invoices, subscription status, customer identifiers, and billing webhooks.",
+          ],
+        },
+        {
+          title: "2. Communications",
+          bullets: [
+            "SendGrid: transactional email delivery such as verification, password reset, invitations, schedule updates, and service notices.",
+            "Twilio: WhatsApp or SMS delivery for operational notifications where messaging is configured.",
+          ],
+        },
+        {
+          title: "3. Analytics and reliability",
+          bullets: [
+            "PostHog: product analytics, page events, usage events, and session diagnostics when analytics consent is granted and production analytics is configured.",
+            "Sentry: error monitoring, performance diagnostics, and limited replay data when consent and production configuration allow it.",
+          ],
+        },
+        {
+          title: "4. Infrastructure and storage",
+          bullets: [
+            "Hosting and database providers: application hosting, API hosting, PostgreSQL databases, network services, backups, and operational logs.",
+            "Local or S3-compatible storage providers: profile images, uploads, exports, generated files, and related backups.",
+          ],
+        },
+        {
+          title: "5. AI-assisted features",
+          bullets: [
+            "AI model providers: parsing, importing, summarizing, recommending, or assisting with scheduling-related content where AI features are enabled.",
+          ],
+        },
+        {
+          title: "6. Updates and questions",
+          paragraphs: [
+            "We may update this page when providers are added, removed, replaced, or materially changed.",
+            `For questions about subprocessors, contact ${LEGAL_CONTACT_EMAIL}.`,
+          ],
+        },
+      ],
+    },
   },
   he: {
     terms: {
@@ -506,6 +557,57 @@ export const legalContent: Record<Locale, Record<LegalPageKey, LegalPageContent>
         },
       ],
     },
+    subprocessors: {
+      eyebrow: "משפטי",
+      title: "ספקי משנה",
+      lastUpdatedLabel: "עדכון אחרון",
+      calloutTitle: "מה מופיע בעמוד זה",
+      calloutBody:
+        "עמוד זה מפרט ספקי צד שלישי שעשויים לעבד מידע אישי או נתוני לקוח כאשר Shifter מוגדר להשתמש בהם. הזמינות עשויה להשתנות לפי סביבה, תוכנית ותצורת תכונות.",
+      relatedLinkLabel: "מדיניות פרטיות",
+      sections: [
+        {
+          title: "1. תשלומים ומנויים",
+          bullets: [
+            "LemonSqueezy: תהליך checkout, עיבוד תשלומים, מסים, חשבוניות, סטטוס מנוי, מזהי לקוח ו-webhooks של חיוב.",
+          ],
+        },
+        {
+          title: "2. תקשורת",
+          bullets: [
+            "SendGrid: שליחת אימיילים תפעוליים כגון אימות, איפוס סיסמה, הזמנות, עדכוני סידור והודעות שירות.",
+            "Twilio: משלוח WhatsApp או SMS להתראות תפעוליות כאשר הודעות מוגדרות.",
+          ],
+        },
+        {
+          title: "3. אנליטיקה ואמינות",
+          bullets: [
+            "PostHog: אנליטיקת מוצר, אירועי עמוד, אירועי שימוש ודיאגנוסטיקת סשן כאשר ניתנה הסכמה ואנליטיקה בפרודקשן מוגדרת.",
+            "Sentry: ניטור שגיאות, דיאגנוסטיקת ביצועים ונתוני replay מוגבלים כאשר הסכמה ותצורת פרודקשן מאפשרות זאת.",
+          ],
+        },
+        {
+          title: "4. תשתית ואחסון",
+          bullets: [
+            "ספקי אירוח ומסדי נתונים: אירוח אפליקציה ו-API, PostgreSQL, שירותי רשת, גיבויים ולוגים תפעוליים.",
+            "אחסון מקומי או S3-compatible: תמונות פרופיל, העלאות, יצוא, קבצים שנוצרו וגיבויים קשורים.",
+          ],
+        },
+        {
+          title: "5. תכונות AI",
+          bullets: [
+            "ספקי מודלי AI: ניתוח, יבוא, סיכום, המלצה או סיוע בתוכן הקשור לסידורים כאשר תכונות AI מופעלות.",
+          ],
+        },
+        {
+          title: "6. עדכונים ושאלות",
+          paragraphs: [
+            "אנו עשויים לעדכן עמוד זה כאשר ספקים מתווספים, מוסרים, מוחלפים או משתנים באופן מהותי.",
+            `לשאלות לגבי ספקי משנה ניתן לפנות אל ${LEGAL_CONTACT_EMAIL}.`,
+          ],
+        },
+      ],
+    },
   },
   ru: {
     terms: {
@@ -740,6 +842,57 @@ export const legalContent: Record<Locale, Record<LegalPageKey, LegalPageContent>
             "Shifter не предназначен для детей младше 16 лет, и мы сознательно не собираем персональную информацию детей младше 16 лет.",
             "Мы стремимся обрабатывать персональную информацию в соответствии с применимыми требованиями приватности Израиля и, где применимо, принципами GDPR для пользователей в ЕЭЗ или Великобритании.",
             "Мы можем обновлять эту Политику время от времени. При существенных изменениях мы предоставим разумное уведомление в приложении, по email или другим подходящим способом.",
+          ],
+        },
+      ],
+    },
+    subprocessors: {
+      eyebrow: "Юридическая информация",
+      title: "Субобработчики",
+      lastUpdatedLabel: "Последнее обновление",
+      calloutTitle: "Что описывает эта страница",
+      calloutBody:
+        "Эта страница перечисляет сторонних провайдеров, которые могут обрабатывать персональную информацию или данные клиента, когда Shifter настроен на их использование. Доступность зависит от среды, плана и конфигурации функций.",
+      relatedLinkLabel: "Политика конфиденциальности",
+      sections: [
+        {
+          title: "1. Платежи и подписки",
+          bullets: [
+            "LemonSqueezy: checkout, обработка платежей, налоги, счета, статус подписки, идентификаторы клиента и billing webhooks.",
+          ],
+        },
+        {
+          title: "2. Коммуникации",
+          bullets: [
+            "SendGrid: transactional email, включая verification, password reset, invitations, schedule updates и service notices.",
+            "Twilio: доставка WhatsApp или SMS для операционных уведомлений, если messaging настроен.",
+          ],
+        },
+        {
+          title: "3. Аналитика и надежность",
+          bullets: [
+            "PostHog: product analytics, page events, usage events и session diagnostics, когда пользователь дал согласие и production analytics настроена.",
+            "Sentry: error monitoring, performance diagnostics и ограниченные replay-данные, когда согласие и production-настройки это позволяют.",
+          ],
+        },
+        {
+          title: "4. Инфраструктура и хранение",
+          bullets: [
+            "Провайдеры хостинга и баз данных: hosting приложения и API, PostgreSQL, network services, backups и operational logs.",
+            "Local или S3-compatible storage: фото профиля, uploads, exports, generated files и связанные backups.",
+          ],
+        },
+        {
+          title: "5. AI-функции",
+          bullets: [
+            "AI model providers: parsing, importing, summarizing, recommending или помощь с scheduling-related content, когда AI-функции включены.",
+          ],
+        },
+        {
+          title: "6. Обновления и вопросы",
+          paragraphs: [
+            "Мы можем обновлять эту страницу, когда провайдеры добавляются, удаляются, заменяются или существенно меняются.",
+            `По вопросам субобработчиков пишите на ${LEGAL_CONTACT_EMAIL}.`,
           ],
         },
       ],
