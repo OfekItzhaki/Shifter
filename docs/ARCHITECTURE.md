@@ -176,6 +176,12 @@ Space
 
 A user may belong to multiple spaces. The frontend stores the active `spaceId` in Zustand and includes it in every API request path (`/spaces/{spaceId}/...`).
 
+Future dedicated deployments and customer/account isolation are covered in
+[Portable Space Isolation](./architecture/portable-space-isolation.md). The
+short version: `Space` remains the operational tenant boundary, but spaces must
+stay portable so a customer can move from shared SaaS to a dedicated deployment
+without a code fork.
+
 ---
 
 ## Authentication Flow
