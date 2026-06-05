@@ -1,5 +1,5 @@
 {
-  "name": "Shifter — Smart Shift Scheduling",
+  "name": "Shifter - Smart Shift Scheduling",
   "short_name": "Shifter",
   "description": "View your shift schedule, even offline",
   "start_url": "/schedule/my-missions",
@@ -9,10 +9,20 @@
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "/shifter-favicon.png",
-      "sizes": "192x192",
+      "src": "/shifter_icon.png",
+      "sizes": "464x465",
       "type": "image/png",
       "purpose": "any maskable"
+    },
+    {
+      "src": "/shifter_favicon32.png",
+      "sizes": "32x32",
+      "type": "image/png"
+    },
+    {
+      "src": "/shifter_favicon16.png",
+      "sizes": "16x16",
+      "type": "image/png"
     }
   ],
   "categories": ["productivity", "utilities"],

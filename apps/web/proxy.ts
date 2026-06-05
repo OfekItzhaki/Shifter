@@ -95,7 +95,7 @@ export function proxy(request: NextRequest) {
 export const config = {
   matcher: [
     {
-      source: "/((?!_next/static|_next/image|shifter-favicon.png|sw.js|manifest.json).*)",
+      source: "/((?!_next/static|_next/image|shifter_favicon16.png|shifter_favicon32.png|shifter_icon.png|shifter_full_logo.png|sw.js|manifest.json).*)",
       missing: [
         { type: "header", key: "next-router-prefetch" },
         { type: "header", key: "purpose", value: "prefetch" },

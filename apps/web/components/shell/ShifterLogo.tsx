@@ -11,8 +11,8 @@ interface ShifterLogoProps {
 }
 
 const LOGO_ASPECT_RATIOS: Record<ShifterLogoVariant, number> = {
-  icon: 369 / 396,
-  full: 1692 / 929,
+  icon: 464 / 465,
+  full: 1059 / 294,
 };
 
 const LOGO_SOURCES: Record<ShifterLogoVariant, string> = {

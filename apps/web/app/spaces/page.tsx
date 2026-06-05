@@ -82,7 +82,7 @@ export default function SpacesPage() {
         <div className="text-center">
           <div className="flex justify-center mb-4">
             <img
-              src="/shifter-favicon.png"
+              src="/shifter_icon.png"
               alt="Shifter"
               className="w-16 h-16 rounded-2xl shadow-lg object-cover"
             />
