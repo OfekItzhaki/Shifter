@@ -22,8 +22,7 @@ interface AppShellProps { children: React.ReactNode; }
 
 const S = {
   sidebar: { width: 256, background: "#0f172a", display: "flex", flexDirection: "column" as const, height: "100vh", position: "fixed" as const, top: 0, left: 0, zIndex: 30, overflowY: "auto" as const },
-  logo: { padding: "20px 16px", borderBottom: "1px solid rgba(255,255,255,0.08)", display: "flex", alignItems: "center", gap: 10, textDecoration: "none" },
-  logoIcon: { width: 32, height: 32, borderRadius: 8, background: "#0ea5e9", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 },
+  logo: { padding: "14px 12px", borderBottom: "1px solid rgba(255,255,255,0.08)", display: "flex", alignItems: "center", gap: 8, textDecoration: "none" },
   nav: { flex: 1, padding: "12px 12px", display: "flex", flexDirection: "column" as const, gap: 2 },
   navLink: (active: boolean, admin: boolean) => ({
     display: "flex", alignItems: "center", gap: 10, padding: "9px 12px", borderRadius: 8,
@@ -139,11 +138,11 @@ export default function AppShell({ children }: AppShellProps) {
         dir={dir}
       >
         <div style={{ ...S.logo, textDecoration: "none" }}>
-          <Link href="/home" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none", flex: 1, minWidth: 0 }}>
-            <ShifterLogo size={32} />
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ color: "white", fontWeight: 700, fontSize: 14, lineHeight: 1.2 }}>Shifter</div>
-            </div>
+          <Link href="/home" className="sidebar-brand-link" aria-label="Go to home" title="Go to home">
+            <ShifterLogo size={34} variant="full" className="sidebar-brand-logo" />
+            <span className="sidebar-brand-home-indicator" aria-hidden="true">
+              {ic("M3 12l9-9 9 9M5 10v10a1 1 0 001 1h4m4 0h4a1 1 0 001-1V10M9 21v-6a1 1 0 011-1h4a1 1 0 011 1v6")}
+            </span>
           </Link>
           {/* NotificationBell is OUTSIDE the Link so clicks don't navigate */}
           <NotificationBell />
