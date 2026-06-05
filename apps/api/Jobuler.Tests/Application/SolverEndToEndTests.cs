@@ -133,7 +133,8 @@ public class SolverEndToEndTests : IAsyncLifetime
                 Priority: 5,
                 RequiredRoleIds: [],
                 RequiredQualificationIds: [],
-                AllowsOverlap: false)],
+                AllowsOverlap: false,
+                QualificationRequirements: [])],
             HardConstraints: [],
             SoftConstraints: [],
             EmergencyConstraints: [],
@@ -177,9 +178,9 @@ public class SolverEndToEndTests : IAsyncLifetime
             PresenceWindows: [],
             TaskSlots: [
                 new TaskSlotDto(slot1, taskType, "Guard", "normal",
-                    Tomorrow(6), Tomorrow(14), 2, 5, [], [], false),
+                    Tomorrow(6), Tomorrow(14), 2, 5, [], [], false, false, []),
                 new TaskSlotDto(slot2, taskType, "Guard", "normal",
-                    Tomorrow(14), Tomorrow(22), 2, 5, [], [], false),
+                    Tomorrow(14), Tomorrow(22), 2, 5, [], [], false, false, []),
             ],
             HardConstraints: [],
             SoftConstraints: [],
@@ -221,7 +222,7 @@ public class SolverEndToEndTests : IAsyncLifetime
             PresenceWindows: [],
             TaskSlots: [new TaskSlotDto(
                 slotId, taskType, "Guard", "normal",
-                Tomorrow(8), Tomorrow(16), 1, 5, [], [], false)],
+                Tomorrow(8), Tomorrow(16), 1, 5, [], [], false, false, [])],
             HardConstraints: [],
             SoftConstraints: [],
             EmergencyConstraints: [],
@@ -264,7 +265,7 @@ public class SolverEndToEndTests : IAsyncLifetime
                 slotId, taskType, "Guard", "normal",
                 Tomorrow(8), Tomorrow(16),
                 RequiredHeadcount: 3,   // ← needs 3, only 1 available
-                Priority: 5, [], [], false)],
+                Priority: 5, [], [], false, false, [])],
             HardConstraints: [],
             SoftConstraints: [],
             EmergencyConstraints: [],
@@ -314,7 +315,7 @@ public class SolverEndToEndTests : IAsyncLifetime
             ],
             TaskSlots: [new TaskSlotDto(
                 slotId, taskType, "Guard", "normal",
-                Tomorrow(8), Tomorrow(16), 1, 5, [], [], false)],
+                Tomorrow(8), Tomorrow(16), 1, 5, [], [], false, false, [])],
             HardConstraints: [],
             SoftConstraints: [],
             EmergencyConstraints: [],
@@ -365,7 +366,7 @@ public class SolverEndToEndTests : IAsyncLifetime
             PresenceWindows: [],
             TaskSlots: [new TaskSlotDto(
                 slotId, taskType, "Guard", "normal",
-                Tomorrow(8), Tomorrow(16), 1, 5, [], [], false)],
+                Tomorrow(8), Tomorrow(16), 1, 5, [], [], false, false, [])],
             HardConstraints: [],
             SoftConstraints: [],
             EmergencyConstraints: [],
