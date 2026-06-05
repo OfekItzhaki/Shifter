@@ -8,7 +8,7 @@ import OfflineBanner from "@/components/shell/OfflineBanner";
 import ThemeProvider from "@/components/ThemeProvider";
 import AdminSessionGuard from "@/components/admin/AdminSessionGuard";
 import FeedbackFab from "@/components/shell/FeedbackFab";
-import { initPostHog } from "@/lib/analytics/posthog";
+import CookieConsentBanner from "@/components/privacy/CookieConsentBanner";
 import { initConnectivity } from "@/lib/api/client";
 import { initBackgroundRefresh } from "@/lib/cache/backgroundRefresh";
 import { useCacheLifecycle } from "@/lib/hooks/useCacheLifecycle";
@@ -26,7 +26,6 @@ export function Providers({ children }: { children: React.ReactNode }) {
   useCacheLifecycle();
 
   useEffect(() => {
-    initPostHog();
     const cleanupConnectivity = initConnectivity();
     const cleanupBackgroundRefresh = initBackgroundRefresh();
     return () => {
@@ -42,6 +41,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
         <AdminSessionGuard />
         {isLoggedIn && <FeedbackFab variant={isAuthRoute ? "auth" : "app"} />}
         {children}
+        <CookieConsentBanner />
       </ThemeProvider>
     </QueryClientProvider>
   );

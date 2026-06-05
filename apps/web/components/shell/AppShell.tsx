@@ -10,6 +10,7 @@ import ShifterLogo from "@/components/shell/ShifterLogo";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import DarkModeToggle from "@/components/DarkModeToggle";
 import VerificationBanner from "@/components/shell/VerificationBanner";
+import LegalLinks from "@/components/legal/LegalLinks";
 import OnboardingProvider from "@/components/onboarding/OnboardingProvider";
 import OnboardingPanel from "@/components/onboarding/OnboardingPanel";
 import SpaceSwitcher from "@/components/shell/SpaceSwitcher";
@@ -210,14 +211,8 @@ export default function AppShell({ children }: AppShellProps) {
               ofeklabs.com
             </a>
           </div>
-          <div style={{ padding: "0 12px 12px", textAlign: "center", display: "flex", justifyContent: "center", gap: 8 }}>
-            <Link href="/terms" style={{ fontSize: 10, color: "#94a3b8", textDecoration: "none" }}>
-              {t("nav.terms")}
-            </Link>
-            <span style={{ fontSize: 10, color: "#64748b" }}>·</span>
-            <Link href="/privacy" style={{ fontSize: 10, color: "#94a3b8", textDecoration: "none" }}>
-              {t("nav.privacy")}
-            </Link>
+          <div style={{ padding: "0 12px 12px" }}>
+            <LegalLinks compact />
           </div>
         </div>
       </aside>

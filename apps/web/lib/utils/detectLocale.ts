@@ -1,3 +1,5 @@
+import { DEFAULT_LOCALE, isSupportedLocale } from "@/lib/i18n/locales";
+
 /**
  * Detects the user's preferred locale based on their timezone (location-based).
  * Priority: timezone → browser language → fallback "he"
@@ -8,18 +10,17 @@
  * - Everything else → English
  */
 export function detectBrowserLocale(): string {
-  if (typeof window === "undefined") return "he";
+  if (typeof window === "undefined") return DEFAULT_LOCALE;
 
   // First try timezone-based detection (most accurate for location)
   const tzLocale = detectLocaleFromTimezone();
   if (tzLocale) return tzLocale;
 
   // Fallback to browser language
-  const lang = navigator.language || navigator.languages?.[0] || "he";
+  const lang = navigator.language || navigator.languages?.[0] || DEFAULT_LOCALE;
   const primary = lang.split("-")[0].toLowerCase();
-  const supported = ["he", "en", "ru"];
 
-  return supported.includes(primary) ? primary : "en";
+  return isSupportedLocale(primary) ? primary : "en";
 }
 
 /**

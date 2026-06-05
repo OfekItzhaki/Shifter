@@ -13,6 +13,7 @@ import { useAuthStore } from "@/lib/store/authStore";
 import { formatLocalDate } from "@/lib/utils/formatTime";
 import { clearAuthGuardCookie } from "@/lib/auth/authGuardCookie";
 import { notifyAuthTokenChanged } from "@/lib/auth/tokenState";
+import { isRtl as isRtlLocale } from "@/lib/i18n/locales";
 function getInitials(name: string): string {
   return name
     .split(" ")
@@ -67,7 +68,7 @@ const inputStyle: React.CSSProperties = {
 export default function ProfilePage() {
   const t = useTranslations("profile");
   const locale = useLocale();
-  const isRtl = locale === "he";
+  const isRtl = isRtlLocale(locale);
   const timezoneId = useAuthStore(s => s.timezoneId);
   const [me, setMe] = useState<MeDto | null>(null);
   const [loading, setLoading] = useState(true);

@@ -9,6 +9,7 @@ import { createSpace, joinSpaceByCode } from "@/lib/api/spaces";
 import { useSpaceGuard } from "@/lib/hooks/useSpaceGuard";
 import ShifterLogo from "@/components/shell/ShifterLogo";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
+import { isRtl as isRtlLocale } from "@/lib/i18n/locales";
 
 type Step = "choose" | "create" | "join";
 
@@ -18,7 +19,7 @@ export default function OnboardingPage() {
   const router = useRouter();
   const { setCurrentSpace } = useSpaceStore();
   const { userId } = useAuthStore();
-  const isRtl = locale === "he";
+  const isRtl = isRtlLocale(locale);
   const backArrow = locale === "he" ? "→" : "←";
 
   const [step, setStep] = useState<Step>("choose");

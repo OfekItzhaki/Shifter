@@ -1,4 +1,6 @@
-export type LandingLang = "en" | "he" | "ru";
+import type { Locale } from "@/lib/i18n/locales";
+
+export type LandingLang = Locale;
 
 export const LANDING_CONTENT: Record<LandingLang, {
   nav: { features: string; howItWorks: string; about: string; faq: string; signIn: string; getStarted: string };
@@ -182,4 +184,25 @@ export const LANDING_CONTENT: Record<LandingLang, {
     cta: { title: "Готовы начать?", subtitle: "Регистрация бесплатна за 30 секунд. Без кредитной карты.", primary: "Создать бесплатный аккаунт", secondary: "Войти в существующий аккаунт" },
     footer: { about: "О нас", faq: "FAQ", terms: "Условия", privacy: "Конфиденциальность", signIn: "Войти" },
   },
+};
+
+export const LANDING_LEGAL_LINKS: Record<LandingLang, Array<{ href: string; label: string }>> = {
+  en: [
+    { href: "/terms", label: "Terms" },
+    { href: "/privacy", label: "Privacy" },
+    { href: "/security", label: "Security" },
+    { href: "/subprocessors", label: "Subprocessors" },
+  ],
+  he: [
+    { href: "/terms", label: "תנאי שימוש" },
+    { href: "/privacy", label: "פרטיות" },
+    { href: "/security", label: "אבטחה" },
+    { href: "/subprocessors", label: "מעבדי משנה" },
+  ],
+  ru: [
+    { href: "/terms", label: "Условия" },
+    { href: "/privacy", label: "Конфиденциальность" },
+    { href: "/security", label: "Безопасность" },
+    { href: "/subprocessors", label: "Субпроцессоры" },
+  ],
 };

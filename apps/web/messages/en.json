@@ -64,7 +64,17 @@
     "enableBiometricDesc": "Next time you can log in with fingerprint or face recognition",
     "enableBiometricYes": "Yes, enable",
     "enableBiometricSkip": "Not now",
-    "noCredentialFound": "No registered device found. Log in with password to enable biometric login."
+    "noCredentialFound": "No registered device found. Log in with password to enable biometric login.",
+    "loginSubtitle": "Sign in to your workspace",
+    "close": "Close",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
+    "emailPlaceholder": "you@example.com",
+    "emailOrPhonePlaceholder": "email@example.com / 0501234567",
+    "phonePlaceholder": "+1 555 000 0000",
+    "resend": "Send again",
+    "resendWithSeconds": "Send again ({seconds}s)",
+    "resendLimitReached": "You have reached the attempt limit. Please try again later."
   },
   "nav": {
     "home": "Home",
@@ -88,6 +98,22 @@
     "platform": "Platform",
     "terms": "Terms",
     "privacy": "Privacy"
+  },
+  "legalLinks": {
+    "label": "Legal and trust links",
+    "terms": "Terms",
+    "privacy": "Privacy",
+    "security": "Security",
+    "privacyRequests": "Privacy Requests",
+    "dpa": "DPA",
+    "subprocessors": "Subprocessors"
+  },
+  "privacyConsent": {
+    "title": "Privacy preferences",
+    "body": "We use essential storage for login and app preferences. With your permission, we also use analytics and session diagnostics to improve Shifter.",
+    "privacyLink": "Privacy Policy",
+    "accept": "Allow analytics",
+    "decline": "Essential only"
   },
   "schedule": {
     "title": "Schedule",

@@ -386,8 +386,8 @@ self.addEventListener("push", (event) => {
   event.waitUntil(
     self.registration.showNotification(title, {
       body: body || "",
-      icon: icon || "/shifter-favicon.png",
-      badge: "/shifter-favicon.png",
+      icon: icon || "/shifter_icon.png",
+      badge: "/shifter_favicon32.png",
       tag: tag || undefined,
       timestamp: timestamp || Date.now(),
       data: { url },

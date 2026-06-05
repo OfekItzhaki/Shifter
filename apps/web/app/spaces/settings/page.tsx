@@ -17,11 +17,12 @@ import InviteCodeCard from "@/components/spaces/InviteCodeCard";
 import RoleAssignmentCard from "@/components/spaces/RoleAssignmentCard";
 import ManagementTimeoutCard from "@/components/spaces/ManagementTimeoutCard";
 import DangerZoneCard from "@/components/spaces/DangerZoneCard";
+import { isRtl as isRtlLocale } from "@/lib/i18n/locales";
 
 export default function SpaceSettingsPage() {
   const t = useTranslations("spaces");
   const locale = useLocale();
-  const isRtl = locale === "he";
+  const isRtl = isRtlLocale(locale);
   const { currentSpaceId, setCurrentSpace } = useSpaceStore();
   const { userId } = useAuthStore();
 

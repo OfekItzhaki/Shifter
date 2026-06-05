@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useCallback, FormEvent, KeyboardEvent } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import { apiClient } from "@/lib/api/client";
+import { isRtl as isRtlLocale } from "@/lib/i18n/locales";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -74,7 +75,7 @@ function base64urlToBuffer(base64url: string): ArrayBuffer {
 export default function ReAuthDialog({ open, onSuccess, onCancel, mode, spaceId }: ReAuthDialogProps) {
   const t = useTranslations("reAuth");
   const locale = useLocale();
-  const isRtl = locale === "he";
+  const isRtl = isRtlLocale(locale);
 
   // Credential availability
   const [credentials, setCredentials] = useState<CredentialState>({

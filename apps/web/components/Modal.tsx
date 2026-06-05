@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { useLocale } from "next-intl";
+import { isRtl as isRtlLocale } from "@/lib/i18n/locales";
 
 interface ModalProps {
   open: boolean;
@@ -13,7 +14,7 @@ interface ModalProps {
 
 export default function Modal({ open, onClose, title, children, maxWidth = 480 }: ModalProps) {
   const locale = useLocale();
-  const isRtl = locale === "he";
+  const isRtl = isRtlLocale(locale);
 
   // Close on Escape key
   useEffect(() => {

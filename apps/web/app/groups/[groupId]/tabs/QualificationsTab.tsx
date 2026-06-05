@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import type { GroupMemberDto, GroupQualificationDto, MemberQualificationDto } from "@/lib/api/groups";
+import { isRtl as isRtlLocale } from "@/lib/i18n/locales";
 
 interface Props {
   isAdmin: boolean;
@@ -24,7 +25,7 @@ export default function QualificationsTab({
 }: Props) {
   const t = useTranslations("groups.qualifications_tab");
   const locale = useLocale();
-  const isRtl = locale === "he";
+  const isRtl = isRtlLocale(locale);
   const [newQualName, setNewQualName] = useState("");
   const [newQualDesc, setNewQualDesc] = useState("");
   const [qualSaving, setQualSaving] = useState(false);

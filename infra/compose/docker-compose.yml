@@ -1,8 +1,15 @@
+x-default-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
+
 services:
   # ─── PostgreSQL ─────────────────────────────────────────────
   postgres:
     image: postgres:16-alpine
     restart: unless-stopped
+    logging: *default-logging
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
@@ -22,6 +29,7 @@ services:
   redis:
     image: redis:7-alpine
     restart: unless-stopped
+    logging: *default-logging
     command: redis-server --requirepass ${REDIS_PASSWORD}
     environment:
       REDISCLI_AUTH: ${REDIS_PASSWORD}
@@ -39,6 +47,7 @@ services:
   minio:
     image: minio/minio:RELEASE.2024-06-13T22-53-53Z
     restart: unless-stopped
+    logging: *default-logging
     command: server /data --console-address ":${MINIO_CONSOLE_PORT}"
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
@@ -60,6 +69,7 @@ services:
       context: ../../apps/api
       dockerfile: ../../infra/docker/api.Dockerfile
     restart: unless-stopped
+    logging: *default-logging
     deploy:
       resources:
         limits:
@@ -125,6 +135,7 @@ services:
       context: ../../apps/solver
       dockerfile: ../../infra/docker/solver.Dockerfile
     restart: unless-stopped
+    logging: *default-logging
     deploy:
       resources:
         limits:
@@ -144,7 +155,7 @@ services:
 
   # ─── Frontend (Next.js) ─────────────────────────────────────
   web:
-    image: shifter-web:latest
+    image: shifter-web:${COMPOSE_PROJECT_NAME:-local}
     build:
       context: ../../apps/web
       dockerfile: ../../infra/docker/web.Dockerfile
@@ -153,12 +164,14 @@ services:
         NEXT_PUBLIC_VAPID_PUBLIC_KEY: ${NEXT_PUBLIC_VAPID_PUBLIC_KEY:-}
         NEXT_PUBLIC_SENTRY_DSN: ${NEXT_PUBLIC_SENTRY_DSN:-}
     restart: unless-stopped
+    logging: *default-logging
     environment:
       NEXT_PUBLIC_API_URL: "http://localhost:${API_PORT}"
     ports:
       - "127.0.0.1:${WEB_PORT}:3000"
     depends_on:
-      - api
+      api:
+        condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "node -e \"require('http').get('http://localhost:3000', r => { process.exit(r.statusCode === 200 ? 0 : 1) }).on('error', () => process.exit(1))\""]
       interval: 30s
@@ -170,6 +183,7 @@ services:
   seq:
     image: datalust/seq:2024.3
     restart: unless-stopped
+    logging: *default-logging
     environment:
       ACCEPT_EULA: "Y"
       SEQ_FIRSTRUN_ADMINPASSWORD: ${SEQ_ADMIN_PASSWORD}

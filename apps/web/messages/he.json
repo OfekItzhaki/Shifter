@@ -64,7 +64,17 @@
     "enableBiometricDesc": "בפעם הבאה תוכל להתחבר עם טביעת אצבע או זיהוי פנים",
     "enableBiometricYes": "כן, הפעל",
     "enableBiometricSkip": "לא עכשיו",
-    "noCredentialFound": "לא נמצא מכשיר רשום. התחבר עם סיסמה ותוכל להפעיל כניסה ביומטרית."
+    "noCredentialFound": "לא נמצא מכשיר רשום. התחבר עם סיסמה ותוכל להפעיל כניסה ביומטרית.",
+    "loginSubtitle": "התחברות לסביבת העבודה שלך",
+    "close": "סגור",
+    "showPassword": "הצג סיסמה",
+    "hidePassword": "הסתר סיסמה",
+    "emailPlaceholder": "you@example.com",
+    "emailOrPhonePlaceholder": "email@example.com / 0501234567",
+    "phonePlaceholder": "+972 50 000 0000",
+    "resend": "שלח שוב",
+    "resendWithSeconds": "שלח שוב ({seconds}s)",
+    "resendLimitReached": "הגעת למגבלת הניסיונות. נסה שוב מאוחר יותר."
   },
   "nav": {
     "home": "דף הבית",
@@ -88,6 +98,22 @@
     "platform": "פלטפורמה",
     "terms": "תנאי שימוש",
     "privacy": "פרטיות"
+  },
+  "legalLinks": {
+    "label": "קישורי משפט ואמון",
+    "terms": "תנאי שימוש",
+    "privacy": "פרטיות",
+    "security": "אבטחה",
+    "privacyRequests": "בקשות פרטיות",
+    "dpa": "נספח עיבוד מידע",
+    "subprocessors": "מעבדי משנה"
+  },
+  "privacyConsent": {
+    "title": "העדפות פרטיות",
+    "body": "אנו משתמשים באחסון חיוני לצורך התחברות והעדפות אפליקציה. באישורך, נשתמש גם באנליטיקה ודיאגנוסטיקת סשן כדי לשפר את Shifter.",
+    "privacyLink": "מדיניות פרטיות",
+    "accept": "אפשר אנליטיקה",
+    "decline": "חיוני בלבד"
   },
   "schedule": {
     "title": "לוח זמנים",

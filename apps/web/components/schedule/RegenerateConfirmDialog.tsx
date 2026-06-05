@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import { triggerRegeneration } from "@/lib/api/schedule";
+import { isRtl as isRtlLocale } from "@/lib/i18n/locales";
 
 export interface RegenerateConfirmDialogProps {
   open: boolean;
@@ -21,7 +22,7 @@ export default function RegenerateConfirmDialog({
 }: RegenerateConfirmDialogProps) {
   const t = useTranslations("scheduleRegeneration");
   const locale = useLocale();
-  const isRtl = locale === "he";
+  const isRtl = isRtlLocale(locale);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
