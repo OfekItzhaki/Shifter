@@ -41,7 +41,7 @@ export default function BillingTestPanel() {
       </h2>
       <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
         Creates a checkout session with the test product. Use card 4242 4242 4242 4242.
-        Marked as test-charge — won't affect subscriptions.
+        Marked as test-charge — won&apos;t affect subscriptions.
       </p>
 
       <div className="flex items-center gap-3">

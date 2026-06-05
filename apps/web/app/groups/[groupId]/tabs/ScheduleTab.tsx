@@ -472,13 +472,14 @@ export default function ScheduleTab({
         {scheduleData && scheduleData.length > 0 && (
           <button
             onClick={exportCSV}
-            className="flex items-center justify-center gap-1.5 text-xs text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 px-3 py-2.5 sm:py-2 rounded-xl transition-colors flex-shrink-0"
+            aria-label={t("exportCsv") ?? "Export CSV"}
+            className="flex h-10 w-10 items-center justify-center gap-1.5 text-xs text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-xl transition-colors flex-shrink-0 sm:h-auto sm:w-auto sm:px-3 sm:py-2"
             title={t("exportCsv") ?? "Export CSV"}
           >
             <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
             </svg>
-            {t("exportCsv")}
+            <span className="sr-only sm:not-sr-only">{t("exportCsv")}</span>
           </button>
         )}
         {isAdmin && scheduleData && scheduleData.length > 0 && (

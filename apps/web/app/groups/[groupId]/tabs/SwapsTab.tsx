@@ -37,7 +37,8 @@ export default function SwapsTab({ spaceId, groupId, members }: Props) {
   const t = useTranslations("selfService.swaps");
   const tCommon = useTranslations("selfService");
   const { userId } = useAuthStore();
-  const currentSpaceId = spaceId || useSpaceStore((s) => s.currentSpaceId);
+  const fallbackSpaceId = useSpaceStore((s) => s.currentSpaceId);
+  const currentSpaceId = spaceId || fallbackSpaceId;
 
   // ── State ────────────────────────────────────────────────────────────────
   const [swaps, setSwaps] = useState<SwapRequestDto[]>([]);
