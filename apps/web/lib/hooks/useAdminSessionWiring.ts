@@ -55,9 +55,13 @@ export function useAdminSessionWiring(): void {
     const timeoutMs = timeoutDuration * 60 * 1000;
     const promptDurationMs = 60_000; // 60 seconds prompt countdown
 
+    const resumedLastActivityAt = useAdminSessionStore.getState().lastActivityAt;
     timer.start(timeoutMs, {
       onTick: (_remainingMs: number) => {
         // Timer's primary job is to detect when timeout occurs.
+      },
+      onActivity: () => {
+        resetTimer();
       },
       onTimeout: () => {
         // Check if we've been away so long that even the prompt period has passed
@@ -75,7 +79,7 @@ export function useAdminSessionWiring(): void {
           });
         }
       },
-    });
+    }, resumedLastActivityAt > 0 ? resumedLastActivityAt : Date.now());
 
     return () => {
       timer.stop();
@@ -99,6 +103,7 @@ export function useAdminSessionWiring(): void {
         if (timerRef.current) {
           timerRef.current.reset();
         }
+        resetTimer();
         syncRef.current?.broadcast({
           type: "activity_reset",
           timestamp: Date.now(),
@@ -112,7 +117,7 @@ export function useAdminSessionWiring(): void {
       apiClient.interceptors.request.eject(id);
       interceptorIdRef.current = null;
     };
-  }, [isElevated]);
+  }, [isElevated, resetTimer]);
 
   // ── MultiTabSync — connect to store ─────────────────────────────────────
   useEffect(() => {

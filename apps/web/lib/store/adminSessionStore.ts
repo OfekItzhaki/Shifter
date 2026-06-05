@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { persist } from "zustand/middleware";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -20,6 +21,7 @@ interface AdminSessionState {
   elevatedMode: ElevatedMode | null;
   elevatedGroupId: string | null;
   timeoutDuration: number; // minutes, captured at session start
+  lastActivityAt: number;
   remainingMs: number;
   isPromptVisible: boolean;
   promptCountdownMs: number;
@@ -53,6 +55,7 @@ const initialState = {
   elevatedMode: null as ElevatedMode | null,
   elevatedGroupId: null as string | null,
   timeoutDuration: DEFAULT_TIMEOUT_MINUTES,
+  lastActivityAt: 0,
   remainingMs: 0,
   isPromptVisible: false,
   promptCountdownMs: 0,
@@ -60,10 +63,9 @@ const initialState = {
 };
 
 // ── Store Implementation ──────────────────────────────────────────────────────
-// No persistence — elevated mode resets on page load.
-// Exits only on: manual exit, timeout, or prompt dismissal.
-
-export const useAdminSessionStore = create<AdminSessionState>()((set, get) => ({
+export const useAdminSessionStore = create<AdminSessionState>()(
+  persist(
+    (set, get) => ({
   ...initialState,
 
   enterElevatedMode: (
@@ -72,11 +74,13 @@ export const useAdminSessionStore = create<AdminSessionState>()((set, get) => ({
     timeoutMinutes?: number
   ) => {
     const duration = timeoutMinutes ?? DEFAULT_TIMEOUT_MINUTES;
+    const now = Date.now();
     set({
       isElevated: true,
       elevatedMode: mode,
       elevatedGroupId: groupId ?? null,
       timeoutDuration: duration,
+      lastActivityAt: now,
       remainingMs: duration * 60 * 1000,
       isPromptVisible: false,
       promptCountdownMs: 0,
@@ -90,6 +94,7 @@ export const useAdminSessionStore = create<AdminSessionState>()((set, get) => ({
       elevatedMode: null,
       elevatedGroupId: null,
       timeoutDuration: DEFAULT_TIMEOUT_MINUTES,
+      lastActivityAt: 0,
       remainingMs: 0,
       isPromptVisible: false,
       promptCountdownMs: 0,
@@ -103,6 +108,7 @@ export const useAdminSessionStore = create<AdminSessionState>()((set, get) => ({
     const { isElevated, timeoutDuration } = get();
     if (!isElevated) return;
     set({
+      lastActivityAt: Date.now(),
       remainingMs: timeoutDuration * 60 * 1000,
       isPromptVisible: false,
       promptCountdownMs: 0,
@@ -125,6 +131,7 @@ export const useAdminSessionStore = create<AdminSessionState>()((set, get) => ({
       set({
         isPromptVisible: false,
         promptCountdownMs: 0,
+        lastActivityAt: Date.now(),
         remainingMs: timeoutDuration * 60 * 1000,
       });
     } else {
@@ -135,6 +142,7 @@ export const useAdminSessionStore = create<AdminSessionState>()((set, get) => ({
         elevatedMode: null,
         elevatedGroupId: null,
         timeoutDuration: DEFAULT_TIMEOUT_MINUTES,
+        lastActivityAt: 0,
         remainingMs: 0,
         isPromptVisible: false,
         promptCountdownMs: 0,
@@ -148,4 +156,29 @@ export const useAdminSessionStore = create<AdminSessionState>()((set, get) => ({
   clearExitContext: () => {
     set({ lastExitContext: null });
   },
-}));
+}),
+    {
+      name: "jobuler-admin-session",
+      partialize: (state) => ({
+        isElevated: state.isElevated,
+        elevatedMode: state.elevatedMode,
+        elevatedGroupId: state.elevatedGroupId,
+        timeoutDuration: state.timeoutDuration,
+        lastActivityAt: state.lastActivityAt,
+        remainingMs: state.remainingMs,
+      }),
+      onRehydrateStorage: () => (state) => {
+        if (!state?.isElevated || state.lastActivityAt <= 0)
+          return;
+
+        const timeoutMs = state.timeoutDuration * 60 * 1000;
+        const elapsedMs = Date.now() - state.lastActivityAt;
+        if (elapsedMs >= timeoutMs + PROMPT_COUNTDOWN_MS) {
+          state.exitElevatedMode("timeout");
+        } else {
+          state.remainingMs = Math.max(0, timeoutMs - elapsedMs);
+        }
+      },
+    }
+  )
+);

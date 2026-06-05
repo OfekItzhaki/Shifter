@@ -191,7 +191,7 @@ export default function GroupDetailPage() {
   const [showReAuthDialog, setShowReAuthDialog] = useState(false);
   const [hasCredentials, setHasCredentials] = useState<boolean | null>(null); // null = loading
   const [subscriptionActive, setSubscriptionActive] = useState(true);
-  const { enterElevatedMode } = useAdminSessionStore();
+  const { enterElevatedMode, exitElevatedMode } = useAdminSessionStore();
 
   // ── Re-enter elevated session on page load if admin mode was persisted ──
   // This restarts the inactivity timeout after a refresh.
@@ -249,6 +249,7 @@ export default function GroupDetailPage() {
     if (isAdmin) {
       // Exiting admin mode — no re-auth needed
       exitAdminMode();
+      exitElevatedMode("manual");
       setIsAdmin(false);
     } else {
       // Entering admin mode — require re-authentication
@@ -554,7 +555,6 @@ export default function GroupDetailPage() {
   // ── Cleanup polling on unmount ───────────────────────────────────────────
   useEffect(() => {
     return () => {
-      exitAdminMode();
       if (pollingRef.current) clearInterval(pollingRef.current);
     };
   }, []);
