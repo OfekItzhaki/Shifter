@@ -1355,7 +1355,7 @@ export default function GroupDetailPage() {
       <div className="max-w-6xl w-full mx-auto px-2 sm:px-4 py-4 sm:py-6 space-y-4 sm:space-y-6" dir="rtl">
         {/* Header */}
         <div className="flex items-center gap-3 sm:gap-4">
-          <Link href="/groups" className="text-slate-400 hover:text-slate-600 transition-colors flex-shrink-0">
+          <Link href={group.parentGroupId ? `/groups?parent=${group.parentGroupId}` : "/groups"} className="text-slate-400 hover:text-slate-600 transition-colors flex-shrink-0">
             <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} className="rtl:rotate-180">
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
             </svg>

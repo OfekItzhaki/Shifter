@@ -27,7 +27,8 @@ public class CreateGroupTypeCommandHandler : IRequestHandler<CreateGroupTypeComm
 
 public record CreateGroupCommand(
     Guid SpaceId, Guid? GroupTypeId, string Name, string? Description,
-    Guid CreatedByUserId, GroupTemplateType TemplateType = GroupTemplateType.Custom) : IRequest<Guid>;
+    Guid CreatedByUserId, GroupTemplateType TemplateType = GroupTemplateType.Custom,
+    Guid? ParentGroupId = null) : IRequest<Guid>;
 
 public class CreateGroupCommandHandler : IRequestHandler<CreateGroupCommand, Guid>
 {
@@ -42,6 +43,18 @@ public class CreateGroupCommandHandler : IRequestHandler<CreateGroupCommand, Gui
 
     public async Task<Guid> Handle(CreateGroupCommand req, CancellationToken ct)
     {
+        if (req.ParentGroupId.HasValue)
+        {
+            var parentExists = await _db.Groups.AsNoTracking().AnyAsync(g =>
+                g.Id == req.ParentGroupId.Value &&
+                g.SpaceId == req.SpaceId &&
+                g.IsActive &&
+                g.DeletedAt == null, ct);
+
+            if (!parentExists)
+                throw new KeyNotFoundException("Parent group not found in this space.");
+        }
+
         // Find or create the person linked to the creator's user account
         var person = await _db.People
             .FirstOrDefaultAsync(p => p.SpaceId == req.SpaceId && p.LinkedUserId == req.CreatedByUserId, ct);
@@ -57,6 +70,9 @@ public class CreateGroupCommandHandler : IRequestHandler<CreateGroupCommand, Gui
         }
 
         var group = Group.Create(req.SpaceId, req.GroupTypeId, req.Name, req.Description, createdByUserId: req.CreatedByUserId, templateType: req.TemplateType);
+        if (req.ParentGroupId.HasValue)
+            group.SetParentGroup(req.ParentGroupId.Value);
+
         _db.Groups.Add(group);
         // Save group first so the FK constraint on group_memberships is satisfied
         await _db.SaveChangesAsync(ct);
