@@ -78,20 +78,25 @@ export function useFeedbackSubmission(): UseFeedbackSubmissionReturn {
 
       // 400 — validation error
       if (httpStatus === 400) {
-        const responseData = data as { errors?: Record<string, string[]>; message?: string };
+        const responseData = data as {
+          errors?: Record<string, string[]>;
+          message?: string;
+          detail?: string;
+          title?: string;
+        };
         const firstError = responseData?.errors
           ? Object.values(responseData.errors).flat()[0]
-          : responseData?.message;
+          : responseData?.message ?? responseData?.detail ?? responseData?.title;
         setStatus("error");
         setErrorMessage(firstError ?? "Invalid submission. Please check your input.");
         return;
       }
 
       // Other server errors (500, etc.)
-      const responseData = data as { message?: string };
+      const responseData = data as { message?: string; detail?: string; title?: string };
       setStatus("error");
       setErrorMessage(
-        responseData?.message ?? "Could not process your submission. Please try again."
+        responseData?.message ?? responseData?.detail ?? responseData?.title ?? "Could not process your submission. Please try again."
       );
     }
   }, []);
