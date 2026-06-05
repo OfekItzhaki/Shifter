@@ -118,10 +118,10 @@ class TestMinRestHardConstraintClosedBase:
         assert len(result.assignments) == 1
         assert len(result.uncovered_slot_ids) == 1
 
-    def test_without_home_leave_config_long_shifts_get_soft_penalty(self):
+    def test_without_home_leave_config_long_shifts_respect_hard_rest(self):
         """
-        Without home_leave_config, 24h shifts get a soft penalty (not hard block).
-        1 person, two 24h slots with 6h gap — both CAN be assigned (soft penalty only).
+        Without home_leave_config, configured min_rest_hours is still hard.
+        1 person, two 24h slots with 6h gap cannot both be assigned.
         """
         people = [make_person("p1")]
         slots = [
@@ -161,16 +161,14 @@ class TestMinRestHardConstraintClosedBase:
             payload={"hours": 8}
         )
         result = solve(make_input(slots, people, hard_constraints=[rest_constraint]))
-        # Without home_leave_config, long shifts get soft penalty — both can be assigned
         assert result.feasible
-        assert len(result.assignments) == 2
+        assert len(result.assignments) == 1
+        assert len(result.uncovered_slot_ids) == 1
 
     def test_min_rest_uses_config_value(self):
         """
-        The min_rest_hours from home_leave_config overrides the default,
-        but for closed-base groups it is clamped to a minimum of 8.0h.
-        With min_rest_hours=4 (below floor), the floor of 8.0h is enforced,
-        so a 5h gap should block assignment.
+        The min_rest_hours from home_leave_config overrides the default.
+        With min_rest_hours=4, a 5h gap is allowed.
         """
         people = [make_person("p1")]
         # Slot 1: 08:00-16:00, Slot 2: 21:00-05:00 next day (5h gap)
@@ -198,10 +196,8 @@ class TestMinRestHardConstraintClosedBase:
             leave_duration_hours=48.0,
         )
         result = solve(make_input(slots, people, home_leave_config=config))
-        # 5h gap < 8.0h floor — config value 4.0 is overridden to 8.0h minimum
-        # Only one slot can be assigned to the single person
         assert result.feasible
-        assert len(result.assignments) == 1
+        assert len(result.assignments) == 2
 
     def test_min_rest_config_value_blocks_when_gap_too_small(self):
         """

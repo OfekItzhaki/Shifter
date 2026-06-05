@@ -873,7 +873,8 @@
     "freeInBase": "Free in Base",
     "until": "until",
     "nextMissionIn": "Next mission in",
-    "homeLeaveIn": "Home leave in"
+    "homeLeaveIn": "Home leave in",
+    "restBeforeNext": "Rest before next"
   },
   "imageUpload": {
     "upload": "Upload Image",

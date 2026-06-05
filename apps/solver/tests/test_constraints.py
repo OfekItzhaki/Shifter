@@ -105,6 +105,43 @@ class TestMinRestConstraint:
         feasible, _, _ = solve_simple(model, assign, 2, 1)
         assert feasible
 
+    def test_long_shift_insufficient_rest_blocked(self):
+        model = cp_model.CpModel()
+        slots = [
+            TaskSlot(
+                slot_id="s1", task_type_id="tt1", task_type_name="Guard",
+                burden_level="neutral",
+                starts_at=datetime(2026, 4, 20, 1, 0, tzinfo=timezone.utc),
+                ends_at=datetime(2026, 4, 21, 1, 0, tzinfo=timezone.utc),
+                required_headcount=1, priority=5,
+                required_role_ids=[], required_qualification_ids=[],
+                allows_overlap=False
+            ),
+            TaskSlot(
+                slot_id="s2", task_type_id="tt1", task_type_name="Guard",
+                burden_level="neutral",
+                starts_at=datetime(2026, 4, 21, 8, 0, tzinfo=timezone.utc),
+                ends_at=datetime(2026, 4, 21, 12, 0, tzinfo=timezone.utc),
+                required_headcount=1, priority=5,
+                required_role_ids=[], required_qualification_ids=[],
+                allows_overlap=False
+            ),
+        ]
+        people = [make_person("p1")]
+        assign = {(s, p): model.new_bool_var(f"a_{s}_{p}")
+                  for s in range(2) for p in range(1)}
+
+        model.add(assign[(0, 0)] == 1)
+        model.add(assign[(1, 0)] == 1)
+        add_min_rest_constraints(
+            model, assign, slots, people, 1,
+            min_rest_hours=8.0,
+            soft_penalties=[],
+        )
+
+        feasible, _, _ = solve_simple(model, assign, 2, 1)
+        assert not feasible
+
 
 class TestQualificationConstraint:
     def test_person_without_qualification_blocked(self):

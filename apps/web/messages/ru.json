@@ -833,7 +833,8 @@
     "freeInBase": "Свободен на базе",
     "until": "до",
     "nextMissionIn": "Следующее задание через",
-    "homeLeaveIn": "Домой через"
+    "homeLeaveIn": "Домой через",
+    "restBeforeNext": "Отдых перед следующим"
   },
   "imageUpload": {
     "upload": "Загрузить фото",

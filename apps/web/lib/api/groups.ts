@@ -314,6 +314,8 @@ export interface MemberLiveStatusDto {
   nextTaskName: string | null;
   nextStartsAt: string | null;
   isNextHomeLeave: boolean;
+  previousTaskName: string | null;
+  previousEndsAt: string | null;
 }
 
 export async function getGroupLiveStatus(

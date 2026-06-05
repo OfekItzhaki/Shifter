@@ -18,13 +18,22 @@ function formatTime(iso: string | null, timezoneId: string | null): string {
   return formatLocalTime(iso, timezoneId, "24h");
 }
 
-function formatTimeUntil(isoDate: string, locale: SupportedLocale): string {
-  const now = Date.now();
-  const target = new Date(isoDate).getTime();
-  const diffMs = target - now;
-  if (diffMs <= 0) return "";
-  const hours = diffMs / 3_600_000;
-  return formatRestDuration(hours, locale);
+function getRestWindow(member: MemberLiveStatusDto, locale: SupportedLocale) {
+  const restStartsAt = member.status === "on_mission" ? member.slotEndsAt : member.previousEndsAt;
+  const restEndsAt = member.nextStartsAt;
+
+  if (!restStartsAt || !restEndsAt) return null;
+
+  const start = new Date(restStartsAt).getTime();
+  const end = new Date(restEndsAt).getTime();
+  if (Number.isNaN(start) || Number.isNaN(end)) return null;
+
+  const hours = Math.max(0, (end - start) / 3_600_000);
+  return {
+    restStartsAt,
+    restEndsAt,
+    duration: formatRestDuration(hours, locale),
+  };
 }
 
 export default function LiveStatusPanel({ spaceId, groupId, isAdmin = false }: LiveStatusPanelProps) {
@@ -160,15 +169,17 @@ export default function LiveStatusPanel({ spaceId, groupId, isAdmin = false }: L
                               )}
                             </p>
                           )}
-                          {m.nextStartsAt && isAdmin && (() => {
-                            const duration = formatTimeUntil(m.nextStartsAt, locale);
-                            const label = m.isNextHomeLeave ? t("homeLeaveIn") : t("nextMissionIn");
-                            const icon = m.isNextHomeLeave ? "🏠" : "⏭";
+                          {isAdmin && (() => {
+                            const restWindow = getRestWindow(m, locale);
+                            if (!restWindow) return null;
+
                             return (
-                              <span className="flex items-center gap-1 text-[11px] text-slate-400 mt-0.5">
-                                <span>{icon}</span>
-                                <span>{label}</span>
-                                <span dir="ltr" className="font-medium text-slate-500 tabular-nums">{duration}</span>
+                              <span
+                                className="flex items-center gap-1 text-[11px] text-slate-400 mt-0.5"
+                                title={`${formatTime(restWindow.restStartsAt, timezoneId)} - ${formatTime(restWindow.restEndsAt, timezoneId)}`}
+                              >
+                                <span>{t("restBeforeNext")}</span>
+                                <span dir="ltr" className="font-medium text-slate-500 tabular-nums">{restWindow.duration}</span>
                               </span>
                             );
                           })()}

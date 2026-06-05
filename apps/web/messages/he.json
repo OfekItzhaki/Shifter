@@ -878,7 +878,8 @@
     "freeInBase": "פנוי בבסיס",
     "until": "עד",
     "nextMissionIn": "משימה הבאה בעוד",
-    "homeLeaveIn": "חופשת בית בעוד"
+    "homeLeaveIn": "חופשת בית בעוד",
+    "restBeforeNext": "מנוחה לפני המשימה הבאה"
   },
   "imageUpload": {
     "upload": "העלה תמונה",
