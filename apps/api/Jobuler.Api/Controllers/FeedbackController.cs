@@ -27,11 +27,14 @@ public class FeedbackController : ControllerBase
     public async Task<IActionResult> Submit(
         [FromBody] SubmitFeedbackRequest request, CancellationToken ct)
     {
+        var normalizedType = request.Type?.Trim().ToLowerInvariant() ?? string.Empty;
+        var normalizedDescription = request.Description?.Trim() ?? string.Empty;
+
         var command = new SubmitFeedbackCommand(
             CurrentUserId,
             CurrentUserEmail,
-            request.Type,
-            request.Description);
+            normalizedType,
+            normalizedDescription);
 
         await _mediator.Send(command, ct);
         return NoContent();

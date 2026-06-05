@@ -132,9 +132,10 @@ export default function SubmissionModal({
   // ── Submit handler ───────────────────────────────────────────────────────
 
   const handleSubmit = useCallback(async () => {
-    if (description.trim().length === 0 || status === "loading") return;
+    const trimmedDescription = description.trim();
+    if (trimmedDescription.length === 0 || status === "loading") return;
 
-    await submit({ type: submissionType, description });
+    await submit({ type: submissionType, description: trimmedDescription });
   }, [description, status, submit, submissionType]);
 
   // ── Don't render if not open ─────────────────────────────────────────────
