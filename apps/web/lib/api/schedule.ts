@@ -71,6 +71,10 @@ export async function getRunStatus(spaceId: string, runId: string) {
   return data;
 }
 
+export async function cancelScheduleRun(spaceId: string, runId: string): Promise<void> {
+  await apiClient.post(`/spaces/${spaceId}/schedule-runs/${runId}/cancel`);
+}
+
 export async function publishVersion(spaceId: string, versionId: string): Promise<void> {
   await apiClient.post(`/spaces/${spaceId}/schedule-versions/${versionId}/publish`);
 }

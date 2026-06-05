@@ -519,7 +519,8 @@
       "managementTimeoutDesc": "Minutes of inactivity before the admin is prompted to confirm continued activity in management mode.",
       "managementTimeoutError": "Timeout must be a whole number between 5 and 120 minutes.",
       "minutes": "minutes",
-      "parentGroup": "Parent Group"
+      "parentGroup": "Parent Group",
+      "cancelRun": "Cancel run"
     },
     "linkedGroup": {
       "title": "Parent Group",
@@ -855,7 +856,9 @@
       "errorConflict": "A regeneration is already in progress for this group.",
       "errorPermission": "You do not have permission to regenerate the schedule.",
       "errorGeneric": "Failed to start regeneration. Please try again."
-    }
+    },
+    "solverCancelled": "Scheduler run cancelled.",
+    "solverCancelError": "Could not cancel the scheduler run. Please try again."
   },
   "language": {
     "label": "Language",
@@ -1794,7 +1797,10 @@
       "unknownError": "An unknown error occurred",
       "pollError": "Error checking run status",
       "reviewDraft": "Review Draft",
-      "dismiss": "Dismiss"
+      "dismiss": "Dismiss",
+      "cancelError": "Error cancelling run",
+      "cancelRun": "Cancel run",
+      "cancelled": "Run cancelled"
     }
   },
   "scheduleRegeneration": {

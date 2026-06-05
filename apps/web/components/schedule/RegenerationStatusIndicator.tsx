@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useTranslations } from "next-intl";
-import { getRunStatus } from "@/lib/api/schedule";
+import { cancelScheduleRun, getRunStatus } from "@/lib/api/schedule";
 
 export interface RegenerationStatusIndicatorProps {
   /** The space ID for the current space */
@@ -13,6 +13,8 @@ export interface RegenerationStatusIndicatorProps {
   onCompleted: (resultVersionId: string) => void;
   /** Called when the user dismisses the status indicator */
   onDismiss: () => void;
+  /** Called after a queued/running scheduler run is cancelled */
+  onCancelled?: () => void;
 }
 
 type RunPhase = "queued" | "running" | "completed" | "failed";
@@ -42,18 +44,26 @@ export default function RegenerationStatusIndicator({
   runId,
   onCompleted,
   onDismiss,
+  onCancelled,
 }: RegenerationStatusIndicatorProps) {
   const t = useTranslations("regeneration.status");
   const [phase, setPhase] = useState<RunPhase>("queued");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isCancelling, setIsCancelling] = useState(false);
   const [resultVersionId, setResultVersionId] = useState<string | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const onCompletedRef = useRef(onCompleted);
+  const cancelledByUserRef = useRef(false);
+  const tRef = useRef(t);
 
   // Keep onCompleted ref up to date without re-triggering the effect
   useEffect(() => {
     onCompletedRef.current = onCompleted;
   }, [onCompleted]);
+
+  useEffect(() => {
+    tRef.current = t;
+  }, [t]);
 
   const stopPolling = useCallback(() => {
     if (intervalRef.current) {
@@ -64,11 +74,12 @@ export default function RegenerationStatusIndicator({
 
   useEffect(() => {
     let cancelled = false;
+    cancelledByUserRef.current = false;
 
     async function poll() {
       try {
         const data = (await getRunStatus(spaceId, runId)) as RunStatusResponse;
-        if (cancelled) return;
+        if (cancelled || cancelledByUserRef.current) return;
 
         const status = data.status?.toLowerCase();
 
@@ -81,7 +92,7 @@ export default function RegenerationStatusIndicator({
           }
         } else if (status === "failed" || status === "timedout") {
           setPhase("failed");
-          setErrorMessage(data.errorSummary || t("unknownError"));
+          setErrorMessage(data.errorSummary || tRef.current("unknownError"));
           stopPolling();
         } else if (status === "running") {
           setPhase("running");
@@ -92,7 +103,7 @@ export default function RegenerationStatusIndicator({
       } catch {
         if (cancelled) return;
         setPhase("failed");
-        setErrorMessage(t("pollError"));
+        setErrorMessage(tRef.current("pollError"));
         stopPolling();
       }
     }
@@ -107,13 +118,31 @@ export default function RegenerationStatusIndicator({
       cancelled = true;
       stopPolling();
     };
-  }, [spaceId, runId, stopPolling, t]);
+  }, [spaceId, runId, stopPolling]);
 
   const handleReviewDraft = useCallback(() => {
     if (resultVersionId) {
       onCompletedRef.current(resultVersionId);
     }
   }, [resultVersionId]);
+
+  const handleCancel = useCallback(async () => {
+    if (isCancelling) return;
+
+    setIsCancelling(true);
+    cancelledByUserRef.current = true;
+    try {
+      await cancelScheduleRun(spaceId, runId);
+      stopPolling();
+      setPhase("failed");
+      setErrorMessage(t("cancelled"));
+      onCancelled?.();
+    } catch {
+      setErrorMessage(t("cancelError"));
+    } finally {
+      setIsCancelling(false);
+    }
+  }, [isCancelling, onCancelled, runId, spaceId, stopPolling, t]);
 
   return (
     <div
@@ -157,6 +186,16 @@ export default function RegenerationStatusIndicator({
             }}
           >
             {t("reviewDraft")}
+          </button>
+        )}
+
+        {(phase === "queued" || phase === "running") && (
+          <button
+            onClick={handleCancel}
+            disabled={isCancelling}
+            className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            {t("cancelRun")}
           </button>
         )}
 

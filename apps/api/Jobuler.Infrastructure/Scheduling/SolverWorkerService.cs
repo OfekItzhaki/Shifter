@@ -291,6 +291,16 @@ public class SolverWorkerService : BackgroundService
                 "Solver output: run_id={RunId} feasible={Feasible} timedOut={TimedOut} assignments={Assignments} uncovered={Uncovered}",
                 job.RunId, output.Feasible, output.TimedOut, output.Assignments.Count, output.UncoveredSlotIds.Count);
 
+            await db.Entry(run).ReloadAsync(ct);
+            if (run.Status is ScheduleRunStatus.Completed or ScheduleRunStatus.TimedOut or ScheduleRunStatus.Failed)
+            {
+                _logger.LogInformation(
+                    "Run {RunId} became terminal while solver was running (status={Status}). Skipping result persistence.",
+                    job.RunId,
+                    run.Status);
+                return;
+            }
+
             // ── Phase: storing_results ────────────────────────────────────────
             run.SetProgressPhase("storing_results");
             await db.SaveChangesAsync(ct);

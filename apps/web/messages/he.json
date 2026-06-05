@@ -548,7 +548,8 @@
       "managementTimeoutDesc": "דקות חוסר פעילות לפני שהמנהל יתבקש לאשר המשך פעילות במצב ניהול.",
       "managementTimeoutError": "הזמן הקצוב חייב להיות מספר שלם בין 5 ל-120 דקות.",
       "minutes": "דקות",
-      "parentGroup": "קבוצת אב"
+      "parentGroup": "קבוצת אב",
+      "cancelRun": "בטל הרצה"
     },
     "linkedGroup": {
       "title": "קבוצת אב",
@@ -860,7 +861,9 @@
       "errorConflict": "חישוב מחדש כבר מתבצע עבור קבוצה זו.",
       "errorPermission": "אין לך הרשאה לחשב מחדש את הסידור.",
       "errorGeneric": "שגיאה בהפעלת החישוב מחדש. נסה שוב."
-    }
+    },
+    "solverCancelled": "הרצת הסידור בוטלה.",
+    "solverCancelError": "לא ניתן לבטל את הרצת הסידור. נסה שוב."
   },
   "language": {
     "label": "שפה",
@@ -1734,8 +1737,7 @@
       "mandatory": "חובה",
       "optional": "אופציונלי"
     }
-  }
-,
+  },
   "reAuth": {
     "title": "אימות זהות",
     "description": "לצורכי אבטחה, אנא אמת/י את זהותך לפני גישה להרשאות מוגברות.",
@@ -1807,7 +1809,10 @@
       "unknownError": "אירעה שגיאה לא ידועה",
       "pollError": "שגיאה בבדיקת מצב הריצה",
       "reviewDraft": "סקירת טיוטה",
-      "dismiss": "סגור"
+      "dismiss": "סגור",
+      "cancelError": "שגיאה בביטול ההרצה",
+      "cancelRun": "בטל הרצה",
+      "cancelled": "ההרצה בוטלה"
     }
   },
   "scheduleRegeneration": {

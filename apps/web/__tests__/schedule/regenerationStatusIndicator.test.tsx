@@ -15,14 +15,16 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, act, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, act, fireEvent } from "@testing-library/react";
 
 // ─── Mocks ───────────────────────────────────────────────────────────────────
 
 const mockGetRunStatus = vi.fn();
+const mockCancelScheduleRun = vi.fn();
 
 vi.mock("@/lib/api/schedule", () => ({
   getRunStatus: (...args: unknown[]) => mockGetRunStatus(...args),
+  cancelScheduleRun: (...args: unknown[]) => mockCancelScheduleRun(...args),
 }));
 
 vi.mock("next-intl", () => ({
@@ -35,7 +37,10 @@ vi.mock("next-intl", () => ({
       failed: "Schedule regeneration failed",
       unknownError: "An unknown error occurred",
       pollError: "Error checking run status",
+      cancelError: "Error cancelling run",
+      cancelled: "Run cancelled",
       reviewDraft: "Review Draft",
+      cancelRun: "Cancel run",
       dismiss: "Dismiss",
     };
     return translations[key] ?? key;
@@ -66,6 +71,8 @@ describe("RegenerationStatusIndicator", () => {
   beforeEach(() => {
     vi.useFakeTimers();
     mockGetRunStatus.mockReset();
+    mockCancelScheduleRun.mockReset();
+    mockCancelScheduleRun.mockResolvedValue(undefined);
   });
 
   afterEach(() => {
@@ -339,6 +346,44 @@ describe("RegenerationStatusIndicator", () => {
       });
 
       expect(screen.queryByLabelText("Dismiss")).not.toBeInTheDocument();
+    });
+  });
+
+  describe("Cancel run", () => {
+    it("shows cancel button while queued", async () => {
+      mockGetRunStatus.mockResolvedValue({ status: "Queued" });
+
+      await act(async () => {
+        render(<RegenerationStatusIndicator {...defaultProps()} />);
+      });
+
+      expect(screen.getByText("Cancel run")).toBeInTheDocument();
+    });
+
+    it("cancels the active run and stops polling", async () => {
+      const onCancelled = vi.fn();
+      mockGetRunStatus.mockResolvedValue({ status: "Running" });
+
+      await act(async () => {
+        render(<RegenerationStatusIndicator {...defaultProps({ onCancelled })} />);
+      });
+
+      await act(async () => {
+        fireEvent.click(screen.getByText("Cancel run"));
+      });
+
+      await act(async () => {
+        await mockCancelScheduleRun.mock.results[0]?.value;
+      });
+
+      expect(mockCancelScheduleRun).toHaveBeenCalledWith("space-1", "run-1");
+      expect(onCancelled).toHaveBeenCalledTimes(1);
+
+      const callCount = mockGetRunStatus.mock.calls.length;
+      await act(async () => {
+        vi.advanceTimersByTime(3000);
+      });
+      expect(mockGetRunStatus.mock.calls.length).toBe(callCount);
     });
   });
 
