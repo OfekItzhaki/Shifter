@@ -19,6 +19,8 @@ export interface InactivityTimerCallbacks {
   onTick: (remainingMs: number) => void;
   /** Called when the inactivity timer reaches zero (show the activity prompt). */
   onTimeout: () => void;
+  /** Called after meaningful user activity resets the timer. */
+  onActivity?: () => void;
 }
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -57,13 +59,17 @@ export class InactivityTimer {
    * @param timeoutMs Total timeout duration in milliseconds.
    * @param callbacks Callbacks for tick and timeout events.
    */
-  start(timeoutMs: number, callbacks: InactivityTimerCallbacks): void {
+  start(
+    timeoutMs: number,
+    callbacks: InactivityTimerCallbacks,
+    lastActivityTimestamp?: number
+  ): void {
     // Stop any existing timer before starting a new one
     this.stop();
 
     this.timeoutMs = timeoutMs;
-    this.remainingMs = timeoutMs;
-    this.lastActivityTimestamp = Date.now();
+    this.lastActivityTimestamp = lastActivityTimestamp ?? Date.now();
+    this.remainingMs = Math.max(0, timeoutMs - (Date.now() - this.lastActivityTimestamp));
     this.callbacks = callbacks;
     this.running = true;
 
@@ -172,6 +178,7 @@ export class InactivityTimer {
 
   private handleActivity(): void {
     this.reset();
+    this.callbacks?.onActivity?.();
   }
 
   private handleVisibilityChange(): void {

@@ -3,6 +3,9 @@
     "name": "Shifter",
     "tagline": "מערכת ניהול משמרות"
   },
+  "adminSession": {
+    "managementSessionExpired": "מצב הניהול פג עקב חוסר פעילות"
+  },
   "auth": {
     "login": "התחברות",
     "logout": "התנתקות",

@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 /**
  * Next.js global error boundary — catches errors in the root layout itself.
  * This MUST include its own <html> and <body> tags since the root layout may have crashed.
@@ -105,7 +107,7 @@ export default function GlobalError({
               >
                 נסה שוב
               </button>
-              <a
+              <Link
                 href="/"
                 style={{
                   padding: "10px 24px",
@@ -122,7 +124,7 @@ export default function GlobalError({
                 }}
               >
                 חזרה לדף הבית
-              </a>
+              </Link>
             </div>
 
             {/* Subtle error digest for debugging */}

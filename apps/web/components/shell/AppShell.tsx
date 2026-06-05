@@ -21,7 +21,7 @@ import { getMe } from "@/lib/api/auth";
 interface AppShellProps { children: React.ReactNode; }
 
 const S = {
-  sidebar: { width: 256, background: "#0f172a", display: "flex", flexDirection: "column" as const, height: "100vh", position: "fixed" as const, top: 0, left: 0, zIndex: 30, overflowY: "auto" as const },
+  sidebar: { width: 256, background: "#0f172a", display: "flex", flexDirection: "column" as const, height: "100vh", minHeight: "100dvh", maxHeight: "100dvh", position: "fixed" as const, top: 0, left: 0, zIndex: 30, overflowY: "auto" as const },
   logo: { padding: "14px 12px", borderBottom: "1px solid rgba(255,255,255,0.08)", display: "flex", alignItems: "center", gap: 8, textDecoration: "none" },
   nav: { flex: 1, padding: "12px 12px", display: "flex", flexDirection: "column" as const, gap: 2 },
   navLink: (active: boolean, admin: boolean) => ({

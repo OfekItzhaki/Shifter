@@ -1,6 +1,5 @@
 import { create } from "zustand";
-
-// ── Types ─────────────────────────────────────────────────────────────────────
+import { createJSONStorage, persist } from "zustand/middleware";
 
 export type ElevatedMode = "management" | "platform";
 export type ExitReason = "manual" | "timeout" | "prompt_no" | "sync";
@@ -15,19 +14,18 @@ export interface ExitContext {
 }
 
 interface AdminSessionState {
-  // State
   isElevated: boolean;
   elevatedMode: ElevatedMode | null;
   elevatedGroupId: string | null;
-  timeoutDuration: number; // minutes, captured at session start
+  timeoutDuration: number;
   remainingMs: number;
+  lastActivityAt: number;
   isPromptVisible: boolean;
   promptCountdownMs: number;
 
   /** Populated on exit so side-effect handlers can read mode/groupId/reason after state is cleared. */
   lastExitContext: ExitContext | null;
 
-  // Actions
   enterElevatedMode: (
     mode: ElevatedMode,
     groupId?: string,
@@ -37,16 +35,11 @@ interface AdminSessionState {
   resetTimer: () => void;
   showPrompt: () => void;
   dismissPrompt: (response: PromptResponse) => void;
-  /** Clear the exit context after side effects have been processed. */
   clearExitContext: () => void;
 }
 
-// ── Constants ─────────────────────────────────────────────────────────────────
-
 const DEFAULT_TIMEOUT_MINUTES = 15;
-const PROMPT_COUNTDOWN_MS = 60_000; // 60 seconds
-
-// ── Initial State ─────────────────────────────────────────────────────────────
+const PROMPT_COUNTDOWN_MS = 60_000;
 
 const initialState = {
   isElevated: false,
@@ -54,98 +47,139 @@ const initialState = {
   elevatedGroupId: null as string | null,
   timeoutDuration: DEFAULT_TIMEOUT_MINUTES,
   remainingMs: 0,
+  lastActivityAt: 0,
   isPromptVisible: false,
   promptCountdownMs: 0,
   lastExitContext: null as ExitContext | null,
 };
 
-// ── Store Implementation ──────────────────────────────────────────────────────
-// No persistence — elevated mode resets on page load.
-// Exits only on: manual exit, timeout, or prompt dismissal.
+function getSessionRemainingMs(lastActivityAt: number, timeoutMinutes: number): number {
+  if (!lastActivityAt) return 0;
+  return Math.max(0, timeoutMinutes * 60 * 1000 - (Date.now() - lastActivityAt));
+}
 
-export const useAdminSessionStore = create<AdminSessionState>()((set, get) => ({
-  ...initialState,
+function buildExitContext(
+  mode: ElevatedMode | null,
+  groupId: string | null,
+  reason: ExitReason
+): ExitContext | null {
+  return mode ? { mode, groupId, reason, timestamp: Date.now() } : null;
+}
 
-  enterElevatedMode: (
-    mode: ElevatedMode,
-    groupId?: string,
-    timeoutMinutes?: number
-  ) => {
-    const duration = timeoutMinutes ?? DEFAULT_TIMEOUT_MINUTES;
-    set({
-      isElevated: true,
-      elevatedMode: mode,
-      elevatedGroupId: groupId ?? null,
-      timeoutDuration: duration,
-      remainingMs: duration * 60 * 1000,
-      isPromptVisible: false,
-      promptCountdownMs: 0,
-    });
-  },
+export const useAdminSessionStore = create<AdminSessionState>()(
+  persist(
+    (set, get) => ({
+      ...initialState,
 
-  exitElevatedMode: (reason: ExitReason) => {
-    const { elevatedMode, elevatedGroupId } = get();
-    set({
-      isElevated: false,
-      elevatedMode: null,
-      elevatedGroupId: null,
-      timeoutDuration: DEFAULT_TIMEOUT_MINUTES,
-      remainingMs: 0,
-      isPromptVisible: false,
-      promptCountdownMs: 0,
-      lastExitContext: elevatedMode
-        ? { mode: elevatedMode, groupId: elevatedGroupId, reason, timestamp: Date.now() }
-        : null,
-    });
-  },
+      enterElevatedMode: (
+        mode: ElevatedMode,
+        groupId?: string,
+        timeoutMinutes?: number
+      ) => {
+        const duration = timeoutMinutes ?? DEFAULT_TIMEOUT_MINUTES;
+        set({
+          isElevated: true,
+          elevatedMode: mode,
+          elevatedGroupId: groupId ?? null,
+          timeoutDuration: duration,
+          remainingMs: duration * 60 * 1000,
+          lastActivityAt: Date.now(),
+          isPromptVisible: false,
+          promptCountdownMs: 0,
+          lastExitContext: null,
+        });
+      },
 
-  resetTimer: () => {
-    const { isElevated, timeoutDuration } = get();
-    if (!isElevated) return;
-    set({
-      remainingMs: timeoutDuration * 60 * 1000,
-      isPromptVisible: false,
-      promptCountdownMs: 0,
-    });
-  },
+      exitElevatedMode: (reason: ExitReason) => {
+        const { elevatedMode, elevatedGroupId } = get();
+        set({
+          ...initialState,
+          lastExitContext: buildExitContext(elevatedMode, elevatedGroupId, reason),
+        });
+      },
 
-  showPrompt: () => {
-    const { isElevated } = get();
-    if (!isElevated) return;
-    set({
-      isPromptVisible: true,
-      promptCountdownMs: PROMPT_COUNTDOWN_MS,
-    });
-  },
+      resetTimer: () => {
+        const { isElevated, timeoutDuration } = get();
+        if (!isElevated) return;
+        set({
+          remainingMs: timeoutDuration * 60 * 1000,
+          lastActivityAt: Date.now(),
+          isPromptVisible: false,
+          promptCountdownMs: 0,
+        });
+      },
 
-  dismissPrompt: (response: PromptResponse) => {
-    if (response === "yes") {
-      // User confirmed activity — reset the inactivity timer
-      const { timeoutDuration } = get();
-      set({
-        isPromptVisible: false,
-        promptCountdownMs: 0,
-        remainingMs: timeoutDuration * 60 * 1000,
-      });
-    } else {
-      // User said "no" or countdown expired — exit elevated mode via proper exit flow
-      const { elevatedMode, elevatedGroupId } = get();
-      set({
-        isElevated: false,
-        elevatedMode: null,
-        elevatedGroupId: null,
-        timeoutDuration: DEFAULT_TIMEOUT_MINUTES,
-        remainingMs: 0,
-        isPromptVisible: false,
-        promptCountdownMs: 0,
-        lastExitContext: elevatedMode
-          ? { mode: elevatedMode, groupId: elevatedGroupId, reason: "prompt_no", timestamp: Date.now() }
-          : null,
-      });
+      showPrompt: () => {
+        const { isElevated } = get();
+        if (!isElevated) return;
+        set({
+          isPromptVisible: true,
+          promptCountdownMs: PROMPT_COUNTDOWN_MS,
+        });
+      },
+
+      dismissPrompt: (response: PromptResponse) => {
+        if (response === "yes") {
+          const { timeoutDuration } = get();
+          set({
+            isPromptVisible: false,
+            promptCountdownMs: 0,
+            remainingMs: timeoutDuration * 60 * 1000,
+            lastActivityAt: Date.now(),
+          });
+          return;
+        }
+
+        const { elevatedMode, elevatedGroupId } = get();
+        set({
+          ...initialState,
+          lastExitContext: buildExitContext(elevatedMode, elevatedGroupId, "prompt_no"),
+        });
+      },
+
+      clearExitContext: () => {
+        set({ lastExitContext: null });
+      },
+    }),
+    {
+      name: "jobuler-admin-session",
+      storage: createJSONStorage(() => localStorage),
+      partialize: (state) => ({
+        isElevated: state.isElevated,
+        elevatedMode: state.elevatedMode,
+        elevatedGroupId: state.elevatedGroupId,
+        timeoutDuration: state.timeoutDuration,
+        remainingMs: state.remainingMs,
+        lastActivityAt: state.lastActivityAt,
+      }),
+      merge: (persisted, current) => {
+        const persistedState = persisted as Partial<AdminSessionState>;
+
+        if (!persistedState.isElevated || !persistedState.elevatedMode) {
+          return current;
+        }
+
+        const timeoutDuration = persistedState.timeoutDuration ?? DEFAULT_TIMEOUT_MINUTES;
+        const lastActivityAt = persistedState.lastActivityAt ?? 0;
+        const remainingMs = getSessionRemainingMs(lastActivityAt, timeoutDuration);
+
+        if (remainingMs <= 0) {
+          return current;
+        }
+
+        return {
+          ...current,
+          isElevated: true,
+          elevatedMode: persistedState.elevatedMode,
+          elevatedGroupId: persistedState.elevatedGroupId ?? null,
+          timeoutDuration,
+          remainingMs,
+          lastActivityAt,
+          isPromptVisible: false,
+          promptCountdownMs: 0,
+          lastExitContext: null,
+        };
+      },
     }
-  },
-
-  clearExitContext: () => {
-    set({ lastExitContext: null });
-  },
-}));
+  )
+);

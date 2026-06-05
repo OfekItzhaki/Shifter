@@ -3,6 +3,9 @@
     "name": "Shifter",
     "tagline": "Shift Scheduling System"
   },
+  "adminSession": {
+    "managementSessionExpired": "Management session expired due to inactivity"
+  },
   "auth": {
     "login": "Login",
     "logout": "Logout",

@@ -24,13 +24,17 @@ import { apiClient } from "../../lib/api/client";
 const mockTimerStart = vi.fn();
 const mockTimerReset = vi.fn();
 const mockTimerStop = vi.fn();
+const mockGetLastActivityTimestamp = vi.fn(() => Date.now());
 
 vi.mock("../../lib/session/inactivityTimer", () => ({
-  InactivityTimer: vi.fn().mockImplementation(() => ({
+  InactivityTimer: vi.fn().mockImplementation(function MockInactivityTimer() {
+    return {
     start: mockTimerStart,
     reset: mockTimerReset,
     stop: mockTimerStop,
-  })),
+    getLastActivityTimestamp: mockGetLastActivityTimestamp,
+    };
+  }),
 }));
 
 // Mock MultiTabSync
@@ -82,7 +86,9 @@ describe("useAdminSessionWiring", () => {
       expect.objectContaining({
         onTick: expect.any(Function),
         onTimeout: expect.any(Function),
-      })
+        onActivity: expect.any(Function),
+      }),
+      expect.any(Number)
     );
   });
 

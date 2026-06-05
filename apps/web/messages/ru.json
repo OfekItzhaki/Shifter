@@ -3,6 +3,9 @@
     "name": "Shifter",
     "tagline": "Система управления сменами"
   },
+  "adminSession": {
+    "managementSessionExpired": "Сеанс управления истек из-за бездействия"
+  },
   "auth": {
     "login": "Вход",
     "logout": "Выход",

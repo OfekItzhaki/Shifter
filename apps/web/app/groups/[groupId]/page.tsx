@@ -191,17 +191,24 @@ export default function GroupDetailPage() {
   const [showReAuthDialog, setShowReAuthDialog] = useState(false);
   const [hasCredentials, setHasCredentials] = useState<boolean | null>(null); // null = loading
   const [subscriptionActive, setSubscriptionActive] = useState(true);
-  const { enterElevatedMode } = useAdminSessionStore();
+  const { enterElevatedMode, exitElevatedMode } = useAdminSessionStore();
 
   // ── Re-enter elevated session on page load if admin mode was persisted ──
   // This restarts the inactivity timeout after a refresh.
   useEffect(() => {
     if (adminGroupId === groupId && group) {
-      const { isElevated } = useAdminSessionStore.getState();
-      if (!isElevated) {
-        const timeoutMinutes = group.managementTimeoutMinutes ?? 15;
-        enterElevatedMode("management", groupId, timeoutMinutes);
+      const { isElevated, elevatedMode, elevatedGroupId } = useAdminSessionStore.getState();
+      if (
+        isElevated &&
+        elevatedMode === "management" &&
+        elevatedGroupId === groupId
+      ) {
+        return;
       }
+
+      exitAdminMode();
+      exitElevatedMode("manual");
+      setIsAdmin(false);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [group, adminGroupId, groupId]);
@@ -554,7 +561,6 @@ export default function GroupDetailPage() {
   // ── Cleanup polling on unmount ───────────────────────────────────────────
   useEffect(() => {
     return () => {
-      exitAdminMode();
       if (pollingRef.current) clearInterval(pollingRef.current);
     };
   }, []);

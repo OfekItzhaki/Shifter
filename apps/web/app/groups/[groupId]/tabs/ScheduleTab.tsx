@@ -455,8 +455,8 @@ export default function ScheduleTab({
         />
       )}
 
-      {/* Search filter + export */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+      {/* Search filter + compact actions */}
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
         <div className="relative flex-1">
           <input
             type="text"
@@ -469,40 +469,47 @@ export default function ScheduleTab({
             <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
         </div>
-        {scheduleData && scheduleData.length > 0 && (
-          <button
-            onClick={exportCSV}
-            className="flex items-center justify-center gap-1.5 text-xs text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 px-3 py-2.5 sm:py-2 rounded-xl transition-colors flex-shrink-0"
-            title={t("exportCsv") ?? "Export CSV"}
-          >
-            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-            </svg>
-            {t("exportCsv")}
-          </button>
-        )}
-        {isAdmin && scheduleData && scheduleData.length > 0 && (
-          <button
-            onClick={() => setShowDiff(true)}
-            className="flex items-center justify-center gap-1.5 text-xs text-sky-600 border border-sky-200 bg-white hover:bg-sky-50 px-3 py-2.5 sm:py-2 rounded-xl transition-colors flex-shrink-0"
-          >
-            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-            </svg>
-            {t("showDiff")}
-          </button>
-        )}
-        {isAdmin && spaceId && (
-          <button
-            onClick={() => setShowHistory(!showHistory)}
-            className="flex items-center justify-center gap-1.5 text-xs text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 px-3 py-2.5 sm:py-2 rounded-xl transition-colors flex-shrink-0"
-          >
-            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            {t("history")}
-          </button>
-        )}
+        <div className="flex flex-wrap items-center gap-2 sm:flex-nowrap">
+          {scheduleData && scheduleData.length > 0 && (
+            <button
+              onClick={exportCSV}
+              aria-label={t("exportCsv") ?? "Export CSV"}
+              className="flex h-10 w-10 items-center justify-center gap-1.5 text-xs text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-xl transition-colors flex-shrink-0 sm:h-auto sm:w-auto sm:px-3 sm:py-2"
+              title={t("exportCsv") ?? "Export CSV"}
+            >
+              <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+              <span className="sr-only sm:not-sr-only">{t("exportCsv")}</span>
+            </button>
+          )}
+          {isAdmin && scheduleData && scheduleData.length > 0 && (
+            <button
+              onClick={() => setShowDiff(true)}
+              aria-label={t("showDiff")}
+              title={t("showDiff")}
+              className="flex h-10 w-10 items-center justify-center gap-1.5 text-xs text-sky-600 border border-sky-200 bg-white hover:bg-sky-50 rounded-xl transition-colors flex-shrink-0 sm:h-auto sm:w-auto sm:px-3 sm:py-2"
+            >
+              <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+              </svg>
+              <span className="sr-only sm:not-sr-only">{t("showDiff")}</span>
+            </button>
+          )}
+          {isAdmin && spaceId && (
+            <button
+              onClick={() => setShowHistory(!showHistory)}
+              aria-label={t("history")}
+              title={t("history")}
+              className="flex h-10 w-10 items-center justify-center gap-1.5 text-xs text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-xl transition-colors flex-shrink-0 sm:h-auto sm:w-auto sm:px-3 sm:py-2"
+            >
+              <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span className="sr-only sm:not-sr-only">{t("history")}</span>
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Schedule History panel */}
