@@ -221,6 +221,9 @@ public class PublishVersionCommandHandler : IRequestHandler<PublishVersionComman
                 var requiredRest = Math.Max(current.MinRestHours, next.MinRestHours);
                 if (requiredRest > 0 && gap >= TimeSpan.Zero && gap < TimeSpan.FromHours(requiredRest))
                 {
+                    if (IsAllowedDoubleShiftContinuation(personTimeline, i))
+                        continue;
+
                     throw new InvalidOperationException(
                         $"Cannot publish schedule: {current.PersonName} has only {gap.TotalHours:F1}h rest between " +
                         $"'{current.TaskName}' ending at {current.EndsAt:O} and " +
@@ -228,6 +231,32 @@ public class PublishVersionCommandHandler : IRequestHandler<PublishVersionComman
                 }
             }
         }
+    }
+
+    private static bool IsAllowedDoubleShiftContinuation(IReadOnlyList<ResolvedAssignment> timeline, int currentIndex)
+    {
+        var current = timeline[currentIndex];
+        var next = timeline[currentIndex + 1];
+
+        if (!current.AllowsDoubleShift || !next.AllowsDoubleShift)
+            return false;
+
+        if (current.GroupTaskId is null || current.GroupTaskId != next.GroupTaskId)
+            return false;
+
+        var gap = next.StartsAt - current.EndsAt;
+        if (gap < TimeSpan.Zero || gap > TimeSpan.FromMinutes(1))
+            return false;
+
+        if (currentIndex == 0)
+            return true;
+
+        var previous = timeline[currentIndex - 1];
+        if (!previous.AllowsDoubleShift || previous.GroupTaskId != current.GroupTaskId)
+            return true;
+
+        var previousGap = current.StartsAt - previous.EndsAt;
+        return previousGap < TimeSpan.Zero || previousGap > TimeSpan.FromMinutes(1);
     }
 
     private async Task<List<ResolvedAssignment>> ResolveAssignmentWindowsAsync(
@@ -277,7 +306,9 @@ public class PublishVersionCommandHandler : IRequestHandler<PublishVersionComman
                     taskSlot.StartsAt,
                     taskSlot.EndsAt,
                     defaultMinRestHours,
-                    taskType?.AllowsOverlap ?? false);
+                    taskType?.AllowsOverlap ?? false,
+                    AllowsDoubleShift: false,
+                    GroupTaskId: null);
             }
             else if (generatedSlots.TryGetValue(assignment.TaskSlotId, out var generatedSlot))
             {
@@ -298,7 +329,9 @@ public class PublishVersionCommandHandler : IRequestHandler<PublishVersionComman
                 slot.StartsAt,
                 slot.EndsAt,
                 slot.MinRestHours,
-                slot.AllowsOverlap));
+                slot.AllowsOverlap,
+                slot.AllowsDoubleShift,
+                slot.GroupTaskId));
         }
 
         return resolved;
@@ -379,7 +412,9 @@ public class PublishVersionCommandHandler : IRequestHandler<PublishVersionComman
                         shiftStart,
                         shiftEnd,
                         minRest,
-                        task.AllowsOverlap);
+                        task.AllowsOverlap,
+                        task.AllowsDoubleShift,
+                        task.Id);
                 }
 
                 shiftStart = shiftEnd;
@@ -395,7 +430,9 @@ public class PublishVersionCommandHandler : IRequestHandler<PublishVersionComman
         DateTime StartsAt,
         DateTime EndsAt,
         int MinRestHours,
-        bool AllowsOverlap);
+        bool AllowsOverlap,
+        bool AllowsDoubleShift,
+        Guid? GroupTaskId);
 
     private sealed record ResolvedAssignment(
         Guid AssignmentId,
@@ -405,7 +442,9 @@ public class PublishVersionCommandHandler : IRequestHandler<PublishVersionComman
         DateTime StartsAt,
         DateTime EndsAt,
         int MinRestHours,
-        bool AllowsOverlap);
+        bool AllowsOverlap,
+        bool AllowsDoubleShift,
+        Guid? GroupTaskId);
 
     private static class ShiftGuidHelper
     {

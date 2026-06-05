@@ -395,6 +395,118 @@ public class AdminManagementIntegrationTests
         draft!.Status.Should().Be(ScheduleVersionStatus.Draft);
     }
 
+    [Fact]
+    public async Task PublishVersionCommand_AllowsTwoContinuousGeneratedAssignments_WhenTaskAllowsDoubleShift()
+    {
+        var db = CreateDb();
+        var spaceId = Guid.NewGuid();
+        var userId = Guid.NewGuid();
+
+        var group = Group.Create(spaceId, null, "Guard Group");
+        group.SetMinRestBetweenShifts(8);
+        db.Groups.Add(group);
+
+        var person = Person.Create(spaceId, "Yaakov");
+        db.People.Add(person);
+        db.GroupMemberships.Add(GroupMembership.Create(spaceId, group.Id, person.Id));
+
+        var version = ScheduleVersion.CreateDraft(spaceId, 1, null, null, userId);
+        db.ScheduleVersions.Add(version);
+        await db.SaveChangesAsync();
+
+        var solverStart = version.CreatedAt;
+        solverStart = new DateTime(
+            solverStart.Year, solverStart.Month, solverStart.Day,
+            solverStart.Hour, 0, 0, DateTimeKind.Utc);
+
+        var guardTask = GroupTask.Create(
+            spaceId,
+            group.Id,
+            "Guard",
+            solverStart,
+            solverStart.AddHours(8),
+            shiftDurationMinutes: 240,
+            requiredHeadcount: 1,
+            burdenLevel: TaskBurdenLevel.Normal,
+            allowsDoubleShift: true,
+            allowsOverlap: false,
+            createdByUserId: userId);
+
+        db.GroupTasks.Add(guardTask);
+        db.Assignments.AddRange(
+            Assignment.Create(spaceId, version.Id, DeriveShiftGuid(guardTask.Id, 0), person.Id),
+            Assignment.Create(spaceId, version.Id, DeriveShiftGuid(guardTask.Id, 1), person.Id));
+        await db.SaveChangesAsync();
+
+        var handler = MakePublishHandler(db);
+
+        var act = async () => await handler.Handle(
+            new PublishVersionCommand(spaceId, version.Id, userId),
+            CancellationToken.None);
+
+        await act.Should().NotThrowAsync();
+
+        var published = await db.ScheduleVersions.FindAsync(version.Id);
+        published!.Status.Should().Be(ScheduleVersionStatus.Published);
+    }
+
+    [Fact]
+    public async Task PublishVersionCommand_BlocksThirdContinuousGeneratedAssignment_WhenTaskAllowsDoubleShift()
+    {
+        var db = CreateDb();
+        var spaceId = Guid.NewGuid();
+        var userId = Guid.NewGuid();
+
+        var group = Group.Create(spaceId, null, "Guard Group");
+        group.SetMinRestBetweenShifts(8);
+        db.Groups.Add(group);
+
+        var person = Person.Create(spaceId, "Yaakov");
+        db.People.Add(person);
+        db.GroupMemberships.Add(GroupMembership.Create(spaceId, group.Id, person.Id));
+
+        var version = ScheduleVersion.CreateDraft(spaceId, 1, null, null, userId);
+        db.ScheduleVersions.Add(version);
+        await db.SaveChangesAsync();
+
+        var solverStart = version.CreatedAt;
+        solverStart = new DateTime(
+            solverStart.Year, solverStart.Month, solverStart.Day,
+            solverStart.Hour, 0, 0, DateTimeKind.Utc);
+
+        var guardTask = GroupTask.Create(
+            spaceId,
+            group.Id,
+            "Guard",
+            solverStart,
+            solverStart.AddHours(12),
+            shiftDurationMinutes: 240,
+            requiredHeadcount: 1,
+            burdenLevel: TaskBurdenLevel.Normal,
+            allowsDoubleShift: true,
+            allowsOverlap: false,
+            createdByUserId: userId);
+
+        db.GroupTasks.Add(guardTask);
+        db.Assignments.AddRange(
+            Assignment.Create(spaceId, version.Id, DeriveShiftGuid(guardTask.Id, 0), person.Id),
+            Assignment.Create(spaceId, version.Id, DeriveShiftGuid(guardTask.Id, 1), person.Id),
+            Assignment.Create(spaceId, version.Id, DeriveShiftGuid(guardTask.Id, 2), person.Id));
+        await db.SaveChangesAsync();
+
+        var handler = MakePublishHandler(db);
+
+        var act = async () => await handler.Handle(
+            new PublishVersionCommand(spaceId, version.Id, userId),
+            CancellationToken.None);
+
+        await act.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("*only 0.0h rest*Required: 8h*");
+
+        var draft = await db.ScheduleVersions.FindAsync(version.Id);
+        draft!.Status.Should().Be(ScheduleVersionStatus.Draft);
+    }
+
     private static Guid DeriveShiftGuid(Guid taskId, int shiftIndex)
     {
         var bytes = taskId.ToByteArray();

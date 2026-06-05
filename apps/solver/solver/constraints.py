@@ -95,6 +95,8 @@ def add_no_consecutive_double_shift_constraints(
     """
     When a task has allows_double_shift=False, the same person cannot be assigned
     to two consecutive (adjacent) slots of that same task type.
+    When allows_double_shift=True, only two consecutive slots are allowed; a third
+    consecutive slot for the same person is still blocked.
     Two slots are considered consecutive if one ends exactly when the other starts
     (or within a 1-minute tolerance to handle rounding).
     Emergency-bypassed people skip this constraint.
@@ -106,9 +108,8 @@ def add_no_consecutive_double_shift_constraints(
 
     # Find consecutive slot pairs of the same task type where double shift is NOT allowed
     consecutive_pairs = []
+    consecutive_triples = []
     for s1_idx in range(len(slots)):
-        if slots[s1_idx].allows_double_shift:
-            continue
         s1_end = slot_times[s1_idx][1]
         task_type = slots[s1_idx].task_type_id
 
@@ -117,14 +118,25 @@ def add_no_consecutive_double_shift_constraints(
                 continue
             if slots[s2_idx].task_type_id != task_type:
                 continue
-            if slots[s2_idx].allows_double_shift:
-                continue
             s2_start = slot_times[s2_idx][0]
             # Consecutive: s1 ends exactly when s2 starts (within 60s tolerance)
             if 0 <= (s2_start - s1_end) <= 60:
-                consecutive_pairs.append((s1_idx, s2_idx))
+                if not (slots[s1_idx].allows_double_shift and slots[s2_idx].allows_double_shift):
+                    consecutive_pairs.append((s1_idx, s2_idx))
+                else:
+                    s2_end = slot_times[s2_idx][1]
+                    for s3_idx in range(len(slots)):
+                        if s3_idx in (s1_idx, s2_idx):
+                            continue
+                        if slots[s3_idx].task_type_id != task_type:
+                            continue
+                        if not slots[s3_idx].allows_double_shift:
+                            continue
+                        s3_start = slot_times[s3_idx][0]
+                        if 0 <= (s3_start - s2_end) <= 60:
+                            consecutive_triples.append((s1_idx, s2_idx, s3_idx))
 
-    if not consecutive_pairs:
+    if not consecutive_pairs and not consecutive_triples:
         return
 
     for p_idx in range(num_people):
@@ -132,6 +144,12 @@ def add_no_consecutive_double_shift_constraints(
             continue
         for s1_idx, s2_idx in consecutive_pairs:
             model.add(assign[(s1_idx, p_idx)] + assign[(s2_idx, p_idx)] <= 1)
+        for s1_idx, s2_idx, s3_idx in consecutive_triples:
+            model.add(
+                assign[(s1_idx, p_idx)] +
+                assign[(s2_idx, p_idx)] +
+                assign[(s3_idx, p_idx)] <= 2
+            )
 
 
 def add_min_rest_constraints(
@@ -172,6 +190,10 @@ def add_min_rest_constraints(
             violates_backward = end2 <= start1 and (start1 - end2) < min_rest_seconds
 
             if violates_forward or violates_backward:
+                if violates_forward and _is_allowed_double_shift_pair(slots[s1_idx], slots[s2_idx], end1, start2):
+                    continue
+                if violates_backward and _is_allowed_double_shift_pair(slots[s2_idx], slots[s1_idx], end2, start1):
+                    continue
                 rest_violation_pairs.append((s1_idx, s2_idx, is_long_shift, violates_forward, violates_backward))
 
     for p_idx in range(num_people):
@@ -409,6 +431,16 @@ def _to_timestamp(dt) -> int:
 
 
 # ── Constraint expansion ──────────────────────────────────────────────────────
+
+def _is_allowed_double_shift_pair(first: TaskSlot, second: TaskSlot, first_end: int, second_start: int) -> bool:
+    """Return true only for the allowed two-slot continuation of the same task."""
+    return (
+        first.allows_double_shift
+        and second.allows_double_shift
+        and first.task_type_id == second.task_type_id
+        and 0 <= (second_start - first_end) <= 60
+    )
+
 
 def expand_role_constraints(
     hard_constraints: list,

@@ -9,6 +9,7 @@ from ortools.sat.python import cp_model
 from models.solver_input import TaskSlot, HardConstraint, PersonEligibility
 from solver.constraints import (
     add_no_overlap_constraints,
+    add_no_consecutive_double_shift_constraints,
     add_min_rest_constraints,
     add_qualification_constraints,
     add_role_constraints,
@@ -16,15 +17,24 @@ from solver.constraints import (
 )
 
 
-def make_slot(sid, start_hour, end_hour, allows_overlap=False, task_type_name="Guard"):
+def make_slot(
+    sid,
+    start_hour,
+    end_hour,
+    allows_overlap=False,
+    allows_double_shift=False,
+    task_type_id="tt1",
+    task_type_name="Guard",
+):
     return TaskSlot(
-        slot_id=sid, task_type_id="tt1", task_type_name=task_type_name,
+        slot_id=sid, task_type_id=task_type_id, task_type_name=task_type_name,
         burden_level="neutral",
         starts_at=datetime(2026, 4, 20, start_hour, 0, tzinfo=timezone.utc),
         ends_at=datetime(2026, 4, 20, end_hour, 0, tzinfo=timezone.utc),
         required_headcount=1, priority=5,
         required_role_ids=[], required_qualification_ids=[],
-        allows_overlap=allows_overlap
+        allows_overlap=allows_overlap,
+        allows_double_shift=allows_double_shift,
     )
 
 
@@ -104,6 +114,60 @@ class TestMinRestConstraint:
 
         feasible, _, _ = solve_simple(model, assign, 2, 1)
         assert feasible
+
+    def test_continuous_same_task_allowed_when_double_shift_enabled(self):
+        model = cp_model.CpModel()
+        slots = [
+            make_slot("s1", 8, 12, allows_double_shift=True),
+            make_slot("s2", 12, 16, allows_double_shift=True),
+        ]
+        people = [make_person("p1")]
+        assign = {(s, p): model.new_bool_var(f"a_{s}_{p}")
+                  for s in range(2) for p in range(1)}
+
+        model.add(assign[(0, 0)] == 1)
+        model.add(assign[(1, 0)] == 1)
+        add_min_rest_constraints(model, assign, slots, people, 1, min_rest_hours=8.0)
+
+        feasible, _, _ = solve_simple(model, assign, 2, 1)
+        assert feasible
+
+    def test_different_task_still_blocked_when_double_shift_enabled(self):
+        model = cp_model.CpModel()
+        slots = [
+            make_slot("s1", 8, 12, allows_double_shift=True, task_type_id="tt1"),
+            make_slot("s2", 12, 16, allows_double_shift=True, task_type_id="tt2"),
+        ]
+        people = [make_person("p1")]
+        assign = {(s, p): model.new_bool_var(f"a_{s}_{p}")
+                  for s in range(2) for p in range(1)}
+
+        model.add(assign[(0, 0)] == 1)
+        model.add(assign[(1, 0)] == 1)
+        add_min_rest_constraints(model, assign, slots, people, 1, min_rest_hours=8.0)
+
+        feasible, _, _ = solve_simple(model, assign, 2, 1)
+        assert not feasible
+
+    def test_third_continuous_same_task_blocked_when_double_shift_enabled(self):
+        model = cp_model.CpModel()
+        slots = [
+            make_slot("s1", 8, 12, allows_double_shift=True),
+            make_slot("s2", 12, 16, allows_double_shift=True),
+            make_slot("s3", 16, 20, allows_double_shift=True),
+        ]
+        people = [make_person("p1")]
+        assign = {(s, p): model.new_bool_var(f"a_{s}_{p}")
+                  for s in range(3) for p in range(1)}
+
+        model.add(assign[(0, 0)] == 1)
+        model.add(assign[(1, 0)] == 1)
+        model.add(assign[(2, 0)] == 1)
+        add_no_consecutive_double_shift_constraints(model, assign, slots, people, 1)
+        add_min_rest_constraints(model, assign, slots, people, 1, min_rest_hours=8.0)
+
+        feasible, _, _ = solve_simple(model, assign, 3, 1)
+        assert not feasible
 
 
 class TestQualificationConstraint:
