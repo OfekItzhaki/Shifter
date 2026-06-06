@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using Jobuler.Application.Common;
 using Jobuler.Domain.Identity;
+using Jobuler.Domain.Organizations;
 using Jobuler.Infrastructure.Persistence;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -53,19 +54,31 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Guid>
 
         var hash = BCrypt.Net.BCrypt.HashPassword(request.Password, workFactor: 12);
         var user = User.Create(email, request.DisplayName, hash, request.PreferredLocale, request.PhoneNumber, request.ProfileImageUrl, request.Birthday);
+        user.UpdateLocation(request.CountryCode, request.StateCode);
 
         _db.Users.Add(user);
-        await _db.SaveChangesAsync(ct);
 
         // Auto-create a personal space for the new user
         var displayName = request.DisplayName ?? (string.IsNullOrWhiteSpace(request.Email) ? request.PhoneNumber! : request.Email.Split('@')[0]);
+        var setupTemplate = string.IsNullOrWhiteSpace(request.SetupTemplate) ? "general" : request.SetupTemplate;
+        var organizationName = string.IsNullOrWhiteSpace(request.OrganizationName)
+            ? Organization.BuildDefaultName(request.CountryCode, setupTemplate, displayName)
+            : request.OrganizationName;
+        var organization = Organization.Create(
+            organizationName,
+            user.Id,
+            request.CountryCode,
+            setupTemplate,
+            request.PreferredLocale);
+        _db.Organizations.Add(organization);
+
         var spaceName = (request.PreferredLocale ?? "he") switch
         {
             "he" => $"{displayName} - Space",
             "ru" => $"Пространство {displayName}",
             _ => $"{displayName}'s Space",
         };
-        var space = Jobuler.Domain.Spaces.Space.Create(spaceName, user.Id);
+        var space = Jobuler.Domain.Spaces.Space.Create(spaceName, user.Id, organizationId: organization.Id);
         _db.Spaces.Add(space);
 
         // Add user as space member

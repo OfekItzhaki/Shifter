@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using Jobuler.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -12,9 +13,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Jobuler.Application.Persistence.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260606091650_AddOrganizationsForPortability")]
+    partial class AddOrganizationsForPortability
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -132,84 +135,6 @@ namespace Jobuler.Application.Persistence.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("group_subscriptions", (string)null);
-                });
-
-            modelBuilder.Entity("Jobuler.Domain.Billing.OrganizationSubscription", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<bool>("AutoRenew")
-                        .HasColumnType("boolean")
-                        .HasColumnName("auto_renew");
-
-                    b.Property<string>("BillingMode")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("billing_mode");
-
-                    b.Property<DateTime?>("CanceledAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("canceled_at");
-
-                    b.Property<int?>("CoveredMemberLimit")
-                        .HasColumnType("integer")
-                        .HasColumnName("covered_member_limit");
-
-                    b.Property<int?>("CoveredSpaceLimit")
-                        .HasColumnType("integer")
-                        .HasColumnName("covered_space_limit");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at");
-
-                    b.Property<DateTime?>("CurrentPeriodEnd")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("current_period_end");
-
-                    b.Property<DateTime>("CurrentPeriodStart")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("current_period_start");
-
-                    b.Property<Guid>("OrganizationId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("organization_id");
-
-                    b.Property<string>("ProviderCustomerId")
-                        .HasColumnType("text")
-                        .HasColumnName("provider_customer_id");
-
-                    b.Property<string>("ProviderSubscriptionId")
-                        .HasColumnType("text")
-                        .HasColumnName("provider_subscription_id");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("status");
-
-                    b.Property<string>("TierId")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("tier_id");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("updated_at");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("OrganizationId")
-                        .IsUnique()
-                        .HasDatabaseName("uq_organization_subscriptions_organization_id");
-
-                    b.HasIndex("Status")
-                        .HasDatabaseName("idx_organization_subscriptions_status");
-
-                    b.ToTable("organization_subscriptions", (string)null);
                 });
 
             modelBuilder.Entity("Jobuler.Domain.Billing.SpaceSubscription", b =>
@@ -3855,15 +3780,6 @@ namespace Jobuler.Application.Persistence.Migrations
                         .IsUnique();
 
                     b.ToTable("task_type_overlap_rules", (string)null);
-                });
-
-            modelBuilder.Entity("Jobuler.Domain.Billing.OrganizationSubscription", b =>
-                {
-                    b.HasOne("Jobuler.Domain.Organizations.Organization", null)
-                        .WithMany()
-                        .HasForeignKey("OrganizationId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
                 });
 
             modelBuilder.Entity("Jobuler.Domain.Groups.Group", b =>

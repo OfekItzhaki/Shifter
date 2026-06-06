@@ -1,5 +1,6 @@
 using Jobuler.Application.Billing;
 using Jobuler.Domain.Billing;
+using Jobuler.Domain.Organizations;
 using Jobuler.Domain.Spaces;
 using Jobuler.Infrastructure.Persistence;
 using MediatR;
@@ -25,7 +26,27 @@ public class CreateSpaceCommandHandler : IRequestHandler<CreateSpaceCommand, Gui
 
     public async Task<Guid> Handle(CreateSpaceCommand request, CancellationToken ct)
     {
-        var space = Space.Create(request.Name, request.RequestingUserId, request.Description, request.Locale);
+        var organization = await _db.Organizations
+            .FirstOrDefaultAsync(o =>
+                o.PrimaryOwnerUserId == request.RequestingUserId
+                && o.Status == OrganizationStatus.Active, ct);
+
+        if (organization is null)
+        {
+            var user = await _db.Users
+                .AsNoTracking()
+                .FirstOrDefaultAsync(u => u.Id == request.RequestingUserId, ct);
+            var organizationName = Organization.BuildDefaultName(user?.CountryCode, "general", request.Name);
+            organization = Organization.Create(
+                organizationName,
+                request.RequestingUserId,
+                user?.CountryCode,
+                "general",
+                request.Locale);
+            _db.Organizations.Add(organization);
+        }
+
+        var space = Space.Create(request.Name, request.RequestingUserId, request.Description, request.Locale, organization.Id);
         _db.Spaces.Add(space);
 
         // Owner automatically gets full membership with SpaceOwner permission level

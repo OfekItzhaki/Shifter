@@ -9,4 +9,8 @@ public record RegisterCommand(
     string PreferredLocale = "he",
     string? PhoneNumber = null,
     string? ProfileImageUrl = null,
-    DateOnly? Birthday = null) : IRequest<Guid>;
+    DateOnly? Birthday = null,
+    string? CountryCode = null,
+    string? StateCode = null,
+    string? SetupTemplate = null,
+    string? OrganizationName = null) : IRequest<Guid>;

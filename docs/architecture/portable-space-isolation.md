@@ -60,6 +60,22 @@ For ordinary commercial customers, organizations can live in the shared SaaS
 database. For sensitive customers, the organization should live only inside its
 dedicated deployment database.
 
+Organizations are also the portability boundary for future migrations. A space
+can start under a default organization and later be moved or merged into an
+official organization after ownership is verified.
+
+Initial shared-SaaS onboarding should collect setup signals, not hard customer
+classification:
+
+- operating country/region for locale, timezone, billing, and later search
+- setup template such as general shifts, restaurant/hospitality, security, or
+  military-style duty roster
+- optional organization or workplace name
+
+If the name is blank, the product may generate a default from country +
+template. This gives the operator useful discovery clues later without asking
+new users for business numbers, legal affiliation, or sensitive customer type.
+
 ### Space
 
 `Space` remains the operational tenant boundary used by the product. Groups,
@@ -96,13 +112,21 @@ customer-specific domains, or operator-controlled provisioning.
 When a sensitive customer starts in shared SaaS and later moves to a dedicated
 deployment:
 
-1. Freeze writes for the organization or selected spaces.
-2. Export all space-scoped data and identity links.
-3. Create the dedicated deployment and database.
-4. Import the exported data.
-5. Re-bind users to the dedicated auth provider if required.
-6. Verify schedules, files, memberships, permissions, and audit logs.
-7. Disable or archive the original shared-space copy.
+1. Search candidate organizations/spaces using names, owner emails, verified
+   domains, billing records, operating country, setup template, and invitations.
+2. Have an authorized customer representative confirm the candidate list.
+3. Move or merge the confirmed spaces into the official organization.
+4. Freeze writes for the organization.
+5. Export all organization/space-scoped data and identity links.
+6. Create the dedicated deployment and database.
+7. Import the exported data.
+8. Re-bind users to the dedicated auth provider if required.
+9. Verify schedules, files, memberships, permissions, and audit logs.
+10. Mark the original shared-SaaS organization as relocated/disabled.
+11. Keep the disabled copy for a rollback window, currently 90 days.
+12. After the rollback window, mark the organization purge-pending.
+13. Permanently delete or anonymize the old copy only after explicit platform
+    admin confirmation and signed operational approval.
 
 The dedicated deployment can contain names, countries, and internal org
 structure because it is isolated to that customer. The shared deployment should
@@ -136,9 +160,35 @@ The initial implementation can be conservative:
 - `OrganizationMembership`
 - `Space.OrganizationId`
 - space creation attaches to an organization
-- existing spaces are migrated into a default organization per owner
+- existing spaces are migrated into a default organization
+- relocated organizations are disabled before deletion and track purge
+  eligibility
 
 Avoid sensitive classification fields in the first version.
+
+### Phase 2b: Organization Billing
+
+Keep current space subscriptions as the shared-SaaS/default path, but add an
+organization-level billing path before enterprise migrations:
+
+- ordinary shared SaaS can continue to bill by space
+- verified multi-space customers can be moved to organization billing
+- private online deployments should usually use annual subscription or contract
+  billing because Shifter still runs and evolves as an online service
+- offline/private-network deployments can use a setup/license fee, optionally
+  with annual maintenance/support for updates, support, and security fixes
+- one-time payment can remain an enterprise option, but should be priced as a
+  license plus deployment/support scope rather than as normal SaaS
+
+When an organization migrates to dedicated deployment, individual space
+subscriptions should be canceled or marked as covered by the organization
+contract before the shared copy is disabled.
+
+The shared SaaS database can store neutral billing modes such as
+`SharedSaaS`, `PrivateOnline`, `OfflineLicense`, and `EnterpriseInvoice`. These
+describe how the account is paid for; they are not sensitive customer
+classifications and should not be used to infer military, government, or
+country-specific status.
 
 ### Phase 3: Deployment Awareness
 

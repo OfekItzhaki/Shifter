@@ -1,4 +1,5 @@
 using Jobuler.Domain.Spaces;
+using Jobuler.Domain.Organizations;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -11,6 +12,7 @@ public class SpaceConfiguration : IEntityTypeConfiguration<Space>
         builder.ToTable("spaces");
         builder.HasKey(s => s.Id);
         builder.Property(s => s.Id).HasColumnName("id");
+        builder.Property(s => s.OrganizationId).HasColumnName("organization_id");
         builder.Property(s => s.Name).HasColumnName("name").IsRequired();
         builder.Property(s => s.Description).HasColumnName("description");
         builder.Property(s => s.OwnerUserId).HasColumnName("owner_user_id");
@@ -22,6 +24,12 @@ public class SpaceConfiguration : IEntityTypeConfiguration<Space>
         builder.Property(s => s.ManagementTimeoutMinutes).HasColumnName("management_timeout_minutes").HasDefaultValue(15);
         builder.Property(s => s.CreatedAt).HasColumnName("created_at");
         builder.Property(s => s.UpdatedAt).HasColumnName("updated_at");
+        builder.HasIndex(s => s.OrganizationId)
+            .HasDatabaseName("idx_spaces_organization_id");
+        builder.HasOne<Organization>()
+            .WithMany()
+            .HasForeignKey(s => s.OrganizationId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }
 

@@ -1,4 +1,5 @@
 using FluentValidation;
+using Jobuler.Application.Groups;
 using Jobuler.Application.Scheduling;
 using Jobuler.Domain.Groups;
 using Jobuler.Domain.Scheduling;
@@ -51,6 +52,10 @@ public class TriggerSolverCommandHandler : IRequestHandler<TriggerSolverCommand,
                 request.RequestedByUserId?.ToString() ?? "");
         }
 
+        var scope = request.GroupId.HasValue
+            ? await GroupHierarchyResolver.ResolveAsync(_db, request.SpaceId, request.GroupId.Value, ct)
+            : null;
+
         // ── Limited_Mode guard ────────────────────────────────────────────────
         if (request.GroupId.HasValue)
         {
@@ -85,7 +90,9 @@ public class TriggerSolverCommandHandler : IRequestHandler<TriggerSolverCommand,
                 .AsNoTracking()
                 .AnyAsync(t =>
                     t.SpaceId == request.SpaceId &&
-                    t.GroupId == request.GroupId.Value &&
+                    (scope == null
+                        ? t.GroupId == request.GroupId.Value
+                        : scope.TreeGroupIds.Contains(t.GroupId)) &&
                     t.IsActive &&
                     t.EndsAt > nowUtc, ct);
 
