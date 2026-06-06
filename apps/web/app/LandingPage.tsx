@@ -15,8 +15,13 @@ export default function LandingPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [checking, setChecking] = useState(true);
   const [lang, setLang] = useState<LandingLang>(PUBLIC_DEFAULT_LOCALE);
+  const [themeReady, setThemeReady] = useState(false);
   const { theme, setTheme } = useThemeStore();
-  const resolvedTheme = resolveTheme(theme);
+  const resolvedTheme = themeReady ? resolveTheme(theme) : "light";
+
+  useEffect(() => {
+    setThemeReady(true);
+  }, []);
 
   useEffect(() => {
     // Detect language from cookie or browser
@@ -64,13 +69,13 @@ export default function LandingPage() {
             <ShifterLogo size={28} />
             <span className="text-lg font-bold">Shifter</span>
           </div>
-          <div className="hidden sm:flex items-center gap-6 text-sm text-slate-600 dark:text-slate-300">
+          <div className="hidden lg:flex items-center gap-6 text-sm text-slate-600 dark:text-slate-300">
             <a href="#features" className="hover:text-slate-950 dark:hover:text-white transition-colors">{c.nav.features}</a>
             <a href="#how-it-works" className="hover:text-slate-950 dark:hover:text-white transition-colors">{c.nav.howItWorks}</a>
             <a href="#about" className="hover:text-slate-950 dark:hover:text-white transition-colors">{c.nav.about}</a>
             <a href="#faq" className="hover:text-slate-950 dark:hover:text-white transition-colors">{c.nav.faq}</a>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex min-w-0 items-center gap-2">
             <button
               type="button"
               onClick={toggleTheme}
@@ -81,20 +86,20 @@ export default function LandingPage() {
               {resolvedTheme === "dark" ? <SunIcon /> : <MoonIcon />}
             </button>
             {/* Language switcher */}
-            <div className="hidden sm:flex items-center gap-1 mr-2">
+            <div className="hidden lg:flex items-center gap-1 mr-2">
               {SUPPORTED_LOCALES.map(l => (
                 <button key={l} onClick={() => switchLang(l)} className={`text-xs px-2 py-1 rounded ${lang === l ? "bg-sky-100 text-sky-700 font-bold dark:bg-sky-500/30 dark:text-sky-300" : "text-slate-500 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white"}`}>
                   {LOCALE_META[l].label}
                 </button>
               ))}
             </div>
-            <Link href="/login" className="text-sm text-slate-600 hover:text-slate-950 transition-colors px-4 py-2 border border-slate-200 hover:border-slate-300 rounded-xl hidden sm:inline-block dark:text-slate-300 dark:hover:text-white dark:border-slate-600 dark:hover:border-slate-400">
+            <Link href="/login" className="text-sm text-slate-600 hover:text-slate-950 transition-colors px-4 py-2 border border-slate-200 hover:border-slate-300 rounded-xl hidden lg:inline-block dark:text-slate-300 dark:hover:text-white dark:border-slate-600 dark:hover:border-slate-400">
               {c.nav.signIn}
             </Link>
-            <Link href="/register" className="text-sm font-medium bg-sky-500 hover:bg-sky-600 text-white px-5 py-2.5 rounded-xl transition-colors">
+            <Link href="/register" className="text-sm font-medium bg-sky-500 hover:bg-sky-600 text-white px-4 sm:px-5 py-2.5 rounded-xl transition-colors whitespace-nowrap">
               {c.nav.getStarted}
             </Link>
-            <button onClick={() => setMobileMenuOpen(o => !o)} className="sm:hidden p-2 text-slate-600 dark:text-slate-300" aria-label="Menu">
+            <button onClick={() => setMobileMenuOpen(o => !o)} className="lg:hidden p-2 text-slate-600 dark:text-slate-300" aria-label="Menu">
               <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" /></svg>
             </button>
           </div>
