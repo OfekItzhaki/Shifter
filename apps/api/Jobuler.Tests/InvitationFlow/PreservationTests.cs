@@ -15,6 +15,7 @@ using Jobuler.Domain.Identity;
 using Jobuler.Domain.People;
 using Jobuler.Domain.Spaces;
 using Jobuler.Infrastructure.Persistence;
+using Jobuler.Tests;
 using Jobuler.Tests.Helpers;
 using Microsoft.EntityFrameworkCore;
 using Xunit;
@@ -161,7 +162,7 @@ public class PreservationTests
     {
         // Arrange
         var fixture = await SetupWithExistingMembershipAsync();
-        var handler = new AddPersonByEmailCommandHandler(fixture.Db, new NoOpPeakMemberTracker());
+        var handler = new AddPersonByEmailCommandHandler(fixture.Db, new NoOpPeakMemberTracker(), TestContactLookupProtector.Create());
         var command = new AddPersonByEmailCommand(
             fixture.SpaceId,
             fixture.GroupId,

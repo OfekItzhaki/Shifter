@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useCallback, useEffect, useRef, useState, Suspense } from "react";
 import { useTranslations } from "next-intl";
 import { useAuthStore } from "@/lib/store/authStore";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -29,8 +29,7 @@ function LoginForm() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  // Biometric login state
-  const [biometricError, setBiometricError] = useState<string | null>(null);
+  const conditionalLoginStartedRef = useRef(false);
 
   // Redirect authenticated users away from login page
   useEffect(() => {
@@ -39,43 +38,41 @@ function LoginForm() {
     }
   }, [isLoggedIn, router]);
 
-  // Start conditional mediation (passkey autofill) on mount
-  useEffect(() => {
+  const finishBiometricLogin = useCallback((tokens: Awaited<ReturnType<typeof authenticateWithBiometric>>) => {
+    localStorage.setItem("access_token", tokens.accessToken);
+    localStorage.removeItem("refresh_token");
+    notifyAuthTokenChanged();
+    setAuthGuardCookie();
+    const locale = tokens.preferredLocale || detectBrowserLocale();
+    setLocaleCookie(locale);
+    useAuthStore.setState({
+      userId: tokens.userId,
+      displayName: tokens.displayName,
+      preferredLocale: locale,
+      isAuthenticated: true,
+      isPlatformAdmin: tokens.isPlatformAdmin ?? false,
+      adminGroupId: null,
+      timezoneId: tokens.timezoneId ?? "Asia/Jerusalem",
+      timezoneOffsetMinutes: tokens.timezoneOffsetMinutes ?? 120,
+    });
+    router.push(redirectTo);
+  }, [redirectTo, router]);
+
+  const offerPasskeyLogin = useCallback(async () => {
     if (!isWebAuthnSupported()) return;
-    let cancelled = false;
+    if (conditionalLoginStartedRef.current) return;
+    conditionalLoginStartedRef.current = true;
 
-    async function startConditionalMediation() {
-      const available = await isConditionalMediationAvailable();
-      if (!available || cancelled) return;
+    const available = await isConditionalMediationAvailable();
+    if (!available) return;
 
-      try {
-        const tokens = await authenticateWithBiometric({ mediation: "conditional" });
-        if (cancelled) return;
-        localStorage.setItem("access_token", tokens.accessToken);
-        localStorage.removeItem("refresh_token");
-        notifyAuthTokenChanged();
-        setAuthGuardCookie();
-        const locale = tokens.preferredLocale || detectBrowserLocale();
-        setLocaleCookie(locale);
-        useAuthStore.setState({
-          userId: tokens.userId,
-          displayName: tokens.displayName,
-          preferredLocale: locale,
-          isAuthenticated: true,
-          isPlatformAdmin: tokens.isPlatformAdmin ?? false,
-          adminGroupId: null,
-          timezoneId: tokens.timezoneId ?? "Asia/Jerusalem",
-          timezoneOffsetMinutes: tokens.timezoneOffsetMinutes ?? 120,
-        });
-        router.push(redirectTo);
-      } catch {
-        // Conditional mediation not supported or user didn't select a passkey — silent fail
-      }
+    try {
+      const tokens = await authenticateWithBiometric({ mediation: "conditional" });
+      finishBiometricLogin(tokens);
+    } catch {
+      // The user can ignore passkey autofill and continue with saved credentials/password.
     }
-
-    startConditionalMediation();
-    return () => { cancelled = true; };
-  }, []);
+  }, [finishBiometricLogin]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -107,33 +104,6 @@ function LoginForm() {
             <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{t("loginSubtitle")}</p>
           </div>
 
-          {/* Biometric error (shown if conditional mediation fails silently) */}
-          {biometricError && (
-            <div style={{
-              marginBottom: "1rem",
-              background: "#fef2f2",
-              border: "1px solid #fecaca",
-              borderRadius: "10px",
-              padding: "0.5rem 0.75rem",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              gap: "0.5rem",
-            }}>
-              <p style={{ fontSize: "0.8125rem", color: "#dc2626", margin: 0 }}>{biometricError}</p>
-              <button
-                type="button"
-                onClick={() => setBiometricError(null)}
-                style={{ background: "none", border: "none", cursor: "pointer", color: "#dc2626", padding: 0, lineHeight: 1 }}
-                aria-label={t("close")}
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-          )}
-
           {justRegistered && (
             <div style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 10, padding: "0.625rem 0.875rem", display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "1rem" }}>
               <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="#16a34a" strokeWidth={2} style={{ flexShrink: 0 }}>
@@ -162,8 +132,10 @@ function LoginForm() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                onFocus={offerPasskeyLogin}
+                onClick={offerPasskeyLogin}
                 placeholder={t("emailOrPhonePlaceholder")}
-                autoComplete="username"
+                autoComplete="username webauthn"
                 style={{ width: "100%", border: "1px solid #e2e8f0", borderRadius: "10px", padding: "0.625rem 0.875rem", fontSize: "0.875rem", color: "#0f172a", outline: "none", boxSizing: "border-box" }}
               />
             </div>
@@ -178,6 +150,8 @@ function LoginForm() {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  onFocus={offerPasskeyLogin}
+                  onClick={offerPasskeyLogin}
                   placeholder="••••••••"
                   autoComplete="current-password"
                   style={{ width: "100%", border: "1px solid #e2e8f0", borderRadius: "10px", padding: "0.625rem 2.5rem 0.625rem 0.875rem", fontSize: "0.875rem", color: "#0f172a", outline: "none", boxSizing: "border-box" }}

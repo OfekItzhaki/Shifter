@@ -14,6 +14,7 @@ using Jobuler.Domain.Identity;
 using Jobuler.Domain.People;
 using Jobuler.Domain.Spaces;
 using Jobuler.Infrastructure.Persistence;
+using Jobuler.Tests;
 using Microsoft.EntityFrameworkCore;
 using NSubstitute;
 using Xunit;
@@ -128,7 +129,7 @@ public class BugConditionExplorationTests
     {
         // Arrange
         var fixture = await SetupAsync();
-        var handler = new AddPersonByEmailCommandHandler(fixture.Db, Substitute.For<IPeakMemberTracker>());
+        var handler = new AddPersonByEmailCommandHandler(fixture.Db, Substitute.For<IPeakMemberTracker>(), TestContactLookupProtector.Create());
         var command = new AddPersonByEmailCommand(
             fixture.SpaceId,
             fixture.GroupId,
@@ -151,7 +152,7 @@ public class BugConditionExplorationTests
     {
         // Arrange
         var fixture = await SetupAsync();
-        var handler = new AddPersonByEmailCommandHandler(fixture.Db, Substitute.For<IPeakMemberTracker>());
+        var handler = new AddPersonByEmailCommandHandler(fixture.Db, Substitute.For<IPeakMemberTracker>(), TestContactLookupProtector.Create());
         var command = new AddPersonByEmailCommand(
             fixture.SpaceId,
             fixture.GroupId,
@@ -179,7 +180,7 @@ public class BugConditionExplorationTests
     {
         // Arrange
         var fixture = await SetupAsync();
-        var handler = new AddPersonByPhoneCommandHandler(fixture.Db, Substitute.For<IPeakMemberTracker>());
+        var handler = new AddPersonByPhoneCommandHandler(fixture.Db, Substitute.For<IPeakMemberTracker>(), TestContactLookupProtector.Create());
         var command = new AddPersonByPhoneCommand(
             fixture.SpaceId,
             fixture.GroupId,
@@ -202,7 +203,7 @@ public class BugConditionExplorationTests
     {
         // Arrange
         var fixture = await SetupAsync();
-        var handler = new AddPersonByPhoneCommandHandler(fixture.Db, Substitute.For<IPeakMemberTracker>());
+        var handler = new AddPersonByPhoneCommandHandler(fixture.Db, Substitute.For<IPeakMemberTracker>(), TestContactLookupProtector.Create());
         var command = new AddPersonByPhoneCommand(
             fixture.SpaceId,
             fixture.GroupId,

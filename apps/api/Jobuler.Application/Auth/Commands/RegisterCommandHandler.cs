@@ -14,17 +14,20 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Guid>
 {
     private readonly AppDbContext _db;
     private readonly IEmailSender _emailSender;
+    private readonly IContactLookupProtector _contactLookup;
     private readonly ILogger<RegisterCommandHandler> _logger;
     private readonly string _frontendBaseUrl;
 
     public RegisterCommandHandler(
         AppDbContext db,
         IEmailSender emailSender,
+        IContactLookupProtector contactLookup,
         ILogger<RegisterCommandHandler> logger,
         IConfiguration configuration)
     {
         _db = db;
         _emailSender = emailSender;
+        _contactLookup = contactLookup;
         _logger = logger;
         _frontendBaseUrl = configuration["App:FrontendBaseUrl"]?.TrimEnd('/')
             ?? "https://shifter.ofeklabs.com";
@@ -35,14 +38,16 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Guid>
         // Check uniqueness by email (if provided) or phone (if provided)
         if (!string.IsNullOrWhiteSpace(request.Email))
         {
-            var emailExists = await _db.Users.AnyAsync(u => u.Email == request.Email.ToLowerInvariant().Trim(), ct);
+            var emailLookupHash = _contactLookup.HashEmail(request.Email);
+            var emailExists = await _db.Users.AnyAsync(u => u.EmailLookupHash == emailLookupHash, ct);
             if (emailExists)
                 throw new InvalidOperationException("An account with these credentials already exists.");
         }
 
         if (!string.IsNullOrWhiteSpace(request.PhoneNumber))
         {
-            var phoneExists = await _db.Users.AnyAsync(u => u.PhoneNumber == request.PhoneNumber.Trim(), ct);
+            var phoneLookupHash = _contactLookup.HashPhone(request.PhoneNumber);
+            var phoneExists = await _db.Users.AnyAsync(u => u.PhoneLookupHash == phoneLookupHash, ct);
             if (phoneExists)
                 throw new InvalidOperationException("An account with these credentials already exists.");
         }
@@ -50,10 +55,14 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Guid>
         // If no email provided, generate a placeholder
         var email = string.IsNullOrWhiteSpace(request.Email)
             ? $"phone_{request.PhoneNumber!.Replace("+", "").Replace(" ", "").Replace("-", "")}@phone.local"
-            : request.Email;
+            : _contactLookup.NormalizeEmail(request.Email);
+        var normalizedPhone = string.IsNullOrWhiteSpace(request.PhoneNumber)
+            ? null
+            : _contactLookup.NormalizePhone(request.PhoneNumber);
 
         var hash = BCrypt.Net.BCrypt.HashPassword(request.Password, workFactor: 12);
-        var user = User.Create(email, request.DisplayName, hash, request.PreferredLocale, request.PhoneNumber, request.ProfileImageUrl, request.Birthday);
+        var user = User.Create(email, request.DisplayName, hash, request.PreferredLocale, normalizedPhone, request.ProfileImageUrl, request.Birthday);
+        user.UpdateContactLookupHashes(_contactLookup.HashEmail(email), normalizedPhone is null ? null : _contactLookup.HashPhone(normalizedPhone));
         user.UpdateLocation(request.CountryCode, request.StateCode);
 
         _db.Users.Add(user);
@@ -81,10 +90,6 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Guid>
         var space = Jobuler.Domain.Spaces.Space.Create(spaceName, user.Id, organizationId: organization.Id);
         _db.Spaces.Add(space);
 
-        // Add user as space member
-        var membership = Jobuler.Domain.Spaces.SpaceMembership.Create(space.Id, user.Id);
-        _db.SpaceMemberships.Add(membership);
-
         // Generate email verification token and send email only if real email provided
         var isRealEmail = !string.IsNullOrWhiteSpace(request.Email);
         if (isRealEmail)
@@ -95,6 +100,7 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Guid>
             _db.EmailVerificationTokens.Add(verificationToken);
 
             await _db.SaveChangesAsync(ct);
+            await AddOwnerMembershipAsync(space.Id, user.Id, ct);
 
             // Send verification email — wrapped in try-catch so registration succeeds even if email fails
             try
@@ -113,9 +119,18 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Guid>
         else
         {
             await _db.SaveChangesAsync(ct);
+            await AddOwnerMembershipAsync(space.Id, user.Id, ct);
         }
 
         return user.Id;
+    }
+
+    private async Task AddOwnerMembershipAsync(Guid spaceId, Guid userId, CancellationToken ct)
+    {
+        var membership = Jobuler.Domain.Spaces.SpaceMembership.Create(spaceId, userId);
+        membership.SetPermissionLevel(Jobuler.Domain.Spaces.SpacePermissionLevel.SpaceOwner);
+        _db.SpaceMemberships.Add(membership);
+        await _db.SaveChangesAsync(ct);
     }
 
     private static string ComputeSha256(string input)

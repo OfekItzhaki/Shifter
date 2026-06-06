@@ -22,6 +22,7 @@ using Jobuler.Application.Auth;
 using Jobuler.Infrastructure.Logging;
 using Jobuler.Infrastructure.Persistence;
 using Jobuler.Infrastructure.Scheduling;
+using Jobuler.Infrastructure.Security;
 using Jobuler.Infrastructure.Storage;
 using Jobuler.Infrastructure.Timezone;
 using MediatR;
@@ -44,6 +45,20 @@ Log.Logger = new LoggerConfiguration()
     .CreateLogger();
 
 builder.Host.UseSerilog();
+
+var fieldProtectionSecret = FirstConfigured(
+        builder.Configuration["DataProtection:FieldEncryptionKey"],
+        Environment.GetEnvironmentVariable("FIELD_ENCRYPTION_KEY"),
+        builder.Configuration["Jwt:Secret"])
+    ?? throw new InvalidOperationException("DataProtection:FieldEncryptionKey or Jwt:Secret must be configured.");
+
+if (string.IsNullOrWhiteSpace(builder.Configuration["DataProtection:FieldEncryptionKey"])
+    && string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("FIELD_ENCRYPTION_KEY")))
+{
+    Log.Warning("DataProtection:FieldEncryptionKey is not configured. Falling back to Jwt:Secret for local field protection; configure a dedicated secret before production use.");
+}
+
+FieldEncryption.Configure(fieldProtectionSecret);
 
 // ─── Database ────────────────────────────────────────────────────────────────
 // Tell AppDbContext (defined in Application) where to find EF configurations
@@ -74,6 +89,9 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization();
 
+static string? FirstConfigured(params string?[] values) =>
+    values.FirstOrDefault(value => !string.IsNullOrWhiteSpace(value));
+
 // ─── Application services ────────────────────────────────────────────────────
 builder.Services.AddMediatR(cfg =>
 {
@@ -84,6 +102,8 @@ builder.Services.AddMediatR(cfg =>
 builder.Services.AddValidatorsFromAssembly(typeof(LoginCommand).Assembly);
 
 builder.Services.AddScoped<IJwtService, JwtService>();
+builder.Services.AddSingleton<IContactLookupProtector, ContactLookupProtector>();
+builder.Services.AddHostedService<ContactFieldProtectionBackfillService>();
 
 // ─── WebAuthn / FIDO2 ────────────────────────────────────────────────────────
 builder.Services.AddMemoryCache();

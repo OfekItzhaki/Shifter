@@ -11,6 +11,7 @@ using Jobuler.Domain.Logs;
 using Jobuler.Domain.Organizations;
 using Jobuler.Domain.Spaces;
 using Jobuler.Infrastructure.Persistence;
+using Jobuler.Tests;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -45,6 +46,7 @@ public class OrganizationPortabilityTests
         return new RegisterCommandHandler(
             db,
             emailSender,
+            TestContactLookupProtector.Create(),
             NullLogger<RegisterCommandHandler>.Instance,
             config);
     }

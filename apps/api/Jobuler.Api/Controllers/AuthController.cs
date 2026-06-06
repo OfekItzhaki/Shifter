@@ -37,7 +37,8 @@ public class AuthController : ControllerBase
     {
         var userId = await _mediator.Send(
             new RegisterCommand(req.Email ?? "", req.DisplayName, req.Password, req.PreferredLocale ?? "he",
-                req.PhoneNumber, req.ProfileImageUrl, req.Birthday), ct);
+                req.PhoneNumber, req.ProfileImageUrl, req.Birthday,
+                req.CountryCode, req.StateCode, req.SetupTemplate, req.OrganizationName), ct);
         return CreatedAtAction(nameof(Register), new { userId });
     }
 
@@ -79,11 +80,19 @@ public class AuthController : ControllerBase
     /// <summary>Update current user's profile.</summary>
     [HttpPut("me")]
     [Authorize]
-    public async Task<IActionResult> UpdateMe([FromBody] UpdateMeRequest req, [FromServices] AppDbContext db, CancellationToken ct)
+    public async Task<IActionResult> UpdateMe(
+        [FromBody] UpdateMeRequest req,
+        [FromServices] AppDbContext db,
+        [FromServices] Jobuler.Application.Common.IContactLookupProtector contactLookup,
+        CancellationToken ct)
     {
         var user = await db.Users.FirstOrDefaultAsync(u => u.Id == CurrentUserId, ct);
         if (user is null) return NotFound();
-        user.UpdateProfileFull(req.DisplayName, req.ProfileImageUrl, req.PhoneNumber, req.Birthday);
+        var normalizedPhone = string.IsNullOrWhiteSpace(req.PhoneNumber)
+            ? null
+            : contactLookup.NormalizePhone(req.PhoneNumber);
+        user.UpdateProfileFull(req.DisplayName, req.ProfileImageUrl, normalizedPhone, req.Birthday);
+        user.UpdateContactLookupHashes(contactLookup.HashEmail(user.Email), normalizedPhone is null ? null : contactLookup.HashPhone(normalizedPhone));
 
         // Sync profile image and display name to linked Person records
         var linkedPeople = await db.People
@@ -95,7 +104,7 @@ public class AuthController : ControllerBase
                 string.IsNullOrWhiteSpace(req.DisplayName) ? person.FullName : req.DisplayName,
                 req.DisplayName ?? person.DisplayName,
                 req.ProfileImageUrl ?? person.ProfileImageUrl,
-                req.PhoneNumber ?? person.PhoneNumber,
+                normalizedPhone ?? person.PhoneNumber,
                 person.Birthday);
         }
 
@@ -267,7 +276,18 @@ public class AuthController : ControllerBase
     }
 }
 
-public record RegisterRequest(string? Email, string DisplayName, string Password, string? PreferredLocale, string? PhoneNumber, string? ProfileImageUrl = null, DateOnly? Birthday = null);
+public record RegisterRequest(
+    string? Email,
+    string DisplayName,
+    string Password,
+    string? PreferredLocale,
+    string? PhoneNumber,
+    string? ProfileImageUrl = null,
+    DateOnly? Birthday = null,
+    string? CountryCode = null,
+    string? StateCode = null,
+    string? SetupTemplate = null,
+    string? OrganizationName = null);
 public record LoginRequest(string? Email, string? Identifier, string Password)
 {
     /// <summary>Resolves the login identifier — supports both "email" (legacy) and "identifier" (new) fields.</summary>

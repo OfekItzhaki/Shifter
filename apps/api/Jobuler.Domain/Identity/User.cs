@@ -12,6 +12,8 @@ public class User : AuditableEntity
     public string? ProfileImageUrl { get; private set; }
     public DateTime? LastLoginAt { get; private set; }
     public string? PhoneNumber { get; private set; }
+    public string? EmailLookupHash { get; private set; }
+    public string? PhoneLookupHash { get; private set; }
     public bool IsPlatformAdmin { get; private set; }
     public bool EmailVerified { get; private set; } = false;
     public string? CountryCode { get; private set; }  // ISO 3166-1 alpha-2
@@ -41,6 +43,14 @@ public class User : AuditableEntity
     public DateOnly? Birthday { get; private set; }
 
     public void UpdatePhone(string? phoneNumber) { PhoneNumber = phoneNumber?.Trim(); Touch(); }
+
+    public void UpdateContactLookupHashes(string emailLookupHash, string? phoneLookupHash)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(emailLookupHash);
+        EmailLookupHash = emailLookupHash;
+        PhoneLookupHash = phoneLookupHash;
+        Touch();
+    }
 
     public void SetPasswordHash(string hash) { PasswordHash = hash; Touch(); }
 

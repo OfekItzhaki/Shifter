@@ -17,14 +17,14 @@ export function useEffectiveAuth() {
     }
 
     syncAccessToken();
-    if (persistApi.hasHydrated()) {
+    if (!persistApi || persistApi.hasHydrated()) {
       setIsHydrated(true);
     }
 
-    const unsubHydration = persistApi.onFinishHydration(() => {
+    const unsubHydration = persistApi?.onFinishHydration(() => {
       syncAccessToken();
       setIsHydrated(true);
-    });
+    }) ?? (() => {});
 
     window.addEventListener("storage", syncAccessToken);
     window.addEventListener(AUTH_TOKEN_CHANGED_EVENT, syncAccessToken);

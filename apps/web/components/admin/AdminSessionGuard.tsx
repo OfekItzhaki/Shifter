@@ -27,7 +27,7 @@ export default function AdminSessionGuard() {
   const adminGroupId = useAuthStore((s) => s.adminGroupId);
   const exitAdminMode = useAuthStore((s) => s.exitAdminMode);
   const [isAdminSessionHydrated, setIsAdminSessionHydrated] = useState(
-    () => useAdminSessionStore.persist.hasHydrated()
+    () => useAdminSessionStore.persist?.hasHydrated() ?? false
   );
 
   // Wire up the inactivity timer, API call listener, and multi-tab sync
@@ -38,6 +38,11 @@ export default function AdminSessionGuard() {
 
   useEffect(() => {
     if (isAdminSessionHydrated) return;
+    if (!useAdminSessionStore.persist) {
+      setIsAdminSessionHydrated(true);
+      return;
+    }
+
     const unsubHydration = useAdminSessionStore.persist.onFinishHydration(() => {
       setIsAdminSessionHydrated(true);
     });
