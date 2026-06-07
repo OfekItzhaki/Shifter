@@ -33,13 +33,6 @@ function onTokenRefreshed(token: string) {
 }
 
 /**
- * @deprecated Use `useConnectivityStore` instead. Kept temporarily for backward compatibility.
- */
-let apiOnline = true;
-/** @deprecated Use `useConnectivityStore().isConnected` instead. */
-export function isApiOnline(): boolean { return apiOnline; }
-
-/**
  * Probes real internet connectivity by fetching a lightweight external resource.
  * Used when navigator.onLine is true but an API call failed — distinguishes
  * "server is down" from "connected to WiFi but no internet".
@@ -106,7 +99,6 @@ apiClient.interceptors.response.use(
     // On successful response, notify connectivity store that server is reachable.
     // The store internally checks if we're in server-unavailable state before acting.
     useConnectivityStore.getState().setServerRecovered();
-    apiOnline = true;
     return res;
   },
   async (error) => {
@@ -190,8 +182,6 @@ apiClient.interceptors.response.use(
 
     // 5xx or network error: determine if it's a client connectivity issue or server issue
     if ((status >= 500 && status <= 599 || !error.response) && typeof window !== "undefined") {
-      apiOnline = false;
-
       if (!navigator.onLine) {
         // Browser already knows we're offline
         useConnectivityStore.getState().goOffline();

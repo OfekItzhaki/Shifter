@@ -1,32 +1,17 @@
 /**
  * Property-based tests for group-detail-page feature.
  * These are pure logic tests — no React rendering needed.
- * Run with: node --require ts-node/register __tests__/group-detail-tabs.test.ts
  *
  * Validates: Requirements 2.1, 2.4, 3.1, 3.6, 3.10, 4.3, 4.6, 5.1
  */
 
+import { test } from "vitest";
 import * as assert from "assert";
 import * as fs from "fs";
 import * as path from "path";
 
 // ---------------------------------------------------------------------------
-// Helper: simple test runner
 // ---------------------------------------------------------------------------
-let passed = 0;
-let failed = 0;
-
-function test(name: string, fn: () => void) {
-  try {
-    fn();
-    console.log(`  ✓ ${name}`);
-    passed++;
-  } catch (err: any) {
-    console.error(`  ✗ ${name}`);
-    console.error(`    ${err.message}`);
-    failed++;
-  }
-}
 
 // ---------------------------------------------------------------------------
 // TASK 3.2 — Property 2: Base tabs always present
@@ -40,8 +25,6 @@ function getVisibleTabs(groupId: string, adminGroupId: string | null): string[] 
   const admin = ["members-edit", "tasks", "constraints", "settings"];
   return adminGroupId === groupId ? [...base, ...admin] : base;
 }
-
-console.log("\nProperty 2: Base tabs always present");
 
 test("base tabs present when adminGroupId is null", () => {
   const tabs = getVisibleTabs("group-1", null);
@@ -83,8 +66,6 @@ test("base tabs present for any arbitrary groupId and adminGroupId", () => {
 // ---------------------------------------------------------------------------
 
 const ADMIN_TABS = ["members-edit", "tasks", "constraints", "settings"];
-
-console.log("\nProperty 4: Admin tabs conditional on adminGroupId");
 
 test("admin tabs present when adminGroupId === groupId", () => {
   const tabs = getVisibleTabs("group-1", "group-1");
@@ -137,8 +118,6 @@ function getDisplayName(m: { displayName: string | null; fullName: string }): st
   return m.displayName ?? m.fullName;
 }
 
-console.log("\nProperty 3: displayName fallback");
-
 test("returns displayName when non-null", () => {
   assert.strictEqual(getDisplayName({ displayName: "Ofek", fullName: "Ofek Israeli" }), "Ofek");
   assert.strictEqual(getDisplayName({ displayName: "Yael", fullName: "Yael Cohen" }), "Yael");
@@ -171,8 +150,6 @@ test("displayName fallback for many inputs", () => {
 // TASK 5.2 — Property 5: Members re-fetched after mutation
 // Validates: Requirements 3.6
 // ---------------------------------------------------------------------------
-
-console.log("\nProperty 5: Members re-fetched after mutation");
 
 test("getGroupMembers called after successful addGroupMemberByEmail", async () => {
   let fetchCount = 0;
@@ -220,8 +197,6 @@ function shouldShowWarning(v: number): boolean {
   return v > SOLVER_HORIZON_WARNING_THRESHOLD;
 }
 
-console.log("\nProperty 6: Solver horizon warning threshold");
-
 test("no warning for value 1", () => assert.strictEqual(shouldShowWarning(1), false));
 test("no warning for value 14", () => assert.strictEqual(shouldShowWarning(14), false));
 test("no warning for value 30", () => assert.strictEqual(shouldShowWarning(30), false));
@@ -240,8 +215,6 @@ test("warning threshold is exactly > 30 for all values 1-90", () => {
 // TASK 6.3 — Property 7: No Admin section in AppShell nav
 // Validates: Requirements 4.3
 // ---------------------------------------------------------------------------
-
-console.log("\nProperty 7: No Admin section in AppShell nav");
 
 // Define the nav items as a data structure (mirrors AppShell after task 6.1/6.2)
 const navItems = [
@@ -284,8 +257,6 @@ function topbarStyle(admin: boolean) {
   };
 }
 
-console.log("\nProperty 8: Amber topbar when adminGroupId is non-null");
-
 test("topbar background is #fffbeb when admin is true", () => {
   assert.strictEqual(topbarStyle(true).background, "#fffbeb");
 });
@@ -306,8 +277,6 @@ test("topbar normal border when admin is false", () => {
 // TASK 8.3 — Property 9: Seed UUID validity
 // Validates: Requirements 5.1, 5.2
 // ---------------------------------------------------------------------------
-
-console.log("\nProperty 9: Seed UUID validity");
 
 const UUID_V4_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 const UUID_PATTERN = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi;
@@ -364,14 +333,7 @@ test("seed.sql does NOT contain old sequential UUIDs in SQL statements", () => {
 });
 
 // ---------------------------------------------------------------------------
-// Summary
 // ---------------------------------------------------------------------------
-console.log(`\n${"─".repeat(50)}`);
-console.log(`Results: ${passed} passed, ${failed} failed`);
-if (failed > 0) {
-  process.exit(1);
-}
-
 // ---------------------------------------------------------------------------
 // TASK 19.3 — Property 16: Transfer dropdown excludes the owner
 // Validates: Requirements 8.2
@@ -380,8 +342,6 @@ if (failed > 0) {
 function getTransferDropdownOptions(members: Array<{ personId: string; isOwner: boolean; displayName: string | null; fullName: string }>): Array<{ personId: string; isOwner: boolean; displayName: string | null; fullName: string }> {
   return members.filter(m => !m.isOwner);
 }
-
-console.log("\nProperty 16: Transfer dropdown excludes the owner");
 
 test("dropdown excludes the owner member", () => {
   const members = [

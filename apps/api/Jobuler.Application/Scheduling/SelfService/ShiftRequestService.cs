@@ -330,8 +330,8 @@ public class ShiftRequestService : IShiftRequestService
                             "(approved: {ApprovedCount}, min required: {MinShifts}).",
                             personId, slot.SchedulingCycleId, remainingApprovedCount, minShifts);
 
-                        // TODO: Integrate with notification service to notify admin of under-scheduled member
-                        // This will be handled by the CheckUnderScheduledMembersJob (task 13.1)
+                        // The scheduled under-scheduled-members job sends admin/member notifications
+                        // after request windows close, avoiding noisy alerts during active selection.
                     }
                 }
 

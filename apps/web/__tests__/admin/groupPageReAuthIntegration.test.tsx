@@ -22,11 +22,12 @@ import ReAuthDialog from "../../components/admin/ReAuthDialog";
 // ── Mocks ─────────────────────────────────────────────────────────────────────
 
 const mockApiPost = vi.fn();
+const mockApiGet = vi.fn();
 
 vi.mock("@/lib/api/client", () => ({
   apiClient: {
     post: (...args: any[]) => mockApiPost(...args),
-    get: vi.fn(),
+    get: (...args: any[]) => mockApiGet(...args),
   },
 }));
 
@@ -160,6 +161,7 @@ describe("Group Page Re-Auth Integration (Task 4.1)", () => {
     vi.clearAllMocks();
     mockIsWebAuthnSupported.mockReturnValue(false);
     mockListCredentials.mockResolvedValue([]);
+    mockApiGet.mockResolvedValue({ data: [] });
   });
 
   afterEach(() => {

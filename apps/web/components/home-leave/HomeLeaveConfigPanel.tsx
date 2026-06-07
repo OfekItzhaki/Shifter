@@ -17,13 +17,14 @@ import EmergencyFreezeBanner from "./EmergencyFreezeBanner";
 import FeasibilityIndicator, { FeasibilityResult } from "./FeasibilityIndicator";
 import { useHomeLeavePreview } from "@/hooks/useHomeLeavePreview";
 import RecommendationCard from "@/components/recommendations/RecommendationCard";
+import { getCurrentUserSpacePermission, SpacePermissions } from "@/lib/api/spaces";
 
 interface HomeLeaveConfigPanelProps {
   spaceId: string;
   groupId: string;
   isClosedBase: boolean;
   memberCount: number;
-  /** Whether the user is in admin mode (used to determine schedule.rollback permission) */
+  /** Whether the user is in admin mode. */
   isAdmin?: boolean;
 }
 
@@ -65,6 +66,7 @@ export default function HomeLeaveConfigPanel({
   const [loading, setLoading] = useState(true);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [permissionError, setPermissionError] = useState(false);
+  const [canRollback, setCanRollback] = useState(false);
 
   // Feasibility for automatic mode (from preview hook)
   const previewRequest = !loading && mode === "automatic"
@@ -115,6 +117,32 @@ export default function HomeLeaveConfigPanel({
       fetchConfig();
     }
   }, [isClosedBase, fetchConfig]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function fetchRollbackPermission() {
+      if (!isClosedBase || !isAdmin || !spaceId) {
+        setCanRollback(false);
+        return;
+      }
+
+      try {
+        const result = await getCurrentUserSpacePermission(
+          spaceId,
+          SpacePermissions.ScheduleRollback
+        );
+        if (!cancelled) setCanRollback(result.hasPermission);
+      } catch {
+        if (!cancelled) setCanRollback(false);
+      }
+    }
+
+    fetchRollbackPermission();
+    return () => {
+      cancelled = true;
+    };
+  }, [isAdmin, isClosedBase, spaceId]);
 
   // Hide panel when not a closed base
   if (!isClosedBase) return null;
@@ -290,8 +318,7 @@ export default function HomeLeaveConfigPanel({
         disabled={saving}
         spaceId={spaceId}
         groupId={groupId}
-        // TODO: Query actual schedule.rollback permission from backend instead of using isAdmin as proxy
-        canRollback={isAdmin}
+        canRollback={canRollback}
         onDeactivateSuccess={handleDeactivateSuccess}
       />
 

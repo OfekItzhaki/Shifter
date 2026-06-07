@@ -9,6 +9,11 @@ import { useSessionExitHandler } from "@/lib/hooks/useSessionExitHandler";
 import ActivityPromptModal from "./ActivityPromptModal";
 import SessionTimeoutToast from "./SessionTimeoutToast";
 
+type PersistHydrationApi = {
+  hasHydrated?: () => boolean;
+  onFinishHydration?: (callback: () => void) => () => void;
+};
+
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const PROMPT_COUNTDOWN_SECONDS = 60;
@@ -27,7 +32,9 @@ export default function AdminSessionGuard() {
   const adminGroupId = useAuthStore((s) => s.adminGroupId);
   const exitAdminMode = useAuthStore((s) => s.exitAdminMode);
   const [isAdminSessionHydrated, setIsAdminSessionHydrated] = useState(
-    () => useAdminSessionStore.persist?.hasHydrated() ?? true
+    () =>
+      (useAdminSessionStore as typeof useAdminSessionStore & { persist?: PersistHydrationApi }).persist
+        ?.hasHydrated?.() ?? true
   );
 
   // Wire up the inactivity timer, API call listener, and multi-tab sync
@@ -38,14 +45,12 @@ export default function AdminSessionGuard() {
 
   useEffect(() => {
     if (isAdminSessionHydrated) return;
-    if (!useAdminSessionStore.persist) {
-      setIsAdminSessionHydrated(true);
-      return;
-    }
-
-    const unsubHydration = useAdminSessionStore.persist.onFinishHydration(() => {
-      setIsAdminSessionHydrated(true);
-    });
+    const unsubHydration =
+      (
+        useAdminSessionStore as typeof useAdminSessionStore & { persist?: PersistHydrationApi }
+      ).persist?.onFinishHydration?.(() => {
+        setIsAdminSessionHydrated(true);
+      }) ?? (() => {});
     return () => unsubHydration();
   }, [isAdminSessionHydrated]);
 

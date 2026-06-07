@@ -56,6 +56,15 @@ export interface SpacePermissionLevelDto {
   permissionLevel: SpacePermissionLevel;
 }
 
+export const SpacePermissions = {
+  ScheduleRollback: "schedule.rollback",
+} as const;
+
+export interface CurrentUserPermissionDto {
+  permissionKey: string;
+  hasPermission: boolean;
+}
+
 // ── Space Home Leave Config ───────────────────────────────────────────────────
 
 export type SpaceHomeLeaveMode = "automatic" | "manual" | "disabled";
@@ -218,5 +227,15 @@ export async function getSpacePermissionLevels(
   spaceId: string
 ): Promise<SpacePermissionLevelDto[]> {
   const { data } = await apiClient.get(`/spaces/${spaceId}/members/roles`);
+  return data;
+}
+
+export async function getCurrentUserSpacePermission(
+  spaceId: string,
+  permissionKey: string
+): Promise<CurrentUserPermissionDto> {
+  const { data } = await apiClient.get(
+    `/spaces/${spaceId}/permissions/${encodeURIComponent(permissionKey)}`
+  );
   return data;
 }

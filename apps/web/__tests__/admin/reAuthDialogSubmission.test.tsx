@@ -17,11 +17,12 @@ import ReAuthDialog from "../../components/admin/ReAuthDialog";
 // ── Mocks ─────────────────────────────────────────────────────────────────────
 
 const mockApiPost = vi.fn();
+const mockApiGet = vi.fn();
 
 vi.mock("@/lib/api/client", () => ({
   apiClient: {
     post: (...args: any[]) => mockApiPost(...args),
-    get: vi.fn(),
+    get: (...args: any[]) => mockApiGet(...args),
   },
 }));
 
@@ -43,7 +44,10 @@ vi.mock("next-intl", () => ({
       confirm: "Confirm",
       verifying: "Verifying...",
       webAuthnButton: "Use Fingerprint",
+      webAuthnVerifying: "Verifying...",
       webAuthnLabel: "Authenticate with fingerprint",
+      usePasswordInstead: "Use password instead",
+      useBiometricInstead: "Use biometric instead",
       or: "or",
       cancel: "Cancel",
       close: "Close",
@@ -52,7 +56,10 @@ vi.mock("next-intl", () => ({
       authFailed: "Authentication failed. Please try again.",
       rateLimited: "Too many attempts. Please try again later.",
       networkError: "Connection error. Please try again.",
+      invalidCredentials: "Authentication failed. Please try again.",
+      connectionProblem: "Connection error. Please try again.",
       webAuthnCancelled: "Verification cancelled. Please try again.",
+      webAuthnNotRecognized: "Authentication failed. Please try again.",
     };
     return translations[key] ?? key;
   },
@@ -87,6 +94,19 @@ describe("ReAuthDialog - Loading and Submission State Handling (Task 3.5)", () =
     // Default: WebAuthn not supported, password only
     mockIsWebAuthnSupported.mockReturnValue(false);
     mockListCredentials.mockResolvedValue([]);
+    Object.defineProperty(global.navigator, "credentials", {
+      value: { get: vi.fn() },
+      writable: true,
+      configurable: true,
+    });
+    Object.defineProperty(window, "PublicKeyCredential", {
+      value: {
+        isUserVerifyingPlatformAuthenticatorAvailable: vi.fn().mockResolvedValue(true),
+      },
+      writable: true,
+      configurable: true,
+    });
+    mockApiGet.mockImplementation(async () => ({ data: await mockListCredentials() }));
   });
 
   afterEach(() => {
@@ -106,6 +126,11 @@ describe("ReAuthDialog - Loading and Submission State Handling (Task 3.5)", () =
     const input = screen.getByLabelText("Password");
     fireEvent.change(input, { target: { value } });
     return input;
+  }
+
+  async function switchToPassword() {
+    fireEvent.click(await screen.findByRole("button", { name: "Use password instead" }));
+    await waitForPasswordInput();
   }
 
   describe("Req 5.1: Loading indicator and disabled inputs during submission", () => {
@@ -205,29 +230,13 @@ describe("ReAuthDialog - Loading and Submission State Handling (Task 3.5)", () =
         { id: "cred-1", nickname: "Key", createdAt: "2024-01-01", lastUsedAt: null, isDisabled: false },
       ]);
 
-      // Set up navigator.credentials.get to reject (auto-trigger will fire and be declined)
-      Object.defineProperty(global.navigator, "credentials", {
-        value: { get: vi.fn().mockRejectedValue(Object.assign(new Error("Not allowed"), { name: "NotAllowedError" })) },
-        writable: true,
-        configurable: true,
-      });
-
-      // First call: auto-trigger gets WebAuthn options, then credentials.get rejects
-      // After that, the deferred promise is used for the password submission
       const deferred = createDeferredPromise();
-      mockApiPost
-        .mockResolvedValueOnce({
-          data: { optionsJson: JSON.stringify({ challenge: "dGVzdA", allowCredentials: [] }), challengeId: "ch-1" },
-        })
-        .mockReturnValue(deferred.promise);
+      mockApiPost.mockReturnValue(deferred.promise);
 
       render(<ReAuthDialog {...defaultProps} />);
 
-      // Wait for auto-trigger to complete (declined) and WebAuthn button to reappear
-      await waitFor(() => {
-        expect(screen.getByRole("button", { name: "Authenticate with fingerprint" })).toBeInTheDocument();
-        expect(screen.getByRole("button", { name: "Confirm" })).toBeInTheDocument();
-      });
+      expect(await screen.findByRole("button", { name: "Use Fingerprint" })).toBeInTheDocument();
+      await switchToPassword();
 
       await typePassword("mypassword");
       const submitBtn = screen.getByRole("button", { name: "Confirm" });
@@ -236,8 +245,8 @@ describe("ReAuthDialog - Loading and Submission State Handling (Task 3.5)", () =
         fireEvent.click(submitBtn);
       });
 
-      // WebAuthn button should be disabled
-      const webAuthnBtn = screen.getByRole("button", { name: "Authenticate with fingerprint" });
+      // The route back to WebAuthn should be disabled while password verification is in flight.
+      const webAuthnBtn = screen.getByRole("button", { name: "Use biometric instead" });
       expect(webAuthnBtn).toBeDisabled();
 
       await act(async () => {
@@ -278,19 +287,18 @@ describe("ReAuthDialog - Loading and Submission State Handling (Task 3.5)", () =
       render(<ReAuthDialog {...defaultProps} />);
 
       await waitFor(() => {
-        expect(screen.getByRole("button", { name: "Authenticate with fingerprint" })).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "Use Fingerprint" })).toBeInTheDocument();
       });
 
-      const webAuthnBtn = screen.getByRole("button", { name: "Authenticate with fingerprint" });
+      const webAuthnBtn = screen.getByRole("button", { name: "Use Fingerprint" });
 
       await act(async () => {
         fireEvent.click(webAuthnBtn);
       });
 
-      // Both buttons should show "Verifying..." (submit button + WebAuthn button)
       await waitFor(() => {
-        const verifyingButtons = screen.getAllByText("Verifying...");
-        expect(verifyingButtons.length).toBeGreaterThanOrEqual(1);
+        expect(screen.getByRole("button", { name: "Use Fingerprint" })).toBeDisabled();
+        expect(screen.getByText("Verifying...")).toBeInTheDocument();
       });
 
       await act(async () => {
@@ -332,29 +340,13 @@ describe("ReAuthDialog - Loading and Submission State Handling (Task 3.5)", () =
         { id: "cred-1", nickname: "Key", createdAt: "2024-01-01", lastUsedAt: null, isDisabled: false },
       ]);
 
-      // Set up navigator.credentials.get to reject (auto-trigger will fire and be declined)
-      Object.defineProperty(global.navigator, "credentials", {
-        value: { get: vi.fn().mockRejectedValue(Object.assign(new Error("Not allowed"), { name: "NotAllowedError" })) },
-        writable: true,
-        configurable: true,
-      });
-
-      // First call: auto-trigger gets WebAuthn options, then credentials.get rejects
-      // After that, the deferred promise is used for the password submission
       const deferred = createDeferredPromise();
-      mockApiPost
-        .mockResolvedValueOnce({
-          data: { optionsJson: JSON.stringify({ challenge: "dGVzdA", allowCredentials: [] }), challengeId: "ch-1" },
-        })
-        .mockReturnValue(deferred.promise);
+      mockApiPost.mockReturnValue(deferred.promise);
 
       render(<ReAuthDialog {...defaultProps} />);
 
-      // Wait for auto-trigger to complete (declined) and buttons to be available
-      await waitFor(() => {
-        expect(screen.getByRole("button", { name: "Authenticate with fingerprint" })).toBeInTheDocument();
-        expect(screen.getByRole("button", { name: "Confirm" })).toBeInTheDocument();
-      });
+      expect(await screen.findByRole("button", { name: "Use Fingerprint" })).toBeInTheDocument();
+      await switchToPassword();
 
       await typePassword("mypassword");
       const submitBtn = screen.getByRole("button", { name: "Confirm" });
@@ -364,12 +356,11 @@ describe("ReAuthDialog - Loading and Submission State Handling (Task 3.5)", () =
         fireEvent.click(submitBtn);
       });
 
-      // Try WebAuthn while password is submitting (button is disabled)
-      const webAuthnBtn = screen.getByRole("button", { name: "Authenticate with fingerprint" });
+      // Try switching to WebAuthn while password is submitting (button is disabled)
+      const webAuthnBtn = screen.getByRole("button", { name: "Use biometric instead" });
       expect(webAuthnBtn).toBeDisabled();
 
-      // API calls: 1 for auto-trigger options + 1 for password submission
-      expect(mockApiPost).toHaveBeenCalledTimes(2);
+      expect(mockApiPost).toHaveBeenCalledTimes(1);
 
       await act(async () => {
         deferred.resolve({ data: { success: true } });

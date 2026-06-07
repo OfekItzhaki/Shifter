@@ -187,7 +187,15 @@
       "rangeWeek": "this week",
       "rangeMonth": "this month",
       "rangeYear": "this year",
-      "dayNames": ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+      "dayNames": [
+        "Sun",
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri",
+        "Sat"
+      ]
     },
     "taskInfoLabel": "Task configuration info",
     "taskInfo": {
@@ -339,7 +347,16 @@
       "bulkAddAll": "Add All",
       "bulkProgress": "Adding {current}/{total}...",
       "bulkSuccess": "{count} members added successfully",
-      "bulkErrors": "{count} errors"
+      "bulkErrors": "{count} errors",
+      "specialLeaveAdminTitle": "Time-off requests",
+      "specialLeaveAdminDescription": "Approving a request marks the member as unavailable so Shifter will not assign them during that time.",
+      "specialLeaveRefresh": "Refresh",
+      "specialLeaveNoPending": "No pending time-off requests",
+      "specialLeaveLoadError": "Could not load time-off requests",
+      "specialLeaveActionError": "Could not update the request",
+      "specialLeaveAdminNote": "Admin note (optional)",
+      "specialLeaveApprove": "Approve",
+      "specialLeaveReject": "Reject"
     },
     "qualifications_tab": {
       "title": "Qualifications",
@@ -920,7 +937,15 @@
     "discardConfirmText": "Discard this draft? This action cannot be undone.",
     "yesDiscard": "Yes, discard",
     "back": "Back",
-    "dayNames": ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+    "dayNames": [
+      "Sun",
+      "Mon",
+      "Tue",
+      "Wed",
+      "Thu",
+      "Fri",
+      "Sat"
+    ],
     "enterSimulation": "Enter Simulation",
     "enteringSimulation": "Loading...",
     "errorEnterSimulation": "Error entering simulation"
@@ -1150,37 +1175,39 @@
         "title": "Double Shift Recommended",
         "body": "A double shift is recommended to cover all tasks."
       },
-      "self_service.request_approved": {
-        "title": "Shift Approved",
-        "body": "Your shift request has been approved."
-      },
-      "self_service.request_rejected": {
-        "title": "Shift Rejected",
-        "body": "Your shift request was rejected — the slot is full."
-      },
-      "self_service.swap_proposal_received": {
-        "title": "Swap Proposal",
-        "body": "Someone wants to swap shifts with you."
-      },
-      "self_service.swap_declined": {
-        "title": "Swap Declined",
-        "body": "Your shift swap proposal was declined."
-      },
-      "self_service.waitlist_offer": {
-        "title": "Slot Available",
-        "body": "A spot has opened for a shift you're waiting for."
-      },
-      "self_service.under_scheduled_members": {
-        "title": "Under-Scheduled Members",
-        "body": "Some members have fewer shifts than the minimum."
-      },
-      "self_service.under_scheduled_warning": {
-        "title": "Under-Scheduled",
-        "body": "You have fewer shifts than the minimum required."
-      },
       "request_window_open": {
         "title": "Request Window Open",
         "body": "The shift request window is now open."
+      },
+      "self_service": {
+        "request_approved": {
+          "title": "Shift Approved",
+          "body": "Your shift request has been approved."
+        },
+        "request_rejected": {
+          "title": "Shift Rejected",
+          "body": "Your shift request was rejected — the slot is full."
+        },
+        "swap_proposal_received": {
+          "title": "Swap Proposal",
+          "body": "Someone wants to swap shifts with you."
+        },
+        "swap_declined": {
+          "title": "Swap Declined",
+          "body": "Your shift swap proposal was declined."
+        },
+        "waitlist_offer": {
+          "title": "Slot Available",
+          "body": "A spot has opened for a shift you're waiting for."
+        },
+        "under_scheduled_members": {
+          "title": "Under-Scheduled Members",
+          "body": "Some members have fewer shifts than the minimum."
+        },
+        "under_scheduled_warning": {
+          "title": "Under-Scheduled",
+          "body": "You have fewer shifts than the minimum required."
+        }
       }
     }
   },
@@ -1359,6 +1386,7 @@
     "loading": "Loading plans...",
     "fetchError": "Could not load current pricing. Showing estimated prices.",
     "checkoutError": "Failed to create checkout. Please try again.",
+    "sessionExpiredReload": "Your session expired. Please sign in again and try the payment again.",
     "waitingForPayment": "Waiting for payment completion...",
     "selectedPlan": "Plan: {name}",
     "waitingHint": "Complete the payment in the new tab. This page will update automatically.",
@@ -1892,7 +1920,15 @@
       "alternativeSlots": "Alternative slots:",
       "requestSuccess": "Request submitted successfully",
       "waitlistSuccess": "Joined waitlist at position {position}",
-      "dayNames": ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+      "dayNames": [
+        "Sunday",
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday"
+      ]
     },
     "myShifts": {
       "title": "My Shifts",
@@ -1911,7 +1947,22 @@
       "underScheduled": "⚠ You are below the minimum required shifts ({min})",
       "cancelWindowClosed": "Cancellation window has closed",
       "noShifts": "No shifts in the current cycle",
-      "adminOverride": "Admin assignment"
+      "adminOverride": "Admin assignment",
+      "specialLeaveTitle": "Need time off?",
+      "specialLeaveDescription": "Send a request to the admins. If approved, Shifter will treat you as unavailable for that time.",
+      "specialLeaveStart": "From",
+      "specialLeaveEnd": "Until",
+      "specialLeaveReason": "Reason",
+      "specialLeaveReasonPlaceholder": "Family event, appointment, holiday...",
+      "specialLeaveSubmit": "Send request",
+      "specialLeaveSubmitting": "Sending...",
+      "specialLeaveSubmitted": "Request sent to the admins",
+      "specialLeaveCancelled": "Request cancelled",
+      "specialLeaveCancel": "Cancel request",
+      "specialLeaveDateRequired": "Choose start and end times",
+      "specialLeaveInvalidRange": "End time must be after start time",
+      "specialLeaveReasonRequired": "Write a short reason",
+      "specialLeaveReasonTooLong": "Reason must be 500 characters or less"
     },
     "waitlist": {
       "title": "Waitlist",

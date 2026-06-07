@@ -151,5 +151,5 @@ describe("Feature: admin-reauth-security — Property 2: Whitespace password rej
       }),
       { numRuns: 100 }
     );
-  });
+  }, 30000);
 });

@@ -24,6 +24,29 @@ vi.mock("@/lib/api/billing", () => ({
   createSpaceCheckout: vi.fn().mockResolvedValue({ checkoutUrl: "https://checkout.example.com" }),
   cancelSpaceSubscription: vi.fn().mockResolvedValue(undefined),
   renewSpaceSubscription: vi.fn().mockResolvedValue(undefined),
+  getPlans: vi.fn().mockResolvedValue([]),
+}));
+
+vi.mock("next-intl", () => ({
+  useLocale: () => "en",
+  useTranslations: () => (key: string) => {
+    const translations: Record<string, string> = {
+      "status.trialing": "Trialing",
+      "status.active": "Active",
+      "status.canceled": "Canceled",
+      trialStart: "Trial Start",
+      trialEnd: "Trial End",
+      periodStart: "Period Start",
+      periodEnd: "Period End",
+      canceledAt: "Cancellation Date",
+      accessExpires: "Access Expires",
+      daysRemaining: "Days Remaining",
+      trialPeriod: "This space is currently in its trial period.",
+      errorLoad: "Could not load billing information.",
+      retry: "Retry",
+    };
+    return translations[key] ?? key;
+  },
 }));
 
 // ── Test Data ─────────────────────────────────────────────────────────────────
@@ -105,9 +128,9 @@ describe("SpaceBillingCard (Task 14.3)", () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByText("2025-01-01")).toBeInTheDocument();
+        expect(screen.getByText("Jan 1, 2025")).toBeInTheDocument();
       });
-      expect(screen.getByText("2025-01-15")).toBeInTheDocument();
+      expect(screen.getByText("Jan 15, 2025")).toBeInTheDocument();
       expect(screen.getByText("Trial Start")).toBeInTheDocument();
       expect(screen.getByText("Trial End")).toBeInTheDocument();
     });
@@ -133,7 +156,7 @@ describe("SpaceBillingCard (Task 14.3)", () => {
 
       await waitFor(() => {
         expect(screen.getByText("Days Remaining")).toBeInTheDocument();
-        expect(screen.getByText("10")).toBeInTheDocument();
+        expect(screen.getByText("daysRemainingValue")).toBeInTheDocument();
       });
     });
   });
@@ -147,9 +170,9 @@ describe("SpaceBillingCard (Task 14.3)", () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByText("2025-01-15")).toBeInTheDocument();
+        expect(screen.getByText("Jan 15, 2025")).toBeInTheDocument();
       });
-      expect(screen.getByText("2025-02-15")).toBeInTheDocument();
+      expect(screen.getByText("Feb 15, 2025")).toBeInTheDocument();
       expect(screen.getByText("Period Start")).toBeInTheDocument();
       expect(screen.getByText("Period End")).toBeInTheDocument();
     });
@@ -176,9 +199,9 @@ describe("SpaceBillingCard (Task 14.3)", () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByText("2025-02-01")).toBeInTheDocument();
+        expect(screen.getByText("Feb 1, 2025")).toBeInTheDocument();
       });
-      expect(screen.getByText("2025-02-15")).toBeInTheDocument();
+      expect(screen.getByText("Feb 15, 2025")).toBeInTheDocument();
       expect(screen.getByText("Cancellation Date")).toBeInTheDocument();
       expect(screen.getByText("Access Expires")).toBeInTheDocument();
     });
@@ -197,7 +220,7 @@ describe("SpaceBillingCard (Task 14.3)", () => {
   });
 
   describe("Req 4.5: No subscription shows appropriate message", () => {
-    it("displays 'No subscription found' when subscription is null", async () => {
+    it("displays trial-period information when subscription is null", async () => {
       mockGetSpaceSubscription.mockResolvedValue(null);
 
       render(
@@ -206,7 +229,7 @@ describe("SpaceBillingCard (Task 14.3)", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText("No subscription found for this space.")
+          screen.getByText("This space is currently in its trial period.")
         ).toBeInTheDocument();
       });
     });

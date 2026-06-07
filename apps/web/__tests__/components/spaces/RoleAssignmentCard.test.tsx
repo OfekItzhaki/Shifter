@@ -25,10 +25,10 @@ vi.mock("@/lib/api/spaces", () => ({
   getSpaceMembers: (...args: any[]) => mockGetSpaceMembers(...args),
   getSpacePermissionLevels: (...args: any[]) => mockGetSpacePermissionLevels(...args),
   SpacePermissionLevel: {
-    Member: 0,
-    Admin: 1,
-    GroupOwner: 2,
-    SpaceOwner: 3,
+    Member: "Member",
+    Admin: "Admin",
+    GroupOwner: "GroupOwner",
+    SpaceOwner: "SpaceOwner",
   },
   SpaceMemberDto: {},
   SpacePermissionLevelDto: {},
@@ -69,9 +69,9 @@ const mockMembers = [
 ];
 
 const mockPermissions = [
-  { userId: "owner-1", permissionLevel: 3 }, // SpaceOwner
-  { userId: "member-2", permissionLevel: 1 }, // Admin
-  { userId: "member-3", permissionLevel: 0 }, // Member
+  { userId: "owner-1", permissionLevel: "SpaceOwner" },
+  { userId: "member-2", permissionLevel: "Admin" },
+  { userId: "member-3", permissionLevel: "Member" },
 ];
 
 const defaultProps = {
@@ -153,9 +153,9 @@ describe("RoleAssignmentCard (Task 17.2)", () => {
       await renderAndWaitForLoad();
 
       const selects = screen.getAllByRole("combobox");
-      // Sorted by permission level descending: Alice (Admin=1) first, then Bob (Member=0)
-      expect(selects[0]).toHaveValue("1"); // Alice - Admin
-      expect(selects[1]).toHaveValue("0"); // Bob - Member
+      // Sorted by permission level descending: Alice first, then Bob.
+      expect(selects[0]).toHaveValue("Admin");
+      expect(selects[1]).toHaveValue("Member");
     });
 
     it("displays member emails", async () => {
@@ -172,13 +172,13 @@ describe("RoleAssignmentCard (Task 17.2)", () => {
       await renderAndWaitForLoad();
 
       const selects = screen.getAllByRole("combobox");
-      // Change Alice's role from Admin (1) to GroupOwner (2)
+      // Change Alice's role from Admin to GroupOwner.
       await act(async () => {
-        fireEvent.change(selects[0], { target: { value: "2" } });
+        fireEvent.change(selects[0], { target: { value: "GroupOwner" } });
       });
 
       await waitFor(() => {
-        expect(mockAssignSpaceRole).toHaveBeenCalledWith("space-123", "member-2", 2);
+        expect(mockAssignSpaceRole).toHaveBeenCalledWith("space-123", "member-2", "GroupOwner");
       });
     });
 
@@ -187,13 +187,13 @@ describe("RoleAssignmentCard (Task 17.2)", () => {
       await renderAndWaitForLoad();
 
       const selects = screen.getAllByRole("combobox");
-      // Change Alice's role from Admin (1) to Member (0)
+      // Change Alice's role from Admin to Member.
       await act(async () => {
-        fireEvent.change(selects[0], { target: { value: "0" } });
+        fireEvent.change(selects[0], { target: { value: "Member" } });
       });
 
       await waitFor(() => {
-        expect(mockAssignSpaceRole).toHaveBeenCalledWith("space-123", "member-2", 0);
+        expect(mockAssignSpaceRole).toHaveBeenCalledWith("space-123", "member-2", "Member");
       });
     });
   });
@@ -205,7 +205,7 @@ describe("RoleAssignmentCard (Task 17.2)", () => {
 
       const selects = screen.getAllByRole("combobox");
       await act(async () => {
-        fireEvent.change(selects[0], { target: { value: "2" } });
+        fireEvent.change(selects[0], { target: { value: "GroupOwner" } });
       });
 
       await waitFor(() => {
@@ -219,7 +219,7 @@ describe("RoleAssignmentCard (Task 17.2)", () => {
 
       const selects = screen.getAllByRole("combobox");
       await act(async () => {
-        fireEvent.change(selects[0], { target: { value: "2" } });
+        fireEvent.change(selects[0], { target: { value: "GroupOwner" } });
       });
 
       await waitFor(() => {
@@ -232,14 +232,14 @@ describe("RoleAssignmentCard (Task 17.2)", () => {
       await renderAndWaitForLoad();
 
       const selects = screen.getAllByRole("combobox");
-      // Change Alice from Admin (1) to GroupOwner (2)
+      // Change Alice from Admin to GroupOwner.
       await act(async () => {
-        fireEvent.change(selects[0], { target: { value: "2" } });
+        fireEvent.change(selects[0], { target: { value: "GroupOwner" } });
       });
 
       await waitFor(() => {
         // After successful save, the dropdown should reflect the new value
-        expect(selects[0]).toHaveValue("2");
+        expect(selects[0]).toHaveValue("GroupOwner");
       });
     });
 

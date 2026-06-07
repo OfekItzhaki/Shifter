@@ -15,6 +15,7 @@ import { render, screen, fireEvent } from "@testing-library/react";
 
 // Mock next-intl — useTranslations returns a function that returns the key itself
 vi.mock("next-intl", () => ({
+  useLocale: () => "en",
   useTranslations: () => (key: string) => key,
 }));
 

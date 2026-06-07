@@ -4,6 +4,7 @@
  * Validates: Tasks 25.1, 25.2
  */
 
+import { test } from "vitest";
 import * as assert from "assert";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -44,21 +45,6 @@ function getActiveRoles(roles: GroupRoleDto[]): GroupRoleDto[] {
 
 // ── Test runner ───────────────────────────────────────────────────────────────
 
-let passed = 0;
-let failed = 0;
-
-function test(name: string, fn: () => void) {
-  try {
-    fn();
-    console.log(`  ✓ ${name}`);
-    passed++;
-  } catch (err: unknown) {
-    console.error(`  ✗ ${name}`);
-    console.error(`    ${(err as Error).message}`);
-    failed++;
-  }
-}
-
 const GROUP_ID = "group-abc";
 
 function makeConstraint(id: string, scopeType: string, scopeId: string | null): ConstraintDto {
@@ -67,8 +53,6 @@ function makeConstraint(id: string, scopeType: string, scopeId: string | null): 
 
 // ── Property 6: Constraint scope filtering in UI ──────────────────────────────
 // Feature: schedule-table-autoschedule-role-constraints, Property 6: constraint scope filtering in UI
-
-console.log("\nProperty 6: Constraint scope filtering in UI");
 
 test("group constraints appear only in group section", () => {
   const constraints = [makeConstraint("c1", "Group", GROUP_ID)];
@@ -138,8 +122,6 @@ test("property: mixed list is correctly partitioned", () => {
 // ── Property 13: Active-only role selector ────────────────────────────────────
 // Feature: schedule-table-autoschedule-role-constraints, Property 13: active-only role selector
 
-console.log("\nProperty 13: Active-only role selector");
-
 test("inactive roles are excluded from selector", () => {
   const roles: GroupRoleDto[] = [
     { id: "r1", name: "Active Role", description: null, isActive: true, permissionLevel: "view" },
@@ -180,8 +162,3 @@ test("property: for any list, selector contains exactly active roles", () => {
     assert.ok(active.every(r => r.isActive), "all returned roles must be active");
   }
 });
-
-// ── Summary ───────────────────────────────────────────────────────────────────
-console.log(`\n${"─".repeat(50)}`);
-console.log(`Results: ${passed} passed, ${failed} failed`);
-if (failed > 0) process.exit(1);

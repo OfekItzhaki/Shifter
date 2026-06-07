@@ -8,6 +8,12 @@ import {
   ShiftRequestDto,
   MyShiftsResponse,
 } from "@/lib/api/selfService";
+import {
+  cancelSpecialLeaveRequest,
+  getMySpecialLeaveRequests,
+  submitSpecialLeaveRequest,
+  SpecialLeaveRequestDto,
+} from "@/lib/api/specialLeave";
 import { formatSlotDate, formatTime24h, HEBREW_DAY_NAMES } from "@/lib/utils/selfServiceFormat";
 import { validateCancellationReason } from "@/lib/utils/selfServiceValidation";
 import { getSelfServiceErrorMessage } from "@/lib/utils/selfServiceErrors";
@@ -88,8 +94,15 @@ export default function MyShiftsTab({ spaceId, groupId }: MyShiftsTabProps) {
   const t = useTranslations("selfService.myShifts");
 
   const [data, setData] = useState<MyShiftsResponse | null>(null);
+  const [specialLeaveRequests, setSpecialLeaveRequests] = useState<SpecialLeaveRequestDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [leaveStart, setLeaveStart] = useState("");
+  const [leaveEnd, setLeaveEnd] = useState("");
+  const [leaveReason, setLeaveReason] = useState("");
+  const [leaveSaving, setLeaveSaving] = useState(false);
+  const [leaveError, setLeaveError] = useState<string | null>(null);
+  const [leaveSuccess, setLeaveSuccess] = useState<string | null>(null);
 
   // Cancel dialog state
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
@@ -103,8 +116,12 @@ export default function MyShiftsTab({ spaceId, groupId }: MyShiftsTabProps) {
     try {
       setLoading(true);
       setError(null);
-      const response = await getMyShiftRequests(spaceId, groupId);
+      const [response, leaveRequests] = await Promise.all([
+        getMyShiftRequests(spaceId, groupId),
+        getMySpecialLeaveRequests(spaceId),
+      ]);
       setData(response);
+      setSpecialLeaveRequests(leaveRequests);
     } catch (err) {
       const { message } = getSelfServiceErrorMessage(err);
       setError(message);
@@ -160,6 +177,65 @@ export default function MyShiftsTab({ spaceId, groupId }: MyShiftsTabProps) {
     }
   }
 
+  async function handleSubmitSpecialLeave() {
+    setLeaveError(null);
+    setLeaveSuccess(null);
+
+    if (!leaveStart || !leaveEnd) {
+      setLeaveError(t("specialLeaveDateRequired"));
+      return;
+    }
+
+    if (new Date(leaveStart).getTime() >= new Date(leaveEnd).getTime()) {
+      setLeaveError(t("specialLeaveInvalidRange"));
+      return;
+    }
+
+    if (leaveReason.trim().length === 0) {
+      setLeaveError(t("specialLeaveReasonRequired"));
+      return;
+    }
+
+    if (leaveReason.trim().length > 500) {
+      setLeaveError(t("specialLeaveReasonTooLong"));
+      return;
+    }
+
+    setLeaveSaving(true);
+
+    try {
+      await submitSpecialLeaveRequest(spaceId, {
+        startsAt: new Date(leaveStart).toISOString(),
+        endsAt: new Date(leaveEnd).toISOString(),
+        reason: leaveReason.trim(),
+      });
+      setLeaveStart("");
+      setLeaveEnd("");
+      setLeaveReason("");
+      setLeaveSuccess(t("specialLeaveSubmitted"));
+      await fetchData();
+    } catch (err) {
+      const { message } = getSelfServiceErrorMessage(err);
+      setLeaveError(message);
+    } finally {
+      setLeaveSaving(false);
+    }
+  }
+
+  async function handleCancelSpecialLeave(requestId: string) {
+    setLeaveError(null);
+    setLeaveSuccess(null);
+
+    try {
+      await cancelSpecialLeaveRequest(spaceId, requestId);
+      setLeaveSuccess(t("specialLeaveCancelled"));
+      await fetchData();
+    } catch (err) {
+      const { message } = getSelfServiceErrorMessage(err);
+      setLeaveError(message);
+    }
+  }
+
   // ── Loading state ────────────────────────────────────────────────────────
 
   if (loading) {
@@ -187,6 +263,66 @@ export default function MyShiftsTab({ spaceId, groupId }: MyShiftsTabProps) {
         <span className="text-sm font-medium text-slate-700">
           {t("shiftCount", { current: currentShiftCount, max: maxShiftsPerCycle })}
         </span>
+      </div>
+
+      <div className="bg-white border border-slate-200 rounded-xl px-4 py-4">
+        <div className="flex flex-col gap-1 mb-4">
+          <h3 className="text-sm font-semibold text-slate-900">{t("specialLeaveTitle")}</h3>
+          <p className="text-xs text-slate-500">{t("specialLeaveDescription")}</p>
+        </div>
+
+        <div className="grid gap-3 md:grid-cols-[1fr_1fr_2fr_auto] md:items-end">
+          <label className="space-y-1">
+            <span className="text-xs font-medium text-slate-500">{t("specialLeaveStart")}</span>
+            <input
+              type="datetime-local"
+              value={leaveStart}
+              onChange={(e) => setLeaveStart(e.target.value)}
+              className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400"
+            />
+          </label>
+          <label className="space-y-1">
+            <span className="text-xs font-medium text-slate-500">{t("specialLeaveEnd")}</span>
+            <input
+              type="datetime-local"
+              value={leaveEnd}
+              onChange={(e) => setLeaveEnd(e.target.value)}
+              className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400"
+            />
+          </label>
+          <label className="space-y-1">
+            <span className="text-xs font-medium text-slate-500">{t("specialLeaveReason")}</span>
+            <input
+              value={leaveReason}
+              onChange={(e) => setLeaveReason(e.target.value)}
+              maxLength={500}
+              placeholder={t("specialLeaveReasonPlaceholder")}
+              className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400"
+            />
+          </label>
+          <MutationButton
+            onClick={handleSubmitSpecialLeave}
+            loading={leaveSaving}
+            disabled={leaveSaving}
+            label={t("specialLeaveSubmit")}
+            loadingLabel={t("specialLeaveSubmitting")}
+          />
+        </div>
+
+        {leaveError && <p className="text-xs text-red-600 mt-3">{leaveError}</p>}
+        {leaveSuccess && <p className="text-xs text-emerald-600 mt-3">{leaveSuccess}</p>}
+
+        {specialLeaveRequests.length > 0 && (
+          <div className="mt-4 space-y-2">
+            {specialLeaveRequests.map((request) => (
+              <SpecialLeaveCard
+                key={request.id}
+                request={request}
+                onCancel={handleCancelSpecialLeave}
+              />
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Under-scheduled warning */}
@@ -297,6 +433,62 @@ export default function MyShiftsTab({ spaceId, groupId }: MyShiftsTabProps) {
           </div>
         </div>
       </Modal>
+    </div>
+  );
+}
+
+function formatSpecialLeaveDate(value: string): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleString(undefined, {
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function SpecialLeaveCard({
+  request,
+  onCancel,
+}: {
+  request: SpecialLeaveRequestDto;
+  onCancel: (requestId: string) => void;
+}) {
+  const t = useTranslations("selfService.myShifts");
+  const style = STATUS_BADGE_STYLES[request.status];
+  const statusLabel = (() => {
+    switch (request.status) {
+      case "Approved": return t("approved");
+      case "Pending": return t("pending");
+      case "Cancelled": return t("cancelled");
+      case "Rejected": return t("rejected");
+    }
+  })();
+
+  return (
+    <div className="flex flex-col gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
+      <div className="min-w-0">
+        <p className="text-xs font-medium text-slate-800">
+          {formatSpecialLeaveDate(request.startsAt)} - {formatSpecialLeaveDate(request.endsAt)}
+        </p>
+        <p className="mt-0.5 truncate text-xs text-slate-500">{request.reason}</p>
+      </div>
+      <div className="flex items-center gap-2">
+        <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-medium ${style.badge}`}>
+          <span className={`h-1.5 w-1.5 rounded-full ${style.dot}`} />
+          {statusLabel}
+        </span>
+        {request.status === "Pending" && (
+          <button
+            type="button"
+            onClick={() => onCancel(request.id)}
+            className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-100"
+          >
+            {t("specialLeaveCancel")}
+          </button>
+        )}
+      </div>
     </div>
   );
 }

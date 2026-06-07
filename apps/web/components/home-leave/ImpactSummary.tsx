@@ -59,8 +59,9 @@ export default function ImpactSummary({ data, isLoading, error }: ImpactSummaryP
     ? Math.min(...data.coverageGaps.map(g => g.availableCount))
     : total;
 
-  const fairnessPercent = Math.round(data.fairnessSpread * 100);
-  const fairnessWarning = data.fairnessSpread > 0.15;
+  const fairnessSpread = data.fairnessSpread;
+  const fairnessPercent = Math.round(fairnessSpread * 100);
+  const fairnessWarning = fairnessSpread - 0.15 > Number.EPSILON;
 
   return (
     <div className="space-y-3 bg-white border border-slate-200 rounded-xl p-4">

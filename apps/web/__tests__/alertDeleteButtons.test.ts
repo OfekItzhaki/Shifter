@@ -1,14 +1,9 @@
 // Feature: group-alerts-and-phone
 // Property 11: Delete buttons appear only on own alerts
 
+import { test } from "vitest";
 import * as assert from "assert";
 import { GroupAlertDto } from "../lib/api/groups";
-
-let passed = 0; let failed = 0;
-function test(name: string, fn: () => void) {
-  try { fn(); console.log(`  ✓ ${name}`); passed++; }
-  catch (err: any) { console.error(`  ✗ ${name}\n    ${err.message}`); failed++; }
-}
 
 // Helper: simulate the UI logic for showing delete button
 // Mirrors: {isAdmin && <button onClick={() => handleDeleteAlert(alert.id)}>מחק</button>}
@@ -22,7 +17,6 @@ function canDeleteAlert(alert: GroupAlertDto, currentPersonId: string): boolean 
   return alert.createdByPersonId === currentPersonId;
 }
 
-console.log("\nProperty 11: Delete buttons appear only on own alerts (backend enforcement)");
 
 test("creator can delete their own alert", () => {
   const personId = "person-1";
@@ -114,7 +108,3 @@ test("admin sees delete button on all alerts (backend enforces creator-only)", (
   assert.strictEqual(canDeleteAlert(myAlert, myPersonId), true);
   assert.strictEqual(canDeleteAlert(theirAlert, myPersonId), false);
 });
-
-console.log(`\n${"─".repeat(40)}`);
-console.log(`Results: ${passed} passed, ${failed} failed`);
-if (failed > 0) process.exit(1);

@@ -5,6 +5,7 @@
  * Validates: Tasks 24.1, 24.2, 24.3, 24.4
  */
 
+import { test } from "vitest";
 import * as assert from "assert";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -57,25 +58,8 @@ function buildCellMap(
 
 // ── Test runner ───────────────────────────────────────────────────────────────
 
-let passed = 0;
-let failed = 0;
-
-function test(name: string, fn: () => void) {
-  try {
-    fn();
-    console.log(`  ✓ ${name}`);
-    passed++;
-  } catch (err: unknown) {
-    console.error(`  ✗ ${name}`);
-    console.error(`    ${(err as Error).message}`);
-    failed++;
-  }
-}
-
 // ── Property 1: Column and row completeness ───────────────────────────────────
 // Feature: schedule-table-autoschedule-role-constraints, Property 1: ScheduleTable2D column and row completeness
-
-console.log("\nProperty 1: Column and row completeness");
 
 test("unique task names become columns (sorted)", () => {
   const assignments: ScheduleAssignment[] = [
@@ -115,8 +99,6 @@ test("property: N unique tasks → N columns", () => {
 // ── Property 2: Multi-person cell grouping ────────────────────────────────────
 // Feature: schedule-table-autoschedule-role-constraints, Property 2: multi-person cell grouping
 
-console.log("\nProperty 2: Multi-person cell grouping");
-
 test("multiple people in same slot+task appear in same cell", () => {
   const assignments: ScheduleAssignment[] = [
     { personName: "Alice", taskTypeName: "Guard", slotStartsAt: "2026-04-20T08:00:00", slotEndsAt: "2026-04-20T16:00:00" },
@@ -148,8 +130,6 @@ test("property: N people in same slot → N names in cell", () => {
 
 // ── Property 3: Current user column highlight ─────────────────────────────────
 // Feature: schedule-table-autoschedule-role-constraints, Property 3: current user column highlight
-
-console.log("\nProperty 3: Current user column highlight");
 
 function getHighlightedColumns(assignments: ScheduleAssignment[], currentUserName: string): Set<string> {
   const highlighted = new Set<string>();
@@ -194,8 +174,6 @@ test("property: for any user, only their tasks are highlighted", () => {
 
 // ── Property 4: Date filter correctness ──────────────────────────────────────
 // Feature: schedule-table-autoschedule-role-constraints, Property 4: date filter correctness
-
-console.log("\nProperty 4: Date filter correctness");
 
 test("assignments on filter date are included", () => {
   const filterDate = "2026-04-20";
@@ -244,8 +222,3 @@ test("property: filter returns exactly assignments overlapping the date", () => 
     assert.ok(filtered[0].slotStartsAt.startsWith(filterDate));
   }
 });
-
-// ── Summary ───────────────────────────────────────────────────────────────────
-console.log(`\n${"─".repeat(50)}`);
-console.log(`Results: ${passed} passed, ${failed} failed`);
-if (failed > 0) process.exit(1);

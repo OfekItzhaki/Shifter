@@ -190,7 +190,15 @@
       "rangeWeek": "השבוע",
       "rangeMonth": "החודש",
       "rangeYear": "השנה",
-      "dayNames": ["א׳", "ב׳", "ג׳", "ד׳", "ה׳", "ו׳", "ש׳"]
+      "dayNames": [
+        "א׳",
+        "ב׳",
+        "ג׳",
+        "ד׳",
+        "ה׳",
+        "ו׳",
+        "ש׳"
+      ]
     },
     "taskInfoLabel": "מידע על הגדרות המשימה",
     "taskInfo": {
@@ -342,7 +350,16 @@
       "bulkAddAll": "הוסף הכל",
       "bulkProgress": "מוסיף {current}/{total}...",
       "bulkSuccess": "נוספו {count} חברים בהצלחה",
-      "bulkErrors": "{count} שגיאות"
+      "bulkErrors": "{count} שגיאות",
+      "specialLeaveAdminTitle": "בקשות יציאה מיוחדות",
+      "specialLeaveAdminDescription": "אישור בקשה יסמן את החבר כלא זמין, כדי ש-Shifter לא ישבץ אותו בזמן הזה.",
+      "specialLeaveRefresh": "רענון",
+      "specialLeaveNoPending": "אין בקשות ממתינות",
+      "specialLeaveLoadError": "לא הצלחנו לטעון את הבקשות",
+      "specialLeaveActionError": "לא הצלחנו לעדכן את הבקשה",
+      "specialLeaveAdminNote": "הערת מנהל (לא חובה)",
+      "specialLeaveApprove": "אשר",
+      "specialLeaveReject": "דחה"
     },
     "qualifications_tab": {
       "title": "הכשרות",
@@ -925,7 +942,15 @@
     "discardConfirmText": "לבטל את הטיוטה? פעולה זו אינה הפיכה.",
     "yesDiscard": "כן, בטל",
     "back": "חזרה",
-    "dayNames": ["א׳", "ב׳", "ג׳", "ד׳", "ה׳", "ו׳", "ש׳"],
+    "dayNames": [
+      "א׳",
+      "ב׳",
+      "ג׳",
+      "ד׳",
+      "ה׳",
+      "ו׳",
+      "ש׳"
+    ],
     "enterSimulation": "כניסה לסימולציה",
     "enteringSimulation": "טוען...",
     "errorEnterSimulation": "שגיאה בכניסה לסימולציה"
@@ -1155,37 +1180,39 @@
         "title": "משמרת כפולה מומלצת",
         "body": "מומלצת משמרת כפולה לכיסוי כל המשימות."
       },
-      "self_service.request_approved": {
-        "title": "משמרת אושרה",
-        "body": "בקשת המשמרת שלך אושרה."
-      },
-      "self_service.request_rejected": {
-        "title": "משמרת נדחתה",
-        "body": "בקשת המשמרת נדחתה — המשבצת מלאה."
-      },
-      "self_service.swap_proposal_received": {
-        "title": "הצעת החלפה",
-        "body": "מישהו רוצה להחליף איתך משמרת."
-      },
-      "self_service.swap_declined": {
-        "title": "החלפה נדחתה",
-        "body": "הצעת ההחלפה שלך נדחתה."
-      },
-      "self_service.waitlist_offer": {
-        "title": "משבצת פנויה",
-        "body": "התפנה מקום במשמרת שאתה ממתין לה."
-      },
-      "self_service.under_scheduled_members": {
-        "title": "חברים עם חוסר שיבוצים",
-        "body": "לחלק מהחברים יש פחות משמרות מהמינימום."
-      },
-      "self_service.under_scheduled_warning": {
-        "title": "חוסר שיבוצים",
-        "body": "יש לך פחות משמרות מהמינימום הנדרש."
-      },
       "request_window_open": {
         "title": "חלון בקשות נפתח",
         "body": "חלון בקשות המשמרות נפתח כעת."
+      },
+      "self_service": {
+        "request_approved": {
+          "title": "משמרת אושרה",
+          "body": "בקשת המשמרת שלך אושרה."
+        },
+        "request_rejected": {
+          "title": "משמרת נדחתה",
+          "body": "בקשת המשמרת נדחתה — המשבצת מלאה."
+        },
+        "swap_proposal_received": {
+          "title": "הצעת החלפה",
+          "body": "מישהו רוצה להחליף איתך משמרת."
+        },
+        "swap_declined": {
+          "title": "החלפה נדחתה",
+          "body": "הצעת ההחלפה שלך נדחתה."
+        },
+        "waitlist_offer": {
+          "title": "משבצת פנויה",
+          "body": "התפנה מקום במשמרת שאתה ממתין לה."
+        },
+        "under_scheduled_members": {
+          "title": "חברים עם חוסר שיבוצים",
+          "body": "לחלק מהחברים יש פחות משמרות מהמינימום."
+        },
+        "under_scheduled_warning": {
+          "title": "חוסר שיבוצים",
+          "body": "יש לך פחות משמרות מהמינימום הנדרש."
+        }
       }
     }
   },
@@ -1371,6 +1398,7 @@
     "loading": "טוען תוכניות...",
     "fetchError": "לא ניתן לטעון מחירים עדכניים. מוצגים מחירים משוערים.",
     "checkoutError": "שגיאה ביצירת עמוד תשלום. נסה שוב.",
+    "sessionExpiredReload": "הסשן שלך פג. התחבר מחדש ונסה לבצע את התשלום שוב.",
     "waitingForPayment": "ממתין להשלמת התשלום...",
     "selectedPlan": "תוכנית: {name}",
     "waitingHint": "השלם את התשלום בלשונית החדשה. הדף יתעדכן אוטומטית.",
@@ -1904,7 +1932,15 @@
       "alternativeSlots": "משמרות חלופיות:",
       "requestSuccess": "הבקשה נשלחה בהצלחה",
       "waitlistSuccess": "הצטרפת לרשימת ההמתנה במיקום {position}",
-      "dayNames": ["ראשון", "שני", "שלישי", "רביעי", "חמישי", "שישי", "שבת"]
+      "dayNames": [
+        "ראשון",
+        "שני",
+        "שלישי",
+        "רביעי",
+        "חמישי",
+        "שישי",
+        "שבת"
+      ]
     },
     "myShifts": {
       "title": "המשמרות שלי",
@@ -1923,7 +1959,22 @@
       "underScheduled": "⚠ אתה מתחת למינימום המשמרות הנדרש ({min})",
       "cancelWindowClosed": "חלון הביטול נסגר",
       "noShifts": "אין משמרות במחזור הנוכחי",
-      "adminOverride": "שיבוץ מנהל"
+      "adminOverride": "שיבוץ מנהל",
+      "specialLeaveTitle": "צריך יציאה מיוחדת?",
+      "specialLeaveDescription": "שלח בקשה למנהלים. אם היא תאושר, Shifter יתייחס אליך כלא זמין בזמן הזה.",
+      "specialLeaveStart": "מ",
+      "specialLeaveEnd": "עד",
+      "specialLeaveReason": "סיבה",
+      "specialLeaveReasonPlaceholder": "אירוע משפחתי, תור, חג...",
+      "specialLeaveSubmit": "שלח בקשה",
+      "specialLeaveSubmitting": "שולח...",
+      "specialLeaveSubmitted": "הבקשה נשלחה למנהלים",
+      "specialLeaveCancelled": "הבקשה בוטלה",
+      "specialLeaveCancel": "בטל בקשה",
+      "specialLeaveDateRequired": "בחר זמן התחלה וסיום",
+      "specialLeaveInvalidRange": "זמן הסיום חייב להיות אחרי זמן ההתחלה",
+      "specialLeaveReasonRequired": "כתוב סיבה קצרה",
+      "specialLeaveReasonTooLong": "הסיבה חייבת להיות עד 500 תווים"
     },
     "waitlist": {
       "title": "רשימת המתנה",

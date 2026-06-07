@@ -36,7 +36,7 @@ function shouldShowFairnessWarning(metrics: HomeLeaveMetric[]): boolean {
   const maxRatio = Math.max(...ratios);
   const minRatio = Math.min(...ratios);
 
-  return maxRatio - minRatio > 0.15;
+  return maxRatio - minRatio - 0.15 > Number.EPSILON;
 }
 
 // ── Helper to create a metric from a ratio value ─────────────────────────────
@@ -67,7 +67,7 @@ describe("Property 10: Fairness warning threshold", () => {
 
           const maxRatio = Math.max(...ratios);
           const minRatio = Math.min(...ratios);
-          const expectedWarning = maxRatio - minRatio > 0.15;
+          const expectedWarning = maxRatio - minRatio - 0.15 > Number.EPSILON;
 
           const actualWarning = shouldShowFairnessWarning(metrics);
 

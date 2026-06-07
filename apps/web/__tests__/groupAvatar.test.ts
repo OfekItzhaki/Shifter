@@ -1,3 +1,4 @@
+import { test } from "vitest";
 import * as assert from "assert";
 import { getAvatarColor, getAvatarLetter } from "../lib/utils/groupAvatar";
 
@@ -6,13 +7,6 @@ const COLORS = [
   "#8B5CF6", "#EC4899", "#06B6D4", "#84CC16"
 ];
 
-let passed = 0; let failed = 0;
-function test(name: string, fn: () => void) {
-  try { fn(); console.log(`  ✓ ${name}`); passed++; }
-  catch (err: any) { console.error(`  ✗ ${name}\n    ${err.message}`); failed++; }
-}
-
-console.log("\nProperty 11: Avatar color is deterministic");
 test("same name always returns same color", () => {
   const names = ["Squad A", "Squad B", "Alpha", "Beta", "הקבוצה שלי", ""];
   for (const name of names) {
@@ -32,7 +26,6 @@ test("color is always from the palette", () => {
   }
 });
 
-console.log("\nProperty 12: Avatar letter is uppercase first character");
 test("returns first letter uppercase for non-empty name", () => {
   assert.strictEqual(getAvatarLetter("squad"), "S");
   assert.strictEqual(getAvatarLetter("alpha"), "A");
@@ -51,7 +44,3 @@ test("letter is always single character", () => {
     assert.strictEqual(getAvatarLetter(name).length, 1);
   }
 });
-
-console.log(`\n${"─".repeat(40)}`);
-console.log(`Results: ${passed} passed, ${failed} failed`);
-if (failed > 0) process.exit(1);

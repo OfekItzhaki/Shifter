@@ -24,6 +24,11 @@ type PaymentState =
   | { phase: "polling"; planName: string }
   | { phase: "success"; planName: string };
 
+type NoticeState = {
+  tone: "info" | "error";
+  message: string;
+} | null;
+
 function formatPlanDescription(description: string): string {
   return description.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
 }
@@ -41,6 +46,7 @@ export default function PricingPage() {
   const [error, setError] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
   const [paymentState, setPaymentState] = useState<PaymentState>({ phase: "idle" });
+  const [notice, setNotice] = useState<NoticeState>(null);
 
   const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const pollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -98,9 +104,11 @@ export default function PricingPage() {
   }
 
   async function handleSelectPlan(plan: PlanDto) {
+    setNotice(null);
+
     // If plan has no variant ID (fallback plans), show coming soon message
     if (!plan.variantId) {
-      alert(t("comingSoon"));
+      setNotice({ tone: "info", message: t("comingSoon") });
       return;
     }
 
@@ -171,10 +179,9 @@ export default function PricingPage() {
       setCheckoutLoading(null);
       const status = (err as { response?: { status?: number } })?.response?.status;
       if (status === 401) {
-        alert(t("sessionExpiredReload") ?? "Your session expired. Please reload the page and try again.");
-        window.location.reload();
+        setNotice({ tone: "error", message: t("sessionExpiredReload") });
       } else {
-        alert(t("checkoutError"));
+        setNotice({ tone: "error", message: t("checkoutError") });
       }
     }
   }
@@ -311,6 +318,19 @@ export default function PricingPage() {
             );
           })}
         </div>
+
+        {notice && (
+          <div
+            role="status"
+            className={`mt-4 rounded-xl border px-4 py-3 text-center text-sm font-medium ${
+              notice.tone === "error"
+                ? "border-red-200 bg-red-50 text-red-700 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-200"
+                : "border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-900/60 dark:bg-sky-950/40 dark:text-sky-200"
+            }`}
+          >
+            {notice.message}
+          </div>
+        )}
 
         {/* Features */}
         <div className="mt-10 text-center">
