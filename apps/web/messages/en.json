@@ -187,7 +187,15 @@
       "rangeWeek": "this week",
       "rangeMonth": "this month",
       "rangeYear": "this year",
-      "dayNames": ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+      "dayNames": [
+        "Sun",
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri",
+        "Sat"
+      ]
     },
     "taskInfoLabel": "Task configuration info",
     "taskInfo": {
@@ -929,7 +937,15 @@
     "discardConfirmText": "Discard this draft? This action cannot be undone.",
     "yesDiscard": "Yes, discard",
     "back": "Back",
-    "dayNames": ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+    "dayNames": [
+      "Sun",
+      "Mon",
+      "Tue",
+      "Wed",
+      "Thu",
+      "Fri",
+      "Sat"
+    ],
     "enterSimulation": "Enter Simulation",
     "enteringSimulation": "Loading...",
     "errorEnterSimulation": "Error entering simulation"
@@ -1159,37 +1175,39 @@
         "title": "Double Shift Recommended",
         "body": "A double shift is recommended to cover all tasks."
       },
-      "self_service.request_approved": {
-        "title": "Shift Approved",
-        "body": "Your shift request has been approved."
-      },
-      "self_service.request_rejected": {
-        "title": "Shift Rejected",
-        "body": "Your shift request was rejected — the slot is full."
-      },
-      "self_service.swap_proposal_received": {
-        "title": "Swap Proposal",
-        "body": "Someone wants to swap shifts with you."
-      },
-      "self_service.swap_declined": {
-        "title": "Swap Declined",
-        "body": "Your shift swap proposal was declined."
-      },
-      "self_service.waitlist_offer": {
-        "title": "Slot Available",
-        "body": "A spot has opened for a shift you're waiting for."
-      },
-      "self_service.under_scheduled_members": {
-        "title": "Under-Scheduled Members",
-        "body": "Some members have fewer shifts than the minimum."
-      },
-      "self_service.under_scheduled_warning": {
-        "title": "Under-Scheduled",
-        "body": "You have fewer shifts than the minimum required."
-      },
       "request_window_open": {
         "title": "Request Window Open",
         "body": "The shift request window is now open."
+      },
+      "self_service": {
+        "request_approved": {
+          "title": "Shift Approved",
+          "body": "Your shift request has been approved."
+        },
+        "request_rejected": {
+          "title": "Shift Rejected",
+          "body": "Your shift request was rejected — the slot is full."
+        },
+        "swap_proposal_received": {
+          "title": "Swap Proposal",
+          "body": "Someone wants to swap shifts with you."
+        },
+        "swap_declined": {
+          "title": "Swap Declined",
+          "body": "Your shift swap proposal was declined."
+        },
+        "waitlist_offer": {
+          "title": "Slot Available",
+          "body": "A spot has opened for a shift you're waiting for."
+        },
+        "under_scheduled_members": {
+          "title": "Under-Scheduled Members",
+          "body": "Some members have fewer shifts than the minimum."
+        },
+        "under_scheduled_warning": {
+          "title": "Under-Scheduled",
+          "body": "You have fewer shifts than the minimum required."
+        }
       }
     }
   },
@@ -1902,7 +1920,15 @@
       "alternativeSlots": "Alternative slots:",
       "requestSuccess": "Request submitted successfully",
       "waitlistSuccess": "Joined waitlist at position {position}",
-      "dayNames": ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+      "dayNames": [
+        "Sunday",
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday"
+      ]
     },
     "myShifts": {
       "title": "My Shifts",

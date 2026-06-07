@@ -9,6 +9,7 @@ import {
   useDismissNotification,
   useDismissAllNotifications,
 } from "@/lib/query/hooks/useNotifications";
+import { getNotificationText } from "@/lib/notifications/messageText";
 
 export default function NotificationsPage() {
   const t = useTranslations("notifications");
@@ -55,24 +56,28 @@ export default function NotificationsPage() {
           </div>
         ) : (
           <div className="space-y-2">
-            {[...unread, ...read].map(n => (
-              <div
-                key={n.id}
-                onClick={() => !n.isRead && dismissOne.mutate(n.id)}
-                className={`flex items-start gap-4 bg-white border rounded-xl px-4 py-3.5 transition-colors ${
-                  n.isRead
-                    ? "border-slate-200 cursor-default"
-                    : "border-sky-200 bg-sky-50/30 hover:bg-sky-50 cursor-pointer"
-                }`}
-              >
-                <div className={`w-2 h-2 rounded-full mt-2 flex-shrink-0 ${n.isRead ? "bg-slate-200" : "bg-sky-500"}`} />
-                <div className="flex-1 min-w-0">
-                  <p className={`text-sm font-medium ${n.isRead ? "text-slate-600" : "text-slate-900"}`}>{n.title}</p>
-                  <p className="text-xs text-slate-500 mt-0.5 line-clamp-2">{n.body}</p>
-                  <p className="text-xs text-slate-400 mt-1">{fDateTime(n.createdAt)}</p>
+            {[...unread, ...read].map(n => {
+              const text = getNotificationText(t, n.eventType, { title: n.title, body: n.body });
+
+              return (
+                <div
+                  key={n.id}
+                  onClick={() => !n.isRead && dismissOne.mutate(n.id)}
+                  className={`flex items-start gap-4 bg-white border rounded-xl px-4 py-3.5 transition-colors ${
+                    n.isRead
+                      ? "border-slate-200 cursor-default"
+                      : "border-sky-200 bg-sky-50/30 hover:bg-sky-50 cursor-pointer"
+                  }`}
+                >
+                  <div className={`w-2 h-2 rounded-full mt-2 flex-shrink-0 ${n.isRead ? "bg-slate-200" : "bg-sky-500"}`} />
+                  <div className="flex-1 min-w-0">
+                    <p className={`text-sm font-medium ${n.isRead ? "text-slate-600" : "text-slate-900"}`}>{text.title}</p>
+                    <p className="text-xs text-slate-500 mt-0.5 line-clamp-2">{text.body}</p>
+                    <p className="text-xs text-slate-400 mt-1">{fDateTime(n.createdAt)}</p>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
