@@ -1,16 +1,9 @@
 // Feature: group-alerts-and-phone
 // Property 10: Severity badge color is correct for all severity values
 
+import { test } from "vitest";
 import * as assert from "assert";
 import { SEVERITY_BADGE, getSeverityBadge } from "../lib/utils/alertSeverity";
-
-let passed = 0; let failed = 0;
-function test(name: string, fn: () => void) {
-  try { fn(); console.log(`  ✓ ${name}`); passed++; }
-  catch (err: any) { console.error(`  ✗ ${name}\n    ${err.message}`); failed++; }
-}
-
-console.log("\nProperty 10: Severity badge color is correct for all severity values");
 
 test("info severity returns blue classes", () => {
   const badge = getSeverityBadge("info");
@@ -75,7 +68,3 @@ test("100 iterations — all valid severities return correct color family", () =
       `Iteration ${i}: ${severity} text should contain '${expectedColor}', got: ${badge.text}`);
   }
 });
-
-console.log(`\n${"─".repeat(40)}`);
-console.log(`Results: ${passed} passed, ${failed} failed`);
-if (failed > 0) process.exit(1);

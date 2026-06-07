@@ -1,14 +1,9 @@
 // Feature: group-alerts-and-phone
 // Property 2: Phone number renders correctly for all members
 
+import { test } from "vitest";
 import * as assert from "assert";
 import { GroupMemberDto } from "../lib/api/groups";
-
-let passed = 0; let failed = 0;
-function test(name: string, fn: () => void) {
-  try { fn(); console.log(`  ✓ ${name}`); passed++; }
-  catch (err: any) { console.error(`  ✗ ${name}\n    ${err.message}`); failed++; }
-}
 
 // Helper: simulate what the UI renders for a member's phone
 function renderPhone(member: GroupMemberDto): string {
@@ -18,7 +13,6 @@ function renderPhone(member: GroupMemberDto): string {
   return member.phoneNumber;
 }
 
-console.log("\nProperty 2: Phone number renders correctly for all members");
 
 test("non-null phone number is rendered as-is", () => {
   const members: GroupMemberDto[] = [
@@ -83,8 +77,3 @@ test("100 random members — none render 'null' or 'undefined'", () => {
     }
   }
 });
-
-console.log(`\n${"─".repeat(40)}`);
-console.log(`Results: ${passed} passed, ${failed} failed`);
-if (failed > 0) process.exit(1);
-

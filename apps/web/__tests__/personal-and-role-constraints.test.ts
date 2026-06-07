@@ -6,25 +6,11 @@
  * Validates: Requirements 1.1, 1.6, 2.3, 3.3, 8.1
  */
 
+import { test } from "vitest";
 import * as assert from "assert";
 
 // ---------------------------------------------------------------------------
-// Helper: simple test runner
 // ---------------------------------------------------------------------------
-let passed = 0;
-let failed = 0;
-
-function test(name: string, fn: () => void) {
-  try {
-    fn();
-    console.log(`  ✓ ${name}`);
-    passed++;
-  } catch (err: unknown) {
-    console.error(`  ✗ ${name}`);
-    console.error(`    ${(err as Error).message}`);
-    failed++;
-  }
-}
 
 // ---------------------------------------------------------------------------
 // Types mirroring the frontend DTOs
@@ -102,8 +88,6 @@ function partitionConstraints(
 // Validates: Requirements 2.3, 8.1
 // ---------------------------------------------------------------------------
 
-console.log("\nProperty 4: Person selector contains only registered members");
-
 test("empty list → empty selector", () => {
   assert.strictEqual(getRegisteredMembers([]).length, 0);
 });
@@ -174,8 +158,6 @@ test("property: for any list, selector contains exactly the accepted members", (
 // Validates: Requirements 3.3
 // ---------------------------------------------------------------------------
 
-console.log("\nProperty 5: Role selector contains only active roles");
-
 test("empty list → empty selector", () => {
   assert.strictEqual(getActiveRoles([]).length, 0);
 });
@@ -229,8 +211,6 @@ test("property: for any list, selector contains exactly the active roles", () =>
 // Validates: Requirements 1.6
 // ---------------------------------------------------------------------------
 
-console.log("\nProperty 3: Person name resolution uses displayName with fullName fallback");
-
 test("displayName non-null → returns displayName", () => {
   const members: GroupMemberDto[] = [
     { personId: "p1", fullName: "Alice Israeli", displayName: "Alice", invitationStatus: "accepted" },
@@ -280,8 +260,6 @@ test("property: for any member list, resolved name equals displayName ?? fullNam
 // Task 9.4: Constraints partitioned correctly by scopeType
 // Validates: Requirements 1.1
 // ---------------------------------------------------------------------------
-
-console.log("\nTask 9.4: Constraints partitioned by scopeType");
 
 const GROUP_ID = "group-abc";
 
@@ -363,10 +341,4 @@ test("scopeType case-insensitive partitioning", () => {
 });
 
 // ---------------------------------------------------------------------------
-// Summary
 // ---------------------------------------------------------------------------
-console.log(`\n${"─".repeat(50)}`);
-console.log(`Results: ${passed} passed, ${failed} failed`);
-if (failed > 0) {
-  process.exit(1);
-}

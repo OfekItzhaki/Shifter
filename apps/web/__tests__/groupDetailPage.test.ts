@@ -4,6 +4,7 @@
  * Validates: Tasks 2.2, 3.2, 3.3, 3.6, 5.6, 6.3, 6.4
  */
 
+import { test } from "vitest";
 import * as assert from "assert";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -52,25 +53,8 @@ function getTransferDropdownMembers(members: GroupMemberDto[]): GroupMemberDto[]
 
 // ── Test runner ───────────────────────────────────────────────────────────────
 
-let passed = 0;
-let failed = 0;
-
-function test(name: string, fn: () => void) {
-  try {
-    fn();
-    console.log(`  ✓ ${name}`);
-    passed++;
-  } catch (err: unknown) {
-    console.error(`  ✗ ${name}`);
-    console.error(`    ${(err as Error).message}`);
-    failed++;
-  }
-}
-
 // ── Property 1: Group lookup correctness ─────────────────────────────────────
 // Feature: group-detail-page, Property 1: group lookup correctness
-
-console.log("\nProperty 1: Group lookup correctness");
 
 test("finds group by ID", () => {
   const groups: GroupWithMemberCountDto[] = [
@@ -106,8 +90,6 @@ test("property: for any list and any ID, result is the matching group or null", 
 // ── Property 2: Base tabs always present ─────────────────────────────────────
 // Feature: group-detail-page, Property 2: base tabs always present
 
-console.log("\nProperty 2: Base tabs always present");
-
 const BASE_TABS = ["schedule", "live-status", "members"];
 const ADMIN_TABS = ["tasks", "constraints", "settings", "stats"];
 
@@ -129,8 +111,6 @@ test("base tabs always visible regardless of admin state", () => {
 
 // ── Property 4: Admin tabs conditional on adminGroupId ───────────────────────
 // Feature: group-detail-page, Property 4: admin tabs appear exactly when adminGroupId matches
-
-console.log("\nProperty 4: Admin tabs conditional on adminGroupId");
 
 test("admin tabs visible when adminGroupId matches groupId", () => {
   const tabs = getVisibleTabs("g1", "g1");
@@ -172,8 +152,6 @@ test("property: admin tabs present iff adminGroupId === groupId", () => {
 // ── Property 3: DisplayName fallback ─────────────────────────────────────────
 // Feature: group-detail-page, Property 3: displayName fallback
 
-console.log("\nProperty 3: DisplayName fallback");
-
 test("returns displayName when non-null", () => {
   const m: GroupMemberDto = { personId: "p1", fullName: "Alice Israeli", displayName: "Alice", isOwner: false, phoneNumber: null, invitationStatus: "accepted", profileImageUrl: null, birthday: null, linkedUserId: null };
   assert.strictEqual(getDisplayName(m), "Alice");
@@ -199,8 +177,6 @@ test("property: for any member, result is displayName ?? fullName", () => {
 // ── Property 6: Solver horizon warning threshold ──────────────────────────────
 // Feature: group-detail-page, Property 6: solver horizon warning threshold
 
-console.log("\nProperty 6: Solver horizon warning threshold");
-
 test("warning shown when horizon > 30", () => {
   assert.strictEqual(getSolverHorizonWarning(31), true);
   assert.strictEqual(getSolverHorizonWarning(90), true);
@@ -220,8 +196,6 @@ test("property: warning iff horizon > 30", () => {
 
 // ── Property 16: Transfer dropdown excludes owner ────────────────────────────
 // Feature: group-ownership, Property 16: transfer dropdown excludes owner
-
-console.log("\nProperty 16: Transfer dropdown excludes owner");
 
 test("owner excluded from transfer dropdown", () => {
   const members: GroupMemberDto[] = [
@@ -246,8 +220,3 @@ test("property: for any member list with one owner, dropdown excludes that owner
     assert.ok(!dropdown.some(m => m.isOwner), "owner must not appear in dropdown");
   }
 });
-
-// ── Summary ───────────────────────────────────────────────────────────────────
-console.log(`\n${"─".repeat(50)}`);
-console.log(`Results: ${passed} passed, ${failed} failed`);
-if (failed > 0) process.exit(1);
