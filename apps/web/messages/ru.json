@@ -205,6 +205,7 @@
     }
   },
   "groups": {
+    "whatsNew": "Что нового",
     "title": "Мои группы",
     "subtitle": "Группы, в которых вы состоите",
     "newGroup": "+ Новая группа",
@@ -230,6 +231,23 @@
       "errorApplying": "Ошибка применения шаблона. Можно настроить вручную."
     },
     "createWizard": {
+      "selfServiceTemplateDescription": "Выберите шаблон смен для самостоятельного выбора",
+      "back": "Назад",
+      "createError": "Не удалось создать группу. Попробуйте снова.",
+      "selfServiceTemplates": {
+        "weekly-shifts": {
+          "name": "Еженедельные смены",
+          "description": "Фиксированное недельное расписание с повторяющимися сменами. Подходит командам с предсказуемым режимом."
+        },
+        "flexible": {
+          "name": "Гибкий режим",
+          "description": "Участники выбирают доступные смены. Подходит командам с меняющейся доступностью."
+        },
+        "custom": {
+          "name": "Свой шаблон",
+          "description": "Начните с нуля. Настройте собственную структуру смен и правила."
+        }
+      },
       "title": "Создать новую группу",
       "nameLabel": "Название группы",
       "namePlaceholder": "Введите название группы...",
@@ -246,6 +264,7 @@
       }
     },
     "join": {
+      "alreadyMember": "Вы уже участник",
       "title": "Присоединиться к группе",
       "subtitle": "Введите код, полученный от администратора группы",
       "codeLabel": "Код присоединения",
@@ -529,6 +548,19 @@
       "alreadyParent": "уже родительская"
     },
     "stats_tab": {
+      "loading": "Загрузка статистики...",
+      "connectionTimeout": "Время подключения истекло - попробуйте снова",
+      "errorLoading": "Ошибка загрузки статистики",
+      "table": {
+        "name": "Имя",
+        "total": "Всего",
+        "hard": "Тяжёлые",
+        "normal": "Обычные",
+        "easy": "Лёгкие",
+        "burdenScore": "Оценка нагрузки",
+        "balance": "Баланс",
+        "lastAssignment": "Последнее назначение"
+      },
       "activeMembers": "Активные участники",
       "totalAssignments": "Всего назначений",
       "avgPerPerson": "Среднее на человека",
@@ -577,6 +609,9 @@
     }
   },
   "profile": {
+    "feedback": "Сообщить об ошибке / отзыв",
+    "feedbackDesc": "Нашли ошибку или есть идея для улучшения? Отправьте нам сообщение, и мы ответим.",
+    "feedbackButton": "Отправить отзыв",
     "title": "Мой профиль",
     "loadError": "Не удалось загрузить профиль",
     "loadErrorDesc": "Что-то пошло не так. Попробуйте обновить страницу.",
@@ -669,6 +704,11 @@
     }
   },
   "admin": {
+    "solverCannotRun": "⚠ Невозможно запустить Shifter",
+    "solverNotEnoughMembers": "В группе недостаточно участников. Добавьте минимум 2 участников, чтобы система могла создать расписание.",
+    "solverPhase_building_payload": "Подготовка данных для Shifter...",
+    "solverPhase_solving": "Shifter ищет лучший план...",
+    "solverPhase_storing_results": "Сохранение результатов Shifter...",
     "title": "Режим администратора",
     "enterAdmin": "Войти в режим администратора",
     "exitAdmin": "Выйти из режима администратора",
@@ -912,6 +952,7 @@
     "cannotParse": "Не удалось разобрать автоматически."
   },
   "constraintEditor": {
+    "periodDays": "Период (дни)",
     "minRestHours": "Минимальное время отдыха между сменами",
     "hours": "часов",
     "maxKitchenPerWeek": "Макс. кухонных смен в неделю",
@@ -963,6 +1004,45 @@
     "networkError": "Ошибка сети. Попробуйте ещё раз."
   },
   "spaces": {
+    "roleAssignment": {
+      "title": "Назначение ролей",
+      "description": "Назначьте уровни доступа участникам пространства",
+      "loading": "Загрузка участников...",
+      "loadError": "Ошибка загрузки участников",
+      "retry": "Повторить",
+      "saved": "Роль успешно обновлена",
+      "saveError": "Ошибка обновления роли",
+      "noMembers": "В пространстве нет участников",
+      "selectLabel": "Роль для {name}",
+      "levels": {
+        "spaceOwner": "Владелец пространства",
+        "groupOwner": "Владелец группы",
+        "admin": "Администратор",
+        "member": "Участник"
+      }
+    },
+    "dangerZone": {
+      "title": "Опасная зона",
+      "description": "Необратимые и разрушительные действия. Действуйте осторожно.",
+      "deleteTitle": "Удалить пространство",
+      "deleteDescription": "Архивировать это пространство и все его группы. Пространство можно восстановить позже.",
+      "deleteButton": "Удалить пространство",
+      "deleteConfirm": "Вы уверены? Пространство и все его группы будут архивированы.",
+      "confirmDelete": "Да, удалить",
+      "deleting": "Удаление...",
+      "deleteSuccess": "Пространство успешно удалено.",
+      "deleteError": "Не удалось удалить пространство. Попробуйте снова.",
+      "transferTitle": "Передача владения",
+      "transferDescription": "Передать владение пространством другому участнику. Вы потеряете права владельца.",
+      "selectMember": "Выберите участника...",
+      "selectMemberLabel": "Выберите нового владельца",
+      "transferButton": "Передать",
+      "confirmTransfer": "Да, передать",
+      "transferring": "Передача...",
+      "transferSuccess": "Владение успешно передано.",
+      "transferError": "Не удалось передать владение. Попробуйте снова.",
+      "cancel": "Отмена"
+    },
     "notMember": "Вы ещё не состоите ни в одном пространстве. Создайте его ниже.",
     "createNew": "Создать новое пространство",
     "newWorkspace": "Новое пространство",
@@ -1119,6 +1199,9 @@
     }
   },
   "errors": {
+    "solverTimeout": "Shifter не ответил вовремя. Задача может быть слишком сложной - попробуйте уменьшить горизонт планирования или упростить ограничения.",
+    "solverCheckError": "Ошибка проверки статуса Shifter",
+    "solverStartError": "Ошибка запуска Shifter",
     "unauthorized": "Нет доступа",
     "notFound": "Не найдено",
     "serverError": "Ошибка сервера",
@@ -1143,6 +1226,8 @@
     "timeoutOutOfRange": "Тайм-аут должен быть целым числом от 5 до 120 минут."
   },
   "common": {
+    "completed": "Завершено",
+    "timedOut": "Время истекло",
     "loading": "Загрузка...",
     "save": "Сохранить",
     "cancel": "Отмена",
@@ -1230,6 +1315,7 @@
     "supportedFormats": "Поддерживаемые форматы: Excel, CSV, изображение, PDF"
   },
   "platform": {
+    "title": "Платформа",
     "totalUsers": "Зарегистрированные пользователи",
     "activeUsers7d": "Активные (7 дней)",
     "totalSpaces": "Пространства",
@@ -1365,6 +1451,16 @@
     }
   },
   "billing": {
+    "memberLimitLabel": "Лимит участников",
+    "memberLimitValue": "До {count} участников",
+    "memberLimitBadge": "До {count} участников",
+    "unlimited": "Без ограничений",
+    "cancelConfirm": {
+      "title": "Вы уверены, что хотите отменить подписку?",
+      "description": "Подписка останется активной до конца текущего оплаченного периода. После этого пространство будет ограничено.",
+      "confirm": "Да, отменить подписку",
+      "keepSubscription": "Оставить подписку"
+    },
     "title": "Подписка",
     "loading": "Загрузка...",
     "successTitle": "Оплата прошла успешно!",
@@ -1438,6 +1534,22 @@
     "maxReached": "Нельзя добавить более {max} причин"
   },
   "homeLeave": {
+    "deactivationDialog": {
+      "title": "Отключить экстренную заморозку",
+      "description": "Экстренная заморозка будет снята, и обычное планирование возобновится.",
+      "loadingCounts": "Загрузка сводки изменений...",
+      "changesTitle": "Изменения во время заморозки",
+      "overrides": "Переопределения",
+      "manualAssignments": "Ручные назначения",
+      "swaps": "Обмены",
+      "noChanges": "Во время заморозки изменений расписания не было.",
+      "fetchError": "Не удалось загрузить сводку изменений. Можно отключить заморозку без отмены изменений.",
+      "discardLabel": "Отменить изменения периода заморозки",
+      "discardHint": "Вернуть все изменения расписания, сделанные во время заморозки, создав новый черновик из состояния до заморозки.",
+      "discardUnavailable": "Невозможно определить изменения - отмена недоступна.",
+      "confirm": "Подтвердить отключение",
+      "cancel": "Отмена"
+    },
     "previewLoadFailed": "Не удалось загрузить предварительный просмотр",
     "modeSelector": {
       "groupLabel": "Выбор режима домашнего отпуска",
@@ -1502,6 +1614,35 @@
     }
   },
   "sandbox": {
+    "settings": {
+      "title": "Настройки",
+      "modified": "изменено",
+      "minRestHours": "Минимум часов отдыха",
+      "minRestHoursDesc": "Минимальное время отдыха между сменами (0-24 часа).",
+      "hours": "часов",
+      "minRestZeroWarning": "Внимание: отсутствие отдыха между сменами может привести к усталости.",
+      "baseline": "Исходное значение",
+      "resetToBaseline": "Вернуть исходное",
+      "homeLeaveTitle": "Параметры домашнего отпуска",
+      "homeLeaveDesc": "Настройте параметры планирования домашнего отпуска для этой группы.",
+      "eligibilityThreshold": "Порог права на отпуск",
+      "eligibilityThresholdHint": "Сколько часов нужно быть на базе до права на отпуск.",
+      "leaveDuration": "Длительность отпуска",
+      "leaveDurationHint": "Длительность каждого отпуска в часах.",
+      "leaveCapacity": "Вместимость отпусков",
+      "leaveCapacityHint": "Максимум людей в отпуске одновременно.",
+      "balanceValue": "Значение баланса",
+      "balanceValueHint": "Баланс между временем на базе и дома (0-100).",
+      "minPeopleAtBase": "Минимум людей на базе",
+      "minPeopleAtBaseDesc": "Минимальное число людей, которые должны оставаться на базе.",
+      "people": "людей",
+      "qualificationsTitle": "Требования к квалификациям",
+      "qualificationsDesc": "Измените требования к квалификациям для слотов задач.",
+      "noQualifications": "Нет задач с требованиями к квалификациям.",
+      "qualifications": "квалиф.",
+      "mandatory": "Обязательно",
+      "optional": "Необязательно"
+    },
     "title": "Песочница симуляции",
     "sandboxBadge": "Песочница",
     "tabs": {
@@ -1716,6 +1857,240 @@
     "save": "Сохранить",
     "saved": "Сохранено",
     "saveError": "Не удалось сохранить настройки."
+  },
+  "activityPrompt": {
+    "title": "Вы ещё активны?",
+    "description": "Сеанс истечёт из-за бездействия. Выберите, продолжить или выйти.",
+    "yes": "Да",
+    "no": "Нет"
+  },
+  "selfService": {
+    "modeSelector": {
+      "title": "Выберите режим планирования",
+      "autoTitle": "Автоматическое планирование",
+      "autoDescription": "Система будет автоматически создавать расписание с учетом ограничений и предпочтений. Подходит группам, где решение должен принимать Shifter.",
+      "selfServiceTitle": "Выбор смен",
+      "selfServiceDescription": "Участники группы сами выбирают смены из доступных вариантов. Подходит группам с гибким распределением смен.",
+      "permanentWarning": "Важно: режим планирования выбирается навсегда и не может быть изменен после создания группы."
+    },
+    "confirmDialog": {
+      "title": "Подтвердите режим планирования",
+      "message": "Выбранный режим планирования нельзя будет изменить после создания группы. Продолжить?",
+      "confirm": "Подтвердить и продолжить",
+      "cancel": "Назад"
+    },
+    "tabs": {
+      "availableSlots": "Доступные смены",
+      "myShifts": "Мои смены",
+      "waitlist": "Лист ожидания",
+      "swaps": "Обмены",
+      "shiftTemplates": "Шаблоны смен",
+      "selfServiceConfig": "Настройки выбора",
+      "adminOverrides": "Назначения администратора"
+    },
+    "slotBrowser": {
+      "title": "Доступные смены",
+      "requestButton": "Запросить смену",
+      "joinWaitlistButton": "Встать в лист ожидания",
+      "requesting": "Отправка...",
+      "windowClosed": "Окно запросов сейчас закрыто",
+      "windowOpensAt": "Окно запросов откроется {date}",
+      "windowClosesAt": "Окно запросов закроется {date}",
+      "capacity": "{current}/{total}",
+      "highAvailability": "Много мест",
+      "nearlyFull": "Почти заполнено",
+      "full": "Заполнено",
+      "dateFilter": "Фильтр по дате",
+      "allDates": "Все даты",
+      "noSlots": "Нет доступных смен",
+      "alternativeSlots": "Другие варианты:",
+      "requestSuccess": "Запрос успешно отправлен",
+      "waitlistSuccess": "Вы добавлены в лист ожидания на позицию {position}",
+      "dayNames": ["Воскресенье", "Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота"]
+    },
+    "myShifts": {
+      "title": "Мои смены",
+      "approved": "Одобрено",
+      "pending": "Ожидает",
+      "cancelled": "Отменено",
+      "rejected": "Отклонено",
+      "cancelButton": "Отменить смену",
+      "cancelling": "Отмена...",
+      "cancelDialogTitle": "Отменить смену",
+      "cancelDialogMessage": "Укажите причину отмены (1-500 символов):",
+      "cancelReasonPlaceholder": "Причина отмены...",
+      "cancelConfirm": "Подтвердить отмену",
+      "cancelDismiss": "Назад",
+      "shiftCount": "{current} / {max} смен в этом цикле",
+      "underScheduled": "⚠ У вас меньше смен, чем требуется минимумом ({min})",
+      "cancelWindowClosed": "Окно отмены закрыто",
+      "noShifts": "Нет смен в текущем цикле",
+      "adminOverride": "Назначено администратором",
+      "specialLeaveTitle": "Нужен отгул?",
+      "specialLeaveDescription": "Отправьте запрос администраторам. Если его одобрят, Shifter будет считать вас недоступным в это время.",
+      "specialLeaveStart": "С",
+      "specialLeaveEnd": "До",
+      "specialLeaveReason": "Причина",
+      "specialLeaveReasonPlaceholder": "Семейное событие, прием, праздник...",
+      "specialLeaveSubmit": "Отправить запрос",
+      "specialLeaveSubmitting": "Отправка...",
+      "specialLeaveSubmitted": "Запрос отправлен администраторам",
+      "specialLeaveCancelled": "Запрос отменен",
+      "specialLeaveCancel": "Отменить запрос",
+      "specialLeaveDateRequired": "Выберите время начала и окончания",
+      "specialLeaveInvalidRange": "Время окончания должно быть позже времени начала",
+      "specialLeaveReasonRequired": "Укажите короткую причину",
+      "specialLeaveReasonTooLong": "Причина должна быть не длиннее 500 символов"
+    },
+    "waitlist": {
+      "title": "Лист ожидания",
+      "position": "Позиция: {position}",
+      "statusWaiting": "Ожидание",
+      "statusOffered": "Предложено",
+      "statusAccepted": "Принято",
+      "statusExpired": "Истекло",
+      "statusDeclined": "Отклонено",
+      "statusRemoved": "Удалено",
+      "acceptButton": "Принять предложение",
+      "declineButton": "Отклонить предложение",
+      "leaveButton": "Выйти из листа ожидания",
+      "accepting": "Принятие...",
+      "declining": "Отклонение...",
+      "leaving": "Выход...",
+      "leaveConfirmTitle": "Выйти из листа ожидания",
+      "leaveConfirmMessage": "Вы уверены, что хотите выйти из листа ожидания?",
+      "leaveConfirmYes": "Да, выйти",
+      "leaveConfirmNo": "Отмена",
+      "countdown": "Осталось {time}",
+      "offerExpires": "Предложение истекает через {time}",
+      "noEntries": "Нет записей в листе ожидания",
+      "maxShiftsReached": "Вы достигли максимального числа смен. Предложение передано следующему участнику."
+    },
+    "swaps": {
+      "title": "Обмен сменами",
+      "proposeButton": "Предложить обмен",
+      "acceptButton": "Принять",
+      "declineButton": "Отклонить",
+      "cancelButton": "Отмена",
+      "proposing": "Отправка...",
+      "accepting": "Принятие...",
+      "declining": "Отклонение...",
+      "cancelling": "Отмена...",
+      "statusPending": "Ожидает",
+      "statusAccepted": "Принято",
+      "statusDeclined": "Отклонено",
+      "statusCancelled": "Отменено",
+      "statusExpired": "Истекло",
+      "countdown": "Осталось {time}",
+      "offeredShift": "Предлагаемая смена",
+      "requestedShift": "Запрошенная смена",
+      "selectYourShift": "Выберите свою смену для обмена",
+      "selectTargetShift": "Выберите смену другого участника",
+      "noSwaps": "Нет обменов",
+      "incoming": "Входящие",
+      "outgoing": "Исходящие",
+      "conflictError": "Конфликт времени между сменами: {details}",
+      "duplicateError": "Для этих смен уже есть ожидающий запрос на обмен",
+      "invalidOwnership": "Вы не являетесь владельцем выбранной смены"
+    },
+    "templates": {
+      "title": "Шаблоны смен",
+      "createButton": "Создать шаблон",
+      "editButton": "Изменить",
+      "deleteButton": "Удалить",
+      "creating": "Создание...",
+      "saving": "Сохранение...",
+      "deleting": "Удаление...",
+      "deleteConfirmTitle": "Удалить шаблон",
+      "deleteConfirmMessage": "Вы уверены, что хотите удалить этот шаблон?",
+      "deleteConfirmYes": "Да, удалить",
+      "deleteConfirmNo": "Отмена",
+      "noTemplates": "Нет шаблонов смен",
+      "form": {
+        "dayOfWeek": "День недели",
+        "startTime": "Время начала",
+        "endTime": "Время окончания",
+        "requiredHeadcount": "Требуемое количество",
+        "task": "Задача",
+        "selectDay": "Выберите день...",
+        "selectTask": "Выберите задачу...",
+        "submit": "Сохранить",
+        "cancel": "Отмена"
+      },
+      "days": {
+        "sunday": "Воскресенье",
+        "monday": "Понедельник",
+        "tuesday": "Вторник",
+        "wednesday": "Среда",
+        "thursday": "Четверг",
+        "friday": "Пятница",
+        "saturday": "Суббота"
+      },
+      "validation": {
+        "startAfterEnd": "Время начала должно быть раньше времени окончания",
+        "headcountRange": "Требуемое количество должно быть от 1 до 999"
+      }
+    },
+    "config": {
+      "title": "Настройки самостоятельного выбора",
+      "minShiftsPerCycle": "Минимум смен за цикл",
+      "maxShiftsPerCycle": "Максимум смен за цикл",
+      "requestWindowOpenOffsetHours": "Открытие окна запросов (часов до смены)",
+      "requestWindowCloseOffsetHours": "Закрытие окна запросов (часов до смены)",
+      "cancellationCutoffHours": "Крайний срок отмены (часов до смены)",
+      "waitlistOfferMinutes": "Время действия предложения из листа ожидания (минуты)",
+      "cycleDurationDays": "Длительность цикла (дни)",
+      "save": "Сохранить настройки",
+      "saving": "Сохранение...",
+      "saved": "Настройки сохранены",
+      "validation": {
+        "minGreaterThanMax": "Минимум смен должен быть меньше или равен максимуму",
+        "minShiftsRange": "Минимум смен должен быть от 0 до 100",
+        "maxShiftsRange": "Максимум смен должен быть от 1 до 100",
+        "offsetRange": "Значение должно быть от 1 до 720 часов",
+        "waitlistOfferRange": "Время предложения должно быть от 1 до 1440 минут",
+        "cycleDurationRange": "Длительность цикла должна быть от 1 до 365 дней"
+      }
+    },
+    "adminOverrides": {
+      "title": "Назначения администратора",
+      "assignButton": "Назначить участника",
+      "removeButton": "Удалить",
+      "assigning": "Назначение...",
+      "removing": "Удаление...",
+      "assignConfirmTitle": "Назначить участника",
+      "assignConfirmMessage": "Назначить {name} на эту смену?",
+      "removeConfirmTitle": "Удалить участника",
+      "removeConfirmMessage": "Удалить {name} из этой смены?",
+      "confirmYes": "Подтвердить",
+      "confirmNo": "Отмена",
+      "selectMember": "Выберите участника...",
+      "noPermission": "У вас нет разрешения на ручные назначения. Требуется право публикации расписания.",
+      "noMembers": "Нет участников для назначения",
+      "alreadyAssigned": "Участник уже назначен на эту смену",
+      "notAssigned": "Участник не назначен на эту смену",
+      "memberNotInGroup": "Участник не состоит в этой группе"
+    },
+    "errors": {
+      "generic": "Произошла ошибка. Попробуйте еще раз.",
+      "requestRejected": "Запрос отклонен",
+      "slotFull": "Смена заполнена",
+      "maxShiftsReached": "Вы достигли максимального числа смен в этом цикле",
+      "waitlistRejected": "Не удалось присоединиться к листу ожидания",
+      "cancellationWindowClosed": "Окно отмены закрыто. Отмена невозможна.",
+      "swapConflict": "Конфликт времени между сменами",
+      "swapDuplicate": "Уже есть ожидающий запрос на обмен",
+      "swapInvalidOwnership": "Вы не являетесь владельцем этой смены",
+      "permissionDenied": "У вас нет разрешения выполнить это действие",
+      "notFound": "Элемент не найден",
+      "networkError": "Ошибка сети. Проверьте подключение и попробуйте снова.",
+      "cancellationReasonRequired": "Причина отмены обязательна",
+      "cancellationReasonTooLong": "Причина отмены должна быть не длиннее 500 символов",
+      "invalidTimeRange": "Время начала должно быть раньше времени окончания"
+    },
+    "loading": "Загрузка...",
+    "error": "Ошибка загрузки данных",
+    "retry": "Повторить"
   },
   "pick": {
     "title": "Выбор смен",
