@@ -95,8 +95,21 @@ public class SpecialLeaveRequestsController : ControllerBase
     public async Task<IActionResult> Approve(Guid spaceId, Guid requestId, [FromBody] ReviewSpecialLeaveRequest req, CancellationToken ct)
     {
         await _permissions.RequirePermissionAsync(CurrentUserId, spaceId, Permissions.PeopleManage, ct);
-        var result = await _mediator.Send(new ApproveSpecialLeaveRequestCommand(
-            spaceId, requestId, CurrentUserId, req.AdminNote, req.ReasonId), ct);
+        ApproveSpecialLeaveRequestResult result;
+        try
+        {
+            result = await _mediator.Send(new ApproveSpecialLeaveRequestCommand(
+                spaceId, requestId, CurrentUserId, req.AdminNote, req.ReasonId), ct);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return ProblemDetailsResults.Problem(
+                HttpContext,
+                statusCode: 422,
+                title: "Unprocessable Entity",
+                detail: ex.Message,
+                typeSlug: "special-leave-approval-blocked");
+        }
 
         return Ok(new
         {

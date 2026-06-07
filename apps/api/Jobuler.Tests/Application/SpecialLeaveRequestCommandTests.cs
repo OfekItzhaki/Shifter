@@ -2,6 +2,7 @@ using FluentAssertions;
 using Jobuler.Application.Common;
 using Jobuler.Application.People.SpecialLeave;
 using Jobuler.Application.Scheduling;
+using Jobuler.Application.Scheduling.Models;
 using Jobuler.Domain.Groups;
 using Jobuler.Domain.People;
 using Jobuler.Domain.Scheduling;
@@ -65,9 +66,11 @@ public class SpecialLeaveRequestCommandTests
         var cache = Substitute.For<ICacheService>();
         var audit = Substitute.For<IAuditLogger>();
         var queue = Substitute.For<ISolverJobQueue>();
+        var normalizer = Substitute.For<ISolverPayloadNormalizer>();
+        var solver = Substitute.For<ISolverClient>();
         queue.EnqueueAsync(Arg.Any<SolverJobMessage>(), Arg.Any<CancellationToken>())
             .Returns(Task.CompletedTask);
-        var handler = new ApproveSpecialLeaveRequestCommandHandler(db, cumulative, cache, audit, queue);
+        var handler = new ApproveSpecialLeaveRequestCommandHandler(db, cumulative, cache, audit, queue, normalizer, solver);
 
         var result = await handler.Handle(new ApproveSpecialLeaveRequestCommand(
             spaceId, request.Id, adminId, "approved"), CancellationToken.None);
@@ -126,14 +129,37 @@ public class SpecialLeaveRequestCommandTests
         await db.SaveChangesAsync();
 
         var queue = Substitute.For<ISolverJobQueue>();
+        var normalizer = Substitute.For<ISolverPayloadNormalizer>();
+        var solver = Substitute.For<ISolverClient>();
         queue.EnqueueAsync(Arg.Any<SolverJobMessage>(), Arg.Any<CancellationToken>())
             .Returns(Task.CompletedTask);
+        normalizer.BuildAsync(
+                spaceId,
+                Arg.Any<Guid>(),
+                "preview",
+                published.Id,
+                group.Id,
+                request.StartsAt.Date,
+                Arg.Any<CancellationToken>())
+            .Returns(CreateSolverInput(spaceId, group.Id, person.Id, assignedSlotId, taskStart.AddHours(8), taskStart.AddHours(12)));
+        solver.SolveAsync(Arg.Any<SolverInputDto>(), Arg.Any<CancellationToken>())
+            .Returns(new SolverOutputDto
+            {
+                Feasible = true,
+                Assignments =
+                [
+                    new AssignmentResultDto { SlotId = assignedSlotId.ToString(), PersonId = Guid.NewGuid().ToString() }
+                ],
+                UncoveredSlotIds = []
+            });
         var handler = new ApproveSpecialLeaveRequestCommandHandler(
             db,
             Substitute.For<ICumulativeTracker>(),
             Substitute.For<ICacheService>(),
             Substitute.For<IAuditLogger>(),
-            queue);
+            queue,
+            normalizer,
+            solver);
 
         var result = await handler.Handle(new ApproveSpecialLeaveRequestCommand(
             spaceId, request.Id, adminId, "approved"), CancellationToken.None);
@@ -154,6 +180,94 @@ public class SpecialLeaveRequestCommandTests
                 && job.GroupId == group.Id
                 && job.StartTime == request.StartsAt.Date),
             Arg.Any<CancellationToken>());
+        await solver.Received(1).SolveAsync(
+            Arg.Is<SolverInputDto>(payload =>
+                payload.PreviewMode
+                && payload.PresenceWindows.Any(p =>
+                    p.PersonId == person.Id.ToString()
+                    && p.State == "at_home"
+                    && p.StartsAt == request.StartsAt.ToString("o")
+                    && p.EndsAt == request.EndsAt.ToString("o"))),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Approve_WhenReplacementLeavesAffectedShiftUncovered_BlocksApproval()
+    {
+        await using var db = CreateDb();
+        var spaceId = Guid.NewGuid();
+        var userId = Guid.NewGuid();
+        var adminId = Guid.NewGuid();
+        var group = Group.Create(spaceId, null, "Platoon", createdByUserId: adminId);
+        var person = Person.Create(spaceId, "Ofek", linkedUserId: userId);
+        var taskStart = new DateTime(2026, 6, 10, 0, 0, 0, DateTimeKind.Utc);
+        var task = GroupTask.Create(
+            spaceId,
+            group.Id,
+            "Guard",
+            taskStart,
+            taskStart.AddDays(1),
+            shiftDurationMinutes: 240,
+            requiredHeadcount: 1,
+            TaskBurdenLevel.Normal,
+            allowsDoubleShift: false,
+            allowsOverlap: false,
+            createdByUserId: adminId);
+        var published = ScheduleVersion.CreateDraft(spaceId, 1, null, null, adminId);
+        published.Publish(adminId);
+        var assignedSlotId = DeriveShiftGuid(task.Id, 2);
+        var request = SpecialLeaveRequest.Create(
+            spaceId, person.Id, taskStart.AddHours(9), taskStart.AddHours(11), "Family event", userId);
+
+        db.Groups.Add(group);
+        db.People.Add(person);
+        db.GroupTasks.Add(task);
+        db.ScheduleVersions.Add(published);
+        db.Assignments.Add(Assignment.Create(spaceId, published.Id, assignedSlotId, person.Id));
+        db.SpecialLeaveRequests.Add(request);
+        await db.SaveChangesAsync();
+
+        var normalizer = Substitute.For<ISolverPayloadNormalizer>();
+        normalizer.BuildAsync(
+                spaceId,
+                Arg.Any<Guid>(),
+                "preview",
+                published.Id,
+                group.Id,
+                request.StartsAt.Date,
+                Arg.Any<CancellationToken>())
+            .Returns(CreateSolverInput(spaceId, group.Id, person.Id, assignedSlotId, taskStart.AddHours(8), taskStart.AddHours(12)));
+
+        var solver = Substitute.For<ISolverClient>();
+        solver.SolveAsync(Arg.Any<SolverInputDto>(), Arg.Any<CancellationToken>())
+            .Returns(new SolverOutputDto
+            {
+                Feasible = true,
+                Assignments = [],
+                UncoveredSlotIds = [assignedSlotId.ToString()]
+            });
+
+        var queue = Substitute.For<ISolverJobQueue>();
+        var handler = new ApproveSpecialLeaveRequestCommandHandler(
+            db,
+            Substitute.For<ICumulativeTracker>(),
+            Substitute.For<ICacheService>(),
+            Substitute.For<IAuditLogger>(),
+            queue,
+            normalizer,
+            solver);
+
+        var act = () => handler.Handle(new ApproveSpecialLeaveRequestCommand(
+            spaceId, request.Id, adminId, "approved"), CancellationToken.None);
+
+        await act.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("Cannot approve this leave request because Shifter cannot cover the member's affected shifts while preserving constraints.");
+
+        (await db.PresenceWindows.CountAsync()).Should().Be(0);
+        (await db.ScheduleRuns.CountAsync()).Should().Be(0);
+        var unchangedRequest = await db.SpecialLeaveRequests.SingleAsync(r => r.Id == request.Id);
+        unchangedRequest.Status.Should().Be(SpecialLeaveRequestStatus.Pending);
+        await queue.DidNotReceive().EnqueueAsync(Arg.Any<SolverJobMessage>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -193,6 +307,8 @@ public class SpecialLeaveRequestCommandTests
         await db.SaveChangesAsync();
 
         var queue = Substitute.For<ISolverJobQueue>();
+        var normalizer = Substitute.For<ISolverPayloadNormalizer>();
+        var solver = Substitute.For<ISolverClient>();
         queue.EnqueueAsync(Arg.Any<SolverJobMessage>(), Arg.Any<CancellationToken>())
             .Returns(Task.CompletedTask);
         var handler = new ApproveSpecialLeaveRequestCommandHandler(
@@ -200,7 +316,9 @@ public class SpecialLeaveRequestCommandTests
             Substitute.For<ICumulativeTracker>(),
             Substitute.For<ICacheService>(),
             Substitute.For<IAuditLogger>(),
-            queue);
+            queue,
+            normalizer,
+            solver);
 
         await handler.Handle(new ApproveSpecialLeaveRequestCommand(
             spaceId, request.Id, adminId, "approved"), CancellationToken.None);
@@ -268,4 +386,50 @@ public class SpecialLeaveRequestCommandTests
             bytes[12 + i] ^= indexBytes[i];
         return new Guid(bytes);
     }
+
+    private static SolverInputDto CreateSolverInput(
+        Guid spaceId,
+        Guid groupId,
+        Guid personId,
+        Guid slotId,
+        DateTime slotStartsAt,
+        DateTime slotEndsAt) =>
+        new(
+            SpaceId: spaceId.ToString(),
+            RunId: Guid.NewGuid().ToString(),
+            TriggerMode: "preview",
+            HorizonStart: slotStartsAt.Date.ToString("yyyy-MM-dd"),
+            HorizonEnd: slotStartsAt.Date.AddDays(7).ToString("yyyy-MM-dd"),
+            Locale: "en",
+            StabilityWeights: new StabilityWeightsDto(1, 1, 1),
+            People:
+            [
+                new PersonEligibilityDto(
+                    personId.ToString(),
+                    RoleIds: [],
+                    QualificationIds: [],
+                    GroupIds: [groupId.ToString()])
+            ],
+            AvailabilityWindows: [],
+            PresenceWindows: [],
+            TaskSlots:
+            [
+                new TaskSlotDto(
+                    slotId.ToString(),
+                    "task-type",
+                    "Guard",
+                    "neutral",
+                    slotStartsAt.ToString("o"),
+                    slotEndsAt.ToString("o"),
+                    RequiredHeadcount: 1,
+                    Priority: 5,
+                    RequiredRoleIds: [],
+                    RequiredQualificationIds: [],
+                    AllowsOverlap: false)
+            ],
+            HardConstraints: [],
+            SoftConstraints: [],
+            EmergencyConstraints: [],
+            BaselineAssignments: [],
+            FairnessCounters: []);
 }

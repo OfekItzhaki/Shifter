@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Jobuler.Application.Common;
 using Jobuler.Application.Scheduling;
+using Jobuler.Application.Scheduling.Models;
 using Jobuler.Domain.People;
 using Jobuler.Domain.Scheduling;
 using Jobuler.Domain.Tasks;
@@ -74,19 +75,25 @@ public class ApproveSpecialLeaveRequestCommandHandler
     private readonly ICacheService _cache;
     private readonly IAuditLogger _audit;
     private readonly ISolverJobQueue _solverQueue;
+    private readonly ISolverPayloadNormalizer _normalizer;
+    private readonly ISolverClient _solverClient;
 
     public ApproveSpecialLeaveRequestCommandHandler(
         AppDbContext db,
         ICumulativeTracker cumulativeTracker,
         ICacheService cache,
         IAuditLogger audit,
-        ISolverJobQueue solverQueue)
+        ISolverJobQueue solverQueue,
+        ISolverPayloadNormalizer normalizer,
+        ISolverClient solverClient)
     {
         _db = db;
         _cumulativeTracker = cumulativeTracker;
         _cache = cache;
         _audit = audit;
         _solverQueue = solverQueue;
+        _normalizer = normalizer;
+        _solverClient = solverClient;
     }
 
     public async Task<ApproveSpecialLeaveRequestResult> Handle(
@@ -96,6 +103,26 @@ public class ApproveSpecialLeaveRequestCommandHandler
         var request = await _db.SpecialLeaveRequests
             .FirstOrDefaultAsync(r => r.Id == req.RequestId && r.SpaceId == req.SpaceId, ct)
             ?? throw new KeyNotFoundException("Special leave request not found.");
+
+        var publishedVersion = await GetLatestPublishedVersionAsync(req.SpaceId, ct);
+        var affectedSlotsByGroup = publishedVersion is null
+            ? []
+            : await FindAffectedSlotsByGroupAsync(
+                publishedVersion.Id,
+                req.SpaceId,
+                request.PersonId,
+                request.StartsAt,
+                request.EndsAt,
+                ct);
+
+        if (publishedVersion is not null && affectedSlotsByGroup.Count > 0)
+        {
+            await EnsureApprovalIsSchedulableAsync(
+                request,
+                publishedVersion.Id,
+                affectedSlotsByGroup,
+                ct);
+        }
 
         var presence = PresenceWindow.CreateManual(
             req.SpaceId,
@@ -113,7 +140,14 @@ public class ApproveSpecialLeaveRequestCommandHandler
         await _cumulativeTracker.RecomputeForPersonAsync(req.SpaceId, request.PersonId, ct);
         await _cache.RemoveByPatternAsync($"status:{req.SpaceId}:*", ct);
 
-        var regenerationRunIds = await QueueMinimalRegenerationsAsync(request, req.ProcessedByUserId, ct);
+        var regenerationRunIds = publishedVersion is null
+            ? []
+            : await QueueMinimalRegenerationsAsync(
+                request,
+                req.ProcessedByUserId,
+                publishedVersion.Id,
+                affectedSlotsByGroup.Keys.ToHashSet(),
+                ct);
 
         await _audit.LogAsync(
             req.SpaceId,
@@ -138,24 +172,10 @@ public class ApproveSpecialLeaveRequestCommandHandler
     private async Task<List<Guid>> QueueMinimalRegenerationsAsync(
         SpecialLeaveRequest request,
         Guid processedByUserId,
+        Guid publishedVersionId,
+        HashSet<Guid> affectedGroupIds,
         CancellationToken ct)
     {
-        var publishedVersion = await _db.ScheduleVersions.AsNoTracking()
-            .Where(v => v.SpaceId == request.SpaceId && v.Status == ScheduleVersionStatus.Published)
-            .OrderByDescending(v => v.VersionNumber)
-            .FirstOrDefaultAsync(ct);
-
-        if (publishedVersion is null)
-            return [];
-
-        var affectedGroupIds = await FindAffectedGroupIdsAsync(
-            publishedVersion.Id,
-            request.SpaceId,
-            request.PersonId,
-            request.StartsAt,
-            request.EndsAt,
-            ct);
-
         if (affectedGroupIds.Count == 0)
             return [];
 
@@ -176,7 +196,7 @@ public class ApproveSpecialLeaveRequestCommandHandler
             var run = ScheduleRun.Create(
                 request.SpaceId,
                 ScheduleRunTrigger.Regeneration,
-                publishedVersion.Id,
+                publishedVersionId,
                 processedByUserId,
                 groupId);
 
@@ -189,7 +209,7 @@ public class ApproveSpecialLeaveRequestCommandHandler
                     run.Id,
                     request.SpaceId,
                     "regeneration",
-                    publishedVersion.Id,
+                    publishedVersionId,
                     processedByUserId,
                     groupId,
                     regenerationStart), ct);
@@ -206,7 +226,67 @@ public class ApproveSpecialLeaveRequestCommandHandler
         return regenerationRunIds;
     }
 
-    private async Task<HashSet<Guid>> FindAffectedGroupIdsAsync(
+    private async Task<ScheduleVersion?> GetLatestPublishedVersionAsync(Guid spaceId, CancellationToken ct) =>
+        await _db.ScheduleVersions.AsNoTracking()
+            .Where(v => v.SpaceId == spaceId && v.Status == ScheduleVersionStatus.Published)
+            .OrderByDescending(v => v.VersionNumber)
+            .FirstOrDefaultAsync(ct);
+
+    private async Task EnsureApprovalIsSchedulableAsync(
+        SpecialLeaveRequest request,
+        Guid publishedVersionId,
+        Dictionary<Guid, HashSet<Guid>> affectedSlotsByGroup,
+        CancellationToken ct)
+    {
+        foreach (var (groupId, affectedSlotIds) in affectedSlotsByGroup)
+        {
+            var payload = await _normalizer.BuildAsync(
+                request.SpaceId,
+                Guid.NewGuid(),
+                "preview",
+                publishedVersionId,
+                groupId,
+                DateTime.SpecifyKind(request.StartsAt.Date, DateTimeKind.Utc),
+                ct);
+
+            var presenceWindows = payload.PresenceWindows
+                .Append(new PresenceWindowDto(
+                    request.PersonId.ToString(),
+                    "at_home",
+                    request.StartsAt.ToString("o"),
+                    request.EndsAt.ToString("o")))
+                .ToList();
+
+            var previewPayload = payload with
+            {
+                PresenceWindows = presenceWindows,
+                PreviewMode = true
+            };
+
+            SolverOutputDto result;
+            try
+            {
+                result = await _solverClient.SolveAsync(previewPayload, ct);
+            }
+            catch (Exception ex) when (ex is HttpRequestException or TimeoutException or OperationCanceledException)
+            {
+                throw new InvalidOperationException("Cannot approve this leave request because Shifter could not verify the replacement schedule.", ex);
+            }
+
+            if (!result.Feasible)
+                throw new InvalidOperationException("Cannot approve this leave request because Shifter cannot preserve the schedule constraints.");
+
+            var uncovered = result.UncoveredSlotIds
+                .Select(id => Guid.TryParse(id, out var parsed) ? parsed : Guid.Empty)
+                .Where(id => id != Guid.Empty)
+                .ToHashSet();
+
+            if (affectedSlotIds.Any(uncovered.Contains))
+                throw new InvalidOperationException("Cannot approve this leave request because Shifter cannot cover the member's affected shifts while preserving constraints.");
+        }
+    }
+
+    private async Task<Dictionary<Guid, HashSet<Guid>>> FindAffectedSlotsByGroupAsync(
         Guid publishedVersionId,
         Guid spaceId,
         Guid personId,
@@ -224,7 +304,7 @@ public class ApproveSpecialLeaveRequestCommandHandler
         if (assignedSlotIds.Count == 0)
             return [];
 
-        var affectedGroups = new HashSet<Guid>();
+        var affectedSlotsByGroup = new Dictionary<Guid, HashSet<Guid>>();
 
         var groupTasks = await _db.GroupTasks.AsNoTracking()
             .Where(t => t.SpaceId == spaceId
@@ -257,8 +337,13 @@ public class ApproveSpecialLeaveRequestCommandHandler
                     && shiftStart < leaveEndsAt
                     && shiftEnd > leaveStartsAt)
                 {
-                    affectedGroups.Add(task.GroupId);
-                    break;
+                    if (!affectedSlotsByGroup.TryGetValue(task.GroupId, out var slotIds))
+                    {
+                        slotIds = [];
+                        affectedSlotsByGroup[task.GroupId] = slotIds;
+                    }
+
+                    slotIds.Add(shiftId);
                 }
 
                 shiftStart = shiftEnd;
@@ -266,7 +351,7 @@ public class ApproveSpecialLeaveRequestCommandHandler
             }
         }
 
-        return affectedGroups;
+        return affectedSlotsByGroup;
     }
 
     private static string BuildPresenceNote(SpecialLeaveRequest request, string? adminNote)
