@@ -11,6 +11,12 @@ const PUBLIC_PATHS = [
   "/billing",
   "/invitations",
   "/group-opt-out",
+  "/terms",
+  "/privacy",
+  "/security",
+  "/privacy-requests",
+  "/dpa",
+  "/subprocessors",
   "/error",
 ];
 
