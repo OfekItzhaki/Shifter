@@ -28,6 +28,7 @@ from solver.home_leave import (
     add_home_leave_constraints,
     add_home_leave_eligibility_preference,
     add_home_leave_fairness_objective,
+    add_home_leave_special_day_preference,
 )
 from solver.objectives import build_objective
 from solver.i18n import t
@@ -63,20 +64,14 @@ def _resolve_min_rest_hours_closed_base(
     Returns the resolved min_rest_hours (>= 0).
     """
     if config_value > 0:
-        config_value = max(config_value, _CLOSED_BASE_MIN_REST_FLOOR)
-        if config_value == 0:
-            logger.info(
-                "[run=%s] min_rest_hours = 0 (admin explicitly disabled rest enforcement).",
-                run_id,
-            )
-        else:
-            logger.info(
-                "[run=%s] min_rest_hours resolved to %.1fh (source: group config).",
-                run_id, config_value,
-            )
-        return config_value
+        resolved = max(config_value, _CLOSED_BASE_MIN_REST_FLOOR)
+        logger.info(
+            "[run=%s] min_rest_hours resolved to %.1fh (source: group config %.1fh).",
+            run_id, resolved, config_value,
+        )
+        return resolved
 
-    # Safety net: config_value < 0 means not set — fall back with 8h floor
+    # config_value <= 0 means not set; fall back with the 8h floor.
     if hard_constraint_value is not None:
         resolved = max(hard_constraint_value, _CLOSED_BASE_MIN_REST_FLOOR)
         logger.warning(
@@ -270,6 +265,14 @@ def solve(input: SolverInput) -> SolverOutput:
             horizon_end_ts=horizon_end_ts,
         )
         penalties.extend(fairness_penalties)
+
+        special_day_penalties = add_home_leave_special_day_preference(
+            home_leave_vars=home_leave_vars,
+            config=home_leave_cfg,
+            horizon_start_ts=horizon_start_ts,
+            special_days=input.special_days,
+        )
+        penalties.extend(special_day_penalties)
 
     model.minimize(sum(penalties))
 
