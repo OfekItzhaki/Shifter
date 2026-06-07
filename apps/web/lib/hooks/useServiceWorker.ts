@@ -10,6 +10,24 @@ interface SWState {
   update: () => void;
 }
 
+function shouldUseServiceWorker(): boolean {
+  if (typeof window === "undefined") return false;
+  if (process.env.NODE_ENV !== "production") return false;
+
+  const hostname = window.location.hostname;
+  return hostname !== "localhost" && hostname !== "127.0.0.1" && hostname !== "::1";
+}
+
+async function clearLocalServiceWorkers(): Promise<void> {
+  const registrations = await navigator.serviceWorker.getRegistrations();
+  await Promise.all(registrations.map((registration) => registration.unregister()));
+
+  if ("caches" in window) {
+    const cacheNames = await caches.keys();
+    await Promise.all(cacheNames.map((cacheName) => caches.delete(cacheName)));
+  }
+}
+
 /**
  * Registers the service worker and tracks its state.
  * Call this once at the app root level.
@@ -24,6 +42,19 @@ export function useServiceWorker(): SWState {
 
   useEffect(() => {
     if (!isSupported) return;
+
+    if (!shouldUseServiceWorker()) {
+      clearLocalServiceWorkers()
+        .then(() => {
+          setRegistration(null);
+          setIsRegistered(false);
+          setUpdateAvailable(false);
+        })
+        .catch((err) => {
+          console.warn("SW cleanup failed:", err);
+        });
+      return;
+    }
 
     // Track online/offline status
     const handleOnline = () => setIsOffline(false);
