@@ -88,6 +88,48 @@ public class PresenceWindowConfiguration : IEntityTypeConfiguration<PresenceWind
     }
 }
 
+public class SpecialLeaveRequestConfiguration : IEntityTypeConfiguration<SpecialLeaveRequest>
+{
+    public void Configure(EntityTypeBuilder<SpecialLeaveRequest> builder)
+    {
+        builder.ToTable("special_leave_requests");
+        builder.HasKey(r => r.Id);
+        builder.Property(r => r.Id).HasColumnName("id");
+        builder.Property(r => r.SpaceId).HasColumnName("space_id");
+        builder.Property(r => r.PersonId).HasColumnName("person_id");
+        builder.Property(r => r.StartsAt).HasColumnName("starts_at");
+        builder.Property(r => r.EndsAt).HasColumnName("ends_at");
+        builder.Property(r => r.Reason).HasColumnName("reason").HasMaxLength(500).IsRequired();
+        builder.Property(r => r.Status).HasColumnName("status")
+            .HasConversion<string>()
+            .HasMaxLength(32)
+            .HasDefaultValue(SpecialLeaveRequestStatus.Pending);
+        builder.Property(r => r.RequestedByUserId).HasColumnName("requested_by_user_id");
+        builder.Property(r => r.ProcessedByUserId).HasColumnName("processed_by_user_id");
+        builder.Property(r => r.ProcessedAt).HasColumnName("processed_at");
+        builder.Property(r => r.AdminNote).HasColumnName("admin_note").HasMaxLength(500);
+        builder.Property(r => r.PresenceWindowId).HasColumnName("presence_window_id");
+        builder.Property(r => r.CreatedAt).HasColumnName("created_at");
+        builder.Property(r => r.UpdatedAt).HasColumnName("updated_at");
+
+        builder.HasOne<Person>()
+            .WithMany()
+            .HasForeignKey(r => r.PersonId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasOne<PresenceWindow>()
+            .WithMany()
+            .HasForeignKey(r => r.PresenceWindowId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        builder.HasIndex(r => new { r.SpaceId, r.Status, r.StartsAt })
+            .HasDatabaseName("idx_special_leave_requests_space_status_start");
+
+        builder.HasIndex(r => new { r.PersonId, r.Status, r.StartsAt })
+            .HasDatabaseName("idx_special_leave_requests_person_status_start");
+    }
+}
+
 public class PersonRestrictionConfiguration : IEntityTypeConfiguration<PersonRestriction>
 {
     public void Configure(EntityTypeBuilder<PersonRestriction> builder)

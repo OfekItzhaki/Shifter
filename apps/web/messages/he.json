@@ -340,7 +340,16 @@
       "bulkAddAll": "הוסף הכל",
       "bulkProgress": "מוסיף {current}/{total}...",
       "bulkSuccess": "נוספו {count} חברים בהצלחה",
-      "bulkErrors": "{count} שגיאות"
+      "bulkErrors": "{count} שגיאות",
+      "specialLeaveAdminTitle": "בקשות יציאה מיוחדות",
+      "specialLeaveAdminDescription": "אישור בקשה יסמן את החבר כלא זמין, כדי ש-Shifter לא ישבץ אותו בזמן הזה.",
+      "specialLeaveRefresh": "רענון",
+      "specialLeaveNoPending": "אין בקשות ממתינות",
+      "specialLeaveLoadError": "לא הצלחנו לטעון את הבקשות",
+      "specialLeaveActionError": "לא הצלחנו לעדכן את הבקשה",
+      "specialLeaveAdminNote": "הערת מנהל (לא חובה)",
+      "specialLeaveApprove": "אשר",
+      "specialLeaveReject": "דחה"
     },
     "qualifications_tab": {
       "title": "הכשרות",
@@ -1920,7 +1929,22 @@
       "underScheduled": "⚠ אתה מתחת למינימום המשמרות הנדרש ({min})",
       "cancelWindowClosed": "חלון הביטול נסגר",
       "noShifts": "אין משמרות במחזור הנוכחי",
-      "adminOverride": "שיבוץ מנהל"
+      "adminOverride": "שיבוץ מנהל",
+      "specialLeaveTitle": "צריך יציאה מיוחדת?",
+      "specialLeaveDescription": "שלח בקשה למנהלים. אם היא תאושר, Shifter יתייחס אליך כלא זמין בזמן הזה.",
+      "specialLeaveStart": "מ",
+      "specialLeaveEnd": "עד",
+      "specialLeaveReason": "סיבה",
+      "specialLeaveReasonPlaceholder": "אירוע משפחתי, תור, חג...",
+      "specialLeaveSubmit": "שלח בקשה",
+      "specialLeaveSubmitting": "שולח...",
+      "specialLeaveSubmitted": "הבקשה נשלחה למנהלים",
+      "specialLeaveCancelled": "הבקשה בוטלה",
+      "specialLeaveCancel": "בטל בקשה",
+      "specialLeaveDateRequired": "בחר זמן התחלה וסיום",
+      "specialLeaveInvalidRange": "זמן הסיום חייב להיות אחרי זמן ההתחלה",
+      "specialLeaveReasonRequired": "כתוב סיבה קצרה",
+      "specialLeaveReasonTooLong": "הסיבה חייבת להיות עד 500 תווים"
     },
     "waitlist": {
       "title": "רשימת המתנה",

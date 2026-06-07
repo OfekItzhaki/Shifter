@@ -337,7 +337,16 @@
       "bulkAddAll": "Add All",
       "bulkProgress": "Adding {current}/{total}...",
       "bulkSuccess": "{count} members added successfully",
-      "bulkErrors": "{count} errors"
+      "bulkErrors": "{count} errors",
+      "specialLeaveAdminTitle": "Time-off requests",
+      "specialLeaveAdminDescription": "Approving a request marks the member as unavailable so Shifter will not assign them during that time.",
+      "specialLeaveRefresh": "Refresh",
+      "specialLeaveNoPending": "No pending time-off requests",
+      "specialLeaveLoadError": "Could not load time-off requests",
+      "specialLeaveActionError": "Could not update the request",
+      "specialLeaveAdminNote": "Admin note (optional)",
+      "specialLeaveApprove": "Approve",
+      "specialLeaveReject": "Reject"
     },
     "qualifications_tab": {
       "title": "Qualifications",
@@ -1908,7 +1917,22 @@
       "underScheduled": "⚠ You are below the minimum required shifts ({min})",
       "cancelWindowClosed": "Cancellation window has closed",
       "noShifts": "No shifts in the current cycle",
-      "adminOverride": "Admin assignment"
+      "adminOverride": "Admin assignment",
+      "specialLeaveTitle": "Need time off?",
+      "specialLeaveDescription": "Send a request to the admins. If approved, Shifter will treat you as unavailable for that time.",
+      "specialLeaveStart": "From",
+      "specialLeaveEnd": "Until",
+      "specialLeaveReason": "Reason",
+      "specialLeaveReasonPlaceholder": "Family event, appointment, holiday...",
+      "specialLeaveSubmit": "Send request",
+      "specialLeaveSubmitting": "Sending...",
+      "specialLeaveSubmitted": "Request sent to the admins",
+      "specialLeaveCancelled": "Request cancelled",
+      "specialLeaveCancel": "Cancel request",
+      "specialLeaveDateRequired": "Choose start and end times",
+      "specialLeaveInvalidRange": "End time must be after start time",
+      "specialLeaveReasonRequired": "Write a short reason",
+      "specialLeaveReasonTooLong": "Reason must be 500 characters or less"
     },
     "waitlist": {
       "title": "Waitlist",

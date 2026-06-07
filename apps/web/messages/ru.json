@@ -318,7 +318,16 @@
       "bulkAddAll": "Добавить всех",
       "bulkProgress": "Добавление {current}/{total}...",
       "bulkSuccess": "{count} участников добавлено успешно",
-      "bulkErrors": "{count} ошибок"
+      "bulkErrors": "{count} ошибок",
+      "specialLeaveAdminTitle": "Запросы на отгул",
+      "specialLeaveAdminDescription": "После одобрения участник будет отмечен как недоступный, и Shifter не назначит его на это время.",
+      "specialLeaveRefresh": "Обновить",
+      "specialLeaveNoPending": "Нет ожидающих запросов",
+      "specialLeaveLoadError": "Не удалось загрузить запросы",
+      "specialLeaveActionError": "Не удалось обновить запрос",
+      "specialLeaveAdminNote": "Заметка администратора (необязательно)",
+      "specialLeaveApprove": "Одобрить",
+      "specialLeaveReject": "Отклонить"
     },
     "qualifications_tab": {
       "title": "Квалификации",

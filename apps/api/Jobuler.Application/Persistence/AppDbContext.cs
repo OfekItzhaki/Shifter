@@ -48,6 +48,7 @@ public class AppDbContext : DbContext
     public DbSet<PersonQualification> PersonQualifications => Set<PersonQualification>();
     public DbSet<AvailabilityWindow> AvailabilityWindows => Set<AvailabilityWindow>();
     public DbSet<PresenceWindow> PresenceWindows => Set<PresenceWindow>();
+    public DbSet<SpecialLeaveRequest> SpecialLeaveRequests => Set<SpecialLeaveRequest>();
     public DbSet<PersonRestriction> PersonRestrictions => Set<PersonRestriction>();
     public DbSet<SensitiveRestrictionReason> SensitiveRestrictionReasons => Set<SensitiveRestrictionReason>();
     public DbSet<PendingInvitation> PendingInvitations => Set<PendingInvitation>();
