@@ -73,7 +73,7 @@ export async function approveSpecialLeaveRequest(
   spaceId: string,
   requestId: string,
   adminNote?: string
-): Promise<{ presenceWindowId: string }> {
+): Promise<{ presenceWindowId: string; regenerationRunIds: string[] }> {
   const { data } = await apiClient.post(
     `/spaces/${spaceId}/special-leave-requests/admin/${requestId}/approve`,
     { adminNote: adminNote?.trim() || null }

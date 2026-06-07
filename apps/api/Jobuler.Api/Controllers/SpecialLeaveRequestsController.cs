@@ -95,10 +95,14 @@ public class SpecialLeaveRequestsController : ControllerBase
     public async Task<IActionResult> Approve(Guid spaceId, Guid requestId, [FromBody] ReviewSpecialLeaveRequest req, CancellationToken ct)
     {
         await _permissions.RequirePermissionAsync(CurrentUserId, spaceId, Permissions.PeopleManage, ct);
-        var presenceWindowId = await _mediator.Send(new ApproveSpecialLeaveRequestCommand(
+        var result = await _mediator.Send(new ApproveSpecialLeaveRequestCommand(
             spaceId, requestId, CurrentUserId, req.AdminNote, req.ReasonId), ct);
 
-        return Ok(new { presenceWindowId });
+        return Ok(new
+        {
+            presenceWindowId = result.PresenceWindowId,
+            regenerationRunIds = result.RegenerationRunIds
+        });
     }
 
     [HttpPost("admin/{requestId:guid}/reject")]

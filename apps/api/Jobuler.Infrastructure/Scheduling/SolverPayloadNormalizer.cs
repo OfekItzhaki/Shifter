@@ -588,6 +588,20 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
             }
         }
 
+        var specialDays = await _db.SpaceSpecialDays.AsNoTracking()
+            .Where(d => d.SpaceId == spaceId
+                && d.Date >= horizonStart
+                && d.Date < horizonEnd)
+            .OrderBy(d => d.Date)
+            .ThenBy(d => d.Name)
+            .Select(d => new SpecialDayDto(
+                d.Date.ToString("yyyy-MM-dd"),
+                d.Name,
+                d.Kind.ToString().ToSnakeCase(),
+                (double)d.HomeLeaveWeightMultiplier,
+                d.RequiresCoverage))
+            .ToListAsync(ct);
+
         return new SolverInputDto(
             spaceId.ToString(), runId.ToString(), triggerMode,
             horizonStart.ToString("yyyy-MM-dd"),
@@ -601,7 +615,8 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
             homeLeaveConfigDto,
             taskRotationDto,
             CumulativeTracking: cumulativeTrackingDto,
-            ParentSchedule: parentScheduleDto);
+            ParentSchedule: parentScheduleDto,
+            SpecialDays: specialDays);
     }
 
     public async Task<SolverInputDto> BuildPreviewAsync(

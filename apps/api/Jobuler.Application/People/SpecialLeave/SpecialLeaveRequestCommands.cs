@@ -60,10 +60,14 @@ public record ApproveSpecialLeaveRequestCommand(
     Guid RequestId,
     Guid ProcessedByUserId,
     string? AdminNote,
-    Guid? ReasonId = null) : IRequest<Guid>;
+    Guid? ReasonId = null) : IRequest<ApproveSpecialLeaveRequestResult>;
+
+public record ApproveSpecialLeaveRequestResult(
+    Guid PresenceWindowId,
+    IReadOnlyList<Guid> RegenerationRunIds);
 
 public class ApproveSpecialLeaveRequestCommandHandler
-    : IRequestHandler<ApproveSpecialLeaveRequestCommand, Guid>
+    : IRequestHandler<ApproveSpecialLeaveRequestCommand, ApproveSpecialLeaveRequestResult>
 {
     private readonly AppDbContext _db;
     private readonly ICumulativeTracker _cumulativeTracker;
@@ -85,7 +89,9 @@ public class ApproveSpecialLeaveRequestCommandHandler
         _solverQueue = solverQueue;
     }
 
-    public async Task<Guid> Handle(ApproveSpecialLeaveRequestCommand req, CancellationToken ct)
+    public async Task<ApproveSpecialLeaveRequestResult> Handle(
+        ApproveSpecialLeaveRequestCommand req,
+        CancellationToken ct)
     {
         var request = await _db.SpecialLeaveRequests
             .FirstOrDefaultAsync(r => r.Id == req.RequestId && r.SpaceId == req.SpaceId, ct)
@@ -126,7 +132,7 @@ public class ApproveSpecialLeaveRequestCommandHandler
             }),
             ct: ct);
 
-        return presence.Id;
+        return new ApproveSpecialLeaveRequestResult(presence.Id, regenerationRunIds);
     }
 
     private async Task<List<Guid>> QueueMinimalRegenerationsAsync(

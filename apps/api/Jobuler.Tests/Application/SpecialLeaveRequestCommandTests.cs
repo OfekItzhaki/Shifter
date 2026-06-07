@@ -69,10 +69,12 @@ public class SpecialLeaveRequestCommandTests
             .Returns(Task.CompletedTask);
         var handler = new ApproveSpecialLeaveRequestCommandHandler(db, cumulative, cache, audit, queue);
 
-        var presenceWindowId = await handler.Handle(new ApproveSpecialLeaveRequestCommand(
+        var result = await handler.Handle(new ApproveSpecialLeaveRequestCommand(
             spaceId, request.Id, adminId, "approved"), CancellationToken.None);
 
-        var presence = await db.PresenceWindows.SingleAsync(p => p.Id == presenceWindowId);
+        result.RegenerationRunIds.Should().BeEmpty();
+
+        var presence = await db.PresenceWindows.SingleAsync(p => p.Id == result.PresenceWindowId);
         presence.State.Should().Be(PresenceState.AtHome);
         presence.PersonId.Should().Be(person.Id);
         presence.StartsAt.Should().Be(start);
@@ -80,7 +82,7 @@ public class SpecialLeaveRequestCommandTests
 
         var updatedRequest = await db.SpecialLeaveRequests.SingleAsync(r => r.Id == request.Id);
         updatedRequest.Status.Should().Be(SpecialLeaveRequestStatus.Approved);
-        updatedRequest.PresenceWindowId.Should().Be(presenceWindowId);
+        updatedRequest.PresenceWindowId.Should().Be(result.PresenceWindowId);
 
         await cumulative.Received(1).RecomputeForPersonAsync(spaceId, person.Id, Arg.Any<CancellationToken>());
         await cache.Received(1).RemoveByPatternAsync($"status:{spaceId}:*", Arg.Any<CancellationToken>());
@@ -133,10 +135,11 @@ public class SpecialLeaveRequestCommandTests
             Substitute.For<IAuditLogger>(),
             queue);
 
-        await handler.Handle(new ApproveSpecialLeaveRequestCommand(
+        var result = await handler.Handle(new ApproveSpecialLeaveRequestCommand(
             spaceId, request.Id, adminId, "approved"), CancellationToken.None);
 
         var run = await db.ScheduleRuns.SingleAsync();
+        result.RegenerationRunIds.Should().Equal(run.Id);
         run.TriggerType.Should().Be(ScheduleRunTrigger.Regeneration);
         run.BaselineVersionId.Should().Be(published.Id);
         run.GroupId.Should().Be(group.Id);

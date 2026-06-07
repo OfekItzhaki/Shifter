@@ -53,17 +53,17 @@ def _resolve_min_rest_hours_closed_base(
     """
     Resolve min_rest_hours for a closed-base group.
 
-    config_value is the admin's explicit setting (minRestBetweenShiftsHours from the group):
-      - 0   = admin explicitly disabled rest enforcement
-      - > 0 = admin-configured rest requirement
+    config_value is the admin's configured setting from the group/home-leave payload:
+      - 0   = not configured; fall back to the hard-constraint/default chain
+      - > 0 = admin-configured rest requirement, clamped to the closed-base floor
 
-    The 8h floor is only applied when falling back to the hard constraint rule or the
-    absolute default (i.e., config_value < 0, which shouldn't happen with correct C# callers
-    but is kept as a safety net).
+    Closed-base scheduling never treats rest as disabled. This keeps long shifts
+    and home-leave scheduling under the same hard safety floor.
 
     Returns the resolved min_rest_hours (>= 0).
     """
-    if config_value >= 0:
+    if config_value > 0:
+        config_value = max(config_value, _CLOSED_BASE_MIN_REST_FLOOR)
         if config_value == 0:
             logger.info(
                 "[run=%s] min_rest_hours = 0 (admin explicitly disabled rest enforcement).",
