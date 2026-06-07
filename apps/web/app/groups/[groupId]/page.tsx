@@ -257,6 +257,7 @@ export default function GroupDetailPage() {
     if (isAdmin) {
       // Exiting admin mode — no re-auth needed
       exitAdminMode();
+      exitElevatedMode("manual");
       setIsAdmin(false);
     } else {
       // Entering admin mode — require re-authentication

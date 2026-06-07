@@ -18,7 +18,9 @@ public record MemberLiveStatusDto(
     string? Location,
     string? NextTaskName,
     DateTime? NextStartsAt,
-    bool IsNextHomeLeave);
+    bool IsNextHomeLeave,
+    string? PreviousTaskName,
+    DateTime? PreviousEndsAt);
 
 // ── Query ─────────────────────────────────────────────────────────────────────
 
@@ -86,6 +88,7 @@ public class GetGroupLiveStatusQueryHandler
         // Map: personId → (taskName, slotEndsAt)
         var activeAssignments = new Dictionary<Guid, (string TaskName, DateTime SlotEndsAt)>();
         var nextAssignments = new Dictionary<Guid, (string TaskName, DateTime StartsAt, bool IsHomeLeave)>();
+        var previousAssignments = new Dictionary<Guid, (string TaskName, DateTime EndsAt)>();
 
         if (publishedVersion is not null)
         {
@@ -175,6 +178,13 @@ public class GetGroupLiveStatusQueryHandler
                         nextAssignments[a.PersonId] = (taskName, slotStartsAt, isHomeLeave);
                     }
                 }
+                else if (slotEndsAt <= now)
+                {
+                    if (!previousAssignments.TryGetValue(a.PersonId, out var existing) || slotEndsAt > existing.EndsAt)
+                    {
+                        previousAssignments[a.PersonId] = (taskName, slotEndsAt);
+                    }
+                }
             }
         }
 
@@ -190,6 +200,8 @@ public class GetGroupLiveStatusQueryHandler
             string? nextTaskName = null;
             DateTime? nextStartsAt = null;
             bool isNextHomeLeave = false;
+            string? previousTaskName = null;
+            DateTime? previousEndsAt = null;
 
             if (presenceByPerson.TryGetValue(member.Id, out var pw))
             {
@@ -220,6 +232,12 @@ public class GetGroupLiveStatusQueryHandler
                 isNextHomeLeave = next.IsHomeLeave;
             }
 
+            if (publishedVersion is not null && previousAssignments.TryGetValue(member.Id, out var previous))
+            {
+                previousTaskName = previous.TaskName;
+                previousEndsAt = previous.EndsAt;
+            }
+
             result.Add(new MemberLiveStatusDto(
                 member.Id.ToString(),
                 member.Name,
@@ -229,7 +247,9 @@ public class GetGroupLiveStatusQueryHandler
                 location,
                 nextTaskName,
                 nextStartsAt,
-                isNextHomeLeave));
+                isNextHomeLeave,
+                previousTaskName,
+                previousEndsAt));
         }
 
         var ordered = result.OrderBy(r => r.DisplayName).ToList();

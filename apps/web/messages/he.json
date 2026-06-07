@@ -67,6 +67,8 @@
     "enableBiometricDesc": "בפעם הבאה תוכל להתחבר עם טביעת אצבע או זיהוי פנים",
     "enableBiometricYes": "כן, הפעל",
     "enableBiometricSkip": "לא עכשיו",
+    "thisDevice": "המכשיר הזה",
+    "passkeySetupError": "לא ניתן היה להפעיל כניסה ביומטרית. אפשר לנסות שוב מהמכשיר הזה מאוחר יותר.",
     "noCredentialFound": "לא נמצא מכשיר רשום. התחבר עם סיסמה ותוכל להפעיל כניסה ביומטרית.",
     "loginSubtitle": "התחברות לסביבת העבודה שלך",
     "close": "סגור",
@@ -901,7 +903,8 @@
     "freeInBase": "פנוי בבסיס",
     "until": "עד",
     "nextMissionIn": "משימה הבאה בעוד",
-    "homeLeaveIn": "חופשת בית בעוד"
+    "homeLeaveIn": "חופשת בית בעוד",
+    "restBeforeNext": "מנוחה לפני המשימה הבאה"
   },
   "imageUpload": {
     "upload": "העלה תמונה",

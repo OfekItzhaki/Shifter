@@ -59,7 +59,7 @@
   },
   "lint-staged": {
     "apps/web/**/*.{ts,tsx}": [
-      "next lint --fix"
+      "eslint --fix"
     ]
   }
 }

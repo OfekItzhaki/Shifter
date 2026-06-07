@@ -5,11 +5,16 @@
 using FluentAssertions;
 using Jobuler.Application.Scheduling;
 using Jobuler.Domain.Constraints;
+using Jobuler.Domain.Groups;
 using Jobuler.Domain.People;
+using Jobuler.Domain.Scheduling;
 using Jobuler.Domain.Spaces;
+using Jobuler.Domain.Tasks;
 using Jobuler.Infrastructure.Persistence;
 using Jobuler.Infrastructure.Scheduling;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
+using NSubstitute;
 using Xunit;
 
 namespace Jobuler.Tests.Scheduling;
@@ -257,6 +262,62 @@ public class SolverPayloadNormalizerTests
         propertyNames.Should().BeEquivalentTo(
             new[] { "PersonId", "State", "StartsAt", "EndsAt" },
             "solver PresenceWindowDto must not include any reason-related fields");
+    }
+
+    [Fact]
+    public async Task BuildAsync_AddsRestBlockForRecentBaselineAssignmentOutsideCurrentSlots()
+    {
+        var (db, spaceId) = await SetupSpaceAsync();
+        var groupId = Guid.NewGuid();
+        var person = Person.Create(spaceId, "Rest Tester");
+        var group = Group.Create(spaceId, null, "Rest Group");
+        typeof(Jobuler.Domain.Common.Entity)
+            .GetProperty("Id")!
+            .SetValue(group, groupId);
+        group.SetMinRestBetweenShifts(7);
+
+        var membership = GroupMembership.Create(spaceId, groupId, person.Id);
+        var taskType = TaskType.Create(spaceId, "Guard", TaskBurdenLevel.Normal, Guid.NewGuid());
+        var previousSlot = TaskSlot.Create(
+            spaceId,
+            taskType.Id,
+            new DateTime(2026, 4, 19, 20, 0, 0, DateTimeKind.Utc),
+            new DateTime(2026, 4, 19, 23, 0, 0, DateTimeKind.Utc),
+            requiredHeadcount: 1,
+            priority: 5,
+            createdByUserId: Guid.NewGuid());
+
+        var version = ScheduleVersion.CreateDraft(spaceId, 1, null, null, Guid.NewGuid());
+        version.Publish(Guid.NewGuid());
+
+        db.Groups.Add(group);
+        db.People.Add(person);
+        db.GroupMemberships.Add(membership);
+        db.TaskTypes.Add(taskType);
+        db.TaskSlots.Add(previousSlot);
+        db.ScheduleVersions.Add(version);
+        db.Assignments.Add(Assignment.Create(spaceId, version.Id, previousSlot.Id, person.Id));
+        await db.SaveChangesAsync();
+
+        var normalizer = new SolverPayloadNormalizer(
+            db,
+            NullLogger<SolverPayloadNormalizer>.Instance,
+            Substitute.For<ICumulativeTracker>());
+
+        var payload = await normalizer.BuildAsync(
+            spaceId,
+            Guid.NewGuid(),
+            "standard",
+            version.Id,
+            groupId,
+            new DateTime(2026, 4, 20, 0, 0, 0, DateTimeKind.Utc),
+            CancellationToken.None);
+
+        payload.PresenceWindows.Should().Contain(p =>
+            p.PersonId == person.Id.ToString()
+            && p.State == "on_mission"
+            && DateTime.Parse(p.StartsAt, null, System.Globalization.DateTimeStyles.RoundtripKind) == previousSlot.StartsAt
+            && DateTime.Parse(p.EndsAt, null, System.Globalization.DateTimeStyles.RoundtripKind) == previousSlot.EndsAt.AddHours(7));
     }
 
     private static string ToSnakeCase(string s) =>

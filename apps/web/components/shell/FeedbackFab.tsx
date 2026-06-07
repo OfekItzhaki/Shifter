@@ -70,7 +70,7 @@ export default function FeedbackFab({ variant = "app" }: FeedbackFabProps) {
   return (
     <>
       <div
-        className={`feedback-fab feedback-fab--${variant} z-[1200] flex items-stretch opacity-60 hover:opacity-100 transition-opacity`}
+        className={`feedback-fab feedback-fab--${variant} feedback-fab__control z-[1200] opacity-80`}
       >
         {/* Bug report half (left) */}
         <button
@@ -78,7 +78,7 @@ export default function FeedbackFab({ variant = "app" }: FeedbackFabProps) {
           type="button"
           aria-label="Report a bug"
           onClick={() => handleClick("bug")}
-          className="flex items-center justify-center w-9 h-9 rounded-l-lg bg-slate-800 hover:bg-slate-700 text-white transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2"
+          className="feedback-fab__button"
         >
           {/* Bug icon */}
           <svg
@@ -106,7 +106,7 @@ export default function FeedbackFab({ variant = "app" }: FeedbackFabProps) {
         </button>
 
         {/* Visual divider */}
-        <div className="w-px bg-slate-600" aria-hidden="true" />
+        <div className="feedback-fab__divider" aria-hidden="true" />
 
         {/* Feedback half (right) */}
         <button
@@ -114,7 +114,7 @@ export default function FeedbackFab({ variant = "app" }: FeedbackFabProps) {
           type="button"
           aria-label="Submit feedback"
           onClick={() => handleClick("feedback")}
-          className="flex items-center justify-center w-9 h-9 rounded-r-lg bg-slate-800 hover:bg-slate-700 text-white transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2"
+          className="feedback-fab__button"
         >
           {/* Feedback / message icon */}
           <svg

@@ -67,6 +67,8 @@
     "enableBiometricDesc": "Next time you can log in with fingerprint or face recognition",
     "enableBiometricYes": "Yes, enable",
     "enableBiometricSkip": "Not now",
+    "thisDevice": "This device",
+    "passkeySetupError": "Could not enable biometric login. You can try again from this device later.",
     "noCredentialFound": "No registered device found. Log in with password to enable biometric login.",
     "loginSubtitle": "Sign in to your workspace",
     "close": "Close",
@@ -896,7 +898,8 @@
     "freeInBase": "Free in Base",
     "until": "until",
     "nextMissionIn": "Next mission in",
-    "homeLeaveIn": "Home leave in"
+    "homeLeaveIn": "Home leave in",
+    "restBeforeNext": "Rest before next"
   },
   "imageUpload": {
     "upload": "Upload Image",
