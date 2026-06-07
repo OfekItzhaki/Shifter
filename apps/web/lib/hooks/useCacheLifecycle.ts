@@ -4,6 +4,14 @@ import { useEffect, useRef } from "react";
 import { useAuthStore } from "@/lib/store/authStore";
 import { queryClient } from "@/lib/query/queryClient";
 
+function shouldUseServiceWorkerCache(): boolean {
+  if (typeof window === "undefined") return false;
+  if (process.env.NODE_ENV !== "production") return false;
+
+  const hostname = window.location.hostname;
+  return hostname !== "localhost" && hostname !== "127.0.0.1" && hostname !== "::1";
+}
+
 /**
  * Maps a cached API URL to the corresponding React Query key(s) to invalidate.
  * Returns null if the URL doesn't match any known pattern.
@@ -75,7 +83,8 @@ export function useCacheLifecycle(): void {
     if (
       typeof window === "undefined" ||
       !("serviceWorker" in navigator) ||
-      !navigator.serviceWorker
+      !navigator.serviceWorker ||
+      !shouldUseServiceWorkerCache()
     ) {
       return;
     }
@@ -104,7 +113,8 @@ export function useCacheLifecycle(): void {
     if (
       typeof window === "undefined" ||
       !("serviceWorker" in navigator) ||
-      !navigator.serviceWorker
+      !navigator.serviceWorker ||
+      !shouldUseServiceWorkerCache()
     ) {
       return;
     }
