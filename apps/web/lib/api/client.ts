@@ -33,41 +33,15 @@ function onTokenRefreshed(token: string) {
 }
 
 /**
- * Probes real internet connectivity by fetching a lightweight external resource.
- * Used when navigator.onLine is true but an API call failed — distinguishes
- * "server is down" from "connected to WiFi but no internet".
- *
- * Tries the app's own /health endpoint first (same-origin, fast).
- * If that fails, tries a well-known external endpoint as a fallback.
- * Returns true if the device has internet, false otherwise.
+ * Uses browser connectivity state without calling third-party probe endpoints.
+ * External probes create noisy CSP errors and are not needed for core app flow.
  */
 let probeInFlight: Promise<boolean> | null = null;
 
 async function probeConnectivity(): Promise<boolean> {
-  // Deduplicate concurrent probes — if one is already running, reuse it
   if (probeInFlight) return probeInFlight;
 
-  probeInFlight = (async () => {
-    try {
-      // Try fetching a tiny external resource (Google's generate_204 endpoint)
-      // This confirms internet access independent of our server's health.
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 3000);
-
-      const response = await fetch("https://www.gstatic.com/generate_204", {
-        method: "HEAD",
-        mode: "no-cors",
-        signal: controller.signal,
-      });
-
-      clearTimeout(timeout);
-      // In no-cors mode, an opaque response (type "opaque") means the request succeeded
-      return response.type === "opaque" || response.ok;
-    } catch {
-      // External probe failed — no internet
-      return false;
-    }
-  })();
+  probeInFlight = Promise.resolve(navigator.onLine);
 
   const result = await probeInFlight;
   probeInFlight = null;
