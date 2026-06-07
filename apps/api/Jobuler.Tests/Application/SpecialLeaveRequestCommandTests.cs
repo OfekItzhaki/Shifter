@@ -2,7 +2,10 @@ using FluentAssertions;
 using Jobuler.Application.Common;
 using Jobuler.Application.People.SpecialLeave;
 using Jobuler.Application.Scheduling;
+using Jobuler.Domain.Groups;
 using Jobuler.Domain.People;
+using Jobuler.Domain.Scheduling;
+using Jobuler.Domain.Tasks;
 using Jobuler.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using NSubstitute;
@@ -61,7 +64,10 @@ public class SpecialLeaveRequestCommandTests
         var cumulative = Substitute.For<ICumulativeTracker>();
         var cache = Substitute.For<ICacheService>();
         var audit = Substitute.For<IAuditLogger>();
-        var handler = new ApproveSpecialLeaveRequestCommandHandler(db, cumulative, cache, audit);
+        var queue = Substitute.For<ISolverJobQueue>();
+        queue.EnqueueAsync(Arg.Any<SolverJobMessage>(), Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+        var handler = new ApproveSpecialLeaveRequestCommandHandler(db, cumulative, cache, audit, queue);
 
         var presenceWindowId = await handler.Handle(new ApproveSpecialLeaveRequestCommand(
             spaceId, request.Id, adminId, "approved"), CancellationToken.None);
@@ -78,6 +84,126 @@ public class SpecialLeaveRequestCommandTests
 
         await cumulative.Received(1).RecomputeForPersonAsync(spaceId, person.Id, Arg.Any<CancellationToken>());
         await cache.Received(1).RemoveByPatternAsync($"status:{spaceId}:*", Arg.Any<CancellationToken>());
+        await queue.DidNotReceive().EnqueueAsync(Arg.Any<SolverJobMessage>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Approve_WhenLeaveOverlapsPublishedAssignment_QueuesRegenerationForAffectedGroup()
+    {
+        await using var db = CreateDb();
+        var spaceId = Guid.NewGuid();
+        var userId = Guid.NewGuid();
+        var adminId = Guid.NewGuid();
+        var group = Group.Create(spaceId, null, "Platoon", createdByUserId: adminId);
+        var person = Person.Create(spaceId, "Ofek", linkedUserId: userId);
+        var taskStart = new DateTime(2026, 6, 10, 0, 0, 0, DateTimeKind.Utc);
+        var task = GroupTask.Create(
+            spaceId,
+            group.Id,
+            "Guard",
+            taskStart,
+            taskStart.AddDays(2),
+            shiftDurationMinutes: 240,
+            requiredHeadcount: 1,
+            TaskBurdenLevel.Normal,
+            allowsDoubleShift: false,
+            allowsOverlap: false,
+            createdByUserId: adminId);
+        var published = ScheduleVersion.CreateDraft(spaceId, 1, null, null, adminId);
+        published.Publish(adminId);
+        var assignedSlotId = DeriveShiftGuid(task.Id, 2); // 08:00-12:00 on the first day
+        var request = SpecialLeaveRequest.Create(
+            spaceId, person.Id, taskStart.AddHours(9), taskStart.AddHours(11), "Family event", userId);
+
+        db.Groups.Add(group);
+        db.People.Add(person);
+        db.GroupTasks.Add(task);
+        db.ScheduleVersions.Add(published);
+        db.Assignments.Add(Assignment.Create(spaceId, published.Id, assignedSlotId, person.Id));
+        db.SpecialLeaveRequests.Add(request);
+        await db.SaveChangesAsync();
+
+        var queue = Substitute.For<ISolverJobQueue>();
+        queue.EnqueueAsync(Arg.Any<SolverJobMessage>(), Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+        var handler = new ApproveSpecialLeaveRequestCommandHandler(
+            db,
+            Substitute.For<ICumulativeTracker>(),
+            Substitute.For<ICacheService>(),
+            Substitute.For<IAuditLogger>(),
+            queue);
+
+        await handler.Handle(new ApproveSpecialLeaveRequestCommand(
+            spaceId, request.Id, adminId, "approved"), CancellationToken.None);
+
+        var run = await db.ScheduleRuns.SingleAsync();
+        run.TriggerType.Should().Be(ScheduleRunTrigger.Regeneration);
+        run.BaselineVersionId.Should().Be(published.Id);
+        run.GroupId.Should().Be(group.Id);
+        run.RequestedByUserId.Should().Be(adminId);
+
+        await queue.Received(1).EnqueueAsync(
+            Arg.Is<SolverJobMessage>(job =>
+                job.RunId == run.Id
+                && job.SpaceId == spaceId
+                && job.TriggerMode == "regeneration"
+                && job.BaselineVersionId == published.Id
+                && job.GroupId == group.Id
+                && job.StartTime == request.StartsAt.Date),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Approve_WhenLeaveDoesNotOverlapPublishedAssignment_DoesNotQueueRegeneration()
+    {
+        await using var db = CreateDb();
+        var spaceId = Guid.NewGuid();
+        var userId = Guid.NewGuid();
+        var adminId = Guid.NewGuid();
+        var group = Group.Create(spaceId, null, "Platoon", createdByUserId: adminId);
+        var person = Person.Create(spaceId, "Ofek", linkedUserId: userId);
+        var taskStart = new DateTime(2026, 6, 10, 0, 0, 0, DateTimeKind.Utc);
+        var task = GroupTask.Create(
+            spaceId,
+            group.Id,
+            "Guard",
+            taskStart,
+            taskStart.AddDays(1),
+            shiftDurationMinutes: 240,
+            requiredHeadcount: 1,
+            TaskBurdenLevel.Normal,
+            allowsDoubleShift: false,
+            allowsOverlap: false,
+            createdByUserId: adminId);
+        var published = ScheduleVersion.CreateDraft(spaceId, 1, null, null, adminId);
+        published.Publish(adminId);
+        var assignedSlotId = DeriveShiftGuid(task.Id, 1); // 04:00-08:00
+        var request = SpecialLeaveRequest.Create(
+            spaceId, person.Id, taskStart.AddHours(12), taskStart.AddHours(14), "Family event", userId);
+
+        db.Groups.Add(group);
+        db.People.Add(person);
+        db.GroupTasks.Add(task);
+        db.ScheduleVersions.Add(published);
+        db.Assignments.Add(Assignment.Create(spaceId, published.Id, assignedSlotId, person.Id));
+        db.SpecialLeaveRequests.Add(request);
+        await db.SaveChangesAsync();
+
+        var queue = Substitute.For<ISolverJobQueue>();
+        queue.EnqueueAsync(Arg.Any<SolverJobMessage>(), Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+        var handler = new ApproveSpecialLeaveRequestCommandHandler(
+            db,
+            Substitute.For<ICumulativeTracker>(),
+            Substitute.For<ICacheService>(),
+            Substitute.For<IAuditLogger>(),
+            queue);
+
+        await handler.Handle(new ApproveSpecialLeaveRequestCommand(
+            spaceId, request.Id, adminId, "approved"), CancellationToken.None);
+
+        (await db.ScheduleRuns.CountAsync()).Should().Be(0);
+        await queue.DidNotReceive().EnqueueAsync(Arg.Any<SolverJobMessage>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -129,5 +255,14 @@ public class SpecialLeaveRequestCommandTests
         result[0].PersonName.Should().Be("Ofek L.");
         result[0].Reason.Should().Be("Family event");
         result[0].Status.Should().Be(nameof(SpecialLeaveRequestStatus.Pending));
+    }
+
+    private static Guid DeriveShiftGuid(Guid taskId, int shiftIndex)
+    {
+        var bytes = taskId.ToByteArray();
+        var indexBytes = BitConverter.GetBytes(shiftIndex);
+        for (var i = 0; i < 4; i++)
+            bytes[12 + i] ^= indexBytes[i];
+        return new Guid(bytes);
     }
 }

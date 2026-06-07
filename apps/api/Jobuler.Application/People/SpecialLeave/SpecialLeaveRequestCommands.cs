@@ -2,6 +2,8 @@ using System.Text.Json;
 using Jobuler.Application.Common;
 using Jobuler.Application.Scheduling;
 using Jobuler.Domain.People;
+using Jobuler.Domain.Scheduling;
+using Jobuler.Domain.Tasks;
 using Jobuler.Infrastructure.Persistence;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -67,17 +69,20 @@ public class ApproveSpecialLeaveRequestCommandHandler
     private readonly ICumulativeTracker _cumulativeTracker;
     private readonly ICacheService _cache;
     private readonly IAuditLogger _audit;
+    private readonly ISolverJobQueue _solverQueue;
 
     public ApproveSpecialLeaveRequestCommandHandler(
         AppDbContext db,
         ICumulativeTracker cumulativeTracker,
         ICacheService cache,
-        IAuditLogger audit)
+        IAuditLogger audit,
+        ISolverJobQueue solverQueue)
     {
         _db = db;
         _cumulativeTracker = cumulativeTracker;
         _cache = cache;
         _audit = audit;
+        _solverQueue = solverQueue;
     }
 
     public async Task<Guid> Handle(ApproveSpecialLeaveRequestCommand req, CancellationToken ct)
@@ -102,6 +107,8 @@ public class ApproveSpecialLeaveRequestCommandHandler
         await _cumulativeTracker.RecomputeForPersonAsync(req.SpaceId, request.PersonId, ct);
         await _cache.RemoveByPatternAsync($"status:{req.SpaceId}:*", ct);
 
+        var regenerationRunIds = await QueueMinimalRegenerationsAsync(request, req.ProcessedByUserId, ct);
+
         await _audit.LogAsync(
             req.SpaceId,
             req.ProcessedByUserId,
@@ -114,11 +121,146 @@ public class ApproveSpecialLeaveRequestCommandHandler
                 person_id = request.PersonId,
                 starts_at = request.StartsAt,
                 ends_at = request.EndsAt,
-                presence_window_id = presence.Id
+                presence_window_id = presence.Id,
+                regeneration_run_ids = regenerationRunIds
             }),
             ct: ct);
 
         return presence.Id;
+    }
+
+    private async Task<List<Guid>> QueueMinimalRegenerationsAsync(
+        SpecialLeaveRequest request,
+        Guid processedByUserId,
+        CancellationToken ct)
+    {
+        var publishedVersion = await _db.ScheduleVersions.AsNoTracking()
+            .Where(v => v.SpaceId == request.SpaceId && v.Status == ScheduleVersionStatus.Published)
+            .OrderByDescending(v => v.VersionNumber)
+            .FirstOrDefaultAsync(ct);
+
+        if (publishedVersion is null)
+            return [];
+
+        var affectedGroupIds = await FindAffectedGroupIdsAsync(
+            publishedVersion.Id,
+            request.SpaceId,
+            request.PersonId,
+            request.StartsAt,
+            request.EndsAt,
+            ct);
+
+        if (affectedGroupIds.Count == 0)
+            return [];
+
+        var regenerationRunIds = new List<Guid>();
+        var regenerationStart = DateTime.SpecifyKind(request.StartsAt.Date, DateTimeKind.Utc);
+
+        foreach (var groupId in affectedGroupIds)
+        {
+            var hasActiveRun = await _db.ScheduleRuns.AsNoTracking()
+                .AnyAsync(r => r.SpaceId == request.SpaceId
+                    && r.GroupId == groupId
+                    && r.TriggerType == ScheduleRunTrigger.Regeneration
+                    && (r.Status == ScheduleRunStatus.Queued || r.Status == ScheduleRunStatus.Running), ct);
+
+            if (hasActiveRun)
+                continue;
+
+            var run = ScheduleRun.Create(
+                request.SpaceId,
+                ScheduleRunTrigger.Regeneration,
+                publishedVersion.Id,
+                processedByUserId,
+                groupId);
+
+            _db.ScheduleRuns.Add(run);
+            await _db.SaveChangesAsync(ct);
+
+            try
+            {
+                await _solverQueue.EnqueueAsync(new SolverJobMessage(
+                    run.Id,
+                    request.SpaceId,
+                    "regeneration",
+                    publishedVersion.Id,
+                    processedByUserId,
+                    groupId,
+                    regenerationStart), ct);
+
+                regenerationRunIds.Add(run.Id);
+            }
+            catch (Exception ex)
+            {
+                run.MarkFailed($"Could not queue automatic regeneration for approved special leave: {ex.Message}");
+                await _db.SaveChangesAsync(ct);
+            }
+        }
+
+        return regenerationRunIds;
+    }
+
+    private async Task<HashSet<Guid>> FindAffectedGroupIdsAsync(
+        Guid publishedVersionId,
+        Guid spaceId,
+        Guid personId,
+        DateTime leaveStartsAt,
+        DateTime leaveEndsAt,
+        CancellationToken ct)
+    {
+        var assignedSlotIds = (await _db.Assignments.AsNoTracking()
+            .Where(a => a.SpaceId == spaceId
+                && a.ScheduleVersionId == publishedVersionId
+                && a.PersonId == personId)
+            .Select(a => a.TaskSlotId)
+            .ToListAsync(ct)).ToHashSet();
+
+        if (assignedSlotIds.Count == 0)
+            return [];
+
+        var affectedGroups = new HashSet<Guid>();
+
+        var groupTasks = await _db.GroupTasks.AsNoTracking()
+            .Where(t => t.SpaceId == spaceId
+                && t.IsActive
+                && t.StartsAt < leaveEndsAt
+                && t.EndsAt > leaveStartsAt)
+            .ToListAsync(ct);
+
+        foreach (var task in groupTasks)
+        {
+            if (task.ShiftDurationMinutes < 1)
+                continue;
+
+            var shiftDuration = TimeSpan.FromMinutes(task.ShiftDurationMinutes);
+            var searchStart = leaveStartsAt - shiftDuration;
+            if (searchStart < task.StartsAt)
+                searchStart = task.StartsAt;
+
+            var shiftIndex = (int)Math.Floor((searchStart - task.StartsAt).TotalMinutes / task.ShiftDurationMinutes);
+            if (shiftIndex < 0)
+                shiftIndex = 0;
+
+            var shiftStart = task.StartsAt + TimeSpan.FromMinutes((double)shiftIndex * task.ShiftDurationMinutes);
+            while (shiftStart < leaveEndsAt && shiftStart + shiftDuration <= task.EndsAt)
+            {
+                var shiftEnd = shiftStart + shiftDuration;
+                var shiftId = ShiftGuidHelper.DeriveShiftGuid(task.Id, shiftIndex);
+
+                if (assignedSlotIds.Contains(shiftId)
+                    && shiftStart < leaveEndsAt
+                    && shiftEnd > leaveStartsAt)
+                {
+                    affectedGroups.Add(task.GroupId);
+                    break;
+                }
+
+                shiftStart = shiftEnd;
+                shiftIndex++;
+            }
+        }
+
+        return affectedGroups;
     }
 
     private static string BuildPresenceNote(SpecialLeaveRequest request, string? adminNote)
@@ -127,6 +269,18 @@ public class ApproveSpecialLeaveRequestCommandHandler
         if (!string.IsNullOrWhiteSpace(adminNote))
             note += $" | Admin note: {adminNote.Trim()}";
         return note.Length <= 500 ? note : note[..500];
+    }
+
+    private static class ShiftGuidHelper
+    {
+        internal static Guid DeriveShiftGuid(Guid taskId, int shiftIndex)
+        {
+            var bytes = taskId.ToByteArray();
+            var indexBytes = BitConverter.GetBytes(shiftIndex);
+            for (var i = 0; i < 4; i++)
+                bytes[12 + i] ^= indexBytes[i];
+            return new Guid(bytes);
+        }
     }
 }
 
