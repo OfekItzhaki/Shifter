@@ -306,5 +306,53 @@ public class GetGroupLiveStatusPriorityTests
             "derived AtHome window should also take precedence over assignment-based on_mission");
     }
 
+    [Fact]
+    public async Task Person_WithPreviousAndNextAssignments_ReturnsRestWindowAnchors()
+    {
+        // Arrange
+        var ctx = await SetupAsync();
+        var now = DateTime.UtcNow.AddHours(3);
+        var person = CreatePerson(ctx.Db, ctx.SpaceId, ctx.GroupId, "Frank");
+
+        var taskType = TaskType.Create(ctx.SpaceId, "Guard", TaskBurdenLevel.Normal, Guid.NewGuid());
+        ctx.Db.TaskTypes.Add(taskType);
+        var version = CreatePublishedVersion(ctx.Db, ctx.SpaceId);
+
+        var olderSlot = TaskSlot.Create(
+            ctx.SpaceId, taskType.Id,
+            now.AddHours(-14), now.AddHours(-10),
+            requiredHeadcount: 1, priority: 5, createdByUserId: Guid.NewGuid());
+        var previousSlot = TaskSlot.Create(
+            ctx.SpaceId, taskType.Id,
+            now.AddHours(-6), now.AddHours(-2),
+            requiredHeadcount: 1, priority: 5, createdByUserId: Guid.NewGuid());
+        var nextSlot = TaskSlot.Create(
+            ctx.SpaceId, taskType.Id,
+            now.AddHours(5), now.AddHours(9),
+            requiredHeadcount: 1, priority: 5, createdByUserId: Guid.NewGuid());
+
+        ctx.Db.TaskSlots.AddRange(olderSlot, previousSlot, nextSlot);
+        ctx.Db.Assignments.AddRange(
+            Assignment.Create(ctx.SpaceId, version.Id, olderSlot.Id, person.Id),
+            Assignment.Create(ctx.SpaceId, version.Id, previousSlot.Id, person.Id),
+            Assignment.Create(ctx.SpaceId, version.Id, nextSlot.Id, person.Id));
+
+        await ctx.Db.SaveChangesAsync();
+
+        var handler = new GetGroupLiveStatusQueryHandler(ctx.Db, new NoOpCacheService());
+        var query = new GetGroupLiveStatusQuery(ctx.SpaceId, ctx.GroupId);
+
+        // Act
+        var result = await handler.Handle(query, CancellationToken.None);
+
+        // Assert
+        result.Should().HaveCount(1);
+        result[0].Status.Should().Be("free_in_base");
+        result[0].PreviousTaskName.Should().Be("Guard");
+        result[0].PreviousEndsAt.Should().Be(previousSlot.EndsAt);
+        result[0].NextTaskName.Should().Be("Guard");
+        result[0].NextStartsAt.Should().Be(nextSlot.StartsAt);
+    }
+
     private record TestContext(AppDbContext Db, Guid SpaceId, Guid GroupId);
 }

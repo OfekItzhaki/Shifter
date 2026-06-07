@@ -98,6 +98,7 @@ export function useAdminSessionWiring(): void {
         if (timerRef.current) {
           timerRef.current.reset();
         }
+        resetTimer();
         syncRef.current?.broadcast({
           type: "activity_reset",
           timestamp: Date.now(),
@@ -111,7 +112,7 @@ export function useAdminSessionWiring(): void {
       apiClient.interceptors.request.eject(id);
       interceptorIdRef.current = null;
     };
-  }, [isElevated]);
+  }, [isElevated, resetTimer]);
 
   // ── MultiTabSync — connect to store ─────────────────────────────────────
   useEffect(() => {

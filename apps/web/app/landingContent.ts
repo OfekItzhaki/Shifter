@@ -72,7 +72,7 @@ export const LANDING_CONTENT: Record<LandingLang, {
   },
   he: {
     dir: "rtl",
-    nav: { features: "יתרונות", howItWorks: "איך זה עובד", about: "אודות", faq: "שאלות נפוצות", signIn: "כניסה", getStarted: "הרשמה חינם" },
+    nav: { features: "תכונות", howItWorks: "איך זה עובד", about: "אודות", faq: "שאלות נפוצות", signIn: "כניסה", getStarted: "הרשמה חינם" },
     hero: { title1: "סידור משמרות", title2: "חכם ואוטומטי", subtitle: "Shifter מייצר סידור עבודה הוגן ומאוזן בלחיצת כפתור. בלי אקסלים, בלי כאב ראש, בלי ויכוחים.", cta: "התחל עכשיו - חינם", signIn: "יש לי חשבון - כניסה" },
     features: {
       title: "למה Shifter?",

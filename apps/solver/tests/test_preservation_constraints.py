@@ -191,26 +191,23 @@ class TestPreservationNonClosedBaseRestLogic:
 # **Validates: Requirements 3.1, 3.2**
 
 
-class TestPreservationLongShiftSoftPenalty:
+class TestPreservationLongShiftHardRest:
     """
-    Preservation Property: Long shifts (>= 24h) in non-closed-base groups
-    use soft penalty path when rest_soft_penalties is not None.
+    Preservation Property: Long shifts (>= 24h) still respect hard rest.
 
-    When a shift is >= 24h and the group is non-closed-base (soft_penalties=[]),
-    the rest constraint becomes a soft penalty (violation * 50) rather than
-    a hard block. This allows the solver to assign the same person to both
-    shifts when resources are tight, at the cost of a penalty.
+    Long shifts must not downgrade min-rest into a soft penalty. If there is
+    only one person and the next slot starts inside the rest window, Shifter
+    should leave one slot uncovered instead of violating configured rest.
     """
 
     @given(
         shift_duration_hours=st.integers(min_value=24, max_value=48),
     )
     @settings(max_examples=10, deadline=None, suppress_health_check=[HealthCheck.too_slow])
-    def test_long_shift_allows_same_person_with_penalty(self, shift_duration_hours):
+    def test_long_shift_blocks_same_person_inside_rest_window(self, shift_duration_hours):
         """
-        Property: For non-closed-base groups, when one shift is >= 24h,
-        the solver CAN assign the same person to both shifts (soft penalty).
-        With only 1 person available, the solver must use the soft path.
+        Property: For non-closed-base groups, long shifts still enforce rest.
+        With only 1 person available, one of the two slots remains uncovered.
 
         **Validates: Requirements 3.1, 3.2**
         """
@@ -251,22 +248,12 @@ class TestPreservationLongShiftSoftPenalty:
         )
         result = solve(solver_input)
 
-        assert result.feasible, "Solver should find a feasible solution (soft penalty path)"
-
-        # With only 1 person and soft penalty for long shifts, the solver
-        # should assign p1 to both slots (accepting the penalty)
-        assert len(result.assignments) == 2, (
-            f"REGRESSION: Expected 2 assignments (soft penalty allows both), "
-            f"got {len(result.assignments)}. Long-shift soft penalty path "
-            f"should allow same person to be assigned to both slots."
+        assert result.feasible, "Solver should return a feasible partial solution"
+        assert len(result.assignments) == 1, (
+            f"REGRESSION: Expected 1 assignment because long shifts must not "
+            f"bypass hard rest, got {len(result.assignments)}."
         )
-
-        # Verify both slots are assigned to the same person
-        persons = {a.person_id for a in result.assignments}
-        assert persons == {"p1"}, (
-            f"Expected p1 assigned to both slots via soft penalty path, "
-            f"got persons: {persons}"
-        )
+        assert len(result.uncovered_slot_ids) == 1
 
 
 # ─── Property 3: Emergency-Bypassed People Skip Constraints ──────────────────

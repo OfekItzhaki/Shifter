@@ -22,7 +22,17 @@ export function useEffectiveAuth() {
     }
 
     syncAccessToken();
-    if (!persistApi || persistApi.hasHydrated?.()) {
+    if (!persistApi) {
+      setIsHydrated(true);
+      window.addEventListener("storage", syncAccessToken);
+      window.addEventListener(AUTH_TOKEN_CHANGED_EVENT, syncAccessToken);
+      return () => {
+        window.removeEventListener("storage", syncAccessToken);
+        window.removeEventListener(AUTH_TOKEN_CHANGED_EVENT, syncAccessToken);
+      };
+    }
+
+    if (persistApi.hasHydrated?.()) {
       setIsHydrated(true);
     }
 

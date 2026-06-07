@@ -459,6 +459,17 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
                 .Select(a => a.TaskSlotId.ToString())
                 .Distinct()
                 .ToList();
+
+            var restBlocks = await BuildRecentAssignmentRestBlocksAsync(
+                spaceId,
+                baselineRows.Select(a => (a.TaskSlotId, a.PersonId)).ToList(),
+                currentSlotIds,
+                horizonStartDt,
+                horizonEndDt,
+                minRestBetweenShiftsHours,
+                ct);
+
+            presenceDto.AddRange(restBlocks);
         }
 
         // ── Fairness counters ─────────────────────────────────────────────────
@@ -505,7 +516,7 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
         List<CumulativeTrackingDto> cumulativeTrackingDto = [];
         if (groupId.HasValue)
         {
-            var cumulativeData = await _cumulativeTracker.GetForSolverPayloadAsync(spaceId, groupId.Value, ct);
+            var cumulativeData = await _cumulativeTracker.GetForSolverPayloadAsync(spaceId, groupId.Value, ct) ?? [];
             if (cumulativeData.Count > 0)
             {
                 cumulativeTrackingDto = cumulativeData;
@@ -727,6 +738,105 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
             .ToListAsync(ct);
 
         return excludedIds.ToHashSet();
+    }
+
+    /// <summary>
+    /// Converts recent baseline assignments that are outside the current solver slot
+    /// payload into blocking windows through their required rest period.
+    /// This protects the start of a new run from assignments that ended shortly
+    /// before the horizon and are therefore filtered out of slotsDto.
+    /// </summary>
+    private async Task<List<PresenceWindowDto>> BuildRecentAssignmentRestBlocksAsync(
+        Guid spaceId,
+        List<(Guid TaskSlotId, Guid PersonId)> baselineAssignments,
+        HashSet<string> currentSlotIds,
+        DateTime horizonStartDt,
+        DateTime horizonEndDt,
+        int minRestBetweenShiftsHours,
+        CancellationToken ct)
+    {
+        if (minRestBetweenShiftsHours <= 0 || baselineAssignments.Count == 0)
+            return [];
+
+        var lookbackStart = horizonStartDt.AddHours(-minRestBetweenShiftsHours);
+        var assignmentSlotIds = baselineAssignments.Select(a => a.TaskSlotId).Distinct().ToHashSet();
+
+        var taskSlots = await _db.TaskSlots.AsNoTracking()
+            .Where(s => s.SpaceId == spaceId && assignmentSlotIds.Contains(s.Id))
+            .Select(s => new { s.Id, s.StartsAt, s.EndsAt })
+            .ToDictionaryAsync(s => s.Id, s => (s.StartsAt, s.EndsAt), ct);
+
+        var unresolvedSlotIds = assignmentSlotIds
+            .Where(id => !taskSlots.ContainsKey(id))
+            .ToHashSet();
+
+        var derivedShiftTimes = new Dictionary<Guid, (DateTime StartsAt, DateTime EndsAt)>();
+        if (unresolvedSlotIds.Count > 0)
+        {
+            var groupTasks = await _db.GroupTasks.AsNoTracking()
+                .Where(t => t.SpaceId == spaceId && t.IsActive)
+                .ToListAsync(ct);
+
+            foreach (var task in groupTasks)
+            {
+                var shiftDuration = TimeSpan.FromMinutes(task.ShiftDurationMinutes);
+                if (shiftDuration <= TimeSpan.Zero)
+                    continue;
+
+                var firstRelevantIndex = Math.Max(
+                    0,
+                    (int)Math.Floor((lookbackStart - task.StartsAt).TotalMinutes / shiftDuration.TotalMinutes));
+                var lastRelevantIndex = Math.Max(
+                    firstRelevantIndex,
+                    (int)Math.Ceiling((horizonEndDt - task.StartsAt).TotalMinutes / shiftDuration.TotalMinutes));
+
+                for (var shiftIndex = firstRelevantIndex; shiftIndex <= lastRelevantIndex; shiftIndex++)
+                {
+                    var derivedId = DeriveShiftGuid(task.Id, shiftIndex);
+                    if (!unresolvedSlotIds.Contains(derivedId))
+                        continue;
+
+                    var startsAt = task.StartsAt.AddMinutes(shiftIndex * shiftDuration.TotalMinutes);
+                    var endsAt = startsAt.Add(shiftDuration);
+                    derivedShiftTimes[derivedId] = (startsAt, endsAt);
+                }
+            }
+        }
+
+        var restBlocks = new List<PresenceWindowDto>();
+        var seen = new HashSet<string>();
+
+        foreach (var assignment in baselineAssignments)
+        {
+            if (currentSlotIds.Contains(assignment.TaskSlotId.ToString()))
+                continue;
+
+            (DateTime StartsAt, DateTime EndsAt) slotTime;
+            if (taskSlots.TryGetValue(assignment.TaskSlotId, out var taskSlotTime))
+            {
+                slotTime = taskSlotTime;
+            }
+            else if (!derivedShiftTimes.TryGetValue(assignment.TaskSlotId, out slotTime))
+            {
+                continue;
+            }
+
+            var blockEndsAt = slotTime.EndsAt.AddHours(minRestBetweenShiftsHours);
+            if (blockEndsAt <= horizonStartDt || slotTime.StartsAt >= horizonEndDt)
+                continue;
+
+            var key = $"{assignment.PersonId}:{slotTime.StartsAt:o}:{blockEndsAt:o}";
+            if (!seen.Add(key))
+                continue;
+
+            restBlocks.Add(new PresenceWindowDto(
+                assignment.PersonId.ToString(),
+                PresenceState.OnMission.ToString().ToSnakeCase(),
+                slotTime.StartsAt.ToString("o"),
+                blockEndsAt.ToString("o")));
+        }
+
+        return restBlocks;
     }
 
     /// <summary>
