@@ -190,7 +190,15 @@
       "rangeWeek": "השבוע",
       "rangeMonth": "החודש",
       "rangeYear": "השנה",
-      "dayNames": ["א׳", "ב׳", "ג׳", "ד׳", "ה׳", "ו׳", "ש׳"]
+      "dayNames": [
+        "א׳",
+        "ב׳",
+        "ג׳",
+        "ד׳",
+        "ה׳",
+        "ו׳",
+        "ש׳"
+      ]
     },
     "taskInfoLabel": "מידע על הגדרות המשימה",
     "taskInfo": {
@@ -934,7 +942,15 @@
     "discardConfirmText": "לבטל את הטיוטה? פעולה זו אינה הפיכה.",
     "yesDiscard": "כן, בטל",
     "back": "חזרה",
-    "dayNames": ["א׳", "ב׳", "ג׳", "ד׳", "ה׳", "ו׳", "ש׳"],
+    "dayNames": [
+      "א׳",
+      "ב׳",
+      "ג׳",
+      "ד׳",
+      "ה׳",
+      "ו׳",
+      "ש׳"
+    ],
     "enterSimulation": "כניסה לסימולציה",
     "enteringSimulation": "טוען...",
     "errorEnterSimulation": "שגיאה בכניסה לסימולציה"
@@ -1195,37 +1211,39 @@
         "title": "משמרת כפולה מומלצת",
         "body": "מומלצת משמרת כפולה לכיסוי כל המשימות."
       },
-      "self_service.request_approved": {
-        "title": "משמרת אושרה",
-        "body": "בקשת המשמרת שלך אושרה."
-      },
-      "self_service.request_rejected": {
-        "title": "משמרת נדחתה",
-        "body": "בקשת המשמרת נדחתה — המשבצת מלאה."
-      },
-      "self_service.swap_proposal_received": {
-        "title": "הצעת החלפה",
-        "body": "מישהו רוצה להחליף איתך משמרת."
-      },
-      "self_service.swap_declined": {
-        "title": "החלפה נדחתה",
-        "body": "הצעת ההחלפה שלך נדחתה."
-      },
-      "self_service.waitlist_offer": {
-        "title": "משבצת פנויה",
-        "body": "התפנה מקום במשמרת שאתה ממתין לה."
-      },
-      "self_service.under_scheduled_members": {
-        "title": "חברים עם חוסר שיבוצים",
-        "body": "לחלק מהחברים יש פחות משמרות מהמינימום."
-      },
-      "self_service.under_scheduled_warning": {
-        "title": "חוסר שיבוצים",
-        "body": "יש לך פחות משמרות מהמינימום הנדרש."
-      },
       "request_window_open": {
         "title": "חלון בקשות נפתח",
         "body": "חלון בקשות המשמרות נפתח כעת."
+      },
+      "self_service": {
+        "request_approved": {
+          "title": "משמרת אושרה",
+          "body": "בקשת המשמרת שלך אושרה."
+        },
+        "request_rejected": {
+          "title": "משמרת נדחתה",
+          "body": "בקשת המשמרת נדחתה — המשבצת מלאה."
+        },
+        "swap_proposal_received": {
+          "title": "הצעת החלפה",
+          "body": "מישהו רוצה להחליף איתך משמרת."
+        },
+        "swap_declined": {
+          "title": "החלפה נדחתה",
+          "body": "הצעת ההחלפה שלך נדחתה."
+        },
+        "waitlist_offer": {
+          "title": "משבצת פנויה",
+          "body": "התפנה מקום במשמרת שאתה ממתין לה."
+        },
+        "under_scheduled_members": {
+          "title": "חברים עם חוסר שיבוצים",
+          "body": "לחלק מהחברים יש פחות משמרות מהמינימום."
+        },
+        "under_scheduled_warning": {
+          "title": "חוסר שיבוצים",
+          "body": "יש לך פחות משמרות מהמינימום הנדרש."
+        }
       }
     }
   },
@@ -1945,7 +1963,15 @@
       "alternativeSlots": "משמרות חלופיות:",
       "requestSuccess": "הבקשה נשלחה בהצלחה",
       "waitlistSuccess": "הצטרפת לרשימת ההמתנה במיקום {position}",
-      "dayNames": ["ראשון", "שני", "שלישי", "רביעי", "חמישי", "שישי", "שבת"]
+      "dayNames": [
+        "ראשון",
+        "שני",
+        "שלישי",
+        "רביעי",
+        "חמישי",
+        "שישי",
+        "שבת"
+      ]
     },
     "myShifts": {
       "title": "המשמרות שלי",

@@ -11,6 +11,7 @@ import {
   useDismissAllNotifications,
 } from "@/lib/query/hooks/useNotifications";
 import { useNotificationPrefsStore } from "@/lib/store/notificationPrefsStore";
+import { getNotificationText } from "@/lib/notifications/messageText";
 
 export default function NotificationBell({ variant = "dark" }: { variant?: "light" | "dark" }) {
   const t = useTranslations("notifications");
@@ -105,19 +106,15 @@ export default function NotificationBell({ variant = "dark" }: { variant?: "ligh
         {filteredNotifications.length === 0 ? (
           <p className="text-xs text-gray-400 dark:text-slate-500 text-center py-6">{t("noNotifications")}</p>
         ) : filteredNotifications.map(n => {
-          // Use localized title/body based on eventType if translation exists
-          // Replace dots with underscores for translation key lookup (next-intl uses dots as path separators)
-          const eventKey = n.eventType.replace(/\./g, "_");
-          const localizedTitle = t(`events.${eventKey}.title`, { defaultValue: "" }) || n.title;
-          const localizedBody = t(`events.${eventKey}.body`, { defaultValue: "" }) || n.body;
+          const text = getNotificationText(t, n.eventType, { title: n.title, body: n.body });
 
           return (
             <div key={n.id}
               className={`px-4 py-3 flex gap-3 ${n.isRead ? "opacity-50" : "bg-sky-50/40 dark:bg-sky-900/20"}`}>
               <span className="text-base mt-0.5 flex-shrink-0">{eventIcon(n.eventType)}</span>
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-semibold text-gray-800 dark:text-slate-100">{localizedTitle}</p>
-                <p className="text-xs text-gray-600 dark:text-slate-300 mt-0.5 leading-relaxed">{localizedBody}</p>
+                <p className="text-xs font-semibold text-gray-800 dark:text-slate-100">{text.title}</p>
+                <p className="text-xs text-gray-600 dark:text-slate-300 mt-0.5 leading-relaxed">{text.body}</p>
                 <p className="text-[10px] text-gray-400 dark:text-slate-500 mt-1.5">
                   {fDateTime(n.createdAt)}
                 </p>
