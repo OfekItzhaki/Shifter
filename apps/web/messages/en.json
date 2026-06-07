@@ -3,6 +3,9 @@
     "name": "Shifter",
     "tagline": "Shift Scheduling System"
   },
+  "adminSession": {
+    "managementSessionExpired": "Management session expired due to inactivity"
+  },
   "auth": {
     "login": "Login",
     "logout": "Logout",
@@ -112,10 +115,13 @@
   },
   "privacyConsent": {
     "title": "Privacy preferences",
-    "body": "We use essential storage for login and app preferences. With your permission, we also use analytics and session diagnostics to improve Shifter.",
+    "body": "We use essential storage so you can sign in and keep your app preferences. If you allow it, we will also collect basic usage and error information to understand what works, fix problems, and improve Shifter.",
     "privacyLink": "Privacy Policy",
-    "accept": "Allow analytics",
-    "decline": "Essential only"
+    "accept": "Allow improvement data",
+    "decline": "Essential only",
+    "summary": "We use essential storage to keep Shifter working. You can also allow basic usage and error information to help us improve it.",
+    "understood": "Got it",
+    "options": "More choices"
   },
   "schedule": {
     "title": "Schedule",
@@ -207,10 +213,15 @@
     "newGroup": "+ New Group",
     "newGroupPlaceholder": "New group name",
     "noGroups": "You are not part of any group yet.",
+    "noGroupsInScope": "No groups here yet.",
     "deletedGroups": "Deleted Groups",
     "noDeletedGroups": "No deleted groups",
     "restore": "Restore",
     "members": "members",
+    "root": "All groups",
+    "subgroups": "subgroups",
+    "openGroup": "Open",
+    "manageGroup": "Manage",
     "childOf": "Child of",
     "parentOf": "Parent of",
     "templates": {
@@ -464,9 +475,9 @@
       "saveSettings": "Save Settings",
       "autoPublish": "Auto-Publish",
       "autoPublishDesc": "Automatically publish the schedule when it is ready",
-      "autoScheduler": "Auto-Scheduler",
-      "autoSchedulerDesc": "Runs every 6 hours to fill uncovered shifts with minimal changes",
-      "runSchedule": "Run Schedule",
+      "autoScheduler": "Shifter automation",
+      "autoSchedulerDesc": "Shifter runs every 6 hours to fill uncovered shifts with minimal changes",
+      "runSchedule": "Run Shifter",
       "running": "Running...",
       "startFrom": "Start from",
       "draftPending": "A draft is pending publication",
@@ -498,8 +509,8 @@
       "adminOnly": "Settings are available to admins only",
       "errorCreateRole": "Error creating role",
       "errorUpdateRole": "Error updating role",
-      "solverStartFrom": "Auto-scheduler start date",
-      "solverStartFromHint": "Empty = start from now. Set a fixed date/time for the auto-scheduler to use.",
+      "solverStartFrom": "Shifter start date",
+      "solverStartFromHint": "Empty = start from now. Set a fixed date/time for Shifter to use.",
       "inviteLink": "Invite Link",
       "inviteLinkDesc": "Share this link with people to let them join your group instantly.",
       "copyLink": "Copy Link",
@@ -518,7 +529,8 @@
       "managementTimeoutDesc": "Minutes of inactivity before the admin is prompted to confirm continued activity in management mode.",
       "managementTimeoutError": "Timeout must be a whole number between 5 and 120 minutes.",
       "minutes": "minutes",
-      "parentGroup": "Parent Group"
+      "parentGroup": "Parent Group",
+      "cancelRun": "Cancel run"
     },
     "linkedGroup": {
       "title": "Parent Group",
@@ -557,7 +569,7 @@
     "schedule_tab": {
       "draftReady": "Draft schedule ready for review and publication",
       "viewDraft": "👁 View Draft",
-      "publishSchedule": "Publish Schedule",
+      "publishSchedule": "Publish Shifter Plan",
       "publishing": "Publishing...",
       "cancelDraft": "Cancel Draft",
       "draftBadge": "Draft",
@@ -570,7 +582,7 @@
       "showDiff": "Changes",
       "history": "History",
       "thisWeek": "This Week",
-      "infeasible": "Could not create schedule",
+      "infeasible": "Shifter could not create a plan",
       "infeasibleDesc": "The system could not build a schedule with the current constraints.",
       "infeasibleSolution": "Solutions: add more members, extend the time horizon, or relax constraints.",
       "noMissionsToday": "No missions on this day"
@@ -763,23 +775,23 @@
     "today": "Today",
     "yesterday": "Yesterday",
     "tomorrow": "Tomorrow",
-    "runSolver": "Run Schedule",
-    "runEmergency": "Emergency Schedule",
+    "runSolver": "Run Shifter",
+    "runEmergency": "Emergency Shifter Run",
     "solverStartTime": "Start from",
-    "solverStarted": "Schedule started. ID: {runId}",
-    "emergencyStarted": "Emergency schedule started. ID: {runId}",
-    "errorSolver": "Error starting the schedule.",
+    "solverStarted": "Shifter started. ID: {runId}",
+    "emergencyStarted": "Emergency Shifter run started. ID: {runId}",
+    "errorSolver": "Error starting Shifter.",
     "solver_uncovered_slots": "Could not fill all shifts. Missing tasks: {tasks} ({count} shifts). Try adding more members.",
     "member_limit_reached": "You've reached the member limit for your plan ({limit}). Upgrade to add more.",
-    "solverCannotRun": "⚠ Cannot create schedule",
+    "solverCannotRun": "⚠ Cannot run Shifter",
     "solverNotEnoughMembers": "Not enough members in the group. Add at least 2 members for the system to create a schedule.",
-    "solverLastFailed": "⚠ Last schedule run failed",
+    "solverLastFailed": "⚠ Last Shifter run failed",
     "solverSolutions": "Possible solutions: add more members, change home-time settings, or relax constraints.",
     "reportProblem": "Report a problem",
-    "solverPhase_building_payload": "Building schedule data...",
-    "solverPhase_solving": "Finding optimal solution...",
-    "solverPhase_storing_results": "Storing results...",
-    "errorEmergencySolver": "Error starting emergency schedule.",
+    "solverPhase_building_payload": "Preparing Shifter data...",
+    "solverPhase_solving": "Shifter is finding the best plan...",
+    "solverPhase_storing_results": "Saving Shifter results...",
+    "errorEmergencySolver": "Error starting emergency Shifter run.",
     "selectVersion": "Select a version to view details.",
     "selectGroup": "Select a group to manage",
     "noMembers": "No members yet.",
@@ -854,7 +866,9 @@
       "errorConflict": "A regeneration is already in progress for this group.",
       "errorPermission": "You do not have permission to regenerate the schedule.",
       "errorGeneric": "Failed to start regeneration. Please try again."
-    }
+    },
+    "solverCancelled": "Shifter run cancelled.",
+    "solverCancelError": "Could not cancel the Shifter run. Please try again."
   },
   "language": {
     "label": "Language",
@@ -1192,9 +1206,9 @@
     "errorLoadSchedule": "Error loading schedule",
     "offlineWithCache": "No internet connection. Showing cached schedule from {date}",
     "offlineNoCache": "No internet connection and no cached schedule",
-    "solverTimeout": "The system did not respond in time. The problem may be too complex - try reducing the planning horizon or simplifying constraints.",
-    "solverCheckError": "Error checking schedule status",
-    "solverStartError": "Error starting the schedule",
+    "solverTimeout": "Shifter did not respond in time. The problem may be too complex - try reducing the planning horizon or simplifying constraints.",
+    "solverCheckError": "Error checking Shifter status",
+    "solverStartError": "Error starting Shifter",
     "timeoutOutOfRange": "Timeout must be a whole number between 5 and 120 minutes."
   },
   "common": {
@@ -1380,9 +1394,9 @@
         "cta": "Set Rules"
       },
       "runSolver": {
-        "title": "Generate Schedule",
-        "description": "Run the auto-scheduler",
-        "cta": "Run Schedule"
+        "title": "Run Shifter",
+        "description": "Let Shifter generate the first draft",
+        "cta": "Run Shifter"
       }
     }
   },
@@ -1479,7 +1493,7 @@
   "stats": {
     "title": "Statistics",
     "assignments": "Assignments",
-    "solverRuns": "Schedule Runs",
+    "solverRuns": "Shifter Runs",
     "versionsPublished": "Versions Published",
     "burdenTrend": "Burden Trend",
     "last7days": "7d",
@@ -1671,7 +1685,7 @@
       "homeLeaveTitle": "Home-Leave Assignments",
       "member": "Member",
       "leaveWindow": "Leave Window",
-      "solverTime": "Processing time: {ms}ms"
+      "solverTime": "Shifter time: {ms}ms"
     },
     "publish": "Publish",
     "publishing": "Publishing...",
@@ -1777,7 +1791,7 @@
     "tipCreateGroup": "Create a new group",
     "tipAddMembers": "Add members to a group",
     "tipDefineTasks": "Define tasks and shifts",
-    "tipRunSolver": "Run automatic scheduling",
+    "tipRunSolver": "Run Shifter",
     "quickActions": "Quick Actions",
     "myMissions": "My Missions",
     "myGroups": "My Groups",
@@ -1788,13 +1802,16 @@
     "status": {
       "ariaLabel": "Regeneration run status",
       "queued": "Queued for processing...",
-      "running": "Computing new schedule...",
-      "completed": "New schedule is ready",
-      "failed": "Schedule regeneration failed",
+      "running": "Shifter is computing a new plan...",
+      "completed": "New Shifter plan is ready",
+      "failed": "Shifter regeneration failed",
       "unknownError": "An unknown error occurred",
       "pollError": "Error checking run status",
       "reviewDraft": "Review Draft",
-      "dismiss": "Dismiss"
+      "dismiss": "Dismiss",
+      "cancelError": "Error cancelling run",
+      "cancelRun": "Cancel run",
+      "cancelled": "Run cancelled"
     }
   },
   "scheduleRegeneration": {

@@ -17,10 +17,10 @@
 export interface InactivityTimerCallbacks {
   /** Called every second with the remaining time in milliseconds. */
   onTick: (remainingMs: number) => void;
-  /** Called whenever user activity resets the timer. */
-  onActivity?: () => void;
   /** Called when the inactivity timer reaches zero (show the activity prompt). */
   onTimeout: () => void;
+  /** Called after meaningful user activity resets the timer. */
+  onActivity?: () => void;
 }
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -58,19 +58,18 @@ export class InactivityTimer {
    * Start the inactivity countdown.
    * @param timeoutMs Total timeout duration in milliseconds.
    * @param callbacks Callbacks for tick and timeout events.
-   * @param lastActivityTimestamp Optional timestamp to resume an existing session.
    */
   start(
     timeoutMs: number,
     callbacks: InactivityTimerCallbacks,
-    lastActivityTimestamp: number = Date.now()
+    lastActivityTimestamp?: number
   ): void {
     // Stop any existing timer before starting a new one
     this.stop();
 
     this.timeoutMs = timeoutMs;
-    this.remainingMs = timeoutMs;
-    this.lastActivityTimestamp = lastActivityTimestamp;
+    this.lastActivityTimestamp = lastActivityTimestamp ?? Date.now();
+    this.remainingMs = Math.max(0, timeoutMs - (Date.now() - this.lastActivityTimestamp));
     this.callbacks = callbacks;
     this.running = true;
 
@@ -87,7 +86,6 @@ export class InactivityTimer {
 
     this.remainingMs = this.timeoutMs;
     this.lastActivityTimestamp = Date.now();
-    this.callbacks?.onActivity?.();
   }
 
   /**
@@ -180,6 +178,7 @@ export class InactivityTimer {
 
   private handleActivity(): void {
     this.reset();
+    this.callbacks?.onActivity?.();
   }
 
   private handleVisibilityChange(): void {

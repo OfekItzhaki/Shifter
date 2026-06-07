@@ -17,6 +17,11 @@ export interface GroupDto {
   parentGroupId: string | null;
 }
 
+export interface CreateGroupInput {
+  name: string;
+  parentGroupId?: string | null;
+}
+
 export function useGroups(spaceId: string | null) {
   return useQuery({
     queryKey: queryKeys.groups(spaceId ?? ""),
@@ -41,8 +46,8 @@ export function useDeletedGroups(spaceId: string | null) {
 export function useCreateGroup(spaceId: string | null) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (name: string) =>
-      apiClient.post(`/spaces/${spaceId}/groups`, { name, description: null }),
+    mutationFn: ({ name, parentGroupId }: CreateGroupInput) =>
+      apiClient.post(`/spaces/${spaceId}/groups`, { name, description: null, parentGroupId }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: queryKeys.groups(spaceId ?? "") });
     },

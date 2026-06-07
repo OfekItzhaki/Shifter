@@ -25,40 +25,52 @@ public class LinkParentGroupCommandHandler : IRequestHandler<LinkParentGroupComm
 
     public async Task Handle(LinkParentGroupCommand request, CancellationToken ct)
     {
-        // ── Permission check ─────────────────────────────────────────────────
         await _permissions.RequirePermissionAsync(
             request.RequestingUserId, request.SpaceId, Permissions.SpaceAdminMode, ct);
 
-        // ── Load child group ─────────────────────────────────────────────────
         var childGroup = await _db.Groups
             .FirstOrDefaultAsync(g => g.Id == request.ChildGroupId && g.SpaceId == request.SpaceId && g.DeletedAt == null, ct)
             ?? throw new KeyNotFoundException("Child group not found in this space.");
 
-        // ── Load parent group ────────────────────────────────────────────────
         var parentGroup = await _db.Groups
             .FirstOrDefaultAsync(g => g.Id == request.ParentGroupId && g.SpaceId == request.SpaceId && g.DeletedAt == null, ct)
             ?? throw new KeyNotFoundException("Parent group not found in this space.");
 
-        // ── Validate same space ──────────────────────────────────────────────
         if (childGroup.SpaceId != parentGroup.SpaceId)
             throw new InvalidOperationException("Both groups must belong to the same space.");
 
-        // ── Validate no circular reference (child cannot be itself) ──────────
         if (request.ChildGroupId == request.ParentGroupId)
             throw new InvalidOperationException("A group cannot be its own parent.");
 
-        // ── Single-level hierarchy: parent cannot itself have a parent ───────
-        if (parentGroup.ParentGroupId is not null)
-            throw new InvalidOperationException("Only single-level hierarchy is allowed. The proposed parent group already has a parent.");
+        await EnsureNoCircularHierarchyAsync(request.SpaceId, request.ChildGroupId, parentGroup.ParentGroupId, ct);
 
-        // ── Single-level hierarchy: child cannot already be a parent of other groups ─
-        var childIsParent = await _db.Groups
-            .AnyAsync(g => g.ParentGroupId == request.ChildGroupId && g.DeletedAt == null, ct);
-        if (childIsParent)
-            throw new InvalidOperationException("A group that is a parent of other groups cannot itself become a child.");
-
-        // ── Set parent ───────────────────────────────────────────────────────
         childGroup.SetParentGroup(request.ParentGroupId);
         await _db.SaveChangesAsync(ct);
+    }
+
+    private async Task EnsureNoCircularHierarchyAsync(
+        Guid spaceId,
+        Guid childGroupId,
+        Guid? parentAncestorId,
+        CancellationToken ct)
+    {
+        var visited = new HashSet<Guid> { childGroupId };
+        var currentParentId = parentAncestorId;
+        var depth = 0;
+
+        while (currentParentId.HasValue)
+        {
+            if (!visited.Add(currentParentId.Value))
+                throw new InvalidOperationException("Parent group link would create a circular hierarchy.");
+
+            currentParentId = await _db.Groups.AsNoTracking()
+                .Where(g => g.Id == currentParentId.Value && g.SpaceId == spaceId && g.DeletedAt == null)
+                .Select(g => g.ParentGroupId)
+                .FirstOrDefaultAsync(ct);
+
+            depth++;
+            if (depth > 50)
+                throw new InvalidOperationException("Group hierarchy is too deep or circular.");
+        }
     }
 }

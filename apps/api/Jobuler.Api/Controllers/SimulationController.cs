@@ -3,10 +3,13 @@ using Jobuler.Application.Common;
 using Jobuler.Application.Scheduling;
 using Jobuler.Application.Scheduling.Commands;
 using Jobuler.Application.Scheduling.Models;
+using Jobuler.Domain.Scheduling;
 using Jobuler.Domain.Spaces;
+using Jobuler.Infrastructure.Persistence;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 
 namespace Jobuler.Api.Controllers;
@@ -21,23 +24,58 @@ public class SimulationController : ControllerBase
     private readonly IValidator<SimulateRequest> _simulateValidator;
     private readonly IValidator<PublishSandboxRequest> _publishValidator;
     private readonly IMediator _mediator;
+    private readonly ISolverPayloadNormalizer _normalizer;
+    private readonly AppDbContext _db;
 
     public SimulationController(
         IPermissionService permissions,
         ISolverClient solverClient,
         IValidator<SimulateRequest> simulateValidator,
         IValidator<PublishSandboxRequest> publishValidator,
-        IMediator mediator)
+        IMediator mediator,
+        ISolverPayloadNormalizer normalizer,
+        AppDbContext db)
     {
         _permissions = permissions;
         _solverClient = solverClient;
         _simulateValidator = simulateValidator;
         _publishValidator = publishValidator;
         _mediator = mediator;
+        _normalizer = normalizer;
+        _db = db;
     }
 
     private Guid CurrentUserId =>
         Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+
+    /// <summary>
+    /// Build the baseline solver payload used to enter the simulation sandbox.
+    /// </summary>
+    [HttpGet("solver-baseline")]
+    public async Task<IActionResult> GetSolverBaseline(
+        Guid spaceId, Guid groupId, CancellationToken ct)
+    {
+        await _permissions.RequirePermissionAsync(
+            CurrentUserId, spaceId, Permissions.ScheduleRecalculate, ct);
+
+        var publishedVersionId = await _db.ScheduleVersions
+            .AsNoTracking()
+            .Where(v => v.SpaceId == spaceId && v.Status == ScheduleVersionStatus.Published)
+            .OrderByDescending(v => v.VersionNumber)
+            .Select(v => (Guid?)v.Id)
+            .FirstOrDefaultAsync(ct);
+
+        var payload = await _normalizer.BuildAsync(
+            spaceId,
+            Guid.NewGuid(),
+            "standard",
+            publishedVersionId,
+            groupId,
+            startTime: null,
+            ct);
+
+        return Ok(payload);
+    }
 
     /// <summary>
     /// Run a simulation with the provided solver payload.

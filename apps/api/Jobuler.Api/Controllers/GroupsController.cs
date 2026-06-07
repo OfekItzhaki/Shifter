@@ -52,7 +52,7 @@ public class GroupsController : ControllerBase
         }
 
         var id = await _mediator.Send(
-            new CreateGroupCommand(spaceId, req.GroupTypeId, req.Name, req.Description, CurrentUserId, templateType), ct);
+            new CreateGroupCommand(spaceId, req.GroupTypeId, req.Name, req.Description, CurrentUserId, templateType, req.ParentGroupId), ct);
         return Created("", new { id });
     }
 
@@ -391,7 +391,7 @@ public class GroupsController : ControllerBase
 public record AddMemberByIdRequest(Guid PersonId, Guid? RoleId = null);
 public record CreateGroupMessageRequest(string Content, bool IsPinned = false);
 public record CreateGroupTypeRequest(string Name, string? Description);
-public record CreateGroupRequest(Guid? GroupTypeId, string Name, string? Description, string? TemplateType = null);
+public record CreateGroupRequest(Guid? GroupTypeId, string Name, string? Description, string? TemplateType = null, Guid? ParentGroupId = null);
 public record AddMemberByEmailRequest(string Email, Guid? RoleId = null);
 public record AddMemberByPhoneRequest(string PhoneNumber, Guid? RoleId = null);
 public record UpdateGroupSettingsRequest(int SolverHorizonDays, DateTime? SolverStartDateTime = null, bool? AutoPublish = null, int? MinRestBetweenShiftsHours = null, bool? AllowMembersViewHistory = null, bool? AllowMembersViewStats = null, int? ManagementTimeoutMinutes = null);

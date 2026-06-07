@@ -4,6 +4,8 @@ using Jobuler.Domain.Notifications;
 using Jobuler.Domain.People;
 using Jobuler.Domain.Scheduling;
 using Jobuler.Domain.Spaces;
+using Jobuler.Domain.Groups;
+using Jobuler.Domain.Tasks;
 using Jobuler.Infrastructure.Persistence;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -76,6 +78,8 @@ public class PublishVersionCommandHandler : IRequestHandler<PublishVersionComman
         // Guard: not a draft — cannot publish
         if (version.Status != ScheduleVersionStatus.Draft)
             throw new InvalidOperationException($"Cannot publish a version with status '{version.Status}'.");
+
+        await ValidateDraftHardConstraintsAsync(version, ct);
 
         // Archive the current published version before publishing the new one
         var currentPublished = await _db.ScheduleVersions
@@ -181,6 +185,277 @@ public class PublishVersionCommandHandler : IRequestHandler<PublishVersionComman
                     .LogError(ex, "Conflict detection failed for version {VersionId}", req.VersionId);
             }
         });
+    }
+
+    private async Task ValidateDraftHardConstraintsAsync(ScheduleVersion version, CancellationToken ct)
+    {
+        var assignments = await _db.Assignments.AsNoTracking()
+            .Where(a => a.SpaceId == version.SpaceId && a.ScheduleVersionId == version.Id)
+            .ToListAsync(ct);
+
+        if (assignments.Count < 2)
+            return;
+
+        var resolved = await ResolveAssignmentWindowsAsync(version, assignments, ct);
+        if (resolved.Count < 2)
+            return;
+
+        foreach (var personTimeline in resolved
+            .GroupBy(a => a.PersonId)
+            .Select(g => g.OrderBy(a => a.StartsAt).ThenBy(a => a.EndsAt).ToList()))
+        {
+            for (var i = 0; i < personTimeline.Count - 1; i++)
+            {
+                var current = personTimeline[i];
+                var next = personTimeline[i + 1];
+
+                if (current.EndsAt > next.StartsAt && !(current.AllowsOverlap && next.AllowsOverlap))
+                {
+                    throw new InvalidOperationException(
+                        $"Cannot publish schedule: {current.PersonName} is assigned to overlapping tasks " +
+                        $"'{current.TaskName}' ({current.StartsAt:O}-{current.EndsAt:O}) and " +
+                        $"'{next.TaskName}' ({next.StartsAt:O}-{next.EndsAt:O}).");
+                }
+
+                var gap = next.StartsAt - current.EndsAt;
+                var requiredRest = Math.Max(current.MinRestHours, next.MinRestHours);
+                if (requiredRest > 0 && gap >= TimeSpan.Zero && gap < TimeSpan.FromHours(requiredRest))
+                {
+                    if (IsAllowedDoubleShiftContinuation(personTimeline, i))
+                        continue;
+
+                    throw new InvalidOperationException(
+                        $"Cannot publish schedule: {current.PersonName} has only {gap.TotalHours:F1}h rest between " +
+                        $"'{current.TaskName}' ending at {current.EndsAt:O} and " +
+                        $"'{next.TaskName}' starting at {next.StartsAt:O}. Required: {requiredRest}h.");
+                }
+            }
+        }
+    }
+
+    private static bool IsAllowedDoubleShiftContinuation(IReadOnlyList<ResolvedAssignment> timeline, int currentIndex)
+    {
+        var current = timeline[currentIndex];
+        var next = timeline[currentIndex + 1];
+
+        if (!current.AllowsDoubleShift || !next.AllowsDoubleShift)
+            return false;
+
+        if (current.GroupTaskId is null || current.GroupTaskId != next.GroupTaskId)
+            return false;
+
+        var gap = next.StartsAt - current.EndsAt;
+        if (gap < TimeSpan.Zero || gap > TimeSpan.FromMinutes(1))
+            return false;
+
+        if (currentIndex == 0)
+            return true;
+
+        var previous = timeline[currentIndex - 1];
+        if (!previous.AllowsDoubleShift || previous.GroupTaskId != current.GroupTaskId)
+            return true;
+
+        var previousGap = current.StartsAt - previous.EndsAt;
+        return previousGap < TimeSpan.Zero || previousGap > TimeSpan.FromMinutes(1);
+    }
+
+    private async Task<List<ResolvedAssignment>> ResolveAssignmentWindowsAsync(
+        ScheduleVersion version,
+        List<Assignment> assignments,
+        CancellationToken ct)
+    {
+        var slotIds = assignments.Select(a => a.TaskSlotId).ToHashSet();
+        var personIds = assignments.Select(a => a.PersonId).ToHashSet();
+
+        var people = await _db.People.AsNoTracking()
+            .Where(p => personIds.Contains(p.Id))
+            .ToDictionaryAsync(p => p.Id, p => p.DisplayName ?? p.FullName, ct);
+
+        var taskSlots = await _db.TaskSlots.AsNoTracking()
+            .Where(s => s.SpaceId == version.SpaceId && slotIds.Contains(s.Id))
+            .ToDictionaryAsync(s => s.Id, ct);
+
+        var taskTypeIds = taskSlots.Values.Select(s => s.TaskTypeId).ToHashSet();
+        var taskTypes = await _db.TaskTypes.AsNoTracking()
+            .Where(t => t.SpaceId == version.SpaceId && taskTypeIds.Contains(t.Id))
+            .ToDictionaryAsync(t => t.Id, ct);
+
+        var groups = await _db.Groups.AsNoTracking()
+            .Where(g => g.SpaceId == version.SpaceId && g.DeletedAt == null)
+            .ToDictionaryAsync(g => g.Id, ct);
+
+        var defaultMinRestHours = groups.Count == 0
+            ? 8
+            : Math.Max(8, groups.Values.Max(g => g.MinRestBetweenShiftsHours));
+
+        var missingIds = slotIds.Where(id => !taskSlots.ContainsKey(id)).ToHashSet();
+        var generatedSlots = missingIds.Count == 0
+            ? new Dictionary<Guid, ResolvedSlot>()
+            : await ResolveGeneratedGroupTaskSlotsAsync(version, missingIds, groups, ct);
+
+        var resolved = new List<ResolvedAssignment>();
+        foreach (var assignment in assignments)
+        {
+            ResolvedSlot? slot = null;
+
+            if (taskSlots.TryGetValue(assignment.TaskSlotId, out var taskSlot))
+            {
+                taskTypes.TryGetValue(taskSlot.TaskTypeId, out var taskType);
+                slot = new ResolvedSlot(
+                    taskType?.Name ?? "Unknown",
+                    taskSlot.StartsAt,
+                    taskSlot.EndsAt,
+                    defaultMinRestHours,
+                    taskType?.AllowsOverlap ?? false,
+                    AllowsDoubleShift: false,
+                    GroupTaskId: null);
+            }
+            else if (generatedSlots.TryGetValue(assignment.TaskSlotId, out var generatedSlot))
+            {
+                slot = generatedSlot;
+            }
+
+            if (slot is null)
+            {
+                throw new InvalidOperationException(
+                    $"Cannot publish schedule: assignment {assignment.Id} references unknown slot {assignment.TaskSlotId}.");
+            }
+
+            resolved.Add(new ResolvedAssignment(
+                assignment.Id,
+                assignment.PersonId,
+                people.TryGetValue(assignment.PersonId, out var personName) ? personName : assignment.PersonId.ToString(),
+                slot.TaskName,
+                slot.StartsAt,
+                slot.EndsAt,
+                slot.MinRestHours,
+                slot.AllowsOverlap,
+                slot.AllowsDoubleShift,
+                slot.GroupTaskId));
+        }
+
+        return resolved;
+    }
+
+    private async Task<Dictionary<Guid, ResolvedSlot>> ResolveGeneratedGroupTaskSlotsAsync(
+        ScheduleVersion version,
+        HashSet<Guid> missingSlotIds,
+        Dictionary<Guid, Group> groups,
+        CancellationToken ct)
+    {
+        var groupTasks = await _db.GroupTasks.AsNoTracking()
+            .Where(t => t.SpaceId == version.SpaceId)
+            .ToListAsync(ct);
+
+        var solverStartDt = version.CreatedAt;
+        solverStartDt = new DateTime(
+            solverStartDt.Year, solverStartDt.Month, solverStartDt.Day,
+            solverStartDt.Hour, 0, 0, DateTimeKind.Utc);
+
+        if (version.SourceRunId.HasValue)
+        {
+            var run = await _db.ScheduleRuns.AsNoTracking()
+                .FirstOrDefaultAsync(r => r.Id == version.SourceRunId.Value, ct);
+            if (run?.StartedAt.HasValue == true)
+            {
+                solverStartDt = new DateTime(
+                    run.StartedAt.Value.Year, run.StartedAt.Value.Month, run.StartedAt.Value.Day,
+                    run.StartedAt.Value.Hour, 0, 0, DateTimeKind.Utc);
+            }
+        }
+
+        var resolved = new Dictionary<Guid, ResolvedSlot>();
+        foreach (var task in groupTasks)
+        {
+            if (task.ShiftDurationMinutes < 1)
+                continue;
+
+            var shiftDuration = TimeSpan.FromMinutes(task.ShiftDurationMinutes);
+            var windowStart = solverStartDt > task.StartsAt ? solverStartDt : task.StartsAt;
+
+            if (task.ShiftDurationMinutes == 1440 && task.StartsAt <= solverStartDt)
+            {
+                var candidateStart = solverStartDt.Date + task.StartsAt.TimeOfDay;
+                if (candidateStart <= solverStartDt)
+                    candidateStart = candidateStart.AddDays(1);
+                windowStart = DateTime.SpecifyKind(candidateStart, DateTimeKind.Utc);
+            }
+
+            var shiftIndex = (int)Math.Floor((windowStart - task.StartsAt).TotalMinutes / task.ShiftDurationMinutes);
+            if (shiftIndex < 0)
+                shiftIndex = 0;
+
+            var shiftStart = task.StartsAt + TimeSpan.FromMinutes((double)shiftIndex * task.ShiftDurationMinutes);
+            if (shiftStart < windowStart)
+            {
+                shiftIndex++;
+                shiftStart += shiftDuration;
+            }
+
+            var maxShifts = Math.Min(
+                10_000,
+                missingSlotIds.Count + (int)Math.Ceiling((task.EndsAt - shiftStart).TotalMinutes / task.ShiftDurationMinutes) + 1);
+
+            for (var i = 0; shiftStart + shiftDuration <= task.EndsAt && i < maxShifts && resolved.Count < missingSlotIds.Count; i++)
+            {
+                var shiftEnd = shiftStart + shiftDuration;
+                var slotId = ShiftGuidHelper.DeriveShiftGuid(task.Id, shiftIndex);
+
+                if (missingSlotIds.Contains(slotId))
+                {
+                    var minRest = groups.TryGetValue(task.GroupId, out var group)
+                        ? group.MinRestBetweenShiftsHours
+                        : 8;
+
+                    resolved[slotId] = new ResolvedSlot(
+                        task.Name,
+                        shiftStart,
+                        shiftEnd,
+                        minRest,
+                        task.AllowsOverlap,
+                        task.AllowsDoubleShift,
+                        task.Id);
+                }
+
+                shiftStart = shiftEnd;
+                shiftIndex++;
+            }
+        }
+
+        return resolved;
+    }
+
+    private sealed record ResolvedSlot(
+        string TaskName,
+        DateTime StartsAt,
+        DateTime EndsAt,
+        int MinRestHours,
+        bool AllowsOverlap,
+        bool AllowsDoubleShift,
+        Guid? GroupTaskId);
+
+    private sealed record ResolvedAssignment(
+        Guid AssignmentId,
+        Guid PersonId,
+        string PersonName,
+        string TaskName,
+        DateTime StartsAt,
+        DateTime EndsAt,
+        int MinRestHours,
+        bool AllowsOverlap,
+        bool AllowsDoubleShift,
+        Guid? GroupTaskId);
+
+    private static class ShiftGuidHelper
+    {
+        internal static Guid DeriveShiftGuid(Guid taskId, int shiftIndex)
+        {
+            var bytes = taskId.ToByteArray();
+            var indexBytes = BitConverter.GetBytes(shiftIndex);
+            for (var i = 0; i < 4; i++)
+                bytes[12 + i] ^= indexBytes[i];
+            return new Guid(bytes);
+        }
     }
 
     /// <summary>

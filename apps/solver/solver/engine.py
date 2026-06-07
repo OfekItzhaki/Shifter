@@ -574,7 +574,7 @@ def _build_hard_conflicts(input: SolverInput, people, slots) -> list[HardConflic
     Analyse the input to produce locale-aware conflict explanations when
     the solver returns INFEASIBLE.
     """
-    from solver.constraints import _to_timestamp
+    from solver.constraints import _is_allowed_double_shift_pair, _to_timestamp
 
     locale = getattr(input, "locale", "en")
     conflicts: list[HardConflict] = []
@@ -610,9 +610,17 @@ def _build_hard_conflicts(input: SolverInput, people, slots) -> list[HardConflic
 
                     # Check if the gap between the two slots is less than min_rest
                     violates = False
-                    if end1 <= start2 and (start2 - end1) < min_rest_seconds:
+                    if (
+                        end1 <= start2
+                        and (start2 - end1) < min_rest_seconds
+                        and not _is_allowed_double_shift_pair(slot1, slot2, end1, start2)
+                    ):
                         violates = True
-                    elif end2 <= start1 and (start1 - end2) < min_rest_seconds:
+                    elif (
+                        end2 <= start1
+                        and (start1 - end2) < min_rest_seconds
+                        and not _is_allowed_double_shift_pair(slot2, slot1, end2, start1)
+                    ):
                         violates = True
 
                     if violates:

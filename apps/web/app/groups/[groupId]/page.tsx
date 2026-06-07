@@ -170,6 +170,7 @@ export default function GroupDetailPage() {
     minRestBetweenShiftsHours, setMinRestBetweenShiftsHours,
     managementTimeoutMinutes, setManagementTimeoutMinutes,
     solverPolling, setSolverPolling, solverStatus, setSolverStatus, solverError, setSolverError,
+    currentSolverRunId, setCurrentSolverRunId,
     deletedGroups, setDeletedGroups, deletedGroupsLoading, setDeletedGroupsLoading,
     transferPersonId, setTransferPersonId, transferSaving, setTransferSaving,
     transferError, setTransferError, hasPendingTransfer, setHasPendingTransfer,
@@ -197,11 +198,18 @@ export default function GroupDetailPage() {
   // This restarts the inactivity timeout after a refresh.
   useEffect(() => {
     if (adminGroupId === groupId && group) {
-      const { isElevated } = useAdminSessionStore.getState();
-      if (!isElevated) {
-        const timeoutMinutes = group.managementTimeoutMinutes ?? 15;
-        enterElevatedMode("management", groupId, timeoutMinutes);
+      const { isElevated, elevatedMode, elevatedGroupId } = useAdminSessionStore.getState();
+      if (
+        isElevated &&
+        elevatedMode === "management" &&
+        elevatedGroupId === groupId
+      ) {
+        return;
       }
+
+      exitAdminMode();
+      exitElevatedMode("manual");
+      setIsAdmin(false);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [group, adminGroupId, groupId]);
@@ -1143,6 +1151,7 @@ export default function GroupDetailPage() {
     setSolverPolling(true);
     setSolverStatus(null);
     setSolverError(null);
+    setCurrentSolverRunId(null);
 
     try {
       const res = await apiClient.post<{ runId: string }>(
@@ -1150,6 +1159,7 @@ export default function GroupDetailPage() {
         { triggerMode: "standard", groupId, startTime: startTime ?? null }
       );
       const runId = res.data.runId;
+      setCurrentSolverRunId(runId);
 
       pollingRef.current = setInterval(async () => {
         try {
@@ -1186,6 +1196,7 @@ export default function GroupDetailPage() {
           if (terminal) {
             if (pollingRef.current) clearInterval(pollingRef.current);
             setSolverPolling(false);
+            setCurrentSolverRunId(null);
             refetchNotifications();
 
             // Always reload both draft and discarded versions so the schedule tab
@@ -1225,13 +1236,35 @@ export default function GroupDetailPage() {
         } catch {
           if (pollingRef.current) clearInterval(pollingRef.current);
           setSolverPolling(false);
+          setCurrentSolverRunId(null);
           setSolverError(tErrors("solverCheckError"));
         }
       }, 3000);
     } catch (err: unknown) {
       setSolverPolling(false);
+      setCurrentSolverRunId(null);
       const axiosErr = err as { response?: { data?: { error?: string; title?: string } } };
       setSolverError(axiosErr?.response?.data?.error || axiosErr?.response?.data?.title || tErrors("solverStartError"));
+    }
+  }
+
+  async function handleCancelSolverRun() {
+    if (!currentSpaceId || !currentSolverRunId) return;
+
+    try {
+      await apiClient.post(`/spaces/${currentSpaceId}/schedule-runs/${currentSolverRunId}/cancel`);
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current);
+        pollingRef.current = null;
+      }
+      setSolverPolling(false);
+      setCurrentSolverRunId(null);
+      setSolverStatus("Failed");
+      setSolverError(tAdmin("solverCancelled"));
+      refetchNotifications();
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { data?: { error?: string; title?: string } } };
+      setSolverError(axiosErr?.response?.data?.error || axiosErr?.response?.data?.title || tAdmin("solverCancelError"));
     }
   }
 
@@ -1323,7 +1356,7 @@ export default function GroupDetailPage() {
       <div className="max-w-6xl w-full mx-auto px-2 sm:px-4 py-4 sm:py-6 space-y-4 sm:space-y-6" dir="rtl">
         {/* Header */}
         <div className="flex items-center gap-3 sm:gap-4">
-          <Link href="/groups" className="text-slate-400 hover:text-slate-600 transition-colors flex-shrink-0">
+          <Link href={group.parentGroupId ? `/groups?parent=${group.parentGroupId}` : "/groups"} className="text-slate-400 hover:text-slate-600 transition-colors flex-shrink-0">
             <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} className="rtl:rotate-180">
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
             </svg>
@@ -1641,6 +1674,7 @@ export default function GroupDetailPage() {
               onAllowMembersViewStatsChange={handleAllowMembersViewStatsChange}
               onSaveSettings={handleSaveSettings}
               onTriggerSolver={handleTriggerSolver}
+              onCancelSolverRun={handleCancelSolverRun}
               onOpenDraftModal={() => setShowDraftModal(true)}
               onTransferPersonChange={setTransferPersonId}
               onInitiateTransfer={handleInitiateTransfer}

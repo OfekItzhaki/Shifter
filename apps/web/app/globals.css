@@ -228,6 +228,9 @@ button:disabled, input:disabled, textarea:disabled, select:disabled {
 /* Mobile: hide sidebar by default */
 @media (max-width: 767px) {
   .sidebar-nav {
+    height: 100vh !important;
+    min-height: 100dvh !important;
+    max-height: 100dvh !important;
     transform: translateX(-100%);
     transition: transform 0.25s ease;
   }

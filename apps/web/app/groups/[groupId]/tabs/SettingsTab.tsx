@@ -62,6 +62,7 @@ interface Props {
   onAllowMembersViewStatsChange: (v: boolean) => void;
   onSaveSettings: () => void;
   onTriggerSolver: (startTime?: string) => void;
+  onCancelSolverRun: () => void;
   onOpenDraftModal: () => void;
   onRestoreGroup?: never;
   onTransferPersonChange: (v: string) => void;
@@ -80,7 +81,7 @@ export default function SettingsTab({
   transferPersonId, transferSaving, transferError, hasPendingTransfer, cancelTransferSaving,
   showDeleteConfirm, deleteSaving, deleteError,
   onGroupNameChange, onRenameGroup, onSolverHorizonChange, onSolverStartDateTimeChange, onAutoPublishChange, onClosedBaseChange, onMinRestBetweenShiftsChange, onManagementTimeoutChange, onAllowMembersViewHistoryChange, onAllowMembersViewStatsChange, onSaveSettings,
-  onTriggerSolver, onOpenDraftModal,
+  onTriggerSolver, onCancelSolverRun, onOpenDraftModal,
   onTransferPersonChange, onInitiateTransfer, onCancelTransfer,
   onShowDeleteConfirm, onDeleteGroup,
 }: Props) {
@@ -287,6 +288,14 @@ export default function SettingsTab({
                 </>
               ) : t("runSchedule")}
             </button>
+            {solverPolling && (
+              <button
+                onClick={onCancelSolverRun}
+                className="text-sm font-medium px-4 py-2.5 rounded-xl border border-red-200 text-red-600 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950/30 transition-colors"
+              >
+                {t("cancelRun")}
+              </button>
+            )}
           </div>
           {settingsError && <p className="text-sm text-red-600 dark:text-red-400">{settingsError}</p>}
           {settingsSaved && <p className="text-sm text-emerald-600">✓</p>}

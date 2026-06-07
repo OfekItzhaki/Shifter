@@ -21,6 +21,7 @@ export function clearAuthGuardCookie(): void {
 export function setLocaleCookie(locale: string): void {
   if (typeof document === "undefined") return;
   document.cookie = `locale=${locale}; path=/; max-age=31536000; SameSite=Strict${secureCookieSuffix()}`;
+  window.dispatchEvent(new CustomEvent("shifter-locale-changed", { detail: locale }));
 }
 
 export function clearLocaleCookie(): void {

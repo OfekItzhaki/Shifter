@@ -25,19 +25,15 @@ export function useAdminSessionWiring(): void {
   const elevatedMode = useAdminSessionStore((s) => s.elevatedMode);
   const elevatedGroupId = useAdminSessionStore((s) => s.elevatedGroupId);
   const timeoutDuration = useAdminSessionStore((s) => s.timeoutDuration);
+  const lastActivityAt = useAdminSessionStore((s) => s.lastActivityAt);
   const resetTimer = useAdminSessionStore((s) => s.resetTimer);
   const showPrompt = useAdminSessionStore((s) => s.showPrompt);
   const exitElevatedMode = useAdminSessionStore((s) => s.exitElevatedMode);
   const isPromptVisible = useAdminSessionStore((s) => s.isPromptVisible);
-  const lastExitContext = useAdminSessionStore((s) => s.lastExitContext);
 
   const timerRef = useRef<InactivityTimer | null>(null);
   const syncRef = useRef<MultiTabSync | null>(null);
   const interceptorIdRef = useRef<number | null>(null);
-
-  // Keep a ref to lastExitContext so the cleanup function can access it
-  const lastExitContextRef = useRef(lastExitContext);
-  lastExitContextRef.current = lastExitContext;
 
   // ── Start/stop InactivityTimer based on elevated mode ───────────────────
   useEffect(() => {
@@ -55,7 +51,6 @@ export function useAdminSessionWiring(): void {
     const timeoutMs = timeoutDuration * 60 * 1000;
     const promptDurationMs = 60_000; // 60 seconds prompt countdown
 
-    const resumedLastActivityAt = useAdminSessionStore.getState().lastActivityAt;
     timer.start(timeoutMs, {
       onTick: (_remainingMs: number) => {
         // Timer's primary job is to detect when timeout occurs.
@@ -79,7 +74,7 @@ export function useAdminSessionWiring(): void {
           });
         }
       },
-    }, resumedLastActivityAt > 0 ? resumedLastActivityAt : Date.now());
+    }, lastActivityAt || undefined);
 
     return () => {
       timer.stop();
@@ -158,12 +153,13 @@ export function useAdminSessionWiring(): void {
 
     return () => {
       // Broadcast session_exit before destroying (if exit context is available)
-      if (lastExitContextRef.current) {
+      const lastExitContext = useAdminSessionStore.getState().lastExitContext;
+      if (lastExitContext) {
         sync.broadcast({
           type: "session_exit",
           timestamp: Date.now(),
-          groupId: lastExitContextRef.current.groupId ?? undefined,
-          mode: lastExitContextRef.current.mode ?? undefined,
+          groupId: lastExitContext.groupId ?? undefined,
+          mode: lastExitContext.mode ?? undefined,
         });
       }
       sync.destroy();

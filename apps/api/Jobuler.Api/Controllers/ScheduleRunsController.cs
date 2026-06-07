@@ -92,6 +92,17 @@ public class ScheduleRunsController : ControllerBase
         var result = await _mediator.Send(new GetScheduleRunQuery(spaceId, runId), ct);
         return result is null ? NotFound() : Ok(result);
     }
+
+    /// <summary>Cancel a queued or running scheduler run.</summary>
+    [HttpPost("{runId:guid}/cancel")]
+    public async Task<IActionResult> Cancel(Guid spaceId, Guid runId, CancellationToken ct)
+    {
+        await _permissions.RequirePermissionAsync(
+            CurrentUserId, spaceId, Permissions.ScheduleRecalculate, ct);
+
+        await _mediator.Send(new CancelScheduleRunCommand(spaceId, runId, CurrentUserId), ct);
+        return NoContent();
+    }
 }
 
 public record TriggerSolverRequest(string? TriggerMode, Guid? GroupId = null, DateTime? StartTime = null);

@@ -155,6 +155,7 @@ export function useGroupPageState() {
   const [solverPolling, setSolverPolling] = useState(false);
   const [solverStatus, setSolverStatus] = useState<string | null>(null);
   const [solverError, setSolverError] = useState<string | null>(null);
+  const [currentSolverRunId, setCurrentSolverRunId] = useState<string | null>(null);
   const [deletedGroups, setDeletedGroups] = useState<DeletedGroupDto[]>([]);
   const [deletedGroupsLoading, setDeletedGroupsLoading] = useState(false);
   const [transferPersonId, setTransferPersonId] = useState("");
@@ -298,6 +299,7 @@ export function useGroupPageState() {
     solverPolling, setSolverPolling,
     solverStatus, setSolverStatus,
     solverError, setSolverError,
+    currentSolverRunId, setCurrentSolverRunId,
     deletedGroups, setDeletedGroups,
     deletedGroupsLoading, setDeletedGroupsLoading,
     transferPersonId, setTransferPersonId,
