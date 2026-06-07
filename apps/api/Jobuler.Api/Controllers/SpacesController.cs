@@ -1,5 +1,6 @@
 using Jobuler.Application.Spaces.Commands;
 using Jobuler.Application.Spaces.Queries;
+using Jobuler.Application.Common;
 using Jobuler.Domain.Groups;
 using Jobuler.Domain.Spaces;
 using MediatR;
@@ -15,8 +16,13 @@ namespace Jobuler.Api.Controllers;
 public class SpacesController : ControllerBase
 {
     private readonly IMediator _mediator;
+    private readonly IPermissionService _permissions;
 
-    public SpacesController(IMediator mediator) => _mediator = mediator;
+    public SpacesController(IMediator mediator, IPermissionService permissions)
+    {
+        _mediator = mediator;
+        _permissions = permissions;
+    }
 
     private Guid CurrentUserId =>
         Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
@@ -133,6 +139,17 @@ public class SpacesController : ControllerBase
         return Ok(result);
     }
 
+    /// <summary>Check whether the current user has a permission in this space.</summary>
+    [HttpGet("{spaceId:guid}/permissions/{permissionKey}")]
+    public async Task<IActionResult> HasPermission(Guid spaceId, string permissionKey, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(permissionKey))
+            return BadRequest(new { error = "Permission key is required." });
+
+        var hasPermission = await _permissions.HasPermissionAsync(CurrentUserId, spaceId, permissionKey, ct);
+        return Ok(new CurrentUserPermissionResponse(permissionKey, hasPermission));
+    }
+
     /// <summary>Update the space-level management timeout (owner only).</summary>
     [HttpPut("{spaceId:guid}/management-timeout")]
     public async Task<IActionResult> UpdateManagementTimeout(
@@ -188,6 +205,7 @@ public record UpdateSpaceRequest(string Name, string? Description, string Locale
 public record JoinSpaceRequest(string InviteCode);
 public record TransferOwnershipRequest(Guid TargetUserId, string? Reason);
 public record AssignSpaceRoleRequest(SpacePermissionLevel Level);
+public record CurrentUserPermissionResponse(string PermissionKey, bool HasPermission);
 public record UpdateManagementTimeoutRequest(int Minutes);
 public record UpdateHomeLeaveConfigRequest(
     HomeLeaveMode Mode,
