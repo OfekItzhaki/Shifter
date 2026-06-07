@@ -32,7 +32,8 @@ export default function HomeLeaveMetricsPanel({ metrics }: HomeLeaveMetricsPanel
   const ratios = sorted.map((m) => m.baseTimeRatio);
   const maxRatio = Math.max(...ratios);
   const minRatio = Math.min(...ratios);
-  const showFairnessWarning = metrics.length >= 2 && maxRatio - minRatio > 0.15;
+  const fairnessSpread = maxRatio - minRatio;
+  const showFairnessWarning = metrics.length >= 2 && fairnessSpread - 0.15 > Number.EPSILON;
 
   return (
     <div className="bg-white border border-slate-200 rounded-xl p-5 space-y-4">
@@ -72,7 +73,7 @@ export default function HomeLeaveMetricsPanel({ metrics }: HomeLeaveMetricsPanel
           </svg>
           <span className="text-xs font-medium text-amber-700">
             פער הוגנות גבוה — הפרש של{" "}
-            {((maxRatio - minRatio) * 100).toFixed(1)}% בין האדם עם הכי הרבה זמן בבסיס לבין הכי פחות
+            {(fairnessSpread * 100).toFixed(1)}% בין האדם עם הכי הרבה זמן בבסיס לבין הכי פחות
           </span>
         </div>
       )}

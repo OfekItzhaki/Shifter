@@ -278,8 +278,9 @@ export default function ReAuthDialog({ open, onSuccess, onCancel, mode, spaceId 
     if (activeMethod !== "webauthn" || !webAuthnSupported) return;
     if (!credentials.hasWebAuthnCredentials) return;
 
-    // Detect touch device (mobile/tablet)
-    const isTouchDevice = "ontouchstart" in window || navigator.maxTouchPoints > 0;
+    // Detect real touch hardware. Checking only for `ontouchstart` is too broad
+    // in some desktop and test environments and can trigger biometric prompts early.
+    const isTouchDevice = navigator.maxTouchPoints > 0;
     if (!isTouchDevice) return;
 
     // Auto-trigger after a short delay to let the dialog render
@@ -305,7 +306,7 @@ export default function ReAuthDialog({ open, onSuccess, onCancel, mode, spaceId 
       if (!dialog) return;
 
       const focusableElements = dialog.querySelectorAll<HTMLElement>(
-        'button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        'button:not([disabled]):not([tabindex="-1"]), input:not([disabled]):not([tabindex="-1"]), [tabindex]:not([tabindex="-1"])'
       );
       if (focusableElements.length === 0) return;
 

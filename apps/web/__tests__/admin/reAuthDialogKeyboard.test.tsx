@@ -15,11 +15,12 @@ import ReAuthDialog from "../../components/admin/ReAuthDialog";
 // ── Mocks ─────────────────────────────────────────────────────────────────────
 
 const mockApiPost = vi.fn();
+const mockApiGet = vi.fn();
 
 vi.mock("@/lib/api/client", () => ({
   apiClient: {
     post: (...args: any[]) => mockApiPost(...args),
-    get: vi.fn(),
+    get: (...args: any[]) => mockApiGet(...args),
   },
 }));
 
@@ -50,7 +51,13 @@ vi.mock("next-intl", () => ({
       authFailed: "Authentication failed. Please try again.",
       rateLimited: "Too many attempts. Please try again later.",
       networkError: "Connection error. Please try again.",
+      invalidCredentials: "Authentication failed. Please try again.",
+      connectionProblem: "Connection error. Please try again.",
       webAuthnCancelled: "Verification cancelled. Please try again.",
+      webAuthnVerifying: "Verifying...",
+      usePasswordInstead: "Use password instead",
+      useBiometricInstead: "Use biometric instead",
+      webAuthnNotRecognized: "Biometric sign-in was not recognized. Please try again or use your password.",
     };
     return translations[key] ?? key;
   },
@@ -84,6 +91,19 @@ describe("ReAuthDialog - Keyboard Submission and Tab Navigation (Task 4.3)", () 
     vi.clearAllMocks();
     mockIsWebAuthnSupported.mockReturnValue(false);
     mockListCredentials.mockResolvedValue([]);
+    Object.defineProperty(global.navigator, "credentials", {
+      value: { get: vi.fn() },
+      writable: true,
+      configurable: true,
+    });
+    Object.defineProperty(window, "PublicKeyCredential", {
+      value: {
+        isUserVerifyingPlatformAuthenticatorAvailable: vi.fn().mockResolvedValue(true),
+      },
+      writable: true,
+      configurable: true,
+    });
+    mockApiGet.mockImplementation(async () => ({ data: await mockListCredentials() }));
   });
 
   afterEach(() => {
@@ -101,6 +121,11 @@ describe("ReAuthDialog - Keyboard Submission and Tab Navigation (Task 4.3)", () 
     const input = screen.getByLabelText("Password");
     fireEvent.change(input, { target: { value } });
     return input;
+  }
+
+  async function switchToPassword() {
+    fireEvent.click(await screen.findByRole("button", { name: "Use password instead" }));
+    await waitForPasswordInput();
   }
 
   // ── Enter Key Submission (Req 3.6) ─────────────────────────────────────────
@@ -210,7 +235,7 @@ describe("ReAuthDialog - Keyboard Submission and Tab Navigation (Task 4.3)", () 
 
       const dialog = screen.getByRole("dialog");
       const focusableElements = dialog.querySelectorAll<HTMLElement>(
-        'button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        'button:not([disabled]):not([tabindex="-1"]), input:not([disabled]):not([tabindex="-1"]), [tabindex]:not([tabindex="-1"])'
       );
 
       // Should have: close button, password input, submit button, cancel button
@@ -233,7 +258,7 @@ describe("ReAuthDialog - Keyboard Submission and Tab Navigation (Task 4.3)", () 
       ]);
     });
 
-    it("Tab navigation includes WebAuthn button when available", async () => {
+    it("Tab navigation includes biometric fallback when available in password mode", async () => {
       mockIsWebAuthnSupported.mockReturnValue(true);
       mockListCredentials.mockResolvedValue([
         { id: "cred-1", nickname: "Key", createdAt: "2024-01-01", lastUsedAt: null, isDisabled: false },
@@ -241,10 +266,8 @@ describe("ReAuthDialog - Keyboard Submission and Tab Navigation (Task 4.3)", () 
 
       render(<ReAuthDialog {...defaultProps} />);
 
-      await waitFor(() => {
-        expect(screen.getByLabelText("Password")).toBeInTheDocument();
-        expect(screen.getByRole("button", { name: "Authenticate with fingerprint" })).toBeInTheDocument();
-      });
+      expect(await screen.findByRole("button", { name: "Use Fingerprint" })).toBeInTheDocument();
+      await switchToPassword();
 
       // Type a password so the submit button becomes enabled
       const input = screen.getByLabelText("Password");
@@ -252,10 +275,10 @@ describe("ReAuthDialog - Keyboard Submission and Tab Navigation (Task 4.3)", () 
 
       const dialog = screen.getByRole("dialog");
       const focusableElements = dialog.querySelectorAll<HTMLElement>(
-        'button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        'button:not([disabled]):not([tabindex="-1"]), input:not([disabled]):not([tabindex="-1"]), [tabindex]:not([tabindex="-1"])'
       );
 
-      // Should have: close button, password input, submit button, webauthn button, cancel button
+      // Should have: close button, password input, submit button, biometric fallback, cancel button
       expect(focusableElements.length).toBe(5);
 
       // Verify the elements are in logical order
@@ -263,7 +286,7 @@ describe("ReAuthDialog - Keyboard Submission and Tab Navigation (Task 4.3)", () 
         if (el.tagName === "INPUT") return "password-input";
         if (el.getAttribute("aria-label") === "Close") return "close-button";
         if (el.textContent === "Confirm") return "submit-button";
-        if (el.getAttribute("aria-label") === "Authenticate with fingerprint") return "webauthn-button";
+        if (el.textContent === "Use biometric instead") return "webauthn-switch-button";
         if (el.textContent === "Cancel") return "cancel-button";
         return el.tagName;
       });
@@ -272,7 +295,7 @@ describe("ReAuthDialog - Keyboard Submission and Tab Navigation (Task 4.3)", () 
         "close-button",
         "password-input",
         "submit-button",
-        "webauthn-button",
+        "webauthn-switch-button",
         "cancel-button",
       ]);
     });
@@ -292,7 +315,7 @@ describe("ReAuthDialog - Keyboard Submission and Tab Navigation (Task 4.3)", () 
       fireEvent.keyDown(dialog, { key: "Tab", shiftKey: false });
 
       const focusableElements = dialog.querySelectorAll<HTMLElement>(
-        'button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        'button:not([disabled]):not([tabindex="-1"]), input:not([disabled]):not([tabindex="-1"]), [tabindex]:not([tabindex="-1"])'
       );
       expect(document.activeElement).toBe(focusableElements[0]);
     });
@@ -303,7 +326,7 @@ describe("ReAuthDialog - Keyboard Submission and Tab Navigation (Task 4.3)", () 
 
       const dialog = screen.getByRole("dialog");
       const focusableElements = dialog.querySelectorAll<HTMLElement>(
-        'button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        'button:not([disabled]):not([tabindex="-1"]), input:not([disabled]):not([tabindex="-1"]), [tabindex]:not([tabindex="-1"])'
       );
       const firstElement = focusableElements[0];
       const lastElement = focusableElements[focusableElements.length - 1];
@@ -326,14 +349,12 @@ describe("ReAuthDialog - Keyboard Submission and Tab Navigation (Task 4.3)", () 
 
       render(<ReAuthDialog {...defaultProps} />);
 
-      await waitFor(() => {
-        expect(screen.getByLabelText("Password")).toBeInTheDocument();
-        expect(screen.getByRole("button", { name: "Authenticate with fingerprint" })).toBeInTheDocument();
-      });
+      expect(await screen.findByRole("button", { name: "Use Fingerprint" })).toBeInTheDocument();
+      await switchToPassword();
 
       const dialog = screen.getByRole("dialog");
       const focusableElements = dialog.querySelectorAll<HTMLElement>(
-        'button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        'button:not([disabled]):not([tabindex="-1"]), input:not([disabled]):not([tabindex="-1"]), [tabindex]:not([tabindex="-1"])'
       );
 
       // Cycle through all elements with Tab, verify focus stays inside

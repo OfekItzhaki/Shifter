@@ -19,6 +19,8 @@ import ReAuthDialog from "../../components/admin/ReAuthDialog";
 
 const mockListCredentials = vi.fn();
 const mockIsWebAuthnSupported = vi.fn();
+const mockApiGet = vi.fn();
+const mockApiPost = vi.fn();
 let mockLocale = "he";
 
 vi.mock("@/lib/webauthn", () => ({
@@ -45,7 +47,13 @@ vi.mock("next-intl", () => ({
       authFailed: "Authentication failed. Please try again.",
       rateLimited: "Too many attempts. Please try again later.",
       networkError: "Connection error. Please try again.",
+      invalidCredentials: "Authentication failed. Please try again.",
+      connectionProblem: "Connection error. Please try again.",
       webAuthnCancelled: "Verification cancelled. Please try again.",
+      webAuthnVerifying: "Verifying...",
+      usePasswordInstead: "Use password instead",
+      useBiometricInstead: "Use biometric instead",
+      webAuthnNotRecognized: "Biometric sign-in was not recognized. Please try again or use your password.",
     };
     return translations[key] ?? key;
   },
@@ -54,8 +62,8 @@ vi.mock("next-intl", () => ({
 
 vi.mock("@/lib/api/client", () => ({
   apiClient: {
-    post: vi.fn(),
-    get: vi.fn(),
+    post: (...args: any[]) => mockApiPost(...args),
+    get: (...args: any[]) => mockApiGet(...args),
   },
 }));
 
@@ -74,6 +82,19 @@ describe("ReAuthDialog - Accessibility Compliance (Task 3.4)", () => {
     mockLocale = "he";
     mockIsWebAuthnSupported.mockReturnValue(false);
     mockListCredentials.mockResolvedValue([]);
+    Object.defineProperty(global.navigator, "credentials", {
+      value: { get: vi.fn() },
+      writable: true,
+      configurable: true,
+    });
+    Object.defineProperty(window, "PublicKeyCredential", {
+      value: {
+        isUserVerifyingPlatformAuthenticatorAvailable: vi.fn().mockResolvedValue(true),
+      },
+      writable: true,
+      configurable: true,
+    });
+    mockApiGet.mockImplementation(async () => ({ data: await mockListCredentials() }));
   });
 
   afterEach(() => {
@@ -150,7 +171,7 @@ describe("ReAuthDialog - Accessibility Compliance (Task 3.4)", () => {
 
       // First focusable should be the close button in the header
       const focusableElements = dialog.querySelectorAll<HTMLElement>(
-        'button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        'button:not([disabled]):not([tabindex="-1"]), input:not([disabled]):not([tabindex="-1"]), [tabindex]:not([tabindex="-1"])'
       );
       expect(document.activeElement).toBe(focusableElements[0]);
     });
@@ -161,7 +182,7 @@ describe("ReAuthDialog - Accessibility Compliance (Task 3.4)", () => {
 
       const dialog = screen.getByRole("dialog");
       const focusableElements = dialog.querySelectorAll<HTMLElement>(
-        'button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        'button:not([disabled]):not([tabindex="-1"]), input:not([disabled]):not([tabindex="-1"]), [tabindex]:not([tabindex="-1"])'
       );
       const firstElement = focusableElements[0];
       const lastElement = focusableElements[focusableElements.length - 1];
@@ -183,18 +204,15 @@ describe("ReAuthDialog - Accessibility Compliance (Task 3.4)", () => {
 
       render(<ReAuthDialog {...defaultProps} />);
 
-      await waitFor(() => {
-        expect(screen.getByLabelText("Password")).toBeInTheDocument();
-        expect(screen.getByRole("button", { name: "Authenticate with fingerprint" })).toBeInTheDocument();
-      });
+      expect(await screen.findByRole("button", { name: "Use Fingerprint" })).toBeInTheDocument();
 
       const dialog = screen.getByRole("dialog");
       const focusableElements = dialog.querySelectorAll<HTMLElement>(
-        'button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        'button:not([disabled]):not([tabindex="-1"]), input:not([disabled]):not([tabindex="-1"]), [tabindex]:not([tabindex="-1"])'
       );
 
-      // Should have: close button, password input, submit button, webauthn button, cancel button
-      expect(focusableElements.length).toBeGreaterThanOrEqual(4);
+      // Biometric-first view: close, biometric, password fallback, cancel.
+      expect(focusableElements.length).toBe(4);
     });
   });
 
@@ -211,37 +229,17 @@ describe("ReAuthDialog - Accessibility Compliance (Task 3.4)", () => {
       });
     });
 
-    it("password input gets focus after WebAuthn is declined when both available", async () => {
+    it("focuses the biometric button when WebAuthn is available", async () => {
       mockIsWebAuthnSupported.mockReturnValue(true);
       mockListCredentials.mockResolvedValue([
         { id: "cred-1", nickname: "My Key", createdAt: "2024-01-01", lastUsedAt: null, isDisabled: false },
       ]);
 
-      // Mock apiClient.post to return WebAuthn options, then navigator.credentials.get throws NotAllowedError
-      const { apiClient } = await import("@/lib/api/client");
-      (apiClient.post as any).mockResolvedValueOnce({
-        data: { optionsJson: JSON.stringify({ challenge: "dGVzdA", allowCredentials: [] }), challengeId: "ch-1" },
-      });
-
-      const mockCredentialsGet = vi.fn().mockRejectedValue(
-        Object.assign(new Error("The operation either timed out or was not allowed."), { name: "NotAllowedError" })
-      );
-      Object.defineProperty(global.navigator, "credentials", {
-        value: { get: mockCredentialsGet },
-        writable: true,
-        configurable: true,
-      });
-
       render(<ReAuthDialog {...defaultProps} />);
 
+      const biometricButton = await screen.findByRole("button", { name: "Use Fingerprint" });
       await waitFor(() => {
-        expect(screen.getByLabelText("Password")).toBeInTheDocument();
-        expect(screen.getByRole("button", { name: "Authenticate with fingerprint" })).toBeInTheDocument();
-      });
-
-      // After WebAuthn auto-trigger is declined (NotAllowedError), password input should get focus
-      await waitFor(() => {
-        expect(document.activeElement).toBe(screen.getByLabelText("Password"));
+        expect(document.activeElement).toBe(biometricButton);
       });
     });
   });

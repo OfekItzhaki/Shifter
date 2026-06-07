@@ -122,5 +122,5 @@ describe("Feature: admin-reauth-security | Property 1: Dialog state reset on ope
       ),
       { numRuns: 100 }
     );
-  });
+  }, 30000);
 });

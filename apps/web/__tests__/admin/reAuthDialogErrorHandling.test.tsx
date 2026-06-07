@@ -18,11 +18,12 @@ import ReAuthDialog from "../../components/admin/ReAuthDialog";
 // ── Mocks ─────────────────────────────────────────────────────────────────────
 
 const mockApiPost = vi.fn();
+const mockApiGet = vi.fn();
 
 vi.mock("@/lib/api/client", () => ({
   apiClient: {
     post: (...args: any[]) => mockApiPost(...args),
-    get: vi.fn(),
+    get: (...args: any[]) => mockApiGet(...args),
   },
 }));
 
@@ -53,7 +54,13 @@ vi.mock("next-intl", () => ({
       authFailed: "Authentication failed. Please try again.",
       rateLimited: "Too many attempts. Please try again later.",
       networkError: "Connection error. Please try again.",
+      invalidCredentials: "Authentication failed. Please try again.",
+      connectionProblem: "Connection error. Please try again.",
       webAuthnCancelled: "Verification cancelled. Please try again.",
+      webAuthnVerifying: "Verifying...",
+      usePasswordInstead: "Use password instead",
+      useBiometricInstead: "Use biometric instead",
+      webAuthnNotRecognized: "Biometric sign-in was not recognized. Please try again or use your password.",
     };
     return translations[key] ?? key;
   },
@@ -76,6 +83,19 @@ describe("ReAuthDialog - Error Handling and Recovery (Task 4.4)", () => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
     mockIsWebAuthnSupported.mockReturnValue(false);
     mockListCredentials.mockResolvedValue([]);
+    Object.defineProperty(global.navigator, "credentials", {
+      value: { get: vi.fn() },
+      writable: true,
+      configurable: true,
+    });
+    Object.defineProperty(window, "PublicKeyCredential", {
+      value: {
+        isUserVerifyingPlatformAuthenticatorAvailable: vi.fn().mockResolvedValue(true),
+      },
+      writable: true,
+      configurable: true,
+    });
+    mockApiGet.mockImplementation(async () => ({ data: await mockListCredentials() }));
   });
 
   afterEach(() => {
@@ -98,6 +118,13 @@ describe("ReAuthDialog - Error Handling and Recovery (Task 4.4)", () => {
     const submitBtn = screen.getByRole("button", { name: "Confirm" });
     await act(async () => {
       fireEvent.click(submitBtn);
+    });
+  }
+
+  async function submitWebAuthn() {
+    const webAuthnBtn = await screen.findByRole("button", { name: "Use Fingerprint" });
+    await act(async () => {
+      fireEvent.click(webAuthnBtn);
     });
   }
 
@@ -209,6 +236,7 @@ describe("ReAuthDialog - Error Handling and Recovery (Task 4.4)", () => {
       });
 
       render(<ReAuthDialog {...defaultProps} />);
+      await submitWebAuthn();
 
       // Auto-trigger fires handleWebAuthnSubmit, which gets options then calls credentials.get
       // credentials.get throws NotAllowedError → shows "Verification cancelled"
@@ -235,10 +263,10 @@ describe("ReAuthDialog - Error Handling and Recovery (Task 4.4)", () => {
       render(<ReAuthDialog {...defaultProps} />);
 
       await waitFor(() => {
-        expect(screen.getByRole("button", { name: "Authenticate with fingerprint" })).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "Use Fingerprint" })).toBeInTheDocument();
       });
 
-      const webAuthnBtn = screen.getByRole("button", { name: "Authenticate with fingerprint" });
+      const webAuthnBtn = screen.getByRole("button", { name: "Use Fingerprint" });
       await act(async () => {
         fireEvent.click(webAuthnBtn);
       });
@@ -248,7 +276,7 @@ describe("ReAuthDialog - Error Handling and Recovery (Task 4.4)", () => {
       });
 
       // WebAuthn button should be re-enabled after cancellation
-      const reEnabledBtn = screen.getByRole("button", { name: "Authenticate with fingerprint" });
+      const reEnabledBtn = screen.getByRole("button", { name: "Use Fingerprint" });
       expect(reEnabledBtn).not.toBeDisabled();
     });
 
@@ -269,10 +297,10 @@ describe("ReAuthDialog - Error Handling and Recovery (Task 4.4)", () => {
       render(<ReAuthDialog {...defaultProps} />);
 
       await waitFor(() => {
-        expect(screen.getByRole("button", { name: "Authenticate with fingerprint" })).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "Use Fingerprint" })).toBeInTheDocument();
       });
 
-      const webAuthnBtn = screen.getByRole("button", { name: "Authenticate with fingerprint" });
+      const webAuthnBtn = screen.getByRole("button", { name: "Use Fingerprint" });
       await act(async () => {
         fireEvent.click(webAuthnBtn);
       });
@@ -289,7 +317,7 @@ describe("ReAuthDialog - Error Handling and Recovery (Task 4.4)", () => {
       expect(defaultProps.onCancel).not.toHaveBeenCalled();
     });
 
-    it("displays 'Authentication failed' when WebAuthn verification fails with 401", async () => {
+    it("displays biometric-specific failure when WebAuthn verification fails with 401", async () => {
       // Auto-trigger will call handleWebAuthnSubmit:
       // 1st post → WebAuthn options (success)
       // 2nd post → re-authenticate (401 error)
@@ -319,11 +347,12 @@ describe("ReAuthDialog - Error Handling and Recovery (Task 4.4)", () => {
       });
 
       render(<ReAuthDialog {...defaultProps} />);
+      await submitWebAuthn();
 
       // Auto-trigger fires, credentials.get succeeds, but re-authenticate returns 401
       await waitFor(() => {
         const alert = screen.getByRole("alert");
-        expect(alert).toHaveTextContent("Authentication failed. Please try again.");
+        expect(alert).toHaveTextContent("Biometric sign-in was not recognized. Please try again or use your password.");
       });
     });
 
@@ -357,6 +386,7 @@ describe("ReAuthDialog - Error Handling and Recovery (Task 4.4)", () => {
       });
 
       render(<ReAuthDialog {...defaultProps} />);
+      await submitWebAuthn();
 
       // Auto-trigger fires, credentials.get succeeds, but re-authenticate returns 429
       await waitFor(() => {
@@ -397,7 +427,7 @@ describe("ReAuthDialog - Error Handling and Recovery (Task 4.4)", () => {
       expect(input.value).toBe("");
     });
 
-    it("clears password input after network error", async () => {
+    it("retains password input after network error for retry", async () => {
       mockApiPost.mockRejectedValue(new Error("Network Error"));
 
       render(<ReAuthDialog {...defaultProps} />);
@@ -408,7 +438,7 @@ describe("ReAuthDialog - Error Handling and Recovery (Task 4.4)", () => {
       });
 
       const input = screen.getByLabelText("Password") as HTMLInputElement;
-      expect(input.value).toBe("");
+      expect(input.value).toBe("password");
     });
 
     it("re-focuses password input after error", async () => {

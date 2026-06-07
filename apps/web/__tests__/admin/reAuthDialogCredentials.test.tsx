@@ -3,7 +3,7 @@
  *
  * Verifies:
  * - Dialog fetches WebAuthn credential availability via listCredentials()
- * - Password is always shown (system invariant: all registered users have a password)
+ * - Password fallback is always available (system invariant: all registered users have a password)
  * - WebAuthn button is only rendered when isWebAuthnSupported() returns true AND user has registered credentials
  * - Dialog handles the case where WebAuthn is not supported by the browser (button not rendered)
  *
@@ -11,13 +11,15 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import ReAuthDialog from "../../components/admin/ReAuthDialog";
 
 // ── Mocks ─────────────────────────────────────────────────────────────────────
 
 const mockListCredentials = vi.fn();
 const mockIsWebAuthnSupported = vi.fn();
+const mockApiGet = vi.fn();
+const mockApiPost = vi.fn();
 
 vi.mock("@/lib/webauthn", () => ({
   listCredentials: (...args: any[]) => mockListCredentials(...args),
@@ -43,7 +45,13 @@ vi.mock("next-intl", () => ({
       authFailed: "Authentication failed. Please try again.",
       rateLimited: "Too many attempts. Please try again later.",
       networkError: "Connection error. Please try again.",
+      invalidCredentials: "Authentication failed. Please try again.",
+      connectionProblem: "Connection error. Please try again.",
       webAuthnCancelled: "Verification cancelled. Please try again.",
+      webAuthnVerifying: "Verifying...",
+      usePasswordInstead: "Use password instead",
+      useBiometricInstead: "Use biometric instead",
+      webAuthnNotRecognized: "Biometric sign-in was not recognized. Please try again or use your password.",
     };
     return translations[key] ?? key;
   },
@@ -52,8 +60,8 @@ vi.mock("next-intl", () => ({
 
 vi.mock("@/lib/api/client", () => ({
   apiClient: {
-    post: vi.fn(),
-    get: vi.fn(),
+    post: (...args: any[]) => mockApiPost(...args),
+    get: (...args: any[]) => mockApiGet(...args),
   },
 }));
 
@@ -69,11 +77,30 @@ describe("ReAuthDialog - Credential Availability Check (Task 3.2)", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockListCredentials.mockResolvedValue([]);
+    Object.defineProperty(global.navigator, "credentials", {
+      value: { get: vi.fn() },
+      writable: true,
+      configurable: true,
+    });
+    Object.defineProperty(window, "PublicKeyCredential", {
+      value: {
+        isUserVerifyingPlatformAuthenticatorAvailable: vi.fn().mockResolvedValue(true),
+      },
+      writable: true,
+      configurable: true,
+    });
+    mockApiGet.mockImplementation(async () => ({ data: await mockListCredentials() }));
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
   });
+
+  async function switchToPassword() {
+    fireEvent.click(await screen.findByRole("button", { name: "Use password instead" }));
+    return screen.findByLabelText("Password");
+  }
 
   describe("Fetches WebAuthn credential availability via listCredentials() (Req 9.2)", () => {
     it("calls listCredentials() when dialog opens and WebAuthn is supported", async () => {
@@ -94,17 +121,14 @@ describe("ReAuthDialog - Credential Availability Check (Task 3.2)", () => {
 
       render(<ReAuthDialog {...defaultProps} />);
 
-      // Wait for credential loading to complete
-      await waitFor(() => {
-        expect(screen.getByLabelText("Password")).toBeInTheDocument();
-      });
+      await screen.findByLabelText("Password");
 
-      expect(mockListCredentials).not.toHaveBeenCalled();
+      expect(screen.queryByRole("button", { name: "Use Fingerprint" })).not.toBeInTheDocument();
     });
   });
 
-  describe("Password is always shown (Req 2.3)", () => {
-    it("renders password input when WebAuthn is supported and user has credentials", async () => {
+  describe("Password fallback is always available (Req 2.3)", () => {
+    it("renders password input after choosing password when WebAuthn is supported and user has credentials", async () => {
       mockIsWebAuthnSupported.mockReturnValue(true);
       mockListCredentials.mockResolvedValue([
         { id: "cred-1", nickname: "My Key", createdAt: "2024-01-01", lastUsedAt: null, isDisabled: false },
@@ -112,9 +136,7 @@ describe("ReAuthDialog - Credential Availability Check (Task 3.2)", () => {
 
       render(<ReAuthDialog {...defaultProps} />);
 
-      await waitFor(() => {
-        expect(screen.getByLabelText("Password")).toBeInTheDocument();
-      });
+      expect(await switchToPassword()).toBeInTheDocument();
     });
 
     it("renders password input when WebAuthn is not supported", async () => {
@@ -122,9 +144,7 @@ describe("ReAuthDialog - Credential Availability Check (Task 3.2)", () => {
 
       render(<ReAuthDialog {...defaultProps} />);
 
-      await waitFor(() => {
-        expect(screen.getByLabelText("Password")).toBeInTheDocument();
-      });
+      await screen.findByLabelText("Password");
     });
 
     it("renders password input when WebAuthn is supported but user has no credentials", async () => {
@@ -133,19 +153,17 @@ describe("ReAuthDialog - Credential Availability Check (Task 3.2)", () => {
 
       render(<ReAuthDialog {...defaultProps} />);
 
-      await waitFor(() => {
-        expect(screen.getByLabelText("Password")).toBeInTheDocument();
-      });
+      await screen.findByLabelText("Password");
     });
 
-    it("password input has autocomplete='current-password'", async () => {
+    it("password input avoids browser autofill prompts", async () => {
       mockIsWebAuthnSupported.mockReturnValue(false);
 
       render(<ReAuthDialog {...defaultProps} />);
 
       await waitFor(() => {
         const input = screen.getByLabelText("Password");
-        expect(input).toHaveAttribute("autocomplete", "current-password");
+        expect(input).toHaveAttribute("autocomplete", "new-password");
       });
     });
   });
@@ -160,7 +178,7 @@ describe("ReAuthDialog - Credential Availability Check (Task 3.2)", () => {
       render(<ReAuthDialog {...defaultProps} />);
 
       await waitFor(() => {
-        expect(screen.getByRole("button", { name: "Authenticate with fingerprint" })).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "Use Fingerprint" })).toBeInTheDocument();
       });
     });
 
@@ -173,7 +191,7 @@ describe("ReAuthDialog - Credential Availability Check (Task 3.2)", () => {
         expect(screen.getByLabelText("Password")).toBeInTheDocument();
       });
 
-      expect(screen.queryByRole("button", { name: "Authenticate with fingerprint" })).not.toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "Use Fingerprint" })).not.toBeInTheDocument();
     });
 
     it("does NOT render WebAuthn button when user has no registered credentials", async () => {
@@ -186,10 +204,10 @@ describe("ReAuthDialog - Credential Availability Check (Task 3.2)", () => {
         expect(screen.getByLabelText("Password")).toBeInTheDocument();
       });
 
-      expect(screen.queryByRole("button", { name: "Authenticate with fingerprint" })).not.toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "Use Fingerprint" })).not.toBeInTheDocument();
     });
 
-    it("shows both password and WebAuthn when user has both (Req 2.5)", async () => {
+    it("shows WebAuthn first and lets the user switch to password when both are available (Req 2.5)", async () => {
       mockIsWebAuthnSupported.mockReturnValue(true);
       mockListCredentials.mockResolvedValue([
         { id: "cred-1", nickname: "My Key", createdAt: "2024-01-01", lastUsedAt: null, isDisabled: false },
@@ -197,10 +215,9 @@ describe("ReAuthDialog - Credential Availability Check (Task 3.2)", () => {
 
       render(<ReAuthDialog {...defaultProps} />);
 
-      await waitFor(() => {
-        expect(screen.getByLabelText("Password")).toBeInTheDocument();
-        expect(screen.getByRole("button", { name: "Authenticate with fingerprint" })).toBeInTheDocument();
-      });
+      expect(await screen.findByRole("button", { name: "Use Fingerprint" })).toBeInTheDocument();
+      expect(screen.queryByLabelText("Password")).not.toBeInTheDocument();
+      expect(await switchToPassword()).toBeInTheDocument();
     });
 
     it("shows only password when WebAuthn is not available (Req 2.6)", async () => {
@@ -212,7 +229,7 @@ describe("ReAuthDialog - Credential Availability Check (Task 3.2)", () => {
         expect(screen.getByLabelText("Password")).toBeInTheDocument();
       });
 
-      expect(screen.queryByRole("button", { name: "Authenticate with fingerprint" })).not.toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "Use Fingerprint" })).not.toBeInTheDocument();
     });
   });
 
@@ -227,7 +244,7 @@ describe("ReAuthDialog - Credential Availability Check (Task 3.2)", () => {
         expect(screen.getByLabelText("Password")).toBeInTheDocument();
       });
 
-      expect(screen.queryByRole("button", { name: "Authenticate with fingerprint" })).not.toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "Use Fingerprint" })).not.toBeInTheDocument();
     });
   });
 
