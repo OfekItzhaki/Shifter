@@ -113,10 +113,13 @@
   },
   "privacyConsent": {
     "title": "Privacy preferences",
-    "body": "We use essential storage for login and app preferences. With your permission, we also use analytics and session diagnostics to improve Shifter.",
+    "body": "We use essential storage so you can sign in and keep your app preferences. If you allow it, we will also collect basic usage and error information to understand what works, fix problems, and improve Shifter.",
     "privacyLink": "Privacy Policy",
-    "accept": "Allow analytics",
-    "decline": "Essential only"
+    "accept": "Allow improvement data",
+    "decline": "Essential only",
+    "summary": "We use essential storage to keep Shifter working. You can also allow basic usage and error information to help us improve it.",
+    "understood": "Got it",
+    "options": "More choices"
   },
   "schedule": {
     "title": "Schedule",

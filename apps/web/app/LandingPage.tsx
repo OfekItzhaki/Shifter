@@ -7,13 +7,13 @@ import ShifterLogo from "@/components/shell/ShifterLogo";
 import { clearAuthGuardCookie, setLocaleCookie } from "@/lib/auth/authGuardCookie";
 import { notifyAuthTokenChanged } from "@/lib/auth/tokenState";
 import { LANDING_CONTENT, LANDING_LEGAL_LINKS, type LandingLang } from "./landingContent";
-import { LOCALE_META, PUBLIC_DEFAULT_LOCALE, SUPPORTED_LOCALES, getLocaleDirection, isSupportedLocale } from "@/lib/i18n/locales";
+import { LOCALE_META, SUPPORTED_LOCALES, getLocaleDirection, isSupportedLocale } from "@/lib/i18n/locales";
 
-export default function LandingPage() {
+export default function LandingPage({ initialLocale }: { initialLocale: LandingLang }) {
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [checking, setChecking] = useState(true);
-  const [lang, setLang] = useState<LandingLang>(PUBLIC_DEFAULT_LOCALE);
+  const [lang, setLang] = useState<LandingLang>(initialLocale);
 
   useEffect(() => {
     // Detect language from cookie or browser
@@ -46,10 +46,12 @@ export default function LandingPage() {
   function switchLang(l: LandingLang) {
     setLang(l);
     setLocaleCookie(l);
+    document.documentElement.lang = l;
+    document.documentElement.dir = getLocaleDirection(l);
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 text-white" dir={getLocaleDirection(lang)}>
+    <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 text-white">
       {/* Nav */}
       <nav className="sticky top-0 z-50 backdrop-blur-md bg-slate-900/80 border-b border-slate-700/50">
         <div className="flex items-center justify-between px-6 py-3 max-w-6xl mx-auto">
