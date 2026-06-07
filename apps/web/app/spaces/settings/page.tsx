@@ -16,6 +16,7 @@ import SpaceBillingCard from "@/components/billing/SpaceBillingCard";
 import InviteCodeCard from "@/components/spaces/InviteCodeCard";
 import RoleAssignmentCard from "@/components/spaces/RoleAssignmentCard";
 import ManagementTimeoutCard from "@/components/spaces/ManagementTimeoutCard";
+import SpecialDaysCard from "@/components/spaces/SpecialDaysCard";
 import DangerZoneCard from "@/components/spaces/DangerZoneCard";
 import { isRtl as isRtlLocale } from "@/lib/i18n/locales";
 
@@ -212,6 +213,11 @@ export default function SpaceSettingsPage() {
           <ManagementTimeoutCard
             spaceId={currentSpaceId!}
             currentTimeout={space.managementTimeoutMinutes}
+            isOwner={space.isOwner}
+          />
+
+          <SpecialDaysCard
+            spaceId={currentSpaceId!}
             isOwner={space.isOwner}
           />
 

@@ -1049,6 +1049,37 @@
         "member": "Member"
       }
     },
+    "specialDays": {
+      "title": "Special Days",
+      "description": "Mark holidays, weekends, and local events that should matter more when Shifter plans home leave.",
+      "dateLabel": "Date",
+      "nameLabel": "Name",
+      "namePlaceholder": "Holiday or event name",
+      "kindLabel": "Type",
+      "weightLabel": "Home-leave importance",
+      "requiresCoverage": "This date still needs normal coverage",
+      "add": "Add day",
+      "update": "Update day",
+      "cancel": "Cancel",
+      "edit": "Edit",
+      "delete": "Delete",
+      "deleting": "Deleting...",
+      "saving": "Saving...",
+      "saved": "Saved",
+      "loading": "Loading special days...",
+      "empty": "No special days for the next year.",
+      "loadError": "Could not load special days.",
+      "saveError": "Could not save this special day.",
+      "deleteError": "Could not delete this special day.",
+      "validationError": "Choose a date, enter a name, and use an importance between 1 and 5.",
+      "coverageOn": "coverage required",
+      "weightValue": "importance x{value}",
+      "kind": {
+        "Holiday": "Holiday",
+        "Weekend": "Weekend",
+        "Custom": "Custom"
+      }
+    },
     "dangerZone": {
       "title": "Danger Zone",
       "description": "Irreversible and destructive actions. Proceed with caution.",
