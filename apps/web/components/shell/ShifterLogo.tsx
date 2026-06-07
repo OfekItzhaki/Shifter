@@ -38,10 +38,11 @@ export default function ShifterLogo({
       alt="Shifter"
       width={width}
       height={size}
+      priority={variant === "full"}
       className={className}
       style={{
         width,
-        height: size,
+        height: "auto",
         objectFit: "contain",
         flexShrink: 0,
       }}
