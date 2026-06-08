@@ -1047,6 +1047,14 @@
     "saving": "Saving...",
     "saved": "Saved ✓",
     "ownerOnly": "Only the space owner can edit settings",
+    "settingsTabs": {
+      "label": "Space settings sections",
+      "general": "General",
+      "members": "Members",
+      "permissions": "Permissions",
+      "billing": "Billing",
+      "danger": "Danger Zone"
+    },
     "managementTimeout": {
       "title": "Management Mode Timeout",
       "description": "Minutes of inactivity before admin sessions expire across all groups in this space.",

@@ -1052,6 +1052,14 @@
     "saving": "שומר...",
     "saved": "נשמר ✓",
     "ownerOnly": "רק בעל המרחב יכול לערוך הגדרות",
+    "settingsTabs": {
+      "label": "\u05de\u05e7\u05d8\u05e2\u05d9 \u05d4\u05d2\u05d3\u05e8\u05d5\u05ea \u05d4\u05de\u05e8\u05d7\u05d1",
+      "general": "\u05db\u05dc\u05dc\u05d9",
+      "members": "\u05d7\u05d1\u05e8\u05d9\u05dd",
+      "permissions": "\u05d4\u05e8\u05e9\u05d0\u05d5\u05ea",
+      "billing": "\u05d7\u05d9\u05d5\u05d1",
+      "danger": "\u05d0\u05d6\u05d5\u05e8 \u05de\u05e1\u05d5\u05db\u05df"
+    },
     "managementTimeout": {
       "title": "זמן קצוב למצב ניהול",
       "description": "דקות חוסר פעילות לפני שמפגשי ניהול יפוגו בכל הקבוצות במרחב.",
