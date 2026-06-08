@@ -225,6 +225,11 @@
     "newGroupPlaceholder": "שם קבוצה חדשה",
     "noGroups": "אינך משויך לאף קבוצה עדיין.",
     "noGroupsInScope": "אין כאן קבוצות עדיין.",
+    "loadError": {
+      "title": "\u05dc\u05d0 \u05d4\u05e6\u05dc\u05d7\u05e0\u05d5 \u05dc\u05d8\u05e2\u05d5\u05df \u05d0\u05ea \u05d4\u05e7\u05d1\u05d5\u05e6\u05d5\u05ea",
+      "description": "\u05de\u05e9\u05d4\u05d5 \u05d4\u05e9\u05ea\u05d1\u05e9 \u05d1\u05d8\u05e2\u05d9\u05e0\u05ea \u05d4\u05e2\u05de\u05d5\u05d3. \u05e0\u05e1\u05d4 \u05e9\u05d5\u05d1 \u05d1\u05e2\u05d5\u05d3 \u05e8\u05d2\u05e2, \u05d0\u05d5 \u05d3\u05d5\u05d5\u05d7 \u05e2\u05dc \u05d4\u05d1\u05e2\u05d9\u05d4 \u05db\u05d3\u05d9 \u05e9\u05e0\u05d5\u05db\u05dc \u05dc\u05d1\u05d3\u05d5\u05e7.",
+      "reportTemplate": "\u05dc\u05d0 \u05d4\u05e6\u05dc\u05d7\u05ea\u05d9 \u05dc\u05d8\u05e2\u05d5\u05df \u05d0\u05ea \u05e2\u05de\u05d5\u05d3 \u05d4\u05e7\u05d1\u05d5\u05e6\u05d5\u05ea."
+    },
     "deletedGroups": "קבוצות מחוקות",
     "noDeletedGroups": "אין קבוצות מחוקות",
     "restore": "שחזר",
@@ -1241,6 +1246,8 @@
     "solverTimeout": "Shifter לא הגיב בזמן. ייתכן שהבעיה מורכבת מדי - נסה להקטין את אופק התכנון או לפשט את האילוצים.",
     "solverCheckError": "שגיאה בבדיקת סטטוס Shifter",
     "solverStartError": "שגיאה בהפעלת Shifter",
+    "retry": "\u05e0\u05e1\u05d4 \u05e9\u05d5\u05d1",
+    "reportProblem": "\u05d3\u05d5\u05d5\u05d7 \u05e2\u05dc \u05d1\u05e2\u05d9\u05d4",
     "timeoutOutOfRange": "הזמן הקצוב חייב להיות מספר שלם בין 5 ל-120 דקות."
   },
   "common": {

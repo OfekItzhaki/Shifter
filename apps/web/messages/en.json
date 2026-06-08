@@ -222,6 +222,11 @@
     "newGroupPlaceholder": "New group name",
     "noGroups": "You are not part of any group yet.",
     "noGroupsInScope": "No groups here yet.",
+    "loadError": {
+      "title": "We could not load your groups",
+      "description": "Something went wrong while loading this page. Try again in a moment, or report the problem so we can look into it.",
+      "reportTemplate": "I could not load the groups page."
+    },
     "deletedGroups": "Deleted Groups",
     "noDeletedGroups": "No deleted groups",
     "restore": "Restore",
@@ -1236,6 +1241,8 @@
     "solverTimeout": "Shifter did not respond in time. The problem may be too complex - try reducing the planning horizon or simplifying constraints.",
     "solverCheckError": "Error checking Shifter status",
     "solverStartError": "Error starting Shifter",
+    "retry": "Retry",
+    "reportProblem": "Report a problem",
     "timeoutOutOfRange": "Timeout must be a whole number between 5 and 120 minutes."
   },
   "common": {

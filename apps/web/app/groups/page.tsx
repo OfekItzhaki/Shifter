@@ -16,6 +16,8 @@ import { getCurrentStepIndex } from "@/lib/onboarding/decisions";
 import { useWriteGuard } from "@/lib/api/writeGuard";
 import { apiClient } from "@/lib/api/client";
 import type { SchedulingMode } from "@/components/groups/selfService/SchedulingModeSelector";
+import ErrorState from "@/components/shared/ErrorState";
+import { openFeedbackModal } from "@/components/shell/FeedbackFab";
 
 export default function GroupsPageWrapper() {
   return (
@@ -44,7 +46,7 @@ function GroupsPage() {
 
   const { isDisabled: writeGuardDisabled, tooltipText: writeGuardTooltip } = useWriteGuard();
 
-  const { data: groups = [], isLoading: loading, isError: groupsError } = useGroups(currentSpaceId);
+  const { data: groups = [], isLoading: loading, isError: groupsError, refetch: refetchGroups } = useGroups(currentSpaceId);
   const { data: deletedGroups = [], isLoading: deletedLoading } = useDeletedGroups(currentSpaceId);
   const createGroup = useCreateGroup(currentSpaceId);
   const restoreGroup = useRestoreGroup(currentSpaceId);
@@ -115,6 +117,13 @@ function GroupsPage() {
     router.push(groupId ? `/groups?parent=${groupId}` : "/groups");
   }
 
+  function reportGroupsProblem() {
+    openFeedbackModal({
+      type: "bug",
+      initialDescription: t("loadError.reportTemplate"),
+    });
+  }
+
   return (
     <AppShell>
       <div className="max-w-4xl space-y-5 sm:space-y-6">
@@ -169,6 +178,17 @@ function GroupsPage() {
         {/* Active groups */}
         {loading ? (
           <p className="text-slate-400 text-sm py-8">{tCommon("loading")}</p>
+        ) : groupsError ? (
+          <div className="w-full rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <ErrorState
+              type="server"
+              title={t("loadError.title")}
+              description={t("loadError.description")}
+              onRetry={() => { void refetchGroups(); }}
+              onReportProblem={reportGroupsProblem}
+              showHomeLink={false}
+            />
+          </div>
         ) : groups.length === 0 ? (
           <div className="bg-white rounded-xl border border-slate-200 p-6 space-y-5">
             <div className="flex flex-col items-center text-center">
