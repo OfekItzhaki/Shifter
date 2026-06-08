@@ -32,19 +32,31 @@ function onTokenRefreshed(token: string) {
   refreshSubscribers = [];
 }
 
-/**
- * Uses browser connectivity state without calling third-party probe endpoints.
- * External probes create noisy CSP errors and are not needed for core app flow.
- */
-let probeInFlight: Promise<boolean> | null = null;
+let livenessProbeInFlight: Promise<boolean> | null = null;
 
-async function probeConnectivity(): Promise<boolean> {
-  if (probeInFlight) return probeInFlight;
+async function probeApiLiveness(): Promise<boolean> {
+  if (livenessProbeInFlight) return livenessProbeInFlight;
 
-  probeInFlight = Promise.resolve(navigator.onLine);
+  livenessProbeInFlight = (async () => {
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 3000);
 
-  const result = await probeInFlight;
-  probeInFlight = null;
+    try {
+      const response = await fetch(`${API_URL}/health/live`, {
+        cache: "no-store",
+        credentials: "include",
+        signal: controller.signal,
+      });
+      return response.ok;
+    } catch {
+      return false;
+    } finally {
+      window.clearTimeout(timeout);
+    }
+  })();
+
+  const result = await livenessProbeInFlight;
+  livenessProbeInFlight = null;
   return result;
 }
 
@@ -161,14 +173,14 @@ apiClient.interceptors.response.use(
         useConnectivityStore.getState().goOffline();
       } else {
         // navigator.onLine is true but the request failed — probe real connectivity.
-        // This catches "connected to WiFi but no internet" scenarios.
-        probeConnectivity().then((hasInternet) => {
-          if (hasInternet) {
-            // Internet works, server is genuinely down
-            useConnectivityStore.getState().setServerUnavailable();
+        // Confirm whether the API process is actually down before showing the
+        // server-unavailable banner. Individual endpoints can fail while the
+        // API is still alive, especially in local development.
+        probeApiLiveness().then((apiIsAlive) => {
+          if (apiIsAlive) {
+            useConnectivityStore.getState().setServerRecovered();
           } else {
-            // No real internet despite navigator.onLine — treat as offline
-            useConnectivityStore.getState().goOffline();
+            useConnectivityStore.getState().setServerUnavailable();
           }
         });
       }
@@ -195,13 +207,12 @@ export function initConnectivity(): () => void {
   const handleOnline = () => {
     // When the browser says we're back online, verify with a real probe
     // before transitioning to "online" state. This prevents false positives
-    // when connected to a captive portal or WiFi with no internet.
-    probeConnectivity().then((hasInternet) => {
-      if (hasInternet) {
+    // When the browser says we're back online, verify that the API process is
+    // reachable before transitioning back to online.
+    probeApiLiveness().then((apiIsAlive) => {
+      if (apiIsAlive) {
         store().goOnline();
       }
-      // If probe fails, stay in current state (offline) — the next successful
-      // API call will trigger setServerRecovered → online anyway.
     });
   };
 
