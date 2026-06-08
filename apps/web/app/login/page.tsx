@@ -111,7 +111,7 @@ function LoginForm() {
 
   async function finishPasswordLogin() {
     const canOfferPasskey = await isPlatformAuthenticatorAvailable();
-    if (!canOfferPasskey) {
+    if (!canOfferPasskey || !isLikelyTouchDevice()) {
       router.push(redirectTo);
       return;
     }
