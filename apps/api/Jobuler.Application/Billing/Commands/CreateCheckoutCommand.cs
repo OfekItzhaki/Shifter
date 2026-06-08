@@ -49,10 +49,16 @@ public class CreateCheckoutCommandHandler : IRequestHandler<CreateCheckoutComman
         var existingSub = await _db.GroupSubscriptions
             .FirstOrDefaultAsync(s => s.GroupId == req.GroupId && s.SpaceId == req.SpaceId, ct);
 
-        if (existingSub is not null &&
-            (existingSub.Status == SubscriptionStatus.Active || existingSub.Status == SubscriptionStatus.Trialing))
+        if (existingSub is not null && existingSub.Status == SubscriptionStatus.Active)
         {
             throw new InvalidOperationException("Group already has an active subscription.");
+        }
+
+        if (existingSub is null)
+        {
+            existingSub = GroupSubscription.CreateTrial(req.SpaceId, req.GroupId);
+            _db.GroupSubscriptions.Add(existingSub);
+            await _db.SaveChangesAsync(ct);
         }
 
         // ── Create checkout session via LemonSqueezy ─────────────────────────

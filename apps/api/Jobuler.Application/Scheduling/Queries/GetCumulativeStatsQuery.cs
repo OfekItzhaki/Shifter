@@ -97,7 +97,7 @@ public class GetCumulativeStatsQueryHandler : IRequestHandler<GetCumulativeStats
         var result = records.Select(r =>
         {
             personMap.TryGetValue(r.PersonId, out var person);
-            var displayName = person?.DisplayName ?? person?.FullName ?? "Unknown";
+            var displayName = person?.FullName ?? "Unknown";
             var profileImage = person?.ProfileImageUrl;
 
             // Select the appropriate time-window counters

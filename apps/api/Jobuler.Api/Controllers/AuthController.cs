@@ -161,6 +161,16 @@ public class AuthController : ControllerBase
         return NoContent();
     }
 
+    /// <summary>Change the current user's password.</summary>
+    [HttpPost("change-password")]
+    [Authorize]
+    public async Task<IActionResult> ChangePassword(
+        [FromBody] ChangePasswordRequest req, CancellationToken ct)
+    {
+        await _mediator.Send(new ChangePasswordCommand(CurrentUserId, req.CurrentPassword, req.NewPassword), ct);
+        return NoContent();
+    }
+
     /// <summary>Verify email using a token from the verification email.</summary>
     [HttpPost("verify-email")]
     [AllowAnonymous]
@@ -276,6 +286,7 @@ public record LoginRequest(string? Email, string? Identifier, string Password)
 public record RefreshRequest(string? RefreshToken);
 public record ForgotPasswordRequest(string Email);
 public record ResetPasswordRequest(string Token, string NewPassword);
+public record ChangePasswordRequest(string CurrentPassword, string NewPassword);
 public record UpdateMeRequest(string DisplayName, string? PhoneNumber, string? ProfileImageUrl, DateOnly? Birthday);
 public record VerifyEmailRequest(string Token);
 public record SessionTimeoutEventRequest(Guid? SpaceId, string Mode);

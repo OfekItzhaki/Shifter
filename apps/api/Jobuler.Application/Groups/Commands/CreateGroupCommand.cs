@@ -1,4 +1,5 @@
 using Jobuler.Application.Scheduling;
+using Jobuler.Domain.Billing;
 using Jobuler.Domain.Groups;
 using Jobuler.Domain.People;
 using Jobuler.Domain.Spaces;
@@ -88,6 +89,7 @@ public class CreateGroupCommandHandler : IRequestHandler<CreateGroupCommand, Gui
         _db.SpaceRoles.Add(defaultRole);
 
         _db.GroupMemberships.Add(GroupMembership.Create(req.SpaceId, group.Id, person.Id, isOwner: true));
+        _db.GroupSubscriptions.Add(GroupSubscription.CreateTrial(req.SpaceId, group.Id));
 
         await _db.SaveChangesAsync(ct);
 

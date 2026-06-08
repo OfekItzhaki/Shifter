@@ -361,7 +361,9 @@
       "specialLeaveActionError": "Could not update the request",
       "specialLeaveAdminNote": "Admin note (optional)",
       "specialLeaveApprove": "Approve",
-      "specialLeaveReject": "Reject"
+      "specialLeaveReject": "Reject",
+      "inviting": "Sending...",
+      "inviteSent": "Sent"
     },
     "qualifications_tab": {
       "title": "Qualifications",
@@ -552,7 +554,8 @@
       "managementTimeoutError": "Timeout must be a whole number between 5 and 120 minutes.",
       "minutes": "minutes",
       "parentGroup": "Parent Group",
-      "cancelRun": "Cancel run"
+      "cancelRun": "Cancel run",
+      "billing": "Billing"
     },
     "linkedGroup": {
       "title": "Parent Group",
@@ -716,6 +719,19 @@
     "push": {
       "title": "Push Notifications",
       "description": "Manage browser push notification settings"
+    },
+    "password": {
+      "title": "Password",
+      "description": "Change the password used to sign in to your account.",
+      "current": "Current password",
+      "new": "New password",
+      "confirm": "Confirm new password",
+      "save": "Change password",
+      "saving": "Changing...",
+      "saved": "Password changed. Please sign in again on other devices.",
+      "mismatch": "The new passwords do not match.",
+      "tooShort": "Password must be at least 8 characters.",
+      "error": "Could not change password. Check your current password and try again."
     }
   },
   "admin": {

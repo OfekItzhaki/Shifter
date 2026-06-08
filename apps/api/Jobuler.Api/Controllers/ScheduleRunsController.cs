@@ -43,16 +43,33 @@ public class ScheduleRunsController : ControllerBase
             CurrentUserId, spaceId, Permissions.ScheduleRecalculate, ct);
 
         // Check space subscription — block if not active
-        var spaceSub = await _db.SpaceSubscriptions
-            .AsNoTracking()
-            .FirstOrDefaultAsync(s => s.SpaceId == spaceId, ct);
-
-        if (spaceSub != null && !spaceSub.IsAccessGranted)
+        if (req.GroupId.HasValue)
         {
-            var msg = spaceSub.Status == Domain.Billing.SubscriptionStatus.Trialing
-                ? "Your trial has expired. Upgrade to continue using the scheduler."
-                : "Your subscription is not active. Please renew or upgrade.";
-            return StatusCode(402, new { error = msg });
+            var groupSub = await _db.GroupSubscriptions
+                .AsNoTracking()
+                .FirstOrDefaultAsync(s => s.SpaceId == spaceId && s.GroupId == req.GroupId.Value, ct);
+
+            if (groupSub != null && !groupSub.IsActive)
+            {
+                var msg = groupSub.Status == Domain.Billing.SubscriptionStatus.Trialing
+                    ? "This group's trial has expired. Upgrade this group to continue using Shifter."
+                    : "This group's subscription is not active. Please renew or upgrade it.";
+                return StatusCode(402, new { error = msg });
+            }
+        }
+        else
+        {
+            var spaceSub = await _db.SpaceSubscriptions
+                .AsNoTracking()
+                .FirstOrDefaultAsync(s => s.SpaceId == spaceId, ct);
+
+            if (spaceSub != null && !spaceSub.IsAccessGranted)
+            {
+                var msg = spaceSub.Status == Domain.Billing.SubscriptionStatus.Trialing
+                    ? "Your trial has expired. Upgrade to continue using the scheduler."
+                    : "Your subscription is not active. Please renew or upgrade.";
+                return StatusCode(402, new { error = msg });
+            }
         }
         // If spaceSub is null, allow (no subscription record = grace period)
 

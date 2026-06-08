@@ -5,6 +5,7 @@ import { useTranslations, useLocale } from "next-intl";
 import type { GroupMemberDto } from "@/lib/api/groups";
 import { getJoinCode, regenerateJoinCode } from "@/lib/api/groups";
 import SmartImportModal from "@/components/SmartImportModal";
+import GroupBillingCard from "@/components/billing/GroupBillingCard";
 import HomeLeaveConfigPanel from "@/components/home-leave/HomeLeaveConfigPanel";
 import LinkedGroupSelector from "@/components/groups/LinkedGroupSelector";
 import DateTimePicker from "@/components/shared/DateTimePicker";
@@ -180,6 +181,13 @@ export default function SettingsTab({
       </div>
 
       {/* ═══ SCHEDULING ═══ */}
+      <div className="space-y-4">
+        <h3 className="text-xs font-black text-slate-600 dark:text-slate-300 uppercase tracking-widest border-b-2 border-slate-300 dark:border-slate-600 pb-2">
+          {t("billing") ?? "Billing"}
+        </h3>
+        <GroupBillingCard spaceId={spaceId} groupId={groupId} />
+      </div>
+
       <div className="space-y-4">
         <h3 className="text-xs font-black text-slate-600 dark:text-slate-300 uppercase tracking-widest border-b-2 border-slate-300 dark:border-slate-600 pb-2">{t("planningHorizon")}</h3>
 

@@ -48,7 +48,8 @@ public record AssignmentDto(
 
 public record GetScheduleVersionsQuery(
     Guid SpaceId,
-    string? StatusFilter = null) : IRequest<List<ScheduleVersionDto>>;
+    string? StatusFilter = null,
+    Guid? GroupId = null) : IRequest<List<ScheduleVersionDto>>;
 
 public class GetScheduleVersionsQueryHandler
     : IRequestHandler<GetScheduleVersionsQuery, List<ScheduleVersionDto>>
@@ -65,6 +66,16 @@ public class GetScheduleVersionsQueryHandler
         if (!string.IsNullOrEmpty(req.StatusFilter) &&
             Enum.TryParse<ScheduleVersionStatus>(req.StatusFilter, true, out var status))
             query = query.Where(v => v.Status == status);
+
+        if (req.GroupId.HasValue)
+        {
+            var runIds = await _db.ScheduleRuns.AsNoTracking()
+                .Where(r => r.SpaceId == req.SpaceId && r.GroupId == req.GroupId.Value)
+                .Select(r => r.Id)
+                .ToListAsync(ct);
+
+            query = query.Where(v => v.SourceRunId.HasValue && runIds.Contains(v.SourceRunId.Value));
+        }
 
         return await query
             .OrderByDescending(v => v.VersionNumber)

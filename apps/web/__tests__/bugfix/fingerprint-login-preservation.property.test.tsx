@@ -36,6 +36,7 @@ const mockApiClientPost = vi.fn();
 vi.mock("@/lib/webauthn", () => ({
   listCredentials: (...args: any[]) => mockListCredentials(...args),
   isWebAuthnSupported: () => mockIsWebAuthnSupported(),
+  isPlatformAuthenticatorAvailable: () => Promise.resolve(false),
   isConditionalMediationAvailable: () => mockIsConditionalMediationAvailable(),
   authenticateWithBiometric: (...args: any[]) => mockAuthenticateWithBiometric(...args),
   registerCredential: (...args: any[]) => mockRegisterCredential(...args),

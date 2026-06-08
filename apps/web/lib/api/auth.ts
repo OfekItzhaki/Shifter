@@ -78,6 +78,10 @@ export async function resetPassword(token: string, newPassword: string): Promise
   return data;
 }
 
+export async function changePassword(currentPassword: string, newPassword: string): Promise<void> {
+  await apiClient.post("/auth/change-password", { currentPassword, newPassword });
+}
+
 export async function verifyEmail(token: string): Promise<void> {
   await apiClient.post("/auth/verify-email", { token });
 }

@@ -226,9 +226,9 @@
     "noGroups": "אינך משויך לאף קבוצה עדיין.",
     "noGroupsInScope": "אין כאן קבוצות עדיין.",
     "loadError": {
-      "title": "\u05dc\u05d0 \u05d4\u05e6\u05dc\u05d7\u05e0\u05d5 \u05dc\u05d8\u05e2\u05d5\u05df \u05d0\u05ea \u05d4\u05e7\u05d1\u05d5\u05e6\u05d5\u05ea",
-      "description": "\u05de\u05e9\u05d4\u05d5 \u05d4\u05e9\u05ea\u05d1\u05e9 \u05d1\u05d8\u05e2\u05d9\u05e0\u05ea \u05d4\u05e2\u05de\u05d5\u05d3. \u05e0\u05e1\u05d4 \u05e9\u05d5\u05d1 \u05d1\u05e2\u05d5\u05d3 \u05e8\u05d2\u05e2, \u05d0\u05d5 \u05d3\u05d5\u05d5\u05d7 \u05e2\u05dc \u05d4\u05d1\u05e2\u05d9\u05d4 \u05db\u05d3\u05d9 \u05e9\u05e0\u05d5\u05db\u05dc \u05dc\u05d1\u05d3\u05d5\u05e7.",
-      "reportTemplate": "\u05dc\u05d0 \u05d4\u05e6\u05dc\u05d7\u05ea\u05d9 \u05dc\u05d8\u05e2\u05d5\u05df \u05d0\u05ea \u05e2\u05de\u05d5\u05d3 \u05d4\u05e7\u05d1\u05d5\u05e6\u05d5\u05ea."
+      "title": "לא הצלחנו לטעון את הקבוצות",
+      "description": "משהו השתבש בטעינת העמוד. נסה שוב בעוד רגע, או דווח על הבעיה כדי שנוכל לבדוק.",
+      "reportTemplate": "לא הצלחתי לטעון את עמוד הקבוצות."
     },
     "deletedGroups": "קבוצות מחוקות",
     "noDeletedGroups": "אין קבוצות מחוקות",
@@ -364,7 +364,9 @@
       "specialLeaveActionError": "לא הצלחנו לעדכן את הבקשה",
       "specialLeaveAdminNote": "הערת מנהל (לא חובה)",
       "specialLeaveApprove": "אשר",
-      "specialLeaveReject": "דחה"
+      "specialLeaveReject": "דחה",
+      "inviting": "שולח...",
+      "inviteSent": "נשלח"
     },
     "qualifications_tab": {
       "title": "הכשרות",
@@ -581,7 +583,8 @@
       "managementTimeoutError": "הזמן הקצוב חייב להיות מספר שלם בין 5 ל-120 דקות.",
       "minutes": "דקות",
       "parentGroup": "קבוצת אב",
-      "cancelRun": "בטל הרצה"
+      "cancelRun": "בטל הרצה",
+      "billing": "חיוב"
     },
     "linkedGroup": {
       "title": "קבוצת אב",
@@ -720,6 +723,19 @@
     "push": {
       "title": "התראות דחיפה",
       "description": "ניהול הגדרות התראות דחיפה בדפדפן"
+    },
+    "password": {
+      "title": "סיסמה",
+      "description": "שינוי הסיסמה המשמשת לכניסה לחשבון שלך.",
+      "current": "סיסמה נוכחית",
+      "new": "סיסמה חדשה",
+      "confirm": "אימות סיסמה חדשה",
+      "save": "שנה סיסמה",
+      "saving": "משנה...",
+      "saved": "הסיסמה שונתה. במכשירים אחרים תידרש כניסה מחדש.",
+      "mismatch": "הסיסמאות החדשות אינן תואמות.",
+      "tooShort": "הסיסמה חייבת לכלול לפחות 8 תווים.",
+      "error": "לא ניתן לשנות סיסמה. בדוק את הסיסמה הנוכחית ונסה שוב."
     }
   },
   "admin": {
@@ -1053,12 +1069,12 @@
     "saved": "נשמר ✓",
     "ownerOnly": "רק בעל המרחב יכול לערוך הגדרות",
     "settingsTabs": {
-      "label": "\u05de\u05e7\u05d8\u05e2\u05d9 \u05d4\u05d2\u05d3\u05e8\u05d5\u05ea \u05d4\u05de\u05e8\u05d7\u05d1",
-      "general": "\u05db\u05dc\u05dc\u05d9",
-      "members": "\u05d7\u05d1\u05e8\u05d9\u05dd",
-      "permissions": "\u05d4\u05e8\u05e9\u05d0\u05d5\u05ea",
-      "billing": "\u05d7\u05d9\u05d5\u05d1",
-      "danger": "\u05d0\u05d6\u05d5\u05e8 \u05de\u05e1\u05d5\u05db\u05df"
+      "label": "מקטעי הגדרות המרחב",
+      "general": "כללי",
+      "members": "חברים",
+      "permissions": "הרשאות",
+      "billing": "חיוב",
+      "danger": "אזור מסוכן"
     },
     "managementTimeout": {
       "title": "זמן קצוב למצב ניהול",
@@ -1254,8 +1270,8 @@
     "solverTimeout": "Shifter לא הגיב בזמן. ייתכן שהבעיה מורכבת מדי - נסה להקטין את אופק התכנון או לפשט את האילוצים.",
     "solverCheckError": "שגיאה בבדיקת סטטוס Shifter",
     "solverStartError": "שגיאה בהפעלת Shifter",
-    "retry": "\u05e0\u05e1\u05d4 \u05e9\u05d5\u05d1",
-    "reportProblem": "\u05d3\u05d5\u05d5\u05d7 \u05e2\u05dc \u05d1\u05e2\u05d9\u05d4",
+    "retry": "נסה שוב",
+    "reportProblem": "דווח על בעיה",
     "timeoutOutOfRange": "הזמן הקצוב חייב להיות מספר שלם בין 5 ל-120 דקות."
   },
   "common": {

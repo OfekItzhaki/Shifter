@@ -79,7 +79,7 @@ public class GetHistoricalPersonStatsQueryHandler
 
         var nameMap = people.ToDictionary(
             p => p.Id,
-            p => p.DisplayName ?? p.FullName);
+            p => p.FullName);
 
         // Query snapshots filtered by space, date range, and person set
         var snapshots = await _db.FairnessCounterSnapshots.AsNoTracking()

@@ -193,7 +193,9 @@ function LoginForm() {
       <div style={{ width: "100%", maxWidth: "380px" }}>
         {/* Logo */}
         <div style={{ display: "flex", justifyContent: "center", marginBottom: "2rem" }}>
+          <span className="auth-brand-surface">
           <ShifterLogo size={132} variant="full" />
+          </span>
         </div>
 
         {/* Card */}

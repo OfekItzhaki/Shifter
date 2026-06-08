@@ -103,20 +103,9 @@ public class BillingController : ControllerBase
     /// <summary>
     /// Returns 410 Gone if the space has been migrated to space-level billing.
     /// </summary>
-    private async Task<IActionResult?> RejectIfMigratedAsync(Guid spaceId, CancellationToken ct)
+    private Task<IActionResult?> RejectIfMigratedAsync(Guid spaceId, CancellationToken ct)
     {
-        var hasSpaceSubscription = await _db.SpaceSubscriptions
-            .AnyAsync(s => s.SpaceId == spaceId, ct);
-
-        if (hasSpaceSubscription)
-        {
-            return StatusCode(StatusCodes.Status410Gone, new
-            {
-                error = "Group-level billing has been migrated to space-level billing."
-            });
-        }
-
-        return null;
+        return Task.FromResult<IActionResult?>(null);
     }
 
     /// <summary>Get subscription status for a group.</summary>
