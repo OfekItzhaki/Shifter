@@ -139,7 +139,9 @@ export default function AppShell({ children }: AppShellProps) {
       >
         <div style={{ ...S.logo, textDecoration: "none" }}>
           <Link href="/home" className="sidebar-brand-link" aria-label="Go to home" title="Go to home">
-            <ShifterLogo size={34} variant="full" className="sidebar-brand-logo" />
+            <span className="sidebar-brand-logo-chip">
+              <ShifterLogo size={32} variant="full" className="sidebar-brand-logo" />
+            </span>
             <span className="sidebar-brand-home-indicator" aria-hidden="true">
               {ic("M3 12l9-9 9 9M5 10v10a1 1 0 001 1h4m4 0h4a1 1 0 001-1V10M9 21v-6a1 1 0 011-1h4a1 1 0 011 1v6")}
             </span>
