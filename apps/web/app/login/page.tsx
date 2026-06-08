@@ -41,6 +41,11 @@ function completeLogin(tokens: LoginTokens) {
   });
 }
 
+function isLikelyTouchDevice(): boolean {
+  if (typeof window === "undefined" || typeof navigator === "undefined") return false;
+  return window.matchMedia("(pointer: coarse)").matches || navigator.maxTouchPoints > 0;
+}
+
 function LoginForm() {
   const t = useTranslations("auth");
   const login = useAuthStore((s) => s.login);
@@ -79,7 +84,7 @@ function LoginForm() {
 
     async function detectBiometricAvailability() {
       const available = await isPlatformAuthenticatorAvailable();
-      if (!cancelled) setBiometricAvailable(available);
+      if (!cancelled) setBiometricAvailable(available && isLikelyTouchDevice());
     }
 
     detectBiometricAvailability();
