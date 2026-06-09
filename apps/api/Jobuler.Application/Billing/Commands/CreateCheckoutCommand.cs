@@ -45,7 +45,7 @@ public class CreateCheckoutCommandHandler : IRequestHandler<CreateCheckoutComman
         if (!groupExists)
             throw new KeyNotFoundException("Group not found or does not belong to this space.");
 
-        // ── Check no active/trialing subscription exists ─────────────────────
+        // ── Check no active subscription exists ──────────────────────────────
         var existingSub = await _db.GroupSubscriptions
             .FirstOrDefaultAsync(s => s.GroupId == req.GroupId && s.SpaceId == req.SpaceId, ct);
 
