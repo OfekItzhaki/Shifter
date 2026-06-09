@@ -156,7 +156,8 @@ export default function AppShell({ children }: AppShellProps) {
         {/* Space switcher and current-space actions */}
         <div style={{ padding: "4px 12px 10px", borderBottom: "1px solid rgba(148,163,184,0.14)" }}>
           <SpaceSwitcher />
-          <div style={{ marginTop: 6 }}>
+          <NavSection label={t("nav.sections.space")} />
+          <div style={{ marginTop: 2 }}>
             <NavItem href="/spaces/settings" label={t("spaces.settings")} icon={ic("M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4")} onNavigate={() => setSidebarOpen(false)} />
           </div>
         </div>
