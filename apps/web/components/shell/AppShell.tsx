@@ -135,6 +135,9 @@ export default function AppShell({ children }: AppShellProps) {
         dir={dir}
       >
         <div style={{ ...S.logo, textDecoration: "none" }}>
+          <Link href="/home" className="sidebar-brand-home-indicator" aria-label="Go to home" title="Go to home">
+            {ic("M3 12l9-9 9 9M5 10v10a1 1 0 001 1h4m4 0h4a1 1 0 001-1V10M9 21v-6a1 1 0 011-1h4a1 1 0 011 1v6")}
+          </Link>
           <Link href="/home" className="sidebar-brand-link" aria-label="Go to home" title="Go to home">
             <span className="sidebar-brand-lockup">
               <span className="sidebar-brand-logo-chip">
@@ -146,9 +149,6 @@ export default function AppShell({ children }: AppShellProps) {
               </span>
             </span>
           </Link>
-          <Link href="/home" className="sidebar-brand-home-indicator" aria-label="Go to home" title="Go to home">
-            {ic("M3 12l9-9 9 9M5 10v10a1 1 0 001 1h4m4 0h4a1 1 0 001-1V10M9 21v-6a1 1 0 011-1h4a1 1 0 011 1v6")}
-          </Link>
           {/* NotificationBell is OUTSIDE the Link so clicks don't navigate */}
           <NotificationBell variant="light" />
         </div>
@@ -156,7 +156,8 @@ export default function AppShell({ children }: AppShellProps) {
         {/* Space switcher and current-space actions */}
         <div style={{ padding: "4px 12px 10px", borderBottom: "1px solid rgba(148,163,184,0.14)" }}>
           <SpaceSwitcher />
-          <div style={{ marginTop: 6 }}>
+          <NavSection label={t("nav.sections.space")} />
+          <div style={{ marginTop: 2 }}>
             <NavItem href="/spaces/settings" label={t("spaces.settings")} icon={ic("M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4")} onNavigate={() => setSidebarOpen(false)} />
           </div>
         </div>
