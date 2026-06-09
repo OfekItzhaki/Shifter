@@ -22,7 +22,7 @@ interface AppShellProps { children: React.ReactNode; }
 
 const S = {
   sidebar: { width: 256, background: "#0f172a", display: "flex", flexDirection: "column" as const, height: "100dvh", minHeight: 0, maxHeight: "100dvh", position: "fixed" as const, top: 0, left: 0, zIndex: 30, overflowY: "auto" as const },
-  logo: { padding: "14px 12px", borderBottom: "1px solid rgba(148,163,184,0.2)", background: "linear-gradient(135deg, #090f1d 0%, #0f172a 48%, #082f49 100%)", display: "flex", alignItems: "center", gap: 8, textDecoration: "none", boxShadow: "inset 0 -1px 0 rgba(255,255,255,0.04)" },
+  logo: { padding: "14px 12px", borderBottom: "1px solid rgba(148,163,184,0.18)", background: "radial-gradient(circle at 18% 0%, rgba(20,184,166,0.18), transparent 34%), linear-gradient(135deg, #07111f 0%, #0f172a 52%, #082f49 100%)", display: "flex", alignItems: "center", gap: 8, textDecoration: "none", boxShadow: "inset 0 -1px 0 rgba(255,255,255,0.05)" },
   nav: { flex: 1, padding: "12px 12px", display: "flex", flexDirection: "column" as const, gap: 2 },
   navLink: (active: boolean, admin: boolean) => ({
     display: "flex", alignItems: "center", gap: 10, padding: "9px 12px", borderRadius: 8,
@@ -139,8 +139,14 @@ export default function AppShell({ children }: AppShellProps) {
       >
         <div style={{ ...S.logo, textDecoration: "none" }}>
           <Link href="/home" className="sidebar-brand-link" aria-label="Go to home" title="Go to home">
-            <span className="sidebar-brand-logo-chip">
-              <ShifterLogo size={32} variant="full" className="sidebar-brand-logo" />
+            <span className="sidebar-brand-lockup">
+              <span className="sidebar-brand-logo-chip">
+                <ShifterLogo size={28} variant="icon" className="sidebar-brand-logo" />
+              </span>
+              <span className="sidebar-brand-copy">
+                <span className="sidebar-brand-name">Shifter</span>
+                <span className="sidebar-brand-tagline">Smart Shift Scheduling</span>
+              </span>
             </span>
             <span className="sidebar-brand-home-indicator" aria-hidden="true">
               {ic("M3 12l9-9 9 9M5 10v10a1 1 0 001 1h4m4 0h4a1 1 0 001-1V10M9 21v-6a1 1 0 011-1h4a1 1 0 011 1v6")}
