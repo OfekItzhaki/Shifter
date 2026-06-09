@@ -9,6 +9,7 @@ import ThemeProvider from "@/components/ThemeProvider";
 import AdminSessionGuard from "@/components/admin/AdminSessionGuard";
 import FeedbackFab from "@/components/shell/FeedbackFab";
 import PwaInstallPrompt from "@/components/shell/PwaInstallPrompt";
+import ShifterAssistant from "@/components/shell/ShifterAssistant";
 import CookieConsentBanner from "@/components/privacy/CookieConsentBanner";
 import { initPostHog } from "@/lib/analytics/posthog";
 import { initConnectivity } from "@/lib/api/client";
@@ -42,6 +43,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
       <ThemeProvider>
         <OfflineBanner />
         <AdminSessionGuard />
+        {isLoggedIn && <ShifterAssistant />}
         {isLoggedIn && <FeedbackFab variant={isAuthRoute ? "auth" : "app"} />}
         {children}
         <PwaInstallPrompt />

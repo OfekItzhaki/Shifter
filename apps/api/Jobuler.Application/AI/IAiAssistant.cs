@@ -42,6 +42,14 @@ public interface IAiAssistant
         string contentType,
         string fileName,
         CancellationToken ct = default);
+
+    /// <summary>
+    /// Answer a user-facing support/product question.
+    /// The assistant may explain Shifter workflows and suggest next actions, but it never mutates data.
+    /// </summary>
+    Task<AiChatResponseDto> ChatAsync(
+        AiChatRequestDto request,
+        CancellationToken ct = default);
 }
 
 public record ParsedConstraintDto(
@@ -66,3 +74,25 @@ public record InfeasibilityContextDto(
     List<string> HardConflictDescriptions,
     List<string> AffectedPeople,
     List<string> AffectedSlots);
+
+public record AiChatRequestDto(
+    string Message,
+    string Locale,
+    string? UserDisplayName,
+    string? CurrentPath,
+    bool IsAuthenticated,
+    bool IsAdminMode,
+    IReadOnlyList<AiChatMessageDto> RecentMessages);
+
+public record AiChatMessageDto(
+    string Role,
+    string Content);
+
+public record AiChatResponseDto(
+    string Message,
+    IReadOnlyList<AiChatActionDto> SuggestedActions);
+
+public record AiChatActionDto(
+    string Type,
+    string Label,
+    string? Payload);

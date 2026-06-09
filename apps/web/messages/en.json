@@ -2179,6 +2179,26 @@
     "clickToUpdate": "Click to update to the latest version",
     "update": "Update"
   },
+  "assistant": {
+    "open": "Open Shifter assistant",
+    "close": "Close assistant",
+    "title": "Shifter Assistant",
+    "subtitle": "Help, support, and schedule guidance",
+    "welcome": "Hi. Ask me about Shifter, schedules, imports, settings, or support. I can guide you, but I will not change anything without you.",
+    "placeholder": "Ask a question...",
+    "send": "Send",
+    "thinking": "Thinking...",
+    "fallback": "I could not answer right now. Try again or send feedback to support.",
+    "noSpace": "Select a space first so I can answer in the right workspace context.",
+    "quick": {
+      "import": "How do I import a schedule?",
+      "schedule": "Why did scheduling fail?",
+      "support": "I need support"
+    },
+    "actions": {
+      "feedback": "Send feedback"
+    }
+  },
   "pwaInstall": {
     "title": "Install Shifter",
     "description": "Add Shifter to your phone for faster access and offline schedule viewing.",

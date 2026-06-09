@@ -32,6 +32,32 @@ public class AiController : ControllerBase
         Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
     /// <summary>
+    /// User-facing native Shifter assistant.
+    /// The assistant can explain workflows and suggest safe next actions, but never mutates data.
+    /// </summary>
+    [HttpPost("chat")]
+    public async Task<IActionResult> Chat(
+        Guid spaceId, [FromBody] AiChatRequest req, CancellationToken ct)
+    {
+        await _permissions.RequirePermissionAsync(
+            CurrentUserId, spaceId, Permissions.SpaceView, ct);
+
+        var locale = User.FindFirstValue("locale") ?? req.Locale ?? "he";
+        var userDisplayName = User.FindFirstValue("name") ?? User.Identity?.Name;
+
+        var result = await _mediator.Send(new ChatCommand(
+            req.Message,
+            locale,
+            userDisplayName,
+            req.CurrentPath,
+            IsAuthenticated: true,
+            req.IsAdminMode,
+            req.RecentMessages ?? []), ct);
+
+        return Ok(result);
+    }
+
+    /// <summary>
     /// Parse a natural language instruction into a candidate constraint.
     /// The admin must review and confirm before saving.
     /// </summary>
@@ -84,3 +110,10 @@ public class AiController : ControllerBase
 }
 
 public record ParseConstraintRequest(string Input);
+
+public record AiChatRequest(
+    string Message,
+    string? Locale,
+    string? CurrentPath,
+    bool IsAdminMode,
+    IReadOnlyList<AiChatMessageDto>? RecentMessages);
