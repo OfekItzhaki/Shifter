@@ -9,7 +9,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 
 // ─── Mocks ───────────────────────────────────────────────────────────────────
 
@@ -75,6 +75,13 @@ vi.mock("@/components/PushNotificationSettings", () => ({
 
 // Mock the API call
 vi.mock("@/lib/api/userSettings", () => ({
+  getUserSettings: vi.fn().mockResolvedValue({
+    countryCode: null,
+    stateCode: null,
+    timezoneId: "Asia/Jerusalem",
+    timezoneOffsetMinutes: 120,
+    timeFormat: "24h",
+  }),
   updateUserLocation: vi.fn().mockResolvedValue({
     ianaTimezoneId: "America/New_York",
     offsetMinutes: -300,
@@ -82,6 +89,19 @@ vi.mock("@/lib/api/userSettings", () => ({
 }));
 
 import SettingsPage from "../../app/settings/page";
+import { updateUserLocation } from "@/lib/api/userSettings";
+
+async function renderSettingsPage() {
+  render(<SettingsPage />);
+
+  await waitFor(() => {
+    expect(screen.getByText("countryPlaceholder").closest("button")).not.toBeDisabled();
+  });
+}
+
+function getLocationSaveButton() {
+  return screen.getAllByRole("button", { name: "save" })[0];
+}
 
 // ─── Tests ───────────────────────────────────────────────────────────────────
 
@@ -91,39 +111,39 @@ describe("Settings Page", () => {
   });
 
   describe("Settings sections presence (Req 6.5)", () => {
-    it("renders the Location section with country dropdown", () => {
-      render(<SettingsPage />);
+    it("renders the Location section with country dropdown", async () => {
+      await renderSettingsPage();
       // The country dropdown button shows the placeholder key
       expect(screen.getByText("countryPlaceholder")).toBeInTheDocument();
     });
 
-    it("renders the Time Format section with 24h and AM/PM buttons", () => {
-      render(<SettingsPage />);
+    it("renders the Time Format section with 24h and AM/PM buttons", async () => {
+      await renderSettingsPage();
       expect(screen.getByText("24h")).toBeInTheDocument();
       expect(screen.getByText("AM/PM")).toBeInTheDocument();
     });
 
-    it("renders the Notification Preferences section", () => {
-      render(<SettingsPage />);
+    it("renders the Notification Preferences section", async () => {
+      await renderSettingsPage();
       expect(screen.getByTestId("notification-preferences")).toBeInTheDocument();
     });
 
-    it("renders the Push Notification Settings section", () => {
-      render(<SettingsPage />);
+    it("renders the Push Notification Settings section", async () => {
+      await renderSettingsPage();
       expect(screen.getByTestId("push-notification-settings")).toBeInTheDocument();
     });
   });
 
   describe("Country dropdown (Req 7.1)", () => {
-    it("renders a country dropdown button with placeholder text", () => {
-      render(<SettingsPage />);
+    it("renders a country dropdown button with placeholder text", async () => {
+      await renderSettingsPage();
       const countryButton = screen.getByText("countryPlaceholder");
       expect(countryButton).toBeInTheDocument();
       expect(countryButton.tagName).toBe("BUTTON");
     });
 
-    it("opens a searchable input when clicked", () => {
-      render(<SettingsPage />);
+    it("opens a searchable input when clicked", async () => {
+      await renderSettingsPage();
       const countryButton = screen.getByText("countryPlaceholder");
       fireEvent.click(countryButton);
 
@@ -132,8 +152,8 @@ describe("Settings Page", () => {
       expect(input).toBeInTheDocument();
     });
 
-    it("filters country options when typing in search", () => {
-      render(<SettingsPage />);
+    it("filters country options when typing in search", async () => {
+      await renderSettingsPage();
       const countryButton = screen.getByText("countryPlaceholder");
       fireEvent.click(countryButton);
 
@@ -150,8 +170,8 @@ describe("Settings Page", () => {
       expect(options[0]).toHaveTextContent("Israel");
     });
 
-    it("shows all countries when search is empty", () => {
-      render(<SettingsPage />);
+    it("shows all countries when search is empty", async () => {
+      await renderSettingsPage();
       const countryButton = screen.getByText("countryPlaceholder");
       fireEvent.click(countryButton);
 
@@ -160,8 +180,8 @@ describe("Settings Page", () => {
       expect(options.length).toBeGreaterThan(50);
     });
 
-    it("selects a country when an option is clicked", () => {
-      render(<SettingsPage />);
+    it("selects a country when an option is clicked", async () => {
+      await renderSettingsPage();
       const countryButton = screen.getByText("countryPlaceholder");
       fireEvent.click(countryButton);
 
@@ -178,8 +198,8 @@ describe("Settings Page", () => {
   });
 
   describe("State dropdown conditional display (Req 7.2, 7.3)", () => {
-    it("does NOT show state dropdown for single-timezone country (Israel)", () => {
-      render(<SettingsPage />);
+    it("does NOT show state dropdown for single-timezone country (Israel)", async () => {
+      await renderSettingsPage();
       // Select Israel (single timezone)
       const countryButton = screen.getByText("countryPlaceholder");
       fireEvent.click(countryButton);
@@ -192,8 +212,8 @@ describe("Settings Page", () => {
       expect(screen.queryByText("statePlaceholder")).not.toBeInTheDocument();
     });
 
-    it("shows state dropdown for multi-timezone country (United States)", () => {
-      render(<SettingsPage />);
+    it("shows state dropdown for multi-timezone country (United States)", async () => {
+      await renderSettingsPage();
       // Select United States (multi-timezone)
       const countryButton = screen.getByText("countryPlaceholder");
       fireEvent.click(countryButton);
@@ -206,8 +226,22 @@ describe("Settings Page", () => {
       expect(screen.getByText("statePlaceholder")).toBeInTheDocument();
     });
 
-    it("shows state dropdown for Australia (multi-timezone)", () => {
-      render(<SettingsPage />);
+    it("requires state before saving for multi-timezone countries", async () => {
+      await renderSettingsPage();
+      const countryButton = screen.getByText("countryPlaceholder");
+      fireEvent.click(countryButton);
+
+      const input = screen.getByRole("combobox");
+      fireEvent.change(input, { target: { value: "United States" } });
+      fireEvent.click(screen.getByRole("option", { name: "United States" }));
+
+      expect(screen.getByText("stateRequired")).toBeInTheDocument();
+      expect(screen.getByText("timezonePending")).toBeInTheDocument();
+      expect(getLocationSaveButton()).toBeDisabled();
+    });
+
+    it("shows state dropdown for Australia (multi-timezone)", async () => {
+      await renderSettingsPage();
       const countryButton = screen.getByText("countryPlaceholder");
       fireEvent.click(countryButton);
 
@@ -220,8 +254,8 @@ describe("Settings Page", () => {
   });
 
   describe("Country change clears state (Req 7.4)", () => {
-    it("clears state selection when country changes to another multi-tz country", () => {
-      render(<SettingsPage />);
+    it("clears state selection when country changes to another multi-tz country", async () => {
+      await renderSettingsPage();
 
       // Select US
       const countryButton = screen.getByText("countryPlaceholder");
@@ -252,8 +286,8 @@ describe("Settings Page", () => {
       expect(screen.getByText("statePlaceholder")).toBeInTheDocument();
     });
 
-    it("clears state when switching from multi-tz to single-tz country", () => {
-      render(<SettingsPage />);
+    it("clears state when switching from multi-tz to single-tz country", async () => {
+      await renderSettingsPage();
 
       // Select US (multi-tz)
       const countryButton = screen.getByText("countryPlaceholder");
@@ -282,14 +316,37 @@ describe("Settings Page", () => {
     });
   });
 
+  describe("Save location", () => {
+    it("saves country and state, then applies the resolved timezone", async () => {
+      await renderSettingsPage();
+
+      fireEvent.click(screen.getByText("countryPlaceholder"));
+      let input = screen.getByRole("combobox");
+      fireEvent.change(input, { target: { value: "United States" } });
+      fireEvent.click(screen.getByRole("option", { name: "United States" }));
+
+      fireEvent.click(screen.getByText("statePlaceholder"));
+      input = screen.getByRole("combobox");
+      fireEvent.change(input, { target: { value: "New York" } });
+      fireEvent.click(screen.getByRole("option", { name: "New York" }));
+
+      fireEvent.click(getLocationSaveButton());
+
+      await waitFor(() => {
+        expect(updateUserLocation).toHaveBeenCalledWith("US", "NY");
+      });
+      expect(mockSetTimezone).toHaveBeenCalledWith("America/New_York", -300);
+    });
+  });
+
   describe("Resolved timezone display (Req 7.5)", () => {
-    it("displays the default timezone (Asia/Jerusalem) initially", () => {
-      render(<SettingsPage />);
+    it("displays the default timezone (Asia/Jerusalem) initially", async () => {
+      await renderSettingsPage();
       expect(screen.getByText("Asia/Jerusalem")).toBeInTheDocument();
     });
 
-    it("displays timezone label", () => {
-      render(<SettingsPage />);
+    it("displays timezone label", async () => {
+      await renderSettingsPage();
       expect(screen.getByText("timezone:")).toBeInTheDocument();
     });
   });

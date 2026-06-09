@@ -706,9 +706,12 @@
       "countryPlaceholder": "בחר מדינה...",
       "state": "מחוז / אזור",
       "statePlaceholder": "בחר מחוז...",
+      "stateRequired": "בחר מחוז או אזור כדי ששיפטר יבחר את אזור הזמן הנכון.",
       "timezone": "אזור זמן",
       "timezoneResolved": "אזור הזמן שלך: {timezone}",
+      "timezonePending": "(יתעדכן לאחר השמירה)",
       "save": "שמור מיקום",
+      "loading": "טוען...",
       "saving": "שומר...",
       "saved": "המיקום נשמר"
     },

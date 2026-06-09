@@ -702,9 +702,12 @@
       "countryPlaceholder": "Select country...",
       "state": "State / Region",
       "statePlaceholder": "Select state...",
+      "stateRequired": "Select a state or region so Shifter can choose the correct timezone.",
       "timezone": "Timezone",
       "timezoneResolved": "Your timezone: {timezone}",
+      "timezonePending": "(updates after saving)",
       "save": "Save Location",
+      "loading": "Loading...",
       "saving": "Saving...",
       "saved": "Location saved"
     },
