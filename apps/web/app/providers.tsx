@@ -8,6 +8,7 @@ import OfflineBanner from "@/components/shell/OfflineBanner";
 import ThemeProvider from "@/components/ThemeProvider";
 import AdminSessionGuard from "@/components/admin/AdminSessionGuard";
 import FeedbackFab from "@/components/shell/FeedbackFab";
+import PwaInstallPrompt from "@/components/shell/PwaInstallPrompt";
 import CookieConsentBanner from "@/components/privacy/CookieConsentBanner";
 import { initPostHog } from "@/lib/analytics/posthog";
 import { initConnectivity } from "@/lib/api/client";
@@ -43,6 +44,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
         <AdminSessionGuard />
         {isLoggedIn && <FeedbackFab variant={isAuthRoute ? "auth" : "app"} />}
         {children}
+        <PwaInstallPrompt />
         <CookieConsentBanner />
       </ThemeProvider>
     </QueryClientProvider>

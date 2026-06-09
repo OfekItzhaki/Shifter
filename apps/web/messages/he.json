@@ -2190,5 +2190,13 @@
     "newVersionAvailable": "גרסה חדשה זמינה",
     "clickToUpdate": "לחץ לעדכון לגרסה האחרונה",
     "update": "עדכן"
+  },
+  "pwaInstall": {
+    "title": "התקן את Shifter",
+    "description": "הוסף את Shifter לטלפון לגישה מהירה וצפייה בסידור גם ללא חיבור.",
+    "iosDescription": "באייפון, לחץ על שיתוף ואז על הוסף למסך הבית כדי להתקין את Shifter.",
+    "install": "התקן",
+    "notNow": "לא עכשיו",
+    "dismiss": "סגור"
   }
 }
