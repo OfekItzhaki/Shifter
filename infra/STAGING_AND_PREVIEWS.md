@@ -177,6 +177,11 @@ Add GitHub Actions:
 - push to `develop`: SSH deploy staging
 - push to `main`: SSH deploy production, protected by a GitHub Environment approval
 
+Future front-door hardening:
+
+- Add Cloudflare in front of staging/production for DNS, CDN, WAF, DDoS protection, and rate limiting.
+- See `infra/CLOUDFLARE_FRONT_DOOR.md`.
+
 Required GitHub secrets:
 
 - `HETZNER_HOST`
