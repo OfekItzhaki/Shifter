@@ -5,7 +5,7 @@ import { useTranslations, useLocale } from "next-intl";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { verifyEmail, resendVerification } from "@/lib/api/auth";
-import ShifterLogo from "@/components/shell/ShifterLogo";
+import AuthBrand from "@/components/shell/AuthBrand";
 import LegalLinks from "@/components/legal/LegalLinks";
 
 function VerifyEmailContent() {
@@ -15,14 +15,11 @@ function VerifyEmailContent() {
   const token = searchParams.get("token") ?? "";
   const backArrow = locale === "he" ? "→" : "←";
 
-  const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
+  const [status, setStatus] = useState<"loading" | "success" | "error">(() => token ? "loading" : "error");
   const [resendStatus, setResendStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
 
   useEffect(() => {
-    if (!token) {
-      setStatus("error");
-      return;
-    }
+    if (!token) return;
     verifyEmail(token)
       .then(() => setStatus("success"))
       .catch(() => setStatus("error"));
@@ -112,7 +109,7 @@ export default function VerifyEmailPage() {
     <main style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#f8fafc", padding: "1rem" }}>
       <div style={{ width: "100%", maxWidth: "380px" }}>
         <div style={{ display: "flex", justifyContent: "center", marginBottom: "2rem" }}>
-          <ShifterLogo size={132} variant="full" />
+          <AuthBrand />
         </div>
 
         <div style={{ background: "white", borderRadius: 16, boxShadow: "0 4px 24px rgba(0,0,0,0.08)", border: "1px solid #e2e8f0", padding: "2rem" }}>

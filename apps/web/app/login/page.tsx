@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 import { useAuthStore } from "@/lib/store/authStore";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import ShifterLogo from "@/components/shell/ShifterLogo";
+import AuthBrand from "@/components/shell/AuthBrand";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import LegalLinks from "@/components/legal/LegalLinks";
 import {
@@ -193,9 +193,7 @@ function LoginForm() {
       <div style={{ width: "100%", maxWidth: "380px" }}>
         {/* Logo */}
         <div style={{ display: "flex", justifyContent: "center", marginBottom: "2rem" }}>
-          <span className="auth-brand-surface">
-          <ShifterLogo size={132} variant="full" />
-          </span>
+          <AuthBrand />
         </div>
 
         {/* Card */}
