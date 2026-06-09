@@ -21,6 +21,14 @@ public class LemonSqueezyClient : ILemonSqueezyClient
 
     private const string PlansCacheKey = "lemonsqueezy:plans";
     private static readonly TimeSpan PlansCacheDuration = TimeSpan.FromHours(1);
+    private static readonly List<PlanDto> FallbackPlans =
+    [
+        new("", "Starter", 5000, "month", null, 1, 10),
+        new("", "Growth", 9000, "month", null, 2, 20),
+        new("", "Team", 15000, "month", null, 3, 30),
+        new("", "Organization", 25000, "month", null, 4, 50),
+        new("", "Unlimited", 35000, "month", null, 5, null)
+    ];
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -98,27 +106,50 @@ public class LemonSqueezyClient : ILemonSqueezyClient
             return cached;
         }
 
-        var response = await _httpClient.GetAsync(
-            "https://api.lemonsqueezy.com/v1/variants", ct);
-
-        if (!response.IsSuccessStatusCode)
+        try
         {
-            var errorBody = await response.Content.ReadAsStringAsync(ct);
-            _logger.LogError(
-                "LemonSqueezy variants fetch failed: Status={Status} Body={Body}",
-                (int)response.StatusCode, errorBody);
+            var response = await _httpClient.GetAsync(
+                "https://api.lemonsqueezy.com/v1/variants", ct);
 
-            throw new InvalidOperationException(
-                "Failed to fetch plans from LemonSqueezy.");
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorBody = await response.Content.ReadAsStringAsync(ct);
+                _logger.LogWarning(
+                    "LemonSqueezy variants fetch failed; returning fallback plans. Status={Status} Body={Body}",
+                    (int)response.StatusCode, errorBody);
+
+                return CacheFallbackPlans();
+            }
+
+            var json = await response.Content.ReadAsStringAsync(ct);
+            var plans = ParseVariantsResponse(json);
+            if (plans.Count == 0)
+            {
+                _logger.LogWarning("LemonSqueezy returned no published subscription plans; returning fallback plans.");
+                return CacheFallbackPlans();
+            }
+
+            _cache.Set(PlansCacheKey, plans, PlansCacheDuration);
+
+            _logger.LogInformation("Fetched {Count} plans from LemonSqueezy", plans.Count);
+
+            return plans;
         }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "LemonSqueezy variants fetch failed; returning fallback plans.");
+            return CacheFallbackPlans();
+        }
+    }
 
-        var json = await response.Content.ReadAsStringAsync(ct);
-        var plans = ParseVariantsResponse(json);
-
+    private List<PlanDto> CacheFallbackPlans()
+    {
+        var plans = FallbackPlans.ToList();
         _cache.Set(PlansCacheKey, plans, PlansCacheDuration);
-
-        _logger.LogInformation("Fetched {Count} plans from LemonSqueezy", plans.Count);
-
         return plans;
     }
 

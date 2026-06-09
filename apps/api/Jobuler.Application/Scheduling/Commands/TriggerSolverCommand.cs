@@ -81,19 +81,21 @@ public class TriggerSolverCommandHandler : IRequestHandler<TriggerSolverCommand,
                 ? DateTime.SpecifyKind(request.StartTime.Value, DateTimeKind.Utc)
                 : DateTime.UtcNow;
 
+            var scopeGroupIds = await ResolveGroupTreeAsync(request.SpaceId, request.GroupId.Value, ct);
+
             var hasActiveFutureTasks = await _db.GroupTasks
                 .AsNoTracking()
                 .AnyAsync(t =>
                     t.SpaceId == request.SpaceId &&
-                    t.GroupId == request.GroupId.Value &&
+                    scopeGroupIds.Contains(t.GroupId) &&
                     t.IsActive &&
                     t.EndsAt > nowUtc, ct);
 
             if (!hasActiveFutureTasks)
             {
                 throw new InvalidOperationException(
-                    "Cannot create a schedule: all tasks for this group end in the past. " +
-                    "Update the task dates before running the scheduler.");
+                    "Cannot create a schedule: this group tree has no active upcoming missions. " +
+                    "Create or update missions before running Shifter.");
             }
         }
 
@@ -108,9 +110,21 @@ public class TriggerSolverCommandHandler : IRequestHandler<TriggerSolverCommand,
         // When a new solver run is triggered, automatically discard any existing
         // Draft versions for this space. This prevents stale drafts from
         // accumulating and confusing the admin.
-        var existingDrafts = await _db.ScheduleVersions
-            .Where(v => v.SpaceId == request.SpaceId && v.Status == ScheduleVersionStatus.Draft)
-            .ToListAsync(ct);
+        var existingDraftsQuery = _db.ScheduleVersions
+            .Where(v => v.SpaceId == request.SpaceId && v.Status == ScheduleVersionStatus.Draft);
+
+        if (request.GroupId.HasValue)
+        {
+            var scopedRunIds = await _db.ScheduleRuns.AsNoTracking()
+                .Where(r => r.SpaceId == request.SpaceId && r.GroupId == request.GroupId.Value)
+                .Select(r => r.Id)
+                .ToListAsync(ct);
+
+            existingDraftsQuery = existingDraftsQuery
+                .Where(v => v.SourceRunId.HasValue && scopedRunIds.Contains(v.SourceRunId.Value));
+        }
+
+        var existingDrafts = await existingDraftsQuery.ToListAsync(ct);
 
         foreach (var draft in existingDrafts)
             draft.Discard();
@@ -120,7 +134,7 @@ public class TriggerSolverCommandHandler : IRequestHandler<TriggerSolverCommand,
             : ScheduleRunTrigger.Standard;
 
         var run = ScheduleRun.Create(
-            request.SpaceId, trigger, baseline?.Id, request.RequestedByUserId);
+            request.SpaceId, trigger, baseline?.Id, request.RequestedByUserId, request.GroupId);
 
         _db.ScheduleRuns.Add(run);
         await _db.SaveChangesAsync(ct);
@@ -131,5 +145,36 @@ public class TriggerSolverCommandHandler : IRequestHandler<TriggerSolverCommand,
             baseline?.Id, request.RequestedByUserId, request.GroupId, request.StartTime), ct);
 
         return run.Id;
+    }
+
+    private async Task<List<Guid>> ResolveGroupTreeAsync(Guid spaceId, Guid rootGroupId, CancellationToken ct)
+    {
+        var groups = await _db.Groups.AsNoTracking()
+            .Where(g => g.SpaceId == spaceId && g.DeletedAt == null)
+            .Select(g => new { g.Id, g.ParentGroupId })
+            .ToListAsync(ct);
+
+        var childrenByParent = groups
+            .Where(g => g.ParentGroupId.HasValue)
+            .GroupBy(g => g.ParentGroupId!.Value)
+            .ToDictionary(g => g.Key, g => g.Select(child => child.Id).ToList());
+
+        var result = new List<Guid>();
+        var stack = new Stack<Guid>();
+        stack.Push(rootGroupId);
+
+        while (stack.Count > 0)
+        {
+            var current = stack.Pop();
+            if (result.Contains(current)) continue;
+
+            result.Add(current);
+            if (!childrenByParent.TryGetValue(current, out var children)) continue;
+
+            foreach (var child in children)
+                stack.Push(child);
+        }
+
+        return result;
     }
 }

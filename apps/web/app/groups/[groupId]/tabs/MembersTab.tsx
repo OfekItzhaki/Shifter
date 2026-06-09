@@ -32,7 +32,7 @@ interface Props {
   onRemoveMember: (id: string) => void;
   onOpenAddMember: () => void;
   onOpenImport?: () => void;
-  onOpenInvite: (id: string) => void;
+  onOpenInvite: (id: string) => void | Promise<void>;
   onUpdateMemberRole: (personId: string, roleId: string | null) => Promise<void>;
 }
 
@@ -45,6 +45,22 @@ export default function MembersTab({
   const tCommon = useTranslations("common");
   const timezoneId = useAuthStore(s => s.timezoneId);
   const [confirmRemove, setConfirmRemove] = useState<string | null>(null);
+  const [inviteState, setInviteState] = useState<Record<string, "sending" | "sent">>({});
+
+  async function handleInviteClick(personId: string) {
+    if (inviteState[personId]) return;
+    setInviteState(prev => ({ ...prev, [personId]: "sending" }));
+    try {
+      await onOpenInvite(personId);
+      setInviteState(prev => ({ ...prev, [personId]: "sent" }));
+    } catch {
+      setInviteState(prev => {
+        const next = { ...prev };
+        delete next[personId];
+        return next;
+      });
+    }
+  }
 
   const filtered = members.filter(m =>
     !membersSearch ||
@@ -134,8 +150,18 @@ export default function MembersTab({
                 <button onClick={() => onSelectMember(m)} className="text-xs text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-300 border border-sky-200 dark:border-sky-700 bg-sky-50 dark:bg-sky-900/20 px-2.5 py-1.5 rounded-lg hover:bg-sky-100 dark:hover:bg-sky-900/40 transition-colors font-medium">{t("details")}</button>
                 {isAdmin && !m.isOwner && (
                   <>
-                    {(!m.linkedUserId || (!m.phoneNumber && !m.email)) && (
-                      <button onClick={() => onOpenInvite(m.personId)} className="text-xs text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/20 px-2.5 py-1.5 rounded-lg hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors font-medium">{t("invite")}</button>
+                    {(m.phoneNumber || m.email) && (!m.linkedUserId || (!m.phoneNumber && !m.email)) && (
+                      <button
+                        onClick={() => handleInviteClick(m.personId)}
+                        disabled={!!inviteState[m.personId]}
+                        className="text-xs text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/20 px-2.5 py-1.5 rounded-lg hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors font-medium disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        {inviteState[m.personId] === "sending"
+                          ? t("inviting")
+                          : inviteState[m.personId] === "sent"
+                            ? t("inviteSent")
+                            : t("invite")}
+                      </button>
                     )}
                     {confirmRemove === m.personId ? (
                       <>

@@ -225,6 +225,11 @@
     "newGroupPlaceholder": "שם קבוצה חדשה",
     "noGroups": "אינך משויך לאף קבוצה עדיין.",
     "noGroupsInScope": "אין כאן קבוצות עדיין.",
+    "loadError": {
+      "title": "לא הצלחנו לטעון את הקבוצות",
+      "description": "משהו השתבש בטעינת העמוד. נסה שוב בעוד רגע, או דווח על הבעיה כדי שנוכל לבדוק.",
+      "reportTemplate": "לא הצלחתי לטעון את עמוד הקבוצות."
+    },
     "deletedGroups": "קבוצות מחוקות",
     "noDeletedGroups": "אין קבוצות מחוקות",
     "restore": "שחזר",
@@ -359,7 +364,9 @@
       "specialLeaveActionError": "לא הצלחנו לעדכן את הבקשה",
       "specialLeaveAdminNote": "הערת מנהל (לא חובה)",
       "specialLeaveApprove": "אשר",
-      "specialLeaveReject": "דחה"
+      "specialLeaveReject": "דחה",
+      "inviting": "שולח...",
+      "inviteSent": "נשלח"
     },
     "qualifications_tab": {
       "title": "הכשרות",
@@ -576,7 +583,8 @@
       "managementTimeoutError": "הזמן הקצוב חייב להיות מספר שלם בין 5 ל-120 דקות.",
       "minutes": "דקות",
       "parentGroup": "קבוצת אב",
-      "cancelRun": "בטל הרצה"
+      "cancelRun": "בטל הרצה",
+      "billing": "חיוב"
     },
     "linkedGroup": {
       "title": "קבוצת אב",
@@ -715,6 +723,19 @@
     "push": {
       "title": "התראות דחיפה",
       "description": "ניהול הגדרות התראות דחיפה בדפדפן"
+    },
+    "password": {
+      "title": "סיסמה",
+      "description": "שינוי הסיסמה המשמשת לכניסה לחשבון שלך.",
+      "current": "סיסמה נוכחית",
+      "new": "סיסמה חדשה",
+      "confirm": "אימות סיסמה חדשה",
+      "save": "שנה סיסמה",
+      "saving": "משנה...",
+      "saved": "הסיסמה שונתה. במכשירים אחרים תידרש כניסה מחדש.",
+      "mismatch": "הסיסמאות החדשות אינן תואמות.",
+      "tooShort": "הסיסמה חייבת לכלול לפחות 8 תווים.",
+      "error": "לא ניתן לשנות סיסמה. בדוק את הסיסמה הנוכחית ונסה שוב."
     }
   },
   "admin": {
@@ -1047,6 +1068,14 @@
     "saving": "שומר...",
     "saved": "נשמר ✓",
     "ownerOnly": "רק בעל המרחב יכול לערוך הגדרות",
+    "settingsTabs": {
+      "label": "מקטעי הגדרות המרחב",
+      "general": "כללי",
+      "members": "חברים",
+      "permissions": "הרשאות",
+      "billing": "חיוב",
+      "danger": "אזור מסוכן"
+    },
     "managementTimeout": {
       "title": "זמן קצוב למצב ניהול",
       "description": "דקות חוסר פעילות לפני שמפגשי ניהול יפוגו בכל הקבוצות במרחב.",
@@ -1241,6 +1270,8 @@
     "solverTimeout": "Shifter לא הגיב בזמן. ייתכן שהבעיה מורכבת מדי - נסה להקטין את אופק התכנון או לפשט את האילוצים.",
     "solverCheckError": "שגיאה בבדיקת סטטוס Shifter",
     "solverStartError": "שגיאה בהפעלת Shifter",
+    "retry": "נסה שוב",
+    "reportProblem": "דווח על בעיה",
     "timeoutOutOfRange": "הזמן הקצוב חייב להיות מספר שלם בין 5 ל-120 דקות."
   },
   "common": {

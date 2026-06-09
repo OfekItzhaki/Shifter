@@ -40,6 +40,18 @@ export interface CheckoutResponse {
   checkoutUrl: string;
 }
 
+export interface GroupSubscriptionDto {
+  status: "none" | "trialing" | "active" | "pastdue" | "past_due" | "canceled" | "expired" | "migrated";
+  tierId: string | null;
+  trialEndsAt: string | null;
+  peakMemberCount?: number;
+  discountPercent?: number;
+  couponCode?: string | null;
+  isActive?: boolean;
+  canceledAt?: string | null;
+  periodEndsAt?: string | null;
+}
+
 // ── API Functions ─────────────────────────────────────────────────────────────
 
 export async function getPlans(): Promise<PlanDto[]> {
@@ -89,4 +101,40 @@ export async function upgradeSpacePlan(
     { variantId }
   );
   return data as CheckoutResponse;
+}
+
+export async function getGroupSubscription(
+  spaceId: string,
+  groupId: string
+): Promise<GroupSubscriptionDto | null> {
+  const { data } = await apiClient.get(
+    `/spaces/${spaceId}/billing/groups/${groupId}/subscription`
+  );
+  return data as GroupSubscriptionDto | null;
+}
+
+export async function createGroupCheckout(
+  spaceId: string,
+  groupId: string
+): Promise<CheckoutResponse> {
+  const { data } = await apiClient.post(
+    `/spaces/${spaceId}/billing/groups/${groupId}/checkout`,
+    {},
+    { _skipRedirect: true } as any
+  );
+  return data as CheckoutResponse;
+}
+
+export async function cancelGroupSubscription(
+  spaceId: string,
+  groupId: string
+): Promise<void> {
+  await apiClient.post(`/spaces/${spaceId}/billing/groups/${groupId}/cancel`);
+}
+
+export async function renewGroupSubscription(
+  spaceId: string,
+  groupId: string
+): Promise<void> {
+  await apiClient.post(`/spaces/${spaceId}/billing/groups/${groupId}/renew`);
 }

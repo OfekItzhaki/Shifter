@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { useTranslations } from "next-intl";
 import { useAuthStore } from "@/lib/store/authStore";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -41,6 +41,11 @@ function completeLogin(tokens: LoginTokens) {
   });
 }
 
+function isLikelyTouchDevice(): boolean {
+  if (typeof window === "undefined" || typeof navigator === "undefined") return false;
+  return window.matchMedia("(pointer: coarse)").matches || navigator.maxTouchPoints > 0;
+}
+
 function LoginForm() {
   const t = useTranslations("auth");
   const login = useAuthStore((s) => s.login);
@@ -65,6 +70,7 @@ function LoginForm() {
   const [pendingRedirect, setPendingRedirect] = useState(redirectTo);
   const [passkeySetupLoading, setPasskeySetupLoading] = useState(false);
   const [passkeySetupError, setPasskeySetupError] = useState<string | null>(null);
+  const conditionalMediationAttemptedRef = useRef(false);
 
   // Redirect authenticated users away from login page
   useEffect(() => {
@@ -78,40 +84,34 @@ function LoginForm() {
 
     async function detectBiometricAvailability() {
       const available = await isPlatformAuthenticatorAvailable();
-      if (!cancelled) setBiometricAvailable(available);
+      if (!cancelled) setBiometricAvailable(available && isLikelyTouchDevice());
     }
 
     detectBiometricAvailability();
     return () => { cancelled = true; };
   }, []);
 
-  // Start conditional mediation (passkey autofill) on mount
-  useEffect(() => {
+  async function tryConditionalMediation() {
     if (!isWebAuthnSupported()) return;
-    let cancelled = false;
+    if (conditionalMediationAttemptedRef.current) return;
+    conditionalMediationAttemptedRef.current = true;
 
-    async function startConditionalMediation() {
-      const available = await isConditionalMediationAvailable();
-      if (!available || cancelled) return;
+    const available = await isConditionalMediationAvailable();
+    if (!available) return;
 
-      try {
-        const tokens = await authenticateWithBiometric({ mediation: "conditional" });
-        if (cancelled) return;
-        setSuppressAuthRedirect(true);
-        completeLogin(tokens);
-        router.push(redirectTo);
-      } catch {
-        // Conditional mediation not supported or user didn't select a passkey — silent fail
-      }
+    try {
+      const tokens = await authenticateWithBiometric({ mediation: "conditional" });
+      setSuppressAuthRedirect(true);
+      completeLogin(tokens);
+      router.push(redirectTo);
+    } catch {
+      // The user can keep using saved credentials or password login.
     }
-
-    startConditionalMediation();
-    return () => { cancelled = true; };
-  }, []);
+  }
 
   async function finishPasswordLogin() {
     const canOfferPasskey = await isPlatformAuthenticatorAvailable();
-    if (!canOfferPasskey) {
+    if (!canOfferPasskey || !isLikelyTouchDevice()) {
       router.push(redirectTo);
       return;
     }
@@ -193,7 +193,9 @@ function LoginForm() {
       <div style={{ width: "100%", maxWidth: "380px" }}>
         {/* Logo */}
         <div style={{ display: "flex", justifyContent: "center", marginBottom: "2rem" }}>
+          <span className="auth-brand-surface">
           <ShifterLogo size={132} variant="full" />
+          </span>
         </div>
 
         {/* Card */}
@@ -258,9 +260,9 @@ function LoginForm() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                onFocus={tryConditionalMediation}
                 placeholder={t("emailOrPhonePlaceholder")}
                 autoComplete="username"
-                inputMode="email"
                 style={{ width: "100%", border: "1px solid #e2e8f0", borderRadius: "10px", padding: "0.625rem 0.875rem", fontSize: "0.875rem", color: "#0f172a", outline: "none", boxSizing: "border-box" }}
               />
             </div>
@@ -275,6 +277,7 @@ function LoginForm() {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  onFocus={tryConditionalMediation}
                   placeholder="••••••••"
                   autoComplete="current-password"
                   style={{ width: "100%", border: "1px solid #e2e8f0", borderRadius: "10px", padding: "0.625rem 2.5rem 0.625rem 0.875rem", fontSize: "0.875rem", color: "#0f172a", outline: "none", boxSizing: "border-box" }}

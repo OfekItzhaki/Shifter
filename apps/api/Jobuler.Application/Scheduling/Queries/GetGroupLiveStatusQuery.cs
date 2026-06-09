@@ -59,7 +59,7 @@ public class GetGroupLiveStatusQueryHandler
             .Join(_db.People.AsNoTracking(),
                 m => m.PersonId,
                 p => p.Id,
-                (m, p) => new { p.Id, Name = p.DisplayName ?? p.FullName })
+                (m, p) => new { p.Id, Name = p.FullName })
             .ToListAsync(ct);
 
         if (members.Count == 0)
@@ -118,7 +118,11 @@ public class GetGroupLiveStatusQueryHandler
             if (missingSlotIds.Count > 0)
             {
                 var groupTasks = await _db.GroupTasks.AsNoTracking()
-                    .Where(t => t.SpaceId == req.SpaceId)
+                    .Where(t => t.SpaceId == req.SpaceId
+                        && t.GroupId == req.GroupId
+                        && t.IsActive
+                        && t.StartsAt <= now.AddDays(30)
+                        && t.EndsAt >= now.AddDays(-30))
                     .ToListAsync(ct);
 
                 foreach (var gt in groupTasks)

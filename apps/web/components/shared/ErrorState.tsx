@@ -14,6 +14,8 @@ export interface ErrorStateProps {
   description?: string;
   /** Callback for the retry button. If omitted, retry button is hidden. */
   onRetry?: () => void;
+  /** Callback for opening the app's bug/feedback reporting flow. */
+  onReportProblem?: () => void;
   /** Whether to show the "Back to home" link. Defaults to true. */
   showHomeLink?: boolean;
 }
@@ -28,6 +30,7 @@ export default function ErrorState({
   title,
   description,
   onRetry,
+  onReportProblem,
   showHomeLink = true,
 }: ErrorStateProps) {
   const t = useTranslations("errors");
@@ -57,10 +60,20 @@ export default function ErrorState({
       <div className="flex flex-col sm:flex-row items-center gap-3">
         {onRetry && (
           <button
+            type="button"
             onClick={onRetry}
             className="inline-flex items-center justify-center min-h-[44px] px-6 py-2.5 rounded-xl bg-sky-600 text-white text-sm font-medium hover:bg-sky-700 dark:bg-sky-500 dark:hover:bg-sky-600 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-500"
           >
             {t("retry")}
+          </button>
+        )}
+        {onReportProblem && (
+          <button
+            type="button"
+            onClick={onReportProblem}
+            className="inline-flex items-center justify-center min-h-[44px] px-6 py-2.5 rounded-xl border border-sky-200 bg-sky-50 text-sky-700 text-sm font-medium hover:bg-sky-100 dark:border-sky-800 dark:bg-sky-950/40 dark:text-sky-300 dark:hover:bg-sky-900/40 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-500"
+          >
+            {t("reportProblem")}
           </button>
         )}
         {showHomeLink && (

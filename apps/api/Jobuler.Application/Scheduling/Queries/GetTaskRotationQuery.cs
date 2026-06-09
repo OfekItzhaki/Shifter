@@ -47,8 +47,8 @@ public class GetTaskRotationQueryHandler
         var personIds = rotationRecords.Select(r => r.PersonId).ToList();
         var people = await _db.People.AsNoTracking()
             .Where(p => p.SpaceId == req.SpaceId && personIds.Contains(p.Id))
-            .Select(p => new { p.Id, p.DisplayName })
-            .ToDictionaryAsync(p => p.Id, p => p.DisplayName, ct);
+            .Select(p => new { p.Id, p.FullName })
+            .ToDictionaryAsync(p => p.Id, p => p.FullName, ct);
 
         var result = rotationRecords.Select(r => new PersonRotationDto(
             r.PersonId,

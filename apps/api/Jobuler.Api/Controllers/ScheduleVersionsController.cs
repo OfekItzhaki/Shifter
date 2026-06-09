@@ -28,10 +28,10 @@ public class ScheduleVersionsController : ControllerBase
     /// <summary>List all schedule versions for a space.</summary>
     [HttpGet]
     public async Task<IActionResult> List(
-        Guid spaceId, [FromQuery] string? status, CancellationToken ct)
+        Guid spaceId, [FromQuery] string? status, [FromQuery] Guid? groupId, CancellationToken ct)
     {
         await _permissions.RequirePermissionAsync(CurrentUserId, spaceId, Permissions.SpaceView, ct);
-        return Ok(await _mediator.Send(new GetScheduleVersionsQuery(spaceId, status), ct));
+        return Ok(await _mediator.Send(new GetScheduleVersionsQuery(spaceId, status, groupId), ct));
     }
 
     /// <summary>Get the current published schedule with full assignment list.</summary>

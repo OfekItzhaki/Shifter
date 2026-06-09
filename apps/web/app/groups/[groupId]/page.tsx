@@ -10,8 +10,7 @@ import Modal from "@/components/Modal";
 import DraftScheduleModal from "@/components/DraftScheduleModal";
 import SandboxView from "@/components/sandbox/SandboxView";
 import ImportModal from "@/components/ImportModal";
-import TrialBanner from "@/components/billing/TrialBanner";
-import { getSpaceSubscription } from "@/lib/api/billing";
+import { getGroupSubscription } from "@/lib/api/billing";
 import ReAuthDialog from "@/components/admin/ReAuthDialog";
 import ScheduleTab from "./tabs/ScheduleTab";
 import MembersTab, { MemberProfileModal } from "./tabs/MembersTab";
@@ -41,7 +40,6 @@ import { useSpaceStore } from "@/lib/store/spaceStore";
 import { useAuthStore } from "@/lib/store/authStore";
 import { useAdminSessionStore } from "@/lib/store/adminSessionStore";
 import { formatLocalDateTime } from "@/lib/utils/formatTime";
-import { isWebAuthnSupported, listCredentials } from "@/lib/webauthn";
 import { useRefetchNotifications } from "@/lib/query/hooks/useNotifications";
 import {
   getGroups, getGroupMembers, addGroupMemberByEmail, removeGroupMember,
@@ -219,19 +217,9 @@ export default function GroupDetailPage() {
     let cancelled = false;
 
     async function checkCredentials() {
-      // All registered users have a password in this system
-      let hasWebAuthn = false;
-      if (isWebAuthnSupported()) {
-        try {
-          const creds = await listCredentials();
-          hasWebAuthn = (creds?.length ?? 0) > 0;
-        } catch {
-          hasWebAuthn = false;
-        }
-      }
       // User always has a password (system invariant), so credentials are always available
       if (!cancelled) {
-        setHasCredentials(true || hasWebAuthn);
+        setHasCredentials(true);
       }
     }
 
@@ -241,8 +229,8 @@ export default function GroupDetailPage() {
 
   // ── Fetch subscription status for the space ─────────────────────────────
   useEffect(() => {
-    if (!currentSpaceId) return;
-    getSpaceSubscription(currentSpaceId)
+    if (!currentSpaceId || !groupId) return;
+    getGroupSubscription(currentSpaceId, groupId)
       .then((sub) => {
         setSubscriptionActive(sub?.isActive ?? true);
       })
@@ -250,7 +238,7 @@ export default function GroupDetailPage() {
         // Fail open — assume active if we can't fetch
         setSubscriptionActive(true);
       });
-  }, [currentSpaceId]);
+  }, [currentSpaceId, groupId]);
 
   // Handle management mode toggle with re-authentication
   const handleAdminModeToggle = () => {
@@ -334,10 +322,10 @@ export default function GroupDetailPage() {
     Promise.all([
       getGroupSchedule(currentSpaceId, groupId).catch(e => { scheduleError = e; return null; }),
       apiClient.get<Array<{ id: string; status: string; summaryJson?: string | null; sourceRunId?: string | null }>>(
-        `/spaces/${currentSpaceId}/schedule-versions?status=draft`
+        `/spaces/${currentSpaceId}/schedule-versions?status=draft&groupId=${groupId}`
       ).catch(() => ({ data: [] as Array<{ id: string; status: string; summaryJson?: string | null; sourceRunId?: string | null }> })),
       apiClient.get<Array<{ id: string; status: string; summaryJson?: string | null }>>(
-        `/spaces/${currentSpaceId}/schedule-versions?status=discarded`
+        `/spaces/${currentSpaceId}/schedule-versions?status=discarded&groupId=${groupId}`
       ).catch(() => ({ data: [] as Array<{ id: string; status: string; summaryJson?: string | null }> })),
     ]).then(([groupScheduleResponse, draftRes, discardedRes]) => {
       if (groupScheduleResponse !== null) {
@@ -592,7 +580,7 @@ export default function GroupDetailPage() {
       const [groupScheduleResponse, draftRes] = await Promise.all([
         getGroupSchedule(spaceId, groupId).catch(() => ({ assignments: [] as ScheduleAssignment[], taskConfigurations: {} })),
         apiClient.get<Array<{ id: string; status: string }>>(
-          `/spaces/${spaceId}/schedule-versions?status=draft`
+          `/spaces/${spaceId}/schedule-versions?status=draft&groupId=${groupId}`
         ).catch(() => ({ data: [] as Array<{ id: string; status: string }> })),
       ]);
       const groupAssignments = groupScheduleResponse?.assignments ?? [];
@@ -714,11 +702,9 @@ export default function GroupDetailPage() {
   async function handleInvite(personId: string) {
     if (!currentSpaceId) return;
     const member = members.find(m => m.personId === personId);
-    const contact = member?.phoneNumber ?? "";
+    const contact = member?.phoneNumber || member?.email || "";
     if (!contact) return;
-    try {
-      await invitePerson(currentSpaceId, personId, contact, "whatsapp");
-    } catch { /* non-fatal */ }
+    await invitePerson(currentSpaceId, personId, contact, member?.phoneNumber ? "whatsapp" : "email");
   }
 
   // ── Bulk add members ─────────────────────────────────────────────────────
@@ -1206,10 +1192,10 @@ export default function GroupDetailPage() {
                 `/spaces/${currentSpaceId}/schedule-versions/current`
               ).catch(() => null),
               apiClient.get<Array<{ id: string; status: string; summaryJson?: string | null; sourceRunId?: string | null }>>(
-                `/spaces/${currentSpaceId}/schedule-versions?status=draft`
+                `/spaces/${currentSpaceId}/schedule-versions?status=draft&groupId=${groupId}`
               ).catch(() => ({ data: [] as Array<{ id: string; status: string; summaryJson?: string | null; sourceRunId?: string | null }> })),
               apiClient.get<Array<{ id: string; status: string; summaryJson?: string | null }>>(
-                `/spaces/${currentSpaceId}/schedule-versions?status=discarded`
+                `/spaces/${currentSpaceId}/schedule-versions?status=discarded&groupId=${groupId}`
               ).catch(() => ({ data: [] as Array<{ id: string; status: string; summaryJson?: string | null }> })),
             ]);
 
@@ -1243,8 +1229,13 @@ export default function GroupDetailPage() {
     } catch (err: unknown) {
       setSolverPolling(false);
       setCurrentSolverRunId(null);
-      const axiosErr = err as { response?: { data?: { error?: string; title?: string } } };
-      setSolverError(axiosErr?.response?.data?.error || axiosErr?.response?.data?.title || tErrors("solverStartError"));
+      const axiosErr = err as { response?: { data?: { error?: string; title?: string; detail?: string } } };
+      setSolverError(
+        axiosErr?.response?.data?.error ||
+        axiosErr?.response?.data?.detail ||
+        axiosErr?.response?.data?.title ||
+        tErrors("solverStartError")
+      );
     }
   }
 
@@ -1402,9 +1393,6 @@ export default function GroupDetailPage() {
             )}
           </div>
         </div>
-
-        {/* Trial/subscription banner */}
-        <TrialBanner />
 
         {/* Tabs */}
         <div className="flex gap-1 bg-slate-100 p-1 rounded-xl overflow-x-auto -mx-2 px-2 sm:mx-0 sm:px-1" style={{ scrollbarWidth: "thin" }}>

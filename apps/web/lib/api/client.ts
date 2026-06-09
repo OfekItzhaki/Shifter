@@ -32,45 +32,31 @@ function onTokenRefreshed(token: string) {
   refreshSubscribers = [];
 }
 
-/**
- * Probes real internet connectivity by fetching a lightweight external resource.
- * Used when navigator.onLine is true but an API call failed — distinguishes
- * "server is down" from "connected to WiFi but no internet".
- *
- * Tries the app's own /health endpoint first (same-origin, fast).
- * If that fails, tries a well-known external endpoint as a fallback.
- * Returns true if the device has internet, false otherwise.
- */
-let probeInFlight: Promise<boolean> | null = null;
+let livenessProbeInFlight: Promise<boolean> | null = null;
 
-async function probeConnectivity(): Promise<boolean> {
-  // Deduplicate concurrent probes — if one is already running, reuse it
-  if (probeInFlight) return probeInFlight;
+async function probeApiLiveness(): Promise<boolean> {
+  if (livenessProbeInFlight) return livenessProbeInFlight;
 
-  probeInFlight = (async () => {
+  livenessProbeInFlight = (async () => {
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 3000);
+
     try {
-      // Try fetching a tiny external resource (Google's generate_204 endpoint)
-      // This confirms internet access independent of our server's health.
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 3000);
-
-      const response = await fetch("https://www.gstatic.com/generate_204", {
-        method: "HEAD",
-        mode: "no-cors",
+      const response = await fetch(`${API_URL}/health/live`, {
+        cache: "no-store",
+        credentials: "include",
         signal: controller.signal,
       });
-
-      clearTimeout(timeout);
-      // In no-cors mode, an opaque response (type "opaque") means the request succeeded
-      return response.type === "opaque" || response.ok;
+      return response.ok;
     } catch {
-      // External probe failed — no internet
       return false;
+    } finally {
+      window.clearTimeout(timeout);
     }
   })();
 
-  const result = await probeInFlight;
-  probeInFlight = null;
+  const result = await livenessProbeInFlight;
+  livenessProbeInFlight = null;
   return result;
 }
 
@@ -187,14 +173,14 @@ apiClient.interceptors.response.use(
         useConnectivityStore.getState().goOffline();
       } else {
         // navigator.onLine is true but the request failed — probe real connectivity.
-        // This catches "connected to WiFi but no internet" scenarios.
-        probeConnectivity().then((hasInternet) => {
-          if (hasInternet) {
-            // Internet works, server is genuinely down
-            useConnectivityStore.getState().setServerUnavailable();
+        // Confirm whether the API process is actually down before showing the
+        // server-unavailable banner. Individual endpoints can fail while the
+        // API is still alive, especially in local development.
+        probeApiLiveness().then((apiIsAlive) => {
+          if (apiIsAlive) {
+            useConnectivityStore.getState().setServerRecovered();
           } else {
-            // No real internet despite navigator.onLine — treat as offline
-            useConnectivityStore.getState().goOffline();
+            useConnectivityStore.getState().setServerUnavailable();
           }
         });
       }
@@ -221,13 +207,12 @@ export function initConnectivity(): () => void {
   const handleOnline = () => {
     // When the browser says we're back online, verify with a real probe
     // before transitioning to "online" state. This prevents false positives
-    // when connected to a captive portal or WiFi with no internet.
-    probeConnectivity().then((hasInternet) => {
-      if (hasInternet) {
+    // When the browser says we're back online, verify that the API process is
+    // reachable before transitioning back to online.
+    probeApiLiveness().then((apiIsAlive) => {
+      if (apiIsAlive) {
         store().goOnline();
       }
-      // If probe fails, stay in current state (offline) — the next successful
-      // API call will trigger setServerRecovered → online anyway.
     });
   };
 

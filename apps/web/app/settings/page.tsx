@@ -8,6 +8,7 @@ import PushNotificationSettings from "@/components/PushNotificationSettings";
 import { useAuthStore } from "@/lib/store/authStore";
 import { useSpaceStore } from "@/lib/store/spaceStore";
 import { updateUserLocation } from "@/lib/api/userSettings";
+import { changePassword } from "@/lib/api/auth";
 import {
   COUNTRIES,
   STATES,
@@ -351,6 +352,86 @@ function TimeFormatSection() {
   );
 }
 
+function PasswordSection() {
+  const t = useTranslations("userSettings.password");
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setSaved(false);
+    setError(null);
+
+    if (newPassword.length < 8) {
+      setError(t("tooShort"));
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setError(t("mismatch"));
+      return;
+    }
+
+    setSaving(true);
+    try {
+      await changePassword(currentPassword, newPassword);
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      setSaved(true);
+    } catch {
+      setError(t("error"));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <form onSubmit={handleSubmit} style={cardStyle} className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm">
+      <h2 style={sectionHeaderStyle} className="text-slate-900 dark:text-white">{t("title")}</h2>
+      <p style={sectionDescStyle} className="text-slate-500 dark:text-slate-400">{t("description")}</p>
+      <div className="grid gap-3">
+        <input
+          type="password"
+          value={currentPassword}
+          onChange={(e) => setCurrentPassword(e.target.value)}
+          placeholder={t("current")}
+          autoComplete="current-password"
+          className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-sky-500 dark:border-slate-600 dark:bg-slate-700 dark:text-white"
+        />
+        <input
+          type="password"
+          value={newPassword}
+          onChange={(e) => setNewPassword(e.target.value)}
+          placeholder={t("new")}
+          autoComplete="new-password"
+          className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-sky-500 dark:border-slate-600 dark:bg-slate-700 dark:text-white"
+        />
+        <input
+          type="password"
+          value={confirmPassword}
+          onChange={(e) => setConfirmPassword(e.target.value)}
+          placeholder={t("confirm")}
+          autoComplete="new-password"
+          className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-sky-500 dark:border-slate-600 dark:bg-slate-700 dark:text-white"
+        />
+        {error && <p className="text-sm text-red-600">{error}</p>}
+        {saved && <p className="text-sm text-emerald-600">{t("saved")}</p>}
+        <button
+          type="submit"
+          disabled={saving || !currentPassword || !newPassword || !confirmPassword}
+          className="self-start rounded-xl bg-sky-500 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-sky-600 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400"
+        >
+          {saving ? t("saving") : t("save")}
+        </button>
+      </div>
+    </form>
+  );
+}
+
 function NotificationSection() {
   const t = useTranslations("userSettings.notifications");
 
@@ -397,6 +478,7 @@ export default function SettingsPage() {
         <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
           <LocationSection />
           <TimeFormatSection />
+          <PasswordSection />
           <NotificationSection />
           <PushNotificationSection />
         </div>

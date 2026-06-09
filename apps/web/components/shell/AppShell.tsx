@@ -21,8 +21,8 @@ import { getMe } from "@/lib/api/auth";
 interface AppShellProps { children: React.ReactNode; }
 
 const S = {
-  sidebar: { width: 256, background: "#0f172a", display: "flex", flexDirection: "column" as const, height: "100vh", minHeight: "100dvh", maxHeight: "100dvh", position: "fixed" as const, top: 0, left: 0, zIndex: 30, overflowY: "auto" as const },
-  logo: { padding: "14px 12px", borderBottom: "1px solid rgba(255,255,255,0.08)", display: "flex", alignItems: "center", gap: 8, textDecoration: "none" },
+  sidebar: { width: 256, background: "#0f172a", display: "flex", flexDirection: "column" as const, height: "100dvh", minHeight: 0, maxHeight: "100dvh", position: "fixed" as const, top: 0, left: 0, zIndex: 30, overflowY: "auto" as const },
+  logo: { padding: "14px 12px", border: "2px solid #0f172a", background: "#ffffff", display: "flex", alignItems: "center", gap: 8, textDecoration: "none" },
   nav: { flex: 1, padding: "12px 12px", display: "flex", flexDirection: "column" as const, gap: 2 },
   navLink: (active: boolean, admin: boolean) => ({
     display: "flex", alignItems: "center", gap: 10, padding: "9px 12px", borderRadius: 8,
@@ -34,7 +34,7 @@ const S = {
   userInfo: { padding: "8px 12px", marginBottom: 4 },
   logoutBtn: { display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "9px 12px", borderRadius: 8, background: "none", border: "none", cursor: "pointer", color: "#64748b", fontSize: 14, textAlign: "start" as const },
   topbar: (admin: boolean) => ({ height: 56, display: "flex", alignItems: "center", justifyContent: "flex-end", padding: "0 24px", borderBottom: `1px solid ${admin ? "#fde68a" : "var(--border-color, #e2e8f0)"}`, background: admin ? "#fffbeb" : "var(--main-bg, #f8fafc)", position: "sticky" as const, top: 0, zIndex: 20 }),
-  main: { marginLeft: 256, display: "flex", flexDirection: "column" as const, minHeight: "100vh", width: "calc(100vw - 256px)", background: "var(--main-bg, #f8fafc)" },
+  main: { marginLeft: 256, display: "flex", flexDirection: "column" as const, minHeight: "100dvh", width: "calc(100vw - 256px)", background: "var(--main-bg, #f8fafc)" },
   content: { flex: 1, padding: "clamp(16px, 3vw, 32px)", width: "100%", maxWidth: "1400px", margin: "0 auto", display: "flex", flexDirection: "column" as const, alignItems: "center" },
 };
 
@@ -139,13 +139,15 @@ export default function AppShell({ children }: AppShellProps) {
       >
         <div style={{ ...S.logo, textDecoration: "none" }}>
           <Link href="/home" className="sidebar-brand-link" aria-label="Go to home" title="Go to home">
-            <ShifterLogo size={34} variant="full" className="sidebar-brand-logo" />
+            <span className="sidebar-brand-logo-chip">
+              <ShifterLogo size={32} variant="full" className="sidebar-brand-logo" />
+            </span>
             <span className="sidebar-brand-home-indicator" aria-hidden="true">
               {ic("M3 12l9-9 9 9M5 10v10a1 1 0 001 1h4m4 0h4a1 1 0 001-1V10M9 21v-6a1 1 0 011-1h4a1 1 0 011 1v6")}
             </span>
           </Link>
           {/* NotificationBell is OUTSIDE the Link so clicks don't navigate */}
-          <NotificationBell />
+          <NotificationBell variant="light" />
         </div>
 
         {/* Space switcher — under logo */}

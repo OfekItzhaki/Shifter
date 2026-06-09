@@ -24,6 +24,7 @@ const mockApiPost = vi.fn();
 vi.mock("@/lib/webauthn", () => ({
   listCredentials: (...args: any[]) => mockListCredentials(...args),
   isWebAuthnSupported: () => mockIsWebAuthnSupported(),
+  isPlatformAuthenticatorAvailable: () => Promise.resolve(false),
 }));
 
 vi.mock("next-intl", () => ({

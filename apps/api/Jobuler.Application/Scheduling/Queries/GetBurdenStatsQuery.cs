@@ -235,7 +235,7 @@ public class GetBurdenStatsQueryHandler : IRequestHandler<GetBurdenStatsQuery, B
 
             return new PersonBurdenStatsDto(
                 PersonId: p.Id,
-                DisplayName: p.DisplayName ?? p.FullName,
+                DisplayName: p.FullName,
                 ProfileImageUrl: p.ProfileImageUrl,
                 TotalAssignments7d: c?.TotalAssignments7d ?? 0,
                 TotalAssignments14d: c?.TotalAssignments14d ?? 0,

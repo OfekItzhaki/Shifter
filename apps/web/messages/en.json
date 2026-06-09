@@ -222,6 +222,11 @@
     "newGroupPlaceholder": "New group name",
     "noGroups": "You are not part of any group yet.",
     "noGroupsInScope": "No groups here yet.",
+    "loadError": {
+      "title": "We could not load your groups",
+      "description": "Something went wrong while loading this page. Try again in a moment, or report the problem so we can look into it.",
+      "reportTemplate": "I could not load the groups page."
+    },
     "deletedGroups": "Deleted Groups",
     "noDeletedGroups": "No deleted groups",
     "restore": "Restore",
@@ -356,7 +361,9 @@
       "specialLeaveActionError": "Could not update the request",
       "specialLeaveAdminNote": "Admin note (optional)",
       "specialLeaveApprove": "Approve",
-      "specialLeaveReject": "Reject"
+      "specialLeaveReject": "Reject",
+      "inviting": "Sending...",
+      "inviteSent": "Sent"
     },
     "qualifications_tab": {
       "title": "Qualifications",
@@ -547,7 +554,8 @@
       "managementTimeoutError": "Timeout must be a whole number between 5 and 120 minutes.",
       "minutes": "minutes",
       "parentGroup": "Parent Group",
-      "cancelRun": "Cancel run"
+      "cancelRun": "Cancel run",
+      "billing": "Billing"
     },
     "linkedGroup": {
       "title": "Parent Group",
@@ -711,6 +719,19 @@
     "push": {
       "title": "Push Notifications",
       "description": "Manage browser push notification settings"
+    },
+    "password": {
+      "title": "Password",
+      "description": "Change the password used to sign in to your account.",
+      "current": "Current password",
+      "new": "New password",
+      "confirm": "Confirm new password",
+      "save": "Change password",
+      "saving": "Changing...",
+      "saved": "Password changed. Please sign in again on other devices.",
+      "mismatch": "The new passwords do not match.",
+      "tooShort": "Password must be at least 8 characters.",
+      "error": "Could not change password. Check your current password and try again."
     }
   },
   "admin": {
@@ -1042,6 +1063,14 @@
     "saving": "Saving...",
     "saved": "Saved ✓",
     "ownerOnly": "Only the space owner can edit settings",
+    "settingsTabs": {
+      "label": "Space settings sections",
+      "general": "General",
+      "members": "Members",
+      "permissions": "Permissions",
+      "billing": "Billing",
+      "danger": "Danger Zone"
+    },
     "managementTimeout": {
       "title": "Management Mode Timeout",
       "description": "Minutes of inactivity before admin sessions expire across all groups in this space.",
@@ -1236,6 +1265,8 @@
     "solverTimeout": "Shifter did not respond in time. The problem may be too complex - try reducing the planning horizon or simplifying constraints.",
     "solverCheckError": "Error checking Shifter status",
     "solverStartError": "Error starting Shifter",
+    "retry": "Retry",
+    "reportProblem": "Report a problem",
     "timeoutOutOfRange": "Timeout must be a whole number between 5 and 120 minutes."
   },
   "common": {

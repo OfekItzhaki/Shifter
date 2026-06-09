@@ -74,8 +74,6 @@ public class HandleWebhookCommandHandler : IRequestHandler<HandleWebhookCommand>
         }
 
         // ── Route to space-level handlers ────────────────────────────────────
-        // All subscription events are space-level. Events with group_id in metadata
-        // are from the deprecated group billing system and are ignored.
         if (!req.Metadata.ContainsKey("space_id"))
         {
             _logger.LogWarning(
@@ -84,7 +82,40 @@ public class HandleWebhookCommandHandler : IRequestHandler<HandleWebhookCommand>
             return;
         }
 
+        if (req.Metadata.ContainsKey("group_id"))
+        {
+            await DispatchGroupLevelEventAsync(req, ct);
+            return;
+        }
+
         await DispatchSpaceLevelEventAsync(req, ct);
+    }
+
+    private async Task DispatchGroupLevelEventAsync(HandleWebhookCommand req, CancellationToken ct)
+    {
+        switch (req.EventType.ToLowerInvariant())
+        {
+            case "subscription_created":
+                await _mediator.Send(
+                    new HandleSubscriptionCreatedCommand(req.Payload, req.Metadata), ct);
+                break;
+
+            case "subscription_updated":
+                await _mediator.Send(
+                    new HandleSubscriptionUpdatedCommand(req.Payload, req.Metadata), ct);
+                break;
+
+            case "subscription_cancelled":
+                await _mediator.Send(
+                    new HandleSubscriptionCancelledCommand(req.Payload, req.Metadata), ct);
+                break;
+
+            case "subscription_payment_success":
+                _logger.LogInformation(
+                    "subscription_payment_success received for group billing (EventId: {EventId}). No handler required",
+                    req.EventId);
+                break;
+        }
     }
 
     /// <summary>
