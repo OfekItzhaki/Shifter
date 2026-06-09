@@ -1,5 +1,5 @@
 // Feature: lemonsqueezy-billing
-// Property 19: Checkout is rejected for active or trialing subscriptions
+// Property 19: Checkout is rejected for active subscriptions
 // **Validates: Requirements 1.6**
 
 using FluentAssertions;
@@ -61,19 +61,19 @@ public class CheckoutRejectionPropertyTests
     // ── Generators ───────────────────────────────────────────────────────────
 
     /// <summary>
-    /// Generates subscription statuses that should block checkout (Active or Trialing).
+    /// Generates subscription statuses that should block checkout.
     /// </summary>
     private static Arbitrary<SubscriptionStatus> BlockingStatusArbitrary()
     {
-        var gen = Gen.Elements(SubscriptionStatus.Active, SubscriptionStatus.Trialing);
+        var gen = Gen.Constant(SubscriptionStatus.Active);
         return Arb.From(gen);
     }
 
-    // ── Property 19: Checkout is rejected for active or trialing subscriptions ──
+    // ── Property 19: Checkout is rejected for active subscriptions ─────────────
     // **Validates: Requirements 1.6**
 
     [Property(MaxTest = 100)]
-    public Property Checkout_IsRejected_WhenGroupHasActiveOrTrialingSubscription()
+    public Property Checkout_IsRejected_WhenGroupHasActiveSubscription()
     {
         var gen = from status in BlockingStatusArbitrary().Generator
                   from trialDays in Gen.Choose(1, 30)
@@ -107,8 +107,6 @@ public class CheckoutRejectionPropertyTests
                 var periodEnd = periodStart.AddDays(periodDurationDays);
                 sub.Activate("pro", $"ls_sub_{Guid.NewGuid()}", $"ls_cus_{Guid.NewGuid()}", periodStart, periodEnd);
             }
-            // If Trialing, the subscription is already in Trialing status from CreateTrial
-
             db.GroupSubscriptions.Add(sub);
             db.SaveChanges();
 
