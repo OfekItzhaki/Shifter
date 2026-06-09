@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { useAuthStore } from "@/lib/store/authStore";
 import { useRouter, usePathname } from "next/navigation";
@@ -96,9 +96,6 @@ export default function AppShell({ children }: AppShellProps) {
   useEffect(() => {
     if (!hasMounted) return;
 
-    if (storedDisplayName) {
-      setResolvedName(storedDisplayName);
-    }
     getMe().then(me => {
       if (me.displayName) setResolvedName(me.displayName);
       useAuthStore.getState().syncFromMe(me);
@@ -107,7 +104,7 @@ export default function AppShell({ children }: AppShellProps) {
     });
   }, [hasMounted, storedDisplayName]);
 
-  const displayName = resolvedName;
+  const displayName = useMemo(() => resolvedName ?? storedDisplayName, [resolvedName, storedDisplayName]);
   const showPlatformAdmin = hasMounted && isPlatformAdmin;
   const dir = locale === "he" ? "rtl" : "ltr";
 
@@ -148,9 +145,9 @@ export default function AppShell({ children }: AppShellProps) {
                 <span className="sidebar-brand-tagline">Smart Shift Scheduling</span>
               </span>
             </span>
-            <span className="sidebar-brand-home-indicator" aria-hidden="true">
-              {ic("M3 12l9-9 9 9M5 10v10a1 1 0 001 1h4m4 0h4a1 1 0 001-1V10M9 21v-6a1 1 0 011-1h4a1 1 0 011 1v6")}
-            </span>
+          </Link>
+          <Link href="/home" className="sidebar-brand-home-indicator" aria-label="Go to home" title="Go to home">
+            {ic("M3 12l9-9 9 9M5 10v10a1 1 0 001 1h4m4 0h4a1 1 0 001-1V10M9 21v-6a1 1 0 011-1h4a1 1 0 011 1v6")}
           </Link>
           {/* NotificationBell is OUTSIDE the Link so clicks don't navigate */}
           <NotificationBell variant="light" />

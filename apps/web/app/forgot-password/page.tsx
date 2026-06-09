@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { forgotPassword } from "@/lib/api/auth";
 import { useEffectiveAuth } from "@/lib/hooks/useEffectiveAuth";
-import ShifterLogo from "@/components/shell/ShifterLogo";
+import AuthBrand from "@/components/shell/AuthBrand";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import LegalLinks from "@/components/legal/LegalLinks";
 
@@ -62,9 +62,7 @@ export default function ForgotPasswordPage() {
       <div style={{ width: "100%", maxWidth: "380px" }}>
         {/* Logo */}
         <div style={{ display: "flex", justifyContent: "center", marginBottom: "2rem" }}>
-          <span className="auth-brand-surface">
-          <ShifterLogo size={132} variant="full" />
-          </span>
+          <AuthBrand />
         </div>
 
         <div style={{ background: "white", borderRadius: 16, boxShadow: "0 4px 24px rgba(0,0,0,0.08)", border: "1px solid #e2e8f0", padding: "2rem" }}>
