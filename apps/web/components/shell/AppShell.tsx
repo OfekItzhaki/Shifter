@@ -22,7 +22,7 @@ interface AppShellProps { children: React.ReactNode; }
 
 const S = {
   sidebar: { width: 256, background: "#0f172a", display: "flex", flexDirection: "column" as const, height: "100dvh", minHeight: 0, maxHeight: "100dvh", position: "fixed" as const, top: 0, left: 0, zIndex: 30, overflowY: "auto" as const },
-  logo: { padding: "14px 12px", border: "2px solid #0f172a", background: "#ffffff", display: "flex", alignItems: "center", gap: 8, textDecoration: "none" },
+  logo: { padding: "14px 12px", borderBottom: "1px solid rgba(148,163,184,0.2)", background: "linear-gradient(135deg, #090f1d 0%, #0f172a 48%, #082f49 100%)", display: "flex", alignItems: "center", gap: 8, textDecoration: "none", boxShadow: "inset 0 -1px 0 rgba(255,255,255,0.04)" },
   nav: { flex: 1, padding: "12px 12px", display: "flex", flexDirection: "column" as const, gap: 2 },
   navLink: (active: boolean, admin: boolean) => ({
     display: "flex", alignItems: "center", gap: 10, padding: "9px 12px", borderRadius: 8,
