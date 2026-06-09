@@ -213,8 +213,80 @@ public class OpenAiAssistant : IAiAssistant
         }
     }
 
+    public async Task<AiChatResponseDto> ChatAsync(
+        AiChatRequestDto request, CancellationToken ct = default)
+    {
+        var lang = request.Locale == "he" ? "Hebrew" : request.Locale == "ru" ? "Russian" : "English";
+        var recent = request.RecentMessages
+            .TakeLast(8)
+            .Select(m => $"{m.Role}: {m.Content}")
+            .ToArray();
+
+        var systemPrompt = $$"""
+            You are Shifter's native support assistant.
+            Answer in {{lang}}.
+            Shifter is a smart shift scheduling product for teams. It supports automatic scheduling, self-service shift picking,
+            group and space management, permissions/admin mode, constraints, schedule import/scan, notifications, billing, profiles,
+            mobile/PWA usage, and feedback/bug reporting.
+
+            Safety and authority rules:
+            - You do not change schedules, users, billing, permissions, settings, or data.
+            - If an action is needed, suggest a safe action for the app UI to show.
+            - Do not claim that a human support agent has been notified unless the user explicitly uses a contact or feedback action.
+            - If the user asks for legal, billing, security, or account-critical help, be concise and suggest contacting support.
+            - If the user is asking how to use Shifter, give practical step-by-step guidance.
+
+            Return ONLY valid JSON in this exact shape:
+            {
+              "message": "short helpful answer",
+              "suggestedActions": [
+                { "type": "feedback|contact|open_path", "label": "button label", "payload": "optional path or contact target" }
+              ]
+            }
+            Keep suggestedActions empty unless a concrete action helps.
+            """;
+
+        var userPrompt = $$"""
+            User display name: {{request.UserDisplayName ?? "unknown"}}
+            Current path: {{request.CurrentPath ?? "unknown"}}
+            Authenticated: {{request.IsAuthenticated}}
+            Admin mode: {{request.IsAdminMode}}
+
+            Recent conversation:
+            {{string.Join("\n", recent)}}
+
+            User message:
+            {{request.Message}}
+            """;
+
+        try
+        {
+            var response = await CallOpenAiAsync(systemPrompt, userPrompt, ct, maxTokens: 700);
+            var parsed = JsonSerializer.Deserialize<AiChatRawResponse>(StripCodeFences(response), JsonOpts);
+
+            var actions = (parsed?.SuggestedActions ?? [])
+                .Where(a => a.Type is "feedback" or "contact" or "open_path")
+                .Take(3)
+                .Select(a => new AiChatActionDto(a.Type, a.Label, a.Payload))
+                .ToList();
+
+            return new AiChatResponseDto(
+                string.IsNullOrWhiteSpace(parsed?.Message)
+                    ? DefaultChatFallback(request.Locale)
+                    : parsed.Message.Trim(),
+                actions);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "AI chat failed for path {CurrentPath}", request.CurrentPath);
+            return new AiChatResponseDto(DefaultChatFallback(request.Locale), [
+                new AiChatActionDto("feedback", request.Locale == "he" ? "שלח פידבק" : request.Locale == "ru" ? "Отправить отзыв" : "Send feedback", null)
+            ]);
+        }
+    }
+
     private async Task<string> CallOpenAiAsync(
-        string systemPrompt, string userPrompt, CancellationToken ct)
+        string systemPrompt, string userPrompt, CancellationToken ct, int maxTokens = 500)
     {
         var body = new
         {
@@ -224,7 +296,7 @@ public class OpenAiAssistant : IAiAssistant
                 new { role = "system", content = systemPrompt },
                 new { role = "user",   content = userPrompt }
             },
-            max_tokens = 500,
+            max_tokens = maxTokens,
             temperature = 0.2  // low temperature for deterministic structured output
         };
 
@@ -242,6 +314,24 @@ public class OpenAiAssistant : IAiAssistant
             .GetString() ?? string.Empty;
     }
 
+    private static string StripCodeFences(string value)
+    {
+        var json = value.Trim();
+        if (!json.StartsWith("```", StringComparison.Ordinal)) return json;
+
+        var firstNewline = json.IndexOf('\n');
+        if (firstNewline > 0) json = json[(firstNewline + 1)..];
+        if (json.EndsWith("```", StringComparison.Ordinal)) json = json[..^3];
+        return json.Trim();
+    }
+
+    private static string DefaultChatFallback(string locale) =>
+        locale == "he"
+            ? "לא הצלחתי לענות כרגע. אפשר לנסות שוב או לשלוח פידבק לתמיכה."
+            : locale == "ru"
+                ? "I could not answer right now. Try again or send feedback to support."
+                : "I could not answer right now. Try again or send feedback to support.";
+
     private record ParsedConstraintResponse(
         bool Parsed,
         string? RuleType,
@@ -249,4 +339,13 @@ public class OpenAiAssistant : IAiAssistant
         string? ScopeHint,
         string? RulePayloadJson,
         string? ConfidenceNote);
+
+    private record AiChatRawResponse(
+        string Message,
+        List<AiChatRawAction>? SuggestedActions);
+
+    private record AiChatRawAction(
+        string Type,
+        string Label,
+        string? Payload);
 }

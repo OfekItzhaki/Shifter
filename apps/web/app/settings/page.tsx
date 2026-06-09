@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo, useId } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import AppShell from "@/components/shell/AppShell";
 import NotificationPreferences from "@/components/NotificationPreferences";
 import PushNotificationSettings from "@/components/PushNotificationSettings";
 import { useAuthStore } from "@/lib/store/authStore";
 import { useSpaceStore } from "@/lib/store/spaceStore";
-import { updateUserLocation } from "@/lib/api/userSettings";
+import { getUserSettings, updateUserLocation } from "@/lib/api/userSettings";
 import { changePassword } from "@/lib/api/auth";
 import {
   COUNTRIES,
@@ -57,6 +57,7 @@ function SearchableDropdown({
   const [search, setSearch] = useState("");
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const listboxId = useId();
 
   const filtered = useMemo(() => {
     if (!search.trim()) return options;
@@ -128,6 +129,7 @@ function SearchableDropdown({
           } ${value ? "text-slate-900 dark:text-white" : "text-slate-400 dark:text-slate-500"}`}
           aria-haspopup="listbox"
           aria-expanded={false}
+          aria-controls={listboxId}
         >
           {selectedLabel || placeholder}
         </button>
@@ -143,10 +145,12 @@ function SearchableDropdown({
           role="combobox"
           aria-expanded={true}
           aria-autocomplete="list"
+          aria-controls={listboxId}
         />
       )}
       {isOpen && (
         <ul
+          id={listboxId}
           role="listbox"
           className="absolute top-full left-0 right-0 mt-1 max-h-[200px] overflow-y-auto bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl shadow-lg z-50 p-1"
           style={{ listStyle: "none" }}
@@ -186,6 +190,8 @@ function LocationSection() {
   const [selectedCountry, setSelectedCountry] = useState<string | null>(null);
   const [selectedState, setSelectedState] = useState<string | null>(null);
   const [resolvedTimezone, setResolvedTimezone] = useState<string | null>(timezoneId);
+  const [loadingLocation, setLoadingLocation] = useState(true);
+  const [locationDirty, setLocationDirty] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
@@ -214,25 +220,60 @@ function LocationSection() {
       .sort((a, b) => a.label.localeCompare(b.label, locale));
   }, [selectedCountry, locale]);
 
-  const showStateDropdown = selectedCountry && MULTI_TIMEZONE_COUNTRIES.has(selectedCountry);
+  const showStateDropdown = Boolean(selectedCountry && MULTI_TIMEZONE_COUNTRIES.has(selectedCountry));
+  const canSave = Boolean(selectedCountry) && (!showStateDropdown || Boolean(selectedState));
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadSettings() {
+      setLoadingLocation(true);
+      try {
+        const settings = await getUserSettings();
+        if (cancelled) return;
+
+        setSelectedCountry(settings.countryCode);
+        setSelectedState(settings.stateCode);
+        setResolvedTimezone(settings.timezoneId);
+        setTimezone(settings.timezoneId, settings.timezoneOffsetMinutes);
+        setLocationDirty(false);
+      } catch {
+        if (!cancelled) {
+          setResolvedTimezone(timezoneId);
+        }
+      } finally {
+        if (!cancelled) {
+          setLoadingLocation(false);
+        }
+      }
+    }
+
+    loadSettings();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [setTimezone, timezoneId]);
 
   // When country changes, clear state
   const handleCountryChange = useCallback((code: string | null) => {
     setSelectedCountry(code);
     setSelectedState(null);
     setResolvedTimezone(null);
+    setLocationDirty(true);
     setSaved(false);
   }, []);
 
   const handleStateChange = useCallback((code: string | null) => {
     setSelectedState(code);
     setResolvedTimezone(null);
+    setLocationDirty(true);
     setSaved(false);
   }, []);
 
   // Save location
   const handleSave = useCallback(async () => {
-    if (!selectedCountry) return;
+    if (!canSave || !selectedCountry) return;
     setSaving(true);
     setSaved(false);
     try {
@@ -240,13 +281,14 @@ function LocationSection() {
       setResolvedTimezone(result.ianaTimezoneId);
       // Update authStore immediately — no re-login needed
       setTimezone(result.ianaTimezoneId, result.offsetMinutes);
+      setLocationDirty(false);
       setSaved(true);
     } catch {
       // Error handling is done by the axios interceptor
     } finally {
       setSaving(false);
     }
-  }, [selectedCountry, selectedState, setTimezone]);
+  }, [canSave, selectedCountry, selectedState, setTimezone]);
 
   // Show the current timezone from store as initial resolved value
   const displayTimezone = resolvedTimezone ?? timezoneId ?? "Asia/Jerusalem";
@@ -263,6 +305,7 @@ function LocationSection() {
           options={countryOptions}
           value={selectedCountry}
           onChange={handleCountryChange}
+          disabled={loadingLocation}
         />
 
         {/* State dropdown — only for multi-timezone countries */}
@@ -273,7 +316,14 @@ function LocationSection() {
             options={stateOptions}
             value={selectedState}
             onChange={handleStateChange}
+            disabled={loadingLocation}
           />
+        )}
+
+        {showStateDropdown && !selectedState && (
+          <p className="text-xs text-amber-600 dark:text-amber-400" style={{ margin: "-0.25rem 0 0" }}>
+            {t("stateRequired")}
+          </p>
         )}
 
         {/* Resolved timezone display */}
@@ -287,27 +337,30 @@ function LocationSection() {
         >
           <span style={{ fontWeight: 500 }}>{t("timezone")}:</span>{" "}
           <span className="text-slate-900 dark:text-white">{displayTimezone}</span>
+          {locationDirty && (
+            <span className="text-slate-400 dark:text-slate-500"> {t("timezonePending")}</span>
+          )}
         </div>
 
         {/* Save button */}
         <button
           type="button"
           onClick={handleSave}
-          disabled={!selectedCountry || saving}
+          disabled={!canSave || saving || loadingLocation}
           style={{
             padding: "0.625rem 1.25rem",
             borderRadius: 10,
             border: "none",
-            background: !selectedCountry || saving ? "#e2e8f0" : "#0ea5e9",
-            color: !selectedCountry || saving ? "#94a3b8" : "white",
+            background: !canSave || saving || loadingLocation ? "#e2e8f0" : "#0ea5e9",
+            color: !canSave || saving || loadingLocation ? "#94a3b8" : "white",
             fontWeight: 600,
             fontSize: "0.8125rem",
-            cursor: !selectedCountry || saving ? "not-allowed" : "pointer",
+            cursor: !canSave || saving || loadingLocation ? "not-allowed" : "pointer",
             transition: "all 0.15s",
             alignSelf: "flex-start",
           }}
         >
-          {saving ? t("saving") : saved ? t("saved") : t("save")}
+          {loadingLocation ? t("loading") : saving ? t("saving") : saved ? t("saved") : t("save")}
         </button>
       </div>
     </div>

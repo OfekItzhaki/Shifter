@@ -1,220 +1,448 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import ShifterLogo from "@/components/shell/ShifterLogo";
 import { clearAuthGuardCookie, setLocaleCookie } from "@/lib/auth/authGuardCookie";
 import { notifyAuthTokenChanged } from "@/lib/auth/tokenState";
+import { useEffectiveAuth } from "@/lib/hooks/useEffectiveAuth";
+import { LOCALE_META, SUPPORTED_LOCALES, getLocaleDirection } from "@/lib/i18n/locales";
 import { LANDING_CONTENT, LANDING_LEGAL_LINKS, type LandingLang } from "./landingContent";
-import { LOCALE_META, SUPPORTED_LOCALES, getLocaleDirection, isSupportedLocale } from "@/lib/i18n/locales";
+
+const accentClasses = [
+  "border-sky-200 bg-sky-50 text-sky-800",
+  "border-emerald-200 bg-emerald-50 text-emerald-800",
+  "border-amber-200 bg-amber-50 text-amber-800",
+  "border-rose-200 bg-rose-50 text-rose-800",
+];
 
 export default function LandingPage({ initialLocale }: { initialLocale: LandingLang }) {
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [checking, setChecking] = useState(true);
   const [lang, setLang] = useState<LandingLang>(initialLocale);
+  const { hasAccessToken } = useEffectiveAuth();
 
   useEffect(() => {
-    // Detect language from cookie or browser
-    const cookieLang = document.cookie.match(/locale=(\w+)/)?.[1];
-    if (isSupportedLocale(cookieLang)) setLang(cookieLang);
-  }, []);
+    if (!hasAccessToken) return;
 
-  useEffect(() => {
-    const token = localStorage.getItem("access_token");
-    if (!token) { setChecking(false); return; }
     const controller = new AbortController();
+    const token = localStorage.getItem("access_token");
+    if (!token) return;
     fetch(`${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000"}/auth/me`, {
       headers: { Authorization: `Bearer ${token}` },
       signal: controller.signal,
-    }).then(res => {
-      if (res.ok) router.replace("/schedule/my-missions");
-      else {
+    })
+      .then(res => {
+        if (res.ok) {
+          router.replace("/schedule/my-missions");
+          return;
+        }
         localStorage.removeItem("access_token");
         localStorage.removeItem("refresh_token");
         notifyAuthTokenChanged();
         clearAuthGuardCookie();
-        setChecking(false);
-      }
-    }).catch(() => { setChecking(false); });
+      })
+      .catch(() => undefined);
+
     return () => controller.abort();
-  }, [router]);
+  }, [hasAccessToken, router]);
 
   const c = LANDING_CONTENT[lang];
 
-  function switchLang(l: LandingLang) {
-    setLang(l);
-    setLocaleCookie(l);
-    document.documentElement.lang = l;
-    document.documentElement.dir = getLocaleDirection(l);
+  function switchLang(nextLang: LandingLang) {
+    setLang(nextLang);
+    setLocaleCookie(nextLang);
+    document.documentElement.setAttribute("lang", nextLang);
+    document.documentElement.setAttribute("dir", getLocaleDirection(nextLang));
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 text-white">
-      {/* Nav */}
-      <nav className="sticky top-0 z-50 backdrop-blur-md bg-slate-900/80 border-b border-slate-700/50">
-        <div className="flex items-center justify-between px-6 py-3 max-w-6xl mx-auto">
-          <div className="flex items-center gap-3">
-            <ShifterLogo size={28} />
-            <span className="text-lg font-bold">Shifter</span>
+    <div dir={c.dir} className="min-h-screen bg-slate-50 text-slate-950">
+      <nav className="sticky top-0 z-50 border-b border-slate-200 bg-white/90 backdrop-blur">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
+          <Link href="/" className="flex min-w-0 items-center gap-3" aria-label="Shifter home">
+            <ShifterLogo size={34} />
+            <div className="hidden leading-tight sm:block">
+              <p className="text-sm font-bold text-slate-950">Shifter</p>
+              <p className="text-xs text-slate-500">Smart Shift Scheduling</p>
+            </div>
+          </Link>
+
+          <div className="hidden items-center gap-6 text-sm font-medium text-slate-600 lg:flex">
+            <a href="#product" className="hover:text-slate-950">{c.nav.product}</a>
+            <a href="#features" className="hover:text-slate-950">{c.nav.features}</a>
+            <a href="#teams" className="hover:text-slate-950">{c.nav.teams}</a>
+            <a href="#faq" className="hover:text-slate-950">{c.nav.faq}</a>
+            <a href="#contact" className="hover:text-slate-950">{c.nav.contact}</a>
           </div>
-          <div className="hidden sm:flex items-center gap-6 text-sm text-slate-300">
-            <a href="#features" className="hover:text-white transition-colors">{c.nav.features}</a>
-            <a href="#how-it-works" className="hover:text-white transition-colors">{c.nav.howItWorks}</a>
-            <a href="#about" className="hover:text-white transition-colors">{c.nav.about}</a>
-            <a href="#faq" className="hover:text-white transition-colors">{c.nav.faq}</a>
-          </div>
+
           <div className="flex items-center gap-2">
-            {/* Language switcher */}
-            <div className="hidden sm:flex items-center gap-1 mr-2">
-              {SUPPORTED_LOCALES.map(l => (
-                <button key={l} onClick={() => switchLang(l)} className={`text-xs px-2 py-1 rounded ${lang === l ? "bg-sky-500/30 text-sky-300 font-bold" : "text-slate-400 hover:text-white"}`}>
-                  {LOCALE_META[l].label}
+            <div className="hidden items-center rounded-lg border border-slate-200 bg-slate-100 p-1 sm:flex">
+              {SUPPORTED_LOCALES.map(locale => (
+                <button
+                  key={locale}
+                  onClick={() => switchLang(locale)}
+                  className={`rounded-md px-2.5 py-1 text-xs font-semibold transition ${
+                    lang === locale ? "bg-white text-slate-950 shadow-sm" : "text-slate-500 hover:text-slate-900"
+                  }`}
+                >
+                  {LOCALE_META[locale].label}
                 </button>
               ))}
             </div>
-            <Link href="/login" className="text-sm text-slate-300 hover:text-white transition-colors px-4 py-2 border border-slate-600 hover:border-slate-400 rounded-xl hidden sm:inline-block">
+            <Link href="/login" className="hidden rounded-lg px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 sm:inline-flex">
               {c.nav.signIn}
             </Link>
-            <Link href="/register" className="text-sm font-medium bg-sky-500 hover:bg-sky-600 text-white px-5 py-2.5 rounded-xl transition-colors">
+            <Link href="/register" className="rounded-lg bg-slate-950 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800">
               {c.nav.getStarted}
             </Link>
-            <button onClick={() => setMobileMenuOpen(o => !o)} className="sm:hidden p-2 text-slate-300" aria-label="Menu">
-              <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" /></svg>
+            <button
+              type="button"
+              onClick={() => setMobileMenuOpen(open => !open)}
+              className="rounded-lg border border-slate-200 p-2 text-slate-700 lg:hidden"
+              aria-label="Menu"
+            >
+              <span className="block h-0.5 w-5 bg-current" />
+              <span className="mt-1.5 block h-0.5 w-5 bg-current" />
+              <span className="mt-1.5 block h-0.5 w-5 bg-current" />
             </button>
           </div>
         </div>
+
         {mobileMenuOpen && (
-          <div className="sm:hidden border-t border-slate-700/50 px-6 py-4 space-y-3 bg-slate-900/95">
-            <a href="#features" onClick={() => setMobileMenuOpen(false)} className="block text-sm text-slate-300">{c.nav.features}</a>
-            <a href="#how-it-works" onClick={() => setMobileMenuOpen(false)} className="block text-sm text-slate-300">{c.nav.howItWorks}</a>
-            <a href="#about" onClick={() => setMobileMenuOpen(false)} className="block text-sm text-slate-300">{c.nav.about}</a>
-            <a href="#faq" onClick={() => setMobileMenuOpen(false)} className="block text-sm text-slate-300">{c.nav.faq}</a>
-            <Link href="/login" onClick={() => setMobileMenuOpen(false)} className="block text-sm text-sky-400 font-medium">{c.nav.signIn}</Link>
-            <div className="flex gap-2 pt-2">
-              {SUPPORTED_LOCALES.map(l => (
-                <button key={l} onClick={() => { switchLang(l); setMobileMenuOpen(false); }} className={`text-xs px-3 py-1.5 rounded ${lang === l ? "bg-sky-500/30 text-sky-300 font-bold" : "text-slate-400"}`}>
-                  {LOCALE_META[l].label}
-                </button>
+          <div className="border-t border-slate-200 bg-white px-4 py-4 lg:hidden">
+            <div className="mx-auto grid max-w-7xl gap-3 text-sm font-medium text-slate-700">
+              {[
+                ["#product", c.nav.product],
+                ["#features", c.nav.features],
+                ["#teams", c.nav.teams],
+                ["#faq", c.nav.faq],
+                ["#contact", c.nav.contact],
+              ].map(([href, label]) => (
+                <a key={href} href={href} onClick={() => setMobileMenuOpen(false)} className="rounded-lg px-2 py-2 hover:bg-slate-100">
+                  {label}
+                </a>
               ))}
+              <Link href="/login" onClick={() => setMobileMenuOpen(false)} className="rounded-lg px-2 py-2 text-sky-700 hover:bg-sky-50">
+                {c.nav.signIn}
+              </Link>
+              <div className="flex flex-wrap gap-2 pt-2">
+                {SUPPORTED_LOCALES.map(locale => (
+                  <button
+                    key={locale}
+                    onClick={() => {
+                      switchLang(locale);
+                      setMobileMenuOpen(false);
+                    }}
+                    className={`rounded-lg border px-3 py-1.5 text-xs font-semibold ${
+                      lang === locale ? "border-sky-300 bg-sky-50 text-sky-800" : "border-slate-200 text-slate-500"
+                    }`}
+                  >
+                    {LOCALE_META[locale].label}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         )}
       </nav>
 
-      {/* Hero */}
-      <section className="px-6 pt-16 pb-20 sm:pt-24 sm:pb-28 max-w-4xl mx-auto text-center">
-        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-tight mb-6">
-          {c.hero.title1}<br /><span className="text-sky-400">{c.hero.title2}</span>
-        </h1>
-        <p className="text-lg sm:text-xl text-slate-300 max-w-2xl mx-auto mb-10 leading-relaxed">{c.hero.subtitle}</p>
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-          <Link href="/register" className="w-full sm:w-auto text-center bg-sky-500 hover:bg-sky-600 text-white font-semibold px-8 py-4 rounded-2xl text-base transition-all shadow-lg shadow-sky-500/25">{c.hero.cta}</Link>
-          <Link href="/login" className="w-full sm:w-auto text-center text-slate-300 hover:text-white border border-slate-600 hover:border-slate-400 px-8 py-4 rounded-2xl text-base transition-all">{c.hero.signIn}</Link>
-        </div>
-      </section>
-
-      {/* Features */}
-      <section id="features" className="px-6 py-20 max-w-5xl mx-auto scroll-mt-20">
-        <h2 className="text-2xl sm:text-3xl font-bold text-center mb-4">{c.features.title}</h2>
-        <p className="text-slate-400 text-center mb-12 max-w-xl mx-auto">{c.features.subtitle}</p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {c.features.items.map(f => (
-            <div key={f.title} className="bg-slate-800/60 border border-slate-700/50 rounded-2xl p-6 hover:border-slate-600 transition-colors">
-              <span className="text-2xl mb-3 block">{f.icon}</span>
-              <h3 className="text-base font-semibold mb-2">{f.title}</h3>
-              <p className="text-sm text-slate-400 leading-relaxed">{f.desc}</p>
+      <main>
+        <section id="product" className="scroll-mt-24 border-b border-slate-200 bg-white">
+          <div className="mx-auto grid max-w-7xl items-center gap-10 px-4 py-12 sm:px-6 sm:py-16 lg:grid-cols-[0.9fr_1.1fr] lg:py-20">
+            <div className="max-w-2xl">
+              <p className="mb-4 inline-flex rounded-lg border border-sky-200 bg-sky-50 px-3 py-1 text-sm font-semibold text-sky-800">
+                {c.hero.eyebrow}
+              </p>
+              <h1 className="max-w-3xl text-4xl font-black leading-tight tracking-normal text-slate-950 sm:text-5xl lg:text-6xl">
+                {c.hero.title}
+              </h1>
+              <p className="mt-5 max-w-2xl text-lg leading-8 text-slate-600">
+                {c.hero.subtitle}
+              </p>
+              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+                <Link href="/register" className="inline-flex justify-center rounded-lg bg-slate-950 px-6 py-3 text-sm font-bold text-white hover:bg-slate-800">
+                  {c.hero.primary}
+                </Link>
+                <Link href="/login" className="inline-flex justify-center rounded-lg border border-slate-300 bg-white px-6 py-3 text-sm font-bold text-slate-800 hover:bg-slate-50">
+                  {c.hero.secondary}
+                </Link>
+              </div>
+              <p className="mt-4 text-sm font-medium text-emerald-700">{c.hero.install}</p>
             </div>
-          ))}
-        </div>
-      </section>
 
-      {/* How it works */}
-      <section id="how-it-works" className="px-6 py-20 bg-slate-800/50 scroll-mt-20">
-        <div className="max-w-4xl mx-auto">
-          <h2 className="text-2xl sm:text-3xl font-bold text-center mb-12">{c.howItWorks.title}</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
-            {c.howItWorks.steps.map((s, i) => (
-              <div key={i} className="text-center">
-                <div className="w-12 h-12 rounded-full bg-sky-500/20 border border-sky-500/30 flex items-center justify-center mx-auto mb-4">
-                  <span className="text-sky-400 font-bold text-lg">{i + 1}</span>
-                </div>
-                <h3 className="text-base font-semibold mb-2">{s.title}</h3>
-                <p className="text-sm text-slate-400">{s.desc}</p>
+            <ProductPreview c={c.preview} />
+          </div>
+
+          <div className="mx-auto grid max-w-7xl grid-cols-2 gap-px border-t border-slate-200 bg-slate-200 sm:grid-cols-4">
+            {c.proof.map(item => (
+              <div key={item.label} className="bg-slate-50 px-4 py-5 text-center">
+                <p className="text-2xl font-black text-slate-950">{item.value}</p>
+                <p className="mt-1 text-sm font-medium text-slate-600">{item.label}</p>
               </div>
             ))}
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* About */}
-      <section id="about" className="px-6 py-20 max-w-4xl mx-auto scroll-mt-20">
-        <h2 className="text-2xl sm:text-3xl font-bold text-center mb-4">{c.about.title}</h2>
-        <p className="text-slate-400 text-center mb-10 max-w-xl mx-auto">{c.about.subtitle}</p>
-        <div className="bg-slate-800/60 border border-slate-700/50 rounded-2xl p-8 sm:p-10 space-y-5 text-slate-300 leading-relaxed">
-          {c.about.paragraphs.map((p, i) => <p key={i}>{i === 0 ? <><strong className="text-white">Shifter</strong> {p.replace("Shifter ", "")}</> : p}</p>)}
-        </div>
-        <div className="grid grid-cols-3 gap-6 mt-12">
-          {c.about.stats.map(s => (
-            <div key={s.label} className="text-center">
-              <p className="text-3xl sm:text-4xl font-bold text-sky-400">{s.value}</p>
-              <p className="text-sm text-slate-400 mt-1">{s.label}</p>
+        <section id="features" className="scroll-mt-24 px-4 py-16 sm:px-6 lg:py-20">
+          <div className="mx-auto max-w-7xl">
+            <div className="max-w-3xl">
+              <h2 className="text-3xl font-black tracking-normal text-slate-950 sm:text-4xl">{c.features.title}</h2>
+              <p className="mt-4 text-lg leading-8 text-slate-600">{c.features.subtitle}</p>
             </div>
-          ))}
-        </div>
-      </section>
-
-      {/* FAQ */}
-      <section id="faq" className="px-6 py-20 bg-slate-800/50 scroll-mt-20">
-        <div className="max-w-3xl mx-auto">
-          <h2 className="text-2xl sm:text-3xl font-bold text-center mb-4">{c.faq.title}</h2>
-          <p className="text-slate-400 text-center mb-10">{c.faq.subtitle}</p>
-          <div className="space-y-4">
-            {c.faq.items.map(item => (
-              <details key={item.q} className="group bg-slate-800/60 border border-slate-700/50 rounded-xl overflow-hidden">
-                <summary className="flex items-center justify-between px-6 py-4 cursor-pointer list-none">
-                  <span className="text-sm font-medium text-white">{item.q}</span>
-                  <svg className={`w-4 h-4 text-slate-400 group-open:rotate-180 transition-transform flex-shrink-0 ${c.dir === "rtl" ? "mr-3" : "ml-3"}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
-                </summary>
-                <div className="px-6 pb-4 text-sm text-slate-400 leading-relaxed">{item.a}</div>
-              </details>
-            ))}
+            <div className="mt-10 grid gap-4 md:grid-cols-2">
+              {c.features.items.map((feature, index) => (
+                <article key={feature.title} className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <p className="text-lg font-black text-slate-950">{feature.title}</p>
+                      <p className="mt-3 text-sm leading-6 text-slate-600">{feature.desc}</p>
+                    </div>
+                    <span className={`shrink-0 rounded-lg border px-3 py-1 text-xs font-bold ${accentClasses[index % accentClasses.length]}`}>
+                      {feature.detail}
+                    </span>
+                  </div>
+                </article>
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* CTA */}
-      <section className="px-6 py-20 text-center">
-        <div className="max-w-2xl mx-auto bg-gradient-to-br from-sky-600 to-sky-700 rounded-3xl p-10 sm:p-14 shadow-2xl shadow-sky-500/20">
-          <h2 className="text-2xl sm:text-3xl font-bold mb-4">{c.cta.title}</h2>
-          <p className="text-sky-100 mb-8">{c.cta.subtitle}</p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link href="/register" className="w-full sm:w-auto inline-block bg-white text-sky-700 font-bold px-8 py-4 rounded-2xl text-base hover:bg-sky-50 transition-colors shadow-lg">{c.cta.primary}</Link>
-            <Link href="/login" className="w-full sm:w-auto inline-block text-white hover:text-white border-2 border-white/70 hover:border-white px-8 py-4 rounded-2xl text-base transition-colors backdrop-blur-sm">{c.cta.secondary}</Link>
+        <section id="teams" className="scroll-mt-24 bg-slate-950 px-4 py-16 text-white sm:px-6 lg:py-20">
+          <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[0.8fr_1.2fr]">
+            <div>
+              <h2 className="text-3xl font-black tracking-normal sm:text-4xl">{c.teams.title}</h2>
+              <p className="mt-4 text-lg leading-8 text-slate-300">{c.teams.subtitle}</p>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {c.teams.items.map((team, index) => (
+                <div key={team} className="rounded-lg border border-white/10 bg-white/5 p-4">
+                  <div className="mb-4 h-1.5 w-16 rounded-full bg-gradient-to-r from-sky-400 via-emerald-300 to-amber-300" />
+                  <p className="font-bold">{team}</p>
+                  <p className="mt-2 text-sm text-slate-400">{c.preview.alerts[index % c.preview.alerts.length]}</p>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Footer */}
-      <footer className="px-6 py-8 border-t border-slate-700/50">
-        <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <ShifterLogo size={20} />
-            <span className="text-sm text-slate-400">Shifter &copy; {new Date().getFullYear()}</span>
+        <section className="px-4 py-16 sm:px-6 lg:py-20">
+          <div className="mx-auto max-w-7xl">
+            <h2 className="max-w-3xl text-3xl font-black tracking-normal text-slate-950 sm:text-4xl">{c.workflow.title}</h2>
+            <div className="mt-10 grid gap-4 md:grid-cols-3">
+              {c.workflow.steps.map((step, index) => (
+                <article key={step.title} className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+                  <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-slate-950 text-sm font-black text-white">
+                    {index + 1}
+                  </span>
+                  <h3 className="mt-5 text-lg font-black text-slate-950">{step.title}</h3>
+                  <p className="mt-3 text-sm leading-6 text-slate-600">{step.desc}</p>
+                </article>
+              ))}
+            </div>
           </div>
-          <div className="flex items-center gap-6 text-sm text-slate-400">
-            <a href="#about" className="hover:text-white transition-colors">{c.footer.about}</a>
-            <a href="#faq" className="hover:text-white transition-colors">{c.footer.faq}</a>
+        </section>
+
+        <section className="border-y border-slate-200 bg-white px-4 py-12 sm:px-6">
+          <div className="mx-auto grid max-w-7xl gap-4 md:grid-cols-3">
+            {c.trust.map(item => {
+              const body = (
+                <article className="h-full rounded-lg border border-slate-200 p-5 transition hover:border-slate-300 hover:shadow-sm">
+                  <h3 className="font-black text-slate-950">{item.title}</h3>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">{item.desc}</p>
+                </article>
+              );
+              return item.href ? (
+                <Link key={item.title} href={item.href} className="block">
+                  {body}
+                </Link>
+              ) : (
+                <div key={item.title}>{body}</div>
+              );
+            })}
+          </div>
+        </section>
+
+        <section id="contact" className="scroll-mt-24 px-4 py-16 sm:px-6 lg:py-20">
+          <div className="mx-auto grid max-w-7xl overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm lg:grid-cols-[1fr_0.85fr]">
+            <div className="p-6 sm:p-8 lg:p-10">
+              <h2 className="text-3xl font-black tracking-normal text-slate-950">{c.contact.title}</h2>
+              <p className="mt-4 max-w-2xl text-base leading-7 text-slate-600">{c.contact.subtitle}</p>
+              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+                <a href="mailto:support@shifter.app?subject=Shifter%20support" className="inline-flex justify-center rounded-lg bg-slate-950 px-5 py-3 text-sm font-bold text-white hover:bg-slate-800">
+                  {c.contact.email}
+                </a>
+                <a href="mailto:support@shifter.app?subject=Shifter%20walkthrough" className="inline-flex justify-center rounded-lg border border-slate-300 px-5 py-3 text-sm font-bold text-slate-800 hover:bg-slate-50">
+                  {c.contact.demo}
+                </a>
+              </div>
+            </div>
+            <div className="border-t border-slate-200 bg-slate-100 p-6 lg:border-l lg:border-t-0">
+              <MiniOpsPanel alerts={c.preview.alerts} />
+            </div>
+          </div>
+        </section>
+
+        <section id="faq" className="scroll-mt-24 bg-slate-100 px-4 py-16 sm:px-6 lg:py-20">
+          <div className="mx-auto max-w-4xl">
+            <div className="text-center">
+              <h2 className="text-3xl font-black tracking-normal text-slate-950 sm:text-4xl">{c.faq.title}</h2>
+              <p className="mt-3 text-base text-slate-600">{c.faq.subtitle}</p>
+            </div>
+            <div className="mt-10 grid gap-3">
+              {c.faq.items.map(item => (
+                <details key={item.q} className="group rounded-lg border border-slate-200 bg-white px-5 py-4 shadow-sm">
+                  <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-sm font-black text-slate-950">
+                    {item.q}
+                    <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-slate-100 text-slate-500 group-open:rotate-180">v</span>
+                  </summary>
+                  <p className="mt-4 text-sm leading-6 text-slate-600">{item.a}</p>
+                </details>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="bg-white px-4 py-16 text-center sm:px-6 lg:py-20">
+          <div className="mx-auto max-w-3xl">
+            <h2 className="text-3xl font-black tracking-normal text-slate-950 sm:text-4xl">{c.cta.title}</h2>
+            <p className="mt-4 text-lg leading-8 text-slate-600">{c.cta.subtitle}</p>
+            <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
+              <Link href="/register" className="inline-flex justify-center rounded-lg bg-slate-950 px-6 py-3 text-sm font-bold text-white hover:bg-slate-800">
+                {c.cta.primary}
+              </Link>
+              <Link href="/login" className="inline-flex justify-center rounded-lg border border-slate-300 px-6 py-3 text-sm font-bold text-slate-800 hover:bg-slate-50">
+                {c.cta.secondary}
+              </Link>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer className="border-t border-slate-200 bg-slate-950 px-4 py-8 text-white sm:px-6">
+        <div className="mx-auto flex max-w-7xl flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3">
+            <ShifterLogo size={28} />
+            <span className="text-sm font-semibold text-slate-300">Shifter &copy; {new Date().getFullYear()}</span>
+          </div>
+          <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-slate-400">
+            <a href="#product" className="hover:text-white">{c.footer.product}</a>
+            <a href="#faq" className="hover:text-white">{c.footer.faq}</a>
             {LANDING_LEGAL_LINKS[lang].map(link => (
-              <Link key={link.href} href={link.href} className="hover:text-white transition-colors">
+              <Link key={link.href} href={link.href} className="hover:text-white">
                 {link.label}
               </Link>
             ))}
-            <Link href="/login" className="hover:text-white transition-colors">{c.footer.signIn}</Link>
+            <Link href="/login" className="hover:text-white">{c.footer.signIn}</Link>
           </div>
         </div>
       </footer>
+    </div>
+  );
+}
+
+function ProductPreview({ c }: { c: (typeof LANDING_CONTENT)[LandingLang]["preview"] }) {
+  return (
+    <div className="relative">
+      <div className="rounded-lg border border-slate-200 bg-slate-950 p-3 shadow-2xl shadow-slate-300/50">
+        <div className="rounded-lg bg-slate-900 p-4">
+          <div className="flex items-center justify-between border-b border-white/10 pb-4">
+            <div>
+              <p className="text-xs font-semibold uppercase text-sky-300">{c.workspace}</p>
+              <p className="mt-1 text-lg font-black text-white">{c.scheduleTitle}</p>
+              <p className="text-sm text-slate-400">{c.scheduleSubtitle}</p>
+            </div>
+            <div className="hidden rounded-lg bg-emerald-400 px-3 py-2 text-xs font-black text-emerald-950 sm:block">
+              Publish
+            </div>
+          </div>
+
+          <div className="mt-4 grid gap-3 lg:grid-cols-[1fr_0.65fr]">
+            <div className="grid gap-3">
+              {c.shifts.map((shift, index) => (
+                <div key={`${shift.time}-${shift.name}`} className="rounded-lg border border-white/10 bg-white/[0.04] p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-black text-white">{shift.name}</p>
+                      <p className="mt-1 text-xs text-slate-400">{shift.time}</p>
+                    </div>
+                    <span className={`rounded-lg px-2.5 py-1 text-xs font-bold ${
+                      index === 0 ? "bg-emerald-400/15 text-emerald-200" : index === 1 ? "bg-amber-400/15 text-amber-200" : "bg-sky-400/15 text-sky-200"
+                    }`}>
+                      {shift.status}
+                    </span>
+                  </div>
+                  <div className="mt-4 grid grid-cols-5 gap-1.5">
+                    {[0, 1, 2, 3, 4].map(block => (
+                      <span key={block} className={`h-2 rounded-full ${block <= index + 1 ? "bg-sky-400" : "bg-white/10"}`} />
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="grid gap-3">
+              <div className="rounded-lg border border-sky-400/30 bg-sky-400/10 p-4 text-sky-100">
+                <p className="text-xs font-bold uppercase text-sky-300">{c.importLabel}</p>
+                <div className="mt-4 grid grid-cols-4 gap-1.5">
+                  {[80, 44, 64, 90, 55, 74, 36, 70].map((height, index) => (
+                    <span key={index} className="rounded-t bg-sky-300/80" style={{ height: `${height}px` }} />
+                  ))}
+                </div>
+              </div>
+              <div className="rounded-lg border border-amber-300/30 bg-amber-300/10 p-4 text-amber-100">
+                <p className="text-sm font-black">{c.aiLabel}</p>
+                <div className="mt-3 space-y-2">
+                  {c.alerts.map(alert => (
+                    <p key={alert} className="rounded-lg bg-black/20 px-3 py-2 text-xs text-amber-50">{alert}</p>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="mx-auto -mt-10 w-48 rounded-[28px] border-4 border-slate-950 bg-white p-3 shadow-xl sm:absolute sm:-bottom-8 sm:end-6 sm:mt-0">
+        <div className="mb-3 h-1.5 w-14 rounded-full bg-slate-200 mx-auto" />
+        <p className="text-sm font-black text-slate-950">{c.phoneTitle}</p>
+        <p className="text-xs text-slate-500">{c.phoneSubtitle}</p>
+        <div className="mt-4 space-y-2">
+          {c.shifts.slice(0, 2).map(shift => (
+            <div key={shift.name} className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+              <p className="text-xs font-bold text-slate-950">{shift.time}</p>
+              <p className="text-xs text-slate-600">{shift.name}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MiniOpsPanel({ alerts }: { alerts: string[] }) {
+  return (
+    <div className="rounded-lg bg-slate-950 p-5 text-white">
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-sm font-black">Ops snapshot</p>
+        <span className="rounded-lg bg-emerald-400 px-2.5 py-1 text-xs font-black text-emerald-950">Live</span>
+      </div>
+      <div className="mt-5 grid grid-cols-3 gap-2">
+        {[18, 7, 3].map((value, index) => (
+          <div key={value} className="rounded-lg bg-white/10 p-3">
+            <p className="text-xl font-black">{value}</p>
+            <p className="text-xs text-slate-400">{["shifts", "roles", "alerts"][index]}</p>
+          </div>
+        ))}
+      </div>
+      <div className="mt-5 space-y-2">
+        {alerts.map(alert => (
+          <p key={alert} className="rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2 text-xs text-slate-300">
+            {alert}
+          </p>
+        ))}
+      </div>
     </div>
   );
 }

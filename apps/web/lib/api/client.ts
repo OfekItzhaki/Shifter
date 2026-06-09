@@ -5,7 +5,7 @@ import { writeGuardInterceptor } from "@/lib/api/writeGuard";
 import { notifyAuthTokenChanged } from "@/lib/auth/tokenState";
 import { clearAuthGuardCookie, setAuthGuardCookie } from "@/lib/auth/authGuardCookie";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000";
+export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000";
 
 export const apiClient = axios.create({
   baseURL: API_URL,
