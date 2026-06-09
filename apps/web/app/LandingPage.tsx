@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import ShifterLogo from "@/components/shell/ShifterLogo";
 import { clearAuthGuardCookie, setLocaleCookie } from "@/lib/auth/authGuardCookie";
 import { notifyAuthTokenChanged } from "@/lib/auth/tokenState";
+import { useEffectiveAuth } from "@/lib/hooks/useEffectiveAuth";
 import { LOCALE_META, SUPPORTED_LOCALES, getLocaleDirection } from "@/lib/i18n/locales";
 import { LANDING_CONTENT, LANDING_LEGAL_LINKS, type LandingLang } from "./landingContent";
 
@@ -20,12 +21,14 @@ export default function LandingPage({ initialLocale }: { initialLocale: LandingL
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [lang, setLang] = useState<LandingLang>(initialLocale);
+  const { hasAccessToken } = useEffectiveAuth();
 
   useEffect(() => {
-    const token = localStorage.getItem("access_token");
-    if (!token) return;
+    if (!hasAccessToken) return;
 
     const controller = new AbortController();
+    const token = localStorage.getItem("access_token");
+    if (!token) return;
     fetch(`${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000"}/auth/me`, {
       headers: { Authorization: `Bearer ${token}` },
       signal: controller.signal,
@@ -43,7 +46,7 @@ export default function LandingPage({ initialLocale }: { initialLocale: LandingL
       .catch(() => undefined);
 
     return () => controller.abort();
-  }, [router]);
+  }, [hasAccessToken, router]);
 
   const c = LANDING_CONTENT[lang];
 

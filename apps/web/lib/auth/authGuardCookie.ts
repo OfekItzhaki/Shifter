@@ -12,6 +12,13 @@ export function setAuthGuardCookie(): void {
   document.cookie = `${AUTH_GUARD_COOKIE}=1; path=/; max-age=${COOKIE_MAX_AGE_SECONDS}; SameSite=Strict${secureCookieSuffix()}`;
 }
 
+export function hasAuthGuardCookie(): boolean {
+  if (typeof document === "undefined") return false;
+  return document.cookie
+    .split(";")
+    .some((part) => part.trim().startsWith(`${AUTH_GUARD_COOKIE}=`));
+}
+
 export function clearAuthGuardCookie(): void {
   if (typeof document === "undefined") return;
   document.cookie = `${AUTH_GUARD_COOKIE}=; path=/; max-age=0; SameSite=Strict${secureCookieSuffix()}`;

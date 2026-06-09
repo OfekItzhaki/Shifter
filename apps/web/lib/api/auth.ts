@@ -1,4 +1,5 @@
-import { apiClient } from "./client";
+import axios from "axios";
+import { API_URL, apiClient } from "./client";
 
 export interface LoginResponse {
   accessToken: string;
@@ -13,6 +14,14 @@ export interface LoginResponse {
 
 export async function login(identifier: string, password: string): Promise<LoginResponse> {
   const { data } = await apiClient.post<LoginResponse>("/auth/login", { identifier, password });
+  return data;
+}
+
+export async function refreshSession(): Promise<LoginResponse> {
+  const { data } = await axios.post<LoginResponse>(`${API_URL}/auth/refresh`, {}, {
+    timeout: 10000,
+    withCredentials: true,
+  });
   return data;
 }
 
