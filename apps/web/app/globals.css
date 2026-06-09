@@ -72,8 +72,8 @@ button, a, [role="button"], label[for], summary {
 }
 
 .sidebar-brand-link:hover {
-  background: rgba(14, 165, 233, 0.06);
-  box-shadow: inset 0 0 0 1px rgba(14, 165, 233, 0.16);
+  background: rgba(14, 165, 233, 0.1);
+  box-shadow: inset 0 0 0 1px rgba(125, 211, 252, 0.22), 0 10px 24px rgba(2, 8, 23, 0.18);
 }
 
 .sidebar-brand-link:focus-visible {
@@ -92,8 +92,8 @@ button, a, [role="button"], label[for], summary {
   align-items: center;
   padding: 4px 8px;
   border-radius: 8px;
-  background: #ffffff;
-  box-shadow: inset 0 0 0 1px rgba(203, 213, 225, 0.9), 0 6px 16px rgba(15, 23, 42, 0.1);
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  box-shadow: inset 0 0 0 1px rgba(226, 232, 240, 0.95), 0 8px 22px rgba(2, 8, 23, 0.22);
 }
 
 .sidebar-brand-logo {
@@ -108,16 +108,17 @@ button, a, [role="button"], label[for], summary {
   align-items: center;
   justify-content: center;
   border-radius: 9px;
-  color: #0284c7;
-  background: #e0f2fe;
+  color: #38bdf8;
+  background: rgba(14, 165, 233, 0.16);
+  border: 1px solid rgba(125, 211, 252, 0.2);
   opacity: 1;
   transition: opacity 0.15s ease, background-color 0.15s ease, color 0.15s ease;
 }
 
 .sidebar-brand-link:hover .sidebar-brand-home-indicator,
 .sidebar-brand-link:focus-visible .sidebar-brand-home-indicator {
-  color: #0369a1;
-  background: #bae6fd;
+  color: #7dd3fc;
+  background: rgba(14, 165, 233, 0.24);
   opacity: 1;
 }
 
@@ -335,6 +336,13 @@ button:disabled, input:disabled, textarea:disabled, select:disabled {
   --border-color: #cbd5e1;
 }
 
+:root:not(.dark) body {
+  background: #f1f5f9;
+  color: #0f172a;
+  --main-bg: #f1f5f9;
+  --border-color: #cbd5e1;
+}
+
 /* Make light mode borders more visible */
 .border-slate-200 {
   border-color: #cbd5e1;
@@ -353,19 +361,20 @@ button:disabled, input:disabled, textarea:disabled, select:disabled {
    Covers the main content area, cards, inputs, and text colors.
 */
 .dark body {
-  background: #0f172a;
-  color: #e2e8f0;
-  --main-bg: #1e293b;
-  --border-color: #334155;
+  background: #1f2326;
+  color: #e5e7eb;
+  --main-bg: #1f2326;
+  --border-color: #3a3f45;
 }
 
 .dark ::-webkit-scrollbar-thumb { background: #475569; }
 .dark ::-webkit-scrollbar-thumb:hover { background: #64748b; }
 
 /* Cards and containers */
-.dark .bg-white { background: #1e293b !important; }
-.dark .border-slate-200 { border-color: #334155 !important; }
-.dark .border-slate-100 { border-color: #1e293b !important; }
+.dark .bg-white, .dark .bg-slate-800 { background: #101112 !important; }
+.dark .border-slate-200 { border-color: #3a3f45 !important; }
+.dark .border-slate-100 { border-color: #2a2f34 !important; }
+.dark .border-slate-700, .dark .border-slate-600 { border-color: #3a3f45 !important; }
 
 /* Text colors — ensure WCAG AA contrast (4.5:1 minimum) against dark backgrounds */
 .dark .text-slate-900 { color: #f8fafc !important; }
@@ -377,8 +386,8 @@ button:disabled, input:disabled, textarea:disabled, select:disabled {
 
 /* Inputs */
 .dark input, .dark textarea, .dark select {
-  background: #1e293b !important;
-  border-color: #475569 !important;
+  background: #101112 !important;
+  border-color: #3a3f45 !important;
   color: #f1f5f9 !important;
 }
 
@@ -388,14 +397,14 @@ button:disabled, input:disabled, textarea:disabled, select:disabled {
 
 /* Topbar */
 .dark .mobile-topbar, .dark .desktop-topbar {
-  background: #1e293b !important;
-  border-color: #334155 !important;
+  background: #1f2326 !important;
+  border-color: #3a3f45 !important;
 }
 
 /* Hover states */
-.dark .hover\:bg-slate-50:hover { background: #334155 !important; }
-.dark .bg-slate-50\/80, .dark .bg-slate-50 { background: #1e293b !important; }
-.dark .bg-slate-100 { background: #334155 !important; }
+.dark .hover\:bg-slate-50:hover { background: #2a2f34 !important; }
+.dark .bg-slate-50\/80, .dark .bg-slate-50, .dark .bg-slate-900 { background: #1f2326 !important; }
+.dark .bg-slate-100 { background: #2a2f34 !important; }
 
 /* ── Range slider thumb — visible on all platforms including mobile ───────── */
 input[type="range"] {
