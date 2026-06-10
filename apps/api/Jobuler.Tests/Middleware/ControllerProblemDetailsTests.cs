@@ -5,6 +5,8 @@ using Jobuler.Application.Common;
 using Jobuler.Application.Notifications;
 using Jobuler.Application.Scheduling.SelfService;
 using Jobuler.Application.Scheduling.SelfService.Models;
+using Jobuler.Domain.Scheduling;
+using Jobuler.Domain.Tasks;
 using Jobuler.Infrastructure.Persistence;
 using MediatR;
 using Microsoft.AspNetCore.Http;
@@ -78,6 +80,49 @@ public class ControllerProblemDetailsTests
         await db.SaveChangesAsync();
     }
 
+    private async Task<Guid> SeedShiftSlotAsync(AppDbContext db, Guid spaceId, Guid groupId)
+    {
+        var utcNow = DateTime.UtcNow;
+        var cycle = SchedulingCycle.Create(
+            spaceId,
+            groupId,
+            startsAt: utcNow.AddDays(1),
+            endsAt: utcNow.AddDays(8),
+            requestWindowOpensAt: utcNow.AddDays(-1),
+            requestWindowClosesAt: utcNow.AddDays(1));
+
+        var task = GroupTask.Create(
+            spaceId,
+            groupId,
+            "Test Task",
+            utcNow,
+            utcNow.AddDays(30),
+            shiftDurationMinutes: 480,
+            requiredHeadcount: 1,
+            burdenLevel: TaskBurdenLevel.Normal,
+            allowsDoubleShift: false,
+            allowsOverlap: false,
+            createdByUserId: Guid.NewGuid());
+
+        var slot = ShiftSlot.Create(
+            spaceId,
+            groupId,
+            task.Id,
+            shiftTemplateId: Guid.NewGuid(),
+            schedulingCycleId: cycle.Id,
+            date: DateOnly.FromDateTime(utcNow.AddDays(2)),
+            startTime: new TimeOnly(8, 0),
+            endTime: new TimeOnly(16, 0),
+            capacity: 1);
+
+        db.SchedulingCycles.Add(cycle);
+        db.GroupTasks.Add(task);
+        db.ShiftSlots.Add(slot);
+        await db.SaveChangesAsync();
+
+        return slot.Id;
+    }
+
     // --- ShiftRequestsController Tests ---
 
     [Fact]
@@ -89,6 +134,7 @@ public class ControllerProblemDetailsTests
         var groupId = Guid.Parse("00000000-0000-0000-0000-000000000002");
         var db = CreateDb();
         await SeedPersonAsync(db, spaceId, groupId, userId);
+        var shiftSlotId = await SeedShiftSlotAsync(db, spaceId, groupId);
 
         var httpContext = CreateHttpContext(userId);
         var controller = CreateShiftRequestsController(db, httpContext);
@@ -110,7 +156,7 @@ public class ControllerProblemDetailsTests
             .Returns(rejectionResult);
 
         // Act
-        var result = await controller.Submit(spaceId, groupId, new SubmitShiftRequestRequest(Guid.NewGuid()), CancellationToken.None);
+        var result = await controller.Submit(spaceId, groupId, new SubmitShiftRequestRequest(shiftSlotId), CancellationToken.None);
 
         // Assert
         var objectResult = result.Should().BeOfType<ObjectResult>().Subject;
@@ -133,6 +179,7 @@ public class ControllerProblemDetailsTests
         var groupId = Guid.Parse("00000000-0000-0000-0000-000000000002");
         var db = CreateDb();
         await SeedPersonAsync(db, spaceId, groupId, userId);
+        var shiftSlotId = await SeedShiftSlotAsync(db, spaceId, groupId);
 
         var httpContext = CreateHttpContext(userId);
         var controller = CreateShiftRequestsController(db, httpContext);
@@ -148,7 +195,7 @@ public class ControllerProblemDetailsTests
             .Returns(rejectionResult);
 
         // Act
-        var result = await controller.Submit(spaceId, groupId, new SubmitShiftRequestRequest(Guid.NewGuid()), CancellationToken.None);
+        var result = await controller.Submit(spaceId, groupId, new SubmitShiftRequestRequest(shiftSlotId), CancellationToken.None);
 
         // Assert
         var objectResult = result.Should().BeOfType<ObjectResult>().Subject;
@@ -168,6 +215,7 @@ public class ControllerProblemDetailsTests
         var groupId = Guid.Parse("00000000-0000-0000-0000-000000000002");
         var db = CreateDb();
         await SeedPersonAsync(db, spaceId, groupId, userId);
+        var shiftSlotId = await SeedShiftSlotAsync(db, spaceId, groupId);
 
         var httpContext = CreateHttpContext(userId);
         var controller = CreateShiftRequestsController(db, httpContext);
@@ -184,7 +232,7 @@ public class ControllerProblemDetailsTests
             .Returns(rejectionResult);
 
         // Act
-        var result = await controller.Submit(spaceId, groupId, new SubmitShiftRequestRequest(Guid.NewGuid()), CancellationToken.None);
+        var result = await controller.Submit(spaceId, groupId, new SubmitShiftRequestRequest(shiftSlotId), CancellationToken.None);
 
         // Assert
         var objectResult = result.Should().BeOfType<ObjectResult>().Subject;
@@ -203,6 +251,7 @@ public class ControllerProblemDetailsTests
         var groupId = Guid.Parse("00000000-0000-0000-0000-000000000002");
         var db = CreateDb();
         await SeedPersonAsync(db, spaceId, groupId, userId);
+        var shiftSlotId = await SeedShiftSlotAsync(db, spaceId, groupId);
 
         var httpContext = CreateHttpContext(userId);
         httpContext.Request.Path = "/spaces/00000000-0000-0000-0000-000000000001/groups/00000000-0000-0000-0000-000000000002/waitlist";
@@ -223,7 +272,7 @@ public class ControllerProblemDetailsTests
             .Returns(Task.CompletedTask);
 
         // Act
-        var result = await controller.Join(spaceId, groupId, new JoinWaitlistRequest(Guid.NewGuid()), CancellationToken.None);
+        var result = await controller.Join(spaceId, groupId, new JoinWaitlistRequest(shiftSlotId), CancellationToken.None);
 
         // Assert
         var objectResult = result.Should().BeOfType<ObjectResult>().Subject;
@@ -245,6 +294,7 @@ public class ControllerProblemDetailsTests
         var groupId = Guid.Parse("00000000-0000-0000-0000-000000000002");
         var db = CreateDb();
         await SeedPersonAsync(db, spaceId, groupId, userId);
+        var shiftSlotId = await SeedShiftSlotAsync(db, spaceId, groupId);
 
         var httpContext = CreateHttpContext(userId);
         httpContext.Request.Path = "/spaces/00000000-0000-0000-0000-000000000001/groups/00000000-0000-0000-0000-000000000002/waitlist";
@@ -265,7 +315,7 @@ public class ControllerProblemDetailsTests
             .Returns(Task.CompletedTask);
 
         // Act
-        var result = await controller.Join(spaceId, groupId, new JoinWaitlistRequest(Guid.NewGuid()), CancellationToken.None);
+        var result = await controller.Join(spaceId, groupId, new JoinWaitlistRequest(shiftSlotId), CancellationToken.None);
 
         // Assert
         var objectResult = result.Should().BeOfType<ObjectResult>().Subject;

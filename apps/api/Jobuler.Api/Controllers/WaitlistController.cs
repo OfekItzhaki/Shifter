@@ -55,6 +55,9 @@ public class WaitlistController : ControllerBase
         if (personId is null)
             return Forbid();
 
+        if (!await ShiftSlotBelongsToGroupAsync(spaceId, groupId, req.ShiftSlotId, ct))
+            return NotFound();
+
         var result = await _waitlistService.JoinWaitlistAsync(personId.Value, req.ShiftSlotId, ct);
 
         if (!result.Success)
@@ -89,6 +92,9 @@ public class WaitlistController : ControllerBase
         if (personId is null)
             return Forbid();
 
+        if (!await ShiftSlotBelongsToGroupAsync(spaceId, groupId, req.ShiftSlotId, ct))
+            return NotFound();
+
         var result = await _mediator.Send(
             new AcceptWaitlistOfferCommand(spaceId, personId.Value, req.ShiftSlotId), ct);
 
@@ -119,6 +125,9 @@ public class WaitlistController : ControllerBase
         var personId = await ResolvePersonIdAsync(spaceId, groupId, ct);
         if (personId is null)
             return Forbid();
+
+        if (!await ShiftSlotBelongsToGroupAsync(spaceId, groupId, shiftSlotId, ct))
+            return NotFound();
 
         await _waitlistService.LeaveWaitlistAsync(personId.Value, shiftSlotId, ct);
 
@@ -165,6 +174,15 @@ public class WaitlistController : ControllerBase
 
         return personId == Guid.Empty ? null : personId;
     }
+
+    private Task<bool> ShiftSlotBelongsToGroupAsync(
+        Guid spaceId,
+        Guid groupId,
+        Guid shiftSlotId,
+        CancellationToken ct) =>
+        _db.ShiftSlots
+            .AsNoTracking()
+            .AnyAsync(s => s.Id == shiftSlotId && s.SpaceId == spaceId && s.GroupId == groupId, ct);
 }
 
 // --- Request DTOs ---

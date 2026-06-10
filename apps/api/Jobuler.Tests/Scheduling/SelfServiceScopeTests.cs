@@ -1,14 +1,22 @@
 using FluentAssertions;
+using Jobuler.Api.Controllers;
+using Jobuler.Application.Common;
+using Jobuler.Application.Notifications;
 using Jobuler.Application.Scheduling.SelfService;
 using Jobuler.Application.Scheduling.SelfService.Models;
 using Jobuler.Application.Scheduling.SelfService.Queries;
 using Jobuler.Domain.Groups;
 using Jobuler.Domain.People;
 using Jobuler.Domain.Scheduling;
+using Jobuler.Domain.Spaces;
 using Jobuler.Domain.Tasks;
 using Jobuler.Infrastructure.Persistence;
+using MediatR;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using NSubstitute;
+using System.Security.Claims;
 using Xunit;
 
 namespace Jobuler.Tests.Scheduling;
@@ -84,6 +92,132 @@ public class SelfServiceScopeTests
             .GetAvailableSlotsAsync(default, default, default, default);
     }
 
+    [Fact]
+    public async Task Submit_ReturnsNotFound_WhenSlotIsOutsideRouteGroup()
+    {
+        using var db = CreateDb();
+        var services = CreateControllerServices();
+        var spaceId = Guid.NewGuid();
+        var routeGroup = Group.Create(spaceId, null, "Route Group");
+        var otherGroup = Group.Create(spaceId, null, "Other Group");
+        var userId = Guid.NewGuid();
+        var ownerUserId = Guid.NewGuid();
+        var person = Person.Create(spaceId, "Member", linkedUserId: userId);
+        var otherCycle = CreateCycle(spaceId, otherGroup.Id);
+        var otherTask = CreateTask(spaceId, otherGroup.Id, "Other Task", ownerUserId);
+        var otherSlot = CreateSlot(spaceId, otherGroup.Id, otherTask.Id, otherCycle.Id, daysFromNow: 2);
+
+        db.People.Add(person);
+        db.Groups.AddRange(routeGroup, otherGroup);
+        db.GroupMemberships.Add(GroupMembership.Create(spaceId, routeGroup.Id, person.Id));
+        db.SchedulingCycles.Add(otherCycle);
+        db.GroupTasks.Add(otherTask);
+        db.ShiftSlots.Add(otherSlot);
+        await db.SaveChangesAsync();
+
+        var controller = new ShiftRequestsController(
+            services.Mediator,
+            services.Permissions,
+            services.ShiftRequestService,
+            services.PushSender,
+            db);
+        controller.ControllerContext = CreateControllerContext(userId);
+
+        var result = await controller.Submit(
+            spaceId,
+            routeGroup.Id,
+            new SubmitShiftRequestRequest(otherSlot.Id),
+            CancellationToken.None);
+
+        result.Should().BeOfType<NotFoundResult>();
+        await services.ShiftRequestService.DidNotReceiveWithAnyArgs()
+            .ProcessRequestAsync(default, default, default);
+    }
+
+    [Fact]
+    public async Task JoinWaitlist_ReturnsNotFound_WhenSlotIsOutsideRouteGroup()
+    {
+        using var db = CreateDb();
+        var services = CreateControllerServices();
+        var spaceId = Guid.NewGuid();
+        var routeGroup = Group.Create(spaceId, null, "Route Group");
+        var otherGroup = Group.Create(spaceId, null, "Other Group");
+        var userId = Guid.NewGuid();
+        var ownerUserId = Guid.NewGuid();
+        var person = Person.Create(spaceId, "Member", linkedUserId: userId);
+        var otherCycle = CreateCycle(spaceId, otherGroup.Id);
+        var otherTask = CreateTask(spaceId, otherGroup.Id, "Other Task", ownerUserId);
+        var otherSlot = CreateSlot(spaceId, otherGroup.Id, otherTask.Id, otherCycle.Id, daysFromNow: 2);
+
+        db.People.Add(person);
+        db.Groups.AddRange(routeGroup, otherGroup);
+        db.GroupMemberships.Add(GroupMembership.Create(spaceId, routeGroup.Id, person.Id));
+        db.SchedulingCycles.Add(otherCycle);
+        db.GroupTasks.Add(otherTask);
+        db.ShiftSlots.Add(otherSlot);
+        await db.SaveChangesAsync();
+
+        services.Permissions
+            .RequirePermissionAsync(userId, spaceId, Permissions.SpaceView, Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+
+        var controller = new WaitlistController(
+            services.Mediator,
+            services.Permissions,
+            services.WaitlistService,
+            db);
+        controller.ControllerContext = CreateControllerContext(userId);
+
+        var result = await controller.Join(
+            spaceId,
+            routeGroup.Id,
+            new JoinWaitlistRequest(otherSlot.Id),
+            CancellationToken.None);
+
+        result.Should().BeOfType<NotFoundResult>();
+        await services.WaitlistService.DidNotReceiveWithAnyArgs()
+            .JoinWaitlistAsync(default, default, default);
+    }
+
+    [Fact]
+    public async Task AcceptSwap_ReturnsNotFound_WhenSwapIsOutsideRouteGroup()
+    {
+        using var db = CreateDb();
+        var services = CreateControllerServices();
+        var spaceId = Guid.NewGuid();
+        var routeGroup = Group.Create(spaceId, null, "Route Group");
+        var otherGroup = Group.Create(spaceId, null, "Other Group");
+        var userId = Guid.NewGuid();
+        var currentPerson = Person.Create(spaceId, "Current Member", linkedUserId: userId);
+        var otherPerson = Person.Create(spaceId, "Other Member", linkedUserId: Guid.NewGuid());
+        var swap = SwapRequest.Create(
+            spaceId,
+            otherGroup.Id,
+            otherPerson.Id,
+            currentPerson.Id,
+            Guid.NewGuid(),
+            Guid.NewGuid());
+
+        db.People.AddRange(currentPerson, otherPerson);
+        db.Groups.AddRange(routeGroup, otherGroup);
+        db.GroupMemberships.Add(GroupMembership.Create(spaceId, routeGroup.Id, currentPerson.Id));
+        db.SwapRequests.Add(swap);
+        await db.SaveChangesAsync();
+
+        var controller = new ShiftSwapsController(services.SwapService, db);
+        controller.ControllerContext = CreateControllerContext(userId);
+
+        var result = await controller.AcceptSwap(
+            spaceId,
+            routeGroup.Id,
+            swap.Id,
+            CancellationToken.None);
+
+        result.Should().BeOfType<NotFoundResult>();
+        await services.SwapService.DidNotReceiveWithAnyArgs()
+            .AcceptSwapAsync(default, default, default);
+    }
+
     private static SchedulingCycle CreateCycle(Guid spaceId, Guid groupId)
     {
         var utcNow = DateTime.UtcNow;
@@ -129,4 +263,33 @@ public class SelfServiceScopeTests
             startTime: new TimeOnly(8, 0),
             endTime: new TimeOnly(16, 0),
             capacity: 1);
+
+    private static ControllerContext CreateControllerContext(Guid userId)
+    {
+        var httpContext = new DefaultHttpContext
+        {
+            User = new ClaimsPrincipal(new ClaimsIdentity(
+                new[] { new Claim(ClaimTypes.NameIdentifier, userId.ToString()) },
+                "TestAuth"))
+        };
+
+        return new ControllerContext { HttpContext = httpContext };
+    }
+
+    private static ControllerServices CreateControllerServices() =>
+        new(
+            Substitute.For<IMediator>(),
+            Substitute.For<IPermissionService>(),
+            Substitute.For<IShiftRequestService>(),
+            Substitute.For<IWaitlistService>(),
+            Substitute.For<IShiftSwapService>(),
+            Substitute.For<IPushNotificationSender>());
+
+    private sealed record ControllerServices(
+        IMediator Mediator,
+        IPermissionService Permissions,
+        IShiftRequestService ShiftRequestService,
+        IWaitlistService WaitlistService,
+        IShiftSwapService SwapService,
+        IPushNotificationSender PushSender);
 }

@@ -62,6 +62,13 @@ public class ShiftSwapsController : ControllerBase
         if (personId is null || personId == Guid.Empty)
             return Forbid();
 
+        if (!await ShiftRequestsBelongToGroupAsync(
+                spaceId,
+                groupId,
+                new[] { req.InitiatorShiftRequestId, req.TargetShiftRequestId },
+                ct))
+            return NotFound();
+
         var result = await _swapService.ProposeSwapAsync(
             personId.Value, req.InitiatorShiftRequestId, req.TargetShiftRequestId, ct);
 
@@ -87,6 +94,9 @@ public class ShiftSwapsController : ControllerBase
         if (personId is null || personId == Guid.Empty)
             return Forbid();
 
+        if (!await SwapBelongsToGroupAsync(spaceId, groupId, swapRequestId, ct))
+            return NotFound();
+
         var result = await _swapService.AcceptSwapAsync(personId.Value, swapRequestId, ct);
 
         if (!result.Success)
@@ -110,6 +120,9 @@ public class ShiftSwapsController : ControllerBase
         if (personId is null || personId == Guid.Empty)
             return Forbid();
 
+        if (!await SwapBelongsToGroupAsync(spaceId, groupId, swapRequestId, ct))
+            return NotFound();
+
         await _swapService.DeclineSwapAsync(personId.Value, swapRequestId, ct);
 
         return NoContent();
@@ -129,6 +142,9 @@ public class ShiftSwapsController : ControllerBase
         var personId = await GetCurrentPersonIdAsync(spaceId, groupId, ct);
         if (personId is null || personId == Guid.Empty)
             return Forbid();
+
+        if (!await SwapBelongsToGroupAsync(spaceId, groupId, swapRequestId, ct))
+            return NotFound();
 
         await _swapService.CancelSwapAsync(personId.Value, swapRequestId, ct);
 
@@ -263,6 +279,32 @@ public class ShiftSwapsController : ControllerBase
 
     private static string FormatSlotTime(TimeOnly? startsAt, TimeOnly? endsAt) =>
         startsAt is null || endsAt is null ? string.Empty : $"{startsAt:HH\\:mm}-{endsAt:HH\\:mm}";
+
+    private async Task<bool> ShiftRequestsBelongToGroupAsync(
+        Guid spaceId,
+        Guid groupId,
+        Guid[] shiftRequestIds,
+        CancellationToken ct)
+    {
+        var distinctRequestIds = shiftRequestIds.Distinct().ToArray();
+        var matchingCount = await _db.ShiftRequests
+            .AsNoTracking()
+            .CountAsync(r => distinctRequestIds.Contains(r.Id)
+                             && r.SpaceId == spaceId
+                             && r.GroupId == groupId,
+                ct);
+
+        return matchingCount == distinctRequestIds.Length;
+    }
+
+    private Task<bool> SwapBelongsToGroupAsync(
+        Guid spaceId,
+        Guid groupId,
+        Guid swapRequestId,
+        CancellationToken ct) =>
+        _db.SwapRequests
+            .AsNoTracking()
+            .AnyAsync(s => s.Id == swapRequestId && s.SpaceId == spaceId && s.GroupId == groupId, ct);
 }
 
 public record ProposeSwapRequest(Guid InitiatorShiftRequestId, Guid TargetShiftRequestId);

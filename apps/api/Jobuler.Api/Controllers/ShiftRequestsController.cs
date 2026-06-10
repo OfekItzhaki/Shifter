@@ -58,6 +58,9 @@ public class ShiftRequestsController : ControllerBase
         if (personId is null)
             return Forbid();
 
+        if (!await ShiftSlotBelongsToGroupAsync(spaceId, groupId, req.ShiftSlotId, ct))
+            return NotFound();
+
         var result = await _shiftRequestService.ProcessRequestAsync(personId.Value, req.ShiftSlotId, ct);
 
         if (!result.Success)
@@ -93,6 +96,9 @@ public class ShiftRequestsController : ControllerBase
         if (personId is null)
             return Forbid();
 
+        if (!await ShiftRequestBelongsToGroupAsync(spaceId, groupId, shiftRequestId, personId.Value, ct))
+            return NotFound();
+
         var result = await _shiftRequestService.CancelRequestAsync(personId.Value, shiftRequestId, req.Reason, ct);
 
         if (!result.Success)
@@ -121,6 +127,9 @@ public class ShiftRequestsController : ControllerBase
         var personId = await ResolvePersonIdAsync(spaceId, groupId, ct);
         if (personId is null)
             return Forbid();
+
+        if (!await ShiftRequestBelongsToGroupAsync(spaceId, groupId, shiftRequestId, personId.Value, ct))
+            return NotFound();
 
         var result = await _shiftRequestService.ReportCannotAttendAsync(personId.Value, shiftRequestId, req.Reason, ct);
 
@@ -300,6 +309,29 @@ public class ShiftRequestsController : ControllerBase
 
         return personId == Guid.Empty ? null : personId;
     }
+
+    private Task<bool> ShiftSlotBelongsToGroupAsync(
+        Guid spaceId,
+        Guid groupId,
+        Guid shiftSlotId,
+        CancellationToken ct) =>
+        _db.ShiftSlots
+            .AsNoTracking()
+            .AnyAsync(s => s.Id == shiftSlotId && s.SpaceId == spaceId && s.GroupId == groupId, ct);
+
+    private Task<bool> ShiftRequestBelongsToGroupAsync(
+        Guid spaceId,
+        Guid groupId,
+        Guid shiftRequestId,
+        Guid personId,
+        CancellationToken ct) =>
+        _db.ShiftRequests
+            .AsNoTracking()
+            .AnyAsync(r => r.Id == shiftRequestId
+                           && r.SpaceId == spaceId
+                           && r.GroupId == groupId
+                           && r.PersonId == personId,
+                ct);
 
     private async Task SendAbsenceReviewNotificationAsync(
         ShiftAbsenceReport report,
