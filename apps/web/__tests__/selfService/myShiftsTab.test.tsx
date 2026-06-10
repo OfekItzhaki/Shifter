@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import MyShiftsTab from "../../components/groups/selfService/MyShiftsTab";
 
@@ -42,6 +42,10 @@ vi.mock("next-intl", () => ({
       changeRequestsTitle: "Shift change requests",
       changeRequestsDescription: "Track requests",
       changeRequestsEmpty: "No change requests",
+      changeRequestedTo: "Requested",
+      changeFlexibleTarget: "Flexible replacement",
+      changeCancel: "Cancel request",
+      changeRequestCancelled: "Change request cancelled",
       absenceReportsTitle: "Absence reports",
       absenceReportsDescription: `${values?.used ?? 0}/${values?.max ?? 0} late reports used`,
       absenceReportsEmpty: "No absence reports",
@@ -134,6 +138,44 @@ describe("MyShiftsTab", () => {
     expect(screen.getByText("2/2 used inside 24h")).toBeInTheDocument();
 
     await waitFor(() => expect(mockReportCannotAttend).not.toHaveBeenCalled());
+  });
+
+  it("lets members cancel a pending shift-change request", async () => {
+    mockCancelShiftChangeRequest.mockResolvedValue(undefined);
+    mockGetMyShiftChangeRequests.mockResolvedValue([
+      {
+        id: "change-1",
+        shiftRequestId: "request-1",
+        personId: "person-1",
+        personName: "Member One",
+        originalShiftSlotId: "slot-1",
+        originalSlotDate: "2026-06-12",
+        originalSlotStartTime: "09:00:00",
+        originalSlotEndTime: "17:00:00",
+        originalTaskName: "Front desk",
+        requestedShiftSlotId: null,
+        requestedSlotDate: null,
+        requestedSlotStartTime: null,
+        requestedSlotEndTime: null,
+        requestedTaskName: null,
+        reason: "Need to swap school pickup",
+        status: "Pending",
+        requestedAt: "2026-06-10T08:00:00",
+        adminNote: null,
+        reviewedAt: null,
+      },
+    ]);
+
+    render(<MyShiftsTab spaceId="space-1" groupId="group-1" />);
+
+    await screen.findByText("Need to swap school pickup");
+    fireEvent.click(screen.getByRole("button", { name: "Cancel request" }));
+
+    await waitFor(() => {
+      expect(mockCancelShiftChangeRequest).toHaveBeenCalledWith("space-1", "group-1", "change-1");
+    });
+    expect(await screen.findByText("Change request cancelled")).toBeInTheDocument();
+    expect(mockGetMyShiftChangeRequests).toHaveBeenCalledTimes(2);
   });
 });
 
