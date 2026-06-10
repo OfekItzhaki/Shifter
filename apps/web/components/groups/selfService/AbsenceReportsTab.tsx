@@ -31,12 +31,16 @@ interface Props {
   groupId: string;
 }
 
+type ReviewQueueFilter = "pending" | "all" | "handled";
+
 const STATUS_STYLES: Record<AbsenceReportDto["status"] | ShiftChangeRequestDto["status"] | SpecialLeaveRequestDto["status"], string> = {
   Pending: "border-amber-200 bg-amber-50 text-amber-700",
   Approved: "border-emerald-200 bg-emerald-50 text-emerald-700",
   Rejected: "border-red-200 bg-red-50 text-red-700",
   Cancelled: "border-slate-200 bg-slate-50 text-slate-600",
 };
+
+const REVIEW_FILTERS: ReviewQueueFilter[] = ["pending", "all", "handled"];
 
 function pendingFirst<T extends { status: string }>(items: T[]): T[] {
   return [...items].sort((a, b) => {
@@ -49,6 +53,12 @@ function pendingFirst<T extends { status: string }>(items: T[]): T[] {
 
 function countPending(items: { status: string }[]): number {
   return items.filter((item) => item.status === "Pending").length;
+}
+
+function filterReviewItems<T extends { status: string }>(items: T[], filter: ReviewQueueFilter): T[] {
+  if (filter === "pending") return items.filter((item) => item.status === "Pending");
+  if (filter === "handled") return items.filter((item) => item.status !== "Pending");
+  return items;
 }
 
 interface ReviewActivityItem {
@@ -87,6 +97,7 @@ export default function AbsenceReportsTab({ spaceId, groupId }: Props) {
   const [changeActionLoading, setChangeActionLoading] = useState<Record<string, "approve" | "reject">>({});
   const [leaveActionLoading, setLeaveActionLoading] = useState<Record<string, "approve" | "reject">>({});
   const [actionError, setActionError] = useState<string | null>(null);
+  const [queueFilter, setQueueFilter] = useState<ReviewQueueFilter>("pending");
 
   const fetchReports = useCallback(async () => {
     try {
@@ -231,9 +242,12 @@ export default function AbsenceReportsTab({ spaceId, groupId }: Props) {
   if (loading) return <LoadingCard rows={4} variant="list" />;
   if (error) return <ErrorRetry message={error} onRetry={fetchReports} />;
 
-  const sortedReports = pendingFirst(reports);
-  const sortedChangeRequests = pendingFirst(changeRequests);
-  const sortedLeaveRequests = pendingFirst(leaveRequests);
+  const visibleReports = filterReviewItems(reports, queueFilter);
+  const visibleChangeRequests = filterReviewItems(changeRequests, queueFilter);
+  const visibleLeaveRequests = filterReviewItems(leaveRequests, queueFilter);
+  const sortedReports = pendingFirst(visibleReports);
+  const sortedChangeRequests = pendingFirst(visibleChangeRequests);
+  const sortedLeaveRequests = pendingFirst(visibleLeaveRequests);
   const reportPendingCount = countPending(reports);
   const changePendingCount = countPending(changeRequests);
   const leavePendingCount = countPending(leaveRequests);
@@ -290,6 +304,27 @@ export default function AbsenceReportsTab({ spaceId, groupId }: Props) {
         </button>
       </div>
 
+      <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2">
+        <span className="text-xs font-medium text-slate-500">{t("filterLabel")}</span>
+        <div className="inline-flex rounded-lg border border-slate-200 bg-slate-50 p-1" role="group" aria-label={t("filterAria")}>
+          {REVIEW_FILTERS.map((filter) => (
+            <button
+              key={filter}
+              type="button"
+              onClick={() => setQueueFilter(filter)}
+              className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                queueFilter === filter
+                  ? "bg-white text-slate-900 shadow-sm"
+                  : "text-slate-500 hover:text-slate-800"
+              }`}
+              aria-pressed={queueFilter === filter}
+            >
+              {t(`filter.${filter}`)}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {actionError && (
         <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-xs text-red-700">
           {actionError}
@@ -343,9 +378,9 @@ export default function AbsenceReportsTab({ spaceId, groupId }: Props) {
         summaryLabel={t("pendingSummary", { pending: reportPendingCount, total: reports.length })}
       />
 
-      {reports.length === 0 ? (
+      {visibleReports.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-xl border border-slate-200 bg-white py-12 text-center">
-          <p className="text-sm text-slate-400">{t("empty")}</p>
+          <p className="text-sm text-slate-400">{t(queueFilter === "pending" ? "emptyPending" : "empty")}</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -414,9 +449,9 @@ export default function AbsenceReportsTab({ spaceId, groupId }: Props) {
         summaryLabel={t("pendingSummary", { pending: changePendingCount, total: changeRequests.length })}
       />
 
-      {changeRequests.length === 0 ? (
+      {visibleChangeRequests.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-xl border border-slate-200 bg-white py-12 text-center">
-          <p className="text-sm text-slate-400">{t("changeRequestsEmpty")}</p>
+          <p className="text-sm text-slate-400">{t(queueFilter === "pending" ? "changeRequestsEmptyPending" : "changeRequestsEmpty")}</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -502,9 +537,9 @@ export default function AbsenceReportsTab({ spaceId, groupId }: Props) {
         summaryLabel={t("pendingSummary", { pending: leavePendingCount, total: leaveRequests.length })}
       />
 
-      {leaveRequests.length === 0 ? (
+      {visibleLeaveRequests.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-xl border border-slate-200 bg-white py-12 text-center">
-          <p className="text-sm text-slate-400">{t("leaveRequestsEmpty")}</p>
+          <p className="text-sm text-slate-400">{t(queueFilter === "pending" ? "leaveRequestsEmptyPending" : "leaveRequestsEmpty")}</p>
         </div>
       ) : (
         <div className="space-y-3">
