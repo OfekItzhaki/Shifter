@@ -74,7 +74,7 @@ export default function AbsenceReportsTab({ spaceId, groupId }: Props) {
         getAbsenceReports(spaceId, groupId),
         getShiftChangeRequests(spaceId, groupId),
         getShiftChangeTargetSlots(spaceId, groupId, "current"),
-        getAdminSpecialLeaveRequests(spaceId, "Pending", undefined, undefined, groupId),
+        getAdminSpecialLeaveRequests(spaceId, undefined, undefined, undefined, groupId),
       ]);
       setReports(absenceRows);
       setChangeRequests(changeRows);
