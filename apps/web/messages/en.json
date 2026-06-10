@@ -2328,6 +2328,11 @@
           "title": "Requests",
           "description": "{changes} shift-change and {absences} absence report(s) are waiting for review.",
           "button": "Open my shifts"
+        },
+        "leave": {
+          "title": "Time off",
+          "description": "Track special leave requests and submit new time-off when needed.",
+          "button": "Open my shifts"
         }
       },
       "lateAbsences": "Late absences",
@@ -2344,7 +2349,8 @@
         "lateAbsenceValue": "{used}/{max} used. Reports inside the last {hours}h count as late.",
         "waitlist": "Waitlist offers",
         "waitlistValue": "When offered a full shift, you have {minutes} minutes to accept."
-      }
+      },
+      "pendingLeave": "Time off"
     }
   },
   "trialBanner": {

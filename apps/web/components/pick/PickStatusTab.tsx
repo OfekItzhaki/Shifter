@@ -20,6 +20,7 @@ import { getSelfServiceErrorMessage } from "@/lib/utils/selfServiceErrors";
 import { formatSlotDate, formatTime24h } from "@/lib/utils/selfServiceFormat";
 import LoadingCard from "@/components/groups/selfService/LoadingCard";
 import ErrorRetry from "@/components/groups/selfService/ErrorRetry";
+import { getMySpecialLeaveRequests, SpecialLeaveRequestDto } from "@/lib/api/specialLeave";
 import type { PickerTab } from "./PickerTabs";
 
 interface PickStatusTabProps {
@@ -35,6 +36,7 @@ interface StatusData {
   changes: ShiftChangeRequestDto[];
   absences: MyAbsenceReportsResponse;
   config: SelfServiceConfigDto;
+  specialLeave: SpecialLeaveRequestDto[];
 }
 
 export default function PickStatusTab({ spaceId, groupId, onNavigate }: PickStatusTabProps) {
@@ -49,16 +51,17 @@ export default function PickStatusTab({ spaceId, groupId, onNavigate }: PickStat
     setError(null);
 
     try {
-      const [shifts, waitlist, swaps, changes, absences, config] = await Promise.all([
+      const [shifts, waitlist, swaps, changes, absences, config, specialLeave] = await Promise.all([
         getMyShiftRequests(spaceId, groupId),
         getMyWaitlistEntries(spaceId, groupId),
         getMySwaps(spaceId, groupId),
         getMyShiftChangeRequests(spaceId, groupId),
         getMyAbsenceReports(spaceId, groupId),
         getSelfServiceConfig(spaceId, groupId),
+        getMySpecialLeaveRequests(spaceId),
       ]);
       setNowMs(Date.now());
-      setData({ shifts, waitlist, swaps, changes, absences, config });
+      setData({ shifts, waitlist, swaps, changes, absences, config, specialLeave });
     } catch (err) {
       setError(getSelfServiceErrorMessage(err).message);
     } finally {
@@ -80,6 +83,7 @@ export default function PickStatusTab({ spaceId, groupId, onNavigate }: PickStat
     const pendingSwaps = data.swaps.filter((swap) => swap.status === "Pending");
     const pendingChanges = data.changes.filter((change) => change.status === "Pending");
     const pendingAbsences = data.absences.reports.filter((report) => report.status === "Pending");
+    const pendingSpecialLeave = data.specialLeave.filter((request) => request.status === "Pending");
     const nextShift = approved
       .filter((request) => {
         const startsAt = new Date(`${request.slotDate}T${request.slotStartTime}`);
@@ -95,6 +99,7 @@ export default function PickStatusTab({ spaceId, groupId, onNavigate }: PickStat
       pendingSwaps,
       pendingChanges,
       pendingAbsences,
+      pendingSpecialLeave,
       nextShift,
     };
   }, [data, nowMs]);
@@ -140,6 +145,7 @@ export default function PickStatusTab({ spaceId, groupId, onNavigate }: PickStat
             tone={data.absences.lateReportsUsed >= data.absences.maxLateReports ? "warning" : "default"}
           />
           <Metric label={t("pendingAbsences")} value={`${summary.pendingAbsences.length}`} tone={summary.pendingAbsences.length > 0 ? "warning" : "default"} />
+          <Metric label={t("pendingLeave")} value={`${summary.pendingSpecialLeave.length}`} tone={summary.pendingSpecialLeave.length > 0 ? "warning" : "default"} />
         </div>
 
         {summary.nextShift ? (
@@ -231,6 +237,14 @@ export default function PickStatusTab({ spaceId, groupId, onNavigate }: PickStat
           count={summary.pendingShifts.length + summary.pendingChanges.length + summary.pendingAbsences.length}
           tone={summary.pendingChanges.length > 0 || summary.pendingAbsences.length > 0 ? "warning" : "default"}
           button={t("cards.requests.button")}
+          onClick={() => onNavigate("my-shifts")}
+        />
+        <ActionCard
+          title={t("cards.leave.title")}
+          description={t("cards.leave.description")}
+          count={summary.pendingSpecialLeave.length}
+          tone={summary.pendingSpecialLeave.length > 0 ? "warning" : "default"}
+          button={t("cards.leave.button")}
           onClick={() => onNavigate("my-shifts")}
         />
       </div>
