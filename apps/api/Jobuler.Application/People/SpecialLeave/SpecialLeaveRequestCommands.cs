@@ -255,8 +255,13 @@ public class CancelSpecialLeaveRequestCommandHandler
     : IRequestHandler<CancelSpecialLeaveRequestCommand>
 {
     private readonly AppDbContext _db;
+    private readonly INotificationService _notifications;
 
-    public CancelSpecialLeaveRequestCommandHandler(AppDbContext db) => _db = db;
+    public CancelSpecialLeaveRequestCommandHandler(AppDbContext db, INotificationService notifications)
+    {
+        _db = db;
+        _notifications = notifications;
+    }
 
     public async Task Handle(CancelSpecialLeaveRequestCommand req, CancellationToken ct)
     {
@@ -266,7 +271,30 @@ public class CancelSpecialLeaveRequestCommandHandler
                 && r.PersonId == req.PersonId, ct)
             ?? throw new KeyNotFoundException("Special leave request not found.");
 
+        var personName = await _db.People
+            .AsNoTracking()
+            .Where(p => p.Id == request.PersonId && p.SpaceId == request.SpaceId)
+            .Select(p => p.DisplayName ?? p.FullName)
+            .FirstOrDefaultAsync(ct) ?? "Member";
+
         request.Cancel();
         await _db.SaveChangesAsync(ct);
+
+        await _notifications.NotifySpaceAdminsAsync(
+            req.SpaceId,
+            "self_service.special_leave_cancelled",
+            "Time-off Request Cancelled",
+            $"{personName} cancelled a time-off request from {request.StartsAt:MMM dd HH:mm} to {request.EndsAt:MMM dd HH:mm}.",
+            JsonSerializer.Serialize(new
+            {
+                requestId = request.Id,
+                personId = request.PersonId,
+                personName,
+                startsAt = request.StartsAt,
+                endsAt = request.EndsAt,
+                reason = request.Reason
+            }),
+            groupId: null,
+            ct);
     }
 }

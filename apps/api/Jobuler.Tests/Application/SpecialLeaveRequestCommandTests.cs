@@ -149,6 +149,39 @@ public class SpecialLeaveRequestCommandTests
     }
 
     [Fact]
+    public async Task Cancel_NotifiesSpaceAdmins()
+    {
+        await using var db = CreateDb();
+        var spaceId = Guid.NewGuid();
+        var userId = Guid.NewGuid();
+        var person = Person.Create(spaceId, "Ofek", linkedUserId: userId);
+        var start = DateTime.UtcNow.AddDays(3);
+        var request = SpecialLeaveRequest.Create(
+            spaceId, person.Id, start, start.AddDays(1), "Family event", userId);
+
+        db.People.Add(person);
+        db.SpecialLeaveRequests.Add(request);
+        await db.SaveChangesAsync();
+
+        var notifications = Substitute.For<INotificationService>();
+        var handler = new CancelSpecialLeaveRequestCommandHandler(db, notifications);
+
+        await handler.Handle(new CancelSpecialLeaveRequestCommand(
+            spaceId, request.Id, person.Id), CancellationToken.None);
+
+        var updatedRequest = await db.SpecialLeaveRequests.SingleAsync(r => r.Id == request.Id);
+        updatedRequest.Status.Should().Be(SpecialLeaveRequestStatus.Cancelled);
+        await notifications.Received(1).NotifySpaceAdminsAsync(
+            spaceId,
+            "self_service.special_leave_cancelled",
+            "Time-off Request Cancelled",
+            Arg.Is<string>(body => body.Contains("Ofek") && body.Contains("cancelled a time-off request")),
+            Arg.Is<string>(metadata => metadata.Contains(request.Id.ToString()) && metadata.Contains("\"reason\":\"Family event\"")),
+            null,
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task GetMyRequests_ReturnsProjectedRequestsForLinkedPerson()
     {
         await using var db = CreateDb();
