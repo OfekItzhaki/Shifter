@@ -2276,7 +2276,8 @@
           "generating": "Generating...",
           "refresh": "Refresh",
           "refreshing": "Refreshing..."
-        }
+        },
+        "openReviewQueue": "Open {queue}"
       }
     }
   },

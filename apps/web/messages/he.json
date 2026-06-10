@@ -2288,7 +2288,8 @@
           "generating": "????...",
           "refresh": "????",
           "refreshing": "?????..."
-        }
+        },
+        "openReviewQueue": "??? ?? {queue}"
       }
     }
   },

@@ -4,6 +4,7 @@ import { useTranslations } from "next-intl";
 import CycleControlPanel from "./CycleControlPanel";
 
 type SelfServiceOpsTarget =
+  | "members"
   | "absence-reports"
   | "admin-overrides"
   | "shift-templates"
@@ -56,7 +57,7 @@ export default function SelfServiceOperationsTab({
         </div>
       </div>
 
-      <CycleControlPanel spaceId={spaceId} groupId={groupId} />
+      <CycleControlPanel spaceId={spaceId} groupId={groupId} onNavigate={onNavigate} />
     </div>
   );
 }

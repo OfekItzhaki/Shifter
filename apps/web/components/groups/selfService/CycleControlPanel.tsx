@@ -17,6 +17,7 @@ import MutationButton from "./MutationButton";
 interface CycleControlPanelProps {
   spaceId: string;
   groupId: string;
+  onNavigate?: (tab: "absence-reports" | "members") => void;
 }
 
 function formatDateTime(value: string | null): string {
@@ -39,7 +40,7 @@ function formatCoverage(status: SelfServiceCycleStatusDto): string {
   return `${Math.round((status.filledCount / status.totalCapacity) * 100)}%`;
 }
 
-export default function CycleControlPanel({ spaceId, groupId }: CycleControlPanelProps) {
+export default function CycleControlPanel({ spaceId, groupId, onNavigate }: CycleControlPanelProps) {
   const t = useTranslations("selfService.operations.cycle");
   const [status, setStatus] = useState<SelfServiceCycleStatusDto | null>(null);
   const [loading, setLoading] = useState(true);
@@ -128,10 +129,34 @@ export default function CycleControlPanel({ spaceId, groupId }: CycleControlPane
                 <Metric label={t("metrics.approved")} value={`${status.approvedCount}`} />
                 <Metric label={t("metrics.pending")} value={`${status.pendingCount}`} />
                 <Metric label={t("metrics.waitlist")} value={`${status.waitlistCount}`} />
-                <Metric label={t("metrics.absenceReview")} value={`${status.pendingAbsenceReportCount}`} tone={status.pendingAbsenceReportCount > 0 ? "warning" : "default"} />
-                <Metric label={t("metrics.lateReports")} value={`${status.latePendingAbsenceReportCount}`} tone={status.latePendingAbsenceReportCount > 0 ? "danger" : "default"} />
-                <Metric label={t("metrics.changeReview")} value={`${status.pendingShiftChangeRequestCount}`} tone={status.pendingShiftChangeRequestCount > 0 ? "warning" : "default"} />
-                <Metric label={t("metrics.leaveReview")} value={`${status.pendingSpecialLeaveRequestCount}`} tone={status.pendingSpecialLeaveRequestCount > 0 ? "warning" : "default"} />
+                <Metric
+                  label={t("metrics.absenceReview")}
+                  value={`${status.pendingAbsenceReportCount}`}
+                  tone={status.pendingAbsenceReportCount > 0 ? "warning" : "default"}
+                  actionLabel={t("openReviewQueue", { queue: t("metrics.absenceReview") })}
+                  onClick={onNavigate ? () => onNavigate("absence-reports") : undefined}
+                />
+                <Metric
+                  label={t("metrics.lateReports")}
+                  value={`${status.latePendingAbsenceReportCount}`}
+                  tone={status.latePendingAbsenceReportCount > 0 ? "danger" : "default"}
+                  actionLabel={t("openReviewQueue", { queue: t("metrics.lateReports") })}
+                  onClick={onNavigate ? () => onNavigate("absence-reports") : undefined}
+                />
+                <Metric
+                  label={t("metrics.changeReview")}
+                  value={`${status.pendingShiftChangeRequestCount}`}
+                  tone={status.pendingShiftChangeRequestCount > 0 ? "warning" : "default"}
+                  actionLabel={t("openReviewQueue", { queue: t("metrics.changeReview") })}
+                  onClick={onNavigate ? () => onNavigate("absence-reports") : undefined}
+                />
+                <Metric
+                  label={t("metrics.leaveReview")}
+                  value={`${status.pendingSpecialLeaveRequestCount}`}
+                  tone={status.pendingSpecialLeaveRequestCount > 0 ? "warning" : "default"}
+                  actionLabel={t("openReviewQueue", { queue: t("metrics.leaveReview") })}
+                  onClick={onNavigate ? () => onNavigate("members") : undefined}
+                />
                 <Metric label={t("metrics.generated")} value={status.isGenerated ? t("yes") : t("no")} />
               </div>
 
@@ -249,10 +274,14 @@ function Metric({
   label,
   value,
   tone = "default",
+  actionLabel,
+  onClick,
 }: {
   label: string;
   value: string;
   tone?: "default" | "warning" | "danger";
+  actionLabel?: string;
+  onClick?: () => void;
 }) {
   const toneClass =
     tone === "danger"
@@ -261,10 +290,30 @@ function Metric({
         ? "border-amber-200 bg-amber-50 text-amber-900"
         : "border-slate-200 bg-slate-50 text-slate-900";
 
-  return (
-    <div className={`rounded-lg border px-3 py-2 ${toneClass}`}>
+  const content = (
+    <>
       <div className="text-xs text-slate-500">{label}</div>
       <div className="mt-1 text-sm font-semibold">{value}</div>
+    </>
+  );
+
+  if (onClick) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        aria-label={actionLabel}
+        title={actionLabel}
+        className={`rounded-lg border px-3 py-2 text-left transition-colors hover:border-sky-300 hover:bg-sky-50 focus:outline-none focus:ring-2 focus:ring-sky-400 ${toneClass}`}
+      >
+        {content}
+      </button>
+    );
+  }
+
+  return (
+    <div className={`rounded-lg border px-3 py-2 ${toneClass}`}>
+      {content}
     </div>
   );
 }
