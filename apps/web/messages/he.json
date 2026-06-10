@@ -2105,7 +2105,9 @@
       "changeRequestsEmpty": "אין בקשות שינוי משמרת",
       "changeFrom": "מ",
       "changeTo": "אל",
-      "changeFlexibleTarget": "החלפה גמישה"
+      "changeFlexibleTarget": "החלפה גמישה",
+      "changeTargetShift": "משמרת יעד",
+      "changeTargetRequired": "בחר משמרת יעד כדי לאשר"
     },
     "templates": {
       "title": "תבניות משמרות",

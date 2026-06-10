@@ -4,11 +4,13 @@ import { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import {
   AbsenceReportDto,
+  AvailableSlotDto,
   ShiftChangeRequestDto,
   approveAbsenceReport,
   approveShiftChangeRequest,
   getAbsenceReports,
   getShiftChangeRequests,
+  getShiftChangeTargetSlots,
   rejectAbsenceReport,
   rejectShiftChangeRequest,
 } from "@/lib/api/selfService";
@@ -34,9 +36,11 @@ export default function AbsenceReportsTab({ spaceId, groupId }: Props) {
   const t = useTranslations("selfService.absenceReports");
   const [reports, setReports] = useState<AbsenceReportDto[]>([]);
   const [changeRequests, setChangeRequests] = useState<ShiftChangeRequestDto[]>([]);
+  const [changeSlotOptions, setChangeSlotOptions] = useState<AvailableSlotDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [adminNotes, setAdminNotes] = useState<Record<string, string>>({});
+  const [changeTargetSlots, setChangeTargetSlots] = useState<Record<string, string>>({});
   const [actionLoading, setActionLoading] = useState<Record<string, "approve" | "reject">>({});
   const [changeActionLoading, setChangeActionLoading] = useState<Record<string, "approve" | "reject">>({});
   const [actionError, setActionError] = useState<string | null>(null);
@@ -45,12 +49,23 @@ export default function AbsenceReportsTab({ spaceId, groupId }: Props) {
     try {
       setLoading(true);
       setError(null);
-      const [absenceRows, changeRows] = await Promise.all([
+      const [absenceRows, changeRows, targetSlots] = await Promise.all([
         getAbsenceReports(spaceId, groupId),
         getShiftChangeRequests(spaceId, groupId),
+        getShiftChangeTargetSlots(spaceId, groupId, "current"),
       ]);
       setReports(absenceRows);
       setChangeRequests(changeRows);
+      setChangeSlotOptions(targetSlots);
+      setChangeTargetSlots((prev) => {
+        const next = { ...prev };
+        for (const request of changeRows) {
+          if (!next[request.id] && request.requestedShiftSlotId) {
+            next[request.id] = request.requestedShiftSlotId;
+          }
+        }
+        return next;
+      });
     } catch (err) {
       const { message } = getSelfServiceErrorMessage(err);
       setError(message);
@@ -94,7 +109,12 @@ export default function AbsenceReportsTab({ spaceId, groupId }: Props) {
     try {
       const note = adminNotes[changeRequestId] ?? "";
       if (action === "approve") {
-        await approveShiftChangeRequest(spaceId, groupId, changeRequestId, note);
+        const targetShiftSlotId = changeTargetSlots[changeRequestId] || null;
+        if (!targetShiftSlotId) {
+          setActionError(t("changeTargetRequired"));
+          return;
+        }
+        await approveShiftChangeRequest(spaceId, groupId, changeRequestId, note, targetShiftSlotId);
       } else {
         await rejectShiftChangeRequest(spaceId, groupId, changeRequestId, note);
       }
@@ -109,6 +129,10 @@ export default function AbsenceReportsTab({ spaceId, groupId }: Props) {
         return next;
       });
     }
+  }
+
+  function formatTargetSlot(slot: AvailableSlotDto) {
+    return `${formatSlotDate(slot.date)} - ${formatTime24h(slot.startTime)}-${formatTime24h(slot.endTime)} - ${slot.taskName} (${slot.currentFillCount}/${slot.capacity})`;
   }
 
   if (loading) return <LoadingCard rows={4} variant="list" />;
@@ -234,6 +258,23 @@ export default function AbsenceReportsTab({ spaceId, groupId }: Props) {
 
                 {request.status === "Pending" && (
                   <div className="w-full shrink-0 space-y-2 sm:w-64">
+                    <label className="block space-y-1">
+                      <span className="text-xs font-medium text-slate-600">{t("changeTargetShift")}</span>
+                      <select
+                        value={changeTargetSlots[request.id] ?? request.requestedShiftSlotId ?? ""}
+                        onChange={(e) => setChangeTargetSlots((prev) => ({ ...prev, [request.id]: e.target.value }))}
+                        className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-sky-400"
+                      >
+                        <option value="">{t("changeTargetRequired")}</option>
+                        {changeSlotOptions
+                          .filter((slot) => slot.id !== request.originalShiftSlotId)
+                          .map((slot) => (
+                            <option key={slot.id} value={slot.id}>
+                              {formatTargetSlot(slot)}
+                            </option>
+                          ))}
+                      </select>
+                    </label>
                     <input
                       value={adminNotes[request.id] ?? ""}
                       onChange={(e) => setAdminNotes((prev) => ({ ...prev, [request.id]: e.target.value }))}
@@ -245,7 +286,7 @@ export default function AbsenceReportsTab({ spaceId, groupId }: Props) {
                       <MutationButton
                         onClick={() => reviewChange(request.id, "approve")}
                         loading={changeActionLoading[request.id] === "approve"}
-                        disabled={!!changeActionLoading[request.id]}
+                        disabled={!!changeActionLoading[request.id] || !(changeTargetSlots[request.id] ?? request.requestedShiftSlotId)}
                         label={t("approve")}
                         loadingLabel={t("approving")}
                         variant="primary"

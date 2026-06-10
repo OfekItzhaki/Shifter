@@ -2093,7 +2093,9 @@
       "changeRequestsEmpty": "No shift change requests",
       "changeFrom": "From",
       "changeTo": "To",
-      "changeFlexibleTarget": "Flexible replacement"
+      "changeFlexibleTarget": "Flexible replacement",
+      "changeTargetShift": "Target shift",
+      "changeTargetRequired": "Choose a target shift to approve"
     },
     "templates": {
       "title": "Шаблоны смен",

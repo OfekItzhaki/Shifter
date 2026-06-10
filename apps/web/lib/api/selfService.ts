@@ -516,15 +516,32 @@ export async function getShiftChangeRequests(
   return data;
 }
 
+export async function getShiftChangeTargetSlots(
+  spaceId: string,
+  groupId: string,
+  cycleId: string
+): Promise<AvailableSlotDto[]> {
+  const { data } = await apiClient.get(
+    `/spaces/${spaceId}/groups/${groupId}/shift-change-requests/admin/target-slots`,
+    { params: { cycleId } }
+  );
+  return (data ?? []).map((slot: AvailableSlotDto & { shiftSlotId?: string }) => ({
+    ...slot,
+    id: slot.id ?? slot.shiftSlotId,
+    shiftSlotId: slot.shiftSlotId ?? slot.id,
+  }));
+}
+
 export async function approveShiftChangeRequest(
   spaceId: string,
   groupId: string,
   changeRequestId: string,
-  adminNote?: string
+  adminNote?: string,
+  targetShiftSlotId?: string | null
 ): Promise<void> {
   await apiClient.post(
     `/spaces/${spaceId}/groups/${groupId}/shift-change-requests/admin/${changeRequestId}/approve`,
-    { adminNote: adminNote?.trim() || null }
+    { adminNote: adminNote?.trim() || null, targetShiftSlotId: targetShiftSlotId || null }
   );
 }
 

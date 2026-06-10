@@ -75,6 +75,18 @@ public class ShiftChangeRequest : AuditableEntity, ITenantScoped
         Touch();
     }
 
+    public void SetRequestedShiftSlot(Guid requestedShiftSlotId)
+    {
+        if (Status != ShiftChangeRequestStatus.Pending)
+            throw new InvalidOperationException("Only pending change requests can be updated.");
+
+        if (requestedShiftSlotId == OriginalShiftSlotId)
+            throw new InvalidOperationException("Requested shift must be different from the current shift.");
+
+        RequestedShiftSlotId = requestedShiftSlotId;
+        Touch();
+    }
+
     public void Reject(Guid reviewedByUserId, string? adminNote = null)
     {
         if (Status != ShiftChangeRequestStatus.Pending)

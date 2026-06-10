@@ -186,6 +186,60 @@ public class ShiftChangeRequestsController : ControllerBase
             .ToList());
     }
 
+    [HttpGet("admin/target-slots")]
+    public async Task<IActionResult> ListTargetSlotsForAdmin(
+        Guid spaceId,
+        Guid groupId,
+        [FromQuery] string cycleId,
+        CancellationToken ct)
+    {
+        await _permissions.RequirePermissionAsync(CurrentUserId, spaceId, Permissions.ConstraintsManage, ct);
+
+        Guid resolvedCycleId;
+        if (string.Equals(cycleId, "current", StringComparison.OrdinalIgnoreCase))
+        {
+            var now = DateTime.UtcNow;
+            resolvedCycleId = await _db.SchedulingCycles
+                .AsNoTracking()
+                .Where(c => c.SpaceId == spaceId && c.GroupId == groupId && c.EndsAt >= now)
+                .OrderBy(c => c.StartsAt < now ? 0 : 1)
+                .ThenBy(c => c.StartsAt)
+                .Select(c => c.Id)
+                .FirstOrDefaultAsync(ct);
+
+            if (resolvedCycleId == Guid.Empty)
+                return Ok(Array.Empty<object>());
+        }
+        else if (!Guid.TryParse(cycleId, out resolvedCycleId))
+        {
+            return BadRequest(new { error = "Invalid cycleId. Use a scheduling cycle id or 'current'." });
+        }
+
+        var slots = await _db.ShiftSlots
+            .AsNoTracking()
+            .Where(s => s.SpaceId == spaceId
+                        && s.GroupId == groupId
+                        && s.SchedulingCycleId == resolvedCycleId
+                        && s.CurrentFillCount < s.Capacity)
+            .Join(_db.GroupTasks.AsNoTracking(), s => s.GroupTaskId, t => t.Id, (s, t) => new
+            {
+                id = s.Id,
+                shiftSlotId = s.Id,
+                s.Date,
+                s.StartTime,
+                s.EndTime,
+                taskName = t.Name,
+                s.Capacity,
+                s.CurrentFillCount,
+                s.SchedulingCycleId
+            })
+            .OrderBy(s => s.Date)
+            .ThenBy(s => s.StartTime)
+            .ToListAsync(ct);
+
+        return Ok(slots);
+    }
+
     [HttpPost("admin/{changeRequestId:guid}/approve")]
     public async Task<IActionResult> Approve(
         Guid spaceId,
@@ -205,7 +259,23 @@ public class ShiftChangeRequestsController : ControllerBase
         if (changeRequest is null)
             return NotFound();
 
-        if (changeRequest.RequestedShiftSlotId.HasValue)
+        var targetShiftSlotId = req.TargetShiftSlotId ?? changeRequest.RequestedShiftSlotId;
+        if (!targetShiftSlotId.HasValue)
+            return Rejected("Choose a target shift before approving this change request.");
+
+        if (req.TargetShiftSlotId.HasValue && req.TargetShiftSlotId.Value != changeRequest.RequestedShiftSlotId)
+        {
+            try
+            {
+                changeRequest.SetRequestedShiftSlot(req.TargetShiftSlotId.Value);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Rejected(ex.Message);
+            }
+        }
+
+        if (targetShiftSlotId.HasValue)
         {
             var shiftRequest = await _db.ShiftRequests
                 .FirstOrDefaultAsync(r => r.Id == changeRequest.ShiftRequestId
@@ -220,7 +290,7 @@ public class ShiftChangeRequestsController : ControllerBase
                                           && s.GroupId == groupId,
                     ct);
             var requestedSlot = await _db.ShiftSlots
-                .FirstOrDefaultAsync(s => s.Id == changeRequest.RequestedShiftSlotId.Value
+                .FirstOrDefaultAsync(s => s.Id == targetShiftSlotId.Value
                                           && s.SpaceId == spaceId
                                           && s.GroupId == groupId,
                     ct);
@@ -547,7 +617,7 @@ public class ShiftChangeRequestsController : ControllerBase
 
 public record SubmitShiftChangeRequest(Guid ShiftRequestId, Guid? RequestedShiftSlotId, string Reason);
 
-public record ReviewShiftChangeRequest(string? AdminNote);
+public record ReviewShiftChangeRequest(string? AdminNote, Guid? TargetShiftSlotId = null);
 
 public record ShiftChangeRequestDto(
     Guid Id,
