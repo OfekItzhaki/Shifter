@@ -2,6 +2,7 @@ using System.Text.Json;
 using Jobuler.Application.Common;
 using Jobuler.Application.Notifications;
 using Jobuler.Application.Scheduling;
+using Jobuler.Domain.Notifications;
 using Jobuler.Domain.People;
 using Jobuler.Infrastructure.Persistence;
 using MediatR;
@@ -143,6 +144,8 @@ public class ApproveSpecialLeaveRequestCommandHandler
             }),
             ct: ct);
 
+        await SpecialLeaveNotifications.AddMemberReviewNotificationAsync(_db, request, approved: true, ct);
+
         return presence.Id;
     }
 
@@ -195,6 +198,51 @@ public class RejectSpecialLeaveRequestCommandHandler
                 admin_note = req.AdminNote
             }),
             ct: ct);
+
+        await SpecialLeaveNotifications.AddMemberReviewNotificationAsync(_db, request, approved: false, ct);
+    }
+}
+
+internal static class SpecialLeaveNotifications
+{
+    public static async Task AddMemberReviewNotificationAsync(
+        AppDbContext db,
+        SpecialLeaveRequest request,
+        bool approved,
+        CancellationToken ct)
+    {
+        var linkedUserId = await db.People
+            .AsNoTracking()
+            .Where(p => p.Id == request.PersonId && p.SpaceId == request.SpaceId && p.LinkedUserId != null)
+            .Select(p => p.LinkedUserId)
+            .FirstOrDefaultAsync(ct);
+
+        if (linkedUserId is null)
+            return;
+
+        var title = approved ? "Time-off Approved" : "Time-off Rejected";
+        var body = approved
+            ? $"Your time-off request from {request.StartsAt:MMM dd HH:mm} to {request.EndsAt:MMM dd HH:mm} was approved."
+            : $"Your time-off request from {request.StartsAt:MMM dd HH:mm} to {request.EndsAt:MMM dd HH:mm} was rejected.";
+
+        db.Notifications.Add(Notification.Create(
+            request.SpaceId,
+            linkedUserId.Value,
+            approved ? "self_service.special_leave_approved" : "self_service.special_leave_rejected",
+            title,
+            body,
+            JsonSerializer.Serialize(new
+            {
+                requestId = request.Id,
+                personId = request.PersonId,
+                startsAt = request.StartsAt,
+                endsAt = request.EndsAt,
+                reason = request.Reason,
+                adminNote = request.AdminNote,
+                processedAt = request.ProcessedAt
+            })));
+
+        await db.SaveChangesAsync(ct);
     }
 }
 

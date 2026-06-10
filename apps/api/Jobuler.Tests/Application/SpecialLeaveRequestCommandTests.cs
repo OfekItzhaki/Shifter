@@ -88,6 +88,41 @@ public class SpecialLeaveRequestCommandTests
 
         await cumulative.Received(1).RecomputeForPersonAsync(spaceId, person.Id, Arg.Any<CancellationToken>());
         await cache.Received(1).RemoveByPatternAsync($"status:{spaceId}:*", Arg.Any<CancellationToken>());
+
+        var notification = await db.Notifications.SingleAsync(n => n.EventType == "self_service.special_leave_approved");
+        notification.UserId.Should().Be(userId);
+        notification.MetadataJson.Should().Contain(request.Id.ToString());
+        notification.MetadataJson.Should().Contain("\"adminNote\":\"approved\"");
+    }
+
+    [Fact]
+    public async Task Reject_NotifiesLinkedMember()
+    {
+        await using var db = CreateDb();
+        var spaceId = Guid.NewGuid();
+        var userId = Guid.NewGuid();
+        var adminId = Guid.NewGuid();
+        var person = Person.Create(spaceId, "Ofek", linkedUserId: userId);
+        var start = DateTime.UtcNow.AddDays(3);
+        var request = SpecialLeaveRequest.Create(
+            spaceId, person.Id, start, start.AddDays(1), "Family event", userId);
+
+        db.People.Add(person);
+        db.SpecialLeaveRequests.Add(request);
+        await db.SaveChangesAsync();
+
+        var handler = new RejectSpecialLeaveRequestCommandHandler(db, Substitute.For<IAuditLogger>());
+
+        await handler.Handle(new RejectSpecialLeaveRequestCommand(
+            spaceId, request.Id, adminId, "not this week"), CancellationToken.None);
+
+        var updatedRequest = await db.SpecialLeaveRequests.SingleAsync(r => r.Id == request.Id);
+        updatedRequest.Status.Should().Be(SpecialLeaveRequestStatus.Rejected);
+
+        var notification = await db.Notifications.SingleAsync(n => n.EventType == "self_service.special_leave_rejected");
+        notification.UserId.Should().Be(userId);
+        notification.MetadataJson.Should().Contain(request.Id.ToString());
+        notification.MetadataJson.Should().Contain("\"adminNote\":\"not this week\"");
     }
 
     [Fact]
