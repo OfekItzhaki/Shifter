@@ -39,6 +39,19 @@ const STATUS_STYLES: Record<AbsenceReportDto["status"] | ShiftChangeRequestDto["
   Cancelled: "border-slate-200 bg-slate-50 text-slate-600",
 };
 
+function pendingFirst<T extends { status: string }>(items: T[]): T[] {
+  return [...items].sort((a, b) => {
+    if (a.status === b.status) return 0;
+    if (a.status === "Pending") return -1;
+    if (b.status === "Pending") return 1;
+    return 0;
+  });
+}
+
+function countPending(items: { status: string }[]): number {
+  return items.filter((item) => item.status === "Pending").length;
+}
+
 export default function AbsenceReportsTab({ spaceId, groupId, memberIds }: Props) {
   const t = useTranslations("selfService.absenceReports");
   const [reports, setReports] = useState<AbsenceReportDto[]>([]);
@@ -198,6 +211,13 @@ export default function AbsenceReportsTab({ spaceId, groupId, memberIds }: Props
   if (loading) return <LoadingCard rows={4} variant="list" />;
   if (error) return <ErrorRetry message={error} onRetry={fetchReports} />;
 
+  const sortedReports = pendingFirst(reports);
+  const sortedChangeRequests = pendingFirst(changeRequests);
+  const sortedLeaveRequests = pendingFirst(leaveRequests);
+  const reportPendingCount = countPending(reports);
+  const changePendingCount = countPending(changeRequests);
+  const leavePendingCount = countPending(leaveRequests);
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -217,13 +237,19 @@ export default function AbsenceReportsTab({ spaceId, groupId, memberIds }: Props
         </div>
       )}
 
+      <QueueHeader
+        title={t("absenceReportsTitle")}
+        pending={reportPendingCount}
+        summaryLabel={t("pendingSummary", { pending: reportPendingCount, total: reports.length })}
+      />
+
       {reports.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-xl border border-slate-200 bg-white py-12 text-center">
           <p className="text-sm text-slate-400">{t("empty")}</p>
         </div>
       ) : (
         <div className="space-y-3">
-          {reports.map((report) => (
+          {sortedReports.map((report) => (
             <div key={report.id} className="rounded-xl border border-slate-200 bg-white p-4">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div className="min-w-0">
@@ -282,9 +308,11 @@ export default function AbsenceReportsTab({ spaceId, groupId, memberIds }: Props
         </div>
       )}
 
-      <div className="flex items-center justify-between pt-2">
-        <h2 className="text-sm font-semibold text-slate-700">{t("changeRequestsTitle")}</h2>
-      </div>
+      <QueueHeader
+        title={t("changeRequestsTitle")}
+        pending={changePendingCount}
+        summaryLabel={t("pendingSummary", { pending: changePendingCount, total: changeRequests.length })}
+      />
 
       {changeRequests.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-xl border border-slate-200 bg-white py-12 text-center">
@@ -292,7 +320,7 @@ export default function AbsenceReportsTab({ spaceId, groupId, memberIds }: Props
         </div>
       ) : (
         <div className="space-y-3">
-          {changeRequests.map((request) => (
+          {sortedChangeRequests.map((request) => (
             <div key={request.id} className="rounded-xl border border-slate-200 bg-white p-4">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div className="min-w-0">
@@ -368,9 +396,11 @@ export default function AbsenceReportsTab({ spaceId, groupId, memberIds }: Props
         </div>
       )}
 
-      <div className="flex items-center justify-between pt-2">
-        <h2 className="text-sm font-semibold text-slate-700">{t("leaveRequestsTitle")}</h2>
-      </div>
+      <QueueHeader
+        title={t("leaveRequestsTitle")}
+        pending={leavePendingCount}
+        summaryLabel={t("pendingSummary", { pending: leavePendingCount, total: leaveRequests.length })}
+      />
 
       {leaveRequests.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-xl border border-slate-200 bg-white py-12 text-center">
@@ -378,7 +408,7 @@ export default function AbsenceReportsTab({ spaceId, groupId, memberIds }: Props
         </div>
       ) : (
         <div className="space-y-3">
-          {leaveRequests.map((request) => (
+          {sortedLeaveRequests.map((request) => (
             <div key={request.id} className="rounded-xl border border-slate-200 bg-white p-4">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div className="min-w-0">
@@ -431,6 +461,31 @@ export default function AbsenceReportsTab({ spaceId, groupId, memberIds }: Props
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+function QueueHeader({
+  title,
+  pending,
+  summaryLabel,
+}: {
+  title: string;
+  pending: number;
+  summaryLabel: string;
+}) {
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-2 pt-2">
+      <h2 className="text-sm font-semibold text-slate-700">{title}</h2>
+      <span
+        className={`rounded-full border px-2.5 py-1 text-xs font-medium ${
+          pending > 0
+            ? "border-amber-200 bg-amber-50 text-amber-700"
+            : "border-slate-200 bg-slate-50 text-slate-500"
+        }`}
+      >
+        {summaryLabel}
+      </span>
     </div>
   );
 }

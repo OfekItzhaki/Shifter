@@ -2111,7 +2111,9 @@
       "changeTargetShift": "Target shift",
       "changeTargetRequired": "Choose a target shift to approve",
       "leaveRequestsTitle": "Time-off Requests",
-      "leaveRequestsEmpty": "No time-off requests"
+      "leaveRequestsEmpty": "No time-off requests",
+      "absenceReportsTitle": "Absence Reports",
+      "pendingSummary": "{pending} pending / {total} total"
     },
     "templates": {
       "title": "Shift Templates",
