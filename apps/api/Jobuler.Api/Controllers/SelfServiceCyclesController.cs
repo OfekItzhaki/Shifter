@@ -186,7 +186,16 @@ public class SelfServiceCyclesController : ControllerBase
         var slots = await _db.ShiftSlots
             .AsNoTracking()
             .Where(s => s.SchedulingCycleId == cycle.Id)
-            .Select(s => new { s.Capacity, s.CurrentFillCount })
+            .Select(s => new
+            {
+                s.Id,
+                s.GroupTaskId,
+                s.Date,
+                s.StartTime,
+                s.EndTime,
+                s.Capacity,
+                s.CurrentFillCount
+            })
             .ToListAsync(ct);
 
         var approvedCount = await _db.ShiftRequests
@@ -208,6 +217,40 @@ public class SelfServiceCyclesController : ControllerBase
             .CountAsync(w => cycleSlotIds.Contains(w.ShiftSlotId)
                              && (w.Status == WaitlistEntryStatus.Waiting || w.Status == WaitlistEntryStatus.Offered), ct);
 
+        var pendingAbsenceReports = await _db.ShiftAbsenceReports
+            .AsNoTracking()
+            .Where(r => r.SchedulingCycleId == cycle.Id && r.Status == ShiftAbsenceReportStatus.Pending)
+            .Select(r => new { r.IsLate })
+            .ToListAsync(ct);
+
+        var taskIds = slots
+            .Where(s => s.CurrentFillCount < s.Capacity)
+            .Select(s => s.GroupTaskId)
+            .Distinct()
+            .ToList();
+
+        var taskNames = await _db.GroupTasks
+            .AsNoTracking()
+            .Where(t => taskIds.Contains(t.Id))
+            .Select(t => new { t.Id, t.Name })
+            .ToDictionaryAsync(t => t.Id, t => t.Name, ct);
+
+        var underfilledSlots = slots
+            .Where(s => s.CurrentFillCount < s.Capacity)
+            .OrderBy(s => s.Date)
+            .ThenBy(s => s.StartTime)
+            .Take(12)
+            .Select(s => new UnderfilledSlotResponse(
+                s.Id,
+                s.Date,
+                s.StartTime,
+                s.EndTime,
+                taskNames.GetValueOrDefault(s.GroupTaskId, "Shift"),
+                s.CurrentFillCount,
+                s.Capacity,
+                s.Capacity - s.CurrentFillCount))
+            .ToList();
+
         var now = DateTime.UtcNow;
         var totalCapacity = slots.Sum(s => s.Capacity);
         var filled = slots.Sum(s => s.CurrentFillCount);
@@ -225,11 +268,24 @@ public class SelfServiceCyclesController : ControllerBase
             filled,
             approvedCount,
             pendingCount,
-            waitlistCount);
+            waitlistCount,
+            pendingAbsenceReports.Count,
+            pendingAbsenceReports.Count(r => r.IsLate),
+            underfilledSlots);
     }
 }
 
 public record OpenCycleWindowRequest(int? Hours);
+
+public record UnderfilledSlotResponse(
+    Guid ShiftSlotId,
+    DateOnly Date,
+    TimeOnly StartTime,
+    TimeOnly EndTime,
+    string TaskName,
+    int CurrentFillCount,
+    int Capacity,
+    int OpenSeats);
 
 public record SelfServiceCycleStatusResponse(
     Guid? CycleId,
@@ -244,8 +300,11 @@ public record SelfServiceCycleStatusResponse(
     int FilledCount,
     int ApprovedCount,
     int PendingCount,
-    int WaitlistCount)
+    int WaitlistCount,
+    int PendingAbsenceReportCount,
+    int LatePendingAbsenceReportCount,
+    IReadOnlyList<UnderfilledSlotResponse> UnderfilledSlots)
 {
     public static SelfServiceCycleStatusResponse Empty() =>
-        new(null, null, null, null, null, false, false, 0, 0, 0, 0, 0, 0);
+        new(null, null, null, null, null, false, false, 0, 0, 0, 0, 0, 0, 0, 0, []);
 }

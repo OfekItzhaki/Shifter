@@ -96,6 +96,20 @@ export interface SelfServiceCycleStatusDto {
   approvedCount: number;
   pendingCount: number;
   waitlistCount: number;
+  pendingAbsenceReportCount: number;
+  latePendingAbsenceReportCount: number;
+  underfilledSlots: UnderfilledSlotDto[];
+}
+
+export interface UnderfilledSlotDto {
+  shiftSlotId: string;
+  date: string;
+  startTime: string;
+  endTime: string;
+  taskName: string;
+  currentFillCount: number;
+  capacity: number;
+  openSeats: number;
 }
 
 export interface UnderScheduledMemberDto {

@@ -26,6 +26,18 @@ function formatDateTime(value: string | null): string {
   }).format(new Date(value));
 }
 
+function formatDate(value: string): string {
+  return new Intl.DateTimeFormat(undefined, {
+    month: "short",
+    day: "numeric",
+  }).format(new Date(value));
+}
+
+function formatCoverage(status: SelfServiceCycleStatusDto): string {
+  if (status.totalCapacity <= 0) return "0%";
+  return `${Math.round((status.filledCount / status.totalCapacity) * 100)}%`;
+}
+
 export default function CycleControlPanel({ spaceId, groupId }: CycleControlPanelProps) {
   const [status, setStatus] = useState<SelfServiceCycleStatusDto | null>(null);
   const [loading, setLoading] = useState(true);
@@ -109,11 +121,43 @@ export default function CycleControlPanel({ spaceId, groupId }: CycleControlPane
                 <Metric label="Window closes" value={formatDateTime(status.requestWindowClosesAt)} />
                 <Metric label="Slots" value={`${status.slotCount}`} />
                 <Metric label="Filled" value={`${status.filledCount}/${status.totalCapacity}`} />
+                <Metric label="Coverage" value={formatCoverage(status)} />
+                <Metric label="Open seats" value={`${Math.max(status.totalCapacity - status.filledCount, 0)}`} />
                 <Metric label="Approved" value={`${status.approvedCount}`} />
                 <Metric label="Pending" value={`${status.pendingCount}`} />
                 <Metric label="Waitlist" value={`${status.waitlistCount}`} />
+                <Metric label="Absence review" value={`${status.pendingAbsenceReportCount}`} tone={status.pendingAbsenceReportCount > 0 ? "warning" : "default"} />
+                <Metric label="Late reports" value={`${status.latePendingAbsenceReportCount}`} tone={status.latePendingAbsenceReportCount > 0 ? "danger" : "default"} />
                 <Metric label="Generated" value={status.isGenerated ? "Yes" : "No"} />
               </div>
+
+              {status.underfilledSlots.length > 0 && (
+                <div className="rounded-lg border border-amber-200 bg-amber-50/70 p-3">
+                  <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                    <p className="text-sm font-semibold text-amber-900">Under-filled slots</p>
+                    <p className="text-xs text-amber-700">Showing the next {status.underfilledSlots.length} gaps</p>
+                  </div>
+                  <div className="mt-3 grid gap-2 lg:grid-cols-2">
+                    {status.underfilledSlots.map((slot) => (
+                      <div
+                        key={slot.shiftSlotId}
+                        className="flex items-center justify-between gap-3 rounded-md border border-amber-200 bg-white px-3 py-2"
+                      >
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-medium text-slate-900">{slot.taskName}</p>
+                          <p className="text-xs text-slate-500">
+                            {formatDate(slot.date)} · {slot.startTime}-{slot.endTime}
+                          </p>
+                        </div>
+                        <div className="shrink-0 text-right">
+                          <p className="text-sm font-semibold text-amber-800">{slot.openSeats} open</p>
+                          <p className="text-xs text-slate-500">{slot.currentFillCount}/{slot.capacity}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <div className="flex flex-wrap gap-2">
                 <MutationButton
@@ -197,11 +241,26 @@ export default function CycleControlPanel({ spaceId, groupId }: CycleControlPane
   );
 }
 
-function Metric({ label, value }: { label: string; value: string }) {
+function Metric({
+  label,
+  value,
+  tone = "default",
+}: {
+  label: string;
+  value: string;
+  tone?: "default" | "warning" | "danger";
+}) {
+  const toneClass =
+    tone === "danger"
+      ? "border-red-200 bg-red-50 text-red-900"
+      : tone === "warning"
+        ? "border-amber-200 bg-amber-50 text-amber-900"
+        : "border-slate-200 bg-slate-50 text-slate-900";
+
   return (
-    <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+    <div className={`rounded-lg border px-3 py-2 ${toneClass}`}>
       <div className="text-xs text-slate-500">{label}</div>
-      <div className="mt-1 text-sm font-semibold text-slate-900">{value}</div>
+      <div className="mt-1 text-sm font-semibold">{value}</div>
     </div>
   );
 }
