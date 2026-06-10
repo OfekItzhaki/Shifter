@@ -64,6 +64,7 @@ export interface UpdateSelfServiceConfigPayload {
 
 export interface AvailableSlotDto {
   id: string;
+  shiftSlotId?: string;
   date: string;         // "YYYY-MM-DD"
   startTime: string;    // "HH:mm"
   endTime: string;      // "HH:mm"
@@ -78,7 +79,35 @@ export interface AvailableSlotsResponse {
   requestWindowOpen: boolean;
   requestWindowOpensAt: string | null;
   requestWindowClosesAt: string | null;
-  currentCycleId: string;
+  currentCycleId: string | null;
+}
+
+export interface SelfServiceCycleStatusDto {
+  cycleId: string | null;
+  startsAt: string | null;
+  endsAt: string | null;
+  requestWindowOpensAt: string | null;
+  requestWindowClosesAt: string | null;
+  requestWindowOpen: boolean;
+  isGenerated: boolean;
+  slotCount: number;
+  totalCapacity: number;
+  filledCount: number;
+  approvedCount: number;
+  pendingCount: number;
+  waitlistCount: number;
+}
+
+export interface UnderScheduledMemberDto {
+  personId: string;
+  personName: string;
+  approvedCount: number;
+  minRequired: number;
+}
+
+export interface UnderScheduledCheckResponse {
+  success: boolean;
+  underScheduledMembers: UnderScheduledMemberDto[];
 }
 
 // ── Shift Request ────────────────────────────────────────────────────────────
@@ -252,6 +281,68 @@ export async function getAvailableSlots(
   const { data } = await apiClient.get(
     `/spaces/${spaceId}/groups/${groupId}/shift-slots/available`,
     { params: { cycleId } }
+  );
+  return {
+    ...data,
+    slots: (data.slots ?? []).map((slot: AvailableSlotDto & { shiftSlotId?: string }) => ({
+      ...slot,
+      id: slot.id ?? slot.shiftSlotId,
+      shiftSlotId: slot.shiftSlotId ?? slot.id,
+    })),
+  };
+}
+
+export async function getSelfServiceCycleStatus(
+  spaceId: string,
+  groupId: string
+): Promise<SelfServiceCycleStatusDto> {
+  const { data } = await apiClient.get(
+    `/spaces/${spaceId}/groups/${groupId}/self-service-cycles/status`
+  );
+  return data;
+}
+
+export async function generateNextSelfServiceCycle(
+  spaceId: string,
+  groupId: string
+): Promise<SelfServiceCycleStatusDto> {
+  const { data } = await apiClient.post(
+    `/spaces/${spaceId}/groups/${groupId}/self-service-cycles/generate-next`
+  );
+  return data;
+}
+
+export async function openSelfServiceCycleWindow(
+  spaceId: string,
+  groupId: string,
+  cycleId: string,
+  hours = 24
+): Promise<SelfServiceCycleStatusDto> {
+  const { data } = await apiClient.post(
+    `/spaces/${spaceId}/groups/${groupId}/self-service-cycles/${cycleId}/open`,
+    { hours }
+  );
+  return data;
+}
+
+export async function closeSelfServiceCycleWindow(
+  spaceId: string,
+  groupId: string,
+  cycleId: string
+): Promise<SelfServiceCycleStatusDto> {
+  const { data } = await apiClient.post(
+    `/spaces/${spaceId}/groups/${groupId}/self-service-cycles/${cycleId}/close`
+  );
+  return data;
+}
+
+export async function checkUnderScheduledMembers(
+  spaceId: string,
+  groupId: string,
+  cycleId: string
+): Promise<UnderScheduledCheckResponse> {
+  const { data } = await apiClient.post(
+    `/spaces/${spaceId}/groups/${groupId}/self-service-cycles/${cycleId}/check-under-scheduled`
   );
   return data;
 }

@@ -65,7 +65,27 @@ public class SchedulingCycle : AuditableEntity, ITenantScoped
         if (newCloseAt <= RequestWindowOpensAt)
             throw new InvalidOperationException("Request window close must be after request window open.");
 
+        if (newCloseAt > StartsAt)
+            throw new InvalidOperationException("Request window must close no later than the cycle start.");
+
         RequestWindowClosesAt = newCloseAt;
+        Touch();
+    }
+
+    /// <summary>
+    /// Reopens or adjusts the request window while preserving the rule that the
+    /// request window closes no later than the cycle start.
+    /// </summary>
+    public void UpdateRequestWindow(DateTime opensAt, DateTime closesAt)
+    {
+        if (opensAt >= closesAt)
+            throw new InvalidOperationException("Request window open must be before request window close.");
+
+        if (closesAt > StartsAt)
+            throw new InvalidOperationException("Request window must close no later than the cycle start.");
+
+        RequestWindowOpensAt = opensAt;
+        RequestWindowClosesAt = closesAt;
         Touch();
     }
 

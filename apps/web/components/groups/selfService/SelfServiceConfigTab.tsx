@@ -13,6 +13,7 @@ import { getSelfServiceErrorMessage } from "@/lib/utils/selfServiceErrors";
 import LoadingCard from "./LoadingCard";
 import ErrorRetry from "./ErrorRetry";
 import MutationButton from "./MutationButton";
+import CycleControlPanel from "./CycleControlPanel";
 
 interface SelfServiceConfigTabProps {
   spaceId: string;
@@ -142,62 +143,66 @@ export default function SelfServiceConfigTab({ spaceId, groupId }: SelfServiceCo
   // ── Render ───────────────────────────────────────────────────────────────
 
   return (
-    <div className="bg-white border border-slate-200 rounded-xl p-6">
-      <h3 className="text-base font-semibold text-slate-900 mb-6">{t("title")}</h3>
+    <div className="space-y-5">
+      <CycleControlPanel spaceId={spaceId} groupId={groupId} />
 
-      <div className="space-y-5">
-        {CONFIG_FIELDS.map((field) => (
-          <div key={field.key}>
-            <label
-              htmlFor={`config-${field.key}`}
-              className="block text-sm font-medium text-slate-700 mb-1.5"
-            >
-              {t(field.key)}
-            </label>
-            <input
-              id={`config-${field.key}`}
-              type="number"
-              min={field.min}
-              max={field.max}
-              value={formValues[field.key]}
-              onChange={(e) => handleFieldChange(field.key, e.target.value)}
-              className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400 focus:border-transparent"
-              dir="ltr"
-            />
+      <div className="bg-white border border-slate-200 rounded-xl p-6">
+        <h3 className="text-base font-semibold text-slate-900 mb-6">{t("title")}</h3>
+
+        <div className="space-y-5">
+          {CONFIG_FIELDS.map((field) => (
+            <div key={field.key}>
+              <label
+                htmlFor={`config-${field.key}`}
+                className="block text-sm font-medium text-slate-700 mb-1.5"
+              >
+                {t(field.key)}
+              </label>
+              <input
+                id={`config-${field.key}`}
+                type="number"
+                min={field.min}
+                max={field.max}
+                value={formValues[field.key]}
+                onChange={(e) => handleFieldChange(field.key, e.target.value)}
+                className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400 focus:border-transparent"
+                dir="ltr"
+              />
+            </div>
+          ))}
+        </div>
+
+        {/* Validation error */}
+        {validationError && (
+          <div className="mt-4 bg-red-50 border border-red-200 rounded-lg px-4 py-2.5">
+            <p className="text-sm text-red-600">{validationError}</p>
           </div>
-        ))}
-      </div>
+        )}
 
-      {/* Validation error */}
-      {validationError && (
-        <div className="mt-4 bg-red-50 border border-red-200 rounded-lg px-4 py-2.5">
-          <p className="text-sm text-red-600">{validationError}</p>
+        {/* API error */}
+        {saveError && (
+          <div className="mt-4 bg-red-50 border border-red-200 rounded-lg px-4 py-2.5">
+            <p className="text-sm text-red-600">{saveError}</p>
+          </div>
+        )}
+
+        {/* Success message */}
+        {saveSuccess && (
+          <div className="mt-4 bg-emerald-50 border border-emerald-200 rounded-lg px-4 py-2.5">
+            <p className="text-sm text-emerald-700">{t("saved")}</p>
+          </div>
+        )}
+
+        {/* Save button */}
+        <div className="mt-6">
+          <MutationButton
+            onClick={handleSave}
+            loading={saving}
+            label={t("save")}
+            loadingLabel={t("saving")}
+            variant="primary"
+          />
         </div>
-      )}
-
-      {/* API error */}
-      {saveError && (
-        <div className="mt-4 bg-red-50 border border-red-200 rounded-lg px-4 py-2.5">
-          <p className="text-sm text-red-600">{saveError}</p>
-        </div>
-      )}
-
-      {/* Success message */}
-      {saveSuccess && (
-        <div className="mt-4 bg-emerald-50 border border-emerald-200 rounded-lg px-4 py-2.5">
-          <p className="text-sm text-emerald-700">{t("saved")}</p>
-        </div>
-      )}
-
-      {/* Save button */}
-      <div className="mt-6">
-        <MutationButton
-          onClick={handleSave}
-          loading={saving}
-          label={t("save")}
-          loadingLabel={t("saving")}
-          variant="primary"
-        />
       </div>
     </div>
   );

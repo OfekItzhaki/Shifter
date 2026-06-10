@@ -51,8 +51,8 @@ export function validateSelfServiceConfig(config: {
   requestWindowOpenOffsetHours: number;
   requestWindowCloseOffsetHours: number;
   cancellationCutoffHours: number;
-  maxLateCancellationsPerCycle: number;
-  lateCancellationWindowHours: number;
+  maxLateCancellationsPerCycle?: number;
+  lateCancellationWindowHours?: number;
   waitlistOfferMinutes: number;
   cycleDurationDays: number;
 }): ValidationResult {
@@ -62,8 +62,8 @@ export function validateSelfServiceConfig(config: {
     requestWindowOpenOffsetHours,
     requestWindowCloseOffsetHours,
     cancellationCutoffHours,
-    maxLateCancellationsPerCycle,
-    lateCancellationWindowHours,
+    maxLateCancellationsPerCycle = 2,
+    lateCancellationWindowHours = 24,
     waitlistOfferMinutes,
     cycleDurationDays,
   } = config;
