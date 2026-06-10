@@ -51,6 +51,28 @@ function countPending(items: { status: string }[]): number {
   return items.filter((item) => item.status === "Pending").length;
 }
 
+interface ReviewActivityItem {
+  id: string;
+  kind: "absence" | "change" | "leave";
+  personName: string;
+  status: "Approved" | "Rejected" | "Cancelled";
+  summary: string;
+  occurredAt: string;
+  note: string | null;
+}
+
+function formatActivityTime(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+
+  return new Intl.DateTimeFormat(undefined, {
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
+}
+
 export default function AbsenceReportsTab({ spaceId, groupId }: Props) {
   const t = useTranslations("selfService.absenceReports");
   const [reports, setReports] = useState<AbsenceReportDto[]>([]);
@@ -215,6 +237,45 @@ export default function AbsenceReportsTab({ spaceId, groupId }: Props) {
   const reportPendingCount = countPending(reports);
   const changePendingCount = countPending(changeRequests);
   const leavePendingCount = countPending(leaveRequests);
+  const recentActivity: ReviewActivityItem[] = [
+    ...reports
+      .filter((report) => report.status !== "Pending")
+      .map((report) => ({
+        id: `absence-${report.id}`,
+        kind: "absence" as const,
+        personName: report.personName,
+        status: report.status as "Approved" | "Rejected",
+        summary: `${formatSlotDate(report.date)} | ${formatTime24h(report.startTime)}-${formatTime24h(report.endTime)} | ${report.taskName}`,
+        occurredAt: report.reviewedAt ?? report.reportedAt,
+        note: report.adminNote,
+      })),
+    ...changeRequests
+      .filter((request) => request.status !== "Pending")
+      .map((request) => ({
+        id: `change-${request.id}`,
+        kind: "change" as const,
+        personName: request.personName,
+        status: request.status as "Approved" | "Rejected" | "Cancelled",
+        summary: request.requestedSlotDate
+          ? `${formatSlotDate(request.originalSlotDate)} -> ${formatSlotDate(request.requestedSlotDate)}`
+          : `${formatSlotDate(request.originalSlotDate)} -> ${t("changeFlexibleTarget")}`,
+        occurredAt: request.reviewedAt ?? request.requestedAt,
+        note: request.adminNote,
+      })),
+    ...leaveRequests
+      .filter((request) => request.status !== "Pending")
+      .map((request) => ({
+        id: `leave-${request.id}`,
+        kind: "leave" as const,
+        personName: request.personName,
+        status: request.status as "Approved" | "Rejected" | "Cancelled",
+        summary: `${formatLeaveDate(request.startsAt)} - ${formatLeaveDate(request.endsAt)}`,
+        occurredAt: request.processedAt ?? request.updatedAt,
+        note: request.adminNote,
+      })),
+  ]
+    .sort((a, b) => new Date(b.occurredAt).getTime() - new Date(a.occurredAt).getTime())
+    .slice(0, 5);
 
   return (
     <div className="space-y-4">
@@ -234,6 +295,47 @@ export default function AbsenceReportsTab({ spaceId, groupId }: Props) {
           {actionError}
         </div>
       )}
+
+      <div className="rounded-xl border border-slate-200 bg-white p-4">
+        <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h3 className="text-sm font-semibold text-slate-900">{t("activityTitle")}</h3>
+            <p className="text-xs text-slate-500">{t("activityDescription")}</p>
+          </div>
+          <span className="inline-flex w-fit rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-600">
+            {t("activityCount", { count: recentActivity.length })}
+          </span>
+        </div>
+
+        {recentActivity.length === 0 ? (
+          <p className="mt-4 rounded-lg border border-dashed border-slate-200 bg-slate-50 px-3 py-4 text-center text-xs text-slate-400">
+            {t("activityEmpty")}
+          </p>
+        ) : (
+          <div className="mt-4 divide-y divide-slate-100">
+            {recentActivity.map((item) => (
+              <div key={item.id} className="grid gap-2 py-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className={`rounded-full border px-2 py-0.5 text-xs font-medium ${STATUS_STYLES[item.status]}`}>
+                      {t(`status${item.status}`)}
+                    </span>
+                    <span className="text-xs font-medium text-slate-500">
+                      {t(`activityKind${item.kind}`)}
+                    </span>
+                    <span className="text-sm font-semibold text-slate-900">{item.personName}</span>
+                  </div>
+                  <p className="mt-1 truncate text-xs text-slate-500">{item.summary}</p>
+                  {item.note && (
+                    <p className="mt-1 truncate text-xs text-slate-500">{t("adminNote")}: {item.note}</p>
+                  )}
+                </div>
+                <span className="text-xs text-slate-500">{formatActivityTime(item.occurredAt)}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
       <QueueHeader
         title={t("absenceReportsTitle")}

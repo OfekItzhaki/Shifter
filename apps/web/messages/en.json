@@ -2130,7 +2130,14 @@
       "leaveRequestsTitle": "Time-off Requests",
       "leaveRequestsEmpty": "No time-off requests",
       "absenceReportsTitle": "Absence Reports",
-      "pendingSummary": "{pending} pending / {total} total"
+      "pendingSummary": "{pending} pending / {total} total",
+      "activityTitle": "Recent review activity",
+      "activityDescription": "Latest handled self-service requests across absence, shift changes, and time off.",
+      "activityCount": "{count} recent",
+      "activityEmpty": "No reviewed or cancelled requests yet.",
+      "activityKindabsence": "Absence",
+      "activityKindchange": "Shift change",
+      "activityKindleave": "Time off"
     },
     "templates": {
       "title": "Shift Templates",

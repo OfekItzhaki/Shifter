@@ -2142,7 +2142,14 @@
       "leaveRequestsTitle": "????? ????? ???????",
       "leaveRequestsEmpty": "??? ????? ????? ???????",
       "absenceReportsTitle": "?????? ?? ????",
-      "pendingSummary": "{pending} ????? / {total} ????"
+      "pendingSummary": "{pending} ????? / {total} ????",
+      "activityTitle": "Recent review activity",
+      "activityDescription": "Latest handled self-service requests across absence, shift changes, and time off.",
+      "activityCount": "{count} recent",
+      "activityEmpty": "No reviewed or cancelled requests yet.",
+      "activityKindabsence": "Absence",
+      "activityKindchange": "Shift change",
+      "activityKindleave": "Time off"
     },
     "templates": {
       "title": "תבניות משמרות",
