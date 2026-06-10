@@ -3,9 +3,15 @@
 import { useEffect, useState, useCallback } from "react";
 import { useTranslations } from "next-intl";
 import {
+  AvailableSlotDto,
+  ShiftChangeRequestDto,
+  cancelShiftChangeRequest,
+  getAvailableSlots,
+  getMyShiftChangeRequests,
   getMyShiftRequests,
   cancelShiftRequest,
   reportCannotAttend,
+  submitShiftChangeRequest,
   ShiftRequestDto,
   MyShiftsResponse,
 } from "@/lib/api/selfService";
@@ -103,6 +109,7 @@ export default function MyShiftsTab({ spaceId, groupId }: MyShiftsTabProps) {
 
   const [data, setData] = useState<MyShiftsResponse | null>(null);
   const [specialLeaveRequests, setSpecialLeaveRequests] = useState<SpecialLeaveRequestDto[]>([]);
+  const [changeRequests, setChangeRequests] = useState<ShiftChangeRequestDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [leaveStart, setLeaveStart] = useState("");
@@ -127,16 +134,28 @@ export default function MyShiftsTab({ spaceId, groupId }: MyShiftsTabProps) {
   const [reportingCannotAttend, setReportingCannotAttend] = useState(false);
   const [cannotAttendError, setCannotAttendError] = useState<string | null>(null);
 
+  const [changeDialogOpen, setChangeDialogOpen] = useState(false);
+  const [changeTarget, setChangeTarget] = useState<ShiftRequestDto | null>(null);
+  const [changeReason, setChangeReason] = useState("");
+  const [changeReasonError, setChangeReasonError] = useState<string | null>(null);
+  const [changeRequestedSlotId, setChangeRequestedSlotId] = useState("");
+  const [changeSlotOptions, setChangeSlotOptions] = useState<AvailableSlotDto[]>([]);
+  const [changeSlotsLoading, setChangeSlotsLoading] = useState(false);
+  const [submittingChange, setSubmittingChange] = useState(false);
+  const [changeError, setChangeError] = useState<string | null>(null);
+
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      const [response, leaveRequests] = await Promise.all([
+      const [response, leaveRequests, shiftChanges] = await Promise.all([
         getMyShiftRequests(spaceId, groupId),
         getMySpecialLeaveRequests(spaceId),
+        getMyShiftChangeRequests(spaceId, groupId),
       ]);
       setData(response);
       setSpecialLeaveRequests(leaveRequests);
+      setChangeRequests(shiftChanges);
     } catch (err) {
       const { message } = getSelfServiceErrorMessage(err);
       setError(message);
@@ -232,6 +251,71 @@ export default function MyShiftsTab({ spaceId, groupId }: MyShiftsTabProps) {
     }
   }
 
+  async function openChangeDialog(request: ShiftRequestDto) {
+    setChangeTarget(request);
+    setChangeReason("");
+    setChangeReasonError(null);
+    setChangeRequestedSlotId("");
+    setChangeSlotOptions([]);
+    setChangeError(null);
+    setChangeDialogOpen(true);
+    setChangeSlotsLoading(true);
+
+    try {
+      const slots = await getAvailableSlots(spaceId, groupId, "current");
+      setChangeSlotOptions(
+        slots.slots.filter(
+          (slot) => slot.id !== request.shiftSlotId && slot.currentFillCount < slot.capacity
+        )
+      );
+    } catch (err) {
+      const { message } = getSelfServiceErrorMessage(err);
+      setChangeError(message);
+    } finally {
+      setChangeSlotsLoading(false);
+    }
+  }
+
+  function closeChangeDialog() {
+    setChangeDialogOpen(false);
+    setChangeTarget(null);
+    setChangeReason("");
+    setChangeReasonError(null);
+    setChangeRequestedSlotId("");
+    setChangeSlotOptions([]);
+    setChangeError(null);
+  }
+
+  async function handleChangeConfirm() {
+    if (!changeTarget) return;
+
+    const validation = validateCancellationReason(changeReason);
+    if (!validation.valid) {
+      setChangeReasonError(validation.errorKey ?? null);
+      return;
+    }
+
+    setSubmittingChange(true);
+    setChangeError(null);
+
+    try {
+      await submitShiftChangeRequest(
+        spaceId,
+        groupId,
+        changeTarget.id,
+        changeReason.trim(),
+        changeRequestedSlotId || null
+      );
+      closeChangeDialog();
+      await fetchData();
+    } catch (err) {
+      const { message } = getSelfServiceErrorMessage(err);
+      setChangeError(message);
+    } finally {
+      setSubmittingChange(false);
+    }
+  }
+
   async function handleSubmitSpecialLeave() {
     setLeaveError(null);
     setLeaveSuccess(null);
@@ -284,6 +368,20 @@ export default function MyShiftsTab({ spaceId, groupId }: MyShiftsTabProps) {
     try {
       await cancelSpecialLeaveRequest(spaceId, requestId);
       setLeaveSuccess(t("specialLeaveCancelled"));
+      await fetchData();
+    } catch (err) {
+      const { message } = getSelfServiceErrorMessage(err);
+      setLeaveError(message);
+    }
+  }
+
+  async function handleCancelShiftChange(requestId: string) {
+    setLeaveError(null);
+    setLeaveSuccess(null);
+
+    try {
+      await cancelShiftChangeRequest(spaceId, groupId, requestId);
+      setLeaveSuccess(t("changeRequestCancelled"));
       await fetchData();
     } catch (err) {
       const { message } = getSelfServiceErrorMessage(err);
@@ -380,6 +478,27 @@ export default function MyShiftsTab({ spaceId, groupId }: MyShiftsTabProps) {
         )}
       </div>
 
+      <div className="bg-white border border-slate-200 rounded-xl px-4 py-4">
+        <div className="flex flex-col gap-1 mb-4">
+          <h3 className="text-sm font-semibold text-slate-900">{t("changeRequestsTitle")}</h3>
+          <p className="text-xs text-slate-500">{t("changeRequestsDescription")}</p>
+        </div>
+
+        {changeRequests.length === 0 ? (
+          <p className="text-xs text-slate-400">{t("changeRequestsEmpty")}</p>
+        ) : (
+          <div className="space-y-2">
+            {changeRequests.map((request) => (
+              <ShiftChangeCard
+                key={request.id}
+                request={request}
+                onCancel={handleCancelShiftChange}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+
       {/* Under-scheduled warning */}
       {isUnderScheduled && (
         <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
@@ -405,6 +524,7 @@ export default function MyShiftsTab({ spaceId, groupId }: MyShiftsTabProps) {
           cancellationCutoffHours={cancellationCutoffHours}
           onCancel={openCancelDialog}
           onCannotAttend={openCannotAttendDialog}
+          onChange={openChangeDialog}
         />
       )}
 
@@ -417,6 +537,7 @@ export default function MyShiftsTab({ spaceId, groupId }: MyShiftsTabProps) {
           cancellationCutoffHours={cancellationCutoffHours}
           onCancel={openCancelDialog}
           onCannotAttend={openCannotAttendDialog}
+          onChange={openChangeDialog}
         />
       )}
 
@@ -429,6 +550,7 @@ export default function MyShiftsTab({ spaceId, groupId }: MyShiftsTabProps) {
           cancellationCutoffHours={cancellationCutoffHours}
           onCancel={openCancelDialog}
           onCannotAttend={openCannotAttendDialog}
+          onChange={openChangeDialog}
         />
       )}
 
@@ -545,6 +667,79 @@ export default function MyShiftsTab({ spaceId, groupId }: MyShiftsTabProps) {
           </div>
         </div>
       </Modal>
+
+      <Modal
+        open={changeDialogOpen}
+        onClose={closeChangeDialog}
+        title={t("changeDialogTitle")}
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-slate-600">{t("changeDialogMessage")}</p>
+
+          <label className="block space-y-1">
+            <span className="text-xs font-medium text-slate-500">{t("changePreferredShift")}</span>
+            <select
+              value={changeRequestedSlotId}
+              onChange={(e) => setChangeRequestedSlotId(e.target.value)}
+              className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400 focus:border-transparent"
+              disabled={changeSlotsLoading}
+            >
+              <option value="">
+                {changeSlotsLoading ? t("changeSlotsLoading") : t("changeNoPreferredShift")}
+              </option>
+              {changeSlotOptions.map((slot) => (
+                <option key={slot.id} value={slot.id}>
+                  {formatSlotDate(slot.date)} {formatTime24h(slot.startTime)}-{formatTime24h(slot.endTime)} {slot.taskName}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <textarea
+            value={changeReason}
+            onChange={(e) => {
+              setChangeReason(e.target.value);
+              setChangeReasonError(null);
+            }}
+            placeholder={t("changeReasonPlaceholder")}
+            className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-sky-400 focus:border-transparent"
+            rows={3}
+            maxLength={500}
+            dir="rtl"
+          />
+
+          <div className="flex justify-between items-center">
+            <span className="text-xs text-slate-400">
+              {changeReason.trim().length} / 500
+            </span>
+          </div>
+
+          {changeReasonError && (
+            <p className="text-xs text-red-600">{changeReasonError}</p>
+          )}
+          {changeError && (
+            <p className="text-xs text-red-600">{changeError}</p>
+          )}
+
+          <div className="flex gap-3 justify-end">
+            <button
+              onClick={closeChangeDialog}
+              className="px-4 py-2 text-sm text-slate-600 hover:text-slate-800 border border-slate-200 rounded-lg transition-colors"
+              disabled={submittingChange}
+            >
+              {t("cancelDismiss")}
+            </button>
+            <MutationButton
+              onClick={handleChangeConfirm}
+              loading={submittingChange}
+              disabled={changeReason.trim().length === 0}
+              label={t("changeConfirm")}
+              loadingLabel={t("changeSubmitting")}
+              variant="primary"
+            />
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }
@@ -605,6 +800,47 @@ function SpecialLeaveCard({
   );
 }
 
+function ShiftChangeCard({
+  request,
+  onCancel,
+}: {
+  request: ShiftChangeRequestDto;
+  onCancel: (requestId: string) => void;
+}) {
+  const t = useTranslations("selfService.myShifts");
+  const style = STATUS_BADGE_STYLES[request.status];
+  const requestedLabel = request.requestedShiftSlotId && request.requestedSlotDate
+    ? `${formatSlotDate(request.requestedSlotDate)} ${formatTime24h(request.requestedSlotStartTime ?? "")}-${formatTime24h(request.requestedSlotEndTime ?? "")} ${request.requestedTaskName ?? ""}`
+    : t("changeFlexibleTarget");
+
+  return (
+    <div className="flex flex-col gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
+      <div className="min-w-0">
+        <p className="text-xs font-medium text-slate-800">
+          {formatSlotDate(request.originalSlotDate)} {formatTime24h(request.originalSlotStartTime)}-{formatTime24h(request.originalSlotEndTime)} - {request.originalTaskName}
+        </p>
+        <p className="mt-0.5 text-xs text-slate-500">{t("changeRequestedTo")}: {requestedLabel}</p>
+        <p className="mt-0.5 truncate text-xs text-slate-500">{request.reason}</p>
+      </div>
+      <div className="flex items-center gap-2">
+        <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-medium ${style.badge}`}>
+          <span className={`h-1.5 w-1.5 rounded-full ${style.dot}`} />
+          {t(request.status === "Approved" ? "approved" : request.status === "Pending" ? "pending" : request.status === "Rejected" ? "rejected" : "cancelled")}
+        </span>
+        {request.status === "Pending" && (
+          <button
+            type="button"
+            onClick={() => onCancel(request.id)}
+            className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-100"
+          >
+            {t("changeCancel")}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ── ShiftSection sub-component ─────────────────────────────────────────────
 
 interface ShiftSectionProps {
@@ -614,9 +850,10 @@ interface ShiftSectionProps {
   cancellationCutoffHours: number;
   onCancel: (request: ShiftRequestDto) => void;
   onCannotAttend: (request: ShiftRequestDto) => void;
+  onChange: (request: ShiftRequestDto) => void;
 }
 
-function ShiftSection({ title, requests, statusKey, cancellationCutoffHours, onCancel, onCannotAttend }: ShiftSectionProps) {
+function ShiftSection({ title, requests, statusKey, cancellationCutoffHours, onCancel, onCannotAttend, onChange }: ShiftSectionProps) {
   return (
     <div>
       <div className="flex items-center gap-2 mb-2">
@@ -633,6 +870,7 @@ function ShiftSection({ title, requests, statusKey, cancellationCutoffHours, onC
             cancellationCutoffHours={cancellationCutoffHours}
             onCancel={onCancel}
             onCannotAttend={onCannotAttend}
+            onChange={onChange}
           />
         ))}
       </div>
@@ -647,9 +885,10 @@ interface ShiftCardProps {
   cancellationCutoffHours: number;
   onCancel: (request: ShiftRequestDto) => void;
   onCannotAttend: (request: ShiftRequestDto) => void;
+  onChange: (request: ShiftRequestDto) => void;
 }
 
-function ShiftCard({ request, cancellationCutoffHours, onCancel, onCannotAttend }: ShiftCardProps) {
+function ShiftCard({ request, cancellationCutoffHours, onCancel, onCannotAttend, onChange }: ShiftCardProps) {
   const t = useTranslations("selfService.myShifts");
   const style = STATUS_BADGE_STYLES[request.status];
   const showCancelButton = canCancelShift(request, cancellationCutoffHours);
@@ -707,6 +946,14 @@ function ShiftCard({ request, cancellationCutoffHours, onCancel, onCannotAttend 
             className="text-xs text-red-600 hover:text-red-700 border border-red-200 bg-red-50 hover:bg-red-100 px-2.5 py-1 rounded-lg transition-colors"
           >
             {t("cancelButton")}
+          </button>
+        )}
+        {showCannotAttendButton && (
+          <button
+            onClick={() => onChange(request)}
+            className="text-xs text-sky-700 hover:text-sky-800 border border-sky-200 bg-sky-50 hover:bg-sky-100 px-2.5 py-1 rounded-lg transition-colors"
+          >
+            {t("changeButton")}
           </button>
         )}
         {showCannotAttendButton && (

@@ -174,6 +174,28 @@ export interface AbsenceReportDto {
   reviewedAt: string | null;
 }
 
+export interface ShiftChangeRequestDto {
+  id: string;
+  shiftRequestId: string;
+  personId: string;
+  personName: string;
+  originalShiftSlotId: string;
+  originalSlotDate: string;
+  originalSlotStartTime: string;
+  originalSlotEndTime: string;
+  originalTaskName: string;
+  requestedShiftSlotId: string | null;
+  requestedSlotDate: string | null;
+  requestedSlotStartTime: string | null;
+  requestedSlotEndTime: string | null;
+  requestedTaskName: string | null;
+  reason: string;
+  status: "Pending" | "Approved" | "Rejected" | "Cancelled";
+  requestedAt: string;
+  adminNote: string | null;
+  reviewedAt: string | null;
+}
+
 // ── Waitlist ─────────────────────────────────────────────────────────────────
 
 export interface WaitlistEntryDto {
@@ -444,6 +466,76 @@ export async function rejectAbsenceReport(
 ): Promise<void> {
   await apiClient.post(
     `/spaces/${spaceId}/groups/${groupId}/shift-requests/absence-reports/${absenceReportId}/reject`,
+    { adminNote: adminNote?.trim() || null }
+  );
+}
+
+export async function submitShiftChangeRequest(
+  spaceId: string,
+  groupId: string,
+  shiftRequestId: string,
+  reason: string,
+  requestedShiftSlotId?: string | null
+): Promise<{ id: string }> {
+  const { data } = await apiClient.post(
+    `/spaces/${spaceId}/groups/${groupId}/shift-change-requests`,
+    { shiftRequestId, requestedShiftSlotId: requestedShiftSlotId || null, reason }
+  );
+  return data;
+}
+
+export async function getMyShiftChangeRequests(
+  spaceId: string,
+  groupId: string
+): Promise<ShiftChangeRequestDto[]> {
+  const { data } = await apiClient.get(
+    `/spaces/${spaceId}/groups/${groupId}/shift-change-requests/mine`
+  );
+  return data;
+}
+
+export async function cancelShiftChangeRequest(
+  spaceId: string,
+  groupId: string,
+  changeRequestId: string
+): Promise<void> {
+  await apiClient.post(
+    `/spaces/${spaceId}/groups/${groupId}/shift-change-requests/${changeRequestId}/cancel`
+  );
+}
+
+export async function getShiftChangeRequests(
+  spaceId: string,
+  groupId: string,
+  status?: ShiftChangeRequestDto["status"]
+): Promise<ShiftChangeRequestDto[]> {
+  const { data } = await apiClient.get(
+    `/spaces/${spaceId}/groups/${groupId}/shift-change-requests/admin`,
+    { params: status ? { status } : undefined }
+  );
+  return data;
+}
+
+export async function approveShiftChangeRequest(
+  spaceId: string,
+  groupId: string,
+  changeRequestId: string,
+  adminNote?: string
+): Promise<void> {
+  await apiClient.post(
+    `/spaces/${spaceId}/groups/${groupId}/shift-change-requests/admin/${changeRequestId}/approve`,
+    { adminNote: adminNote?.trim() || null }
+  );
+}
+
+export async function rejectShiftChangeRequest(
+  spaceId: string,
+  groupId: string,
+  changeRequestId: string,
+  adminNote?: string
+): Promise<void> {
+  await apiClient.post(
+    `/spaces/${spaceId}/groups/${groupId}/shift-change-requests/admin/${changeRequestId}/reject`,
     { adminNote: adminNote?.trim() || null }
   );
 }

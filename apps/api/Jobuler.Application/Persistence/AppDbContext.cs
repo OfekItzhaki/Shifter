@@ -96,6 +96,7 @@ public class AppDbContext : DbContext
     public DbSet<ShiftSlot> ShiftSlots => Set<ShiftSlot>();
     public DbSet<ShiftRequest> ShiftRequests => Set<ShiftRequest>();
     public DbSet<ShiftAbsenceReport> ShiftAbsenceReports => Set<ShiftAbsenceReport>();
+    public DbSet<ShiftChangeRequest> ShiftChangeRequests => Set<ShiftChangeRequest>();
     public DbSet<WaitlistEntry> WaitlistEntries => Set<WaitlistEntry>();
     public DbSet<SwapRequest> SwapRequests => Set<SwapRequest>();
 

@@ -218,6 +218,171 @@ public class SelfServiceScopeTests
             .AcceptSwapAsync(default, default, default);
     }
 
+    [Fact]
+    public async Task SubmitShiftChange_ReturnsNotFound_WhenRequestedSlotIsOutsideRouteGroup()
+    {
+        using var db = CreateDb();
+        var services = CreateControllerServices();
+        var spaceId = Guid.NewGuid();
+        var routeGroup = Group.Create(spaceId, null, "Route Group");
+        var otherGroup = Group.Create(spaceId, null, "Other Group");
+        var userId = Guid.NewGuid();
+        var ownerUserId = Guid.NewGuid();
+        var person = Person.Create(spaceId, "Member", linkedUserId: userId);
+        var routeCycle = CreateCycle(spaceId, routeGroup.Id);
+        var otherCycle = CreateCycle(spaceId, otherGroup.Id);
+        var routeTask = CreateTask(spaceId, routeGroup.Id, "Route Task", ownerUserId);
+        var otherTask = CreateTask(spaceId, otherGroup.Id, "Other Task", ownerUserId);
+        var originalSlot = CreateSlot(spaceId, routeGroup.Id, routeTask.Id, routeCycle.Id, daysFromNow: 2);
+        var otherSlot = CreateSlot(spaceId, otherGroup.Id, otherTask.Id, otherCycle.Id, daysFromNow: 3);
+        var shiftRequest = ShiftRequest.Create(spaceId, originalSlot.Id, person.Id, routeGroup.Id, routeCycle.Id);
+        shiftRequest.Approve();
+        originalSlot.IncrementFillCount();
+
+        db.People.Add(person);
+        db.Groups.AddRange(routeGroup, otherGroup);
+        db.GroupMemberships.Add(GroupMembership.Create(spaceId, routeGroup.Id, person.Id));
+        db.SchedulingCycles.AddRange(routeCycle, otherCycle);
+        db.GroupTasks.AddRange(routeTask, otherTask);
+        db.ShiftSlots.AddRange(originalSlot, otherSlot);
+        db.ShiftRequests.Add(shiftRequest);
+        await db.SaveChangesAsync();
+
+        var controller = new ShiftChangeRequestsController(services.Permissions, db);
+        controller.ControllerContext = CreateControllerContext(userId);
+
+        var result = await controller.Submit(
+            spaceId,
+            routeGroup.Id,
+            new SubmitShiftChangeRequest(shiftRequest.Id, otherSlot.Id, "Need another shift"),
+            CancellationToken.None);
+
+        result.Should().BeOfType<NotFoundResult>();
+        (await db.ShiftChangeRequests.CountAsync()).Should().Be(0);
+    }
+
+    [Fact]
+    public async Task ApproveShiftChange_MovesApprovedShiftToRequestedSlot()
+    {
+        using var db = CreateDb();
+        var services = CreateControllerServices();
+        var spaceId = Guid.NewGuid();
+        var group = Group.Create(spaceId, null, "Route Group");
+        var userId = Guid.NewGuid();
+        var adminUserId = Guid.NewGuid();
+        var ownerUserId = Guid.NewGuid();
+        var person = Person.Create(spaceId, "Member", linkedUserId: userId);
+        var cycle = CreateCycle(spaceId, group.Id);
+        var task = CreateTask(spaceId, group.Id, "Task", ownerUserId);
+        var originalSlot = CreateSlot(spaceId, group.Id, task.Id, cycle.Id, daysFromNow: 2);
+        var requestedSlot = CreateSlot(spaceId, group.Id, task.Id, cycle.Id, daysFromNow: 3);
+        var shiftRequest = ShiftRequest.Create(spaceId, originalSlot.Id, person.Id, group.Id, cycle.Id);
+        shiftRequest.Approve();
+        originalSlot.IncrementFillCount();
+        var changeRequest = ShiftChangeRequest.Create(
+            spaceId,
+            group.Id,
+            cycle.Id,
+            shiftRequest.Id,
+            originalSlot.Id,
+            requestedSlot.Id,
+            person.Id,
+            "Can I move to the next day?",
+            DateTime.UtcNow);
+
+        db.People.Add(person);
+        db.Groups.Add(group);
+        db.GroupMemberships.Add(GroupMembership.Create(spaceId, group.Id, person.Id));
+        db.SchedulingCycles.Add(cycle);
+        db.GroupTasks.Add(task);
+        db.ShiftSlots.AddRange(originalSlot, requestedSlot);
+        db.ShiftRequests.Add(shiftRequest);
+        db.ShiftChangeRequests.Add(changeRequest);
+        await db.SaveChangesAsync();
+
+        services.Permissions
+            .RequirePermissionAsync(adminUserId, spaceId, Permissions.ConstraintsManage, Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+
+        var controller = new ShiftChangeRequestsController(services.Permissions, db);
+        controller.ControllerContext = CreateControllerContext(adminUserId);
+
+        var result = await controller.Approve(
+            spaceId,
+            group.Id,
+            changeRequest.Id,
+            new ReviewShiftChangeRequest("Approved"),
+            CancellationToken.None);
+
+        result.Should().BeOfType<NoContentResult>();
+
+        var updatedRequest = await db.ShiftRequests.SingleAsync(r => r.Id == shiftRequest.Id);
+        var updatedOriginalSlot = await db.ShiftSlots.SingleAsync(s => s.Id == originalSlot.Id);
+        var updatedRequestedSlot = await db.ShiftSlots.SingleAsync(s => s.Id == requestedSlot.Id);
+        var updatedChange = await db.ShiftChangeRequests.SingleAsync(r => r.Id == changeRequest.Id);
+
+        updatedRequest.ShiftSlotId.Should().Be(requestedSlot.Id);
+        updatedOriginalSlot.CurrentFillCount.Should().Be(0);
+        updatedRequestedSlot.CurrentFillCount.Should().Be(1);
+        updatedChange.Status.Should().Be(ShiftChangeRequestStatus.Approved);
+    }
+
+    [Fact]
+    public async Task ListShiftChangesForAdmin_ReturnsOriginalAndRequestedSlotDetails()
+    {
+        using var db = CreateDb();
+        var services = CreateControllerServices();
+        var spaceId = Guid.NewGuid();
+        var group = Group.Create(spaceId, null, "Route Group");
+        var adminUserId = Guid.NewGuid();
+        var ownerUserId = Guid.NewGuid();
+        var person = Person.Create(spaceId, "Member", displayName: "Display Member", linkedUserId: Guid.NewGuid());
+        var cycle = CreateCycle(spaceId, group.Id);
+        var task = CreateTask(spaceId, group.Id, "Task", ownerUserId);
+        var requestedTask = CreateTask(spaceId, group.Id, "Requested Task", ownerUserId);
+        var originalSlot = CreateSlot(spaceId, group.Id, task.Id, cycle.Id, daysFromNow: 2);
+        var requestedSlot = CreateSlot(spaceId, group.Id, requestedTask.Id, cycle.Id, daysFromNow: 3);
+        var shiftRequest = ShiftRequest.Create(spaceId, originalSlot.Id, person.Id, group.Id, cycle.Id);
+        shiftRequest.Approve();
+        originalSlot.IncrementFillCount();
+        var changeRequest = ShiftChangeRequest.Create(
+            spaceId,
+            group.Id,
+            cycle.Id,
+            shiftRequest.Id,
+            originalSlot.Id,
+            requestedSlot.Id,
+            person.Id,
+            "Can I move?",
+            DateTime.UtcNow);
+
+        db.People.Add(person);
+        db.Groups.Add(group);
+        db.GroupMemberships.Add(GroupMembership.Create(spaceId, group.Id, person.Id));
+        db.SchedulingCycles.Add(cycle);
+        db.GroupTasks.AddRange(task, requestedTask);
+        db.ShiftSlots.AddRange(originalSlot, requestedSlot);
+        db.ShiftRequests.Add(shiftRequest);
+        db.ShiftChangeRequests.Add(changeRequest);
+        await db.SaveChangesAsync();
+
+        services.Permissions
+            .RequirePermissionAsync(adminUserId, spaceId, Permissions.ConstraintsManage, Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+
+        var controller = new ShiftChangeRequestsController(services.Permissions, db);
+        controller.ControllerContext = CreateControllerContext(adminUserId);
+
+        var result = await controller.ListForAdmin(spaceId, group.Id, status: null, CancellationToken.None);
+
+        var ok = result.Should().BeOfType<OkObjectResult>().Subject;
+        var rows = ok.Value.Should().BeAssignableTo<IReadOnlyList<ShiftChangeRequestDto>>().Subject;
+        rows.Should().ContainSingle();
+        rows[0].PersonName.Should().Be("Display Member");
+        rows[0].OriginalTaskName.Should().Be("Task");
+        rows[0].RequestedTaskName.Should().Be("Requested Task");
+    }
+
     private static SchedulingCycle CreateCycle(Guid spaceId, Guid groupId)
     {
         var utcNow = DateTime.UtcNow;

@@ -4,9 +4,13 @@ import { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import {
   AbsenceReportDto,
+  ShiftChangeRequestDto,
   approveAbsenceReport,
+  approveShiftChangeRequest,
   getAbsenceReports,
+  getShiftChangeRequests,
   rejectAbsenceReport,
+  rejectShiftChangeRequest,
 } from "@/lib/api/selfService";
 import { getSelfServiceErrorMessage } from "@/lib/utils/selfServiceErrors";
 import { formatSlotDate, formatTime24h } from "@/lib/utils/selfServiceFormat";
@@ -19,26 +23,34 @@ interface Props {
   groupId: string;
 }
 
-const STATUS_STYLES: Record<AbsenceReportDto["status"], string> = {
+const STATUS_STYLES: Record<AbsenceReportDto["status"] | ShiftChangeRequestDto["status"], string> = {
   Pending: "border-amber-200 bg-amber-50 text-amber-700",
   Approved: "border-emerald-200 bg-emerald-50 text-emerald-700",
   Rejected: "border-red-200 bg-red-50 text-red-700",
+  Cancelled: "border-slate-200 bg-slate-50 text-slate-600",
 };
 
 export default function AbsenceReportsTab({ spaceId, groupId }: Props) {
   const t = useTranslations("selfService.absenceReports");
   const [reports, setReports] = useState<AbsenceReportDto[]>([]);
+  const [changeRequests, setChangeRequests] = useState<ShiftChangeRequestDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [adminNotes, setAdminNotes] = useState<Record<string, string>>({});
   const [actionLoading, setActionLoading] = useState<Record<string, "approve" | "reject">>({});
+  const [changeActionLoading, setChangeActionLoading] = useState<Record<string, "approve" | "reject">>({});
   const [actionError, setActionError] = useState<string | null>(null);
 
   const fetchReports = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      setReports(await getAbsenceReports(spaceId, groupId));
+      const [absenceRows, changeRows] = await Promise.all([
+        getAbsenceReports(spaceId, groupId),
+        getShiftChangeRequests(spaceId, groupId),
+      ]);
+      setReports(absenceRows);
+      setChangeRequests(changeRows);
     } catch (err) {
       const { message } = getSelfServiceErrorMessage(err);
       setError(message);
@@ -70,6 +82,30 @@ export default function AbsenceReportsTab({ spaceId, groupId }: Props) {
       setActionLoading((prev) => {
         const next = { ...prev };
         delete next[reportId];
+        return next;
+      });
+    }
+  }
+
+  async function reviewChange(changeRequestId: string, action: "approve" | "reject") {
+    setChangeActionLoading((prev) => ({ ...prev, [changeRequestId]: action }));
+    setActionError(null);
+
+    try {
+      const note = adminNotes[changeRequestId] ?? "";
+      if (action === "approve") {
+        await approveShiftChangeRequest(spaceId, groupId, changeRequestId, note);
+      } else {
+        await rejectShiftChangeRequest(spaceId, groupId, changeRequestId, note);
+      }
+      await fetchReports();
+    } catch (err) {
+      const { message } = getSelfServiceErrorMessage(err);
+      setActionError(message);
+    } finally {
+      setChangeActionLoading((prev) => {
+        const next = { ...prev };
+        delete next[changeRequestId];
         return next;
       });
     }
@@ -149,6 +185,75 @@ export default function AbsenceReportsTab({ spaceId, groupId }: Props) {
                         onClick={() => review(report.id, "reject")}
                         loading={actionLoading[report.id] === "reject"}
                         disabled={!!actionLoading[report.id]}
+                        label={t("reject")}
+                        loadingLabel={t("rejecting")}
+                        variant="danger"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="flex items-center justify-between pt-2">
+        <h2 className="text-sm font-semibold text-slate-700">{t("changeRequestsTitle")}</h2>
+      </div>
+
+      {changeRequests.length === 0 ? (
+        <div className="flex flex-col items-center justify-center rounded-xl border border-slate-200 bg-white py-12 text-center">
+          <p className="text-sm text-slate-400">{t("changeRequestsEmpty")}</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {changeRequests.map((request) => (
+            <div key={request.id} className="rounded-xl border border-slate-200 bg-white p-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="text-sm font-semibold text-slate-900">{request.personName}</p>
+                    <span className={`rounded-full border px-2 py-0.5 text-xs font-medium ${STATUS_STYLES[request.status]}`}>
+                      {t(`status${request.status}`)}
+                    </span>
+                  </div>
+                  <p className="mt-1 text-xs text-slate-500">
+                    {t("changeFrom")}: {formatSlotDate(request.originalSlotDate)} ֲ· {formatTime24h(request.originalSlotStartTime)}-{formatTime24h(request.originalSlotEndTime)} ֲ· {request.originalTaskName}
+                  </p>
+                  <p className="mt-1 text-xs text-slate-500">
+                    {t("changeTo")}: {request.requestedSlotDate
+                      ? `${formatSlotDate(request.requestedSlotDate)} ֲ· ${formatTime24h(request.requestedSlotStartTime ?? "")}-${formatTime24h(request.requestedSlotEndTime ?? "")} ֲ· ${request.requestedTaskName ?? ""}`
+                      : t("changeFlexibleTarget")}
+                  </p>
+                  <p className="mt-2 text-sm text-slate-700">{request.reason}</p>
+                  {request.adminNote && (
+                    <p className="mt-2 text-xs text-slate-500">{t("adminNote")}: {request.adminNote}</p>
+                  )}
+                </div>
+
+                {request.status === "Pending" && (
+                  <div className="w-full shrink-0 space-y-2 sm:w-64">
+                    <input
+                      value={adminNotes[request.id] ?? ""}
+                      onChange={(e) => setAdminNotes((prev) => ({ ...prev, [request.id]: e.target.value }))}
+                      maxLength={500}
+                      placeholder={t("adminNotePlaceholder")}
+                      className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-sky-400"
+                    />
+                    <div className="flex gap-2">
+                      <MutationButton
+                        onClick={() => reviewChange(request.id, "approve")}
+                        loading={changeActionLoading[request.id] === "approve"}
+                        disabled={!!changeActionLoading[request.id]}
+                        label={t("approve")}
+                        loadingLabel={t("approving")}
+                        variant="primary"
+                      />
+                      <MutationButton
+                        onClick={() => reviewChange(request.id, "reject")}
+                        loading={changeActionLoading[request.id] === "reject"}
+                        disabled={!!changeActionLoading[request.id]}
                         label={t("reject")}
                         loadingLabel={t("rejecting")}
                         variant="danger"

@@ -2003,7 +2003,23 @@
       "specialLeaveDateRequired": "Выберите время начала и окончания",
       "specialLeaveInvalidRange": "Время окончания должно быть позже времени начала",
       "specialLeaveReasonRequired": "Укажите короткую причину",
-      "specialLeaveReasonTooLong": "Причина должна быть не длиннее 500 символов"
+      "specialLeaveReasonTooLong": "Причина должна быть не длиннее 500 символов",
+      "changeButton": "Request change",
+      "changeDialogTitle": "Request Shift Change",
+      "changeDialogMessage": "Ask the admins to move this shift. You can choose a preferred open shift or leave it flexible.",
+      "changePreferredShift": "Preferred shift",
+      "changeSlotsLoading": "Loading shifts...",
+      "changeNoPreferredShift": "No preferred shift",
+      "changeReasonPlaceholder": "Why do you need to change this shift?",
+      "changeConfirm": "Send Change Request",
+      "changeSubmitting": "Sending...",
+      "changeRequestsTitle": "Shift change requests",
+      "changeRequestsDescription": "Track requests to move assigned shifts.",
+      "changeRequestsEmpty": "No change requests",
+      "changeFlexibleTarget": "Flexible replacement",
+      "changeRequestedTo": "Requested",
+      "changeCancel": "Cancel request",
+      "changeRequestCancelled": "Change request cancelled"
     },
     "waitlist": {
       "title": "Лист ожидания",
@@ -2069,7 +2085,13 @@
       "rejecting": "Отклонение...",
       "statusPending": "Ожидает",
       "statusApproved": "Одобрено",
-      "statusRejected": "Отклонено"
+      "statusRejected": "Отклонено",
+      "statusCancelled": "Cancelled",
+      "changeRequestsTitle": "Shift Change Requests",
+      "changeRequestsEmpty": "No shift change requests",
+      "changeFrom": "From",
+      "changeTo": "To",
+      "changeFlexibleTarget": "Flexible replacement"
     },
     "templates": {
       "title": "Шаблоны смен",

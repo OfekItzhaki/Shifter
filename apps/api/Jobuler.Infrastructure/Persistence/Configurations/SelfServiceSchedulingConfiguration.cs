@@ -183,6 +183,46 @@ public class ShiftAbsenceReportConfiguration : IEntityTypeConfiguration<ShiftAbs
     }
 }
 
+public class ShiftChangeRequestConfiguration : IEntityTypeConfiguration<ShiftChangeRequest>
+{
+    public void Configure(EntityTypeBuilder<ShiftChangeRequest> builder)
+    {
+        builder.ToTable("shift_change_requests");
+        builder.HasKey(r => r.Id);
+        builder.Property(r => r.Id).HasColumnName("id");
+        builder.Property(r => r.SpaceId).HasColumnName("space_id");
+        builder.Property(r => r.GroupId).HasColumnName("group_id");
+        builder.Property(r => r.SchedulingCycleId).HasColumnName("scheduling_cycle_id");
+        builder.Property(r => r.ShiftRequestId).HasColumnName("shift_request_id");
+        builder.Property(r => r.OriginalShiftSlotId).HasColumnName("original_shift_slot_id");
+        builder.Property(r => r.RequestedShiftSlotId).HasColumnName("requested_shift_slot_id");
+        builder.Property(r => r.PersonId).HasColumnName("person_id");
+        builder.Property(r => r.Reason).HasColumnName("reason").HasMaxLength(500);
+        builder.Property(r => r.Status).HasColumnName("status")
+            .HasConversion(v => v.ToString(), v => Enum.Parse<ShiftChangeRequestStatus>(v, true))
+            .HasDefaultValue(ShiftChangeRequestStatus.Pending);
+        builder.Property(r => r.RequestedAt).HasColumnName("requested_at");
+        builder.Property(r => r.ReviewedByUserId).HasColumnName("reviewed_by_user_id");
+        builder.Property(r => r.AdminNote).HasColumnName("admin_note").HasMaxLength(500);
+        builder.Property(r => r.ReviewedAt).HasColumnName("reviewed_at");
+        builder.Property(r => r.CreatedAt).HasColumnName("created_at");
+        builder.Property(r => r.UpdatedAt).HasColumnName("updated_at");
+
+        builder.HasIndex(r => new { r.PersonId, r.SchedulingCycleId, r.Status })
+            .HasDatabaseName("idx_shift_change_requests_person_cycle");
+
+        builder.HasIndex(r => new { r.GroupId, r.Status, r.RequestedAt })
+            .HasDatabaseName("idx_shift_change_requests_group_status");
+
+        builder.HasIndex(r => r.ShiftRequestId)
+            .HasFilter("status = 'Pending'")
+            .HasDatabaseName("idx_shift_change_requests_shift_request_pending");
+
+        builder.HasIndex(r => r.RequestedShiftSlotId)
+            .HasDatabaseName("idx_shift_change_requests_requested_slot");
+    }
+}
+
 public class WaitlistEntryConfiguration : IEntityTypeConfiguration<WaitlistEntry>
 {
     public void Configure(EntityTypeBuilder<WaitlistEntry> builder)

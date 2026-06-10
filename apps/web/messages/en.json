@@ -2003,7 +2003,23 @@
       "specialLeaveDateRequired": "Choose start and end times",
       "specialLeaveInvalidRange": "End time must be after start time",
       "specialLeaveReasonRequired": "Write a short reason",
-      "specialLeaveReasonTooLong": "Reason must be 500 characters or less"
+      "specialLeaveReasonTooLong": "Reason must be 500 characters or less",
+      "changeButton": "Request change",
+      "changeDialogTitle": "Request Shift Change",
+      "changeDialogMessage": "Ask the admins to move this shift. You can choose a preferred open shift or leave it flexible.",
+      "changePreferredShift": "Preferred shift",
+      "changeSlotsLoading": "Loading shifts...",
+      "changeNoPreferredShift": "No preferred shift",
+      "changeReasonPlaceholder": "Why do you need to change this shift?",
+      "changeConfirm": "Send Change Request",
+      "changeSubmitting": "Sending...",
+      "changeRequestsTitle": "Shift change requests",
+      "changeRequestsDescription": "Track requests to move assigned shifts.",
+      "changeRequestsEmpty": "No change requests",
+      "changeFlexibleTarget": "Flexible replacement",
+      "changeRequestedTo": "Requested",
+      "changeCancel": "Cancel request",
+      "changeRequestCancelled": "Change request cancelled"
     },
     "waitlist": {
       "title": "Waitlist",
@@ -2069,8 +2085,14 @@
       "rejecting": "Rejecting...",
       "statusPending": "Pending",
       "statusApproved": "Approved",
-      "statusRejected": "Rejected"
-    },
+        "statusRejected": "Rejected",
+        "statusCancelled": "Cancelled",
+        "changeRequestsTitle": "Shift Change Requests",
+        "changeRequestsEmpty": "No shift change requests",
+        "changeFrom": "From",
+        "changeTo": "To",
+        "changeFlexibleTarget": "Flexible replacement"
+      },
     "templates": {
       "title": "Shift Templates",
       "createButton": "Create Template",

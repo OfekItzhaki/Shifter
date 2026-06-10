@@ -2015,7 +2015,23 @@
       "specialLeaveDateRequired": "בחר זמן התחלה וסיום",
       "specialLeaveInvalidRange": "זמן הסיום חייב להיות אחרי זמן ההתחלה",
       "specialLeaveReasonRequired": "כתוב סיבה קצרה",
-      "specialLeaveReasonTooLong": "הסיבה חייבת להיות עד 500 תווים"
+      "specialLeaveReasonTooLong": "הסיבה חייבת להיות עד 500 תווים",
+      "changeButton": "בקש שינוי",
+      "changeDialogTitle": "בקשת שינוי משמרת",
+      "changeDialogMessage": "בקש מהמנהלים להעביר את המשמרת. אפשר לבחור משמרת פתוחה מועדפת או להשאיר את הבקשה גמישה.",
+      "changePreferredShift": "משמרת מועדפת",
+      "changeSlotsLoading": "טוען משמרות...",
+      "changeNoPreferredShift": "ללא משמרת מועדפת",
+      "changeReasonPlaceholder": "למה צריך לשנות את המשמרת?",
+      "changeConfirm": "שלח בקשת שינוי",
+      "changeSubmitting": "שולח...",
+      "changeRequestsTitle": "בקשות שינוי משמרת",
+      "changeRequestsDescription": "מעקב אחרי בקשות להעברת משמרות ששובצת אליהן.",
+      "changeRequestsEmpty": "אין בקשות שינוי",
+      "changeFlexibleTarget": "החלפה גמישה",
+      "changeRequestedTo": "מבוקש",
+      "changeCancel": "בטל בקשה",
+      "changeRequestCancelled": "בקשת השינוי בוטלה"
     },
     "waitlist": {
       "title": "רשימת המתנה",
@@ -2081,7 +2097,13 @@
       "rejecting": "דוחה...",
       "statusPending": "ממתין",
       "statusApproved": "אושר",
-      "statusRejected": "נדחה"
+      "statusRejected": "נדחה",
+      "statusCancelled": "בוטל",
+      "changeRequestsTitle": "בקשות שינוי משמרת",
+      "changeRequestsEmpty": "אין בקשות שינוי משמרת",
+      "changeFrom": "מ",
+      "changeTo": "אל",
+      "changeFlexibleTarget": "החלפה גמישה"
     },
     "templates": {
       "title": "תבניות משמרות",
