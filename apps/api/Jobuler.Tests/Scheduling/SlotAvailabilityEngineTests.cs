@@ -155,6 +155,27 @@ public class SlotAvailabilityEngineTests
     }
 
     [Fact]
+    public async Task GetAvailableSlotsAsync_ExcludesStartedSlots()
+    {
+        using var db = CreateDb();
+        var (spaceId, groupId, cycleId, taskId) = SeedBaseData(db);
+
+        var startedDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-1));
+        var futureDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(8));
+        var startedSlot = AddSlot(db, spaceId, groupId, taskId, cycleId, startedDate,
+            new TimeOnly(8, 0), new TimeOnly(16, 0));
+        var futureSlot = AddSlot(db, spaceId, groupId, taskId, cycleId, futureDate,
+            new TimeOnly(8, 0), new TimeOnly(16, 0));
+
+        var engine = new SlotAvailabilityEngine(db);
+        var result = await engine.GetAvailableSlotsAsync(Guid.NewGuid(), groupId, cycleId);
+
+        result.Slots.Select(s => s.ShiftSlotId).Should()
+            .Contain(futureSlot.Id)
+            .And.NotContain(startedSlot.Id);
+    }
+
+    [Fact]
     public async Task GetAvailableSlotsAsync_ExcludesSlotsWithMemberPendingOrApprovedRequest()
     {
         using var db = CreateDb();

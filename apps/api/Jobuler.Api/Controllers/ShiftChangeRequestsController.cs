@@ -102,6 +102,9 @@ public class ShiftChangeRequestsController : ControllerBase
 
             if (requestedSlot.SchedulingCycleId != shiftRequest.SchedulingCycleId)
                 return Rejected("Requested shift must be in the same scheduling cycle.");
+
+            if (HasShiftStarted(requestedSlot))
+                return Rejected("Requested shift has already started.");
         }
 
         var hasPendingChange = await _db.ShiftChangeRequests
@@ -228,7 +231,7 @@ public class ShiftChangeRequestsController : ControllerBase
             return BadRequest(new { error = "Invalid cycleId. Use a scheduling cycle id or 'current'." });
         }
 
-        var slots = await _db.ShiftSlots
+        var slots = (await _db.ShiftSlots
             .AsNoTracking()
             .Where(s => s.SpaceId == spaceId
                         && s.GroupId == groupId
@@ -246,9 +249,11 @@ public class ShiftChangeRequestsController : ControllerBase
                 s.CurrentFillCount,
                 s.SchedulingCycleId
             })
+            .ToListAsync(ct))
+            .Where(s => !HasShiftStarted(s.Date, s.StartTime))
             .OrderBy(s => s.Date)
             .ThenBy(s => s.StartTime)
-            .ToListAsync(ct);
+            .ToList();
 
         return Ok(slots);
     }
@@ -316,6 +321,9 @@ public class ShiftChangeRequestsController : ControllerBase
 
             if (requestedSlot.SchedulingCycleId != shiftRequest.SchedulingCycleId)
                 return Rejected("Requested shift must be in the same scheduling cycle.");
+
+            if (HasShiftStarted(requestedSlot))
+                return Rejected("Requested shift has already started.");
 
             if (!requestedSlot.HasAvailableCapacity())
                 return Rejected("Requested shift is already full.");
@@ -464,7 +472,10 @@ public class ShiftChangeRequestsController : ControllerBase
             typeSlug: "shift-change-request-rejected");
 
     private static bool HasShiftStarted(ShiftSlot slot) =>
-        slot.Date.ToDateTime(slot.StartTime, DateTimeKind.Utc) <= DateTime.UtcNow;
+        HasShiftStarted(slot.Date, slot.StartTime);
+
+    private static bool HasShiftStarted(DateOnly date, TimeOnly startTime) =>
+        date.ToDateTime(startTime, DateTimeKind.Utc) <= DateTime.UtcNow;
 
     private async Task NotifyAdminsChangeSubmittedAsync(ShiftChangeRequest changeRequest, CancellationToken ct)
     {

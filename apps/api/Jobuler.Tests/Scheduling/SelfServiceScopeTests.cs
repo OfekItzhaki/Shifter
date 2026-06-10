@@ -17,6 +17,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using NSubstitute;
 using System.Security.Claims;
+using System.Text.Json;
 using Xunit;
 
 namespace Jobuler.Tests.Scheduling;
@@ -365,6 +366,51 @@ public class SelfServiceScopeTests
     }
 
     [Fact]
+    public async Task SubmitShiftChange_Returns422_WhenRequestedShiftAlreadyStarted()
+    {
+        using var db = CreateDb();
+        var services = CreateControllerServices();
+        var spaceId = Guid.NewGuid();
+        var group = Group.Create(spaceId, null, "Route Group");
+        var userId = Guid.NewGuid();
+        var ownerUserId = Guid.NewGuid();
+        var person = Person.Create(spaceId, "Member", linkedUserId: userId);
+        var cycle = CreateCycle(spaceId, group.Id);
+        var task = CreateTask(spaceId, group.Id, "Task", ownerUserId);
+        var originalSlot = CreateSlot(spaceId, group.Id, task.Id, cycle.Id, daysFromNow: 3);
+        var requestedSlot = CreateSlot(spaceId, group.Id, task.Id, cycle.Id, daysFromNow: -1);
+        var shiftRequest = ShiftRequest.Create(spaceId, originalSlot.Id, person.Id, group.Id, cycle.Id);
+        shiftRequest.Approve();
+        originalSlot.IncrementFillCount();
+
+        db.People.Add(person);
+        db.Groups.Add(group);
+        db.GroupMemberships.Add(GroupMembership.Create(spaceId, group.Id, person.Id));
+        db.SchedulingCycles.Add(cycle);
+        db.GroupTasks.Add(task);
+        db.ShiftSlots.AddRange(originalSlot, requestedSlot);
+        db.ShiftRequests.Add(shiftRequest);
+        await db.SaveChangesAsync();
+
+        var controller = new ShiftChangeRequestsController(
+            services.Permissions,
+            services.NotificationService,
+            services.PushSender,
+            db);
+        controller.ControllerContext = CreateControllerContext(userId);
+
+        var result = await controller.Submit(
+            spaceId,
+            group.Id,
+            new SubmitShiftChangeRequest(shiftRequest.Id, requestedSlot.Id, "Too late"),
+            CancellationToken.None);
+
+        var problem = result.Should().BeAssignableTo<ObjectResult>().Subject;
+        problem.StatusCode.Should().Be(StatusCodes.Status422UnprocessableEntity);
+        (await db.ShiftChangeRequests.CountAsync()).Should().Be(0);
+    }
+
+    [Fact]
     public async Task ApproveShiftChange_MovesApprovedShiftToRequestedSlot()
     {
         using var db = CreateDb();
@@ -454,6 +500,77 @@ public class SelfServiceScopeTests
         var task = CreateTask(spaceId, group.Id, "Task", ownerUserId);
         var originalSlot = CreateSlot(spaceId, group.Id, task.Id, cycle.Id, daysFromNow: -1);
         var requestedSlot = CreateSlot(spaceId, group.Id, task.Id, cycle.Id, daysFromNow: 3);
+        var shiftRequest = ShiftRequest.Create(spaceId, originalSlot.Id, person.Id, group.Id, cycle.Id);
+        shiftRequest.Approve();
+        originalSlot.IncrementFillCount();
+        var changeRequest = ShiftChangeRequest.Create(
+            spaceId,
+            group.Id,
+            cycle.Id,
+            shiftRequest.Id,
+            originalSlot.Id,
+            requestedSlot.Id,
+            person.Id,
+            "Can I move this?",
+            DateTime.UtcNow);
+
+        db.People.Add(person);
+        db.Groups.Add(group);
+        db.GroupMemberships.Add(GroupMembership.Create(spaceId, group.Id, person.Id));
+        db.SchedulingCycles.Add(cycle);
+        db.GroupTasks.Add(task);
+        db.ShiftSlots.AddRange(originalSlot, requestedSlot);
+        db.ShiftRequests.Add(shiftRequest);
+        db.ShiftChangeRequests.Add(changeRequest);
+        await db.SaveChangesAsync();
+
+        services.Permissions
+            .RequirePermissionAsync(adminUserId, spaceId, Permissions.ConstraintsManage, Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+
+        var controller = new ShiftChangeRequestsController(
+            services.Permissions,
+            services.NotificationService,
+            services.PushSender,
+            db);
+        controller.ControllerContext = CreateControllerContext(adminUserId);
+
+        var result = await controller.Approve(
+            spaceId,
+            group.Id,
+            changeRequest.Id,
+            new ReviewShiftChangeRequest("Approved"),
+            CancellationToken.None);
+
+        var problem = result.Should().BeAssignableTo<ObjectResult>().Subject;
+        problem.StatusCode.Should().Be(StatusCodes.Status422UnprocessableEntity);
+
+        var updatedRequest = await db.ShiftRequests.SingleAsync(r => r.Id == shiftRequest.Id);
+        var updatedOriginalSlot = await db.ShiftSlots.SingleAsync(s => s.Id == originalSlot.Id);
+        var updatedRequestedSlot = await db.ShiftSlots.SingleAsync(s => s.Id == requestedSlot.Id);
+        var updatedChange = await db.ShiftChangeRequests.SingleAsync(r => r.Id == changeRequest.Id);
+
+        updatedRequest.ShiftSlotId.Should().Be(originalSlot.Id);
+        updatedOriginalSlot.CurrentFillCount.Should().Be(1);
+        updatedRequestedSlot.CurrentFillCount.Should().Be(0);
+        updatedChange.Status.Should().Be(ShiftChangeRequestStatus.Pending);
+    }
+
+    [Fact]
+    public async Task ApproveShiftChange_Returns422_WhenRequestedShiftAlreadyStarted()
+    {
+        using var db = CreateDb();
+        var services = CreateControllerServices();
+        var spaceId = Guid.NewGuid();
+        var group = Group.Create(spaceId, null, "Route Group");
+        var userId = Guid.NewGuid();
+        var adminUserId = Guid.NewGuid();
+        var ownerUserId = Guid.NewGuid();
+        var person = Person.Create(spaceId, "Member", linkedUserId: userId);
+        var cycle = CreateCycle(spaceId, group.Id);
+        var task = CreateTask(spaceId, group.Id, "Task", ownerUserId);
+        var originalSlot = CreateSlot(spaceId, group.Id, task.Id, cycle.Id, daysFromNow: 3);
+        var requestedSlot = CreateSlot(spaceId, group.Id, task.Id, cycle.Id, daysFromNow: -1);
         var shiftRequest = ShiftRequest.Create(spaceId, originalSlot.Id, person.Id, group.Id, cycle.Id);
         shiftRequest.Approve();
         originalSlot.IncrementFillCount();
@@ -706,6 +823,49 @@ public class SelfServiceScopeTests
         rows[0].PersonName.Should().Be("Display Member");
         rows[0].OriginalTaskName.Should().Be("Task");
         rows[0].RequestedTaskName.Should().Be("Requested Task");
+    }
+
+    [Fact]
+    public async Task ListTargetSlotsForAdmin_ExcludesStartedSlots()
+    {
+        using var db = CreateDb();
+        var services = CreateControllerServices();
+        var spaceId = Guid.NewGuid();
+        var group = Group.Create(spaceId, null, "Route Group");
+        var adminUserId = Guid.NewGuid();
+        var ownerUserId = Guid.NewGuid();
+        var cycle = CreateCycle(spaceId, group.Id);
+        var task = CreateTask(spaceId, group.Id, "Task", ownerUserId);
+        var startedSlot = CreateSlot(spaceId, group.Id, task.Id, cycle.Id, daysFromNow: -1);
+        var futureSlot = CreateSlot(spaceId, group.Id, task.Id, cycle.Id, daysFromNow: 3);
+
+        db.Groups.Add(group);
+        db.SchedulingCycles.Add(cycle);
+        db.GroupTasks.Add(task);
+        db.ShiftSlots.AddRange(startedSlot, futureSlot);
+        await db.SaveChangesAsync();
+
+        services.Permissions
+            .RequirePermissionAsync(adminUserId, spaceId, Permissions.ConstraintsManage, Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+
+        var controller = new ShiftChangeRequestsController(
+            services.Permissions,
+            services.NotificationService,
+            services.PushSender,
+            db);
+        controller.ControllerContext = CreateControllerContext(adminUserId);
+
+        var result = await controller.ListTargetSlotsForAdmin(
+            spaceId,
+            group.Id,
+            "current",
+            CancellationToken.None);
+
+        var ok = result.Should().BeOfType<OkObjectResult>().Subject;
+        var json = JsonSerializer.Serialize(ok.Value);
+        json.Should().Contain(futureSlot.Id.ToString());
+        json.Should().NotContain(startedSlot.Id.ToString());
     }
 
     [Fact]

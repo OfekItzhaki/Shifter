@@ -85,6 +85,9 @@ public class SlotAvailabilityEngine : ISlotAvailabilityEngine
         {
             var slot = item.Slot;
 
+            if (slot.Date.ToDateTime(slot.StartTime, DateTimeKind.Utc) <= utcNow)
+                continue;
+
             // Requirement 7.3: Exclude slots where the member already has a pending/approved request
             if (memberRequestedSlotIdSet.Contains(slot.Id))
                 continue;
