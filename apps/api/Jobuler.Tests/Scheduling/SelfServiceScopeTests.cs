@@ -248,7 +248,11 @@ public class SelfServiceScopeTests
         db.ShiftRequests.Add(shiftRequest);
         await db.SaveChangesAsync();
 
-        var controller = new ShiftChangeRequestsController(services.Permissions, db);
+        var controller = new ShiftChangeRequestsController(
+            services.Permissions,
+            services.NotificationService,
+            services.PushSender,
+            db);
         controller.ControllerContext = CreateControllerContext(userId);
 
         var result = await controller.Submit(
@@ -259,6 +263,60 @@ public class SelfServiceScopeTests
 
         result.Should().BeOfType<NotFoundResult>();
         (await db.ShiftChangeRequests.CountAsync()).Should().Be(0);
+        await services.NotificationService.DidNotReceiveWithAnyArgs()
+            .NotifySpaceAdminsAsync(default, default!, default!, default!, default, default, default);
+    }
+
+    [Fact]
+    public async Task SubmitShiftChange_NotifiesAdmins_WhenRequestIsCreated()
+    {
+        using var db = CreateDb();
+        var services = CreateControllerServices();
+        var spaceId = Guid.NewGuid();
+        var group = Group.Create(spaceId, null, "Route Group");
+        var userId = Guid.NewGuid();
+        var ownerUserId = Guid.NewGuid();
+        var person = Person.Create(spaceId, "Member", displayName: "Display Member", linkedUserId: userId);
+        var cycle = CreateCycle(spaceId, group.Id);
+        var task = CreateTask(spaceId, group.Id, "Task", ownerUserId);
+        var requestedTask = CreateTask(spaceId, group.Id, "Requested Task", ownerUserId);
+        var originalSlot = CreateSlot(spaceId, group.Id, task.Id, cycle.Id, daysFromNow: 2);
+        var requestedSlot = CreateSlot(spaceId, group.Id, requestedTask.Id, cycle.Id, daysFromNow: 3);
+        var shiftRequest = ShiftRequest.Create(spaceId, originalSlot.Id, person.Id, group.Id, cycle.Id);
+        shiftRequest.Approve();
+        originalSlot.IncrementFillCount();
+
+        db.People.Add(person);
+        db.Groups.Add(group);
+        db.GroupMemberships.Add(GroupMembership.Create(spaceId, group.Id, person.Id));
+        db.SchedulingCycles.Add(cycle);
+        db.GroupTasks.AddRange(task, requestedTask);
+        db.ShiftSlots.AddRange(originalSlot, requestedSlot);
+        db.ShiftRequests.Add(shiftRequest);
+        await db.SaveChangesAsync();
+
+        var controller = new ShiftChangeRequestsController(
+            services.Permissions,
+            services.NotificationService,
+            services.PushSender,
+            db);
+        controller.ControllerContext = CreateControllerContext(userId);
+
+        var result = await controller.Submit(
+            spaceId,
+            group.Id,
+            new SubmitShiftChangeRequest(shiftRequest.Id, requestedSlot.Id, "Need to move"),
+            CancellationToken.None);
+
+        result.Should().BeOfType<CreatedResult>();
+        await services.NotificationService.Received(1).NotifySpaceAdminsAsync(
+            spaceId,
+            "self_service.change_requested",
+            "Shift Change Requested",
+            Arg.Is<string>(body => body.Contains("Display Member") && body.Contains("Task")),
+            Arg.Is<string>(metadata => metadata.Contains("\"reason\":\"Need to move\"")),
+            group.Id,
+            Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -304,7 +362,11 @@ public class SelfServiceScopeTests
             .RequirePermissionAsync(adminUserId, spaceId, Permissions.ConstraintsManage, Arg.Any<CancellationToken>())
             .Returns(Task.CompletedTask);
 
-        var controller = new ShiftChangeRequestsController(services.Permissions, db);
+        var controller = new ShiftChangeRequestsController(
+            services.Permissions,
+            services.NotificationService,
+            services.PushSender,
+            db);
         controller.ControllerContext = CreateControllerContext(adminUserId);
 
         var result = await controller.Approve(
@@ -325,6 +387,11 @@ public class SelfServiceScopeTests
         updatedOriginalSlot.CurrentFillCount.Should().Be(0);
         updatedRequestedSlot.CurrentFillCount.Should().Be(1);
         updatedChange.Status.Should().Be(ShiftChangeRequestStatus.Approved);
+
+        var notification = await db.Notifications
+            .SingleAsync(n => n.EventType == "self_service.change_approved");
+        notification.UserId.Should().Be(userId);
+        notification.MetadataJson.Should().Contain(changeRequest.Id.ToString());
     }
 
     [Fact]
@@ -370,7 +437,11 @@ public class SelfServiceScopeTests
             .RequirePermissionAsync(adminUserId, spaceId, Permissions.ConstraintsManage, Arg.Any<CancellationToken>())
             .Returns(Task.CompletedTask);
 
-        var controller = new ShiftChangeRequestsController(services.Permissions, db);
+        var controller = new ShiftChangeRequestsController(
+            services.Permissions,
+            services.NotificationService,
+            services.PushSender,
+            db);
         controller.ControllerContext = CreateControllerContext(adminUserId);
 
         var result = await controller.ListForAdmin(spaceId, group.Id, status: null, CancellationToken.None);
@@ -445,6 +516,7 @@ public class SelfServiceScopeTests
         new(
             Substitute.For<IMediator>(),
             Substitute.For<IPermissionService>(),
+            Substitute.For<INotificationService>(),
             Substitute.For<IShiftRequestService>(),
             Substitute.For<IWaitlistService>(),
             Substitute.For<IShiftSwapService>(),
@@ -453,6 +525,7 @@ public class SelfServiceScopeTests
     private sealed record ControllerServices(
         IMediator Mediator,
         IPermissionService Permissions,
+        INotificationService NotificationService,
         IShiftRequestService ShiftRequestService,
         IWaitlistService WaitlistService,
         IShiftSwapService SwapService,

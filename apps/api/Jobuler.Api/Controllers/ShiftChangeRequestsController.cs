@@ -1,5 +1,7 @@
 using Jobuler.Api.Middleware;
 using Jobuler.Application.Common;
+using Jobuler.Application.Notifications;
+using Jobuler.Domain.Notifications;
 using Jobuler.Domain.Scheduling;
 using Jobuler.Domain.Spaces;
 using Jobuler.Infrastructure.Persistence;
@@ -7,6 +9,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
+using System.Text.Json;
 
 namespace Jobuler.Api.Controllers;
 
@@ -16,11 +19,19 @@ namespace Jobuler.Api.Controllers;
 public class ShiftChangeRequestsController : ControllerBase
 {
     private readonly IPermissionService _permissions;
+    private readonly INotificationService _notificationService;
+    private readonly IPushNotificationSender _pushSender;
     private readonly AppDbContext _db;
 
-    public ShiftChangeRequestsController(IPermissionService permissions, AppDbContext db)
+    public ShiftChangeRequestsController(
+        IPermissionService permissions,
+        INotificationService notificationService,
+        IPushNotificationSender pushSender,
+        AppDbContext db)
     {
         _permissions = permissions;
+        _notificationService = notificationService;
+        _pushSender = pushSender;
         _db = db;
     }
 
@@ -105,6 +116,7 @@ public class ShiftChangeRequestsController : ControllerBase
 
             _db.ShiftChangeRequests.Add(changeRequest);
             await _db.SaveChangesAsync(ct);
+            await NotifyAdminsChangeSubmittedAsync(changeRequest, ct);
 
             return Created("", new { id = changeRequest.Id });
         }
@@ -139,6 +151,7 @@ public class ShiftChangeRequestsController : ControllerBase
         {
             changeRequest.Cancel();
             await _db.SaveChangesAsync(ct);
+            await NotifyAdminsChangeCancelledAsync(changeRequest, ct);
             return NoContent();
         }
         catch (InvalidOperationException ex)
@@ -239,7 +252,9 @@ public class ShiftChangeRequestsController : ControllerBase
         try
         {
             changeRequest.Approve(CurrentUserId, req.AdminNote);
+            await AddMemberReviewNotificationAsync(changeRequest, approved: true, ct);
             await _db.SaveChangesAsync(ct);
+            await SendMemberReviewPushAsync(changeRequest, approved: true, ct);
             return NoContent();
         }
         catch (InvalidOperationException ex)
@@ -270,7 +285,9 @@ public class ShiftChangeRequestsController : ControllerBase
         try
         {
             changeRequest.Reject(CurrentUserId, req.AdminNote);
+            await AddMemberReviewNotificationAsync(changeRequest, approved: false, ct);
             await _db.SaveChangesAsync(ct);
+            await SendMemberReviewPushAsync(changeRequest, approved: false, ct);
             return NoContent();
         }
         catch (InvalidOperationException ex)
@@ -348,12 +365,171 @@ public class ShiftChangeRequestsController : ControllerBase
             detail: detail,
             typeSlug: "shift-change-request-rejected");
 
+    private async Task NotifyAdminsChangeSubmittedAsync(ShiftChangeRequest changeRequest, CancellationToken ct)
+    {
+        var detail = await GetChangeNotificationDetailAsync(changeRequest, ct);
+        if (detail is null)
+            return;
+
+        await _notificationService.NotifySpaceAdminsAsync(
+            changeRequest.SpaceId,
+            "self_service.change_requested",
+            "Shift Change Requested",
+            $"{detail.PersonName} requested a change for {detail.OriginalTaskName} on {detail.OriginalSlot.Date:MMM dd}.",
+            JsonSerializer.Serialize(new
+            {
+                changeRequestId = changeRequest.Id,
+                shiftRequestId = changeRequest.ShiftRequestId,
+                personId = changeRequest.PersonId,
+                personName = detail.PersonName,
+                groupId = changeRequest.GroupId,
+                originalShiftSlotId = changeRequest.OriginalShiftSlotId,
+                requestedShiftSlotId = changeRequest.RequestedShiftSlotId,
+                originalTaskName = detail.OriginalTaskName,
+                requestedTaskName = detail.RequestedTaskName,
+                reason = changeRequest.Reason
+            }),
+            changeRequest.GroupId,
+            ct);
+    }
+
+    private async Task NotifyAdminsChangeCancelledAsync(ShiftChangeRequest changeRequest, CancellationToken ct)
+    {
+        var detail = await GetChangeNotificationDetailAsync(changeRequest, ct);
+        if (detail is null)
+            return;
+
+        await _notificationService.NotifySpaceAdminsAsync(
+            changeRequest.SpaceId,
+            "self_service.change_cancelled",
+            "Shift Change Cancelled",
+            $"{detail.PersonName} cancelled a shift change request for {detail.OriginalTaskName} on {detail.OriginalSlot.Date:MMM dd}.",
+            JsonSerializer.Serialize(new
+            {
+                changeRequestId = changeRequest.Id,
+                shiftRequestId = changeRequest.ShiftRequestId,
+                personId = changeRequest.PersonId,
+                personName = detail.PersonName,
+                groupId = changeRequest.GroupId,
+                originalShiftSlotId = changeRequest.OriginalShiftSlotId,
+                requestedShiftSlotId = changeRequest.RequestedShiftSlotId
+            }),
+            changeRequest.GroupId,
+            ct);
+    }
+
+    private async Task AddMemberReviewNotificationAsync(
+        ShiftChangeRequest changeRequest,
+        bool approved,
+        CancellationToken ct)
+    {
+        var detail = await GetChangeNotificationDetailAsync(changeRequest, ct);
+        if (detail?.LinkedUserId is null)
+            return;
+
+        var title = approved ? "Shift Change Approved" : "Shift Change Rejected";
+        var body = approved
+            ? $"Your change request for {detail.OriginalTaskName} on {detail.OriginalSlot.Date:MMM dd} was approved."
+            : $"Your change request for {detail.OriginalTaskName} on {detail.OriginalSlot.Date:MMM dd} was rejected.";
+
+        _db.Notifications.Add(Notification.Create(
+            changeRequest.SpaceId,
+            detail.LinkedUserId.Value,
+            approved ? "self_service.change_approved" : "self_service.change_rejected",
+            title,
+            body,
+            JsonSerializer.Serialize(new
+            {
+                changeRequestId = changeRequest.Id,
+                shiftRequestId = changeRequest.ShiftRequestId,
+                groupId = changeRequest.GroupId,
+                originalShiftSlotId = changeRequest.OriginalShiftSlotId,
+                requestedShiftSlotId = changeRequest.RequestedShiftSlotId,
+                originalTaskName = detail.OriginalTaskName,
+                requestedTaskName = detail.RequestedTaskName,
+                adminNote = changeRequest.AdminNote,
+                reviewedAt = changeRequest.ReviewedAt
+            })));
+    }
+
+    private async Task SendMemberReviewPushAsync(
+        ShiftChangeRequest changeRequest,
+        bool approved,
+        CancellationToken ct)
+    {
+        var detail = await GetChangeNotificationDetailAsync(changeRequest, ct);
+        if (detail?.LinkedUserId is null)
+            return;
+
+        var title = approved ? "Shift Change Approved" : "Shift Change Rejected";
+        var body = approved
+            ? $"Your change request for {detail.OriginalTaskName} was approved."
+            : $"Your change request for {detail.OriginalTaskName} was rejected.";
+
+        try
+        {
+            await _pushSender.SendPushToUserAsync(
+                detail.LinkedUserId.Value,
+                changeRequest.SpaceId,
+                new PushPayload(title, body, "/favicon.jpeg", "/shifts"),
+                ct);
+        }
+        catch
+        {
+            // In-app notification is the source of truth; push failures must not affect review.
+        }
+    }
+
+    private async Task<ChangeNotificationDetail?> GetChangeNotificationDetailAsync(
+        ShiftChangeRequest changeRequest,
+        CancellationToken ct)
+    {
+        var person = await _db.People
+            .AsNoTracking()
+            .Where(p => p.Id == changeRequest.PersonId && p.SpaceId == changeRequest.SpaceId)
+            .Select(p => new { p.FullName, p.DisplayName, p.LinkedUserId })
+            .FirstOrDefaultAsync(ct);
+
+        var original = await _db.ShiftSlots
+            .AsNoTracking()
+            .Where(s => s.Id == changeRequest.OriginalShiftSlotId)
+            .Join(_db.GroupTasks.AsNoTracking(), s => s.GroupTaskId, t => t.Id, (s, t) => new { Slot = s, TaskName = t.Name })
+            .FirstOrDefaultAsync(ct);
+
+        if (person is null || original is null)
+            return null;
+
+        string? requestedTaskName = null;
+        if (changeRequest.RequestedShiftSlotId.HasValue)
+        {
+            requestedTaskName = await _db.ShiftSlots
+                .AsNoTracking()
+                .Where(s => s.Id == changeRequest.RequestedShiftSlotId.Value)
+                .Join(_db.GroupTasks.AsNoTracking(), s => s.GroupTaskId, t => t.Id, (_, t) => t.Name)
+                .FirstOrDefaultAsync(ct);
+        }
+
+        return new ChangeNotificationDetail(
+            person.DisplayName ?? person.FullName,
+            person.LinkedUserId,
+            original.Slot,
+            original.TaskName,
+            requestedTaskName);
+    }
+
     private sealed record ShiftChangeRequestRow(
         ShiftChangeRequest Change,
         string PersonName,
         ShiftSlot OriginalSlot,
         string OriginalTaskName,
         ShiftSlot? RequestedSlot,
+        string? RequestedTaskName);
+
+    private sealed record ChangeNotificationDetail(
+        string PersonName,
+        Guid? LinkedUserId,
+        ShiftSlot OriginalSlot,
+        string OriginalTaskName,
         string? RequestedTaskName);
 }
 
