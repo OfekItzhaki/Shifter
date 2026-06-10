@@ -88,6 +88,41 @@ describe("getSelfServiceErrorMessage", () => {
       expect(result.isI18nKey).toBe(true);
     });
 
+    it("maps absence, change, and special-leave rejection slugs to fallback keys", () => {
+      expect(getSelfServiceErrorMessage({
+        response: {
+          status: 400,
+          data: {
+            type: "https://api.shifter.co.il/errors/shift-absence-rejected",
+            title: "Bad Request",
+            status: 400,
+          },
+        },
+      }).message).toBe("selfService.errors.absenceRejected");
+
+      expect(getSelfServiceErrorMessage({
+        response: {
+          status: 400,
+          data: {
+            type: "https://api.shifter.co.il/errors/shift-change-request-rejected",
+            title: "Bad Request",
+            status: 400,
+          },
+        },
+      }).message).toBe("selfService.errors.changeRequestRejected");
+
+      expect(getSelfServiceErrorMessage({
+        response: {
+          status: 400,
+          data: {
+            type: "https://api.shifter.co.il/errors/special-leave-request-rejected",
+            title: "Bad Request",
+            status: 400,
+          },
+        },
+      }).message).toBe("selfService.errors.specialLeaveRejected");
+    });
+
     it("maps forbidden to the correct i18n key", () => {
       const error = {
         response: {
@@ -208,6 +243,9 @@ describe("getSelfServiceErrorMessage", () => {
 describe("getErrorI18nKey", () => {
   it("returns mapped key for known error codes", () => {
     expect(getErrorI18nKey("shift-request-rejected")).toBe("selfService.errors.requestRejected");
+    expect(getErrorI18nKey("shift-absence-rejected")).toBe("selfService.errors.absenceRejected");
+    expect(getErrorI18nKey("shift-change-request-rejected")).toBe("selfService.errors.changeRequestRejected");
+    expect(getErrorI18nKey("special-leave-request-rejected")).toBe("selfService.errors.specialLeaveRejected");
     expect(getErrorI18nKey("waitlist-rejected")).toBe("selfService.errors.waitlistRejected");
     expect(getErrorI18nKey("slot-full")).toBe("selfService.errors.slotFull");
     expect(getErrorI18nKey("max-shifts-reached")).toBe("selfService.errors.maxShiftsReached");

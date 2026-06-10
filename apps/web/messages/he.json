@@ -2192,6 +2192,9 @@
     "errors": {
       "generic": "אירעה שגיאה. נסה שוב.",
       "requestRejected": "הבקשה נדחתה",
+      "absenceRejected": "דיווח אי ההגעה נדחה",
+      "changeRequestRejected": "בקשת שינוי המשמרת נדחתה",
+      "specialLeaveRejected": "בקשת החופשה המיוחדת נדחתה",
       "slotFull": "המשמרת מלאה",
       "maxShiftsReached": "הגעת למקסימום המשמרות במחזור זה",
       "waitlistRejected": "לא ניתן להצטרף לרשימת ההמתנה",

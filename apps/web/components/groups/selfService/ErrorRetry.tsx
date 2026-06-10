@@ -16,7 +16,9 @@ export interface ErrorRetryProps {
 export default function ErrorRetry({ message, onRetry }: ErrorRetryProps) {
   const t = useTranslations("selfService");
 
-  const displayMessage = message || t("error");
+  const displayMessage = message?.startsWith("selfService.")
+    ? t(message.replace(/^selfService\./, ""))
+    : message || t("error");
 
   return (
     <div className="flex flex-col items-center justify-center py-16 bg-white rounded-xl border border-slate-200">

@@ -15,6 +15,9 @@
  */
 const ERROR_CODE_MAP: Record<string, string> = {
   "shift-request-rejected": "selfService.errors.requestRejected",
+  "shift-absence-rejected": "selfService.errors.absenceRejected",
+  "shift-change-request-rejected": "selfService.errors.changeRequestRejected",
+  "special-leave-request-rejected": "selfService.errors.specialLeaveRejected",
   "waitlist-rejected": "selfService.errors.waitlistRejected",
   "slot-full": "selfService.errors.slotFull",
   "max-shifts-reached": "selfService.errors.maxShiftsReached",

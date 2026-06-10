@@ -2180,6 +2180,9 @@
     "errors": {
       "generic": "An error occurred. Please try again.",
       "requestRejected": "Request rejected",
+      "absenceRejected": "Absence report rejected",
+      "changeRequestRejected": "Shift change request rejected",
+      "specialLeaveRejected": "Special leave request rejected",
       "slotFull": "Shift is full",
       "maxShiftsReached": "You have reached the maximum shifts for this cycle",
       "waitlistRejected": "Could not join the waitlist",
