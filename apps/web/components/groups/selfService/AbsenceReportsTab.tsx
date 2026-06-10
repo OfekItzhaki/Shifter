@@ -29,7 +29,6 @@ import MutationButton from "./MutationButton";
 interface Props {
   spaceId: string;
   groupId: string;
-  memberIds: string[];
 }
 
 const STATUS_STYLES: Record<AbsenceReportDto["status"] | ShiftChangeRequestDto["status"] | SpecialLeaveRequestDto["status"], string> = {
@@ -52,7 +51,7 @@ function countPending(items: { status: string }[]): number {
   return items.filter((item) => item.status === "Pending").length;
 }
 
-export default function AbsenceReportsTab({ spaceId, groupId, memberIds }: Props) {
+export default function AbsenceReportsTab({ spaceId, groupId }: Props) {
   const t = useTranslations("selfService.absenceReports");
   const [reports, setReports] = useState<AbsenceReportDto[]>([]);
   const [changeRequests, setChangeRequests] = useState<ShiftChangeRequestDto[]>([]);
@@ -75,12 +74,11 @@ export default function AbsenceReportsTab({ spaceId, groupId, memberIds }: Props
         getAbsenceReports(spaceId, groupId),
         getShiftChangeRequests(spaceId, groupId),
         getShiftChangeTargetSlots(spaceId, groupId, "current"),
-        getAdminSpecialLeaveRequests(spaceId, "Pending"),
+        getAdminSpecialLeaveRequests(spaceId, "Pending", undefined, undefined, groupId),
       ]);
       setReports(absenceRows);
       setChangeRequests(changeRows);
-      const groupMemberIds = new Set(memberIds);
-      setLeaveRequests(leaveRows.filter((request) => groupMemberIds.has(request.personId)));
+      setLeaveRequests(leaveRows);
       setChangeSlotOptions(targetSlots);
       setChangeTargetSlots((prev) => {
         const next = { ...prev };
@@ -101,7 +99,7 @@ export default function AbsenceReportsTab({ spaceId, groupId, memberIds }: Props
     } finally {
       setLoading(false);
     }
-  }, [spaceId, groupId, memberIds]);
+  }, [spaceId, groupId]);
 
   useEffect(() => {
     void Promise.resolve().then(fetchReports);

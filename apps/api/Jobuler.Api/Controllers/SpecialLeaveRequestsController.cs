@@ -85,10 +85,11 @@ public class SpecialLeaveRequestsController : ControllerBase
         [FromQuery] string? status,
         [FromQuery] DateTime? from,
         [FromQuery] DateTime? to,
+        [FromQuery] Guid? groupId,
         CancellationToken ct)
     {
         await _permissions.RequirePermissionAsync(CurrentUserId, spaceId, Permissions.PeopleManage, ct);
-        return Ok(await _mediator.Send(new GetSpecialLeaveRequestsForAdminQuery(spaceId, status, from, to), ct));
+        return Ok(await _mediator.Send(new GetSpecialLeaveRequestsForAdminQuery(spaceId, status, from, to, groupId), ct));
     }
 
     [HttpPost("admin/{requestId:guid}/approve")]

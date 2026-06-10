@@ -1751,11 +1751,7 @@ export default function GroupDetailPage() {
           )}
 
           {activeTab === "absence-reports" && currentSpaceId && (
-            <AbsenceReportsTab
-              spaceId={currentSpaceId}
-              groupId={groupId}
-              memberIds={members.map((member) => member.personId)}
-            />
+            <AbsenceReportsTab spaceId={currentSpaceId} groupId={groupId} />
           )}
 
           {activeTab === "admin-overrides" && currentSpaceId && (

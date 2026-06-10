@@ -60,11 +60,12 @@ export async function getAdminSpecialLeaveRequests(
   spaceId: string,
   status?: SpecialLeaveStatus,
   from?: string,
-  to?: string
+  to?: string,
+  groupId?: string
 ): Promise<SpecialLeaveRequestDto[]> {
   const { data } = await apiClient.get(
     `/spaces/${spaceId}/special-leave-requests/admin`,
-    { params: { status, from, to } }
+    { params: { status, from, to, groupId } }
   );
   return data;
 }

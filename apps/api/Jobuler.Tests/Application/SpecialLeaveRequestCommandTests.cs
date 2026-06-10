@@ -3,6 +3,7 @@ using Jobuler.Application.Common;
 using Jobuler.Application.Notifications;
 using Jobuler.Application.People.SpecialLeave;
 using Jobuler.Application.Scheduling;
+using Jobuler.Domain.Groups;
 using Jobuler.Domain.People;
 using Jobuler.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -174,5 +175,42 @@ public class SpecialLeaveRequestCommandTests
         result[0].PersonName.Should().Be("Ofek L.");
         result[0].Reason.Should().Be("Family event");
         result[0].Status.Should().Be(nameof(SpecialLeaveRequestStatus.Pending));
+    }
+
+    [Fact]
+    public async Task GetAdminRequests_WithGroupId_ReturnsOnlyGroupMembers()
+    {
+        await using var db = CreateDb();
+        var spaceId = Guid.NewGuid();
+        var group = Group.Create(spaceId, null, "Route Group");
+        var otherGroup = Group.Create(spaceId, null, "Other Group");
+        var memberUserId = Guid.NewGuid();
+        var otherMemberUserId = Guid.NewGuid();
+        var member = Person.Create(spaceId, "Member", linkedUserId: memberUserId);
+        var otherMember = Person.Create(spaceId, "Other Member", linkedUserId: otherMemberUserId);
+        var start = DateTime.UtcNow.AddDays(3);
+        var request = SpecialLeaveRequest.Create(
+            spaceId, member.Id, start, start.AddDays(1), "Family event", memberUserId);
+        var otherRequest = SpecialLeaveRequest.Create(
+            spaceId, otherMember.Id, start, start.AddDays(1), "Other event", otherMemberUserId);
+
+        db.Groups.AddRange(group, otherGroup);
+        db.People.AddRange(member, otherMember);
+        db.GroupMemberships.AddRange(
+            GroupMembership.Create(spaceId, group.Id, member.Id),
+            GroupMembership.Create(spaceId, otherGroup.Id, otherMember.Id));
+        db.SpecialLeaveRequests.AddRange(request, otherRequest);
+        await db.SaveChangesAsync();
+
+        var handler = new GetSpecialLeaveRequestsForAdminQueryHandler(db);
+
+        var result = await handler.Handle(new GetSpecialLeaveRequestsForAdminQuery(
+            spaceId,
+            Status: nameof(SpecialLeaveRequestStatus.Pending),
+            GroupId: group.Id), CancellationToken.None);
+
+        result.Should().ContainSingle();
+        result[0].Id.Should().Be(request.Id);
+        result[0].PersonId.Should().Be(member.Id);
     }
 }

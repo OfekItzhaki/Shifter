@@ -53,7 +53,8 @@ public record GetSpecialLeaveRequestsForAdminQuery(
     Guid SpaceId,
     string? Status = null,
     DateTime? From = null,
-    DateTime? To = null) : IRequest<IReadOnlyList<SpecialLeaveRequestDto>>;
+    DateTime? To = null,
+    Guid? GroupId = null) : IRequest<IReadOnlyList<SpecialLeaveRequestDto>>;
 
 public class GetSpecialLeaveRequestsForAdminQueryHandler
     : IRequestHandler<GetSpecialLeaveRequestsForAdminQuery, IReadOnlyList<SpecialLeaveRequestDto>>
@@ -69,6 +70,16 @@ public class GetSpecialLeaveRequestsForAdminQueryHandler
         var query = _db.SpecialLeaveRequests.AsNoTracking()
             .Where(r => r.SpaceId == req.SpaceId)
             .ApplyWindow(req.From, req.To);
+
+        if (req.GroupId.HasValue)
+        {
+            var memberPersonIds = _db.GroupMemberships
+                .AsNoTracking()
+                .Where(m => m.SpaceId == req.SpaceId && m.GroupId == req.GroupId.Value)
+                .Select(m => m.PersonId);
+
+            query = query.Where(r => memberPersonIds.Contains(r.PersonId));
+        }
 
         if (!string.IsNullOrWhiteSpace(req.Status))
         {
