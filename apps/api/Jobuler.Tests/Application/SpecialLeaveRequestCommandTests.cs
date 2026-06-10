@@ -248,6 +248,44 @@ public class SpecialLeaveRequestCommandTests
     }
 
     [Fact]
+    public async Task Cancel_ApprovedRequest_IsRejectedWithoutNotificationsOrAudit()
+    {
+        await using var db = CreateDb();
+        var spaceId = Guid.NewGuid();
+        var userId = Guid.NewGuid();
+        var adminId = Guid.NewGuid();
+        var presenceWindowId = Guid.NewGuid();
+        var person = Person.Create(spaceId, "Ofek", linkedUserId: userId);
+        var start = DateTime.UtcNow.AddDays(3);
+        var request = SpecialLeaveRequest.Create(
+            spaceId, person.Id, start, start.AddDays(1), "Family event", userId);
+        request.Approve(adminId, presenceWindowId, "approved");
+
+        db.People.Add(person);
+        db.SpecialLeaveRequests.Add(request);
+        await db.SaveChangesAsync();
+
+        var notifications = Substitute.For<INotificationService>();
+        var audit = CreateAuditLogger();
+        var handler = new CancelSpecialLeaveRequestCommandHandler(db, notifications, audit);
+
+        var act = () => handler.Handle(new CancelSpecialLeaveRequestCommand(
+            spaceId, request.Id, person.Id), CancellationToken.None);
+
+        await act.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("Only pending special leave requests can be changed.");
+
+        var unchangedRequest = await db.SpecialLeaveRequests.SingleAsync(r => r.Id == request.Id);
+        unchangedRequest.Status.Should().Be(SpecialLeaveRequestStatus.Approved);
+        unchangedRequest.PresenceWindowId.Should().Be(presenceWindowId);
+
+        await notifications.DidNotReceiveWithAnyArgs()
+            .NotifySpaceAdminsAsync(default, default!, default!, default!, default!, default, default);
+        await audit.DidNotReceiveWithAnyArgs()
+            .LogAsync(default, default, default!, default, default, default, default, default, default);
+    }
+
+    [Fact]
     public async Task GetMyRequests_ReturnsProjectedRequestsForLinkedPerson()
     {
         await using var db = CreateDb();
