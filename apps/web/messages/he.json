@@ -2041,7 +2041,19 @@
       "absenceReportsDescription": "??????? ??????? ?????? ?????? ???: {used} / {max}.",
       "absenceReportsEmpty": "??? ?????? ?? ????",
       "absenceLate": "?????",
-      "absenceAdminNote": "???? ????"
+      "absenceAdminNote": "???? ????",
+      "summaryTitle": "My self-service status",
+      "summaryDescription": "A quick view of your shift count, pending requests, waitlist state, and next shift.",
+      "summaryPickShifts": "Pick more shifts",
+      "summaryMinimumLabel": "Minimum shifts",
+      "summaryMinimumValue": "{current}/{min} required ? {max} max",
+      "summaryRequestsLabel": "Pending requests",
+      "summaryRequestsValue": "Leave {leave} ? Changes {changes} ? Absences {absences}",
+      "summaryWaitlistLabel": "Waitlist",
+      "summaryWaitlistValue": "{offered} offer(s) ? {waiting} waiting",
+      "summaryOpenWaitlist": "Open waitlist",
+      "summaryNextShiftLabel": "Next shift",
+      "summaryNoNextShift": "No upcoming approved shift"
     },
     "waitlist": {
       "title": "רשימת המתנה",

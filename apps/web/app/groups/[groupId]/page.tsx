@@ -1731,7 +1731,7 @@ export default function GroupDetailPage() {
           )}
 
           {activeTab === "my-shifts" && currentSpaceId && (
-            <MyShiftsTab spaceId={currentSpaceId} groupId={groupId} />
+            <MyShiftsTab spaceId={currentSpaceId} groupId={groupId} onNavigate={setActiveTab} />
           )}
 
           {activeTab === "waitlist" && currentSpaceId && (

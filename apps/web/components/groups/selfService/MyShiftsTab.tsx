@@ -11,9 +11,11 @@ import {
   getMyAbsenceReports,
   getMyShiftChangeRequests,
   getMyShiftRequests,
+  getMyWaitlistEntries,
   cancelShiftRequest,
   reportCannotAttend,
   submitShiftChangeRequest,
+  WaitlistEntryDto,
   ShiftRequestDto,
   MyShiftsResponse,
 } from "@/lib/api/selfService";
@@ -34,6 +36,7 @@ import MutationButton from "./MutationButton";
 interface MyShiftsTabProps {
   spaceId: string;
   groupId: string;
+  onNavigate?: (tab: "available-slots" | "waitlist") => void;
 }
 
 /** Status badge color configuration */
@@ -106,13 +109,14 @@ function isFutureApprovedShift(request: ShiftRequestDto): boolean {
   return !isNaN(shiftStart.getTime()) && shiftStart.getTime() > Date.now();
 }
 
-export default function MyShiftsTab({ spaceId, groupId }: MyShiftsTabProps) {
+export default function MyShiftsTab({ spaceId, groupId, onNavigate }: MyShiftsTabProps) {
   const t = useTranslations("selfService.myShifts");
 
   const [data, setData] = useState<MyShiftsResponse | null>(null);
   const [specialLeaveRequests, setSpecialLeaveRequests] = useState<SpecialLeaveRequestDto[]>([]);
   const [changeRequests, setChangeRequests] = useState<ShiftChangeRequestDto[]>([]);
   const [absenceReports, setAbsenceReports] = useState<AbsenceReportDto[]>([]);
+  const [waitlistEntries, setWaitlistEntries] = useState<WaitlistEntryDto[]>([]);
   const [lateReportsUsed, setLateReportsUsed] = useState(0);
   const [maxLateReports, setMaxLateReports] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -154,16 +158,18 @@ export default function MyShiftsTab({ spaceId, groupId }: MyShiftsTabProps) {
     try {
       setLoading(true);
       setError(null);
-      const [response, leaveRequests, shiftChanges, absenceResponse] = await Promise.all([
+      const [response, leaveRequests, shiftChanges, absenceResponse, waitlistResponse] = await Promise.all([
         getMyShiftRequests(spaceId, groupId),
         getMySpecialLeaveRequests(spaceId),
         getMyShiftChangeRequests(spaceId, groupId),
         getMyAbsenceReports(spaceId, groupId),
+        getMyWaitlistEntries(spaceId, groupId),
       ]);
       setData(response);
       setSpecialLeaveRequests(leaveRequests);
       setChangeRequests(shiftChanges);
       setAbsenceReports(absenceResponse.reports);
+      setWaitlistEntries(waitlistResponse);
       setLateReportsUsed(absenceResponse.lateReportsUsed);
       setMaxLateReports(absenceResponse.maxLateReports);
     } catch (err) {
@@ -425,11 +431,77 @@ export default function MyShiftsTab({ spaceId, groupId }: MyShiftsTabProps) {
   const { approved, pending, cancelled } = groupByStatus(data.requests);
   const { currentShiftCount, minShiftsPerCycle, maxShiftsPerCycle, cancellationCutoffHours } = data;
   const isUnderScheduled = currentShiftCount < minShiftsPerCycle;
+  const pendingLeaveCount = specialLeaveRequests.filter((request) => request.status === "Pending").length;
+  const pendingChangeCount = changeRequests.filter((request) => request.status === "Pending").length;
+  const pendingAbsenceCount = absenceReports.filter((report) => report.status === "Pending").length;
+  const waitlistOfferCount = waitlistEntries.filter((entry) => entry.status === "Offered").length;
+  const waitingCount = waitlistEntries.filter((entry) => entry.status === "Waiting").length;
+  const nextShift = [...approved]
+    .filter(isFutureApprovedShift)
+    .sort((a, b) =>
+      `${a.slotDate}T${a.slotStartTime}`.localeCompare(`${b.slotDate}T${b.slotStartTime}`)
+    )[0] ?? null;
 
   // ── Render ───────────────────────────────────────────────────────────────
 
   return (
     <div className="space-y-4">
+      <div className="rounded-xl border border-slate-200 bg-white p-4">
+        <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h3 className="text-sm font-semibold text-slate-900">{t("summaryTitle")}</h3>
+            <p className="text-xs text-slate-500">{t("summaryDescription")}</p>
+          </div>
+          {isUnderScheduled && onNavigate && (
+            <button
+              type="button"
+              onClick={() => onNavigate("available-slots")}
+              className="mt-2 inline-flex w-fit rounded-lg bg-sky-600 px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-sky-700 sm:mt-0"
+            >
+              {t("summaryPickShifts")}
+            </button>
+          )}
+        </div>
+
+        <div className="mt-4 grid gap-2 md:grid-cols-2 xl:grid-cols-4">
+          <SummaryCard
+            label={t("summaryMinimumLabel")}
+            value={t("summaryMinimumValue", {
+              current: currentShiftCount,
+              min: minShiftsPerCycle,
+              max: maxShiftsPerCycle,
+            })}
+            tone={isUnderScheduled ? "warning" : "ok"}
+          />
+          <SummaryCard
+            label={t("summaryRequestsLabel")}
+            value={t("summaryRequestsValue", {
+              leave: pendingLeaveCount,
+              changes: pendingChangeCount,
+              absences: pendingAbsenceCount,
+            })}
+            tone={pendingLeaveCount + pendingChangeCount + pendingAbsenceCount > 0 ? "warning" : "default"}
+          />
+          <SummaryCard
+            label={t("summaryWaitlistLabel")}
+            value={t("summaryWaitlistValue", {
+              offered: waitlistOfferCount,
+              waiting: waitingCount,
+            })}
+            tone={waitlistOfferCount > 0 ? "danger" : waitingCount > 0 ? "warning" : "default"}
+            onClick={onNavigate && waitlistEntries.length > 0 ? () => onNavigate("waitlist") : undefined}
+            actionLabel={waitlistEntries.length > 0 ? t("summaryOpenWaitlist") : undefined}
+          />
+          <SummaryCard
+            label={t("summaryNextShiftLabel")}
+            value={nextShift
+              ? `${formatSlotDate(nextShift.slotDate)} ${formatTime24h(nextShift.slotStartTime)}-${formatTime24h(nextShift.slotEndTime)}`
+              : t("summaryNoNextShift")}
+            tone={nextShift ? "default" : "warning"}
+          />
+        </div>
+      </div>
+
       {/* Shift count indicator */}
       <div className="flex items-center justify-between bg-white border border-slate-200 rounded-xl px-4 py-3">
         <span className="text-sm font-medium text-slate-700">
@@ -797,6 +869,55 @@ function formatSpecialLeaveDate(value: string): string {
     hour: "2-digit",
     minute: "2-digit",
   });
+}
+
+function SummaryCard({
+  label,
+  value,
+  tone = "default",
+  actionLabel,
+  onClick,
+}: {
+  label: string;
+  value: string;
+  tone?: "default" | "ok" | "warning" | "danger";
+  actionLabel?: string;
+  onClick?: () => void;
+}) {
+  const toneClass =
+    tone === "danger"
+      ? "border-red-200 bg-red-50 text-red-900"
+      : tone === "warning"
+        ? "border-amber-200 bg-amber-50 text-amber-900"
+        : tone === "ok"
+          ? "border-emerald-200 bg-emerald-50 text-emerald-900"
+          : "border-slate-200 bg-slate-50 text-slate-900";
+
+  const content = (
+    <>
+      <div className="text-xs font-medium text-slate-500">{label}</div>
+      <div className="mt-1 text-sm font-semibold">{value}</div>
+      {actionLabel && <div className="mt-2 text-xs font-medium text-sky-700">{actionLabel}</div>}
+    </>
+  );
+
+  if (onClick) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        className={`rounded-lg border px-3 py-2 text-left transition-colors hover:border-sky-300 hover:bg-sky-50 focus:outline-none focus:ring-2 focus:ring-sky-400 ${toneClass}`}
+      >
+        {content}
+      </button>
+    );
+  }
+
+  return (
+    <div className={`rounded-lg border px-3 py-2 ${toneClass}`}>
+      {content}
+    </div>
+  );
 }
 
 function SpecialLeaveCard({
