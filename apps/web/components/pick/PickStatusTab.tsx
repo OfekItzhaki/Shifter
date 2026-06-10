@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import {
+  getSelfServiceConfig,
   getMyShiftChangeRequests,
   getMyShiftRequests,
   getMyAbsenceReports,
@@ -10,6 +11,7 @@ import {
   getMyWaitlistEntries,
   MyAbsenceReportsResponse,
   MyShiftsResponse,
+  SelfServiceConfigDto,
   ShiftChangeRequestDto,
   SwapRequestDto,
   WaitlistEntryDto,
@@ -32,6 +34,7 @@ interface StatusData {
   swaps: SwapRequestDto[];
   changes: ShiftChangeRequestDto[];
   absences: MyAbsenceReportsResponse;
+  config: SelfServiceConfigDto;
 }
 
 export default function PickStatusTab({ spaceId, groupId, onNavigate }: PickStatusTabProps) {
@@ -46,15 +49,16 @@ export default function PickStatusTab({ spaceId, groupId, onNavigate }: PickStat
     setError(null);
 
     try {
-      const [shifts, waitlist, swaps, changes, absences] = await Promise.all([
+      const [shifts, waitlist, swaps, changes, absences, config] = await Promise.all([
         getMyShiftRequests(spaceId, groupId),
         getMyWaitlistEntries(spaceId, groupId),
         getMySwaps(spaceId, groupId),
         getMyShiftChangeRequests(spaceId, groupId),
         getMyAbsenceReports(spaceId, groupId),
+        getSelfServiceConfig(spaceId, groupId),
       ]);
       setNowMs(Date.now());
-      setData({ shifts, waitlist, swaps, changes, absences });
+      setData({ shifts, waitlist, swaps, changes, absences, config });
     } catch (err) {
       setError(getSelfServiceErrorMessage(err).message);
     } finally {
@@ -153,6 +157,47 @@ export default function PickStatusTab({ spaceId, groupId, onNavigate }: PickStat
         )}
       </section>
 
+      <section className="rounded-xl border border-slate-200 bg-white p-4">
+        <h3 className="text-sm font-semibold text-slate-900">{t("rules.title")}</h3>
+        <div className="mt-3 grid gap-2">
+          <RuleRow
+            label={t("rules.shiftRange")}
+            value={t("rules.shiftRangeValue", {
+              min: data.config.minShiftsPerCycle,
+              max: data.config.maxShiftsPerCycle,
+            })}
+          />
+          <RuleRow
+            label={t("rules.requestWindow")}
+            value={t("rules.requestWindowValue", {
+              open: data.config.requestWindowOpenOffsetHours,
+              close: data.config.requestWindowCloseOffsetHours,
+            })}
+          />
+          <RuleRow
+            label={t("rules.cancellation")}
+            value={t("rules.cancellationValue", {
+              hours: data.config.cancellationCutoffHours,
+            })}
+          />
+          <RuleRow
+            label={t("rules.lateAbsence")}
+            value={t("rules.lateAbsenceValue", {
+              used: data.absences.lateReportsUsed,
+              max: data.config.maxLateCancellationsPerCycle,
+              hours: data.config.lateCancellationWindowHours,
+            })}
+            tone={data.absences.lateReportsUsed >= data.config.maxLateCancellationsPerCycle ? "warning" : "default"}
+          />
+          <RuleRow
+            label={t("rules.waitlist")}
+            value={t("rules.waitlistValue", {
+              minutes: data.config.waitlistOfferMinutes,
+            })}
+          />
+        </div>
+      </section>
+
       <div className="grid gap-3">
         <ActionCard
           title={t("cards.pick.title")}
@@ -189,6 +234,27 @@ export default function PickStatusTab({ spaceId, groupId, onNavigate }: PickStat
           onClick={() => onNavigate("my-shifts")}
         />
       </div>
+    </div>
+  );
+}
+
+function RuleRow({
+  label,
+  value,
+  tone = "default",
+}: {
+  label: string;
+  value: string;
+  tone?: "default" | "warning";
+}) {
+  return (
+    <div className={`rounded-lg border px-3 py-2 ${
+      tone === "warning"
+        ? "border-amber-200 bg-amber-50"
+        : "border-slate-200 bg-slate-50"
+    }`}>
+      <p className="text-xs font-medium text-slate-500">{label}</p>
+      <p className="mt-1 text-sm text-slate-800">{value}</p>
     </div>
   );
 }

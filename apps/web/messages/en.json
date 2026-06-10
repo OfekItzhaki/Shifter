@@ -2284,7 +2284,20 @@
         }
       },
       "lateAbsences": "Late absences",
-      "pendingAbsences": "Absence reports"
+      "pendingAbsences": "Absence reports",
+      "rules": {
+        "title": "Rules",
+        "shiftRange": "Shift range",
+        "shiftRangeValue": "Pick at least {min} and at most {max} shifts per cycle.",
+        "requestWindow": "Request window",
+        "requestWindowValue": "Usually opens {open}h before the cycle and closes {close}h before it starts.",
+        "cancellation": "Cancellation cutoff",
+        "cancellationValue": "Regular cancellation closes {hours}h before shift start.",
+        "lateAbsence": "Late absence limit",
+        "lateAbsenceValue": "{used}/{max} used. Reports inside the last {hours}h count as late.",
+        "waitlist": "Waitlist offers",
+        "waitlistValue": "When offered a full shift, you have {minutes} minutes to accept."
+      }
     }
   },
   "trialBanner": {
