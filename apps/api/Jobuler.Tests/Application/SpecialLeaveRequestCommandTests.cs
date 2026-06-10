@@ -87,7 +87,7 @@ public class SpecialLeaveRequestCommandTests
 
         var cumulative = Substitute.For<ICumulativeTracker>();
         var cache = Substitute.For<ICacheService>();
-        var audit = Substitute.For<IAuditLogger>();
+        var audit = CreateAuditLogger();
         var handler = new ApproveSpecialLeaveRequestCommandHandler(db, cumulative, cache, audit);
 
         var presenceWindowId = await handler.Handle(new ApproveSpecialLeaveRequestCommand(
@@ -110,6 +110,20 @@ public class SpecialLeaveRequestCommandTests
         notification.UserId.Should().Be(userId);
         notification.MetadataJson.Should().Contain(request.Id.ToString());
         notification.MetadataJson.Should().Contain("\"adminNote\":\"approved\"");
+
+        await audit.Received(1).LogAsync(
+            spaceId,
+            adminId,
+            "approve_special_leave_request",
+            "special_leave_request",
+            request.Id,
+            Arg.Is<string?>(json => json == null),
+            Arg.Is<string?>(json => json != null
+                && json.Contains(request.Id.ToString())
+                && json.Contains(person.Id.ToString())
+                && json.Contains(presenceWindowId.ToString())),
+            Arg.Is<string?>(ipAddress => ipAddress == null),
+            Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -128,7 +142,8 @@ public class SpecialLeaveRequestCommandTests
         db.SpecialLeaveRequests.Add(request);
         await db.SaveChangesAsync();
 
-        var handler = new RejectSpecialLeaveRequestCommandHandler(db, Substitute.For<IAuditLogger>());
+        var audit = CreateAuditLogger();
+        var handler = new RejectSpecialLeaveRequestCommandHandler(db, audit);
 
         await handler.Handle(new RejectSpecialLeaveRequestCommand(
             spaceId, request.Id, adminId, "not this week"), CancellationToken.None);
@@ -140,6 +155,20 @@ public class SpecialLeaveRequestCommandTests
         notification.UserId.Should().Be(userId);
         notification.MetadataJson.Should().Contain(request.Id.ToString());
         notification.MetadataJson.Should().Contain("\"adminNote\":\"not this week\"");
+
+        await audit.Received(1).LogAsync(
+            spaceId,
+            adminId,
+            "reject_special_leave_request",
+            "special_leave_request",
+            request.Id,
+            Arg.Is<string?>(json => json == null),
+            Arg.Is<string?>(json => json != null
+                && json.Contains(request.Id.ToString())
+                && json.Contains(person.Id.ToString())
+                && json.Contains("\"admin_note\":\"not this week\"")),
+            Arg.Is<string?>(ipAddress => ipAddress == null),
+            Arg.Any<CancellationToken>());
     }
 
     [Fact]
