@@ -1411,6 +1411,39 @@ public class SelfServiceScopeTests
             .RequirePermissionAsync(userId, spaceId, Permissions.SpaceView, Arg.Any<CancellationToken>());
     }
 
+    [Fact]
+    public async Task ListSpecialLeaveForAdmin_RequiresConstraintsManagePermission()
+    {
+        using var db = CreateDb();
+        var services = CreateControllerServices();
+        var spaceId = Guid.NewGuid();
+        var adminUserId = Guid.NewGuid();
+
+        services.Permissions
+            .RequirePermissionAsync(adminUserId, spaceId, Permissions.ConstraintsManage, Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+
+        var controller = new SpecialLeaveRequestsController(
+            services.Mediator,
+            services.Permissions,
+            db);
+        controller.ControllerContext = CreateControllerContext(adminUserId);
+
+        var result = await controller.ListForAdmin(
+            spaceId,
+            status: null,
+            from: null,
+            to: null,
+            groupId: null,
+            CancellationToken.None);
+
+        result.Should().BeOfType<OkObjectResult>();
+        await services.Permissions.Received(1)
+            .RequirePermissionAsync(adminUserId, spaceId, Permissions.ConstraintsManage, Arg.Any<CancellationToken>());
+        await services.Permissions.DidNotReceive()
+            .RequirePermissionAsync(adminUserId, spaceId, Permissions.PeopleManage, Arg.Any<CancellationToken>());
+    }
+
     private static SchedulingCycle CreateCycle(Guid spaceId, Guid groupId)
     {
         var utcNow = DateTime.UtcNow;

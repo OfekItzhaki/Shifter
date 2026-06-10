@@ -94,14 +94,14 @@ public class SpecialLeaveRequestsController : ControllerBase
         [FromQuery] Guid? groupId,
         CancellationToken ct)
     {
-        await _permissions.RequirePermissionAsync(CurrentUserId, spaceId, Permissions.PeopleManage, ct);
+        await _permissions.RequirePermissionAsync(CurrentUserId, spaceId, Permissions.ConstraintsManage, ct);
         return Ok(await _mediator.Send(new GetSpecialLeaveRequestsForAdminQuery(spaceId, status, from, to, groupId), ct));
     }
 
     [HttpPost("admin/{requestId:guid}/approve")]
     public async Task<IActionResult> Approve(Guid spaceId, Guid requestId, [FromBody] ReviewSpecialLeaveRequest req, CancellationToken ct)
     {
-        await _permissions.RequirePermissionAsync(CurrentUserId, spaceId, Permissions.PeopleManage, ct);
+        await _permissions.RequirePermissionAsync(CurrentUserId, spaceId, Permissions.ConstraintsManage, ct);
         var presenceWindowId = await _mediator.Send(new ApproveSpecialLeaveRequestCommand(
             spaceId, requestId, CurrentUserId, req.AdminNote, req.ReasonId), ct);
 
@@ -111,7 +111,7 @@ public class SpecialLeaveRequestsController : ControllerBase
     [HttpPost("admin/{requestId:guid}/reject")]
     public async Task<IActionResult> Reject(Guid spaceId, Guid requestId, [FromBody] ReviewSpecialLeaveRequest req, CancellationToken ct)
     {
-        await _permissions.RequirePermissionAsync(CurrentUserId, spaceId, Permissions.PeopleManage, ct);
+        await _permissions.RequirePermissionAsync(CurrentUserId, spaceId, Permissions.ConstraintsManage, ct);
         await _mediator.Send(new RejectSpecialLeaveRequestCommand(spaceId, requestId, CurrentUserId, req.AdminNote), ct);
         return NoContent();
     }
