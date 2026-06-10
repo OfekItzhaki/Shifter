@@ -29,7 +29,7 @@ interface Props {
 type ProposeStep = "idle" | "selectMyShift" | "selectTargetMember" | "selectTargetShift";
 
 /**
- * SwapsTab — displays the member's swap requests (incoming and outgoing)
+ * SwapsTab displays the member's swap requests (incoming and outgoing)
  * and provides a "Propose Swap" flow.
  *
  * Validates: Requirements 8.1, 8.2, 8.3, 8.4, 8.5, 8.6, 8.7, 8.8, 8.9, 8.10
@@ -41,7 +41,6 @@ export default function SwapsTab({ spaceId, groupId, members }: Props) {
   const storedSpaceId = useSpaceStore((s) => s.currentSpaceId);
   const currentSpaceId = spaceId || storedSpaceId;
 
-  // ── State ────────────────────────────────────────────────────────────────
   const [swaps, setSwaps] = useState<SwapRequestDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -61,7 +60,6 @@ export default function SwapsTab({ spaceId, groupId, members }: Props) {
   const [proposing, setProposing] = useState(false);
   const [proposeError, setProposeError] = useState<string | null>(null);
 
-  // ── Fetch swaps ──────────────────────────────────────────────────────────
   const fetchSwaps = useCallback(async () => {
     if (!currentSpaceId || !groupId) return;
     setLoading(true);
@@ -77,13 +75,11 @@ export default function SwapsTab({ spaceId, groupId, members }: Props) {
   }, [currentSpaceId, groupId, tCommon]);
 
   useEffect(() => {
-    fetchSwaps();
+    void Promise.resolve().then(fetchSwaps);
   }, [fetchSwaps]);
 
-  // ── Determine current user's personId from members list ──────────────────
   const currentPersonId = members.find((m) => m.linkedUserId === userId)?.personId ?? null;
 
-  // ── Classify swaps ──────────────────────────────────────────────────────
   const incomingSwaps = swaps.filter(
     (s) => s.targetPersonId === currentPersonId && s.status === "Pending"
   );
@@ -91,8 +87,8 @@ export default function SwapsTab({ spaceId, groupId, members }: Props) {
     (s) => s.initiatorPersonId === currentPersonId && s.status === "Pending"
   );
   const completedSwaps = swaps.filter((s) => s.status !== "Pending");
+  const swappableMembers = members.filter((m) => m.personId !== currentPersonId);
 
-  // ── Actions ──────────────────────────────────────────────────────────────
   async function handleAccept(swapId: string) {
     if (!currentSpaceId) return;
     setActionLoading((prev) => ({ ...prev, [swapId]: "accepting" }));
@@ -150,7 +146,6 @@ export default function SwapsTab({ spaceId, groupId, members }: Props) {
     }
   }
 
-  // ── Propose Swap Flow ────────────────────────────────────────────────────
   async function startProposeFlow() {
     if (!currentSpaceId) return;
     setProposeStep("selectMyShift");
@@ -219,7 +214,6 @@ export default function SwapsTab({ spaceId, groupId, members }: Props) {
     setProposeError(null);
   }
 
-  // ── Status badge styling ─────────────────────────────────────────────────
   function getStatusBadge(status: SwapRequestDto["status"]) {
     const styles: Record<SwapRequestDto["status"], string> = {
       Pending: "bg-amber-50 text-amber-700 border-amber-200",
@@ -242,17 +236,14 @@ export default function SwapsTab({ spaceId, groupId, members }: Props) {
     );
   }
 
-  // ── Loading state ────────────────────────────────────────────────────────
   if (loading) {
     return <LoadingCard rows={3} variant="list" />;
   }
 
-  // ── Error state ──────────────────────────────────────────────────────────
   if (error) {
     return <ErrorRetry message={error} onRetry={fetchSwaps} />;
   }
 
-  // ── Render ───────────────────────────────────────────────────────────────
   return (
     <div className="space-y-5">
       {/* Header with Propose button */}
@@ -285,9 +276,10 @@ export default function SwapsTab({ spaceId, groupId, members }: Props) {
                 <p className="text-sm font-medium text-slate-700">{t("selectYourShift")}</p>
                 <button
                   onClick={resetProposeFlow}
+                  aria-label={t("close")}
                   className="text-xs text-slate-500 hover:text-slate-700"
                 >
-                  ✕
+                  x
                 </button>
               </div>
               {myShiftsLoading ? (
@@ -299,7 +291,7 @@ export default function SwapsTab({ spaceId, groupId, members }: Props) {
                   {tCommon("loading")}
                 </div>
               ) : myShifts.length === 0 ? (
-                <p className="text-xs text-slate-400">אין משמרות מאושרות להחלפה</p>
+                <p className="text-xs text-slate-400">{t("noApprovedShifts")}</p>
               ) : (
                 <div className="space-y-2">
                   {myShifts.map((shift) => (
@@ -309,7 +301,7 @@ export default function SwapsTab({ spaceId, groupId, members }: Props) {
                       className="w-full text-right rounded-lg border border-slate-200 p-3 hover:border-sky-300 hover:bg-sky-50 transition-colors"
                     >
                       <p className="text-xs font-medium text-slate-700">
-                        {formatSlotDate(shift.slotDate)} • {formatTime24h(shift.slotStartTime)}–{formatTime24h(shift.slotEndTime)}
+                        {formatSlotDate(shift.slotDate)} | {formatTime24h(shift.slotStartTime)}-{formatTime24h(shift.slotEndTime)}
                       </p>
                       <p className="text-xs text-slate-500">{shift.taskName}</p>
                     </button>
@@ -326,16 +318,18 @@ export default function SwapsTab({ spaceId, groupId, members }: Props) {
                 <p className="text-sm font-medium text-slate-700">{t("selectTargetShift")}</p>
                 <button
                   onClick={resetProposeFlow}
+                  aria-label={t("close")}
                   className="text-xs text-slate-500 hover:text-slate-700"
                 >
-                  ✕
+                  x
                 </button>
               </div>
-              <p className="text-xs text-slate-500 mb-2">בחר חבר קבוצה:</p>
-              <div className="space-y-1 max-h-48 overflow-y-auto">
-                {members
-                  .filter((m) => m.personId !== currentPersonId)
-                  .map((member) => (
+              <p className="text-xs text-slate-500 mb-2">{t("selectTargetMember")}</p>
+              {swappableMembers.length === 0 ? (
+                <p className="text-xs text-slate-400">{t("noTargetMembers")}</p>
+              ) : (
+                <div className="space-y-1 max-h-48 overflow-y-auto">
+                  {swappableMembers.map((member) => (
                     <button
                       key={member.personId}
                       onClick={() => handleSelectTargetMember(member)}
@@ -344,7 +338,8 @@ export default function SwapsTab({ spaceId, groupId, members }: Props) {
                       {member.displayName || member.fullName}
                     </button>
                   ))}
-              </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -353,13 +348,14 @@ export default function SwapsTab({ spaceId, groupId, members }: Props) {
             <div>
               <div className="flex items-center justify-between mb-3">
                 <p className="text-sm font-medium text-slate-700">
-                  {t("selectTargetShift")} — {selectedTargetMember?.displayName || selectedTargetMember?.fullName}
+                  {t("selectTargetShift")} - {selectedTargetMember?.displayName || selectedTargetMember?.fullName}
                 </p>
                 <button
                   onClick={resetProposeFlow}
+                  aria-label={t("close")}
                   className="text-xs text-slate-500 hover:text-slate-700"
                 >
-                  ✕
+                  x
                 </button>
               </div>
               {targetShiftsLoading ? (
@@ -371,7 +367,7 @@ export default function SwapsTab({ spaceId, groupId, members }: Props) {
                   {tCommon("loading")}
                 </div>
               ) : targetShifts.length === 0 ? (
-                <p className="text-xs text-slate-400">אין משמרות זמינות להחלפה עבור חבר זה</p>
+                <p className="text-xs text-slate-400">{t("noTargetShifts")}</p>
               ) : (
                 <div className="space-y-2">
                   {targetShifts.map((shift) => (
@@ -382,7 +378,7 @@ export default function SwapsTab({ spaceId, groupId, members }: Props) {
                       className="w-full text-right rounded-lg border border-slate-200 p-3 hover:border-sky-300 hover:bg-sky-50 transition-colors disabled:opacity-50"
                     >
                       <p className="text-xs font-medium text-slate-700">
-                        {formatSlotDate(shift.slotDate)} • {formatTime24h(shift.slotStartTime)}–{formatTime24h(shift.slotEndTime)}
+                        {formatSlotDate(shift.slotDate)} | {formatTime24h(shift.slotStartTime)}-{formatTime24h(shift.slotEndTime)}
                       </p>
                       <p className="text-xs text-slate-500">{shift.taskName}</p>
                     </button>
@@ -451,7 +447,7 @@ export default function SwapsTab({ spaceId, groupId, members }: Props) {
       {completedSwaps.length > 0 && (
         <div>
           <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
-            היסטוריה
+            {t("history")}
           </h3>
           <div className="space-y-2">
             {completedSwaps.map((swap) => (
@@ -476,7 +472,6 @@ export default function SwapsTab({ spaceId, groupId, members }: Props) {
   );
 }
 
-// ── SwapCard sub-component ─────────────────────────────────────────────────
 
 interface SwapCardProps {
   swap: SwapRequestDto;
@@ -518,7 +513,7 @@ function SwapCard({ swap, direction, actionLoading, onAccept, onDecline, onCance
             {formatSlotDate(swap.initiatorSlotDate)}
           </p>
           <p className="text-xs text-slate-600">
-            {formatTime24h(swap.initiatorSlotTime)} • {swap.initiatorTaskName}
+            {formatTime24h(swap.initiatorSlotTime)} | {swap.initiatorTaskName}
           </p>
         </div>
 
@@ -531,7 +526,7 @@ function SwapCard({ swap, direction, actionLoading, onAccept, onDecline, onCance
             {formatSlotDate(swap.targetSlotDate)}
           </p>
           <p className="text-xs text-slate-600">
-            {formatTime24h(swap.targetSlotTime)} • {swap.targetTaskName}
+            {formatTime24h(swap.targetSlotTime)} | {swap.targetTaskName}
           </p>
         </div>
       </div>
@@ -571,7 +566,6 @@ function SwapCard({ swap, direction, actionLoading, onAccept, onDecline, onCance
   );
 }
 
-// ── StatusBadge sub-component ──────────────────────────────────────────────
 
 function StatusBadge({ status, t }: { status: SwapRequestDto["status"]; t: (key: string) => string }) {
   const styles: Record<SwapRequestDto["status"], string> = {

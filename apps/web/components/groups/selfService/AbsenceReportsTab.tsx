@@ -79,7 +79,7 @@ export default function AbsenceReportsTab({ spaceId, groupId }: Props) {
   }, [spaceId, groupId]);
 
   useEffect(() => {
-    fetchReports();
+    void Promise.resolve().then(fetchReports);
   }, [fetchReports]);
 
   async function review(reportId: string, action: "approve" | "reject") {
@@ -191,7 +191,7 @@ export default function AbsenceReportsTab({ spaceId, groupId }: Props) {
                     )}
                   </div>
                   <p className="mt-1 text-xs text-slate-500">
-                    {formatSlotDate(report.date)} · {formatTime24h(report.startTime)}-{formatTime24h(report.endTime)} · {report.taskName}
+                    {formatSlotDate(report.date)} | {formatTime24h(report.startTime)}-{formatTime24h(report.endTime)} | {report.taskName}
                   </p>
                   <p className="mt-2 text-sm text-slate-700">{report.reason}</p>
                   {report.adminNote && (
@@ -255,11 +255,11 @@ export default function AbsenceReportsTab({ spaceId, groupId }: Props) {
                     </span>
                   </div>
                   <p className="mt-1 text-xs text-slate-500">
-                    {t("changeFrom")}: {formatSlotDate(request.originalSlotDate)} ֲ· {formatTime24h(request.originalSlotStartTime)}-{formatTime24h(request.originalSlotEndTime)} ֲ· {request.originalTaskName}
+                    {t("changeFrom")}: {formatSlotDate(request.originalSlotDate)} | {formatTime24h(request.originalSlotStartTime)}-{formatTime24h(request.originalSlotEndTime)} | {request.originalTaskName}
                   </p>
                   <p className="mt-1 text-xs text-slate-500">
                     {t("changeTo")}: {request.requestedSlotDate
-                      ? `${formatSlotDate(request.requestedSlotDate)} ֲ· ${formatTime24h(request.requestedSlotStartTime ?? "")}-${formatTime24h(request.requestedSlotEndTime ?? "")} ֲ· ${request.requestedTaskName ?? ""}`
+                      ? `${formatSlotDate(request.requestedSlotDate)} | ${formatTime24h(request.requestedSlotStartTime ?? "")}-${formatTime24h(request.requestedSlotEndTime ?? "")} | ${request.requestedTaskName ?? ""}`
                       : t("changeFlexibleTarget")}
                   </p>
                   <p className="mt-2 text-sm text-slate-700">{request.reason}</p>
