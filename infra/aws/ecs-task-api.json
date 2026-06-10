@@ -16,14 +16,15 @@
       "environment": [
         { "name": "ASPNETCORE_ENVIRONMENT", "value": "Production" },
         { "name": "ASPNETCORE_URLS", "value": "http://+:8080" },
-        { "name": "Feedback__DeveloperEmail", "value": "ofeklabs@outlook.com" }
+        { "name": "Feedback__DeveloperEmail", "value": "ofeklabs@outlook.com" },
+        { "name": "AI__BaseUrl", "value": "https://api.openai.com/v1" }
       ],
       "secrets": [
         { "name": "ConnectionStrings__DefaultConnection", "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:jobuler/db-connection" },
         { "name": "Redis__ConnectionString",              "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:jobuler/redis-connection" },
         { "name": "Jwt__Secret",                          "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:jobuler/jwt-secret" },
         { "name": "AI__ApiKey",                           "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:jobuler/openai-key" },
-        { "name": "SendGrid__ApiKey",                     "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:jobuler/sendgrid-key" }
+        { "name": "Resend__ApiKey",                       "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:jobuler/resend-key" }
       ],
       "logConfiguration": {
         "logDriver": "awslogs",

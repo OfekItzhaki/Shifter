@@ -20,7 +20,7 @@ Minimum recommended topology:
 | Staging | `develop` | `https://staging.example.com` | separate DB/storage/secrets |
 | PR preview | PR branch | optional `https://pr-123.example.com` | ephemeral or shared staging-like data |
 
-Do not point staging at the production database, Redis, S3 bucket, LemonSqueezy live keys, SendGrid production sender, or Twilio production sender.
+Do not point staging at the production database, Redis, S3 bucket, LemonSqueezy live keys, Resend production sender, or Twilio production sender.
 
 ## Persistent Staging on the VPS
 

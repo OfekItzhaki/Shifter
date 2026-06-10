@@ -96,11 +96,12 @@ services:
       Storage__S3__ForcePathStyle: ${STORAGE_S3_FORCE_PATH_STYLE:-false}
       AutoScheduler__Enabled: ${AUTO_SCHEDULER_ENABLED:-false}
       AI__ApiKey: ${AI_API_KEY:-}
+      AI__BaseUrl: ${AI_BASE_URL:-}
       AI__Model: ${AI_MODEL:-gpt-4o}
       Feedback__DeveloperEmail: ${FEEDBACK_DEVELOPER_EMAIL:-ofeklabs@outlook.com}
-      SendGrid__ApiKey: ${SENDGRID_API_KEY:-}
-      SendGrid__FromEmail: ${SENDGRID_FROM_EMAIL:-noreply@shifter.app}
-      SendGrid__FromName: ${SENDGRID_FROM_NAME:-Shifter}
+      Resend__ApiKey: ${RESEND_API_KEY:-}
+      Resend__FromEmail: ${RESEND_FROM_EMAIL:-noreply@shifter.app}
+      Resend__FromName: ${RESEND_FROM_NAME:-Shifter}
       Twilio__AccountSid: ${TWILIO_ACCOUNT_SID:-}
       Twilio__AuthToken: ${TWILIO_AUTH_TOKEN:-}
       Twilio__WhatsAppFrom: ${TWILIO_WHATSAPP_FROM:-whatsapp:+14155238886}

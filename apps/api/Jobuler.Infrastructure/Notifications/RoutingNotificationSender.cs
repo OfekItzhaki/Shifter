@@ -6,7 +6,7 @@ namespace Jobuler.Infrastructure.Notifications;
 /// <summary>
 /// Routes notifications to the correct channel based on the recipient address:
 /// - Phone number (starts with + or digits) → WhatsApp via Twilio
-/// - Email address (contains @) → Email via SendGrid
+/// - Email address (contains @) → Email via configured IEmailSender
 ///
 /// This replaces the NoOpNotificationSender in production.
 /// </summary>

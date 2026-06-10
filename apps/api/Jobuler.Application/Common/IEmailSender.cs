@@ -3,7 +3,7 @@ namespace Jobuler.Application.Common;
 /// <summary>
 /// Abstraction for sending emails. Implementations are registered in Infrastructure.
 /// Default: NoOpEmailSender (logs intent, no actual send).
-/// Swap for a real provider (SendGrid, SES, etc.) without changing business logic.
+/// Swap for a real provider (Resend, SES, SMTP, etc.) without changing business logic.
 /// </summary>
 public interface IEmailSender
 {

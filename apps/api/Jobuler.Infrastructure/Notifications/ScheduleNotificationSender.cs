@@ -6,7 +6,7 @@ namespace Jobuler.Infrastructure.Notifications;
 /// <summary>
 /// Sends schedule notifications via the appropriate channel:
 /// - Phone number → WhatsApp (Twilio)
-/// - Email address → Email (SendGrid)
+/// - Email address → Email (configured IEmailSender)
 /// </summary>
 public class ScheduleNotificationSender : IScheduleNotificationSender
 {

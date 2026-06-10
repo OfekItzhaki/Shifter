@@ -5,7 +5,7 @@ namespace Jobuler.Infrastructure.Email;
 
 /// <summary>
 /// Default no-op email sender. Logs the intent at Debug level without sending anything.
-/// Replace with a real implementation (SendGrid, SES, SMTP) by registering a different
+/// Replace with a real implementation (Resend, SES, SMTP) by registering a different
 /// IEmailSender in DI — no business logic changes required.
 /// </summary>
 public class NoOpEmailSender : IEmailSender

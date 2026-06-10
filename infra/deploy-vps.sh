@@ -33,7 +33,7 @@ if [ ! -f .env ]; then
   echo ""
   echo "⚠️  IMPORTANT: Edit /opt/shifter/infra/compose/.env to set:"
   echo "   - Your domain in APP_FRONTEND_BASE_URL and APP_API_BASE_URL"
-  echo "   - SendGrid API key (optional, for emails)"
+  echo "   - Resend API key (optional, for emails)"
   echo "   - Twilio credentials (optional, for WhatsApp)"
   echo "   - AI API key (optional, for AI features)"
   echo ""

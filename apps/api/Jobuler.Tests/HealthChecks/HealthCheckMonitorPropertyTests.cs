@@ -20,7 +20,7 @@ public class HealthCheckMonitorPropertyTests
     // ── Generators ───────────────────────────────────────────────────────────
 
     private static readonly string[] ServiceNames =
-        ["postgres", "redis", "lemonsqueezy", "sendgrid", "solver", "svc-alpha", "svc-beta"];
+        ["postgres", "redis", "lemonsqueezy", "resend", "solver", "svc-alpha", "svc-beta"];
 
     private static Arbitrary<string> ServiceNameArbitrary()
     {

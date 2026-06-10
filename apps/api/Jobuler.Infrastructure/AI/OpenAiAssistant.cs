@@ -17,6 +17,7 @@ public class OpenAiAssistant : IAiAssistant
     private readonly HttpClient _http;
     private readonly ILogger<OpenAiAssistant> _logger;
     private readonly string _model;
+    private readonly string _baseUrl;
 
     private static readonly JsonSerializerOptions JsonOpts = new()
     {
@@ -28,11 +29,14 @@ public class OpenAiAssistant : IAiAssistant
         _http = http;
         _logger = logger;
         _model = config["AI:Model"] ?? "gpt-4o";
+        _baseUrl = (config["AI:BaseUrl"] ?? "https://api.openai.com/v1").TrimEnd('/');
 
-        var apiKey = config["AI:ApiKey"]
-            ?? throw new InvalidOperationException("AI:ApiKey not configured.");
-        _http.DefaultRequestHeaders.Authorization =
-            new AuthenticationHeaderValue("Bearer", apiKey);
+        var apiKey = config["AI:ApiKey"];
+        if (!string.IsNullOrWhiteSpace(apiKey))
+        {
+            _http.DefaultRequestHeaders.Authorization =
+                new AuthenticationHeaderValue("Bearer", apiKey);
+        }
     }
 
     public async Task<ParsedConstraintDto> ParseConstraintAsync(
@@ -194,7 +198,7 @@ public class OpenAiAssistant : IAiAssistant
             };
 
             var response = await _http.PostAsJsonAsync(
-                "https://api.openai.com/v1/chat/completions", body, ct);
+                $"{_baseUrl}/chat/completions", body, ct);
             response.EnsureSuccessStatusCode();
 
             using var doc = await JsonDocument.ParseAsync(
@@ -305,7 +309,7 @@ public class OpenAiAssistant : IAiAssistant
         };
 
         var response = await _http.PostAsJsonAsync(
-            "https://api.openai.com/v1/chat/completions", body, ct);
+            $"{_baseUrl}/chat/completions", body, ct);
         response.EnsureSuccessStatusCode();
 
         using var doc = await JsonDocument.ParseAsync(

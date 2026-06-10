@@ -20,7 +20,7 @@ public class HealthCheckRunnerPropertyTests
 
     private static Arbitrary<List<ServiceHealthResult>> ServiceResultsArbitrary()
     {
-        var resultGen = from name in Gen.Elements("postgres", "redis", "lemonsqueezy", "sendgrid", "solver")
+        var resultGen = from name in Gen.Elements("postgres", "redis", "lemonsqueezy", "resend", "solver")
                         from status in Gen.Elements(ValidStatuses)
                         from hasError in Arb.Default.Bool().Generator
                         from responseMs in Gen.Choose(1, 5000)

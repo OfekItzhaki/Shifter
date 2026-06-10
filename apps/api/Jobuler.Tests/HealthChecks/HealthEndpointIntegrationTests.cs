@@ -73,7 +73,7 @@ public class HealthEndpointIntegrationTests
                 new("postgres", "healthy", null, TimeSpan.FromMilliseconds(5)),
                 new("redis", "healthy", null, TimeSpan.FromMilliseconds(2)),
                 new("lemonsqueezy", "healthy", null, TimeSpan.FromMilliseconds(120)),
-                new("sendgrid", "healthy", null, TimeSpan.FromMilliseconds(80)),
+                new("resend", "healthy", null, TimeSpan.FromMilliseconds(80)),
                 new("solver", "healthy", null, TimeSpan.FromMilliseconds(15))
             });
     }
@@ -89,7 +89,7 @@ public class HealthEndpointIntegrationTests
                 new("postgres", "healthy", null, TimeSpan.FromMilliseconds(5)),
                 new("redis", "unhealthy", "Connection refused", TimeSpan.FromMilliseconds(10000)),
                 new("lemonsqueezy", "unhealthy", "HTTP 401 Unauthorized", TimeSpan.FromMilliseconds(450)),
-                new("sendgrid", "skipped"),
+                new("resend", "skipped"),
                 new("solver", "healthy", null, TimeSpan.FromMilliseconds(25))
             });
     }
@@ -120,7 +120,7 @@ public class HealthEndpointIntegrationTests
         body.Checks.Should().HaveCount(5);
         body.Checks.Select(c => c.ServiceName).Should().Contain(new[]
         {
-            "postgres", "redis", "lemonsqueezy", "sendgrid", "solver"
+            "postgres", "redis", "lemonsqueezy", "resend", "solver"
         });
     }
 

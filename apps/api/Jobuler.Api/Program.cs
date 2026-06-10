@@ -176,32 +176,32 @@ builder.Services.AddHttpClient("TrialDurationCache", (sp, client) =>
 });
 builder.Services.AddSingleton<ITrialDurationCache, TrialDurationCache>();
 
-// ─── Email: SendGrid (real) or NoOp (dev fallback) ────────────────────────────
-if (!string.IsNullOrWhiteSpace(builder.Configuration["SendGrid:ApiKey"]))
+// ─── Email: Resend (real) or NoOp (dev fallback) ──────────────────────────────
+if (!string.IsNullOrWhiteSpace(builder.Configuration["Resend:ApiKey"]))
 {
-    builder.Services.AddScoped<IEmailSender, SendGridEmailSender>();
-    Log.Information("Email provider: SendGrid");
+    builder.Services.AddHttpClient<IEmailSender, ResendEmailSender>();
+    Log.Information("Email provider: Resend");
 }
 else
 {
     builder.Services.AddScoped<IEmailSender, NoOpEmailSender>();
-    Log.Warning("SendGrid:ApiKey not configured — emails will be logged only (NoOp)");
+    Log.Warning("Resend:ApiKey not configured — emails will be logged only (NoOp)");
 }
 
 // ─── WhatsApp: Twilio (always registered — graceful no-op if unconfigured) ───
 builder.Services.AddScoped<TwilioWhatsAppSender>();
 
-// ─── Notification routing: phone → WhatsApp, email → SendGrid ────────────────
+// ─── Notification routing: phone → WhatsApp, email → Resend ──────────────────
 if (!string.IsNullOrWhiteSpace(builder.Configuration["Twilio:AccountSid"]) ||
-    !string.IsNullOrWhiteSpace(builder.Configuration["SendGrid:ApiKey"]))
+    !string.IsNullOrWhiteSpace(builder.Configuration["Resend:ApiKey"]))
 {
     builder.Services.AddScoped<INotificationSender, RoutingNotificationSender>();
-    Log.Information("Notification sender: RoutingNotificationSender (Twilio + SendGrid)");
+    Log.Information("Notification sender: RoutingNotificationSender (Twilio + Resend)");
 }
 else
 {
     builder.Services.AddScoped<INotificationSender, NoOpNotificationSender>();
-    Log.Warning("Twilio and SendGrid not configured — notifications will be logged only (NoOp)");
+    Log.Warning("Twilio and Resend not configured — notifications will be logged only (NoOp)");
 }
 
 // ─── Invitation senders ───────────────────────────────────────────────────────
@@ -302,7 +302,8 @@ builder.Services.AddHttpClient<ISolverClient, SolverHttpClient>(client =>
 // ─── AI assistant (optional — only registered when API key is configured) ────
 builder.Services.AddSingleton<IStructuredImportParser, StructuredImportParser>();
 
-if (!string.IsNullOrEmpty(builder.Configuration["AI:ApiKey"]))
+if (!string.IsNullOrWhiteSpace(builder.Configuration["AI:ApiKey"]) ||
+    !string.IsNullOrWhiteSpace(builder.Configuration["AI:BaseUrl"]))
 {
     builder.Services.AddHttpClient<IAiAssistant, OpenAiAssistant>();
 }
@@ -375,7 +376,7 @@ builder.Services.Configure<Jobuler.Application.Common.HealthChecks.HealthCheckOp
 builder.Services.AddScoped<Jobuler.Application.Common.HealthChecks.IServiceHealthCheck, Jobuler.Infrastructure.HealthChecks.PostgresHealthCheck>();
 builder.Services.AddScoped<Jobuler.Application.Common.HealthChecks.IServiceHealthCheck, Jobuler.Infrastructure.HealthChecks.RedisHealthCheck>();
 builder.Services.AddScoped<Jobuler.Application.Common.HealthChecks.IServiceHealthCheck, Jobuler.Infrastructure.HealthChecks.LemonSqueezyHealthCheck>();
-builder.Services.AddScoped<Jobuler.Application.Common.HealthChecks.IServiceHealthCheck, Jobuler.Infrastructure.HealthChecks.SendGridHealthCheck>();
+builder.Services.AddScoped<Jobuler.Application.Common.HealthChecks.IServiceHealthCheck, Jobuler.Infrastructure.HealthChecks.ResendHealthCheck>();
 builder.Services.AddScoped<Jobuler.Application.Common.HealthChecks.IServiceHealthCheck, Jobuler.Infrastructure.HealthChecks.SolverHealthCheck>();
 
 // Health check runner (aggregates all IServiceHealthCheck instances)
@@ -387,7 +388,7 @@ builder.Services.AddSingleton<Jobuler.Application.Common.HealthChecks.IPushoverN
 // Named HttpClient instances for health checks
 builder.Services.AddHttpClient("Pushover");
 builder.Services.AddHttpClient("LemonSqueezy");
-builder.Services.AddHttpClient("SendGrid");
+builder.Services.AddHttpClient("Resend");
 builder.Services.AddHttpClient("Solver", client =>
 {
     var solverUrl = builder.Configuration["Solver:BaseUrl"]

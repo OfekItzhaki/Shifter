@@ -7,25 +7,25 @@ using Microsoft.Extensions.Logging;
 namespace Jobuler.Infrastructure.HealthChecks;
 
 /// <summary>
-/// Checks SendGrid API connectivity by making an authenticated GET request
-/// to /v3/user/profile. Returns "skipped" when the API key is not configured.
+/// Checks Resend API connectivity by calling /domains.
+/// Returns "skipped" when the API key is not configured.
 /// </summary>
-public class SendGridHealthCheck : IServiceHealthCheck
+public class ResendHealthCheck : IServiceHealthCheck
 {
-    public string ServiceName => "sendgrid";
+    public string ServiceName => "resend";
 
     private readonly IHttpClientFactory _httpClientFactory;
-    private readonly ILogger<SendGridHealthCheck> _logger;
+    private readonly ILogger<ResendHealthCheck> _logger;
     private readonly string? _apiKey;
 
-    public SendGridHealthCheck(
+    public ResendHealthCheck(
         IHttpClientFactory httpClientFactory,
         IConfiguration configuration,
-        ILogger<SendGridHealthCheck> logger)
+        ILogger<ResendHealthCheck> logger)
     {
         _httpClientFactory = httpClientFactory;
         _logger = logger;
-        _apiKey = configuration["SendGrid:ApiKey"];
+        _apiKey = configuration["Resend:ApiKey"];
     }
 
     public async Task<ServiceHealthResult> CheckAsync(CancellationToken ct)
@@ -39,11 +39,11 @@ public class SendGridHealthCheck : IServiceHealthCheck
 
         try
         {
-            var client = _httpClientFactory.CreateClient("SendGrid");
+            var client = _httpClientFactory.CreateClient("Resend");
             client.DefaultRequestHeaders.Authorization =
                 new AuthenticationHeaderValue("Bearer", _apiKey);
 
-            var response = await client.GetAsync("https://api.sendgrid.com/v3/user/profile", ct);
+            var response = await client.GetAsync("https://api.resend.com/domains", ct);
             sw.Stop();
 
             if (response.IsSuccessStatusCode)
@@ -52,13 +52,13 @@ public class SendGridHealthCheck : IServiceHealthCheck
             }
 
             var errorMessage = $"HTTP {(int)response.StatusCode} {response.ReasonPhrase}";
-            _logger.LogWarning("SendGrid health check failed: {Error}", errorMessage);
+            _logger.LogWarning("Resend health check failed: {Error}", errorMessage);
             return new ServiceHealthResult(ServiceName, "unhealthy", errorMessage, sw.Elapsed);
         }
         catch (Exception ex)
         {
             sw.Stop();
-            _logger.LogWarning(ex, "SendGrid health check threw an exception");
+            _logger.LogWarning(ex, "Resend health check threw an exception");
             return new ServiceHealthResult(ServiceName, "unhealthy", ex.Message, sw.Elapsed);
         }
     }

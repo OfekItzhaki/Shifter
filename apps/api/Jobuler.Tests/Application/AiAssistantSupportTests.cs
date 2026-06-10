@@ -75,16 +75,58 @@ public class AiAssistantSupportTests
             a.Payload.Contains("Can I contact a human?"));
     }
 
+    [Fact]
+    public async Task OpenAiChat_WithBaseUrlAndNoApiKey_UsesPrivateCompatibleEndpoint()
+    {
+        var responseJson = """
+            {
+              "choices": [
+                {
+                  "message": {
+                    "content": "{\"message\":\"Private endpoint is working.\",\"suggestedActions\":[]}"
+                  }
+                }
+              ]
+            }
+            """;
+        var handler = new StaticResponseHandler(responseJson);
+        var http = new HttpClient(handler);
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["AI:BaseUrl"] = "http://local-ai.internal/v1",
+                ["AI:Model"] = "local-model"
+            })
+            .Build();
+        var assistant = new OpenAiAssistant(http, config, NullLogger<OpenAiAssistant>.Instance);
+
+        var result = await assistant.ChatAsync(new AiChatRequestDto(
+            "hello",
+            "en",
+            "Ofek",
+            "/home",
+            IsAuthenticated: true,
+            IsAdminMode: false,
+            RecentMessages: []));
+
+        result.Message.Should().Be("Private endpoint is working.");
+        handler.Request!.RequestUri!.ToString().Should().Be("http://local-ai.internal/v1/chat/completions");
+        handler.Request.Headers.Authorization.Should().BeNull();
+    }
+
     private sealed class StaticResponseHandler : HttpMessageHandler
     {
         private readonly string _responseBody;
 
         public StaticResponseHandler(string responseBody) => _responseBody = responseBody;
 
+        public HttpRequestMessage? Request { get; private set; }
+
         protected override Task<HttpResponseMessage> SendAsync(
             HttpRequestMessage request,
             CancellationToken cancellationToken)
         {
+            Request = request;
             var response = new HttpResponseMessage(HttpStatusCode.OK)
             {
                 Content = new StringContent(_responseBody, Encoding.UTF8, "application/json")
