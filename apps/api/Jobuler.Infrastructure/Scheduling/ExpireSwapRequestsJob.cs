@@ -35,7 +35,7 @@ public class ExpireSwapRequestsJob : BackgroundService
         {
             try
             {
-                await ExpireSwapRequestsAsync(stoppingToken);
+                await RunOnceAsync(stoppingToken);
             }
             catch (Exception ex)
             {
@@ -46,7 +46,7 @@ public class ExpireSwapRequestsJob : BackgroundService
         }
     }
 
-    private async Task ExpireSwapRequestsAsync(CancellationToken ct)
+    public async Task RunOnceAsync(CancellationToken ct = default)
     {
         using var scope = _scopeFactory.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
