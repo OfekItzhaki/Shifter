@@ -29,6 +29,7 @@ import MutationButton from "./MutationButton";
 interface Props {
   spaceId: string;
   groupId: string;
+  onReviewed?: () => void | Promise<void>;
 }
 
 type ReviewQueueFilter = "pending" | "all" | "handled";
@@ -83,7 +84,7 @@ function formatActivityTime(value: string) {
   }).format(date);
 }
 
-export default function AbsenceReportsTab({ spaceId, groupId }: Props) {
+export default function AbsenceReportsTab({ spaceId, groupId, onReviewed }: Props) {
   const t = useTranslations("selfService.absenceReports");
   const [reports, setReports] = useState<AbsenceReportDto[]>([]);
   const [changeRequests, setChangeRequests] = useState<ShiftChangeRequestDto[]>([]);
@@ -150,6 +151,7 @@ export default function AbsenceReportsTab({ spaceId, groupId }: Props) {
         await rejectAbsenceReport(spaceId, groupId, reportId, note);
       }
       await fetchReports();
+      await onReviewed?.();
     } catch (err) {
       const { message } = getSelfServiceErrorMessage(err);
       setActionError(message);
@@ -180,6 +182,7 @@ export default function AbsenceReportsTab({ spaceId, groupId }: Props) {
         await rejectShiftChangeRequest(spaceId, groupId, changeRequestId, note);
       }
       await fetchReports();
+      await onReviewed?.();
     } catch (err) {
       const { message } = getSelfServiceErrorMessage(err);
       setActionError(message);
@@ -204,6 +207,7 @@ export default function AbsenceReportsTab({ spaceId, groupId }: Props) {
         await rejectSpecialLeaveRequest(spaceId, requestId, note);
       }
       await fetchReports();
+      await onReviewed?.();
     } catch (err) {
       const { message } = getSelfServiceErrorMessage(err);
       setActionError(message);

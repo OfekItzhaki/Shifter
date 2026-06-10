@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState, lazy, Suspense } from "react";
+import React, { useCallback, useEffect, useRef, useState, lazy, Suspense } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
@@ -63,6 +63,7 @@ import { getAvatarColor, getAvatarLetter } from "@/lib/utils/groupAvatar";
 import { listGroupTasks, createGroupTask, updateGroupTask, deleteGroupTask, GroupTaskDto } from "@/lib/api/tasks";
 import { getConstraints, createConstraint, updateConstraint, deleteConstraint, ConstraintDto } from "@/lib/api/constraints";
 import { createPerson, invitePerson, searchPeople } from "@/lib/api/people";
+import { getSelfServiceCycleStatus } from "@/lib/api/selfService";
 import { addGroupMemberById } from "@/lib/api/groups";
 import { apiClient } from "@/lib/api/client";
 import { DEFAULT_TASK_HORIZON_DAYS, MS_PER_DAY } from "@/lib/utils/constants";
@@ -194,7 +195,26 @@ export default function GroupDetailPage() {
   const [showReAuthDialog, setShowReAuthDialog] = useState(false);
   const [hasCredentials, setHasCredentials] = useState<boolean | null>(null); // null = loading
   const [subscriptionActive, setSubscriptionActive] = useState(true);
+  const [pendingSelfServiceReviewCount, setPendingSelfServiceReviewCount] = useState(0);
   const { enterElevatedMode, exitElevatedMode } = useAdminSessionStore();
+
+  const refreshSelfServiceReviewCount = useCallback(async () => {
+    if (!currentSpaceId || !groupId || group?.schedulingMode !== "SelfService" || !isAdmin) {
+      setPendingSelfServiceReviewCount(0);
+      return;
+    }
+
+    try {
+      const status = await getSelfServiceCycleStatus(currentSpaceId, groupId);
+      setPendingSelfServiceReviewCount(
+        status.pendingAbsenceReportCount
+          + status.pendingShiftChangeRequestCount
+          + status.pendingSpecialLeaveRequestCount
+      );
+    } catch {
+      setPendingSelfServiceReviewCount(0);
+    }
+  }, [currentSpaceId, groupId, group?.schedulingMode, isAdmin]);
 
   // ── Re-enter elevated session on page load if admin mode was persisted ──
   // This restarts the inactivity timeout after a refresh.
@@ -243,6 +263,10 @@ export default function GroupDetailPage() {
         setSubscriptionActive(true);
       });
   }, [currentSpaceId, groupId]);
+
+  useEffect(() => {
+    void Promise.resolve().then(refreshSelfServiceReviewCount);
+  }, [activeTab, refreshSelfServiceReviewCount]);
 
   // Handle management mode toggle with re-authentication
   const handleAdminModeToggle = () => {
@@ -1345,6 +1369,12 @@ export default function GroupDetailPage() {
   })();
   const avatarColor = getAvatarColor(group.name);
   const avatarLetter = getAvatarLetter(group.name);
+  const tabBadges: Partial<Record<ActiveTab, number>> = isSelfService && isAdmin
+    ? {
+        "self-service-ops": pendingSelfServiceReviewCount,
+        "absence-reports": pendingSelfServiceReviewCount,
+      }
+    : {};
 
   return (
     <AppShell>
@@ -1405,13 +1435,18 @@ export default function GroupDetailPage() {
               key={tab}
               onClick={() => setActiveTab(tab)}
               data-testid={`group-tab-${tab}`}
-              className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium whitespace-nowrap transition-all ${
+              className={`inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium whitespace-nowrap transition-all ${
                 activeTab === tab
                   ? "bg-white text-slate-900 shadow-sm"
                   : "text-slate-500 hover:text-slate-700"
               }`}
             >
-              {TAB_LABELS[tab]}
+              <span>{TAB_LABELS[tab]}</span>
+              {(tabBadges[tab] ?? 0) > 0 && (
+                <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-amber-500 px-1.5 text-[11px] font-semibold leading-none text-white">
+                  {tabBadges[tab]! > 99 ? "99+" : tabBadges[tab]}
+                </span>
+              )}
             </button>
           ))}
         </div>
@@ -1751,7 +1786,11 @@ export default function GroupDetailPage() {
           )}
 
           {activeTab === "absence-reports" && currentSpaceId && (
-            <AbsenceReportsTab spaceId={currentSpaceId} groupId={groupId} />
+            <AbsenceReportsTab
+              spaceId={currentSpaceId}
+              groupId={groupId}
+              onReviewed={refreshSelfServiceReviewCount}
+            />
           )}
 
           {activeTab === "admin-overrides" && currentSpaceId && (
