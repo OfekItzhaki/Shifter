@@ -21,17 +21,20 @@ public class ShiftChangeRequestsController : ControllerBase
     private readonly IPermissionService _permissions;
     private readonly INotificationService _notificationService;
     private readonly IPushNotificationSender _pushSender;
+    private readonly IAuditLogger _audit;
     private readonly AppDbContext _db;
 
     public ShiftChangeRequestsController(
         IPermissionService permissions,
         INotificationService notificationService,
         IPushNotificationSender pushSender,
+        IAuditLogger audit,
         AppDbContext db)
     {
         _permissions = permissions;
         _notificationService = notificationService;
         _pushSender = pushSender;
+        _audit = audit;
         _db = db;
     }
 
@@ -131,6 +134,24 @@ public class ShiftChangeRequestsController : ControllerBase
 
             _db.ShiftChangeRequests.Add(changeRequest);
             await _db.SaveChangesAsync(ct);
+            await _audit.LogAsync(
+                spaceId,
+                CurrentUserId,
+                "self_service.submit_shift_change",
+                "shift_change_request",
+                changeRequest.Id,
+                afterJson: JsonSerializer.Serialize(new
+                {
+                    change_request_id = changeRequest.Id,
+                    shift_request_id = changeRequest.ShiftRequestId,
+                    person_id = changeRequest.PersonId,
+                    group_id = changeRequest.GroupId,
+                    scheduling_cycle_id = changeRequest.SchedulingCycleId,
+                    original_shift_slot_id = changeRequest.OriginalShiftSlotId,
+                    requested_shift_slot_id = changeRequest.RequestedShiftSlotId,
+                    status = changeRequest.Status.ToString().ToLowerInvariant()
+                }),
+                ct: ct);
             await NotifyAdminsChangeSubmittedAsync(changeRequest, ct);
 
             return Created("", new { id = changeRequest.Id });
@@ -166,6 +187,31 @@ public class ShiftChangeRequestsController : ControllerBase
         {
             changeRequest.Cancel();
             await _db.SaveChangesAsync(ct);
+            await _audit.LogAsync(
+                spaceId,
+                CurrentUserId,
+                "self_service.cancel_shift_change",
+                "shift_change_request",
+                changeRequest.Id,
+                beforeJson: JsonSerializer.Serialize(new
+                {
+                    change_request_id = changeRequest.Id,
+                    shift_request_id = changeRequest.ShiftRequestId,
+                    person_id = changeRequest.PersonId,
+                    group_id = changeRequest.GroupId,
+                    scheduling_cycle_id = changeRequest.SchedulingCycleId,
+                    status = "pending"
+                }),
+                afterJson: JsonSerializer.Serialize(new
+                {
+                    change_request_id = changeRequest.Id,
+                    shift_request_id = changeRequest.ShiftRequestId,
+                    person_id = changeRequest.PersonId,
+                    group_id = changeRequest.GroupId,
+                    scheduling_cycle_id = changeRequest.SchedulingCycleId,
+                    status = changeRequest.Status.ToString().ToLowerInvariant()
+                }),
+                ct: ct);
             await NotifyAdminsChangeCancelledAsync(changeRequest, ct);
             return NoContent();
         }
@@ -349,6 +395,35 @@ public class ShiftChangeRequestsController : ControllerBase
             changeRequest.Approve(CurrentUserId, req.AdminNote);
             await AddMemberReviewNotificationAsync(changeRequest, approved: true, ct);
             await _db.SaveChangesAsync(ct);
+            await _audit.LogAsync(
+                spaceId,
+                CurrentUserId,
+                "self_service.approve_shift_change",
+                "shift_change_request",
+                changeRequest.Id,
+                beforeJson: JsonSerializer.Serialize(new
+                {
+                    change_request_id = changeRequest.Id,
+                    shift_request_id = changeRequest.ShiftRequestId,
+                    person_id = changeRequest.PersonId,
+                    group_id = changeRequest.GroupId,
+                    scheduling_cycle_id = changeRequest.SchedulingCycleId,
+                    original_shift_slot_id = changeRequest.OriginalShiftSlotId,
+                    status = "pending"
+                }),
+                afterJson: JsonSerializer.Serialize(new
+                {
+                    change_request_id = changeRequest.Id,
+                    shift_request_id = changeRequest.ShiftRequestId,
+                    person_id = changeRequest.PersonId,
+                    group_id = changeRequest.GroupId,
+                    scheduling_cycle_id = changeRequest.SchedulingCycleId,
+                    original_shift_slot_id = changeRequest.OriginalShiftSlotId,
+                    requested_shift_slot_id = changeRequest.RequestedShiftSlotId,
+                    status = changeRequest.Status.ToString().ToLowerInvariant(),
+                    admin_note = changeRequest.AdminNote
+                }),
+                ct: ct);
             await SendMemberReviewPushAsync(changeRequest, approved: true, ct);
             return NoContent();
         }
@@ -382,6 +457,32 @@ public class ShiftChangeRequestsController : ControllerBase
             changeRequest.Reject(CurrentUserId, req.AdminNote);
             await AddMemberReviewNotificationAsync(changeRequest, approved: false, ct);
             await _db.SaveChangesAsync(ct);
+            await _audit.LogAsync(
+                spaceId,
+                CurrentUserId,
+                "self_service.reject_shift_change",
+                "shift_change_request",
+                changeRequest.Id,
+                beforeJson: JsonSerializer.Serialize(new
+                {
+                    change_request_id = changeRequest.Id,
+                    shift_request_id = changeRequest.ShiftRequestId,
+                    person_id = changeRequest.PersonId,
+                    group_id = changeRequest.GroupId,
+                    scheduling_cycle_id = changeRequest.SchedulingCycleId,
+                    status = "pending"
+                }),
+                afterJson: JsonSerializer.Serialize(new
+                {
+                    change_request_id = changeRequest.Id,
+                    shift_request_id = changeRequest.ShiftRequestId,
+                    person_id = changeRequest.PersonId,
+                    group_id = changeRequest.GroupId,
+                    scheduling_cycle_id = changeRequest.SchedulingCycleId,
+                    status = changeRequest.Status.ToString().ToLowerInvariant(),
+                    admin_note = changeRequest.AdminNote
+                }),
+                ct: ct);
             await SendMemberReviewPushAsync(changeRequest, approved: false, ct);
             return NoContent();
         }

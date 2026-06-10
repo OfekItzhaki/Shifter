@@ -298,6 +298,7 @@ public class SelfServiceScopeTests
             services.Permissions,
             services.NotificationService,
             services.PushSender,
+            services.Audit,
             db);
         controller.ControllerContext = CreateControllerContext(userId);
 
@@ -345,6 +346,7 @@ public class SelfServiceScopeTests
             services.Permissions,
             services.NotificationService,
             services.PushSender,
+            services.Audit,
             db);
         controller.ControllerContext = CreateControllerContext(userId);
 
@@ -362,6 +364,21 @@ public class SelfServiceScopeTests
             Arg.Is<string>(body => body.Contains("Display Member") && body.Contains("Task")),
             Arg.Is<string>(metadata => metadata.Contains("\"reason\":\"Need to move\"")),
             group.Id,
+            Arg.Any<CancellationToken>());
+
+        var createdChange = await db.ShiftChangeRequests.SingleAsync();
+        await services.Audit.Received(1).LogAsync(
+            spaceId,
+            userId,
+            "self_service.submit_shift_change",
+            "shift_change_request",
+            createdChange.Id,
+            Arg.Is<string?>(json => json == null),
+            Arg.Is<string?>(json => json != null
+                && json.Contains(shiftRequest.Id.ToString())
+                && json.Contains(requestedSlot.Id.ToString())
+                && json.Contains("\"status\":\"pending\"")),
+            Arg.Is<string?>(ipAddress => ipAddress == null),
             Arg.Any<CancellationToken>());
     }
 
@@ -396,6 +413,7 @@ public class SelfServiceScopeTests
             services.Permissions,
             services.NotificationService,
             services.PushSender,
+            services.Audit,
             db);
         controller.ControllerContext = CreateControllerContext(userId);
 
@@ -441,6 +459,7 @@ public class SelfServiceScopeTests
             services.Permissions,
             services.NotificationService,
             services.PushSender,
+            services.Audit,
             db);
         controller.ControllerContext = CreateControllerContext(userId);
 
@@ -502,6 +521,7 @@ public class SelfServiceScopeTests
             services.Permissions,
             services.NotificationService,
             services.PushSender,
+            services.Audit,
             db);
         controller.ControllerContext = CreateControllerContext(adminUserId);
 
@@ -577,6 +597,7 @@ public class SelfServiceScopeTests
             services.Permissions,
             services.NotificationService,
             services.PushSender,
+            services.Audit,
             db);
         controller.ControllerContext = CreateControllerContext(adminUserId);
 
@@ -648,6 +669,7 @@ public class SelfServiceScopeTests
             services.Permissions,
             services.NotificationService,
             services.PushSender,
+            services.Audit,
             db);
         controller.ControllerContext = CreateControllerContext(adminUserId);
 
@@ -718,6 +740,7 @@ public class SelfServiceScopeTests
             services.Permissions,
             services.NotificationService,
             services.PushSender,
+            services.Audit,
             db);
         controller.ControllerContext = CreateControllerContext(adminUserId);
 
@@ -786,6 +809,7 @@ public class SelfServiceScopeTests
             services.Permissions,
             services.NotificationService,
             services.PushSender,
+            services.Audit,
             db);
         controller.ControllerContext = CreateControllerContext(adminUserId);
 
@@ -808,6 +832,22 @@ public class SelfServiceScopeTests
         updatedRequestedSlot.CurrentFillCount.Should().Be(1);
         updatedChange.Status.Should().Be(ShiftChangeRequestStatus.Approved);
         updatedChange.RequestedShiftSlotId.Should().Be(requestedSlot.Id);
+
+        await services.Audit.Received(1).LogAsync(
+            spaceId,
+            adminUserId,
+            "self_service.approve_shift_change",
+            "shift_change_request",
+            changeRequest.Id,
+            Arg.Is<string?>(json => json != null
+                && json.Contains(changeRequest.Id.ToString())
+                && json.Contains("\"status\":\"pending\"")),
+            Arg.Is<string?>(json => json != null
+                && json.Contains(requestedSlot.Id.ToString())
+                && json.Contains("\"status\":\"approved\"")
+                && json.Contains("\"admin_note\":\"Approved\"")),
+            Arg.Is<string?>(ipAddress => ipAddress == null),
+            Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -857,6 +897,7 @@ public class SelfServiceScopeTests
             services.Permissions,
             services.NotificationService,
             services.PushSender,
+            services.Audit,
             db);
         controller.ControllerContext = CreateControllerContext(adminUserId);
 
@@ -898,6 +939,7 @@ public class SelfServiceScopeTests
             services.Permissions,
             services.NotificationService,
             services.PushSender,
+            services.Audit,
             db);
         controller.ControllerContext = CreateControllerContext(adminUserId);
 
@@ -1306,6 +1348,24 @@ public class SelfServiceScopeTests
             endTime: new TimeOnly(16, 0),
             capacity: 1);
 
+    private static IAuditLogger CreateAuditLogger()
+    {
+        var audit = Substitute.For<IAuditLogger>();
+        audit.LogAsync(
+                Arg.Any<Guid?>(),
+                Arg.Any<Guid?>(),
+                Arg.Any<string>(),
+                Arg.Any<string?>(),
+                Arg.Any<Guid?>(),
+                Arg.Any<string?>(),
+                Arg.Any<string?>(),
+                Arg.Any<string?>(),
+                Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+        return audit;
+    }
+
+
     private static ControllerContext CreateControllerContext(Guid userId)
     {
         var httpContext = new DefaultHttpContext
@@ -1326,7 +1386,8 @@ public class SelfServiceScopeTests
             Substitute.For<IShiftRequestService>(),
             Substitute.For<IWaitlistService>(),
             Substitute.For<IShiftSwapService>(),
-            Substitute.For<IPushNotificationSender>());
+            Substitute.For<IPushNotificationSender>(),
+            CreateAuditLogger());
 
     private sealed record ControllerServices(
         IMediator Mediator,
@@ -1335,5 +1396,6 @@ public class SelfServiceScopeTests
         IShiftRequestService ShiftRequestService,
         IWaitlistService WaitlistService,
         IShiftSwapService SwapService,
-        IPushNotificationSender PushSender);
+        IPushNotificationSender PushSender,
+        IAuditLogger Audit);
 }
