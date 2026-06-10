@@ -159,6 +159,47 @@ public class SelfServiceNotificationTests
     }
 
     [Fact]
+    public async Task AdminAssignShiftCommand_AcceptsMatchingActiveWaitlistEntry()
+    {
+        using var db = CreateDb();
+        var (spaceId, groupId, cycleId, taskId, _) = SeedBaseData(db);
+        var member = Person.Create(spaceId, "Waitlisted Member", linkedUserId: Guid.NewGuid());
+        var slot = AddSlot(db, spaceId, groupId, taskId, cycleId, daysFromNow: 2);
+        var entry = WaitlistEntry.Create(spaceId, slot.Id, member.Id, position: 1);
+
+        db.People.Add(member);
+        db.GroupMemberships.Add(GroupMembership.Create(spaceId, groupId, member.Id));
+        db.WaitlistEntries.Add(entry);
+        await db.SaveChangesAsync();
+
+        var permissions = Substitute.For<IPermissionService>();
+        permissions
+            .RequirePermissionAsync(Arg.Any<Guid>(), spaceId, Permissions.SchedulePublish, Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+
+        var handler = new AdminAssignShiftCommandHandler(
+            db,
+            permissions,
+            Substitute.For<IPushNotificationSender>(),
+            NullLogger<AdminAssignShiftCommandHandler>.Instance);
+
+        var result = await handler.Handle(
+            new AdminAssignShiftCommand(spaceId, groupId, slot.Id, member.Id, Guid.NewGuid()),
+            CancellationToken.None);
+
+        result.Success.Should().BeTrue();
+
+        var updatedEntry = await db.WaitlistEntries.SingleAsync(e => e.Id == entry.Id);
+        updatedEntry.Status.Should().Be(WaitlistEntryStatus.Accepted);
+        var hasApprovedOverride = await db.ShiftRequests.AnyAsync(r =>
+            r.ShiftSlotId == slot.Id
+            && r.PersonId == member.Id
+            && r.Status == ShiftRequestStatus.Approved
+            && r.IsAdminOverride);
+        hasApprovedOverride.Should().BeTrue();
+    }
+
+    [Fact]
     public async Task AdminRemoveShiftCommand_CreatesNotification_ForRemovedMember()
     {
         using var db = CreateDb();

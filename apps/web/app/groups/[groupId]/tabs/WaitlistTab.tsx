@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useTranslations } from "next-intl";
 import Modal from "@/components/Modal";
 import {
+  adminAssignMember,
   getAdminWaitlistEntries,
   getMyWaitlistEntries,
   acceptWaitlistOffer,
@@ -42,6 +43,7 @@ export default function WaitlistTab({ spaceId, groupId, isAdmin = false }: Waitl
   const [acceptingId, setAcceptingId] = useState<string | null>(null);
   const [decliningId, setDecliningId] = useState<string | null>(null);
   const [leavingId, setLeavingId] = useState<string | null>(null);
+  const [adminAssigningId, setAdminAssigningId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
 
   // Leave confirmation dialog
@@ -131,6 +133,20 @@ export default function WaitlistTab({ spaceId, groupId, isAdmin = false }: Waitl
     }
   };
 
+  const handleAdminAssign = async (entry: AdminWaitlistEntryDto) => {
+    setAdminAssigningId(entry.id);
+    setActionError(null);
+    try {
+      await adminAssignMember(spaceId, groupId, entry.shiftSlotId, entry.personId);
+      await fetchEntries();
+    } catch (err) {
+      const errorResult = getSelfServiceErrorMessage(err);
+      setActionError(errorResult.message);
+    } finally {
+      setAdminAssigningId(null);
+    }
+  };
+
   const getStatusLabel = (status: WaitlistEntryDto["status"]): string => {
     const statusMap: Record<WaitlistEntryDto["status"], string> = {
       Waiting: t("statusWaiting"),
@@ -210,11 +226,21 @@ export default function WaitlistTab({ spaceId, groupId, isAdmin = false }: Waitl
                     {entry.taskName} - {formatSlotDate(entry.slotDate)} - {formatTime24h(entry.slotStartTime)}-{formatTime24h(entry.slotEndTime)}
                   </p>
                 </div>
-                {entry.status === "Offered" && entry.expiresAt && (
-                  <div className="text-sm font-medium text-sky-700">
-                    {t("offerExpires", { time: formatCountdown(entry.expiresAt) })}
-                  </div>
-                )}
+                <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+                  {entry.status === "Offered" && entry.expiresAt && (
+                    <div className="text-sm font-medium text-sky-700">
+                      {t("offerExpires", { time: formatCountdown(entry.expiresAt) })}
+                    </div>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => handleAdminAssign(entry)}
+                    disabled={adminAssigningId === entry.id}
+                    className="inline-flex items-center rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {adminAssigningId === entry.id ? t("adminAssigning") : t("adminAssignButton")}
+                  </button>
+                </div>
               </div>
             ))}
           </div>

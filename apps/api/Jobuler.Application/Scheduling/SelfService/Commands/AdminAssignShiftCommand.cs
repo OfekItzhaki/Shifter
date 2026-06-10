@@ -95,6 +95,12 @@ public class AdminAssignShiftCommandHandler : IRequestHandler<AdminAssignShiftCo
         if (hasDuplicate)
             throw new InvalidOperationException("The member is already assigned to this shift slot.");
 
+        var waitlistEntry = await _db.WaitlistEntries
+            .FirstOrDefaultAsync(e => e.SpaceId == request.SpaceId
+                                      && e.ShiftSlotId == request.ShiftSlotId
+                                      && e.PersonId == request.PersonId
+                                      && (e.Status == WaitlistEntryStatus.Waiting || e.Status == WaitlistEntryStatus.Offered), ct);
+
         // Req 10.1, 10.2: Admin override bypasses capacity and Max_Shifts constraints
         // Create an approved ShiftRequest with admin override flag
         var shiftRequest = ShiftRequest.Create(
@@ -110,13 +116,14 @@ public class AdminAssignShiftCommandHandler : IRequestHandler<AdminAssignShiftCo
 
         // Req 10.3: Increment fill count (even beyond capacity for admin override)
         slot.IncrementFillCount();
+        waitlistEntry?.Accept();
 
         _db.ShiftRequests.Add(shiftRequest);
         await _db.SaveChangesAsync(ct);
 
         _logger.LogInformation(
-            "Admin {AdminUserId} assigned person {PersonId} to slot {SlotId} (admin override). Request {RequestId}",
-            request.RequestingUserId, request.PersonId, request.ShiftSlotId, shiftRequest.Id);
+            "Admin {AdminUserId} assigned person {PersonId} to slot {SlotId} (admin override). Request {RequestId}. Waitlist entry accepted: {AcceptedWaitlistEntry}",
+            request.RequestingUserId, request.PersonId, request.ShiftSlotId, shiftRequest.Id, waitlistEntry is not null);
 
         await SendAdminAssignedNotificationAsync(request.PersonId, slot, shiftRequest.Id, ct);
 

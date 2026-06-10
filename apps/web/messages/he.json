@@ -2068,7 +2068,9 @@
       "maxShiftsReached": "הגעת למקסימום המשמרות. ההצעה הועברה לבא בתור.",
       "adminTitle": "Active waitlist queue",
       "adminDescription": "Members currently waiting or holding an offer for this group.",
-      "adminCount": "{count} active"
+      "adminCount": "{count} active",
+      "adminAssignButton": "Assign now",
+      "adminAssigning": "Assigning..."
     },
     "swaps": {
       "title": "החלפות משמרות",

@@ -2056,7 +2056,9 @@
       "adminTitle": "Active waitlist queue",
       "adminDescription": "Members currently waiting or holding an offer for this group.",
       "adminCount": "{count} active",
-      "maxShiftsReached": "You have reached the maximum shifts. The offer has been passed to the next person."
+      "maxShiftsReached": "You have reached the maximum shifts. The offer has been passed to the next person.",
+      "adminAssignButton": "Assign now",
+      "adminAssigning": "Assigning..."
     },
     "swaps": {
       "title": "Shift Swaps",

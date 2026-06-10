@@ -2056,7 +2056,9 @@
       "maxShiftsReached": "Вы достигли максимального числа смен. Предложение передано следующему участнику.",
       "adminTitle": "Active waitlist queue",
       "adminDescription": "Members currently waiting or holding an offer for this group.",
-      "adminCount": "{count} active"
+      "adminCount": "{count} active",
+      "adminAssignButton": "Assign now",
+      "adminAssigning": "Assigning..."
     },
     "swaps": {
       "title": "Обмен сменами",
