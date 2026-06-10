@@ -1,11 +1,14 @@
 using FluentValidation;
 using Jobuler.Application.Common;
+using Jobuler.Application.Notifications;
+using Jobuler.Domain.Notifications;
 using Jobuler.Domain.Scheduling;
 using Jobuler.Domain.Spaces;
 using Jobuler.Infrastructure.Persistence;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using System.Text.Json;
 
 namespace Jobuler.Application.Scheduling.SelfService.Commands;
 
@@ -43,17 +46,20 @@ public class AdminRemoveShiftCommandHandler : IRequestHandler<AdminRemoveShiftCo
     private readonly AppDbContext _db;
     private readonly IPermissionService _permissions;
     private readonly IWaitlistService _waitlistService;
+    private readonly IPushNotificationSender _pushSender;
     private readonly ILogger<AdminRemoveShiftCommandHandler> _logger;
 
     public AdminRemoveShiftCommandHandler(
         AppDbContext db,
         IPermissionService permissions,
         IWaitlistService waitlistService,
+        IPushNotificationSender pushSender,
         ILogger<AdminRemoveShiftCommandHandler> logger)
     {
         _db = db;
         _permissions = permissions;
         _waitlistService = waitlistService;
+        _pushSender = pushSender;
         _logger = logger;
     }
 
@@ -110,8 +116,77 @@ public class AdminRemoveShiftCommandHandler : IRequestHandler<AdminRemoveShiftCo
             "Admin {AdminUserId} removed person {PersonId} from slot {SlotId}. Request {RequestId} cancelled with reason 'admin_removed'.",
             request.RequestingUserId, request.PersonId, request.ShiftSlotId, shiftRequest.Id);
 
+        await SendAdminRemovedNotificationAsync(request.PersonId, slot, shiftRequest.Id, ct);
+
         return new AdminRemoveShiftResult(
             Success: true,
             ErrorMessage: null);
+    }
+
+    private async Task SendAdminRemovedNotificationAsync(
+        Guid personId,
+        ShiftSlot slot,
+        Guid shiftRequestId,
+        CancellationToken ct)
+    {
+        try
+        {
+            var detail = await _db.People
+                .AsNoTracking()
+                .Where(p => p.Id == personId && p.SpaceId == slot.SpaceId && p.LinkedUserId != null)
+                .Join(
+                    _db.GroupTasks.AsNoTracking(),
+                    p => slot.GroupTaskId,
+                    t => t.Id,
+                    (p, t) => new { p.LinkedUserId, TaskName = t.Name })
+                .FirstOrDefaultAsync(ct);
+
+            if (detail?.LinkedUserId is null)
+                return;
+
+            var title = "Shift Removed";
+            var body = $"An admin removed you from {detail.TaskName} on {slot.Date:MMM dd} ({slot.StartTime:HH:mm}-{slot.EndTime:HH:mm}).";
+
+            _db.Notifications.Add(Notification.Create(
+                slot.SpaceId,
+                detail.LinkedUserId.Value,
+                "self_service.admin_removed",
+                title,
+                body,
+                JsonSerializer.Serialize(new
+                {
+                    shiftRequestId,
+                    groupId = slot.GroupId,
+                    shiftSlotId = slot.Id,
+                    schedulingCycleId = slot.SchedulingCycleId,
+                    date = slot.Date,
+                    startTime = slot.StartTime.ToString("HH:mm"),
+                    endTime = slot.EndTime.ToString("HH:mm"),
+                    taskName = detail.TaskName
+                })));
+
+            await _db.SaveChangesAsync(ct);
+
+            try
+            {
+                await _pushSender.SendPushToUserAsync(
+                    detail.LinkedUserId.Value,
+                    slot.SpaceId,
+                    new PushPayload(title, body, "/favicon.jpeg", "/shifts"),
+                    ct);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex,
+                    "Push notification delivery failed for admin removal (person {PersonId}, slot {SlotId}). In-app notification was persisted successfully.",
+                    personId, slot.Id);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex,
+                "Failed to send admin removal notification for person {PersonId}, slot {SlotId}",
+                personId, slot.Id);
+        }
     }
 }

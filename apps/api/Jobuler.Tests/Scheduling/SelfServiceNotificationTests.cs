@@ -1,9 +1,12 @@
 using FluentAssertions;
+using Jobuler.Application.Common;
 using Jobuler.Application.Notifications;
 using Jobuler.Application.Scheduling.SelfService;
+using Jobuler.Application.Scheduling.SelfService.Commands;
 using Jobuler.Domain.Groups;
 using Jobuler.Domain.People;
 using Jobuler.Domain.Scheduling;
+using Jobuler.Domain.Spaces;
 using Jobuler.Domain.Tasks;
 using Jobuler.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -117,6 +120,84 @@ public class SelfServiceNotificationTests
             .Should().BeEquivalentTo([initiatorUserId, targetUserId]);
         acceptedNotifications.Should().AllSatisfy(n =>
             n.MetadataJson.Should().Contain(swap.Id.ToString()));
+    }
+
+    [Fact]
+    public async Task AdminAssignShiftCommand_CreatesNotification_ForAssignedMember()
+    {
+        using var db = CreateDb();
+        var (spaceId, groupId, cycleId, taskId, _) = SeedBaseData(db);
+        var assignedUserId = Guid.NewGuid();
+        var member = Person.Create(spaceId, "Assigned Member", linkedUserId: assignedUserId);
+        var slot = AddSlot(db, spaceId, groupId, taskId, cycleId, daysFromNow: 2);
+
+        db.People.Add(member);
+        db.GroupMemberships.Add(GroupMembership.Create(spaceId, groupId, member.Id));
+        await db.SaveChangesAsync();
+
+        var permissions = Substitute.For<IPermissionService>();
+        permissions
+            .RequirePermissionAsync(Arg.Any<Guid>(), spaceId, Permissions.SchedulePublish, Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+
+        var handler = new AdminAssignShiftCommandHandler(
+            db,
+            permissions,
+            Substitute.For<IPushNotificationSender>(),
+            NullLogger<AdminAssignShiftCommandHandler>.Instance);
+
+        var result = await handler.Handle(
+            new AdminAssignShiftCommand(spaceId, groupId, slot.Id, member.Id, Guid.NewGuid()),
+            CancellationToken.None);
+
+        result.Success.Should().BeTrue();
+
+        var notification = await db.Notifications
+            .SingleAsync(n => n.EventType == "self_service.admin_assigned");
+        notification.UserId.Should().Be(assignedUserId);
+        notification.MetadataJson.Should().Contain(slot.Id.ToString());
+    }
+
+    [Fact]
+    public async Task AdminRemoveShiftCommand_CreatesNotification_ForRemovedMember()
+    {
+        using var db = CreateDb();
+        var (spaceId, groupId, cycleId, taskId, _) = SeedBaseData(db);
+        var removedUserId = Guid.NewGuid();
+        var member = Person.Create(spaceId, "Removed Member", linkedUserId: removedUserId);
+        var slot = AddSlot(db, spaceId, groupId, taskId, cycleId, daysFromNow: 2);
+        slot.IncrementFillCount();
+
+        var shiftRequest = ShiftRequest.Create(spaceId, slot.Id, member.Id, groupId, cycleId);
+        shiftRequest.Approve();
+
+        db.People.Add(member);
+        db.GroupMemberships.Add(GroupMembership.Create(spaceId, groupId, member.Id));
+        db.ShiftRequests.Add(shiftRequest);
+        await db.SaveChangesAsync();
+
+        var permissions = Substitute.For<IPermissionService>();
+        permissions
+            .RequirePermissionAsync(Arg.Any<Guid>(), spaceId, Permissions.SchedulePublish, Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+
+        var handler = new AdminRemoveShiftCommandHandler(
+            db,
+            permissions,
+            Substitute.For<IWaitlistService>(),
+            Substitute.For<IPushNotificationSender>(),
+            NullLogger<AdminRemoveShiftCommandHandler>.Instance);
+
+        var result = await handler.Handle(
+            new AdminRemoveShiftCommand(spaceId, groupId, slot.Id, member.Id, Guid.NewGuid()),
+            CancellationToken.None);
+
+        result.Success.Should().BeTrue();
+
+        var notification = await db.Notifications
+            .SingleAsync(n => n.EventType == "self_service.admin_removed");
+        notification.UserId.Should().Be(removedUserId);
+        notification.MetadataJson.Should().Contain(shiftRequest.Id.ToString());
     }
 
     private static (Guid spaceId, Guid groupId, Guid cycleId, Guid taskId, Guid ownerUserId) SeedBaseData(AppDbContext db)
