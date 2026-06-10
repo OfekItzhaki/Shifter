@@ -1930,6 +1930,7 @@
       "cancel": "Go Back"
     },
     "tabs": {
+      "operations": "Operations",
       "availableSlots": "Available Slots",
       "myShifts": "My Shifts",
       "waitlist": "Waitlist",
@@ -2095,16 +2096,16 @@
       "rejecting": "Rejecting...",
       "statusPending": "Pending",
       "statusApproved": "Approved",
-        "statusRejected": "Rejected",
-        "statusCancelled": "Cancelled",
-        "changeRequestsTitle": "Shift Change Requests",
-        "changeRequestsEmpty": "No shift change requests",
-        "changeFrom": "From",
-        "changeTo": "To",
-        "changeFlexibleTarget": "Flexible replacement",
-        "changeTargetShift": "Target shift",
-        "changeTargetRequired": "Choose a target shift to approve"
-      },
+      "statusRejected": "Rejected",
+      "statusCancelled": "Cancelled",
+      "changeRequestsTitle": "Shift Change Requests",
+      "changeRequestsEmpty": "No shift change requests",
+      "changeFrom": "From",
+      "changeTo": "To",
+      "changeFlexibleTarget": "Flexible replacement",
+      "changeTargetShift": "Target shift",
+      "changeTargetRequired": "Choose a target shift to approve"
+    },
     "templates": {
       "title": "Shift Templates",
       "createButton": "Create Template",
@@ -2207,7 +2208,29 @@
     },
     "loading": "Loading...",
     "error": "Error loading data",
-    "retry": "Retry"
+    "retry": "Retry",
+    "operations": {
+      "title": "Self-service operations",
+      "description": "Run the current cycle, watch coverage, and jump into the queues that need admin action.",
+      "actions": {
+        "reviews": {
+          "title": "Review requests",
+          "description": "Approve absence reports and shift-change requests."
+        },
+        "overrides": {
+          "title": "Manual overrides",
+          "description": "Assign or remove members when the schedule needs a direct correction."
+        },
+        "templates": {
+          "title": "Shift templates",
+          "description": "Adjust the slots generated for upcoming self-service cycles."
+        },
+        "policy": {
+          "title": "Policy settings",
+          "description": "Tune limits, windows, cutoffs, and waitlist offer timing."
+        }
+      }
+    }
   },
   "pick": {
     "title": "Shift Picker",

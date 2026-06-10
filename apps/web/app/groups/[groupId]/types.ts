@@ -7,7 +7,7 @@ export type ActiveTab =
   | "alerts" | "messages" | "tasks" | "constraints"
   | "settings" | "stats" | "live-status"
   // Self-service tabs:
-  | "available-slots" | "my-shifts" | "waitlist" | "swaps"
+  | "self-service-ops" | "available-slots" | "my-shifts" | "waitlist" | "swaps"
   | "shift-templates" | "self-service-config" | "admin-overrides" | "absence-reports";
 
 export const ADMIN_ONLY_TABS: ActiveTab[] = ["tasks", "constraints", "roles", "settings"];
@@ -26,6 +26,7 @@ export const SELF_SERVICE_MEMBER_TABS: ActiveTab[] = [
 
 /** Tabs shown for self-service groups to admins */
 export const SELF_SERVICE_ADMIN_TABS: ActiveTab[] = [
+  "self-service-ops",
   "available-slots", "my-shifts", "waitlist", "swaps",
   "shift-templates", "self-service-config", "admin-overrides",
   "absence-reports",

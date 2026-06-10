@@ -13,7 +13,6 @@ import { getSelfServiceErrorMessage } from "@/lib/utils/selfServiceErrors";
 import LoadingCard from "./LoadingCard";
 import ErrorRetry from "./ErrorRetry";
 import MutationButton from "./MutationButton";
-import CycleControlPanel from "./CycleControlPanel";
 
 interface SelfServiceConfigTabProps {
   spaceId: string;
@@ -89,7 +88,7 @@ export default function SelfServiceConfigTab({ spaceId, groupId }: SelfServiceCo
   }, [spaceId, groupId]);
 
   useEffect(() => {
-    fetchConfig();
+    void Promise.resolve().then(fetchConfig);
   }, [fetchConfig]);
 
   // ── Form handlers ────────────────────────────────────────────────────────
@@ -144,8 +143,6 @@ export default function SelfServiceConfigTab({ spaceId, groupId }: SelfServiceCo
 
   return (
     <div className="space-y-5">
-      <CycleControlPanel spaceId={spaceId} groupId={groupId} />
-
       <div className="bg-white border border-slate-200 rounded-xl p-6">
         <h3 className="text-base font-semibold text-slate-900 mb-6">{t("title")}</h3>
 

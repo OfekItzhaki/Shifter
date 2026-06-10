@@ -32,6 +32,7 @@ const SlotBrowserTab = lazy(() => import("./tabs/SlotBrowserTab"));
 const MyShiftsTab = lazy(() => import("@/components/groups/selfService/MyShiftsTab"));
 const WaitlistTab = lazy(() => import("./tabs/WaitlistTab"));
 const SwapsTab = lazy(() => import("./tabs/SwapsTab"));
+const SelfServiceOperationsTab = lazy(() => import("@/components/groups/selfService/SelfServiceOperationsTab"));
 const ShiftTemplatesTab = lazy(() => import("@/components/groups/selfService/ShiftTemplatesTab"));
 const SelfServiceConfigTab = lazy(() => import("@/components/groups/selfService/SelfServiceConfigTab"));
 const AbsenceReportsTab = lazy(() => import("@/components/groups/selfService/AbsenceReportsTab"));
@@ -82,6 +83,7 @@ function getTabLabels(t: (key: string) => string, tSelfService: (key: string) =>
     stats: t("tabs.stats"),
     "live-status": t("tabs.liveStatus"),
     // Self-service tabs
+    "self-service-ops": tSelfService("tabs.operations"),
     "available-slots": tSelfService("tabs.availableSlots"),
     "my-shifts": tSelfService("tabs.myShifts"),
     "waitlist": tSelfService("tabs.waitlist"),
@@ -1716,6 +1718,14 @@ export default function GroupDetailPage() {
           )}
 
           {/* Self-service tabs */}
+          {activeTab === "self-service-ops" && currentSpaceId && (
+            <SelfServiceOperationsTab
+              spaceId={currentSpaceId}
+              groupId={groupId}
+              onNavigate={setActiveTab}
+            />
+          )}
+
           {activeTab === "available-slots" && currentSpaceId && (
             <SlotBrowserTab spaceId={currentSpaceId} groupId={groupId} isAdmin={isAdmin} />
           )}

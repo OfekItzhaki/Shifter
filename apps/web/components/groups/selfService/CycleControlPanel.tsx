@@ -58,7 +58,7 @@ export default function CycleControlPanel({ spaceId, groupId }: CycleControlPane
   }, [spaceId, groupId]);
 
   useEffect(() => {
-    load();
+    void Promise.resolve().then(load);
   }, [load]);
 
   async function run(name: string, fn: () => Promise<SelfServiceCycleStatusDto | void>) {
