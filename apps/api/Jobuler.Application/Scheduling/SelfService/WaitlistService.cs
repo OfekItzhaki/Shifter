@@ -50,9 +50,7 @@ public class WaitlistService : IWaitlistService
                 ErrorMessage: "You are already on the waitlist for this slot.");
         }
 
-        // Load the slot to get SpaceId for tenant scoping
         var slot = await _db.ShiftSlots
-            .AsNoTracking()
             .FirstOrDefaultAsync(s => s.Id == shiftSlotId, ct);
 
         if (slot is null)
@@ -61,6 +59,27 @@ public class WaitlistService : IWaitlistService
                 Success: false,
                 Position: null,
                 ErrorMessage: "The requested shift slot does not exist.");
+        }
+
+        if (slot.HasAvailableCapacity())
+        {
+            return new WaitlistResult(
+                Success: false,
+                Position: null,
+                ErrorMessage: "This shift still has available capacity. Request the shift directly instead.");
+        }
+
+        var hasActiveShiftRequest = await _db.ShiftRequests
+            .AnyAsync(r => r.ShiftSlotId == shiftSlotId
+                           && r.PersonId == personId
+                           && (r.Status == ShiftRequestStatus.Pending || r.Status == ShiftRequestStatus.Approved), ct);
+
+        if (hasActiveShiftRequest)
+        {
+            return new WaitlistResult(
+                Success: false,
+                Position: null,
+                ErrorMessage: "You already have an active request for this slot.");
         }
 
         // Determine next position (max position + 1 among active entries for this slot)
