@@ -313,6 +313,8 @@ public class ShiftSwapService : IShiftSwapService
                     swapRequestId, initiatorPersonId, targetSlotId,
                     targetPersonIdOnRequest, initiatorSlotId);
 
+                await SendSwapAcceptedNotificationsAsync(swapRequest, initiatorSlot, targetSlot, ct);
+
                 return new SwapResult(Success: true, SwapRequestId: swapRequestId, ErrorMessage: null);
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
@@ -380,6 +382,8 @@ public class ShiftSwapService : IShiftSwapService
         _logger.LogInformation(
             "Swap request {SwapId} cancelled by initiator {InitiatorId}",
             swapRequestId, initiatorPersonId);
+
+        await SendSwapCancelledNotificationAsync(swapRequest, ct);
     }
 
     /// <summary>
@@ -657,6 +661,144 @@ public class ShiftSwapService : IShiftSwapService
         {
             _logger.LogError(ex,
                 "Failed to send swap declined notification for swap {SwapId}",
+                swapRequest.Id);
+        }
+    }
+
+    private async Task SendSwapAcceptedNotificationsAsync(
+        SwapRequest swapRequest,
+        ShiftSlot initiatorSlot,
+        ShiftSlot targetSlot,
+        CancellationToken ct)
+    {
+        try
+        {
+            var persons = await _db.People
+                .AsNoTracking()
+                .Where(p => (p.Id == swapRequest.InitiatorPersonId || p.Id == swapRequest.TargetPersonId)
+                            && p.SpaceId == swapRequest.SpaceId
+                            && p.LinkedUserId != null)
+                .Select(p => new { p.Id, p.LinkedUserId })
+                .ToListAsync(ct);
+
+            if (persons.Count == 0)
+                return;
+
+            var taskIds = new[] { initiatorSlot.GroupTaskId, targetSlot.GroupTaskId };
+            var taskNames = await _db.GroupTasks
+                .AsNoTracking()
+                .Where(t => taskIds.Contains(t.Id))
+                .Select(t => new { t.Id, t.Name })
+                .ToDictionaryAsync(t => t.Id, t => t.Name, ct);
+
+            var initiatorTaskName = taskNames.GetValueOrDefault(initiatorSlot.GroupTaskId, "Shift");
+            var targetTaskName = taskNames.GetValueOrDefault(targetSlot.GroupTaskId, "Shift");
+
+            var notifications = new List<Notification>();
+            foreach (var person in persons)
+            {
+                var receivingSlot = person.Id == swapRequest.InitiatorPersonId ? targetSlot : initiatorSlot;
+                var receivingTask = person.Id == swapRequest.InitiatorPersonId ? targetTaskName : initiatorTaskName;
+
+                notifications.Add(Notification.Create(
+                    swapRequest.SpaceId,
+                    person.LinkedUserId!.Value,
+                    "self_service.swap_accepted",
+                    "Shift Swap Accepted",
+                    $"Your shift swap was accepted. You are now assigned to {receivingTask} on {receivingSlot.Date:MMM dd} ({receivingSlot.StartTime:HH:mm}-{receivingSlot.EndTime:HH:mm}).",
+                    JsonSerializer.Serialize(new
+                    {
+                        swapRequestId = swapRequest.Id,
+                        groupId = swapRequest.GroupId,
+                        shiftSlotId = receivingSlot.Id,
+                        date = receivingSlot.Date,
+                        startTime = receivingSlot.StartTime.ToString("HH:mm"),
+                        endTime = receivingSlot.EndTime.ToString("HH:mm"),
+                        taskName = receivingTask
+                    })));
+            }
+
+            _db.Notifications.AddRange(notifications);
+            await _db.SaveChangesAsync(ct);
+
+            try
+            {
+                await _pushSender.SendPushToUsersAsync(
+                    persons.Select(p => p.LinkedUserId!.Value).ToList(),
+                    swapRequest.SpaceId,
+                    new PushPayload(
+                        Title: "Shift Swap Accepted",
+                        Body: "Your shift swap was accepted.",
+                        Icon: "/favicon.jpeg",
+                        Url: "/shifts/swaps"),
+                    ct);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex,
+                    "Push notification delivery failed for swap accepted (swap {SwapId}). In-app notifications were persisted successfully.",
+                    swapRequest.Id);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex,
+                "Failed to send swap accepted notifications for swap {SwapId}",
+                swapRequest.Id);
+        }
+    }
+
+    private async Task SendSwapCancelledNotificationAsync(SwapRequest swapRequest, CancellationToken ct)
+    {
+        try
+        {
+            var target = await _db.People
+                .AsNoTracking()
+                .Where(p => p.Id == swapRequest.TargetPersonId
+                            && p.SpaceId == swapRequest.SpaceId
+                            && p.LinkedUserId != null)
+                .Select(p => new { p.LinkedUserId })
+                .FirstOrDefaultAsync(ct);
+
+            if (target?.LinkedUserId is null)
+                return;
+
+            var title = "Swap Proposal Cancelled";
+            var body = "A shift swap proposal sent to you was cancelled.";
+
+            _db.Notifications.Add(Notification.Create(
+                swapRequest.SpaceId,
+                target.LinkedUserId.Value,
+                "self_service.swap_cancelled",
+                title,
+                body,
+                JsonSerializer.Serialize(new
+                {
+                    swapRequestId = swapRequest.Id,
+                    groupId = swapRequest.GroupId
+                })));
+
+            await _db.SaveChangesAsync(ct);
+
+            try
+            {
+                await _pushSender.SendPushToUserAsync(
+                    target.LinkedUserId.Value,
+                    swapRequest.SpaceId,
+                    new PushPayload(title, body, "/favicon.jpeg", "/shifts/swaps"),
+                    ct);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex,
+                    "Push notification delivery failed for swap cancelled (swap {SwapId}). In-app notification was persisted successfully.",
+                    swapRequest.Id);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex,
+                "Failed to send swap cancelled notification for swap {SwapId}",
                 swapRequest.Id);
         }
     }

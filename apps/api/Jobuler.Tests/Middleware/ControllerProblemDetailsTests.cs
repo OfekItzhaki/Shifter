@@ -2,6 +2,7 @@ using FluentAssertions;
 using Jobuler.Api.Controllers;
 using Jobuler.Api.Middleware;
 using Jobuler.Application.Common;
+using Jobuler.Application.Notifications;
 using Jobuler.Application.Scheduling.SelfService;
 using Jobuler.Application.Scheduling.SelfService.Models;
 using Jobuler.Infrastructure.Persistence;
@@ -25,6 +26,7 @@ public class ControllerProblemDetailsTests
     private readonly IPermissionService _permissions = Substitute.For<IPermissionService>();
     private readonly IShiftRequestService _shiftRequestService = Substitute.For<IShiftRequestService>();
     private readonly IWaitlistService _waitlistService = Substitute.For<IWaitlistService>();
+    private readonly IPushNotificationSender _pushSender = Substitute.For<IPushNotificationSender>();
 
     private static AppDbContext CreateDb()
     {
@@ -49,7 +51,7 @@ public class ControllerProblemDetailsTests
 
     private ShiftRequestsController CreateShiftRequestsController(AppDbContext db, HttpContext httpContext)
     {
-        var controller = new ShiftRequestsController(_mediator, _permissions, _shiftRequestService, db);
+        var controller = new ShiftRequestsController(_mediator, _permissions, _shiftRequestService, _pushSender, db);
         controller.ControllerContext = new ControllerContext
         {
             HttpContext = httpContext

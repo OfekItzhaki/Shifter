@@ -1,0 +1,193 @@
+using FluentAssertions;
+using Jobuler.Application.Notifications;
+using Jobuler.Application.Scheduling.SelfService;
+using Jobuler.Domain.Groups;
+using Jobuler.Domain.People;
+using Jobuler.Domain.Scheduling;
+using Jobuler.Domain.Tasks;
+using Jobuler.Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
+using Microsoft.Extensions.Logging.Abstractions;
+using NSubstitute;
+using Xunit;
+
+namespace Jobuler.Tests.Scheduling;
+
+public class SelfServiceNotificationTests
+{
+    private static AppDbContext CreateDb()
+    {
+        var options = new DbContextOptionsBuilder<AppDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning))
+            .Options;
+
+        return new AppDbContext(options);
+    }
+
+    [Fact]
+    public async Task ReportCannotAttendAsync_NotifiesSpaceAdmins_WhenAbsenceReportIsCreated()
+    {
+        using var db = CreateDb();
+        var notifications = Substitute.For<INotificationService>();
+        var (spaceId, groupId, cycleId, taskId, _) = SeedBaseData(db);
+
+        var person = Person.Create(spaceId, "Alex Member", linkedUserId: Guid.NewGuid());
+        var slot = AddSlot(db, spaceId, groupId, taskId, cycleId, daysFromNow: 2);
+        slot.IncrementFillCount();
+
+        var request = ShiftRequest.Create(spaceId, slot.Id, person.Id, groupId, cycleId);
+        request.Approve();
+
+        db.People.Add(person);
+        db.ShiftRequests.Add(request);
+        await db.SaveChangesAsync();
+
+        var service = new ShiftRequestService(
+            db,
+            Substitute.For<ISlotLockService>(),
+            TimeProvider.System,
+            NullLogger<ShiftRequestService>.Instance,
+            notifications,
+            Substitute.For<IPushNotificationSender>());
+
+        var result = await service.ReportCannotAttendAsync(person.Id, request.Id, "Sick");
+
+        result.Success.Should().BeTrue();
+        await notifications.Received(1).NotifySpaceAdminsAsync(
+            spaceId,
+            "self_service.absence_reported",
+            "Absence Reported",
+            Arg.Is<string>(body => body.Contains("Alex Member") && body.Contains("Guard")),
+            Arg.Is<string>(metadata => metadata.Contains("\"reason\":\"Sick\"")),
+            groupId,
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task AcceptSwapAsync_CreatesAcceptedNotifications_ForBothMembers()
+    {
+        using var db = CreateDb();
+        var (spaceId, groupId, cycleId, guardTaskId, ownerUserId) = SeedBaseData(db);
+        var deskTask = AddTask(db, spaceId, groupId, "Desk", ownerUserId);
+
+        var initiatorUserId = Guid.NewGuid();
+        var targetUserId = Guid.NewGuid();
+        var initiator = Person.Create(spaceId, "Initiator", linkedUserId: initiatorUserId);
+        var target = Person.Create(spaceId, "Target", linkedUserId: targetUserId);
+
+        var initiatorSlot = AddSlot(db, spaceId, groupId, guardTaskId, cycleId, daysFromNow: 3);
+        var targetSlot = AddSlot(db, spaceId, groupId, deskTask.Id, cycleId, daysFromNow: 4);
+
+        var initiatorRequest = ShiftRequest.Create(spaceId, initiatorSlot.Id, initiator.Id, groupId, cycleId);
+        initiatorRequest.Approve();
+        var targetRequest = ShiftRequest.Create(spaceId, targetSlot.Id, target.Id, groupId, cycleId);
+        targetRequest.Approve();
+
+        var swap = SwapRequest.Create(
+            spaceId,
+            groupId,
+            initiator.Id,
+            target.Id,
+            initiatorRequest.Id,
+            targetRequest.Id);
+
+        db.People.AddRange(initiator, target);
+        db.ShiftRequests.AddRange(initiatorRequest, targetRequest);
+        db.SwapRequests.Add(swap);
+        await db.SaveChangesAsync();
+
+        var service = new ShiftSwapService(
+            db,
+            Substitute.For<IPushNotificationSender>(),
+            TimeProvider.System,
+            NullLogger<ShiftSwapService>.Instance);
+
+        var result = await service.AcceptSwapAsync(target.Id, swap.Id);
+
+        result.Success.Should().BeTrue();
+
+        var acceptedNotifications = await db.Notifications
+            .Where(n => n.EventType == "self_service.swap_accepted")
+            .ToListAsync();
+
+        acceptedNotifications.Should().HaveCount(2);
+        acceptedNotifications.Select(n => n.UserId)
+            .Should().BeEquivalentTo([initiatorUserId, targetUserId]);
+        acceptedNotifications.Should().AllSatisfy(n =>
+            n.MetadataJson.Should().Contain(swap.Id.ToString()));
+    }
+
+    private static (Guid spaceId, Guid groupId, Guid cycleId, Guid taskId, Guid ownerUserId) SeedBaseData(AppDbContext db)
+    {
+        var spaceId = Guid.NewGuid();
+        var ownerUserId = Guid.NewGuid();
+        var group = Group.Create(spaceId, null, "Operations", createdByUserId: ownerUserId);
+        group.SetSchedulingMode(SchedulingMode.SelfService);
+        db.Groups.Add(group);
+
+        var utcNow = DateTime.UtcNow;
+        var cycle = SchedulingCycle.Create(
+            spaceId,
+            group.Id,
+            startsAt: utcNow.AddDays(1),
+            endsAt: utcNow.AddDays(8),
+            requestWindowOpensAt: utcNow.AddDays(-2),
+            requestWindowClosesAt: utcNow.AddHours(1));
+        db.SchedulingCycles.Add(cycle);
+
+        var task = AddTask(db, spaceId, group.Id, "Guard", ownerUserId);
+        db.SaveChanges();
+
+        return (spaceId, group.Id, cycle.Id, task.Id, ownerUserId);
+    }
+
+    private static GroupTask AddTask(
+        AppDbContext db,
+        Guid spaceId,
+        Guid groupId,
+        string name,
+        Guid createdByUserId)
+    {
+        var utcNow = DateTime.UtcNow;
+        var task = GroupTask.Create(
+            spaceId,
+            groupId,
+            name,
+            utcNow,
+            utcNow.AddDays(30),
+            shiftDurationMinutes: 480,
+            requiredHeadcount: 1,
+            burdenLevel: TaskBurdenLevel.Normal,
+            allowsDoubleShift: false,
+            allowsOverlap: false,
+            createdByUserId: createdByUserId);
+
+        db.GroupTasks.Add(task);
+        return task;
+    }
+
+    private static ShiftSlot AddSlot(
+        AppDbContext db,
+        Guid spaceId,
+        Guid groupId,
+        Guid taskId,
+        Guid cycleId,
+        int daysFromNow)
+    {
+        var slot = ShiftSlot.Create(
+            spaceId,
+            groupId,
+            taskId,
+            shiftTemplateId: Guid.NewGuid(),
+            schedulingCycleId: cycleId,
+            date: DateOnly.FromDateTime(DateTime.UtcNow.AddDays(daysFromNow)),
+            startTime: new TimeOnly(8, 0),
+            endTime: new TimeOnly(16, 0),
+            capacity: 1);
+
+        db.ShiftSlots.Add(slot);
+        return slot;
+    }
+}

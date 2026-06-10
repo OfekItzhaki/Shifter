@@ -1,7 +1,9 @@
 using Jobuler.Api.Middleware;
 using Jobuler.Application.Common;
+using Jobuler.Application.Notifications;
 using Jobuler.Application.Scheduling.SelfService;
 using Jobuler.Application.Scheduling.SelfService.Queries;
+using Jobuler.Domain.Notifications;
 using Jobuler.Domain.Scheduling;
 using Jobuler.Domain.Spaces;
 using Jobuler.Infrastructure.Persistence;
@@ -10,6 +12,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
+using System.Text.Json;
 
 namespace Jobuler.Api.Controllers;
 
@@ -21,17 +24,20 @@ public class ShiftRequestsController : ControllerBase
     private readonly IMediator _mediator;
     private readonly IPermissionService _permissions;
     private readonly IShiftRequestService _shiftRequestService;
+    private readonly IPushNotificationSender _pushSender;
     private readonly AppDbContext _db;
 
     public ShiftRequestsController(
         IMediator mediator,
         IPermissionService permissions,
         IShiftRequestService shiftRequestService,
+        IPushNotificationSender pushSender,
         AppDbContext db)
     {
         _mediator = mediator;
         _permissions = permissions;
         _shiftRequestService = shiftRequestService;
+        _pushSender = pushSender;
         _db = db;
     }
 
@@ -206,6 +212,7 @@ public class ShiftRequestsController : ControllerBase
 
         report.Approve(CurrentUserId, req.AdminNote);
         await _db.SaveChangesAsync(ct);
+        await SendAbsenceReviewNotificationAsync(report, approved: true, ct);
 
         return NoContent();
     }
@@ -228,6 +235,7 @@ public class ShiftRequestsController : ControllerBase
 
         report.Reject(CurrentUserId, req.AdminNote);
         await _db.SaveChangesAsync(ct);
+        await SendAbsenceReviewNotificationAsync(report, approved: false, ct);
 
         return NoContent();
     }
@@ -286,6 +294,70 @@ public class ShiftRequestsController : ControllerBase
             .FirstOrDefaultAsync(ct);
 
         return personId == Guid.Empty ? null : personId;
+    }
+
+    private async Task SendAbsenceReviewNotificationAsync(
+        ShiftAbsenceReport report,
+        bool approved,
+        CancellationToken ct)
+    {
+        var detail = await _db.People
+            .AsNoTracking()
+            .Where(p => p.Id == report.PersonId && p.SpaceId == report.SpaceId && p.LinkedUserId != null)
+            .Join(
+                _db.ShiftSlots.AsNoTracking(),
+                p => report.ShiftSlotId,
+                s => s.Id,
+                (p, s) => new { Person = p, Slot = s })
+            .Join(
+                _db.GroupTasks.AsNoTracking(),
+                ps => ps.Slot.GroupTaskId,
+                t => t.Id,
+                (ps, t) => new { ps.Person.LinkedUserId, Slot = ps.Slot, TaskName = t.Name })
+            .FirstOrDefaultAsync(ct);
+
+        if (detail?.LinkedUserId is null)
+            return;
+
+        var title = approved ? "Absence Report Approved" : "Absence Report Rejected";
+        var body = approved
+            ? $"Your absence report for {detail.TaskName} on {detail.Slot.Date:MMM dd} was approved."
+            : $"Your absence report for {detail.TaskName} on {detail.Slot.Date:MMM dd} was rejected.";
+
+        _db.Notifications.Add(Notification.Create(
+            report.SpaceId,
+            detail.LinkedUserId.Value,
+            approved ? "self_service.absence_approved" : "self_service.absence_rejected",
+            title,
+            body,
+            JsonSerializer.Serialize(new
+            {
+                absenceReportId = report.Id,
+                shiftRequestId = report.ShiftRequestId,
+                groupId = report.GroupId,
+                shiftSlotId = report.ShiftSlotId,
+                date = detail.Slot.Date,
+                startTime = detail.Slot.StartTime.ToString("HH:mm"),
+                endTime = detail.Slot.EndTime.ToString("HH:mm"),
+                taskName = detail.TaskName,
+                adminNote = report.AdminNote,
+                reviewedAt = report.ReviewedAt
+            })));
+
+        await _db.SaveChangesAsync(ct);
+
+        try
+        {
+            await _pushSender.SendPushToUserAsync(
+                detail.LinkedUserId.Value,
+                report.SpaceId,
+                new PushPayload(title, body, "/favicon.jpeg", "/shifts"),
+                ct);
+        }
+        catch
+        {
+            // In-app notification is the source of truth; push failures must not affect review.
+        }
     }
 }
 

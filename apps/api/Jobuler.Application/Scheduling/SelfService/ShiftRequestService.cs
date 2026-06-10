@@ -19,6 +19,7 @@ public class ShiftRequestService : IShiftRequestService
     private readonly AppDbContext _db;
     private readonly ISlotLockService _slotLockService;
     private readonly IWaitlistService? _waitlistService;
+    private readonly INotificationService _notificationService;
     private readonly IPushNotificationSender _pushSender;
     private readonly TimeProvider _timeProvider;
     private readonly ILogger<ShiftRequestService> _logger;
@@ -30,6 +31,7 @@ public class ShiftRequestService : IShiftRequestService
         ISlotLockService slotLockService,
         TimeProvider timeProvider,
         ILogger<ShiftRequestService> logger,
+        INotificationService notificationService,
         IPushNotificationSender pushSender,
         IWaitlistService? waitlistService = null)
     {
@@ -37,6 +39,7 @@ public class ShiftRequestService : IShiftRequestService
         _slotLockService = slotLockService;
         _timeProvider = timeProvider;
         _logger = logger;
+        _notificationService = notificationService;
         _pushSender = pushSender;
         _waitlistService = waitlistService;
     }
@@ -485,6 +488,8 @@ public class ShiftRequestService : IShiftRequestService
                     "Shift absence report {ReportId} created for person {PersonId}, request {RequestId}. Late={WasLate}",
                     absenceReport.Id, personId, shiftRequestId, wasLate);
 
+                await SendAbsenceReportedNotificationAsync(personId, slot, absenceReport.Id, reason, wasLate, ct);
+
                 return new AbsenceReportResult(
                     true,
                     absenceReport.Id,
@@ -738,6 +743,62 @@ public class ShiftRequestService : IShiftRequestService
             _logger.LogError(ex,
                 "Failed to send request rejected notification for person {PersonId}, slot {SlotId}",
                 personId, slot.Id);
+        }
+    }
+
+    private async Task SendAbsenceReportedNotificationAsync(
+        Guid personId,
+        ShiftSlot slot,
+        Guid absenceReportId,
+        string reason,
+        bool wasLate,
+        CancellationToken ct)
+    {
+        try
+        {
+            var personName = await _db.People
+                .AsNoTracking()
+                .Where(p => p.Id == personId && p.SpaceId == slot.SpaceId)
+                .Select(p => p.FullName)
+                .FirstOrDefaultAsync(ct) ?? "A member";
+
+            var taskName = await _db.GroupTasks
+                .AsNoTracking()
+                .Where(t => t.Id == slot.GroupTaskId)
+                .Select(t => t.Name)
+                .FirstOrDefaultAsync(ct) ?? "Shift";
+
+            var title = wasLate ? "Late Absence Reported" : "Absence Reported";
+            var body = $"{personName} reported they cannot attend {taskName} on {slot.Date:MMM dd} ({slot.StartTime:HH:mm}-{slot.EndTime:HH:mm}).";
+
+            await _notificationService.NotifySpaceAdminsAsync(
+                slot.SpaceId,
+                eventType: "self_service.absence_reported",
+                title,
+                body,
+                metadataJson: JsonSerializer.Serialize(new
+                {
+                    absenceReportId,
+                    personId,
+                    personName,
+                    groupId = slot.GroupId,
+                    shiftSlotId = slot.Id,
+                    schedulingCycleId = slot.SchedulingCycleId,
+                    date = slot.Date,
+                    startTime = slot.StartTime.ToString("HH:mm"),
+                    endTime = slot.EndTime.ToString("HH:mm"),
+                    taskName,
+                    reason = reason.Trim(),
+                    wasLate
+                }),
+                groupId: slot.GroupId,
+                ct);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex,
+                "Failed to send absence reported notification for report {ReportId}, person {PersonId}",
+                absenceReportId, personId);
         }
     }
 }
