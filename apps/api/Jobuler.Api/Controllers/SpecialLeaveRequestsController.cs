@@ -36,6 +36,8 @@ public class SpecialLeaveRequestsController : ControllerBase
     [HttpGet("mine")]
     public async Task<IActionResult> Mine(Guid spaceId, [FromQuery] DateTime? from, [FromQuery] DateTime? to, CancellationToken ct)
     {
+        await _permissions.RequirePermissionAsync(CurrentUserId, spaceId, Permissions.SpaceView, ct);
+
         var personId = await ResolvePersonIdAsync(spaceId, ct);
         if (personId is null)
             return Forbid();
@@ -46,6 +48,8 @@ public class SpecialLeaveRequestsController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Submit(Guid spaceId, [FromBody] SubmitSpecialLeaveRequest req, CancellationToken ct)
     {
+        await _permissions.RequirePermissionAsync(CurrentUserId, spaceId, Permissions.SpaceView, ct);
+
         var personId = await ResolvePersonIdAsync(spaceId, ct);
         if (personId is null)
             return Forbid();
@@ -71,6 +75,8 @@ public class SpecialLeaveRequestsController : ControllerBase
     [HttpPost("{requestId:guid}/cancel")]
     public async Task<IActionResult> CancelMine(Guid spaceId, Guid requestId, CancellationToken ct)
     {
+        await _permissions.RequirePermissionAsync(CurrentUserId, spaceId, Permissions.SpaceView, ct);
+
         var personId = await ResolvePersonIdAsync(spaceId, ct);
         if (personId is null)
             return Forbid();

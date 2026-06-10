@@ -1382,6 +1382,35 @@ public class SelfServiceScopeTests
         response.PendingSpecialLeaveRequestCount.Should().Be(1);
     }
 
+    [Fact]
+    public async Task MineSpecialLeave_RequiresSpaceViewPermission()
+    {
+        using var db = CreateDb();
+        var services = CreateControllerServices();
+        var spaceId = Guid.NewGuid();
+        var userId = Guid.NewGuid();
+        var person = Person.Create(spaceId, "Member", linkedUserId: userId);
+
+        db.People.Add(person);
+        await db.SaveChangesAsync();
+
+        services.Permissions
+            .RequirePermissionAsync(userId, spaceId, Permissions.SpaceView, Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+
+        var controller = new SpecialLeaveRequestsController(
+            services.Mediator,
+            services.Permissions,
+            db);
+        controller.ControllerContext = CreateControllerContext(userId);
+
+        var result = await controller.Mine(spaceId, from: null, to: null, CancellationToken.None);
+
+        result.Should().BeOfType<OkObjectResult>();
+        await services.Permissions.Received(1)
+            .RequirePermissionAsync(userId, spaceId, Permissions.SpaceView, Arg.Any<CancellationToken>());
+    }
+
     private static SchedulingCycle CreateCycle(Guid spaceId, Guid groupId)
     {
         var utcNow = DateTime.UtcNow;
