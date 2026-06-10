@@ -20,6 +20,8 @@ public class UpdateSelfServiceConfigCommandValidatorTests
         RequestWindowOpenOffsetHours: 168,
         RequestWindowCloseOffsetHours: 24,
         CancellationCutoffHours: 24,
+        MaxLateCancellationsPerCycle: 2,
+        LateCancellationWindowHours: 24,
         WaitlistOfferMinutes: 60,
         CycleDurationDays: 7);
 
@@ -163,6 +165,44 @@ public class UpdateSelfServiceConfigCommandValidatorTests
     }
 
     // ── Waitlist offer minutes validation ────────────────────────────────────
+
+    [Theory]
+    [InlineData(-1)]
+    [InlineData(101)]
+    public void MaxLateCancellationsPerCycle_OutOfRange_Fails(int max)
+    {
+        var cmd = ValidCommand() with { MaxLateCancellationsPerCycle = max };
+        var result = _validator.TestValidate(cmd);
+        result.ShouldHaveValidationErrorFor(x => x.MaxLateCancellationsPerCycle);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(100)]
+    public void MaxLateCancellationsPerCycle_BoundaryValues_Pass(int max)
+    {
+        var cmd = ValidCommand() with { MaxLateCancellationsPerCycle = max };
+        _validator.TestValidate(cmd).ShouldNotHaveValidationErrorFor(x => x.MaxLateCancellationsPerCycle);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(721)]
+    public void LateCancellationWindowHours_OutOfRange_Fails(int hours)
+    {
+        var cmd = ValidCommand() with { LateCancellationWindowHours = hours };
+        var result = _validator.TestValidate(cmd);
+        result.ShouldHaveValidationErrorFor(x => x.LateCancellationWindowHours);
+    }
+
+    [Theory]
+    [InlineData(1)]
+    [InlineData(720)]
+    public void LateCancellationWindowHours_BoundaryValues_Pass(int hours)
+    {
+        var cmd = ValidCommand() with { LateCancellationWindowHours = hours };
+        _validator.TestValidate(cmd).ShouldNotHaveValidationErrorFor(x => x.LateCancellationWindowHours);
+    }
 
     [Theory]
     [InlineData(14)]

@@ -17,6 +17,8 @@ public class SelfServiceConfig : AuditableEntity, ITenantScoped
     public int RequestWindowOpenOffsetHours { get; private set; } = 168; // 7 days before cycle start
     public int RequestWindowCloseOffsetHours { get; private set; } = 24; // 1 day before cycle start
     public int CancellationCutoffHours { get; private set; } = 24;
+    public int MaxLateCancellationsPerCycle { get; private set; } = 2;
+    public int LateCancellationWindowHours { get; private set; } = 24;
     public int WaitlistOfferMinutes { get; private set; } = 60;
     public int CycleDurationDays { get; private set; } = 7;
 
@@ -40,6 +42,31 @@ public class SelfServiceConfig : AuditableEntity, ITenantScoped
         int requestWindowCloseOffsetHours,
         int cancellationCutoffHours,
         int waitlistOfferMinutes,
+        int cycleDurationDays) =>
+        Create(
+            spaceId,
+            groupId,
+            minShiftsPerCycle,
+            maxShiftsPerCycle,
+            requestWindowOpenOffsetHours,
+            requestWindowCloseOffsetHours,
+            cancellationCutoffHours,
+            maxLateCancellationsPerCycle: 2,
+            lateCancellationWindowHours: 24,
+            waitlistOfferMinutes,
+            cycleDurationDays);
+
+    public static SelfServiceConfig Create(
+        Guid spaceId,
+        Guid groupId,
+        int minShiftsPerCycle,
+        int maxShiftsPerCycle,
+        int requestWindowOpenOffsetHours,
+        int requestWindowCloseOffsetHours,
+        int cancellationCutoffHours,
+        int maxLateCancellationsPerCycle,
+        int lateCancellationWindowHours,
+        int waitlistOfferMinutes,
         int cycleDurationDays)
     {
         var config = new SelfServiceConfig
@@ -51,6 +78,7 @@ public class SelfServiceConfig : AuditableEntity, ITenantScoped
         config.SetMinMaxShifts(minShiftsPerCycle, maxShiftsPerCycle);
         config.SetRequestWindowOffsets(requestWindowOpenOffsetHours, requestWindowCloseOffsetHours);
         config.SetCancellationCutoffHours(cancellationCutoffHours);
+        config.SetLateCancellationLimits(maxLateCancellationsPerCycle, lateCancellationWindowHours);
         config.SetWaitlistOfferMinutes(waitlistOfferMinutes);
         config.SetCycleDurationDays(cycleDurationDays);
 
@@ -64,11 +92,33 @@ public class SelfServiceConfig : AuditableEntity, ITenantScoped
         int requestWindowCloseOffsetHours,
         int cancellationCutoffHours,
         int waitlistOfferMinutes,
+        int cycleDurationDays) =>
+        Update(
+            minShiftsPerCycle,
+            maxShiftsPerCycle,
+            requestWindowOpenOffsetHours,
+            requestWindowCloseOffsetHours,
+            cancellationCutoffHours,
+            MaxLateCancellationsPerCycle,
+            LateCancellationWindowHours,
+            waitlistOfferMinutes,
+            cycleDurationDays);
+
+    public void Update(
+        int minShiftsPerCycle,
+        int maxShiftsPerCycle,
+        int requestWindowOpenOffsetHours,
+        int requestWindowCloseOffsetHours,
+        int cancellationCutoffHours,
+        int maxLateCancellationsPerCycle,
+        int lateCancellationWindowHours,
+        int waitlistOfferMinutes,
         int cycleDurationDays)
     {
         SetMinMaxShifts(minShiftsPerCycle, maxShiftsPerCycle);
         SetRequestWindowOffsets(requestWindowOpenOffsetHours, requestWindowCloseOffsetHours);
         SetCancellationCutoffHours(cancellationCutoffHours);
+        SetLateCancellationLimits(maxLateCancellationsPerCycle, lateCancellationWindowHours);
         SetWaitlistOfferMinutes(waitlistOfferMinutes);
         SetCycleDurationDays(cycleDurationDays);
         Touch();
@@ -112,6 +162,19 @@ public class SelfServiceConfig : AuditableEntity, ITenantScoped
             throw new InvalidOperationException("Cancellation cutoff must be between 1 and 720 hours.");
 
         CancellationCutoffHours = hours;
+        Touch();
+    }
+
+    public void SetLateCancellationLimits(int maxPerCycle, int windowHours)
+    {
+        if (maxPerCycle < 0 || maxPerCycle > 100)
+            throw new InvalidOperationException("Max late cancellations per cycle must be between 0 and 100.");
+
+        if (windowHours < 1 || windowHours > 720)
+            throw new InvalidOperationException("Late cancellation window must be between 1 and 720 hours.");
+
+        MaxLateCancellationsPerCycle = maxPerCycle;
+        LateCancellationWindowHours = windowHours;
         Touch();
     }
 

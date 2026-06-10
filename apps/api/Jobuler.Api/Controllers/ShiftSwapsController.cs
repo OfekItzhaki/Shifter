@@ -150,19 +150,114 @@ public class ShiftSwapsController : ControllerBase
                         && s.GroupId == groupId
                         && (s.InitiatorPersonId == personId || s.TargetPersonId == personId))
             .OrderByDescending(s => s.CreatedAt)
-            .Select(s => new SwapRequestDto(
+            .ToListAsync(ct);
+
+        var requestIds = swaps
+            .SelectMany(s => new[] { s.InitiatorShiftRequestId, s.TargetShiftRequestId })
+            .Distinct()
+            .ToList();
+
+        var shiftDetails = await _db.ShiftRequests
+            .AsNoTracking()
+            .Where(r => requestIds.Contains(r.Id))
+            .Join(_db.ShiftSlots.AsNoTracking(), r => r.ShiftSlotId, slot => slot.Id, (r, slot) => new { Request = r, Slot = slot })
+            .Join(_db.GroupTasks.AsNoTracking(), rs => rs.Slot.GroupTaskId, task => task.Id, (rs, task) => new
+            {
+                rs.Request.Id,
+                rs.Slot.Date,
+                rs.Slot.StartTime,
+                rs.Slot.EndTime,
+                TaskName = task.Name
+            })
+            .ToDictionaryAsync(x => x.Id, ct);
+
+        var personIds = swaps
+            .SelectMany(s => new[] { s.InitiatorPersonId, s.TargetPersonId })
+            .Distinct()
+            .ToList();
+
+        var personNames = await _db.People
+            .AsNoTracking()
+            .Where(p => personIds.Contains(p.Id))
+            .ToDictionaryAsync(p => p.Id, p => p.DisplayName ?? p.FullName, ct);
+
+        return Ok(swaps.Select(s =>
+        {
+            shiftDetails.TryGetValue(s.InitiatorShiftRequestId, out var initiatorShift);
+            shiftDetails.TryGetValue(s.TargetShiftRequestId, out var targetShift);
+            personNames.TryGetValue(s.InitiatorPersonId, out var initiatorName);
+            personNames.TryGetValue(s.TargetPersonId, out var targetName);
+
+            return new SwapRequestDto(
                 s.Id,
                 s.InitiatorPersonId,
                 s.TargetPersonId,
+                initiatorName ?? "Member",
+                targetName ?? "Member",
                 s.InitiatorShiftRequestId,
                 s.TargetShiftRequestId,
+                initiatorShift?.Date ?? default,
+                FormatSlotTime(initiatorShift?.StartTime, initiatorShift?.EndTime),
+                initiatorShift?.TaskName ?? "Shift",
+                targetShift?.Date ?? default,
+                FormatSlotTime(targetShift?.StartTime, targetShift?.EndTime),
+                targetShift?.TaskName ?? "Shift",
                 s.Status.ToString(),
                 s.ExpiresAt,
-                s.CreatedAt))
+                s.CreatedAt);
+        }));
+    }
+
+    /// <summary>List approved future shifts owned by a group member for the propose-swap flow.</summary>
+    [HttpGet("members/{targetPersonId:guid}/approved-shifts")]
+    public async Task<IActionResult> GetMemberApprovedShifts(
+        Guid spaceId,
+        Guid groupId,
+        Guid targetPersonId,
+        CancellationToken ct)
+    {
+        var currentPersonId = await GetCurrentPersonIdAsync(spaceId, ct);
+        if (currentPersonId is null || currentPersonId == Guid.Empty)
+            return Forbid();
+
+        if (targetPersonId == currentPersonId.Value)
+            return BadRequest(new { error = "Use the mine endpoint for your own shifts." });
+
+        var utcNow = DateTime.UtcNow;
+
+        var shifts = await _db.ShiftRequests
+            .AsNoTracking()
+            .Where(r => r.SpaceId == spaceId
+                        && r.GroupId == groupId
+                        && r.PersonId == targetPersonId
+                        && r.Status == ShiftRequestStatus.Approved)
+            .Join(_db.ShiftSlots.AsNoTracking(), r => r.ShiftSlotId, slot => slot.Id, (r, slot) => new { Request = r, Slot = slot })
+            .Join(_db.GroupTasks.AsNoTracking(), rs => rs.Slot.GroupTaskId, task => task.Id, (rs, task) => new { rs.Request, rs.Slot, TaskName = task.Name })
+            .Where(x => x.Slot.Date.ToDateTime(x.Slot.StartTime, DateTimeKind.Utc) > utcNow)
+            .OrderBy(x => x.Slot.Date)
+            .ThenBy(x => x.Slot.StartTime)
+            .Select(x => new SwappableShiftDto(
+                x.Request.Id,
+                x.Request.ShiftSlotId,
+                x.Request.GroupId,
+                x.Request.SchedulingCycleId,
+                x.Request.Status.ToString(),
+                x.Request.IsAdminOverride,
+                x.Slot.Date,
+                x.Slot.StartTime,
+                x.Slot.EndTime,
+                x.TaskName,
+                x.Request.RejectionReason,
+                x.Request.CancellationReason,
+                x.Request.CancelledAt,
+                x.Request.CreatedAt))
             .ToListAsync(ct);
 
-        return Ok(swaps);
+        return Ok(shifts);
     }
+
+    private static string FormatSlotTime(TimeOnly? startsAt, TimeOnly? endsAt) =>
+        startsAt is null || endsAt is null ? string.Empty : $"{startsAt:HH\\:mm}-{endsAt:HH\\:mm}";
 }
 
 public record ProposeSwapRequest(Guid InitiatorShiftRequestId, Guid TargetShiftRequestId);
@@ -171,8 +266,32 @@ public record SwapRequestDto(
     Guid Id,
     Guid InitiatorPersonId,
     Guid TargetPersonId,
+    string InitiatorPersonName,
+    string TargetPersonName,
     Guid InitiatorShiftRequestId,
     Guid TargetShiftRequestId,
+    DateOnly InitiatorSlotDate,
+    string InitiatorSlotTime,
+    string InitiatorTaskName,
+    DateOnly TargetSlotDate,
+    string TargetSlotTime,
+    string TargetTaskName,
     string Status,
     DateTime? ExpiresAt,
+    DateTime CreatedAt);
+
+public record SwappableShiftDto(
+    Guid Id,
+    Guid ShiftSlotId,
+    Guid GroupId,
+    Guid SchedulingCycleId,
+    string Status,
+    bool IsAdminOverride,
+    DateOnly SlotDate,
+    TimeOnly SlotStartTime,
+    TimeOnly SlotEndTime,
+    string TaskName,
+    string? RejectionReason,
+    string? CancellationReason,
+    DateTime? CancelledAt,
     DateTime CreatedAt);

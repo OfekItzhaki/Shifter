@@ -1934,6 +1934,7 @@
       "swaps": "Swaps",
       "shiftTemplates": "Shift Templates",
       "selfServiceConfig": "Self-Service Config",
+      "absenceReports": "Absence Reports",
       "adminOverrides": "Admin Overrides"
     },
     "slotBrowser": {
@@ -1976,6 +1977,12 @@
       "cancelDialogMessage": "Enter cancellation reason (1-500 characters):",
       "cancelReasonPlaceholder": "Reason for cancellation...",
       "cancelConfirm": "Confirm Cancellation",
+      "cannotAttendButton": "Can't make it",
+      "cannotAttendDialogTitle": "Report Absence",
+      "cannotAttendDialogMessage": "Tell the admins why you cannot attend. If this is late, it counts toward your late absence limit.",
+      "cannotAttendReasonPlaceholder": "Reason you cannot attend...",
+      "cannotAttendConfirm": "Report Absence",
+      "cannotAttendSubmitting": "Reporting...",
       "cancelDismiss": "Go Back",
       "shiftCount": "{current} / {max} shifts this cycle",
       "underScheduled": "⚠ You are below the minimum required shifts ({min})",
@@ -2049,6 +2056,21 @@
       "duplicateError": "A pending swap request already exists for these shifts",
       "invalidOwnership": "You do not own the selected shift"
     },
+    "absenceReports": {
+      "title": "Absence Reports",
+      "refresh": "Refresh",
+      "empty": "No absence reports",
+      "late": "Late",
+      "adminNote": "Admin note",
+      "adminNotePlaceholder": "Admin note...",
+      "approve": "Approve",
+      "reject": "Reject",
+      "approving": "Approving...",
+      "rejecting": "Rejecting...",
+      "statusPending": "Pending",
+      "statusApproved": "Approved",
+      "statusRejected": "Rejected"
+    },
     "templates": {
       "title": "Shift Templates",
       "createButton": "Create Template",
@@ -2094,6 +2116,8 @@
       "requestWindowOpenOffsetHours": "Request window open (hours before)",
       "requestWindowCloseOffsetHours": "Request window close (hours before)",
       "cancellationCutoffHours": "Cancellation cutoff (hours before)",
+      "maxLateCancellationsPerCycle": "Late absence limit per cycle",
+      "lateCancellationWindowHours": "Late absence window (hours before)",
       "waitlistOfferMinutes": "Waitlist offer duration (minutes)",
       "cycleDurationDays": "Cycle duration (days)",
       "save": "Save Configuration",

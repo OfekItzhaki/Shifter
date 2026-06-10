@@ -30,4 +30,6 @@ public interface IShiftRequestService
     /// <param name="ct">Cancellation token.</param>
     /// <returns>Result indicating success or failure with reason.</returns>
     Task<CancellationResult> CancelRequestAsync(Guid personId, Guid shiftRequestId, string reason, CancellationToken ct = default);
+
+    Task<AbsenceReportResult> ReportCannotAttendAsync(Guid personId, Guid shiftRequestId, string reason, CancellationToken ct = default);
 }

@@ -2,6 +2,7 @@ using Jobuler.Api.Middleware;
 using Jobuler.Application.Common;
 using Jobuler.Application.Scheduling.SelfService;
 using Jobuler.Application.Scheduling.SelfService.Queries;
+using Jobuler.Domain.Scheduling;
 using Jobuler.Domain.Spaces;
 using Jobuler.Infrastructure.Persistence;
 using MediatR;
@@ -102,6 +103,136 @@ public class ShiftRequestsController : ControllerBase
     }
 
     /// <summary>
+    /// Report that the current member cannot attend an approved shift.
+    /// Late reports are counted against the group's configured per-cycle limit.
+    /// </summary>
+    [HttpPost("{shiftRequestId:guid}/cannot-attend")]
+    public async Task<IActionResult> CannotAttend(
+        Guid spaceId, Guid groupId, Guid shiftRequestId,
+        [FromBody] CannotAttendShiftRequest req,
+        CancellationToken ct)
+    {
+        var personId = await ResolvePersonIdAsync(spaceId, ct);
+        if (personId is null)
+            return Forbid();
+
+        var result = await _shiftRequestService.ReportCannotAttendAsync(personId.Value, shiftRequestId, req.Reason, ct);
+
+        if (!result.Success)
+        {
+            return ProblemDetailsResults.Problem(
+                HttpContext,
+                statusCode: 422,
+                title: "Unprocessable Entity",
+                detail: result.ErrorMessage!,
+                typeSlug: "shift-absence-rejected",
+                extensions: new Dictionary<string, object?>
+                {
+                    ["wasLate"] = result.WasLate,
+                    ["lateReportsUsed"] = result.LateReportsUsed,
+                    ["maxLateReports"] = result.MaxLateReports
+                });
+        }
+
+        return Created("", new CannotAttendShiftResponse(
+            result.AbsenceReportId!.Value,
+            result.WasLate,
+            result.LateReportsUsed,
+            result.MaxLateReports));
+    }
+
+    /// <summary>List absence reports for this group for admin review.</summary>
+    [HttpGet("absence-reports")]
+    public async Task<IActionResult> ListAbsenceReports(
+        Guid spaceId,
+        Guid groupId,
+        [FromQuery] string? status,
+        CancellationToken ct)
+    {
+        await _permissions.RequirePermissionAsync(CurrentUserId, spaceId, Permissions.ConstraintsManage, ct);
+
+        var query = _db.ShiftAbsenceReports
+            .AsNoTracking()
+            .Where(r => r.SpaceId == spaceId && r.GroupId == groupId);
+
+        if (!string.IsNullOrWhiteSpace(status))
+        {
+            if (!Enum.TryParse<ShiftAbsenceReportStatus>(status, true, out var parsedStatus))
+                return BadRequest(new { error = "Invalid absence report status." });
+
+            query = query.Where(r => r.Status == parsedStatus);
+        }
+
+        var reports = await query
+            .Join(_db.People.AsNoTracking(), r => r.PersonId, p => p.Id, (r, p) => new { Report = r, PersonName = p.DisplayName ?? p.FullName })
+            .Join(_db.ShiftSlots.AsNoTracking(), rp => rp.Report.ShiftSlotId, s => s.Id, (rp, s) => new { rp.Report, rp.PersonName, Slot = s })
+            .Join(_db.GroupTasks.AsNoTracking(), rps => rps.Slot.GroupTaskId, t => t.Id, (rps, t) => new AbsenceReportResponse(
+                rps.Report.Id,
+                rps.Report.ShiftRequestId,
+                rps.Report.PersonId,
+                rps.PersonName,
+                rps.Report.ShiftSlotId,
+                rps.Slot.Date,
+                rps.Slot.StartTime,
+                rps.Slot.EndTime,
+                t.Name,
+                rps.Report.Reason,
+                rps.Report.IsLate,
+                rps.Report.Status.ToString(),
+                rps.Report.ReportedAt,
+                rps.Report.AdminNote,
+                rps.Report.ReviewedAt))
+            .OrderByDescending(r => r.ReportedAt)
+            .ToListAsync(ct);
+
+        return Ok(reports);
+    }
+
+    [HttpPost("absence-reports/{absenceReportId:guid}/approve")]
+    public async Task<IActionResult> ApproveAbsenceReport(
+        Guid spaceId,
+        Guid groupId,
+        Guid absenceReportId,
+        [FromBody] ReviewAbsenceReportRequest req,
+        CancellationToken ct)
+    {
+        await _permissions.RequirePermissionAsync(CurrentUserId, spaceId, Permissions.ConstraintsManage, ct);
+
+        var report = await _db.ShiftAbsenceReports
+            .FirstOrDefaultAsync(r => r.Id == absenceReportId && r.SpaceId == spaceId && r.GroupId == groupId, ct);
+
+        if (report is null)
+            return NotFound();
+
+        report.Approve(CurrentUserId, req.AdminNote);
+        await _db.SaveChangesAsync(ct);
+
+        return NoContent();
+    }
+
+    [HttpPost("absence-reports/{absenceReportId:guid}/reject")]
+    public async Task<IActionResult> RejectAbsenceReport(
+        Guid spaceId,
+        Guid groupId,
+        Guid absenceReportId,
+        [FromBody] ReviewAbsenceReportRequest req,
+        CancellationToken ct)
+    {
+        await _permissions.RequirePermissionAsync(CurrentUserId, spaceId, Permissions.ConstraintsManage, ct);
+
+        var report = await _db.ShiftAbsenceReports
+            .FirstOrDefaultAsync(r => r.Id == absenceReportId && r.SpaceId == spaceId && r.GroupId == groupId, ct);
+
+        if (report is null)
+            return NotFound();
+
+        report.Reject(CurrentUserId, req.AdminNote);
+        await _db.SaveChangesAsync(ct);
+
+        return NoContent();
+    }
+
+    /// <summary>
     /// List the current member's shift requests for a group, optionally filtered by scheduling cycle.
     /// </summary>
     [HttpGet("mine")]
@@ -117,7 +248,29 @@ public class ShiftRequestsController : ControllerBase
         var result = await _mediator.Send(
             new GetMyShiftRequestsQuery(spaceId, groupId, personId.Value, schedulingCycleId), ct);
 
-        return Ok(result);
+        var currentShiftCount = result.Count(r => r.Status is "Approved" or "Pending");
+        var config = await _db.SelfServiceConfigs
+            .AsNoTracking()
+            .FirstOrDefaultAsync(c => c.SpaceId == spaceId && c.GroupId == groupId, ct);
+
+        return Ok(new MyShiftRequestsResponse(
+            result.Select(r => new ShiftRequestResponse(
+                r.Id,
+                r.ShiftSlotId,
+                r.Date,
+                r.StartTime,
+                r.EndTime,
+                r.TaskName,
+                r.Status,
+                r.IsAdminOverride,
+                r.RejectionReason,
+                r.CancellationReason,
+                r.CancelledAt,
+                r.CreatedAt)).ToList(),
+            currentShiftCount,
+            config?.MinShiftsPerCycle ?? 0,
+            config?.MaxShiftsPerCycle ?? 7,
+            config?.CancellationCutoffHours ?? 24));
     }
 
     /// <summary>
@@ -142,6 +295,54 @@ public record SubmitShiftRequestRequest(Guid ShiftSlotId);
 
 public record CancelShiftRequestRequest(string Reason);
 
+public record CannotAttendShiftRequest(string Reason);
+
+public record ReviewAbsenceReportRequest(string? AdminNote);
+
 // --- Response DTOs ---
 
 public record ShiftRequestSuccessResponse(Guid ShiftRequestId);
+
+public record MyShiftRequestsResponse(
+    IReadOnlyList<ShiftRequestResponse> Requests,
+    int CurrentShiftCount,
+    int MinShiftsPerCycle,
+    int MaxShiftsPerCycle,
+    int CancellationCutoffHours);
+
+public record ShiftRequestResponse(
+    Guid Id,
+    Guid ShiftSlotId,
+    DateOnly SlotDate,
+    TimeOnly SlotStartTime,
+    TimeOnly SlotEndTime,
+    string TaskName,
+    string Status,
+    bool IsAdminOverride,
+    string? RejectionReason,
+    string? CancellationReason,
+    DateTime? CancelledAt,
+    DateTime CreatedAt);
+
+public record CannotAttendShiftResponse(
+    Guid AbsenceReportId,
+    bool WasLate,
+    int LateReportsUsed,
+    int MaxLateReports);
+
+public record AbsenceReportResponse(
+    Guid Id,
+    Guid ShiftRequestId,
+    Guid PersonId,
+    string PersonName,
+    Guid ShiftSlotId,
+    DateOnly Date,
+    TimeOnly StartTime,
+    TimeOnly EndTime,
+    string TaskName,
+    string Reason,
+    bool IsLate,
+    string Status,
+    DateTime ReportedAt,
+    string? AdminNote,
+    DateTime? ReviewedAt);

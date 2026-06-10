@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import {
   getMyShiftRequests,
   cancelShiftRequest,
+  reportCannotAttend,
   ShiftRequestDto,
   MyShiftsResponse,
 } from "@/lib/api/selfService";
@@ -90,6 +91,13 @@ function canCancelShift(request: ShiftRequestDto, cancellationCutoffHours: numbe
   }
 }
 
+function isFutureApprovedShift(request: ShiftRequestDto): boolean {
+  if (request.status !== "Approved") return false;
+
+  const shiftStart = new Date(`${request.slotDate}T${request.slotStartTime}`);
+  return !isNaN(shiftStart.getTime()) && shiftStart.getTime() > Date.now();
+}
+
 export default function MyShiftsTab({ spaceId, groupId }: MyShiftsTabProps) {
   const t = useTranslations("selfService.myShifts");
 
@@ -111,6 +119,13 @@ export default function MyShiftsTab({ spaceId, groupId }: MyShiftsTabProps) {
   const [cancelReasonError, setCancelReasonError] = useState<string | null>(null);
   const [cancelling, setCancelling] = useState(false);
   const [cancelError, setCancelError] = useState<string | null>(null);
+
+  const [cannotAttendDialogOpen, setCannotAttendDialogOpen] = useState(false);
+  const [cannotAttendTarget, setCannotAttendTarget] = useState<ShiftRequestDto | null>(null);
+  const [cannotAttendReason, setCannotAttendReason] = useState("");
+  const [cannotAttendReasonError, setCannotAttendReasonError] = useState<string | null>(null);
+  const [reportingCannotAttend, setReportingCannotAttend] = useState(false);
+  const [cannotAttendError, setCannotAttendError] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
     try {
@@ -174,6 +189,46 @@ export default function MyShiftsTab({ spaceId, groupId }: MyShiftsTabProps) {
       setCancelError(message);
     } finally {
       setCancelling(false);
+    }
+  }
+
+  function openCannotAttendDialog(request: ShiftRequestDto) {
+    setCannotAttendTarget(request);
+    setCannotAttendReason("");
+    setCannotAttendReasonError(null);
+    setCannotAttendError(null);
+    setCannotAttendDialogOpen(true);
+  }
+
+  function closeCannotAttendDialog() {
+    setCannotAttendDialogOpen(false);
+    setCannotAttendTarget(null);
+    setCannotAttendReason("");
+    setCannotAttendReasonError(null);
+    setCannotAttendError(null);
+  }
+
+  async function handleCannotAttendConfirm() {
+    if (!cannotAttendTarget) return;
+
+    const validation = validateCancellationReason(cannotAttendReason);
+    if (!validation.valid) {
+      setCannotAttendReasonError(validation.errorKey ?? null);
+      return;
+    }
+
+    setReportingCannotAttend(true);
+    setCannotAttendError(null);
+
+    try {
+      await reportCannotAttend(spaceId, groupId, cannotAttendTarget.id, cannotAttendReason.trim());
+      closeCannotAttendDialog();
+      await fetchData();
+    } catch (err) {
+      const { message } = getSelfServiceErrorMessage(err);
+      setCannotAttendError(message);
+    } finally {
+      setReportingCannotAttend(false);
     }
   }
 
@@ -349,6 +404,7 @@ export default function MyShiftsTab({ spaceId, groupId }: MyShiftsTabProps) {
           statusKey="Approved"
           cancellationCutoffHours={cancellationCutoffHours}
           onCancel={openCancelDialog}
+          onCannotAttend={openCannotAttendDialog}
         />
       )}
 
@@ -360,6 +416,7 @@ export default function MyShiftsTab({ spaceId, groupId }: MyShiftsTabProps) {
           statusKey="Pending"
           cancellationCutoffHours={cancellationCutoffHours}
           onCancel={openCancelDialog}
+          onCannotAttend={openCannotAttendDialog}
         />
       )}
 
@@ -371,6 +428,7 @@ export default function MyShiftsTab({ spaceId, groupId }: MyShiftsTabProps) {
           statusKey="Cancelled"
           cancellationCutoffHours={cancellationCutoffHours}
           onCancel={openCancelDialog}
+          onCannotAttend={openCannotAttendDialog}
         />
       )}
 
@@ -428,6 +486,60 @@ export default function MyShiftsTab({ spaceId, groupId }: MyShiftsTabProps) {
               disabled={cancelReason.trim().length === 0}
               label={t("cancelConfirm")}
               loadingLabel={t("cancelling")}
+              variant="danger"
+            />
+          </div>
+        </div>
+      </Modal>
+
+      <Modal
+        open={cannotAttendDialogOpen}
+        onClose={closeCannotAttendDialog}
+        title={t("cannotAttendDialogTitle")}
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-slate-600">{t("cannotAttendDialogMessage")}</p>
+
+          <textarea
+            value={cannotAttendReason}
+            onChange={(e) => {
+              setCannotAttendReason(e.target.value);
+              setCannotAttendReasonError(null);
+            }}
+            placeholder={t("cannotAttendReasonPlaceholder")}
+            className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-sky-400 focus:border-transparent"
+            rows={3}
+            maxLength={500}
+            dir="rtl"
+          />
+
+          <div className="flex justify-between items-center">
+            <span className="text-xs text-slate-400">
+              {cannotAttendReason.trim().length} / 500
+            </span>
+          </div>
+
+          {cannotAttendReasonError && (
+            <p className="text-xs text-red-600">{cannotAttendReasonError}</p>
+          )}
+          {cannotAttendError && (
+            <p className="text-xs text-red-600">{cannotAttendError}</p>
+          )}
+
+          <div className="flex gap-3 justify-end">
+            <button
+              onClick={closeCannotAttendDialog}
+              className="px-4 py-2 text-sm text-slate-600 hover:text-slate-800 border border-slate-200 rounded-lg transition-colors"
+              disabled={reportingCannotAttend}
+            >
+              {t("cancelDismiss")}
+            </button>
+            <MutationButton
+              onClick={handleCannotAttendConfirm}
+              loading={reportingCannotAttend}
+              disabled={cannotAttendReason.trim().length === 0}
+              label={t("cannotAttendConfirm")}
+              loadingLabel={t("cannotAttendSubmitting")}
               variant="danger"
             />
           </div>
@@ -501,9 +613,10 @@ interface ShiftSectionProps {
   statusKey: ShiftRequestDto["status"];
   cancellationCutoffHours: number;
   onCancel: (request: ShiftRequestDto) => void;
+  onCannotAttend: (request: ShiftRequestDto) => void;
 }
 
-function ShiftSection({ title, requests, statusKey, cancellationCutoffHours, onCancel }: ShiftSectionProps) {
+function ShiftSection({ title, requests, statusKey, cancellationCutoffHours, onCancel, onCannotAttend }: ShiftSectionProps) {
   return (
     <div>
       <div className="flex items-center gap-2 mb-2">
@@ -519,6 +632,7 @@ function ShiftSection({ title, requests, statusKey, cancellationCutoffHours, onC
             request={request}
             cancellationCutoffHours={cancellationCutoffHours}
             onCancel={onCancel}
+            onCannotAttend={onCannotAttend}
           />
         ))}
       </div>
@@ -532,12 +646,14 @@ interface ShiftCardProps {
   request: ShiftRequestDto;
   cancellationCutoffHours: number;
   onCancel: (request: ShiftRequestDto) => void;
+  onCannotAttend: (request: ShiftRequestDto) => void;
 }
 
-function ShiftCard({ request, cancellationCutoffHours, onCancel }: ShiftCardProps) {
+function ShiftCard({ request, cancellationCutoffHours, onCancel, onCannotAttend }: ShiftCardProps) {
   const t = useTranslations("selfService.myShifts");
   const style = STATUS_BADGE_STYLES[request.status];
   const showCancelButton = canCancelShift(request, cancellationCutoffHours);
+  const showCannotAttendButton = isFutureApprovedShift(request);
 
   // Get Hebrew day name from the date
   const dayName = (() => {
@@ -591,6 +707,14 @@ function ShiftCard({ request, cancellationCutoffHours, onCancel }: ShiftCardProp
             className="text-xs text-red-600 hover:text-red-700 border border-red-200 bg-red-50 hover:bg-red-100 px-2.5 py-1 rounded-lg transition-colors"
           >
             {t("cancelButton")}
+          </button>
+        )}
+        {showCannotAttendButton && (
+          <button
+            onClick={() => onCannotAttend(request)}
+            className="text-xs text-amber-700 hover:text-amber-800 border border-amber-200 bg-amber-50 hover:bg-amber-100 px-2.5 py-1 rounded-lg transition-colors"
+          >
+            {t("cannotAttendButton")}
           </button>
         )}
       </div>

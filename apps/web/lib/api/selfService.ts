@@ -41,6 +41,8 @@ export interface SelfServiceConfigDto {
   requestWindowOpenOffsetHours: number;
   requestWindowCloseOffsetHours: number;
   cancellationCutoffHours: number;
+  maxLateCancellationsPerCycle: number;
+  lateCancellationWindowHours: number;
   waitlistOfferMinutes: number;
   cycleDurationDays: number;
 }
@@ -51,6 +53,8 @@ export interface UpdateSelfServiceConfigPayload {
   requestWindowOpenOffsetHours: number;
   requestWindowCloseOffsetHours: number;
   cancellationCutoffHours: number;
+  maxLateCancellationsPerCycle: number;
+  lateCancellationWindowHours: number;
   waitlistOfferMinutes: number;
   cycleDurationDays: number;
 }
@@ -100,6 +104,31 @@ export interface MyShiftsResponse {
   minShiftsPerCycle: number;
   maxShiftsPerCycle: number;
   cancellationCutoffHours: number;
+}
+
+export interface CannotAttendResponse {
+  absenceReportId: string;
+  wasLate: boolean;
+  lateReportsUsed: number;
+  maxLateReports: number;
+}
+
+export interface AbsenceReportDto {
+  id: string;
+  shiftRequestId: string;
+  personId: string;
+  personName: string;
+  shiftSlotId: string;
+  date: string;
+  startTime: string;
+  endTime: string;
+  taskName: string;
+  reason: string;
+  isLate: boolean;
+  status: "Pending" | "Approved" | "Rejected";
+  reportedAt: string;
+  adminNote: string | null;
+  reviewedAt: string | null;
 }
 
 // ── Waitlist ─────────────────────────────────────────────────────────────────
@@ -253,6 +282,19 @@ export async function cancelShiftRequest(
   );
 }
 
+export async function reportCannotAttend(
+  spaceId: string,
+  groupId: string,
+  shiftRequestId: string,
+  reason: string
+): Promise<CannotAttendResponse> {
+  const { data } = await apiClient.post(
+    `/spaces/${spaceId}/groups/${groupId}/shift-requests/${shiftRequestId}/cannot-attend`,
+    { reason }
+  );
+  return data;
+}
+
 export async function getMyShiftRequests(
   spaceId: string,
   groupId: string,
@@ -261,6 +303,53 @@ export async function getMyShiftRequests(
   const { data } = await apiClient.get(
     `/spaces/${spaceId}/groups/${groupId}/shift-requests/mine`,
     { params: schedulingCycleId ? { schedulingCycleId } : undefined }
+  );
+  return data;
+}
+
+export async function getAbsenceReports(
+  spaceId: string,
+  groupId: string,
+  status?: AbsenceReportDto["status"]
+): Promise<AbsenceReportDto[]> {
+  const { data } = await apiClient.get(
+    `/spaces/${spaceId}/groups/${groupId}/shift-requests/absence-reports`,
+    { params: status ? { status } : undefined }
+  );
+  return data;
+}
+
+export async function approveAbsenceReport(
+  spaceId: string,
+  groupId: string,
+  absenceReportId: string,
+  adminNote?: string
+): Promise<void> {
+  await apiClient.post(
+    `/spaces/${spaceId}/groups/${groupId}/shift-requests/absence-reports/${absenceReportId}/approve`,
+    { adminNote: adminNote?.trim() || null }
+  );
+}
+
+export async function rejectAbsenceReport(
+  spaceId: string,
+  groupId: string,
+  absenceReportId: string,
+  adminNote?: string
+): Promise<void> {
+  await apiClient.post(
+    `/spaces/${spaceId}/groups/${groupId}/shift-requests/absence-reports/${absenceReportId}/reject`,
+    { adminNote: adminNote?.trim() || null }
+  );
+}
+
+export async function getMemberApprovedShifts(
+  spaceId: string,
+  groupId: string,
+  personId: string
+): Promise<ShiftRequestDto[]> {
+  const { data } = await apiClient.get(
+    `/spaces/${spaceId}/groups/${groupId}/shift-swaps/members/${personId}/approved-shifts`
   );
   return data;
 }

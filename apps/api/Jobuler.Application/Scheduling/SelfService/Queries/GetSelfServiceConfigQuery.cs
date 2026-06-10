@@ -30,6 +30,8 @@ public class GetSelfServiceConfigQueryHandler : IRequestHandler<GetSelfServiceCo
             config.RequestWindowOpenOffsetHours,
             config.RequestWindowCloseOffsetHours,
             config.CancellationCutoffHours,
+            config.MaxLateCancellationsPerCycle,
+            config.LateCancellationWindowHours,
             config.WaitlistOfferMinutes,
             config.CycleDurationDays);
     }

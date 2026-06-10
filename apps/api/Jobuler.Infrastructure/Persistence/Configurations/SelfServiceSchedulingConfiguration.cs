@@ -19,6 +19,8 @@ public class SelfServiceConfigConfiguration : IEntityTypeConfiguration<SelfServi
         builder.Property(c => c.RequestWindowOpenOffsetHours).HasColumnName("request_window_open_offset_hours").HasDefaultValue(168);
         builder.Property(c => c.RequestWindowCloseOffsetHours).HasColumnName("request_window_close_offset_hours").HasDefaultValue(24);
         builder.Property(c => c.CancellationCutoffHours).HasColumnName("cancellation_cutoff_hours").HasDefaultValue(24);
+        builder.Property(c => c.MaxLateCancellationsPerCycle).HasColumnName("max_late_cancellations_per_cycle").HasDefaultValue(2);
+        builder.Property(c => c.LateCancellationWindowHours).HasColumnName("late_cancellation_window_hours").HasDefaultValue(24);
         builder.Property(c => c.WaitlistOfferMinutes).HasColumnName("waitlist_offer_minutes").HasDefaultValue(60);
         builder.Property(c => c.CycleDurationDays).HasColumnName("cycle_duration_days").HasDefaultValue(7);
         builder.Property(c => c.CreatedAt).HasColumnName("created_at");
@@ -141,6 +143,43 @@ public class ShiftRequestConfiguration : IEntityTypeConfiguration<ShiftRequest>
             .IsUnique()
             .HasFilter("status IN ('Pending', 'Approved')")
             .HasDatabaseName("idx_shift_requests_no_dup");
+    }
+}
+
+public class ShiftAbsenceReportConfiguration : IEntityTypeConfiguration<ShiftAbsenceReport>
+{
+    public void Configure(EntityTypeBuilder<ShiftAbsenceReport> builder)
+    {
+        builder.ToTable("shift_absence_reports");
+        builder.HasKey(r => r.Id);
+        builder.Property(r => r.Id).HasColumnName("id");
+        builder.Property(r => r.SpaceId).HasColumnName("space_id");
+        builder.Property(r => r.GroupId).HasColumnName("group_id");
+        builder.Property(r => r.SchedulingCycleId).HasColumnName("scheduling_cycle_id");
+        builder.Property(r => r.ShiftRequestId).HasColumnName("shift_request_id");
+        builder.Property(r => r.ShiftSlotId).HasColumnName("shift_slot_id");
+        builder.Property(r => r.PersonId).HasColumnName("person_id");
+        builder.Property(r => r.Reason).HasColumnName("reason").HasMaxLength(500);
+        builder.Property(r => r.IsLate).HasColumnName("is_late").HasDefaultValue(false);
+        builder.Property(r => r.ReportedAt).HasColumnName("reported_at");
+        builder.Property(r => r.Status).HasColumnName("status")
+            .HasConversion(v => v.ToString(), v => Enum.Parse<ShiftAbsenceReportStatus>(v, true))
+            .HasDefaultValue(ShiftAbsenceReportStatus.Pending);
+        builder.Property(r => r.ReviewedByUserId).HasColumnName("reviewed_by_user_id");
+        builder.Property(r => r.AdminNote).HasColumnName("admin_note").HasMaxLength(500);
+        builder.Property(r => r.ReviewedAt).HasColumnName("reviewed_at");
+        builder.Property(r => r.CreatedAt).HasColumnName("created_at");
+        builder.Property(r => r.UpdatedAt).HasColumnName("updated_at");
+
+        builder.HasIndex(r => new { r.PersonId, r.SchedulingCycleId, r.IsLate, r.Status })
+            .HasDatabaseName("idx_shift_absence_reports_person_cycle");
+
+        builder.HasIndex(r => new { r.GroupId, r.Status, r.ReportedAt })
+            .HasDatabaseName("idx_shift_absence_reports_group_status");
+
+        builder.HasIndex(r => r.ShiftRequestId)
+            .IsUnique()
+            .HasDatabaseName("idx_shift_absence_reports_shift_request");
     }
 }
 

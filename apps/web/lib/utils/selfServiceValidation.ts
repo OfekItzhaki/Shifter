@@ -51,6 +51,8 @@ export function validateSelfServiceConfig(config: {
   requestWindowOpenOffsetHours: number;
   requestWindowCloseOffsetHours: number;
   cancellationCutoffHours: number;
+  maxLateCancellationsPerCycle: number;
+  lateCancellationWindowHours: number;
   waitlistOfferMinutes: number;
   cycleDurationDays: number;
 }): ValidationResult {
@@ -60,6 +62,8 @@ export function validateSelfServiceConfig(config: {
     requestWindowOpenOffsetHours,
     requestWindowCloseOffsetHours,
     cancellationCutoffHours,
+    maxLateCancellationsPerCycle,
+    lateCancellationWindowHours,
     waitlistOfferMinutes,
     cycleDurationDays,
   } = config;
@@ -92,6 +96,14 @@ export function validateSelfServiceConfig(config: {
   // cancellationCutoffHours: 1–720
   if (cancellationCutoffHours < 1 || cancellationCutoffHours > 720) {
     return { valid: false, errorKey: "selfService.errors.cutoffOutOfRange" };
+  }
+
+  if (maxLateCancellationsPerCycle < 0 || maxLateCancellationsPerCycle > 100) {
+    return { valid: false, errorKey: "selfService.errors.maxLateCancellationsOutOfRange" };
+  }
+
+  if (lateCancellationWindowHours < 1 || lateCancellationWindowHours > 720) {
+    return { valid: false, errorKey: "selfService.errors.lateCancellationWindowOutOfRange" };
   }
 
   // waitlistOfferMinutes: 1–1440

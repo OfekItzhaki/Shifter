@@ -356,6 +356,154 @@ public class ShiftRequestService : IShiftRequestService
         });
     }
 
+    /// <inheritdoc />
+    public async Task<AbsenceReportResult> ReportCannotAttendAsync(
+        Guid personId,
+        Guid shiftRequestId,
+        string reason,
+        CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(reason) || reason.Length > 500)
+        {
+            return new AbsenceReportResult(
+                Success: false,
+                AbsenceReportId: null,
+                WasLate: false,
+                LateReportsUsed: 0,
+                MaxLateReports: 0,
+                ErrorMessage: "Reason must be between 1 and 500 characters.");
+        }
+
+        var strategy = _db.Database.CreateExecutionStrategy();
+
+        return await strategy.ExecuteAsync(async () =>
+        {
+            await using var transaction = await _db.Database.BeginTransactionAsync(ct);
+            try
+            {
+                var shiftRequest = await _db.ShiftRequests
+                    .FirstOrDefaultAsync(r => r.Id == shiftRequestId && r.PersonId == personId, ct);
+
+                if (shiftRequest is null)
+                {
+                    await transaction.RollbackAsync(ct);
+                    return new AbsenceReportResult(false, null, false, 0, 0, "Shift request not found.");
+                }
+
+                if (shiftRequest.Status != ShiftRequestStatus.Approved)
+                {
+                    await transaction.RollbackAsync(ct);
+                    return new AbsenceReportResult(false, null, false, 0, 0, "Only approved shifts can be reported as cannot attend.");
+                }
+
+                var existingReport = await _db.ShiftAbsenceReports
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(r => r.ShiftRequestId == shiftRequestId, ct);
+
+                if (existingReport is not null)
+                {
+                    await transaction.RollbackAsync(ct);
+                    return new AbsenceReportResult(false, null, existingReport.IsLate, 0, 0, "This shift already has an absence report.");
+                }
+
+                var slot = await _db.ShiftSlots
+                    .FirstOrDefaultAsync(s => s.Id == shiftRequest.ShiftSlotId, ct);
+
+                if (slot is null)
+                {
+                    await transaction.RollbackAsync(ct);
+                    return new AbsenceReportResult(false, null, false, 0, 0, "The associated shift slot could not be found.");
+                }
+
+                var config = await _db.SelfServiceConfigs
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(c => c.GroupId == slot.GroupId, ct);
+
+                var maxLateReports = config?.MaxLateCancellationsPerCycle ?? 2;
+                var lateWindowHours = config?.LateCancellationWindowHours ?? config?.CancellationCutoffHours ?? 24;
+                var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
+                var shiftStartUtc = slot.Date.ToDateTime(slot.StartTime, DateTimeKind.Utc);
+
+                if (shiftStartUtc <= utcNow)
+                {
+                    await transaction.RollbackAsync(ct);
+                    return new AbsenceReportResult(false, null, true, 0, maxLateReports, "This shift has already started.");
+                }
+
+                var wasLate = utcNow >= shiftStartUtc.AddHours(-lateWindowHours);
+                var lateReportsUsed = 0;
+
+                if (wasLate)
+                {
+                    lateReportsUsed = await _db.ShiftAbsenceReports
+                        .CountAsync(r => r.PersonId == personId
+                                         && r.SchedulingCycleId == shiftRequest.SchedulingCycleId
+                                         && r.IsLate
+                                         && r.Status != ShiftAbsenceReportStatus.Rejected, ct);
+
+                    if (lateReportsUsed >= maxLateReports)
+                    {
+                        await transaction.RollbackAsync(ct);
+                        return new AbsenceReportResult(
+                            false,
+                            null,
+                            true,
+                            lateReportsUsed,
+                            maxLateReports,
+                            $"You have reached the late absence limit ({maxLateReports}) for this scheduling cycle.");
+                    }
+                }
+
+                var absenceReport = ShiftAbsenceReport.Create(
+                    shiftRequest.SpaceId,
+                    shiftRequest.GroupId,
+                    shiftRequest.SchedulingCycleId,
+                    shiftRequest.Id,
+                    slot.Id,
+                    personId,
+                    reason,
+                    wasLate,
+                    utcNow);
+
+                _db.ShiftAbsenceReports.Add(absenceReport);
+
+                shiftRequest.Cancel(wasLate
+                    ? $"Late absence report: {reason.Trim()}"
+                    : $"Cannot attend: {reason.Trim()}");
+                slot.DecrementFillCount();
+
+                await _db.SaveChangesAsync(ct);
+
+                if (_waitlistService is not null)
+                {
+                    await _waitlistService.ProcessSlotReleasedAsync(slot.Id, ct);
+                }
+
+                await transaction.CommitAsync(ct);
+
+                _logger.LogInformation(
+                    "Shift absence report {ReportId} created for person {PersonId}, request {RequestId}. Late={WasLate}",
+                    absenceReport.Id, personId, shiftRequestId, wasLate);
+
+                return new AbsenceReportResult(
+                    true,
+                    absenceReport.Id,
+                    wasLate,
+                    wasLate ? lateReportsUsed + 1 : lateReportsUsed,
+                    maxLateReports,
+                    null);
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                await transaction.RollbackAsync(ct);
+                _logger.LogError(ex,
+                    "Error reporting cannot attend for request {RequestId}, person {PersonId}",
+                    shiftRequestId, personId);
+                throw;
+            }
+        });
+    }
+
     /// <summary>
     /// Returns up to 5 alternative available slots for the same day as the target slot.
     /// Excludes slots the member already has a request for and slots that overlap with their approved shifts.

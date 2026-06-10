@@ -1934,6 +1934,7 @@
       "swaps": "Обмены",
       "shiftTemplates": "Шаблоны смен",
       "selfServiceConfig": "Настройки выбора",
+      "absenceReports": "Отчеты об отсутствии",
       "adminOverrides": "Назначения администратора"
     },
     "slotBrowser": {
@@ -1976,6 +1977,12 @@
       "cancelDialogMessage": "Укажите причину отмены (1-500 символов):",
       "cancelReasonPlaceholder": "Причина отмены...",
       "cancelConfirm": "Подтвердить отмену",
+      "cannotAttendButton": "Не смогу прийти",
+      "cannotAttendDialogTitle": "Сообщить об отсутствии",
+      "cannotAttendDialogMessage": "Сообщите администраторам, почему вы не сможете прийти. Если сообщение позднее, оно учитывается в лимите поздних отсутствий.",
+      "cannotAttendReasonPlaceholder": "Причина отсутствия...",
+      "cannotAttendConfirm": "Сообщить",
+      "cannotAttendSubmitting": "Отправка...",
       "cancelDismiss": "Назад",
       "shiftCount": "{current} / {max} смен в этом цикле",
       "underScheduled": "⚠ У вас меньше смен, чем требуется минимумом ({min})",
@@ -2049,6 +2056,21 @@
       "duplicateError": "Для этих смен уже есть ожидающий запрос на обмен",
       "invalidOwnership": "Вы не являетесь владельцем выбранной смены"
     },
+    "absenceReports": {
+      "title": "Отчеты об отсутствии",
+      "refresh": "Обновить",
+      "empty": "Нет отчетов об отсутствии",
+      "late": "Поздно",
+      "adminNote": "Заметка администратора",
+      "adminNotePlaceholder": "Заметка администратора...",
+      "approve": "Одобрить",
+      "reject": "Отклонить",
+      "approving": "Одобрение...",
+      "rejecting": "Отклонение...",
+      "statusPending": "Ожидает",
+      "statusApproved": "Одобрено",
+      "statusRejected": "Отклонено"
+    },
     "templates": {
       "title": "Шаблоны смен",
       "createButton": "Создать шаблон",
@@ -2094,6 +2116,8 @@
       "requestWindowOpenOffsetHours": "Открытие окна запросов (часов до смены)",
       "requestWindowCloseOffsetHours": "Закрытие окна запросов (часов до смены)",
       "cancellationCutoffHours": "Крайний срок отмены (часов до смены)",
+      "maxLateCancellationsPerCycle": "Лимит поздних отсутствий за цикл",
+      "lateCancellationWindowHours": "Окно позднего отсутствия (часов до смены)",
       "waitlistOfferMinutes": "Время действия предложения из листа ожидания (минуты)",
       "cycleDurationDays": "Длительность цикла (дни)",
       "save": "Сохранить настройки",

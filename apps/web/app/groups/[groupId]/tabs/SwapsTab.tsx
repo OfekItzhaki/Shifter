@@ -11,6 +11,7 @@ import {
   declineSwap,
   cancelSwap,
   getMyShiftRequests,
+  getMemberApprovedShifts,
   SwapRequestDto,
   ShiftRequestDto,
 } from "@/lib/api/selfService";
@@ -180,26 +181,8 @@ export default function SwapsTab({ spaceId, groupId, members }: Props) {
     if (!currentSpaceId) return;
     setTargetShiftsLoading(true);
     try {
-      // We fetch all approved shifts for the group and filter by the target member
-      // The API returns the current user's shifts, so for the target we use the swap endpoint
-      // Actually, the getMyShiftRequests only returns the current user's shifts.
-      // For the propose flow, we need to show the target member's approved shifts.
-      // The backend should expose this via a different endpoint, but based on the design,
-      // the member selects from "another member's approved shifts" — this implies the frontend
-      // has access to them. We'll use the available slots or a member-specific endpoint.
-      // Since the API only has getMyShiftRequests (returns current user's), we'll need to
-      // rely on the swap proposal endpoint to validate. For the UI, we show the target member's
-      // shifts from the swap context. Let's check if there's a way to get them.
-      // Based on the API design, we don't have a "get shifts for person X" endpoint.
-      // The propose flow in the design says "selects another member's approved shift to request"
-      // This likely means the UI shows available information. Since we can't fetch another
-      // member's shifts directly, we'll provide a simplified flow where the user enters
-      // the target shift details or we use available slots.
-      // Actually, looking at the SwapRequestDto, it has targetShiftRequestId — so the user
-      // needs to know the target's shift request ID. The most practical approach is to
-      // show the available slots that the target member is assigned to.
-      // For now, let's implement a simplified version that works with the available API.
-      setTargetShifts([]);
+      const data = await getMemberApprovedShifts(currentSpaceId, groupId, personId);
+      setTargetShifts(data.filter((r) => r.status === "Approved"));
     } catch {
       setProposeError(tCommon("error"));
     } finally {

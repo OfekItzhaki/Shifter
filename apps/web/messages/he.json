@@ -1946,6 +1946,7 @@
       "swaps": "החלפות",
       "shiftTemplates": "תבניות משמרות",
       "selfServiceConfig": "הגדרות שירות עצמי",
+      "absenceReports": "דיווחי אי הגעה",
       "adminOverrides": "עקיפות מנהל"
     },
     "slotBrowser": {
@@ -1988,6 +1989,12 @@
       "cancelDialogMessage": "הזן סיבת ביטול (1-500 תווים):",
       "cancelReasonPlaceholder": "סיבת הביטול...",
       "cancelConfirm": "אשר ביטול",
+      "cannotAttendButton": "לא אגיע",
+      "cannotAttendDialogTitle": "דיווח אי הגעה",
+      "cannotAttendDialogMessage": "כתוב למנהלים למה לא תוכל להגיע. אם הדיווח מאוחר, הוא ייספר במכסת האיחורים.",
+      "cannotAttendReasonPlaceholder": "סיבת אי ההגעה...",
+      "cannotAttendConfirm": "דווח אי הגעה",
+      "cannotAttendSubmitting": "מדווח...",
       "cancelDismiss": "חזרה",
       "shiftCount": "{current} / {max} משמרות במחזור זה",
       "underScheduled": "⚠ אתה מתחת למינימום המשמרות הנדרש ({min})",
@@ -2061,6 +2068,21 @@
       "duplicateError": "כבר קיימת בקשת החלפה ממתינה עבור משמרות אלו",
       "invalidOwnership": "אינך הבעלים של המשמרת שנבחרה"
     },
+    "absenceReports": {
+      "title": "דיווחי אי הגעה",
+      "refresh": "רענן",
+      "empty": "אין דיווחי אי הגעה",
+      "late": "מאוחר",
+      "adminNote": "הערת מנהל",
+      "adminNotePlaceholder": "הערת מנהל...",
+      "approve": "אשר",
+      "reject": "דחה",
+      "approving": "מאשר...",
+      "rejecting": "דוחה...",
+      "statusPending": "ממתין",
+      "statusApproved": "אושר",
+      "statusRejected": "נדחה"
+    },
     "templates": {
       "title": "תבניות משמרות",
       "createButton": "צור תבנית",
@@ -2106,6 +2128,8 @@
       "requestWindowOpenOffsetHours": "פתיחת חלון בקשות (שעות לפני)",
       "requestWindowCloseOffsetHours": "סגירת חלון בקשות (שעות לפני)",
       "cancellationCutoffHours": "חלון ביטול (שעות לפני)",
+      "maxLateCancellationsPerCycle": "מכסת אי הגעה מאוחרת למחזור",
+      "lateCancellationWindowHours": "חלון אי הגעה מאוחרת (שעות לפני)",
       "waitlistOfferMinutes": "זמן הצעת רשימת המתנה (דקות)",
       "cycleDurationDays": "משך מחזור (ימים)",
       "save": "שמור הגדרות",

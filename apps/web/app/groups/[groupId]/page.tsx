@@ -34,6 +34,7 @@ const WaitlistTab = lazy(() => import("./tabs/WaitlistTab"));
 const SwapsTab = lazy(() => import("./tabs/SwapsTab"));
 const ShiftTemplatesTab = lazy(() => import("@/components/groups/selfService/ShiftTemplatesTab"));
 const SelfServiceConfigTab = lazy(() => import("@/components/groups/selfService/SelfServiceConfigTab"));
+const AbsenceReportsTab = lazy(() => import("@/components/groups/selfService/AbsenceReportsTab"));
 const AdminOverridesTab = lazy(() => import("./tabs/AdminOverridesTab"));
 import { ActiveTab, ADMIN_ONLY_TABS, AUTO_GENERATED_TABS, SELF_SERVICE_MEMBER_TABS, SELF_SERVICE_ADMIN_TABS, ScheduleAssignment } from "./types";
 import { useSpaceStore } from "@/lib/store/spaceStore";
@@ -87,6 +88,7 @@ function getTabLabels(t: (key: string) => string, tSelfService: (key: string) =>
     "swaps": tSelfService("tabs.swaps"),
     "shift-templates": tSelfService("tabs.shiftTemplates"),
     "self-service-config": tSelfService("tabs.selfServiceConfig"),
+    "absence-reports": tSelfService("tabs.absenceReports"),
     "admin-overrides": tSelfService("tabs.adminOverrides"),
   };
 }
@@ -1735,6 +1737,10 @@ export default function GroupDetailPage() {
 
           {activeTab === "self-service-config" && currentSpaceId && (
             <SelfServiceConfigTab spaceId={currentSpaceId} groupId={groupId} />
+          )}
+
+          {activeTab === "absence-reports" && currentSpaceId && (
+            <AbsenceReportsTab spaceId={currentSpaceId} groupId={groupId} />
           )}
 
           {activeTab === "admin-overrides" && currentSpaceId && (

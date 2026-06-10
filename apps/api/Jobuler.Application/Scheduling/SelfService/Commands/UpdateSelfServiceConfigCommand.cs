@@ -14,6 +14,8 @@ public record UpdateSelfServiceConfigCommand(
     int RequestWindowOpenOffsetHours,
     int RequestWindowCloseOffsetHours,
     int CancellationCutoffHours,
+    int MaxLateCancellationsPerCycle,
+    int LateCancellationWindowHours,
     int WaitlistOfferMinutes,
     int CycleDurationDays) : IRequest<SelfServiceConfigDto>;
 
@@ -25,6 +27,8 @@ public record SelfServiceConfigDto(
     int RequestWindowOpenOffsetHours,
     int RequestWindowCloseOffsetHours,
     int CancellationCutoffHours,
+    int MaxLateCancellationsPerCycle,
+    int LateCancellationWindowHours,
     int WaitlistOfferMinutes,
     int CycleDurationDays);
 
@@ -62,6 +66,14 @@ public class UpdateSelfServiceConfigCommandValidator : AbstractValidator<UpdateS
         RuleFor(x => x.CancellationCutoffHours)
             .InclusiveBetween(1, 720)
             .WithMessage("Cancellation cutoff must be between 1 and 720 hours.");
+
+        RuleFor(x => x.MaxLateCancellationsPerCycle)
+            .InclusiveBetween(0, 100)
+            .WithMessage("Max late cancellations per cycle must be between 0 and 100.");
+
+        RuleFor(x => x.LateCancellationWindowHours)
+            .InclusiveBetween(1, 720)
+            .WithMessage("Late cancellation window must be between 1 and 720 hours.");
 
         RuleFor(x => x.WaitlistOfferMinutes)
             .InclusiveBetween(15, 1440)
@@ -101,6 +113,8 @@ public class UpdateSelfServiceConfigCommandHandler : IRequestHandler<UpdateSelfS
                 req.RequestWindowOpenOffsetHours,
                 req.RequestWindowCloseOffsetHours,
                 req.CancellationCutoffHours,
+                req.MaxLateCancellationsPerCycle,
+                req.LateCancellationWindowHours,
                 req.WaitlistOfferMinutes,
                 req.CycleDurationDays);
 
@@ -117,6 +131,8 @@ public class UpdateSelfServiceConfigCommandHandler : IRequestHandler<UpdateSelfS
                 req.RequestWindowOpenOffsetHours,
                 req.RequestWindowCloseOffsetHours,
                 req.CancellationCutoffHours,
+                req.MaxLateCancellationsPerCycle,
+                req.LateCancellationWindowHours,
                 req.WaitlistOfferMinutes,
                 req.CycleDurationDays);
         }
@@ -131,6 +147,8 @@ public class UpdateSelfServiceConfigCommandHandler : IRequestHandler<UpdateSelfS
             config.RequestWindowOpenOffsetHours,
             config.RequestWindowCloseOffsetHours,
             config.CancellationCutoffHours,
+            config.MaxLateCancellationsPerCycle,
+            config.LateCancellationWindowHours,
             config.WaitlistOfferMinutes,
             config.CycleDurationDays);
     }

@@ -32,6 +32,8 @@ const CONFIG_FIELDS: ConfigField[] = [
   { key: "requestWindowOpenOffsetHours", min: 1, max: 720 },
   { key: "requestWindowCloseOffsetHours", min: 1, max: 720 },
   { key: "cancellationCutoffHours", min: 1, max: 720 },
+  { key: "maxLateCancellationsPerCycle", min: 0, max: 100 },
+  { key: "lateCancellationWindowHours", min: 1, max: 720 },
   { key: "waitlistOfferMinutes", min: 1, max: 1440 },
   { key: "cycleDurationDays", min: 1, max: 365 },
 ];
@@ -49,6 +51,8 @@ export default function SelfServiceConfigTab({ spaceId, groupId }: SelfServiceCo
     requestWindowOpenOffsetHours: 168,
     requestWindowCloseOffsetHours: 24,
     cancellationCutoffHours: 24,
+    maxLateCancellationsPerCycle: 2,
+    lateCancellationWindowHours: 24,
     waitlistOfferMinutes: 60,
     cycleDurationDays: 7,
   });
@@ -70,6 +74,8 @@ export default function SelfServiceConfigTab({ spaceId, groupId }: SelfServiceCo
         requestWindowOpenOffsetHours: config.requestWindowOpenOffsetHours,
         requestWindowCloseOffsetHours: config.requestWindowCloseOffsetHours,
         cancellationCutoffHours: config.cancellationCutoffHours,
+        maxLateCancellationsPerCycle: config.maxLateCancellationsPerCycle,
+        lateCancellationWindowHours: config.lateCancellationWindowHours,
         waitlistOfferMinutes: config.waitlistOfferMinutes,
         cycleDurationDays: config.cycleDurationDays,
       });

@@ -45,6 +45,8 @@ public class SelfServiceConfigController : ControllerBase
                 RequestWindowOpenOffsetHours: 168,
                 RequestWindowCloseOffsetHours: 24,
                 CancellationCutoffHours: 24,
+                MaxLateCancellationsPerCycle: 2,
+                LateCancellationWindowHours: 24,
                 WaitlistOfferMinutes: 60,
                 CycleDurationDays: 7));
         }
@@ -57,6 +59,8 @@ public class SelfServiceConfigController : ControllerBase
             RequestWindowOpenOffsetHours: result.RequestWindowOpenOffsetHours,
             RequestWindowCloseOffsetHours: result.RequestWindowCloseOffsetHours,
             CancellationCutoffHours: result.CancellationCutoffHours,
+            MaxLateCancellationsPerCycle: result.MaxLateCancellationsPerCycle,
+            LateCancellationWindowHours: result.LateCancellationWindowHours,
             WaitlistOfferMinutes: result.WaitlistOfferMinutes,
             CycleDurationDays: result.CycleDurationDays));
     }
@@ -78,6 +82,8 @@ public class SelfServiceConfigController : ControllerBase
             req.RequestWindowOpenOffsetHours,
             req.RequestWindowCloseOffsetHours,
             req.CancellationCutoffHours,
+            req.MaxLateCancellationsPerCycle,
+            req.LateCancellationWindowHours,
             req.WaitlistOfferMinutes,
             req.CycleDurationDays), ct);
 
@@ -89,6 +95,8 @@ public class SelfServiceConfigController : ControllerBase
             RequestWindowOpenOffsetHours: result.RequestWindowOpenOffsetHours,
             RequestWindowCloseOffsetHours: result.RequestWindowCloseOffsetHours,
             CancellationCutoffHours: result.CancellationCutoffHours,
+            MaxLateCancellationsPerCycle: result.MaxLateCancellationsPerCycle,
+            LateCancellationWindowHours: result.LateCancellationWindowHours,
             WaitlistOfferMinutes: result.WaitlistOfferMinutes,
             CycleDurationDays: result.CycleDurationDays));
     }
@@ -102,6 +110,8 @@ public record UpdateSelfServiceConfigRequest(
     int RequestWindowOpenOffsetHours,
     int RequestWindowCloseOffsetHours,
     int CancellationCutoffHours,
+    int MaxLateCancellationsPerCycle,
+    int LateCancellationWindowHours,
     int WaitlistOfferMinutes,
     int CycleDurationDays);
 
@@ -115,5 +125,7 @@ public record SelfServiceConfigResponse(
     int RequestWindowOpenOffsetHours,
     int RequestWindowCloseOffsetHours,
     int CancellationCutoffHours,
+    int MaxLateCancellationsPerCycle,
+    int LateCancellationWindowHours,
     int WaitlistOfferMinutes,
     int CycleDurationDays);
