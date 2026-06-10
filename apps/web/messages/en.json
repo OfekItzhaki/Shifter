@@ -1983,6 +1983,8 @@
       "cannotAttendReasonPlaceholder": "Reason you cannot attend...",
       "cannotAttendConfirm": "Report Absence",
       "cannotAttendSubmitting": "Reporting...",
+      "cannotAttendSubmitted": "Absence report sent to the admins.",
+      "cannotAttendLateSubmitted": "Late absence report sent. You have used {used} / {max} late reports this cycle.",
       "cancelDismiss": "Go Back",
       "shiftCount": "{current} / {max} shifts this cycle",
       "underScheduled": "⚠ You are below the minimum required shifts ({min})",

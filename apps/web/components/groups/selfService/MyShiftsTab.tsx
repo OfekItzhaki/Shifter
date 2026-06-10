@@ -133,6 +133,7 @@ export default function MyShiftsTab({ spaceId, groupId }: MyShiftsTabProps) {
   const [cannotAttendReasonError, setCannotAttendReasonError] = useState<string | null>(null);
   const [reportingCannotAttend, setReportingCannotAttend] = useState(false);
   const [cannotAttendError, setCannotAttendError] = useState<string | null>(null);
+  const [cannotAttendSuccess, setCannotAttendSuccess] = useState<string | null>(null);
 
   const [changeDialogOpen, setChangeDialogOpen] = useState(false);
   const [changeTarget, setChangeTarget] = useState<ShiftRequestDto | null>(null);
@@ -216,6 +217,7 @@ export default function MyShiftsTab({ spaceId, groupId }: MyShiftsTabProps) {
     setCannotAttendReason("");
     setCannotAttendReasonError(null);
     setCannotAttendError(null);
+    setCannotAttendSuccess(null);
     setCannotAttendDialogOpen(true);
   }
 
@@ -240,7 +242,15 @@ export default function MyShiftsTab({ spaceId, groupId }: MyShiftsTabProps) {
     setCannotAttendError(null);
 
     try {
-      await reportCannotAttend(spaceId, groupId, cannotAttendTarget.id, cannotAttendReason.trim());
+      const result = await reportCannotAttend(spaceId, groupId, cannotAttendTarget.id, cannotAttendReason.trim());
+      setCannotAttendSuccess(
+        result.wasLate
+          ? t("cannotAttendLateSubmitted", {
+              used: result.lateReportsUsed,
+              max: result.maxLateReports,
+            })
+          : t("cannotAttendSubmitted")
+      );
       closeCannotAttendDialog();
       await fetchData();
     } catch (err) {
@@ -417,6 +427,12 @@ export default function MyShiftsTab({ spaceId, groupId }: MyShiftsTabProps) {
           {t("shiftCount", { current: currentShiftCount, max: maxShiftsPerCycle })}
         </span>
       </div>
+
+      {cannotAttendSuccess && (
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+          {cannotAttendSuccess}
+        </div>
+      )}
 
       <div className="bg-white border border-slate-200 rounded-xl px-4 py-4">
         <div className="flex flex-col gap-1 mb-4">

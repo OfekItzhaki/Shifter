@@ -1995,6 +1995,8 @@
       "cannotAttendReasonPlaceholder": "סיבת אי ההגעה...",
       "cannotAttendConfirm": "דווח אי הגעה",
       "cannotAttendSubmitting": "מדווח...",
+      "cannotAttendSubmitted": "דיווח אי ההגעה נשלח למנהלים.",
+      "cannotAttendLateSubmitted": "דיווח אי הגעה מאוחר נשלח. השתמשת ב-{used} / {max} דיווחים מאוחרים במחזור הזה.",
       "cancelDismiss": "חזרה",
       "shiftCount": "{current} / {max} משמרות במחזור זה",
       "underScheduled": "⚠ אתה מתחת למינימום המשמרות הנדרש ({min})",

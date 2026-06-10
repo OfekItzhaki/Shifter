@@ -1983,6 +1983,8 @@
       "cannotAttendReasonPlaceholder": "Причина отсутствия...",
       "cannotAttendConfirm": "Сообщить",
       "cannotAttendSubmitting": "Отправка...",
+      "cannotAttendSubmitted": "Сообщение об отсутствии отправлено администраторам.",
+      "cannotAttendLateSubmitted": "Позднее сообщение об отсутствии отправлено. Использовано {used} / {max} поздних сообщений в этом цикле.",
       "cancelDismiss": "Назад",
       "shiftCount": "{current} / {max} смен в этом цикле",
       "underScheduled": "⚠ У вас меньше смен, чем требуется минимумом ({min})",
