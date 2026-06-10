@@ -1,0 +1,152 @@
+import { render, screen, waitFor } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import MyShiftsTab from "../../components/groups/selfService/MyShiftsTab";
+
+const mockGetMyShiftRequests = vi.fn();
+const mockGetMySpecialLeaveRequests = vi.fn();
+const mockGetMyShiftChangeRequests = vi.fn();
+const mockGetMyAbsenceReports = vi.fn();
+const mockGetMyWaitlistEntries = vi.fn();
+const mockGetAvailableSlots = vi.fn();
+const mockCancelShiftRequest = vi.fn();
+const mockReportCannotAttend = vi.fn();
+const mockSubmitShiftChangeRequest = vi.fn();
+const mockCancelShiftChangeRequest = vi.fn();
+const mockSubmitSpecialLeaveRequest = vi.fn();
+const mockCancelSpecialLeaveRequest = vi.fn();
+
+vi.mock("next-intl", () => ({
+  useLocale: () => "en",
+  useTranslations: () => (key: string, values?: Record<string, unknown>) => {
+    const translations: Record<string, string> = {
+      summaryTitle: "Shift summary",
+      summaryDescription: "Your self-service status",
+      summaryMinimumLabel: "Minimum",
+      summaryMinimumValue: `${values?.current ?? 0}/${values?.min ?? 0}/${values?.max ?? 0}`,
+      summaryRequestsLabel: "Requests",
+      summaryRequestsValue: `${values?.leave ?? 0} leave / ${values?.changes ?? 0} changes / ${values?.absences ?? 0} absences`,
+      summaryWaitlistLabel: "Waitlist",
+      summaryWaitlistValue: `${values?.offered ?? 0} offered / ${values?.waiting ?? 0} waiting`,
+      summaryLateAbsenceLabel: "Late absences",
+      summaryLateAbsenceValue: `${values?.used ?? 0}/${values?.max ?? 0} used inside ${values?.window ?? 0}h`,
+      summaryNextShiftLabel: "Next shift",
+      shiftCount: `${values?.current ?? 0} of ${values?.max ?? 0} shifts`,
+      specialLeaveTitle: "Need time off?",
+      specialLeaveDescription: "Send a request to admins",
+      specialLeaveStart: "From",
+      specialLeaveEnd: "Until",
+      specialLeaveReason: "Reason",
+      specialLeaveReasonPlaceholder: "Reason...",
+      specialLeaveSubmit: "Send request",
+      specialLeaveSubmitting: "Sending...",
+      changeRequestsTitle: "Shift change requests",
+      changeRequestsDescription: "Track requests",
+      changeRequestsEmpty: "No change requests",
+      absenceReportsTitle: "Absence reports",
+      absenceReportsDescription: `${values?.used ?? 0}/${values?.max ?? 0} late reports used`,
+      absenceReportsEmpty: "No absence reports",
+      approved: "Approved",
+      pending: "Pending",
+      cancelled: "Cancelled",
+      rejected: "Rejected",
+      cancelButton: "Cancel",
+      changeButton: "Request change",
+      cannotAttendButton: "Can't make it",
+      cannotAttendLimitReached: "You have reached the late absence limit for this cycle.",
+      adminOverride: "Admin override",
+    };
+    return translations[key] ?? key;
+  },
+}));
+
+vi.mock("../../lib/api/selfService", () => ({
+  getMyShiftRequests: (...args: unknown[]) => mockGetMyShiftRequests(...args),
+  getMyShiftChangeRequests: (...args: unknown[]) => mockGetMyShiftChangeRequests(...args),
+  getMyAbsenceReports: (...args: unknown[]) => mockGetMyAbsenceReports(...args),
+  getMyWaitlistEntries: (...args: unknown[]) => mockGetMyWaitlistEntries(...args),
+  getAvailableSlots: (...args: unknown[]) => mockGetAvailableSlots(...args),
+  cancelShiftRequest: (...args: unknown[]) => mockCancelShiftRequest(...args),
+  reportCannotAttend: (...args: unknown[]) => mockReportCannotAttend(...args),
+  submitShiftChangeRequest: (...args: unknown[]) => mockSubmitShiftChangeRequest(...args),
+  cancelShiftChangeRequest: (...args: unknown[]) => mockCancelShiftChangeRequest(...args),
+}));
+
+vi.mock("../../lib/api/specialLeave", () => ({
+  getMySpecialLeaveRequests: (...args: unknown[]) => mockGetMySpecialLeaveRequests(...args),
+  submitSpecialLeaveRequest: (...args: unknown[]) => mockSubmitSpecialLeaveRequest(...args),
+  cancelSpecialLeaveRequest: (...args: unknown[]) => mockCancelSpecialLeaveRequest(...args),
+}));
+
+describe("MyShiftsTab", () => {
+  beforeEach(() => {
+    const lateShiftStart = new Date(Date.now() + 60 * 60 * 1000);
+    const lateShiftEnd = new Date(lateShiftStart.getTime() + 8 * 60 * 60 * 1000);
+    mockGetMySpecialLeaveRequests.mockResolvedValue([]);
+    mockGetMyShiftChangeRequests.mockResolvedValue([]);
+    mockGetMyWaitlistEntries.mockResolvedValue([]);
+    mockGetAvailableSlots.mockResolvedValue({ slots: [] });
+    mockGetMyAbsenceReports.mockResolvedValue({
+      reports: [],
+      lateReportsUsed: 2,
+      maxLateReports: 2,
+      schedulingCycleId: "cycle-1",
+    });
+    mockGetMyShiftRequests.mockResolvedValue({
+      requests: [
+        {
+          id: "request-1",
+          shiftSlotId: "slot-1",
+          slotDate: formatLocalDate(lateShiftStart),
+          slotStartTime: formatLocalTime(lateShiftStart),
+          slotEndTime: formatLocalTime(lateShiftEnd),
+          taskName: "Front desk",
+          status: "Approved",
+          isAdminOverride: false,
+          rejectionReason: null,
+          cancellationReason: null,
+          cancelledAt: null,
+          createdAt: "2026-06-10T08:00:00",
+        },
+      ],
+      currentShiftCount: 1,
+      minShiftsPerCycle: 1,
+      maxShiftsPerCycle: 3,
+      cancellationCutoffHours: 48,
+      maxLateReports: 2,
+      lateCancellationWindowHours: 24,
+    });
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("blocks late absence reporting when the member has reached the cycle limit", async () => {
+    render(<MyShiftsTab spaceId="space-1" groupId="group-1" />);
+
+    const cannotAttendButton = await screen.findByRole("button", { name: "Can't make it" });
+
+    expect(cannotAttendButton).toBeDisabled();
+    expect(cannotAttendButton).toHaveAttribute(
+      "title",
+      "You have reached the late absence limit for this cycle.",
+    );
+    expect(screen.getByText("2/2 used inside 24h")).toBeInTheDocument();
+
+    await waitFor(() => expect(mockReportCannotAttend).not.toHaveBeenCalled());
+  });
+});
+
+function formatLocalDate(value: Date): string {
+  const year = value.getFullYear();
+  const month = String(value.getMonth() + 1).padStart(2, "0");
+  const day = String(value.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function formatLocalTime(value: Date): string {
+  const hours = String(value.getHours()).padStart(2, "0");
+  const minutes = String(value.getMinutes()).padStart(2, "0");
+  const seconds = String(value.getSeconds()).padStart(2, "0");
+  return `${hours}:${minutes}:${seconds}`;
+}
