@@ -933,6 +933,111 @@ public class SelfServiceScopeTests
         updatedReport.AdminNote.Should().Be("Already reviewed");
     }
 
+    [Fact]
+    public async Task ListMyAbsenceReports_ReturnsOnlyCurrentMemberCurrentGroupReports()
+    {
+        using var db = CreateDb();
+        var services = CreateControllerServices();
+        var spaceId = Guid.NewGuid();
+        var group = Group.Create(spaceId, null, "Route Group");
+        var otherGroup = Group.Create(spaceId, null, "Other Group");
+        var userId = Guid.NewGuid();
+        var ownerUserId = Guid.NewGuid();
+        var person = Person.Create(spaceId, "Member", linkedUserId: userId);
+        var otherPerson = Person.Create(spaceId, "Other Member", linkedUserId: Guid.NewGuid());
+        var cycle = CreateCycle(spaceId, group.Id);
+        var otherCycle = CreateCycle(spaceId, otherGroup.Id);
+        var task = CreateTask(spaceId, group.Id, "Task", ownerUserId);
+        var otherTask = CreateTask(spaceId, otherGroup.Id, "Other Task", ownerUserId);
+        var slot = CreateSlot(spaceId, group.Id, task.Id, cycle.Id, daysFromNow: 2);
+        var otherMemberSlot = CreateSlot(spaceId, group.Id, task.Id, cycle.Id, daysFromNow: 3);
+        var otherGroupSlot = CreateSlot(spaceId, otherGroup.Id, otherTask.Id, otherCycle.Id, daysFromNow: 4);
+        var request = ShiftRequest.Create(spaceId, slot.Id, person.Id, group.Id, cycle.Id);
+        var otherMemberRequest = ShiftRequest.Create(spaceId, otherMemberSlot.Id, otherPerson.Id, group.Id, cycle.Id);
+        var otherGroupRequest = ShiftRequest.Create(spaceId, otherGroupSlot.Id, person.Id, otherGroup.Id, otherCycle.Id);
+        request.Approve();
+        otherMemberRequest.Approve();
+        otherGroupRequest.Approve();
+        var myReport = ShiftAbsenceReport.Create(
+            spaceId,
+            group.Id,
+            cycle.Id,
+            request.Id,
+            slot.Id,
+            person.Id,
+            "Sick",
+            isLate: true,
+            DateTime.UtcNow);
+        var otherMemberReport = ShiftAbsenceReport.Create(
+            spaceId,
+            group.Id,
+            cycle.Id,
+            otherMemberRequest.Id,
+            otherMemberSlot.Id,
+            otherPerson.Id,
+            "Other sick",
+            isLate: true,
+            DateTime.UtcNow);
+        var otherGroupReport = ShiftAbsenceReport.Create(
+            spaceId,
+            otherGroup.Id,
+            otherCycle.Id,
+            otherGroupRequest.Id,
+            otherGroupSlot.Id,
+            person.Id,
+            "Wrong group",
+            isLate: true,
+            DateTime.UtcNow);
+
+        db.People.AddRange(person, otherPerson);
+        db.Groups.AddRange(group, otherGroup);
+        db.GroupMemberships.AddRange(
+            GroupMembership.Create(spaceId, group.Id, person.Id),
+            GroupMembership.Create(spaceId, group.Id, otherPerson.Id),
+            GroupMembership.Create(spaceId, otherGroup.Id, person.Id));
+        db.SchedulingCycles.AddRange(cycle, otherCycle);
+        db.GroupTasks.AddRange(task, otherTask);
+        db.ShiftSlots.AddRange(slot, otherMemberSlot, otherGroupSlot);
+        db.ShiftRequests.AddRange(request, otherMemberRequest, otherGroupRequest);
+        db.ShiftAbsenceReports.AddRange(myReport, otherMemberReport, otherGroupReport);
+        db.SelfServiceConfigs.Add(SelfServiceConfig.Create(
+            spaceId,
+            group.Id,
+            minShiftsPerCycle: 1,
+            maxShiftsPerCycle: 3,
+            requestWindowOpenOffsetHours: 168,
+            requestWindowCloseOffsetHours: 24,
+            cancellationCutoffHours: 24,
+            maxLateCancellationsPerCycle: 4,
+            lateCancellationWindowHours: 12,
+            waitlistOfferMinutes: 60,
+            cycleDurationDays: 7));
+        await db.SaveChangesAsync();
+
+        var controller = new ShiftRequestsController(
+            services.Mediator,
+            services.Permissions,
+            services.ShiftRequestService,
+            services.PushSender,
+            db);
+        controller.ControllerContext = CreateControllerContext(userId);
+
+        var result = await controller.ListMyAbsenceReports(
+            spaceId,
+            group.Id,
+            "current",
+            CancellationToken.None);
+
+        var ok = result.Should().BeOfType<OkObjectResult>().Subject;
+        var response = ok.Value.Should().BeOfType<MyAbsenceReportsResponse>().Subject;
+        response.Reports.Should().ContainSingle();
+        response.Reports[0].Id.Should().Be(myReport.Id);
+        response.Reports[0].TaskName.Should().Be("Task");
+        response.LateReportsUsed.Should().Be(1);
+        response.MaxLateReports.Should().Be(4);
+        response.SchedulingCycleId.Should().Be(cycle.Id);
+    }
+
     private static SchedulingCycle CreateCycle(Guid spaceId, Guid groupId)
     {
         var utcNow = DateTime.UtcNow;

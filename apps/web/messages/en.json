@@ -2279,10 +2279,12 @@
         },
         "requests": {
           "title": "Requests",
-          "description": "{count} shift-change request(s) are waiting for review.",
+          "description": "{changes} shift-change and {absences} absence report(s) are waiting for review.",
           "button": "Open my shifts"
         }
-      }
+      },
+      "lateAbsences": "Late absences",
+      "pendingAbsences": "Absence reports"
     }
   },
   "trialBanner": {

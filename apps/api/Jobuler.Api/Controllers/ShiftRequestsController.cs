@@ -156,6 +156,87 @@ public class ShiftRequestsController : ControllerBase
             result.MaxLateReports));
     }
 
+    /// <summary>
+    /// List the current member's absence reports for this group.
+    /// Defaults to the current/upcoming cycle so late-report usage matches the per-cycle limit.
+    /// </summary>
+    [HttpGet("absence-reports/mine")]
+    public async Task<IActionResult> ListMyAbsenceReports(
+        Guid spaceId,
+        Guid groupId,
+        [FromQuery] string? cycleId,
+        CancellationToken ct)
+    {
+        var personId = await ResolvePersonIdAsync(spaceId, groupId, ct);
+        if (personId is null)
+            return Forbid();
+
+        var resolvedCycleId = await ResolveCycleIdAsync(spaceId, groupId, cycleId ?? "current", ct);
+        if (resolvedCycleId == Guid.Empty && string.Equals(cycleId ?? "current", "current", StringComparison.OrdinalIgnoreCase))
+        {
+            var configOnly = await _db.SelfServiceConfigs
+                .AsNoTracking()
+                .FirstOrDefaultAsync(c => c.SpaceId == spaceId && c.GroupId == groupId, ct);
+
+            return Ok(new MyAbsenceReportsResponse(
+                Array.Empty<AbsenceReportResponse>(),
+                LateReportsUsed: 0,
+                MaxLateReports: configOnly?.MaxLateCancellationsPerCycle ?? 2,
+                SchedulingCycleId: null));
+        }
+
+        if (resolvedCycleId == Guid.Empty)
+            return BadRequest(new { error = "Invalid cycleId. Use a scheduling cycle id or 'current'." });
+
+        var reports = await _db.ShiftAbsenceReports
+            .AsNoTracking()
+            .Where(r => r.SpaceId == spaceId
+                        && r.GroupId == groupId
+                        && r.PersonId == personId.Value
+                        && r.SchedulingCycleId == resolvedCycleId)
+            .Join(_db.People.AsNoTracking(), r => r.PersonId, p => p.Id, (r, p) => new { Report = r, PersonName = p.DisplayName ?? p.FullName })
+            .Join(_db.ShiftSlots.AsNoTracking(), rp => rp.Report.ShiftSlotId, s => s.Id, (rp, s) => new { rp.Report, rp.PersonName, Slot = s })
+            .Join(_db.GroupTasks.AsNoTracking(), rps => rps.Slot.GroupTaskId, t => t.Id, (rps, t) => new { rps.Report, rps.PersonName, rps.Slot, TaskName = t.Name })
+            .Select(r => new AbsenceReportResponse(
+                r.Report.Id,
+                r.Report.ShiftRequestId,
+                r.Report.PersonId,
+                r.PersonName,
+                r.Report.ShiftSlotId,
+                r.Slot.Date,
+                r.Slot.StartTime,
+                r.Slot.EndTime,
+                r.TaskName,
+                r.Report.Reason,
+                r.Report.IsLate,
+                r.Report.Status.ToString(),
+                r.Report.ReportedAt,
+                r.Report.AdminNote,
+                r.Report.ReviewedAt))
+            .OrderByDescending(r => r.ReportedAt)
+            .ToListAsync(ct);
+
+        var lateReportsUsed = await _db.ShiftAbsenceReports
+            .AsNoTracking()
+            .CountAsync(r => r.SpaceId == spaceId
+                             && r.GroupId == groupId
+                             && r.PersonId == personId.Value
+                             && r.SchedulingCycleId == resolvedCycleId
+                             && r.IsLate
+                             && r.Status != ShiftAbsenceReportStatus.Rejected,
+                ct);
+
+        var config = await _db.SelfServiceConfigs
+            .AsNoTracking()
+            .FirstOrDefaultAsync(c => c.SpaceId == spaceId && c.GroupId == groupId, ct);
+
+        return Ok(new MyAbsenceReportsResponse(
+            reports,
+            lateReportsUsed,
+            config?.MaxLateCancellationsPerCycle ?? 2,
+            resolvedCycleId));
+    }
+
     /// <summary>List absence reports for this group for admin review.</summary>
     [HttpGet("absence-reports")]
     public async Task<IActionResult> ListAbsenceReports(
@@ -347,6 +428,21 @@ public class ShiftRequestsController : ControllerBase
                            && r.PersonId == personId,
                 ct);
 
+    private async Task<Guid> ResolveCycleIdAsync(Guid spaceId, Guid groupId, string cycleId, CancellationToken ct)
+    {
+        if (!string.Equals(cycleId, "current", StringComparison.OrdinalIgnoreCase))
+            return Guid.TryParse(cycleId, out var parsedCycleId) ? parsedCycleId : Guid.Empty;
+
+        var now = DateTime.UtcNow;
+        return await _db.SchedulingCycles
+            .AsNoTracking()
+            .Where(c => c.SpaceId == spaceId && c.GroupId == groupId && c.EndsAt >= now)
+            .OrderBy(c => c.StartsAt < now ? 0 : 1)
+            .ThenBy(c => c.StartsAt)
+            .Select(c => c.Id)
+            .FirstOrDefaultAsync(ct);
+    }
+
     private IActionResult AbsenceRejected(string detail) =>
         ProblemDetailsResults.Problem(
             HttpContext,
@@ -477,3 +573,9 @@ public record AbsenceReportResponse(
     DateTime ReportedAt,
     string? AdminNote,
     DateTime? ReviewedAt);
+
+public record MyAbsenceReportsResponse(
+    IReadOnlyList<AbsenceReportResponse> Reports,
+    int LateReportsUsed,
+    int MaxLateReports,
+    Guid? SchedulingCycleId);

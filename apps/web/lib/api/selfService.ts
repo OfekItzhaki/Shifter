@@ -174,6 +174,13 @@ export interface AbsenceReportDto {
   reviewedAt: string | null;
 }
 
+export interface MyAbsenceReportsResponse {
+  reports: AbsenceReportDto[];
+  lateReportsUsed: number;
+  maxLateReports: number;
+  schedulingCycleId: string | null;
+}
+
 export interface ShiftChangeRequestDto {
   id: string;
   shiftRequestId: string;
@@ -442,6 +449,18 @@ export async function getAbsenceReports(
   const { data } = await apiClient.get(
     `/spaces/${spaceId}/groups/${groupId}/shift-requests/absence-reports`,
     { params: status ? { status } : undefined }
+  );
+  return data;
+}
+
+export async function getMyAbsenceReports(
+  spaceId: string,
+  groupId: string,
+  cycleId = "current"
+): Promise<MyAbsenceReportsResponse> {
+  const { data } = await apiClient.get(
+    `/spaces/${spaceId}/groups/${groupId}/shift-requests/absence-reports/mine`,
+    { params: { cycleId } }
   );
   return data;
 }

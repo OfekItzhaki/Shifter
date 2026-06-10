@@ -5,8 +5,10 @@ import { useTranslations } from "next-intl";
 import {
   getMyShiftChangeRequests,
   getMyShiftRequests,
+  getMyAbsenceReports,
   getMySwaps,
   getMyWaitlistEntries,
+  MyAbsenceReportsResponse,
   MyShiftsResponse,
   ShiftChangeRequestDto,
   SwapRequestDto,
@@ -29,6 +31,7 @@ interface StatusData {
   waitlist: WaitlistEntryDto[];
   swaps: SwapRequestDto[];
   changes: ShiftChangeRequestDto[];
+  absences: MyAbsenceReportsResponse;
 }
 
 export default function PickStatusTab({ spaceId, groupId, onNavigate }: PickStatusTabProps) {
@@ -43,14 +46,15 @@ export default function PickStatusTab({ spaceId, groupId, onNavigate }: PickStat
     setError(null);
 
     try {
-      const [shifts, waitlist, swaps, changes] = await Promise.all([
+      const [shifts, waitlist, swaps, changes, absences] = await Promise.all([
         getMyShiftRequests(spaceId, groupId),
         getMyWaitlistEntries(spaceId, groupId),
         getMySwaps(spaceId, groupId),
         getMyShiftChangeRequests(spaceId, groupId),
+        getMyAbsenceReports(spaceId, groupId),
       ]);
       setNowMs(Date.now());
-      setData({ shifts, waitlist, swaps, changes });
+      setData({ shifts, waitlist, swaps, changes, absences });
     } catch (err) {
       setError(getSelfServiceErrorMessage(err).message);
     } finally {
@@ -71,6 +75,7 @@ export default function PickStatusTab({ spaceId, groupId, onNavigate }: PickStat
     const waitingWaitlist = data.waitlist.filter((entry) => entry.status === "Waiting");
     const pendingSwaps = data.swaps.filter((swap) => swap.status === "Pending");
     const pendingChanges = data.changes.filter((change) => change.status === "Pending");
+    const pendingAbsences = data.absences.reports.filter((report) => report.status === "Pending");
     const nextShift = approved
       .filter((request) => {
         const startsAt = new Date(`${request.slotDate}T${request.slotStartTime}`);
@@ -85,6 +90,7 @@ export default function PickStatusTab({ spaceId, groupId, onNavigate }: PickStat
       waitingWaitlist,
       pendingSwaps,
       pendingChanges,
+      pendingAbsences,
       nextShift,
     };
   }, [data, nowMs]);
@@ -124,6 +130,12 @@ export default function PickStatusTab({ spaceId, groupId, onNavigate }: PickStat
           <Metric label={t("openSlots")} value={`${openSlots}`} />
           <Metric label={t("pendingRequests")} value={`${summary.pendingShifts.length}`} tone={summary.pendingShifts.length > 0 ? "warning" : "default"} />
           <Metric label={t("activeWaitlist")} value={`${summary.waitingWaitlist.length + summary.offeredWaitlist.length}`} tone={summary.offeredWaitlist.length > 0 ? "warning" : "default"} />
+          <Metric
+            label={t("lateAbsences")}
+            value={`${data.absences.lateReportsUsed}/${data.absences.maxLateReports}`}
+            tone={data.absences.lateReportsUsed >= data.absences.maxLateReports ? "warning" : "default"}
+          />
+          <Metric label={t("pendingAbsences")} value={`${summary.pendingAbsences.length}`} tone={summary.pendingAbsences.length > 0 ? "warning" : "default"} />
         </div>
 
         {summary.nextShift ? (
@@ -167,9 +179,12 @@ export default function PickStatusTab({ spaceId, groupId, onNavigate }: PickStat
         />
         <ActionCard
           title={t("cards.requests.title")}
-          description={t("cards.requests.description", { count: summary.pendingChanges.length })}
-          count={summary.pendingShifts.length + summary.pendingChanges.length}
-          tone={summary.pendingChanges.length > 0 ? "warning" : "default"}
+          description={t("cards.requests.description", {
+            changes: summary.pendingChanges.length,
+            absences: summary.pendingAbsences.length,
+          })}
+          count={summary.pendingShifts.length + summary.pendingChanges.length + summary.pendingAbsences.length}
+          tone={summary.pendingChanges.length > 0 || summary.pendingAbsences.length > 0 ? "warning" : "default"}
           button={t("cards.requests.button")}
           onClick={() => onNavigate("my-shifts")}
         />
