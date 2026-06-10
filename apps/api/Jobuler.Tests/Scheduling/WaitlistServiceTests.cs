@@ -218,6 +218,41 @@ public class WaitlistServiceTests
             .SendPushToUserAsync(waitingPerson.LinkedUserId!.Value, spaceId, Arg.Any<PushPayload>(), Arg.Any<CancellationToken>());
     }
 
+    [Fact]
+    public async Task ProcessExpiredOffersAsync_ExpiresOfferAndOffersNextWaitingMember()
+    {
+        using var db = CreateDb();
+        var (spaceId, groupId, cycleId, taskId) = SeedBaseData(db);
+        var expiredPerson = Person.Create(spaceId, "Expired", linkedUserId: Guid.NewGuid());
+        var waitingPerson = Person.Create(spaceId, "Waiting", linkedUserId: Guid.NewGuid());
+        var slot = CreateSlot(spaceId, groupId, taskId, cycleId);
+        var expiredEntry = WaitlistEntry.Create(spaceId, slot.Id, expiredPerson.Id, position: 1);
+        expiredEntry.Offer(DateTime.UtcNow.AddMinutes(-5));
+        var waitingEntry = WaitlistEntry.Create(spaceId, slot.Id, waitingPerson.Id, position: 2);
+
+        db.People.AddRange(expiredPerson, waitingPerson);
+        db.ShiftSlots.Add(slot);
+        db.WaitlistEntries.AddRange(expiredEntry, waitingEntry);
+        await db.SaveChangesAsync();
+
+        var pushSender = Substitute.For<IPushNotificationSender>();
+        var service = CreateService(db, pushSender);
+
+        await service.ProcessExpiredOffersAsync();
+
+        var updatedExpiredEntry = await db.WaitlistEntries.SingleAsync(e => e.Id == expiredEntry.Id);
+        updatedExpiredEntry.Status.Should().Be(WaitlistEntryStatus.Expired);
+
+        var updatedWaitingEntry = await db.WaitlistEntries.SingleAsync(e => e.Id == waitingEntry.Id);
+        updatedWaitingEntry.Status.Should().Be(WaitlistEntryStatus.Offered);
+        updatedWaitingEntry.OfferedAt.Should().NotBeNull();
+        updatedWaitingEntry.ExpiresAt.Should().NotBeNull();
+        updatedWaitingEntry.ExpiresAt.Should().BeAfter(DateTime.UtcNow);
+
+        await pushSender.Received(1)
+            .SendPushToUserAsync(waitingPerson.LinkedUserId!.Value, spaceId, Arg.Any<PushPayload>(), Arg.Any<CancellationToken>());
+    }
+
     private static WaitlistService CreateService(AppDbContext db, IPushNotificationSender? pushSender = null) =>
         new(
             db,
