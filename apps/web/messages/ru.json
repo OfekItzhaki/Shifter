@@ -87,6 +87,7 @@
     "today": "Сегодня",
     "tomorrow": "Завтра",
     "myMissions": "Мои задания",
+    "pickShifts": "Выбор смен",
     "myProfile": "Мой профиль",
     "myGroups": "Мои группы",
     "settings": "Личные настройки",
@@ -1850,6 +1851,7 @@
     "tipRunSolver": "Запустить Shifter",
     "quickActions": "Быстрые действия",
     "myMissions": "Мои задания",
+    "pickShifts": "Выбор смен",
     "myGroups": "Мои группы",
     "createSpace": "Создать новое пространство",
     "latestVersion": "Последняя версия"

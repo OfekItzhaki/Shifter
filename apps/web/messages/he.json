@@ -87,6 +87,7 @@
     "today": "היום",
     "tomorrow": "מחר",
     "myMissions": "המשימות שלי",
+    "pickShifts": "בחירת משמרות",
     "myProfile": "הפרופיל שלי",
     "myGroups": "הקבוצות שלי",
     "settings": "הגדרות אישיות",
@@ -1868,6 +1869,7 @@
     "tipRunSolver": "הפעל Shifter",
     "quickActions": "גישה מהירה",
     "myMissions": "המשימות שלי",
+    "pickShifts": "בחירת משמרות",
     "myGroups": "הקבוצות שלי",
     "createSpace": "צור מרחב חדש",
     "latestVersion": "גרסה אחרונה"

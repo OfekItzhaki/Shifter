@@ -99,7 +99,7 @@ function HomePage() {
           <h2 className="text-base font-semibold text-slate-900 dark:text-white">
             {t("quickActions")}
           </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <Link
               href="/schedule/my-missions"
               className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-5 hover:border-sky-300 dark:hover:border-sky-600 hover:shadow-sm transition-all group no-underline"
@@ -110,6 +110,19 @@ function HomePage() {
                 </span>
                 <span className="text-sm font-semibold text-slate-800 dark:text-slate-100 group-hover:text-sky-600 dark:group-hover:text-sky-400 transition-colors">
                   {t("myMissions")}
+                </span>
+              </div>
+            </Link>
+            <Link
+              href="/pick"
+              className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-5 hover:border-sky-300 dark:hover:border-sky-600 hover:shadow-sm transition-all group no-underline"
+            >
+              <div className="flex items-center gap-3">
+                <span className="flex-shrink-0 w-10 h-10 rounded-xl bg-sky-50 dark:bg-sky-900/30 flex items-center justify-center text-sky-600 dark:text-sky-400">
+                  <HomeIcon d="M9 12l2 2 4-5m6 3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </span>
+                <span className="text-sm font-semibold text-slate-800 dark:text-slate-100 group-hover:text-sky-600 dark:group-hover:text-sky-400 transition-colors">
+                  {t("pickShifts")}
                 </span>
               </div>
             </Link>

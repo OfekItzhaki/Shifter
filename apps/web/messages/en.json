@@ -87,6 +87,7 @@
     "today": "Today",
     "tomorrow": "Tomorrow",
     "myMissions": "My Missions",
+    "pickShifts": "Pick Shifts",
     "myProfile": "My Profile",
     "myGroups": "My Groups",
     "settings": "Personal Settings",
@@ -1856,6 +1857,7 @@
     "tipRunSolver": "Run Shifter",
     "quickActions": "Quick Actions",
     "myMissions": "My Missions",
+    "pickShifts": "Pick Shifts",
     "myGroups": "My Groups",
     "createSpace": "Create New Space",
     "latestVersion": "Latest version"
