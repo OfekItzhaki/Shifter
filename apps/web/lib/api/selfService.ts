@@ -126,6 +126,12 @@ export interface UnderScheduledCheckResponse {
   underScheduledMembers: UnderScheduledMemberDto[];
 }
 
+export interface ShiftSlotAssignmentDto {
+  shiftSlotId: string;
+  personId: string;
+  personName: string;
+}
+
 // ── Shift Request ────────────────────────────────────────────────────────────
 
 export interface ShiftRequestDto {
@@ -717,6 +723,18 @@ export async function adminAssignMember(
   const { data } = await apiClient.post(
     `/spaces/${spaceId}/groups/${groupId}/shift-slots/${shiftSlotId}/admin-overrides/assign`,
     { personId }
+  );
+  return data;
+}
+
+export async function getAdminShiftSlotAssignments(
+  spaceId: string,
+  groupId: string,
+  cycleId = "current"
+): Promise<ShiftSlotAssignmentDto[]> {
+  const { data } = await apiClient.get(
+    `/spaces/${spaceId}/groups/${groupId}/shift-slots/admin/assignments`,
+    { params: { cycleId } }
   );
   return data;
 }

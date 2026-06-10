@@ -30,6 +30,43 @@ public class ShiftSlotsController : ControllerBase
         Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
     /// <summary>
+    /// Get approved member assignments for the current self-service cycle's slots.
+    /// Used by admin override tooling to remove or correct existing assignments after reload.
+    /// </summary>
+    [HttpGet("admin/assignments")]
+    public async Task<IActionResult> GetAdminAssignments(
+        Guid spaceId,
+        Guid groupId,
+        [FromQuery] string cycleId,
+        CancellationToken ct)
+    {
+        await _permissions.RequirePermissionAsync(CurrentUserId, spaceId, Permissions.SchedulePublish, ct);
+
+        var resolvedCycleId = await TryResolveCycleIdAsync(spaceId, groupId, cycleId, ct);
+        if (resolvedCycleId is null)
+            return Ok(Array.Empty<ShiftSlotAssignmentResponse>());
+
+        var assignments = await _db.ShiftRequests
+            .AsNoTracking()
+            .Where(r => r.SpaceId == spaceId
+                        && r.GroupId == groupId
+                        && r.SchedulingCycleId == resolvedCycleId.Value
+                        && r.Status == Domain.Scheduling.ShiftRequestStatus.Approved)
+            .Join(
+                _db.People.AsNoTracking().Where(p => p.SpaceId == spaceId),
+                request => request.PersonId,
+                person => person.Id,
+                (request, person) => new ShiftSlotAssignmentResponse(
+                    request.ShiftSlotId,
+                    request.PersonId,
+                    person.DisplayName ?? person.FullName))
+            .OrderBy(a => a.PersonName)
+            .ToListAsync(ct);
+
+        return Ok(assignments);
+    }
+
+    /// <summary>
     /// Get available shift slots for the current member in a scheduling cycle.
     /// Returns slots with remaining capacity, excluding already-claimed and overlapping slots.
     /// Includes a read-only flag when the request window is closed.
@@ -45,14 +82,7 @@ public class ShiftSlotsController : ControllerBase
         Guid resolvedCycleId;
         if (string.Equals(cycleId, "current", StringComparison.OrdinalIgnoreCase))
         {
-            var now = DateTime.UtcNow;
-            resolvedCycleId = await _db.SchedulingCycles
-                .AsNoTracking()
-                .Where(c => c.SpaceId == spaceId && c.GroupId == groupId && c.EndsAt >= now)
-                .OrderBy(c => c.StartsAt < now ? 0 : 1)
-                .ThenBy(c => c.StartsAt)
-                .Select(c => c.Id)
-                .FirstOrDefaultAsync(ct);
+            resolvedCycleId = await TryResolveCycleIdAsync(spaceId, groupId, cycleId, ct) ?? Guid.Empty;
 
             if (resolvedCycleId == Guid.Empty)
                 return Ok(new { slots = Array.Empty<object>(), requestWindowOpen = false, requestWindowOpensAt = (DateTime?)null, requestWindowClosesAt = (DateTime?)null, currentCycleId = (Guid?)null });
@@ -100,4 +130,26 @@ public class ShiftSlotsController : ControllerBase
 
         return Ok(result);
     }
+
+    private async Task<Guid?> TryResolveCycleIdAsync(Guid spaceId, Guid groupId, string cycleId, CancellationToken ct)
+    {
+        if (!string.Equals(cycleId, "current", StringComparison.OrdinalIgnoreCase))
+            return Guid.TryParse(cycleId, out var parsedCycleId) ? parsedCycleId : null;
+
+        var now = DateTime.UtcNow;
+        var resolvedCycleId = await _db.SchedulingCycles
+            .AsNoTracking()
+            .Where(c => c.SpaceId == spaceId && c.GroupId == groupId && c.EndsAt >= now)
+            .OrderBy(c => c.StartsAt < now ? 0 : 1)
+            .ThenBy(c => c.StartsAt)
+            .Select(c => c.Id)
+            .FirstOrDefaultAsync(ct);
+
+        return resolvedCycleId == Guid.Empty ? null : resolvedCycleId;
+    }
 }
+
+public record ShiftSlotAssignmentResponse(
+    Guid ShiftSlotId,
+    Guid PersonId,
+    string PersonName);

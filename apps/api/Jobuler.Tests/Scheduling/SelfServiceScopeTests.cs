@@ -914,6 +914,67 @@ public class SelfServiceScopeTests
     }
 
     [Fact]
+    public async Task GetAdminAssignments_ReturnsOnlyApprovedAssignmentsForRequestedGroupCycle()
+    {
+        using var db = CreateDb();
+        var services = CreateControllerServices();
+        var spaceId = Guid.NewGuid();
+        var group = Group.Create(spaceId, null, "Route Group");
+        var otherGroup = Group.Create(spaceId, null, "Other Group");
+        var adminUserId = Guid.NewGuid();
+        var ownerUserId = Guid.NewGuid();
+        var assigned = Person.Create(spaceId, "Assigned Member", displayName: "Assigned Display", linkedUserId: Guid.NewGuid());
+        var cancelled = Person.Create(spaceId, "Cancelled Member", linkedUserId: Guid.NewGuid());
+        var otherGroupMember = Person.Create(spaceId, "Other Group Member", linkedUserId: Guid.NewGuid());
+        var cycle = CreateCycle(spaceId, group.Id);
+        var otherGroupCycle = CreateCycle(spaceId, otherGroup.Id);
+        var task = CreateTask(spaceId, group.Id, "Task", ownerUserId);
+        var otherTask = CreateTask(spaceId, otherGroup.Id, "Other Task", ownerUserId);
+        var slot = CreateSlot(spaceId, group.Id, task.Id, cycle.Id, daysFromNow: 2);
+        var cancelledSlot = CreateSlot(spaceId, group.Id, task.Id, cycle.Id, daysFromNow: 3);
+        var otherGroupSlot = CreateSlot(spaceId, otherGroup.Id, otherTask.Id, otherGroupCycle.Id, daysFromNow: 4);
+        var approvedRequest = ShiftRequest.Create(spaceId, slot.Id, assigned.Id, group.Id, cycle.Id);
+        approvedRequest.Approve();
+        var cancelledRequest = ShiftRequest.Create(spaceId, cancelledSlot.Id, cancelled.Id, group.Id, cycle.Id);
+        cancelledRequest.Approve();
+        cancelledRequest.Cancel("cancelled");
+        var otherGroupRequest = ShiftRequest.Create(spaceId, otherGroupSlot.Id, otherGroupMember.Id, otherGroup.Id, otherGroupCycle.Id);
+        otherGroupRequest.Approve();
+
+        db.People.AddRange(assigned, cancelled, otherGroupMember);
+        db.Groups.AddRange(group, otherGroup);
+        db.GroupMemberships.AddRange(
+            GroupMembership.Create(spaceId, group.Id, assigned.Id),
+            GroupMembership.Create(spaceId, group.Id, cancelled.Id),
+            GroupMembership.Create(spaceId, otherGroup.Id, otherGroupMember.Id));
+        db.SchedulingCycles.AddRange(cycle, otherGroupCycle);
+        db.GroupTasks.AddRange(task, otherTask);
+        db.ShiftSlots.AddRange(slot, cancelledSlot, otherGroupSlot);
+        db.ShiftRequests.AddRange(approvedRequest, cancelledRequest, otherGroupRequest);
+        await db.SaveChangesAsync();
+
+        services.Permissions
+            .RequirePermissionAsync(adminUserId, spaceId, Permissions.SchedulePublish, Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+
+        var controller = new ShiftSlotsController(services.Mediator, services.Permissions, db);
+        controller.ControllerContext = CreateControllerContext(adminUserId);
+
+        var result = await controller.GetAdminAssignments(
+            spaceId,
+            group.Id,
+            cycle.Id.ToString(),
+            CancellationToken.None);
+
+        var ok = result.Should().BeOfType<OkObjectResult>().Subject;
+        var rows = ok.Value.Should().BeAssignableTo<IReadOnlyList<ShiftSlotAssignmentResponse>>().Subject;
+        rows.Should().ContainSingle();
+        rows[0].ShiftSlotId.Should().Be(slot.Id);
+        rows[0].PersonId.Should().Be(assigned.Id);
+        rows[0].PersonName.Should().Be("Assigned Display");
+    }
+
+    [Fact]
     public async Task ApproveAbsenceReport_Returns422_WhenReportIsAlreadyReviewed()
     {
         using var db = CreateDb();

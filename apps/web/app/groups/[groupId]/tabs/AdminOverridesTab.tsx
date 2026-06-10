@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, useMemo } from "react";
 import { useTranslations } from "next-intl";
 import {
   getAvailableSlots,
+  getAdminShiftSlotAssignments,
   adminAssignMember,
   adminRemoveMember,
   AvailableSlotDto,
@@ -69,8 +70,20 @@ export default function AdminOverridesTab({
     setLoading(true);
     setError(null);
     try {
-      const data = await getAvailableSlots(spaceId, groupId, "current");
+      const [data, assignments] = await Promise.all([
+        getAvailableSlots(spaceId, groupId, "current"),
+        getAdminShiftSlotAssignments(spaceId, groupId, "current"),
+      ]);
       setSlotsResponse(data);
+      setSlotAssignments(
+        assignments.reduce<Record<string, SlotAssignment[]>>((acc, assignment) => {
+          acc[assignment.shiftSlotId] = [
+            ...(acc[assignment.shiftSlotId] ?? []),
+            { personId: assignment.personId, personName: assignment.personName },
+          ];
+          return acc;
+        }, {})
+      );
     } catch (err) {
       const { message } = getSelfServiceErrorMessage(err);
       setError(message);
@@ -81,9 +94,9 @@ export default function AdminOverridesTab({
 
   useEffect(() => {
     if (hasSchedulePublishPermission) {
-      fetchSlots();
+      void Promise.resolve().then(fetchSlots);
     } else {
-      setLoading(false);
+      void Promise.resolve().then(() => setLoading(false));
     }
   }, [fetchSlots, hasSchedulePublishPermission]);
 
