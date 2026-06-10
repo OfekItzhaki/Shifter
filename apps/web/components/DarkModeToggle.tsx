@@ -52,7 +52,7 @@ export default function DarkModeToggle() {
 
   return (
     <div style={{ padding: "8px 12px", display: "flex", alignItems: "center", gap: 6 }}>
-      <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="#64748b" strokeWidth={2} style={{ flexShrink: 0 }}>
+      <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="var(--sidebar-muted)" strokeWidth={2} style={{ flexShrink: 0 }}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
       </svg>
       <div style={{ display: "flex", gap: 2 }} aria-label={`Theme: ${theme === "system" ? `Auto, currently ${resolvedTheme}` : theme}`}>
@@ -77,7 +77,7 @@ export default function DarkModeToggle() {
                 background: active ? "rgba(14,165,233,0.2)" : "transparent",
                 border: active ? "1px solid rgba(14,165,233,0.4)" : "1px solid transparent",
                 borderRadius: 6,
-                color: active ? "#7dd3fc" : "#94a3b8",
+                color: active ? "var(--sidebar-link-active-fg)" : "var(--sidebar-muted)",
                 cursor: active ? "default" : "pointer",
                 transition: "all 0.15s",
               }}

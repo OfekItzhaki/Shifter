@@ -21,18 +21,18 @@ import { getMe } from "@/lib/api/auth";
 interface AppShellProps { children: React.ReactNode; }
 
 const S = {
-  sidebar: { width: 256, background: "#0f172a", display: "flex", flexDirection: "column" as const, height: "100dvh", minHeight: 0, maxHeight: "100dvh", position: "fixed" as const, top: 0, left: 0, zIndex: 30, overflowY: "auto" as const },
-  logo: { padding: "14px 12px", borderBottom: "1px solid rgba(148,163,184,0.18)", background: "radial-gradient(circle at 18% 0%, rgba(20,184,166,0.18), transparent 34%), linear-gradient(135deg, #07111f 0%, #0f172a 52%, #082f49 100%)", display: "flex", alignItems: "center", gap: 8, textDecoration: "none", boxShadow: "inset 0 -1px 0 rgba(255,255,255,0.05)" },
+  sidebar: { width: 256, background: "var(--sidebar-bg)", borderInlineEnd: "1px solid var(--sidebar-border)", display: "flex", flexDirection: "column" as const, height: "100dvh", minHeight: 0, maxHeight: "100dvh", position: "fixed" as const, top: 0, left: 0, zIndex: 30, overflowY: "auto" as const },
+  logo: { padding: "14px 12px", borderBottom: "1px solid var(--sidebar-section-border)", background: "var(--sidebar-bg)", display: "flex", alignItems: "center", gap: 8, textDecoration: "none" },
   nav: { flex: 1, padding: "12px 12px", display: "flex", flexDirection: "column" as const, gap: 2 },
   navLink: (active: boolean, admin: boolean) => ({
     display: "flex", alignItems: "center", gap: 10, padding: "9px 12px", borderRadius: 8,
     textDecoration: "none", fontSize: 14, fontWeight: 500, transition: "background 0.15s",
-    background: active ? (admin ? "rgba(245,158,11,0.15)" : "rgba(14,165,233,0.15)") : "transparent",
-    color: active ? (admin ? "#fbbf24" : "#7dd3fc") : (admin ? "rgba(251,191,36,0.7)" : "#94a3b8"),
+    background: active ? (admin ? "var(--sidebar-admin-active-bg)" : "var(--sidebar-link-active-bg)") : "transparent",
+    color: active ? (admin ? "var(--sidebar-admin-active-fg)" : "var(--sidebar-link-active-fg)") : (admin ? "var(--sidebar-admin-fg)" : "var(--sidebar-link-fg)"),
   }),
-  bottom: { padding: "12px", borderTop: "1px solid rgba(255,255,255,0.08)" },
+  bottom: { padding: "12px", borderTop: "1px solid var(--sidebar-section-border)" },
   userInfo: { padding: "8px 12px", marginBottom: 4 },
-  logoutBtn: { display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "9px 12px", borderRadius: 8, background: "none", border: "none", cursor: "pointer", color: "#64748b", fontSize: 14, textAlign: "start" as const },
+  logoutBtn: { display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "9px 12px", borderRadius: 8, background: "none", border: "none", cursor: "pointer", color: "var(--sidebar-muted)", fontSize: 14, textAlign: "start" as const },
   topbar: (admin: boolean) => ({ height: 56, display: "flex", alignItems: "center", justifyContent: "flex-end", padding: "0 24px", borderBottom: `1px solid ${admin ? "#fde68a" : "var(--border-color, #e2e8f0)"}`, background: admin ? "#fffbeb" : "var(--main-bg, #f8fafc)", position: "sticky" as const, top: 0, zIndex: 20 }),
   main: { marginLeft: 256, display: "flex", flexDirection: "column" as const, minHeight: "100dvh", width: "calc(100vw - 256px)", background: "var(--main-bg, #f8fafc)" },
   content: { flex: 1, padding: "clamp(16px, 3vw, 32px)", width: "100%", maxWidth: "1400px", margin: "0 auto", display: "flex", flexDirection: "column" as const, alignItems: "center" },
@@ -52,7 +52,7 @@ function NavItem({ href, label, icon, admin, onNavigate }: { href: string; label
 
 function NavSection({ label, admin }: { label: string; admin?: boolean }) {
   const lineColor = admin ? "rgba(251,191,36,0.35)" : "rgba(148,163,184,0.24)";
-  const textColor = admin ? "rgba(251,191,36,0.75)" : "#64748b";
+  const textColor = admin ? "var(--sidebar-admin-fg)" : "var(--sidebar-muted)";
   return (
     <div
       style={{
@@ -154,7 +154,7 @@ export default function AppShell({ children }: AppShellProps) {
         </div>
 
         {/* Space switcher and current-space actions */}
-        <div style={{ padding: "4px 12px 10px", borderBottom: "1px solid rgba(148,163,184,0.14)" }}>
+        <div style={{ padding: "4px 12px 10px", borderBottom: "1px solid var(--sidebar-section-border)" }}>
           <SpaceSwitcher />
           <NavSection label={t("nav.sections.space")} />
           <div style={{ marginTop: 2 }}>
@@ -197,8 +197,8 @@ export default function AppShell({ children }: AppShellProps) {
               {displayName ? displayName.charAt(0).toUpperCase() : "?"}
             </div>
             <div style={{ minWidth: 0 }}>
-              <div style={{ color: "#94a3b8", fontSize: 10, marginBottom: 1 }}>{t("auth.loggedInAs")}</div>
-              <div style={{ color: "white", fontSize: 13, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              <div style={{ color: "var(--sidebar-muted)", fontSize: 10, marginBottom: 1 }}>{t("auth.loggedInAs")}</div>
+              <div style={{ color: "var(--sidebar-text)", fontSize: 13, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                 {displayName ?? "—"}
               </div>
             </div>
@@ -209,7 +209,7 @@ export default function AppShell({ children }: AppShellProps) {
             </svg>
             {t("auth.logout")}
           </button>
-          <div style={{ padding: "4px 12px 8px", color: "#94a3b8", fontSize: 11, textAlign: "center" }}>
+          <div style={{ padding: "4px 12px 8px", color: "var(--sidebar-muted)", fontSize: 11, textAlign: "center" }}>
             v{process.env.NEXT_PUBLIC_APP_VERSION ?? "dev"}
             <span style={{ margin: "0 4px" }}>·</span>
             <a href="https://ofeklabs.com" target="_blank" rel="noopener noreferrer" style={{ color: "inherit", textDecoration: "none" }}>
