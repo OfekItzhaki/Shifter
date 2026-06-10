@@ -2,6 +2,7 @@ using Jobuler.Application.Common;
 using Jobuler.Application.Scheduling.SelfService;
 using Jobuler.Application.Scheduling.SelfService.Commands;
 using Jobuler.Domain.Groups;
+using Jobuler.Domain.People;
 using Jobuler.Domain.Scheduling;
 using Jobuler.Domain.Spaces;
 using Jobuler.Infrastructure.Persistence;
@@ -227,6 +228,22 @@ public class SelfServiceCyclesController : ControllerBase
             .AsNoTracking()
             .CountAsync(r => r.SchedulingCycleId == cycle.Id && r.Status == ShiftChangeRequestStatus.Pending, ct);
 
+        var pendingSpecialLeaveRequestCount = await _db.SpecialLeaveRequests
+            .AsNoTracking()
+            .Where(r => r.SpaceId == cycle.SpaceId
+                        && r.Status == SpecialLeaveRequestStatus.Pending
+                        && r.StartsAt < cycle.EndsAt
+                        && r.EndsAt > cycle.StartsAt)
+            .Join(
+                _db.GroupMemberships
+                    .AsNoTracking()
+                    .Where(m => m.SpaceId == cycle.SpaceId && m.GroupId == cycle.GroupId),
+                request => request.PersonId,
+                membership => membership.PersonId,
+                (request, _) => request.Id)
+            .Distinct()
+            .CountAsync(ct);
+
         var taskIds = slots
             .Where(s => s.CurrentFillCount < s.Capacity)
             .Select(s => s.GroupTaskId)
@@ -276,6 +293,7 @@ public class SelfServiceCyclesController : ControllerBase
             pendingAbsenceReports.Count,
             pendingAbsenceReports.Count(r => r.IsLate),
             pendingShiftChangeRequestCount,
+            pendingSpecialLeaveRequestCount,
             underfilledSlots);
     }
 }
@@ -309,8 +327,9 @@ public record SelfServiceCycleStatusResponse(
     int PendingAbsenceReportCount,
     int LatePendingAbsenceReportCount,
     int PendingShiftChangeRequestCount,
+    int PendingSpecialLeaveRequestCount,
     IReadOnlyList<UnderfilledSlotResponse> UnderfilledSlots)
 {
     public static SelfServiceCycleStatusResponse Empty() =>
-        new(null, null, null, null, null, false, false, 0, 0, 0, 0, 0, 0, 0, 0, 0, []);
+        new(null, null, null, null, null, false, false, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, []);
 }

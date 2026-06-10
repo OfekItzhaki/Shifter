@@ -131,6 +131,7 @@ export default function CycleControlPanel({ spaceId, groupId }: CycleControlPane
                 <Metric label={t("metrics.absenceReview")} value={`${status.pendingAbsenceReportCount}`} tone={status.pendingAbsenceReportCount > 0 ? "warning" : "default"} />
                 <Metric label={t("metrics.lateReports")} value={`${status.latePendingAbsenceReportCount}`} tone={status.latePendingAbsenceReportCount > 0 ? "danger" : "default"} />
                 <Metric label={t("metrics.changeReview")} value={`${status.pendingShiftChangeRequestCount}`} tone={status.pendingShiftChangeRequestCount > 0 ? "warning" : "default"} />
+                <Metric label={t("metrics.leaveReview")} value={`${status.pendingSpecialLeaveRequestCount}`} tone={status.pendingSpecialLeaveRequestCount > 0 ? "warning" : "default"} />
                 <Metric label={t("metrics.generated")} value={status.isGenerated ? t("yes") : t("no")} />
               </div>
 

@@ -2261,7 +2261,8 @@
           "absenceReview": "Absence review",
           "lateReports": "Late reports",
           "changeReview": "Change review",
-          "generated": "Generated"
+          "generated": "Generated",
+          "leaveReview": "Leave review"
         },
         "buttons": {
           "open": "Open 24h",

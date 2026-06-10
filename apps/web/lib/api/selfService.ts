@@ -99,6 +99,7 @@ export interface SelfServiceCycleStatusDto {
   pendingAbsenceReportCount: number;
   latePendingAbsenceReportCount: number;
   pendingShiftChangeRequestCount: number;
+  pendingSpecialLeaveRequestCount: number;
   underfilledSlots: UnderfilledSlotDto[];
 }
 

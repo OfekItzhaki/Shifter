@@ -1093,6 +1093,67 @@ public class SelfServiceScopeTests
         response.PendingShiftChangeRequestCount.Should().Be(1);
     }
 
+    [Fact]
+    public async Task GetCycleStatus_IncludesPendingSpecialLeaveRequestsForCycleMembers()
+    {
+        using var db = CreateDb();
+        var services = CreateControllerServices();
+        var spaceId = Guid.NewGuid();
+        var group = Group.Create(spaceId, null, "Route Group");
+        var otherGroup = Group.Create(spaceId, null, "Other Group");
+        var userId = Guid.NewGuid();
+        var member = Person.Create(spaceId, "Member", linkedUserId: userId);
+        var otherGroupMember = Person.Create(spaceId, "Other Member", linkedUserId: Guid.NewGuid());
+        var cycle = CreateCycle(spaceId, group.Id);
+        var inCycleLeave = SpecialLeaveRequest.Create(
+            spaceId,
+            member.Id,
+            cycle.StartsAt.AddHours(4),
+            cycle.StartsAt.AddHours(8),
+            "Medical appointment",
+            userId);
+        var otherGroupLeave = SpecialLeaveRequest.Create(
+            spaceId,
+            otherGroupMember.Id,
+            cycle.StartsAt.AddHours(4),
+            cycle.StartsAt.AddHours(8),
+            "Wrong group",
+            Guid.NewGuid());
+        var outsideCycleLeave = SpecialLeaveRequest.Create(
+            spaceId,
+            member.Id,
+            cycle.EndsAt.AddDays(1),
+            cycle.EndsAt.AddDays(2),
+            "Outside cycle",
+            userId);
+
+        db.People.AddRange(member, otherGroupMember);
+        db.Groups.AddRange(group, otherGroup);
+        db.GroupMemberships.AddRange(
+            GroupMembership.Create(spaceId, group.Id, member.Id),
+            GroupMembership.Create(spaceId, otherGroup.Id, otherGroupMember.Id));
+        db.SchedulingCycles.Add(cycle);
+        db.SpecialLeaveRequests.AddRange(inCycleLeave, otherGroupLeave, outsideCycleLeave);
+        await db.SaveChangesAsync();
+
+        services.Permissions
+            .RequirePermissionAsync(userId, spaceId, Permissions.SpaceView, Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+
+        var controller = new SelfServiceCyclesController(
+            db,
+            services.Permissions,
+            Substitute.For<ISlotGenerationService>(),
+            services.Mediator);
+        controller.ControllerContext = CreateControllerContext(userId);
+
+        var result = await controller.GetStatus(spaceId, group.Id, CancellationToken.None);
+
+        var ok = result.Should().BeOfType<OkObjectResult>().Subject;
+        var response = ok.Value.Should().BeOfType<SelfServiceCycleStatusResponse>().Subject;
+        response.PendingSpecialLeaveRequestCount.Should().Be(1);
+    }
+
     private static SchedulingCycle CreateCycle(Guid spaceId, Guid groupId)
     {
         var utcNow = DateTime.UtcNow;
