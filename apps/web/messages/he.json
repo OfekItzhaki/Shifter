@@ -2213,8 +2213,10 @@
         "minShiftsRange": "מינימום משמרות חייב להיות בין 0 ל-100",
         "maxShiftsRange": "מקסימום משמרות חייב להיות בין 1 ל-100",
         "offsetRange": "ערך חייב להיות בין 1 ל-720 שעות",
-        "waitlistOfferRange": "זמן הצעה חייב להיות בין 1 ל-1440 דקות",
-        "cycleDurationRange": "משך מחזור חייב להיות בין 1 ל-365 ימים"
+        "waitlistOfferRange": "Offer duration must be between 15 and 1440 minutes",
+        "cycleDurationRange": "Cycle duration must be between 1 and 30 days",
+        "openCloseOrder": "Request window open offset must be greater than close offset",
+        "maxLateRange": "Late absence limit must be between 0 and 100"
       }
     },
     "adminOverrides": {

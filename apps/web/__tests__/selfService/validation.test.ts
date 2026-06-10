@@ -160,6 +160,16 @@ describe("validateSelfServiceConfig", () => {
     expect(result.errorKey).toBe("selfService.errors.closeOffsetOutOfRange");
   });
 
+  it("rejects when request window open offset is not greater than close offset", () => {
+    const result = validateSelfServiceConfig({
+      ...validConfig,
+      requestWindowOpenOffsetHours: 24,
+      requestWindowCloseOffsetHours: 24,
+    });
+    expect(result.valid).toBe(false);
+    expect(result.errorKey).toBe("selfService.errors.openOffsetMustBeGreaterThanClose");
+  });
+
   it("rejects cancellationCutoffHours below 1", () => {
     const result = validateSelfServiceConfig({
       ...validConfig,
@@ -178,10 +188,10 @@ describe("validateSelfServiceConfig", () => {
     expect(result.errorKey).toBe("selfService.errors.cutoffOutOfRange");
   });
 
-  it("rejects waitlistOfferMinutes below 1", () => {
+  it("rejects waitlistOfferMinutes below 15", () => {
     const result = validateSelfServiceConfig({
       ...validConfig,
-      waitlistOfferMinutes: 0,
+      waitlistOfferMinutes: 14,
     });
     expect(result.valid).toBe(false);
     expect(result.errorKey).toBe("selfService.errors.waitlistOfferOutOfRange");
@@ -205,36 +215,36 @@ describe("validateSelfServiceConfig", () => {
     expect(result.errorKey).toBe("selfService.errors.cycleDurationOutOfRange");
   });
 
-  it("rejects cycleDurationDays above 365", () => {
+  it("rejects cycleDurationDays above 30", () => {
     const result = validateSelfServiceConfig({
       ...validConfig,
-      cycleDurationDays: 366,
+      cycleDurationDays: 31,
     });
     expect(result.valid).toBe(false);
     expect(result.errorKey).toBe("selfService.errors.cycleDurationOutOfRange");
   });
 
-  it("accepts boundary values (min=0, max=100, offsets=720, waitlist=1440, cycle=365)", () => {
+  it("accepts maximum boundary values", () => {
     const result = validateSelfServiceConfig({
       minShiftsPerCycle: 0,
       maxShiftsPerCycle: 100,
       requestWindowOpenOffsetHours: 720,
-      requestWindowCloseOffsetHours: 720,
+      requestWindowCloseOffsetHours: 719,
       cancellationCutoffHours: 720,
       waitlistOfferMinutes: 1440,
-      cycleDurationDays: 365,
+      cycleDurationDays: 30,
     });
     expect(result).toEqual({ valid: true });
   });
 
-  it("accepts minimum boundary values (min=0, max=1, offsets=1, waitlist=1, cycle=1)", () => {
+  it("accepts minimum boundary values", () => {
     const result = validateSelfServiceConfig({
       minShiftsPerCycle: 0,
       maxShiftsPerCycle: 1,
-      requestWindowOpenOffsetHours: 1,
+      requestWindowOpenOffsetHours: 2,
       requestWindowCloseOffsetHours: 1,
       cancellationCutoffHours: 1,
-      waitlistOfferMinutes: 1,
+      waitlistOfferMinutes: 15,
       cycleDurationDays: 1,
     });
     expect(result).toEqual({ valid: true });

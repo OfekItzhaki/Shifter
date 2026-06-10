@@ -34,9 +34,38 @@ const CONFIG_FIELDS: ConfigField[] = [
   { key: "cancellationCutoffHours", min: 1, max: 720 },
   { key: "maxLateCancellationsPerCycle", min: 0, max: 100 },
   { key: "lateCancellationWindowHours", min: 1, max: 720 },
-  { key: "waitlistOfferMinutes", min: 1, max: 1440 },
-  { key: "cycleDurationDays", min: 1, max: 365 },
+  { key: "waitlistOfferMinutes", min: 15, max: 1440 },
+  { key: "cycleDurationDays", min: 1, max: 30 },
 ];
+
+function getConfigValidationMessage(
+  errorKey: string,
+  t: (key: string) => string
+): string {
+  switch (errorKey) {
+    case "selfService.errors.minShiftsOutOfRange":
+      return t("validation.minShiftsRange");
+    case "selfService.errors.maxShiftsOutOfRange":
+      return t("validation.maxShiftsRange");
+    case "selfService.errors.minExceedsMax":
+      return t("validation.minGreaterThanMax");
+    case "selfService.errors.openOffsetOutOfRange":
+    case "selfService.errors.closeOffsetOutOfRange":
+    case "selfService.errors.cutoffOutOfRange":
+    case "selfService.errors.lateCancellationWindowOutOfRange":
+      return t("validation.offsetRange");
+    case "selfService.errors.openOffsetMustBeGreaterThanClose":
+      return t("validation.openCloseOrder");
+    case "selfService.errors.maxLateCancellationsOutOfRange":
+      return t("validation.maxLateRange");
+    case "selfService.errors.waitlistOfferOutOfRange":
+      return t("validation.waitlistOfferRange");
+    case "selfService.errors.cycleDurationOutOfRange":
+      return t("validation.cycleDurationRange");
+    default:
+      return errorKey;
+  }
+}
 
 export default function SelfServiceConfigTab({ spaceId, groupId }: SelfServiceConfigTabProps) {
   const t = useTranslations("selfService.config");
@@ -107,7 +136,7 @@ export default function SelfServiceConfigTab({ spaceId, groupId }: SelfServiceCo
     // Client-side validation
     const validation = validateSelfServiceConfig(formValues);
     if (!validation.valid) {
-      setValidationError(validation.errorKey ?? null);
+      setValidationError(validation.errorKey ? getConfigValidationMessage(validation.errorKey, t) : null);
       return;
     }
 

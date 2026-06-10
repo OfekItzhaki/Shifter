@@ -2201,8 +2201,10 @@
         "minShiftsRange": "Minimum shifts must be between 0 and 100",
         "maxShiftsRange": "Maximum shifts must be between 1 and 100",
         "offsetRange": "Value must be between 1 and 720 hours",
-        "waitlistOfferRange": "Offer duration must be between 1 and 1440 minutes",
-        "cycleDurationRange": "Cycle duration must be between 1 and 365 days"
+        "openCloseOrder": "Request window open offset must be greater than close offset",
+        "maxLateRange": "Late absence limit must be between 0 and 100",
+        "waitlistOfferRange": "Offer duration must be between 15 and 1440 minutes",
+        "cycleDurationRange": "Cycle duration must be between 1 and 30 days"
       }
     },
     "adminOverrides": {

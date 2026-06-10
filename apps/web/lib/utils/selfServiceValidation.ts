@@ -38,9 +38,10 @@ export function validateTemplateTimeRange(
  * - minShiftsPerCycle must be <= maxShiftsPerCycle
  * - requestWindowOpenOffsetHours: 1–720
  * - requestWindowCloseOffsetHours: 1–720
+ * - requestWindowOpenOffsetHours must be greater than requestWindowCloseOffsetHours
  * - cancellationCutoffHours: 1–720
- * - waitlistOfferMinutes: 1–1440
- * - cycleDurationDays: 1–365
+ * - waitlistOfferMinutes: 15–1440
+ * - cycleDurationDays: 1–30
  *
  * @param config - The configuration object to validate
  * @returns ValidationResult — invalid with appropriate errorKey if any field is out of range
@@ -94,6 +95,10 @@ export function validateSelfServiceConfig(config: {
   }
 
   // cancellationCutoffHours: 1–720
+  if (requestWindowOpenOffsetHours <= requestWindowCloseOffsetHours) {
+    return { valid: false, errorKey: "selfService.errors.openOffsetMustBeGreaterThanClose" };
+  }
+
   if (cancellationCutoffHours < 1 || cancellationCutoffHours > 720) {
     return { valid: false, errorKey: "selfService.errors.cutoffOutOfRange" };
   }
@@ -106,13 +111,13 @@ export function validateSelfServiceConfig(config: {
     return { valid: false, errorKey: "selfService.errors.lateCancellationWindowOutOfRange" };
   }
 
-  // waitlistOfferMinutes: 1–1440
-  if (waitlistOfferMinutes < 1 || waitlistOfferMinutes > 1440) {
+  // waitlistOfferMinutes: 15–1440
+  if (waitlistOfferMinutes < 15 || waitlistOfferMinutes > 1440) {
     return { valid: false, errorKey: "selfService.errors.waitlistOfferOutOfRange" };
   }
 
-  // cycleDurationDays: 1–365
-  if (cycleDurationDays < 1 || cycleDurationDays > 365) {
+  // cycleDurationDays: 1–30
+  if (cycleDurationDays < 1 || cycleDurationDays > 30) {
     return { valid: false, errorKey: "selfService.errors.cycleDurationOutOfRange" };
   }
 

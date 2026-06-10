@@ -2201,8 +2201,10 @@
         "minShiftsRange": "Минимум смен должен быть от 0 до 100",
         "maxShiftsRange": "Максимум смен должен быть от 1 до 100",
         "offsetRange": "Значение должно быть от 1 до 720 часов",
-        "waitlistOfferRange": "Время предложения должно быть от 1 до 1440 минут",
-        "cycleDurationRange": "Длительность цикла должна быть от 1 до 365 дней"
+        "waitlistOfferRange": "Offer duration must be between 15 and 1440 minutes",
+        "cycleDurationRange": "Cycle duration must be between 1 and 30 days",
+        "openCloseOrder": "Request window open offset must be greater than close offset",
+        "maxLateRange": "Late absence limit must be between 0 and 100"
       }
     },
     "adminOverrides": {
