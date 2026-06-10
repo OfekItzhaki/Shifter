@@ -219,9 +219,16 @@ public class ShiftRequestsController : ControllerBase
         if (report is null)
             return NotFound();
 
-        report.Approve(CurrentUserId, req.AdminNote);
-        await _db.SaveChangesAsync(ct);
-        await SendAbsenceReviewNotificationAsync(report, approved: true, ct);
+        try
+        {
+            report.Approve(CurrentUserId, req.AdminNote);
+            await _db.SaveChangesAsync(ct);
+            await SendAbsenceReviewNotificationAsync(report, approved: true, ct);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return AbsenceRejected(ex.Message);
+        }
 
         return NoContent();
     }
@@ -242,9 +249,16 @@ public class ShiftRequestsController : ControllerBase
         if (report is null)
             return NotFound();
 
-        report.Reject(CurrentUserId, req.AdminNote);
-        await _db.SaveChangesAsync(ct);
-        await SendAbsenceReviewNotificationAsync(report, approved: false, ct);
+        try
+        {
+            report.Reject(CurrentUserId, req.AdminNote);
+            await _db.SaveChangesAsync(ct);
+            await SendAbsenceReviewNotificationAsync(report, approved: false, ct);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return AbsenceRejected(ex.Message);
+        }
 
         return NoContent();
     }
@@ -332,6 +346,14 @@ public class ShiftRequestsController : ControllerBase
                            && r.GroupId == groupId
                            && r.PersonId == personId,
                 ct);
+
+    private IActionResult AbsenceRejected(string detail) =>
+        ProblemDetailsResults.Problem(
+            HttpContext,
+            statusCode: 422,
+            title: "Unprocessable Entity",
+            detail: detail,
+            typeSlug: "shift-absence-rejected");
 
     private async Task SendAbsenceReviewNotificationAsync(
         ShiftAbsenceReport report,

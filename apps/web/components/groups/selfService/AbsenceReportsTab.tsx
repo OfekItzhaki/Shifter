@@ -59,8 +59,12 @@ export default function AbsenceReportsTab({ spaceId, groupId }: Props) {
       setChangeSlotOptions(targetSlots);
       setChangeTargetSlots((prev) => {
         const next = { ...prev };
+        const availableTargetIds = new Set(targetSlots.map((slot) => slot.id));
         for (const request of changeRows) {
-          if (!next[request.id] && request.requestedShiftSlotId) {
+          if (next[request.id] && !availableTargetIds.has(next[request.id])) {
+            delete next[request.id];
+          }
+          if (!next[request.id] && request.requestedShiftSlotId && availableTargetIds.has(request.requestedShiftSlotId)) {
             next[request.id] = request.requestedShiftSlotId;
           }
         }
@@ -109,7 +113,8 @@ export default function AbsenceReportsTab({ spaceId, groupId }: Props) {
     try {
       const note = adminNotes[changeRequestId] ?? "";
       if (action === "approve") {
-        const targetShiftSlotId = changeTargetSlots[changeRequestId] || null;
+        const request = changeRequests.find((row) => row.id === changeRequestId);
+        const targetShiftSlotId = request ? getAvailableTargetSlotId(request) || null : null;
         if (!targetShiftSlotId) {
           setActionError(t("changeTargetRequired"));
           return;
@@ -133,6 +138,13 @@ export default function AbsenceReportsTab({ spaceId, groupId }: Props) {
 
   function formatTargetSlot(slot: AvailableSlotDto) {
     return `${formatSlotDate(slot.date)} - ${formatTime24h(slot.startTime)}-${formatTime24h(slot.endTime)} - ${slot.taskName} (${slot.currentFillCount}/${slot.capacity})`;
+  }
+
+  function getAvailableTargetSlotId(request: ShiftChangeRequestDto) {
+    const targetShiftSlotId = changeTargetSlots[request.id] ?? request.requestedShiftSlotId ?? "";
+    return changeSlotOptions.some((slot) => slot.id === targetShiftSlotId && slot.id !== request.originalShiftSlotId)
+      ? targetShiftSlotId
+      : "";
   }
 
   if (loading) return <LoadingCard rows={4} variant="list" />;
@@ -261,7 +273,7 @@ export default function AbsenceReportsTab({ spaceId, groupId }: Props) {
                     <label className="block space-y-1">
                       <span className="text-xs font-medium text-slate-600">{t("changeTargetShift")}</span>
                       <select
-                        value={changeTargetSlots[request.id] ?? request.requestedShiftSlotId ?? ""}
+                        value={getAvailableTargetSlotId(request)}
                         onChange={(e) => setChangeTargetSlots((prev) => ({ ...prev, [request.id]: e.target.value }))}
                         className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-sky-400"
                       >
@@ -286,7 +298,7 @@ export default function AbsenceReportsTab({ spaceId, groupId }: Props) {
                       <MutationButton
                         onClick={() => reviewChange(request.id, "approve")}
                         loading={changeActionLoading[request.id] === "approve"}
-                        disabled={!!changeActionLoading[request.id] || !(changeTargetSlots[request.id] ?? request.requestedShiftSlotId)}
+                        disabled={!!changeActionLoading[request.id] || !getAvailableTargetSlotId(request)}
                         label={t("approve")}
                         loadingLabel={t("approving")}
                         variant="primary"
