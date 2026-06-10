@@ -3,10 +3,12 @@
 import { useEffect, useState, useCallback } from "react";
 import { useTranslations } from "next-intl";
 import {
+  AbsenceReportDto,
   AvailableSlotDto,
   ShiftChangeRequestDto,
   cancelShiftChangeRequest,
   getAvailableSlots,
+  getMyAbsenceReports,
   getMyShiftChangeRequests,
   getMyShiftRequests,
   cancelShiftRequest,
@@ -110,6 +112,9 @@ export default function MyShiftsTab({ spaceId, groupId }: MyShiftsTabProps) {
   const [data, setData] = useState<MyShiftsResponse | null>(null);
   const [specialLeaveRequests, setSpecialLeaveRequests] = useState<SpecialLeaveRequestDto[]>([]);
   const [changeRequests, setChangeRequests] = useState<ShiftChangeRequestDto[]>([]);
+  const [absenceReports, setAbsenceReports] = useState<AbsenceReportDto[]>([]);
+  const [lateReportsUsed, setLateReportsUsed] = useState(0);
+  const [maxLateReports, setMaxLateReports] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [leaveStart, setLeaveStart] = useState("");
@@ -149,14 +154,18 @@ export default function MyShiftsTab({ spaceId, groupId }: MyShiftsTabProps) {
     try {
       setLoading(true);
       setError(null);
-      const [response, leaveRequests, shiftChanges] = await Promise.all([
+      const [response, leaveRequests, shiftChanges, absenceResponse] = await Promise.all([
         getMyShiftRequests(spaceId, groupId),
         getMySpecialLeaveRequests(spaceId),
         getMyShiftChangeRequests(spaceId, groupId),
+        getMyAbsenceReports(spaceId, groupId),
       ]);
       setData(response);
       setSpecialLeaveRequests(leaveRequests);
       setChangeRequests(shiftChanges);
+      setAbsenceReports(absenceResponse.reports);
+      setLateReportsUsed(absenceResponse.lateReportsUsed);
+      setMaxLateReports(absenceResponse.maxLateReports);
     } catch (err) {
       const { message } = getSelfServiceErrorMessage(err);
       setError(message);
@@ -166,7 +175,7 @@ export default function MyShiftsTab({ spaceId, groupId }: MyShiftsTabProps) {
   }, [spaceId, groupId]);
 
   useEffect(() => {
-    fetchData();
+    void Promise.resolve().then(fetchData);
   }, [fetchData]);
 
   // ── Cancel handlers ──────────────────────────────────────────────────────
@@ -515,6 +524,25 @@ export default function MyShiftsTab({ spaceId, groupId }: MyShiftsTabProps) {
         )}
       </div>
 
+      <div className="bg-white border border-slate-200 rounded-xl px-4 py-4">
+        <div className="flex flex-col gap-1 mb-4">
+          <h3 className="text-sm font-semibold text-slate-900">{t("absenceReportsTitle")}</h3>
+          <p className="text-xs text-slate-500">
+            {t("absenceReportsDescription", { used: lateReportsUsed, max: maxLateReports })}
+          </p>
+        </div>
+
+        {absenceReports.length === 0 ? (
+          <p className="text-xs text-slate-400">{t("absenceReportsEmpty")}</p>
+        ) : (
+          <div className="space-y-2">
+            {absenceReports.map((report) => (
+              <AbsenceReportCard key={report.id} report={report} />
+            ))}
+          </div>
+        )}
+      </div>
+
       {/* Under-scheduled warning */}
       {isUnderScheduled && (
         <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
@@ -858,6 +886,45 @@ function ShiftChangeCard({
 }
 
 // ── ShiftSection sub-component ─────────────────────────────────────────────
+
+function AbsenceReportCard({ report }: { report: AbsenceReportDto }) {
+  const t = useTranslations("selfService.myShifts");
+  const style = STATUS_BADGE_STYLES[report.status];
+  const statusLabel = (() => {
+    switch (report.status) {
+      case "Approved": return t("approved");
+      case "Pending": return t("pending");
+      case "Rejected": return t("rejected");
+    }
+  })();
+
+  return (
+    <div className="flex flex-col gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
+      <div className="min-w-0">
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="text-xs font-medium text-slate-800">
+            {formatSlotDate(report.date)} {formatTime24h(report.startTime)}-{formatTime24h(report.endTime)} - {report.taskName}
+          </p>
+          {report.isLate && (
+            <span className="rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700">
+              {t("absenceLate")}
+            </span>
+          )}
+        </div>
+        <p className="mt-0.5 truncate text-xs text-slate-500">{report.reason}</p>
+        {report.adminNote && (
+          <p className="mt-0.5 text-xs text-slate-500">
+            {t("absenceAdminNote")}: {report.adminNote}
+          </p>
+        )}
+      </div>
+      <span className={`inline-flex w-fit items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-medium ${style.badge}`}>
+        <span className={`h-1.5 w-1.5 rounded-full ${style.dot}`} />
+        {statusLabel}
+      </span>
+    </div>
+  );
+}
 
 interface ShiftSectionProps {
   title: string;
