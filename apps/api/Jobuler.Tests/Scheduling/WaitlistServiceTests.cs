@@ -1,6 +1,7 @@
 using FluentAssertions;
 using Jobuler.Application.Notifications;
 using Jobuler.Application.Scheduling.SelfService;
+using Jobuler.Application.Scheduling.SelfService.Commands;
 using Jobuler.Domain.Groups;
 using Jobuler.Domain.People;
 using Jobuler.Domain.Scheduling;
@@ -131,6 +132,55 @@ public class WaitlistServiceTests
         var entry = await db.WaitlistEntries.SingleAsync();
         entry.PersonId.Should().Be(waitingPerson.Id);
         entry.Status.Should().Be(WaitlistEntryStatus.Waiting);
+    }
+
+    [Fact]
+    public async Task AcceptWaitlistOffer_ApprovesShiftAndAcceptsEntry()
+    {
+        using var db = CreateDb();
+        var (spaceId, groupId, cycleId, taskId) = SeedBaseData(db);
+        var offeredPerson = Person.Create(spaceId, "Offered", linkedUserId: Guid.NewGuid());
+        var slot = CreateSlot(spaceId, groupId, taskId, cycleId);
+        var entry = WaitlistEntry.Create(spaceId, slot.Id, offeredPerson.Id, position: 1);
+        entry.Offer(DateTime.UtcNow.AddMinutes(30));
+
+        db.People.Add(offeredPerson);
+        db.ShiftSlots.Add(slot);
+        db.WaitlistEntries.Add(entry);
+        await db.SaveChangesAsync();
+
+        var waitlistService = Substitute.For<IWaitlistService>();
+        var pushSender = Substitute.For<IPushNotificationSender>();
+        var handler = new AcceptWaitlistOfferCommandHandler(
+            db,
+            waitlistService,
+            pushSender,
+            NullLogger<AcceptWaitlistOfferCommandHandler>.Instance);
+
+        var result = await handler.Handle(
+            new AcceptWaitlistOfferCommand(spaceId, offeredPerson.Id, slot.Id),
+            CancellationToken.None);
+
+        result.Success.Should().BeTrue();
+        result.ShiftRequestId.Should().NotBeNull();
+
+        var updatedEntry = await db.WaitlistEntries.SingleAsync(e => e.Id == entry.Id);
+        updatedEntry.Status.Should().Be(WaitlistEntryStatus.Accepted);
+
+        var shiftRequest = await db.ShiftRequests.SingleAsync(r => r.Id == result.ShiftRequestId);
+        shiftRequest.PersonId.Should().Be(offeredPerson.Id);
+        shiftRequest.ShiftSlotId.Should().Be(slot.Id);
+        shiftRequest.GroupId.Should().Be(groupId);
+        shiftRequest.SchedulingCycleId.Should().Be(cycleId);
+        shiftRequest.Status.Should().Be(ShiftRequestStatus.Approved);
+
+        var updatedSlot = await db.ShiftSlots.SingleAsync(s => s.Id == slot.Id);
+        updatedSlot.CurrentFillCount.Should().Be(1);
+
+        await waitlistService.DidNotReceiveWithAnyArgs()
+            .ProcessSlotReleasedAsync(default, default);
+        await pushSender.Received(1)
+            .SendPushToUserAsync(offeredPerson.LinkedUserId!.Value, spaceId, Arg.Any<PushPayload>(), Arg.Any<CancellationToken>());
     }
 
     private static WaitlistService CreateService(AppDbContext db) =>
