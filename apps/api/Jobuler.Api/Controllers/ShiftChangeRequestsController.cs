@@ -75,6 +75,19 @@ public class ShiftChangeRequestsController : ControllerBase
         if (shiftRequest is null)
             return NotFound();
 
+        var originalSlot = await _db.ShiftSlots
+            .AsNoTracking()
+            .FirstOrDefaultAsync(s => s.Id == shiftRequest.ShiftSlotId
+                                      && s.SpaceId == spaceId
+                                      && s.GroupId == groupId,
+                ct);
+
+        if (originalSlot is null)
+            return NotFound();
+
+        if (HasShiftStarted(originalSlot))
+            return Rejected("This shift has already started.");
+
         if (req.RequestedShiftSlotId.HasValue)
         {
             var requestedSlot = await _db.ShiftSlots
@@ -298,6 +311,9 @@ public class ShiftChangeRequestsController : ControllerBase
             if (shiftRequest is null || originalSlot is null || requestedSlot is null)
                 return NotFound();
 
+            if (HasShiftStarted(originalSlot))
+                return Rejected("This shift has already started.");
+
             if (requestedSlot.SchedulingCycleId != shiftRequest.SchedulingCycleId)
                 return Rejected("Requested shift must be in the same scheduling cycle.");
 
@@ -446,6 +462,9 @@ public class ShiftChangeRequestsController : ControllerBase
             title: "Unprocessable Entity",
             detail: detail,
             typeSlug: "shift-change-request-rejected");
+
+    private static bool HasShiftStarted(ShiftSlot slot) =>
+        slot.Date.ToDateTime(slot.StartTime, DateTimeKind.Utc) <= DateTime.UtcNow;
 
     private async Task NotifyAdminsChangeSubmittedAsync(ShiftChangeRequest changeRequest, CancellationToken ct)
     {
