@@ -71,6 +71,41 @@ public class WaitlistServiceTests
     }
 
     [Fact]
+    public async Task JoinWaitlistAsync_RejectsWhenRequestWindowIsClosed()
+    {
+        using var db = CreateDb();
+        var (spaceId, groupId, _, taskId) = SeedBaseData(db);
+        var utcNow = DateTime.UtcNow;
+        var closedCycle = SchedulingCycle.Create(
+            spaceId,
+            groupId,
+            startsAt: utcNow.AddDays(2),
+            endsAt: utcNow.AddDays(9),
+            requestWindowOpensAt: utcNow.AddDays(-3),
+            requestWindowClosesAt: utcNow.AddDays(-1));
+        var assignedPerson = Person.Create(spaceId, "Assigned", linkedUserId: Guid.NewGuid());
+        var waitingPerson = Person.Create(spaceId, "Waiting", linkedUserId: Guid.NewGuid());
+        var slot = CreateSlot(spaceId, groupId, taskId, closedCycle.Id);
+        var shiftRequest = ShiftRequest.Create(spaceId, slot.Id, assignedPerson.Id, groupId, closedCycle.Id);
+        shiftRequest.Approve();
+        slot.IncrementFillCount();
+
+        db.SchedulingCycles.Add(closedCycle);
+        db.People.AddRange(assignedPerson, waitingPerson);
+        db.ShiftSlots.Add(slot);
+        db.ShiftRequests.Add(shiftRequest);
+        await db.SaveChangesAsync();
+
+        var service = CreateService(db);
+
+        var result = await service.JoinWaitlistAsync(waitingPerson.Id, slot.Id);
+
+        result.Success.Should().BeFalse();
+        result.ErrorMessage.Should().Be("The request window has closed.");
+        (await db.WaitlistEntries.CountAsync()).Should().Be(0);
+    }
+
+    [Fact]
     public async Task JoinWaitlistAsync_AllowsDifferentMemberWhenSlotIsFull()
     {
         using var db = CreateDb();

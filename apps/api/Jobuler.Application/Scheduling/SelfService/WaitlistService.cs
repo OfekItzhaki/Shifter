@@ -69,6 +69,27 @@ public class WaitlistService : IWaitlistService
                 ErrorMessage: "This shift still has available capacity. Request the shift directly instead.");
         }
 
+        var cycle = await _db.SchedulingCycles
+            .AsNoTracking()
+            .FirstOrDefaultAsync(c => c.Id == slot.SchedulingCycleId, ct);
+
+        if (cycle is null)
+        {
+            return new WaitlistResult(
+                Success: false,
+                Position: null,
+                ErrorMessage: "The scheduling cycle for this slot could not be found.");
+        }
+
+        var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
+        if (!cycle.IsRequestWindowOpen(utcNow))
+        {
+            return new WaitlistResult(
+                Success: false,
+                Position: null,
+                ErrorMessage: "The request window has closed.");
+        }
+
         var hasActiveShiftRequest = await _db.ShiftRequests
             .AnyAsync(r => r.ShiftSlotId == shiftSlotId
                            && r.PersonId == personId
