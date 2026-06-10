@@ -96,6 +96,56 @@ export default function CycleControlPanel({ spaceId, groupId, onNavigate }: Cycl
   }
 
   const hasCycle = !!status?.cycleId;
+  const pendingReviewCount = status
+    ? status.pendingAbsenceReportCount
+      + status.pendingShiftChangeRequestCount
+      + status.pendingSpecialLeaveRequestCount
+    : 0;
+  const hasUnderScheduledResult = underScheduled !== null;
+  const underScheduledCount = underScheduled?.length ?? 0;
+  const closeChecklistItems = status
+    ? [
+        {
+          key: "coverage",
+          state: status.underfilledSlots.length > 0 ? "warning" : "ok",
+          label: t("closeChecklist.items.coverage.label"),
+          value: status.underfilledSlots.length > 0
+            ? t("closeChecklist.items.coverage.warning", { count: status.underfilledSlots.length })
+            : t("closeChecklist.items.coverage.ok"),
+          onClick: undefined,
+        },
+        {
+          key: "reviews",
+          state: pendingReviewCount > 0 ? "warning" : "ok",
+          label: t("closeChecklist.items.reviews.label"),
+          value: pendingReviewCount > 0
+            ? t("closeChecklist.items.reviews.warning", { count: pendingReviewCount })
+            : t("closeChecklist.items.reviews.ok"),
+          onClick: pendingReviewCount > 0 && onNavigate ? () => onNavigate("absence-reports") : undefined,
+        },
+        {
+          key: "waitlist",
+          state: status.waitlistCount > 0 ? "warning" : "ok",
+          label: t("closeChecklist.items.waitlist.label"),
+          value: status.waitlistCount > 0
+            ? t("closeChecklist.items.waitlist.warning", { count: status.waitlistCount })
+            : t("closeChecklist.items.waitlist.ok"),
+          onClick: status.waitlistCount > 0 && onNavigate ? () => onNavigate("waitlist") : undefined,
+        },
+        {
+          key: "underScheduled",
+          state: !hasUnderScheduledResult ? "unknown" : underScheduledCount > 0 ? "warning" : "ok",
+          label: t("closeChecklist.items.underScheduled.label"),
+          value: !hasUnderScheduledResult
+            ? t("closeChecklist.items.underScheduled.unknown")
+            : underScheduledCount > 0
+              ? t("closeChecklist.items.underScheduled.warning", { count: underScheduledCount })
+              : t("closeChecklist.items.underScheduled.ok"),
+          onClick: undefined,
+        },
+      ]
+    : [];
+  const closeChecklistWarningCount = closeChecklistItems.filter((item) => item.state === "warning").length;
 
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-6">
@@ -194,6 +244,41 @@ export default function CycleControlPanel({ spaceId, groupId, onNavigate }: Cycl
                 </div>
               )}
 
+              <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-sm font-semibold text-slate-900">{t("closeChecklist.title")}</p>
+                    <p className="text-xs text-slate-500">{t("closeChecklist.description")}</p>
+                  </div>
+                  <span className={`inline-flex w-fit rounded-full border px-2.5 py-1 text-xs font-medium ${
+                    closeChecklistWarningCount > 0
+                      ? "border-amber-200 bg-amber-50 text-amber-800"
+                      : hasUnderScheduledResult
+                        ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                        : "border-slate-200 bg-white text-slate-600"
+                  }`}>
+                    {closeChecklistWarningCount > 0
+                      ? t("closeChecklist.warningCount", { count: closeChecklistWarningCount })
+                      : hasUnderScheduledResult
+                        ? t("closeChecklist.ready")
+                        : t("closeChecklist.needsCheck")}
+                  </span>
+                </div>
+
+                <div className="mt-3 grid gap-2 lg:grid-cols-2">
+                  {closeChecklistItems.map((item) => (
+                    <ChecklistItem
+                      key={item.key}
+                      label={item.label}
+                      value={item.value}
+                      state={item.state as "ok" | "warning" | "unknown"}
+                      actionLabel={item.onClick ? t("closeChecklist.open") : undefined}
+                      onClick={item.onClick}
+                    />
+                  ))}
+                </div>
+              </div>
+
               <div className="flex flex-wrap gap-2">
                 <MutationButton
                   onClick={() => run("open", () => openSelfServiceCycleWindow(spaceId, groupId, status.cycleId!, 24))}
@@ -272,6 +357,60 @@ export default function CycleControlPanel({ spaceId, groupId, onNavigate }: Cycl
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+function ChecklistItem({
+  label,
+  value,
+  state,
+  actionLabel,
+  onClick,
+}: {
+  label: string;
+  value: string;
+  state: "ok" | "warning" | "unknown";
+  actionLabel?: string;
+  onClick?: () => void;
+}) {
+  const dotClass =
+    state === "ok"
+      ? "bg-emerald-500"
+      : state === "warning"
+        ? "bg-amber-500"
+        : "bg-slate-400";
+
+  const content = (
+    <>
+      <div className="flex items-start gap-2">
+        <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${dotClass}`} />
+        <div className="min-w-0">
+          <p className="text-sm font-medium text-slate-900">{label}</p>
+          <p className="mt-0.5 text-xs leading-5 text-slate-500">{value}</p>
+        </div>
+      </div>
+      {actionLabel && (
+        <span className="shrink-0 text-xs font-medium text-sky-700">{actionLabel}</span>
+      )}
+    </>
+  );
+
+  if (onClick) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        className="flex items-center justify-between gap-3 rounded-md border border-slate-200 bg-white px-3 py-2 text-left transition-colors hover:border-sky-300 hover:bg-sky-50 focus:outline-none focus:ring-2 focus:ring-sky-400"
+      >
+        {content}
+      </button>
+    );
+  }
+
+  return (
+    <div className="flex items-center justify-between gap-3 rounded-md border border-slate-200 bg-white px-3 py-2">
+      {content}
     </div>
   );
 }

@@ -2290,7 +2290,38 @@
           "refresh": "????????",
           "refreshing": "?????????..."
         },
-        "openReviewQueue": "???????: {queue}"
+        "openReviewQueue": "???????: {queue}",
+        "closeChecklist": {
+          "title": "Close readiness",
+          "description": "Review these signals before closing the request window.",
+          "ready": "Ready",
+          "needsCheck": "Run check",
+          "warningCount": "{count} item(s)",
+          "open": "Open",
+          "items": {
+            "coverage": {
+              "label": "Coverage",
+              "ok": "All generated slots are filled.",
+              "warning": "{count} under-filled slot(s) still need coverage."
+            },
+            "reviews": {
+              "label": "Review queues",
+              "ok": "No pending absence, change, or time-off reviews.",
+              "warning": "{count} pending review item(s)."
+            },
+            "waitlist": {
+              "label": "Waitlist",
+              "ok": "No active waitlist entries or offers.",
+              "warning": "{count} active waitlist entry/offer item(s)."
+            },
+            "underScheduled": {
+              "label": "Minimum shifts",
+              "ok": "Everyone meets the minimum after the latest check.",
+              "warning": "{count} member(s) are still below minimum.",
+              "unknown": "Run the under-scheduled check before closing."
+            }
+          }
+        }
       }
     }
   },
