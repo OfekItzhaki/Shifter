@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Jobuler.Application.Common;
+using Jobuler.Application.Notifications;
 using Jobuler.Application.Scheduling;
 using Jobuler.Domain.People;
 using Jobuler.Infrastructure.Persistence;
@@ -20,18 +21,25 @@ public class SubmitSpecialLeaveRequestCommandHandler
     : IRequestHandler<SubmitSpecialLeaveRequestCommand, Guid>
 {
     private readonly AppDbContext _db;
+    private readonly INotificationService _notifications;
 
-    public SubmitSpecialLeaveRequestCommandHandler(AppDbContext db) => _db = db;
+    public SubmitSpecialLeaveRequestCommandHandler(AppDbContext db, INotificationService notifications)
+    {
+        _db = db;
+        _notifications = notifications;
+    }
 
     public async Task<Guid> Handle(SubmitSpecialLeaveRequestCommand req, CancellationToken ct)
     {
-        var personExists = await _db.People.AsNoTracking()
-            .AnyAsync(p => p.Id == req.PersonId
+        var person = await _db.People.AsNoTracking()
+            .Where(p => p.Id == req.PersonId
                 && p.SpaceId == req.SpaceId
                 && p.LinkedUserId == req.RequestedByUserId
-                && p.IsActive, ct);
+                && p.IsActive)
+            .Select(p => new { p.Id, Name = p.DisplayName ?? p.FullName })
+            .FirstOrDefaultAsync(ct);
 
-        if (!personExists)
+        if (person is null)
             throw new UnauthorizedAccessException("Current user is not linked to this person in the space.");
 
         var overlapsExistingRequest = await _db.SpecialLeaveRequests.AsNoTracking()
@@ -49,6 +57,23 @@ public class SubmitSpecialLeaveRequestCommandHandler
 
         _db.SpecialLeaveRequests.Add(request);
         await _db.SaveChangesAsync(ct);
+        await _notifications.NotifySpaceAdminsAsync(
+            req.SpaceId,
+            "self_service.special_leave_requested",
+            "Time-off Requested",
+            $"{person.Name} requested time off from {req.StartsAt:MMM dd HH:mm} to {req.EndsAt:MMM dd HH:mm}.",
+            JsonSerializer.Serialize(new
+            {
+                requestId = request.Id,
+                personId = req.PersonId,
+                personName = person.Name,
+                startsAt = req.StartsAt,
+                endsAt = req.EndsAt,
+                reason = req.Reason
+            }),
+            groupId: null,
+            ct);
+
         return request.Id;
     }
 }

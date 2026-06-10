@@ -1,5 +1,6 @@
 using FluentAssertions;
 using Jobuler.Application.Common;
+using Jobuler.Application.Notifications;
 using Jobuler.Application.People.SpecialLeave;
 using Jobuler.Application.Scheduling;
 using Jobuler.Domain.People;
@@ -30,7 +31,8 @@ public class SpecialLeaveRequestCommandTests
         db.People.Add(person);
         await db.SaveChangesAsync();
 
-        var handler = new SubmitSpecialLeaveRequestCommandHandler(db);
+        var notifications = Substitute.For<INotificationService>();
+        var handler = new SubmitSpecialLeaveRequestCommandHandler(db, notifications);
         var start = DateTime.UtcNow.AddDays(3);
 
         var requestId = await handler.Handle(new SubmitSpecialLeaveRequestCommand(
@@ -40,6 +42,14 @@ public class SpecialLeaveRequestCommandTests
         request.Status.Should().Be(SpecialLeaveRequestStatus.Pending);
         request.PersonId.Should().Be(person.Id);
         request.Reason.Should().Be("Wedding");
+        await notifications.Received(1).NotifySpaceAdminsAsync(
+            spaceId,
+            "self_service.special_leave_requested",
+            "Time-off Requested",
+            Arg.Is<string>(body => body.Contains("Ofek") && body.Contains("requested time off")),
+            Arg.Is<string>(metadata => metadata.Contains(requestId.ToString()) && metadata.Contains("\"reason\":\"Wedding\"")),
+            null,
+            Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -93,7 +103,7 @@ public class SpecialLeaveRequestCommandTests
             spaceId, person.Id, start, start.AddDays(1), "Family event", userId));
         await db.SaveChangesAsync();
 
-        var handler = new SubmitSpecialLeaveRequestCommandHandler(db);
+        var handler = new SubmitSpecialLeaveRequestCommandHandler(db, Substitute.For<INotificationService>());
 
         var act = () => handler.Handle(new SubmitSpecialLeaveRequestCommand(
             spaceId, person.Id, start.AddHours(2), start.AddHours(4), "Other event", userId), CancellationToken.None);
