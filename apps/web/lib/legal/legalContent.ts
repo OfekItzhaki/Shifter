@@ -18,7 +18,7 @@ export interface LegalPageContent {
   relatedLinkLabel: string;
 }
 
-export const LEGAL_LAST_UPDATED = "June 4, 2026";
+export const LEGAL_LAST_UPDATED = "June 10, 2026";
 export const LEGAL_CONTACT_EMAIL = process.env.NEXT_PUBLIC_LEGAL_EMAIL ?? "support@ofeklabs.com";
 
 export function legalDir(locale: string): "rtl" | "ltr" {
@@ -209,7 +209,7 @@ export const legalContent: Record<Locale, Record<LegalPageKey, LegalPageContent>
           title: "6. Third-party processors and providers",
           bullets: [
             "LemonSqueezy: checkout, payment processing, invoices, tax handling, and subscription management.",
-            "SendGrid: transactional email delivery.",
+            "Resend: transactional email delivery.",
             "Twilio: WhatsApp or SMS notification delivery where configured.",
             "PostHog: product analytics, page events, usage events, and session replay when enabled in production.",
             "Sentry: error monitoring, performance traces, diagnostic context, and limited session replay for debugging.",
@@ -286,7 +286,7 @@ export const legalContent: Record<Locale, Record<LegalPageKey, LegalPageContent>
         {
           title: "2. Communications",
           bullets: [
-            "SendGrid: transactional email delivery such as verification, password reset, invitations, schedule updates, and service notices.",
+            "Resend: transactional email delivery such as verification, password reset, invitations, schedule updates, and service notices.",
             "Twilio: WhatsApp or SMS delivery for operational notifications where messaging is configured.",
           ],
         },
@@ -722,7 +722,7 @@ export const legalContent: Record<Locale, Record<LegalPageKey, LegalPageContent>
           title: "6. ספקים ומעבדי מידע",
           bullets: [
             "LemonSqueezy: תשלום, חשבוניות, מסים וניהול מנויים.",
-            "SendGrid: שליחת אימיילים תפעוליים.",
+            "Resend: שליחת אימיילים תפעוליים.",
             "Twilio: משלוח WhatsApp או SMS היכן שמוגדר.",
             "PostHog: אנליטיקת מוצר, צפיות עמוד, אירועי שימוש והקלטת סשן כאשר מופעל בפרודקשן.",
             "Sentry: ניטור שגיאות, ביצועים, הקשר דיאגנוסטי והקלטת סשן מוגבלת לצורך דיבוג.",
@@ -799,7 +799,7 @@ export const legalContent: Record<Locale, Record<LegalPageKey, LegalPageContent>
         {
           title: "2. תקשורת",
           bullets: [
-            "SendGrid: שליחת אימיילים תפעוליים כגון אימות, איפוס סיסמה, הזמנות, עדכוני סידור והודעות שירות.",
+            "Resend: שליחת אימיילים תפעוליים כגון אימות, איפוס סיסמה, הזמנות, עדכוני סידור והודעות שירות.",
             "Twilio: משלוח WhatsApp או SMS להתראות תפעוליות כאשר הודעות מוגדרות.",
           ],
         },
@@ -1235,7 +1235,7 @@ export const legalContent: Record<Locale, Record<LegalPageKey, LegalPageContent>
           title: "6. Провайдеры и обработчики",
           bullets: [
             "LemonSqueezy: checkout, платежи, счета, налоги и управление подписками.",
-            "SendGrid: отправка transactional email.",
+            "Resend: отправка transactional email.",
             "Twilio: доставка WhatsApp или SMS где настроено.",
             "PostHog: product analytics, page events, usage events и session replay при включении в production.",
             "Sentry: error monitoring, performance traces, diagnostic context и ограниченный session replay для debugging.",
@@ -1312,7 +1312,7 @@ export const legalContent: Record<Locale, Record<LegalPageKey, LegalPageContent>
         {
           title: "2. Коммуникации",
           bullets: [
-            "SendGrid: transactional email, включая verification, password reset, invitations, schedule updates и service notices.",
+            "Resend: transactional email, включая verification, password reset, invitations, schedule updates и service notices.",
             "Twilio: доставка WhatsApp или SMS для операционных уведомлений, если messaging настроен.",
           ],
         },

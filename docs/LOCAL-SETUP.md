@@ -164,6 +164,6 @@ WhatsApp and email notifications are disabled by default (no-op mode).
 To enable, add to `appsettings.json` or environment variables:
 
 ```json
-"SendGrid": { "ApiKey": "SG.your-key" },
+"Resend": { "ApiKey": "re_your-key", "FromEmail": "noreply@example.com", "FromName": "Shifter" },
 "Twilio": { "AccountSid": "AC...", "AuthToken": "...", "WhatsAppFrom": "whatsapp:+14155238886" }
 ```

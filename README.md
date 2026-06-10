@@ -119,6 +119,14 @@ cd apps/api && dotnet test
 
 The API returns structured JSON logs (Serilog) suitable for ingestion by Seq, ELK, or CloudWatch.
 
+For organizations that need Shifter installed in their own infrastructure, use
+the Docker Compose customer-hosted package:
+
+- [Customer-hosted deployment guide](docs/CUSTOMER-HOSTED-DEPLOYMENT.md)
+- [AI deployment modes](docs/AI-DEPLOYMENT-MODES.md)
+- `infra/compose/.env.customer.example`
+- `infra/scripts/validate-customer-env.sh`
+
 ## Tech Stack
 
 | Layer | Technology |

@@ -9,13 +9,15 @@ configured as a deployment choice, not hard-coded to one vendor.
 Use an OpenAI-compatible HTTP endpoint for chat/import assistant features:
 
 ```env
-AI__ApiKey=...
-AI__Model=...
-AI__BaseUrl=https://api.openai.com/v1
+AI_API_KEY=...
+AI_MODEL=...
+AI_BASE_URL=https://api.openai.com/v1
 ```
 
-The API key may be empty only for local endpoints that do not require auth.
-The app should continue to run with `NoOpAiAssistant` when AI is disabled.
+Docker Compose maps these values into the API as `AI__ApiKey`, `AI__Model`, and
+`AI__BaseUrl`. The API key may be empty only for local endpoints that do not
+require auth. The app continues to run with `NoOpAiAssistant` when AI is
+disabled.
 
 ## Modes
 
@@ -69,6 +71,8 @@ Requirements:
 - No external AI calls.
 - No external email provider unless explicitly configured by the customer.
 - File imports and chat prompts stay inside the customer network.
+- Disable analytics, external chat widgets, and external error tracking unless
+  explicitly approved by the customer.
 
 ## Provider Choice
 

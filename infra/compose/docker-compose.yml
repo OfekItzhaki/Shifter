@@ -77,6 +77,7 @@ services:
           cpus: '2.0'
     environment:
       ASPNETCORE_ENVIRONMENT: Production
+      App__DeploymentMode: ${SHIFTER_DEPLOYMENT_MODE:-saas}
       ConnectionStrings__DefaultConnection: "Host=${POSTGRES_HOST};Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}"
       Redis__ConnectionString: "${REDIS_HOST}:6379,password=${REDIS_PASSWORD}"
       Jwt__Secret: ${JWT_SECRET}
