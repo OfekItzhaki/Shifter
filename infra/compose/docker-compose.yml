@@ -97,6 +97,7 @@ services:
       AutoScheduler__Enabled: ${AUTO_SCHEDULER_ENABLED:-false}
       AI__ApiKey: ${AI_API_KEY:-}
       AI__Model: ${AI_MODEL:-gpt-4o}
+      Feedback__DeveloperEmail: ${FEEDBACK_DEVELOPER_EMAIL:-ofeklabs@outlook.com}
       SendGrid__ApiKey: ${SENDGRID_API_KEY:-}
       SendGrid__FromEmail: ${SENDGRID_FROM_EMAIL:-noreply@shifter.app}
       SendGrid__FromName: ${SENDGRID_FROM_NAME:-Shifter}
