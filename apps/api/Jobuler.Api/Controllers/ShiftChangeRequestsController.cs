@@ -45,10 +45,9 @@ public class ShiftChangeRequestsController : ControllerBase
         if (personId is null)
             return Forbid();
 
-        var rows = await BuildChangeRequestQuery(spaceId, groupId).ToListAsync(ct);
+        var rows = await BuildChangeRequestQuery(spaceId, groupId, personId.Value).ToListAsync(ct);
 
         return Ok(rows
-            .Where(r => r.Change.PersonId == personId.Value)
             .OrderByDescending(r => r.Change.RequestedAt)
             .Select(r => ToDto(r))
             .ToList());
@@ -169,15 +168,17 @@ public class ShiftChangeRequestsController : ControllerBase
     {
         await _permissions.RequirePermissionAsync(CurrentUserId, spaceId, Permissions.ConstraintsManage, ct);
 
-        var rows = await BuildChangeRequestQuery(spaceId, groupId).ToListAsync(ct);
+        ShiftChangeRequestStatus? parsedStatus = null;
 
         if (!string.IsNullOrWhiteSpace(status))
         {
-            if (!Enum.TryParse<ShiftChangeRequestStatus>(status, true, out var parsedStatus))
+            if (!Enum.TryParse<ShiftChangeRequestStatus>(status, true, out var value))
                 return BadRequest(new { error = "Invalid shift change request status." });
 
-            rows = rows.Where(r => r.Change.Status == parsedStatus).ToList();
+            parsedStatus = value;
         }
+
+        var rows = await BuildChangeRequestQuery(spaceId, groupId, status: parsedStatus).ToListAsync(ct);
 
         return Ok(rows
             .OrderByDescending(r => r.Change.RequestedAt)
@@ -312,14 +313,25 @@ public class ShiftChangeRequestsController : ControllerBase
         return personId == Guid.Empty ? null : personId;
     }
 
-    private IQueryable<ShiftChangeRequestRow> BuildChangeRequestQuery(Guid spaceId, Guid groupId)
+    private IQueryable<ShiftChangeRequestRow> BuildChangeRequestQuery(
+        Guid spaceId,
+        Guid groupId,
+        Guid? personId = null,
+        ShiftChangeRequestStatus? status = null)
     {
         var originalSlots = _db.ShiftSlots.AsNoTracking();
         var requestedSlots = _db.ShiftSlots.AsNoTracking();
-
-        return _db.ShiftChangeRequests
+        var changes = _db.ShiftChangeRequests
             .AsNoTracking()
-            .Where(r => r.SpaceId == spaceId && r.GroupId == groupId)
+            .Where(r => r.SpaceId == spaceId && r.GroupId == groupId);
+
+        if (personId.HasValue)
+            changes = changes.Where(r => r.PersonId == personId.Value);
+
+        if (status.HasValue)
+            changes = changes.Where(r => r.Status == status.Value);
+
+        return changes
             .Join(_db.People.AsNoTracking(), r => r.PersonId, p => p.Id, (r, p) => new { Change = r, Person = p })
             .Join(originalSlots, rp => rp.Change.OriginalShiftSlotId, s => s.Id, (rp, s) => new { rp.Change, rp.Person, OriginalSlot = s })
             .Join(_db.GroupTasks.AsNoTracking(), rps => rps.OriginalSlot.GroupTaskId, t => t.Id, (rps, t) => new { rps.Change, rps.Person, rps.OriginalSlot, OriginalTask = t })
