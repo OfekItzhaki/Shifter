@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import {
   checkUnderScheduledMembers,
   closeSelfServiceCycleWindow,
@@ -39,6 +40,7 @@ function formatCoverage(status: SelfServiceCycleStatusDto): string {
 }
 
 export default function CycleControlPanel({ spaceId, groupId }: CycleControlPanelProps) {
+  const t = useTranslations("selfService.operations.cycle");
   const [status, setStatus] = useState<SelfServiceCycleStatusDto | null>(null);
   const [loading, setLoading] = useState(true);
   const [action, setAction] = useState<string | null>(null);
@@ -98,15 +100,15 @@ export default function CycleControlPanel({ spaceId, groupId }: CycleControlPane
     <div className="rounded-xl border border-slate-200 bg-white p-6">
       <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h3 className="text-base font-semibold text-slate-900">Cycle controls</h3>
-          <p className="text-sm text-slate-500">Generate slots, manage the request window, and check shift coverage.</p>
+          <h3 className="text-base font-semibold text-slate-900">{t("title")}</h3>
+          <p className="text-sm text-slate-500">{t("description")}</p>
         </div>
         <span className={`inline-flex w-fit rounded-full px-2.5 py-1 text-xs font-medium ${
           status?.requestWindowOpen
             ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
             : "bg-slate-100 text-slate-600 border border-slate-200"
         }`}>
-          {status?.requestWindowOpen ? "Window open" : "Window closed"}
+          {status?.requestWindowOpen ? t("windowOpen") : t("windowClosed")}
         </span>
       </div>
 
@@ -117,26 +119,26 @@ export default function CycleControlPanel({ spaceId, groupId }: CycleControlPane
           {hasCycle ? (
             <>
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                <Metric label="Cycle starts" value={formatDateTime(status.startsAt)} />
-                <Metric label="Window closes" value={formatDateTime(status.requestWindowClosesAt)} />
-                <Metric label="Slots" value={`${status.slotCount}`} />
-                <Metric label="Filled" value={`${status.filledCount}/${status.totalCapacity}`} />
-                <Metric label="Coverage" value={formatCoverage(status)} />
-                <Metric label="Open seats" value={`${Math.max(status.totalCapacity - status.filledCount, 0)}`} />
-                <Metric label="Approved" value={`${status.approvedCount}`} />
-                <Metric label="Pending" value={`${status.pendingCount}`} />
-                <Metric label="Waitlist" value={`${status.waitlistCount}`} />
-                <Metric label="Absence review" value={`${status.pendingAbsenceReportCount}`} tone={status.pendingAbsenceReportCount > 0 ? "warning" : "default"} />
-                <Metric label="Late reports" value={`${status.latePendingAbsenceReportCount}`} tone={status.latePendingAbsenceReportCount > 0 ? "danger" : "default"} />
-                <Metric label="Change review" value={`${status.pendingShiftChangeRequestCount}`} tone={status.pendingShiftChangeRequestCount > 0 ? "warning" : "default"} />
-                <Metric label="Generated" value={status.isGenerated ? "Yes" : "No"} />
+                <Metric label={t("metrics.cycleStarts")} value={formatDateTime(status.startsAt)} />
+                <Metric label={t("metrics.windowCloses")} value={formatDateTime(status.requestWindowClosesAt)} />
+                <Metric label={t("metrics.slots")} value={`${status.slotCount}`} />
+                <Metric label={t("metrics.filled")} value={`${status.filledCount}/${status.totalCapacity}`} />
+                <Metric label={t("metrics.coverage")} value={formatCoverage(status)} />
+                <Metric label={t("metrics.openSeats")} value={`${Math.max(status.totalCapacity - status.filledCount, 0)}`} />
+                <Metric label={t("metrics.approved")} value={`${status.approvedCount}`} />
+                <Metric label={t("metrics.pending")} value={`${status.pendingCount}`} />
+                <Metric label={t("metrics.waitlist")} value={`${status.waitlistCount}`} />
+                <Metric label={t("metrics.absenceReview")} value={`${status.pendingAbsenceReportCount}`} tone={status.pendingAbsenceReportCount > 0 ? "warning" : "default"} />
+                <Metric label={t("metrics.lateReports")} value={`${status.latePendingAbsenceReportCount}`} tone={status.latePendingAbsenceReportCount > 0 ? "danger" : "default"} />
+                <Metric label={t("metrics.changeReview")} value={`${status.pendingShiftChangeRequestCount}`} tone={status.pendingShiftChangeRequestCount > 0 ? "warning" : "default"} />
+                <Metric label={t("metrics.generated")} value={status.isGenerated ? t("yes") : t("no")} />
               </div>
 
               {status.underfilledSlots.length > 0 && (
                 <div className="rounded-lg border border-amber-200 bg-amber-50/70 p-3">
                   <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-                    <p className="text-sm font-semibold text-amber-900">Under-filled slots</p>
-                    <p className="text-xs text-amber-700">Showing the next {status.underfilledSlots.length} gaps</p>
+                    <p className="text-sm font-semibold text-amber-900">{t("underfilledTitle")}</p>
+                    <p className="text-xs text-amber-700">{t("underfilledCount", { count: status.underfilledSlots.length })}</p>
                   </div>
                   <div className="mt-3 grid gap-2 lg:grid-cols-2">
                     {status.underfilledSlots.map((slot) => (
@@ -151,7 +153,7 @@ export default function CycleControlPanel({ spaceId, groupId }: CycleControlPane
                           </p>
                         </div>
                         <div className="shrink-0 text-right">
-                          <p className="text-sm font-semibold text-amber-800">{slot.openSeats} open</p>
+                          <p className="text-sm font-semibold text-amber-800">{t("openSeatCount", { count: slot.openSeats })}</p>
                           <p className="text-xs text-slate-500">{slot.currentFillCount}/{slot.capacity}</p>
                         </div>
                       </div>
@@ -164,24 +166,24 @@ export default function CycleControlPanel({ spaceId, groupId }: CycleControlPane
                 <MutationButton
                   onClick={() => run("open", () => openSelfServiceCycleWindow(spaceId, groupId, status.cycleId!, 24))}
                   loading={action === "open"}
-                  label="Open 24h"
-                  loadingLabel="Opening..."
+                  label={t("buttons.open")}
+                  loadingLabel={t("buttons.opening")}
                   variant="secondary"
                   disabled={!!action}
                 />
                 <MutationButton
                   onClick={() => run("close", () => closeSelfServiceCycleWindow(spaceId, groupId, status.cycleId!))}
                   loading={action === "close"}
-                  label="Close window"
-                  loadingLabel="Closing..."
+                  label={t("buttons.close")}
+                  loadingLabel={t("buttons.closing")}
                   variant="secondary"
                   disabled={!!action}
                 />
                 <MutationButton
                   onClick={handleUnderScheduled}
                   loading={action === "under"}
-                  label="Check under-scheduled"
-                  loadingLabel="Checking..."
+                  label={t("buttons.checkUnder")}
+                  loadingLabel={t("buttons.checking")}
                   variant="primary"
                   disabled={!!action}
                 />
@@ -189,7 +191,7 @@ export default function CycleControlPanel({ spaceId, groupId }: CycleControlPane
             </>
           ) : (
             <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-4">
-              <p className="text-sm text-slate-600">No upcoming self-service cycle exists yet.</p>
+              <p className="text-sm text-slate-600">{t("noCycle")}</p>
             </div>
           )}
 
@@ -197,16 +199,16 @@ export default function CycleControlPanel({ spaceId, groupId }: CycleControlPane
             <MutationButton
               onClick={() => run("generate", () => generateNextSelfServiceCycle(spaceId, groupId))}
               loading={action === "generate"}
-              label={hasCycle ? "Generate next cycle" : "Generate first cycle"}
-              loadingLabel="Generating..."
+              label={hasCycle ? t("buttons.generateNext") : t("buttons.generateFirst")}
+              loadingLabel={t("buttons.generating")}
               variant="primary"
               disabled={!!action}
             />
             <MutationButton
               onClick={load}
               loading={action === "refresh"}
-              label="Refresh"
-              loadingLabel="Refreshing..."
+              label={t("buttons.refresh")}
+              loadingLabel={t("buttons.refreshing")}
               variant="secondary"
               disabled={!!action}
             />
@@ -216,8 +218,8 @@ export default function CycleControlPanel({ spaceId, groupId }: CycleControlPane
             <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">
               <p className="text-sm font-medium text-amber-800">
                 {underScheduled.length === 0
-                  ? "Everyone meets the minimum shift requirement."
-                  : `${underScheduled.length} member(s) are below the minimum.`}
+                  ? t("underScheduledNone")
+                  : t("underScheduledCount", { count: underScheduled.length })}
               </p>
               {underScheduled.length > 0 && (
                 <ul className="mt-2 space-y-1 text-sm text-amber-700">

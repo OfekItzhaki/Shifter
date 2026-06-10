@@ -2234,6 +2234,48 @@
           "title": "Policy settings",
           "description": "Tune limits, windows, cutoffs, and waitlist offer timing."
         }
+      },
+      "cycle": {
+        "title": "Cycle controls",
+        "description": "Generate slots, manage the request window, and check shift coverage.",
+        "windowOpen": "Window open",
+        "windowClosed": "Window closed",
+        "yes": "Yes",
+        "no": "No",
+        "noCycle": "No upcoming self-service cycle exists yet.",
+        "underfilledTitle": "Under-filled slots",
+        "underfilledCount": "Showing the next {count} gaps",
+        "openSeatCount": "{count} open",
+        "underScheduledNone": "Everyone meets the minimum shift requirement.",
+        "underScheduledCount": "{count} member(s) are below the minimum.",
+        "metrics": {
+          "cycleStarts": "Cycle starts",
+          "windowCloses": "Window closes",
+          "slots": "Slots",
+          "filled": "Filled",
+          "coverage": "Coverage",
+          "openSeats": "Open seats",
+          "approved": "Approved",
+          "pending": "Pending",
+          "waitlist": "Waitlist",
+          "absenceReview": "Absence review",
+          "lateReports": "Late reports",
+          "changeReview": "Change review",
+          "generated": "Generated"
+        },
+        "buttons": {
+          "open": "Open 24h",
+          "opening": "Opening...",
+          "close": "Close window",
+          "closing": "Closing...",
+          "checkUnder": "Check under-scheduled",
+          "checking": "Checking...",
+          "generateNext": "Generate next cycle",
+          "generateFirst": "Generate first cycle",
+          "generating": "Generating...",
+          "refresh": "Refresh",
+          "refreshing": "Refreshing..."
+        }
       }
     }
   },
