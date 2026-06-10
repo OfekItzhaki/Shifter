@@ -93,6 +93,7 @@ public class SelfServiceNotificationTests
         using var db = CreateDb();
         var (spaceId, groupId, cycleId, guardTaskId, ownerUserId) = SeedBaseData(db);
         var deskTask = AddTask(db, spaceId, groupId, "Desk", ownerUserId);
+        var audit = CreateAuditLogger();
 
         var initiatorUserId = Guid.NewGuid();
         var targetUserId = Guid.NewGuid();
@@ -123,6 +124,7 @@ public class SelfServiceNotificationTests
         var service = new ShiftSwapService(
             db,
             Substitute.For<IPushNotificationSender>(),
+            audit,
             TimeProvider.System,
             NullLogger<ShiftSwapService>.Instance);
 
@@ -139,6 +141,22 @@ public class SelfServiceNotificationTests
             .Should().BeEquivalentTo([initiatorUserId, targetUserId]);
         acceptedNotifications.Should().AllSatisfy(n =>
             n.MetadataJson.Should().Contain(swap.Id.ToString()));
+
+        await audit.Received(1).LogAsync(
+            spaceId,
+            targetUserId,
+            "self_service.accept_swap",
+            "swap_request",
+            swap.Id,
+            Arg.Is<string?>(json => json != null
+                && json.Contains(swap.Id.ToString())
+                && json.Contains("\"status\":\"pending\"")),
+            Arg.Is<string?>(json => json != null
+                && json.Contains(initiatorSlot.Id.ToString())
+                && json.Contains(targetSlot.Id.ToString())
+                && json.Contains("\"status\":\"accepted\"")),
+            Arg.Is<string?>(ipAddress => ipAddress == null),
+            Arg.Any<CancellationToken>());
     }
 
     [Fact]

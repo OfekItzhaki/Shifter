@@ -1,3 +1,4 @@
+using Jobuler.Application.Common;
 using Jobuler.Application.Notifications;
 using Jobuler.Application.Scheduling.SelfService.Models;
 using Jobuler.Domain.Conflicts;
@@ -19,17 +20,20 @@ public class ShiftSwapService : IShiftSwapService
 {
     private readonly AppDbContext _db;
     private readonly IPushNotificationSender _pushSender;
+    private readonly IAuditLogger _audit;
     private readonly TimeProvider _timeProvider;
     private readonly ILogger<ShiftSwapService> _logger;
 
     public ShiftSwapService(
         AppDbContext db,
         IPushNotificationSender pushSender,
+        IAuditLogger audit,
         TimeProvider timeProvider,
         ILogger<ShiftSwapService> logger)
     {
         _db = db;
         _pushSender = pushSender;
+        _audit = audit;
         _timeProvider = timeProvider;
         _logger = logger;
     }
@@ -161,6 +165,27 @@ public class ShiftSwapService : IShiftSwapService
 
         _db.SwapRequests.Add(swapRequest);
         await _db.SaveChangesAsync(ct);
+
+        await _audit.LogAsync(
+            swapRequest.SpaceId,
+            await ResolveLinkedUserIdAsync(swapRequest.InitiatorPersonId, swapRequest.SpaceId, ct),
+            "self_service.propose_swap",
+            "swap_request",
+            swapRequest.Id,
+            afterJson: JsonSerializer.Serialize(new
+            {
+                swap_request_id = swapRequest.Id,
+                group_id = swapRequest.GroupId,
+                initiator_person_id = swapRequest.InitiatorPersonId,
+                target_person_id = swapRequest.TargetPersonId,
+                initiator_shift_request_id = swapRequest.InitiatorShiftRequestId,
+                target_shift_request_id = swapRequest.TargetShiftRequestId,
+                initiator_shift_slot_id = initiatorRequest.ShiftSlotId,
+                target_shift_slot_id = targetRequest.ShiftSlotId,
+                status = swapRequest.Status.ToString().ToLowerInvariant(),
+                expires_at = swapRequest.ExpiresAt
+            }),
+            ct: ct);
 
         _logger.LogInformation(
             "Swap request {SwapId} created: initiator {InitiatorId} offers request {InitReqId} for target request {TargetReqId}",
@@ -305,6 +330,37 @@ public class ShiftSwapService : IShiftSwapService
                 swapRequest.Accept();
 
                 await _db.SaveChangesAsync(ct);
+                await _audit.LogAsync(
+                    swapRequest.SpaceId,
+                    await ResolveLinkedUserIdAsync(swapRequest.TargetPersonId, swapRequest.SpaceId, ct),
+                    "self_service.accept_swap",
+                    "swap_request",
+                    swapRequest.Id,
+                    beforeJson: JsonSerializer.Serialize(new
+                    {
+                        swap_request_id = swapRequest.Id,
+                        group_id = swapRequest.GroupId,
+                        initiator_person_id = swapRequest.InitiatorPersonId,
+                        target_person_id = swapRequest.TargetPersonId,
+                        initiator_shift_request_id = swapRequest.InitiatorShiftRequestId,
+                        target_shift_request_id = swapRequest.TargetShiftRequestId,
+                        initiator_shift_slot_id = initiatorSlotId,
+                        target_shift_slot_id = targetSlotId,
+                        status = "pending"
+                    }),
+                    afterJson: JsonSerializer.Serialize(new
+                    {
+                        swap_request_id = swapRequest.Id,
+                        group_id = swapRequest.GroupId,
+                        initiator_person_id = swapRequest.InitiatorPersonId,
+                        target_person_id = swapRequest.TargetPersonId,
+                        initiator_shift_request_id = swapRequest.InitiatorShiftRequestId,
+                        target_shift_request_id = swapRequest.TargetShiftRequestId,
+                        initiator_new_shift_slot_id = targetSlotId,
+                        target_new_shift_slot_id = initiatorSlotId,
+                        status = swapRequest.Status.ToString().ToLowerInvariant()
+                    }),
+                    ct: ct);
                 await transaction.CommitAsync(ct);
 
                 _logger.LogInformation(
@@ -347,6 +403,29 @@ public class ShiftSwapService : IShiftSwapService
 
         swapRequest.Decline();
         await _db.SaveChangesAsync(ct);
+        await _audit.LogAsync(
+            swapRequest.SpaceId,
+            await ResolveLinkedUserIdAsync(swapRequest.TargetPersonId, swapRequest.SpaceId, ct),
+            "self_service.decline_swap",
+            "swap_request",
+            swapRequest.Id,
+            beforeJson: JsonSerializer.Serialize(new
+            {
+                swap_request_id = swapRequest.Id,
+                group_id = swapRequest.GroupId,
+                initiator_person_id = swapRequest.InitiatorPersonId,
+                target_person_id = swapRequest.TargetPersonId,
+                status = "pending"
+            }),
+            afterJson: JsonSerializer.Serialize(new
+            {
+                swap_request_id = swapRequest.Id,
+                group_id = swapRequest.GroupId,
+                initiator_person_id = swapRequest.InitiatorPersonId,
+                target_person_id = swapRequest.TargetPersonId,
+                status = swapRequest.Status.ToString().ToLowerInvariant()
+            }),
+            ct: ct);
 
         _logger.LogInformation(
             "Swap request {SwapId} declined by target {TargetId}",
@@ -378,6 +457,29 @@ public class ShiftSwapService : IShiftSwapService
 
         swapRequest.Cancel();
         await _db.SaveChangesAsync(ct);
+        await _audit.LogAsync(
+            swapRequest.SpaceId,
+            await ResolveLinkedUserIdAsync(swapRequest.InitiatorPersonId, swapRequest.SpaceId, ct),
+            "self_service.cancel_swap",
+            "swap_request",
+            swapRequest.Id,
+            beforeJson: JsonSerializer.Serialize(new
+            {
+                swap_request_id = swapRequest.Id,
+                group_id = swapRequest.GroupId,
+                initiator_person_id = swapRequest.InitiatorPersonId,
+                target_person_id = swapRequest.TargetPersonId,
+                status = "pending"
+            }),
+            afterJson: JsonSerializer.Serialize(new
+            {
+                swap_request_id = swapRequest.Id,
+                group_id = swapRequest.GroupId,
+                initiator_person_id = swapRequest.InitiatorPersonId,
+                target_person_id = swapRequest.TargetPersonId,
+                status = swapRequest.Status.ToString().ToLowerInvariant()
+            }),
+            ct: ct);
 
         _logger.LogInformation(
             "Swap request {SwapId} cancelled by initiator {InitiatorId}",
@@ -385,6 +487,13 @@ public class ShiftSwapService : IShiftSwapService
 
         await SendSwapCancelledNotificationAsync(swapRequest, ct);
     }
+
+    private async Task<Guid?> ResolveLinkedUserIdAsync(Guid personId, Guid spaceId, CancellationToken ct) =>
+        await _db.People
+            .AsNoTracking()
+            .Where(p => p.Id == personId && p.SpaceId == spaceId)
+            .Select(p => p.LinkedUserId)
+            .FirstOrDefaultAsync(ct);
 
     /// <summary>
     /// Detects conflicts in the hypothetical post-swap state for both members.
