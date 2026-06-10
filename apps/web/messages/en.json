@@ -2190,13 +2190,16 @@
     "thinking": "Thinking...",
     "fallback": "I could not answer right now. Try again or send feedback to support.",
     "noSpace": "Select a space first so I can answer in the right workspace context.",
+    "supportNoSpace": "I can still help you contact human support. Open the support request and send the details to Ofek.",
+    "supportOpened": "I opened a support request. When you submit it, it will be sent to {email}.",
     "quick": {
       "import": "How do I import a schedule?",
       "schedule": "Why did scheduling fail?",
       "support": "I need support"
     },
     "actions": {
-      "feedback": "Send feedback"
+      "feedback": "Send feedback",
+      "contact": "Contact support"
     }
   },
   "pwaInstall": {

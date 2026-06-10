@@ -233,7 +233,9 @@ public class OpenAiAssistant : IAiAssistant
             - You do not change schedules, users, billing, permissions, settings, or data.
             - If an action is needed, suggest a safe action for the app UI to show.
             - Do not claim that a human support agent has been notified unless the user explicitly uses a contact or feedback action.
+            - Human support escalation is available through the contact action. It creates a prefilled support request for OfekLabs support.
             - If the user asks for legal, billing, security, or account-critical help, be concise and suggest contacting support.
+            - If the user asks for human support, contact, escalation, a real person, or Ofek, include a contact action.
             - If the user is asking how to use Shifter, give practical step-by-step guidance.
 
             Return ONLY valid JSON in this exact shape:
@@ -269,6 +271,7 @@ public class OpenAiAssistant : IAiAssistant
                 .Take(3)
                 .Select(a => new AiChatActionDto(a.Type, a.Label, a.Payload))
                 .ToList();
+            AddSupportActionIfNeeded(request, actions);
 
             return new AiChatResponseDto(
                 string.IsNullOrWhiteSpace(parsed?.Message)
@@ -280,7 +283,8 @@ public class OpenAiAssistant : IAiAssistant
         {
             _logger.LogWarning(ex, "AI chat failed for path {CurrentPath}", request.CurrentPath);
             return new AiChatResponseDto(DefaultChatFallback(request.Locale), [
-                new AiChatActionDto("feedback", request.Locale == "he" ? "שלח פידבק" : request.Locale == "ru" ? "Отправить отзыв" : "Send feedback", null)
+                new AiChatActionDto("contact", SupportLabel(request.Locale), BuildSupportPayload(request)),
+                new AiChatActionDto("feedback", FeedbackLabel(request.Locale), null)
             ]);
         }
     }
@@ -331,6 +335,52 @@ public class OpenAiAssistant : IAiAssistant
             : locale == "ru"
                 ? "I could not answer right now. Try again or send feedback to support."
                 : "I could not answer right now. Try again or send feedback to support.";
+
+    private static void AddSupportActionIfNeeded(
+        AiChatRequestDto request,
+        List<AiChatActionDto> actions)
+    {
+        if (!LooksLikeSupportEscalation(request.Message)) return;
+        if (actions.Any(a => a.Type == "contact")) return;
+
+        actions.Insert(0, new AiChatActionDto(
+            "contact",
+            SupportLabel(request.Locale),
+            BuildSupportPayload(request)));
+    }
+
+    private static bool LooksLikeSupportEscalation(string message)
+    {
+        var normalized = message.Trim().ToLowerInvariant();
+        return normalized.Contains("support", StringComparison.Ordinal)
+            || normalized.Contains("human", StringComparison.Ordinal)
+            || normalized.Contains("contact", StringComparison.Ordinal)
+            || normalized.Contains("ofek", StringComparison.Ordinal)
+            || normalized.Contains("agent", StringComparison.Ordinal)
+            || normalized.Contains("person", StringComparison.Ordinal)
+            || normalized.Contains("תמיכה", StringComparison.Ordinal)
+            || normalized.Contains("אופק", StringComparison.Ordinal)
+            || normalized.Contains("נציג", StringComparison.Ordinal)
+            || normalized.Contains("בן אדם", StringComparison.Ordinal);
+    }
+
+    private static string SupportLabel(string locale) =>
+        locale == "he" ? "דבר עם תמיכה" : locale == "ru" ? "Связаться с поддержкой" : "Contact support";
+
+    private static string FeedbackLabel(string locale) =>
+        locale == "he" ? "שלח פידבק" : locale == "ru" ? "Отправить отзыв" : "Send feedback";
+
+    private static string BuildSupportPayload(AiChatRequestDto request) =>
+        $"""
+        Human support request
+
+        User: {request.UserDisplayName ?? "unknown"}
+        Current path: {request.CurrentPath ?? "unknown"}
+        Admin mode: {request.IsAdminMode}
+
+        Message:
+        {request.Message}
+        """;
 
     private record ParsedConstraintResponse(
         bool Parsed,

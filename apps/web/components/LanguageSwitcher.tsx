@@ -20,7 +20,7 @@ export default function LanguageSwitcher({ variant = "sidebar" }: Props) {
     router.refresh();
   }
 
-  const stroke = variant === "auth" ? "#94a3b8" : "#64748b";
+  const stroke = variant === "auth" ? "#94a3b8" : "var(--sidebar-muted)";
   const wrapperStyle = variant === "auth"
     ? { display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }
     : { padding: "8px 12px", display: "flex", alignItems: "center", gap: 6 };
@@ -47,7 +47,7 @@ export default function LanguageSwitcher({ variant = "sidebar" }: Props) {
                   ? "1px solid rgba(14,165,233,0.4)"
                   : variant === "auth" ? "1px solid #e2e8f0" : "1px solid transparent",
                 borderRadius: variant === "auth" ? 6 : 5,
-                color: active ? (variant === "auth" ? "#0ea5e9" : "#7dd3fc") : (variant === "auth" ? "#94a3b8" : "#64748b"),
+                color: active ? (variant === "auth" ? "#0ea5e9" : "var(--sidebar-link-active-fg)") : (variant === "auth" ? "#94a3b8" : "var(--sidebar-muted)"),
                 fontSize: 11,
                 fontWeight: active ? 700 : 500,
                 padding: variant === "auth" ? "3px 8px" : "2px 6px",

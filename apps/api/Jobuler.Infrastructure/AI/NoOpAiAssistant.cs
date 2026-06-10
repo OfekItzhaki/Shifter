@@ -33,11 +33,30 @@ public class NoOpAiAssistant : IAiAssistant
         AiChatRequestDto request, CancellationToken ct = default) =>
         Task.FromResult(new AiChatResponseDto(
             request.Locale == "he"
-                ? "העוזר החכם עדיין לא מוגדר. אפשר לשלוח פידבק או ליצור קשר עם התמיכה."
+                ? "העוזר החכם עדיין לא מחובר למודל AI בסביבה הזו. אפשר עדיין לשלוח בקשת תמיכה לאופק, והיא תישלח למייל התמיכה לאחר הגדרת שליחת מיילים."
                 : request.Locale == "ru"
-                    ? "AI-assistant is not configured yet. You can send feedback or contact support."
-                    : "The AI assistant is not configured yet. You can send feedback or contact support.",
+                    ? "AI assistant is not configured in this environment yet. You can still send a human support request to Ofek after email delivery is configured."
+                    : "The AI assistant is not connected to an AI model in this environment yet. You can still send a human support request to Ofek after email delivery is configured.",
             [
-                new AiChatActionDto("feedback", request.Locale == "he" ? "שלח פידבק" : request.Locale == "ru" ? "Отправить отзыв" : "Send feedback", null)
+                new AiChatActionDto("contact", SupportLabel(request.Locale), BuildSupportPayload(request)),
+                new AiChatActionDto("feedback", FeedbackLabel(request.Locale), null)
             ]));
+
+    private static string SupportLabel(string locale) =>
+        locale == "he" ? "דבר עם תמיכה" : locale == "ru" ? "Связаться с поддержкой" : "Contact support";
+
+    private static string FeedbackLabel(string locale) =>
+        locale == "he" ? "שלח פידבק" : locale == "ru" ? "Отправить отзыв" : "Send feedback";
+
+    private static string BuildSupportPayload(AiChatRequestDto request) =>
+        $"""
+        Human support request
+
+        User: {request.UserDisplayName ?? "unknown"}
+        Current path: {request.CurrentPath ?? "unknown"}
+        Admin mode: {request.IsAdminMode}
+
+        Message:
+        {request.Message}
+        """;
 }

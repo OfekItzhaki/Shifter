@@ -13,8 +13,24 @@ interface AssistantMessage extends AiChatMessage {
   actions?: AiChatAction[];
 }
 
+const SUPPORT_EMAIL = "ofeklabs@outlook.com";
+
 function newId() {
   return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function looksLikeSupportRequest(message: string) {
+  const normalized = message.trim().toLowerCase();
+  return normalized.includes("support")
+    || normalized.includes("human")
+    || normalized.includes("contact")
+    || normalized.includes("ofek")
+    || normalized.includes("agent")
+    || normalized.includes("person")
+    || normalized.includes("תמיכה")
+    || normalized.includes("אופק")
+    || normalized.includes("נציג")
+    || normalized.includes("בן אדם");
 }
 
 export default function ShifterAssistant() {
@@ -46,10 +62,14 @@ export default function ShifterAssistant() {
     if (!trimmed || loading) return;
 
     if (!currentSpaceId) {
+      const actions: AiChatAction[] = looksLikeSupportRequest(trimmed)
+        ? [{ type: "contact", label: t("actions.contact"), payload: buildSupportPayload(trimmed) }]
+        : [];
+
       setMessages((prev) => [
         ...prev,
         { id: newId(), role: "user", content: trimmed },
-        { id: newId(), role: "assistant", content: t("noSpace") },
+        { id: newId(), role: "assistant", content: actions.length ? t("supportNoSpace") : t("noSpace"), actions },
       ]);
       setInput("");
       return;
@@ -90,12 +110,32 @@ export default function ShifterAssistant() {
           id: newId(),
           role: "assistant",
           content: t("fallback"),
-          actions: [{ type: "feedback", label: t("actions.feedback"), payload: null }],
+          actions: [
+            { type: "contact", label: t("actions.contact"), payload: buildSupportPayload(trimmed) },
+            { type: "feedback", label: t("actions.feedback"), payload: null },
+          ],
         },
       ]);
     } finally {
       setLoading(false);
     }
+  }
+
+  function buildSupportPayload(message: string) {
+    return [
+      "Human support request",
+      "",
+      `Current path: ${pathname}`,
+      `Admin mode: ${Boolean(adminGroupId)}`,
+      `Support email: ${SUPPORT_EMAIL}`,
+      "",
+      "Message:",
+      message,
+    ].join("\n");
+  }
+
+  function lastUserMessage() {
+    return [...messages].reverse().find((message) => message.role === "user")?.content ?? "";
   }
 
   function handleSubmit(event: FormEvent) {
@@ -110,7 +150,18 @@ export default function ShifterAssistant() {
     }
 
     if (action.type === "contact") {
-      openFeedbackModal({ type: "feedback", initialDescription: action.payload ?? undefined });
+      openFeedbackModal({
+        type: "feedback",
+        initialDescription: action.payload ?? buildSupportPayload(lastUserMessage()),
+      });
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: newId(),
+          role: "assistant",
+          content: t("supportOpened", { email: SUPPORT_EMAIL }),
+        },
+      ]);
       return;
     }
 

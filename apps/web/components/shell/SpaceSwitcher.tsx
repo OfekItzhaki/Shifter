@@ -23,9 +23,9 @@ export default function SpaceSwitcher() {
   useEffect(() => {
     if (!hasMounted) return;
 
-    setLoadError(false);
     getMySpaces()
       .then((fetched) => {
+        setLoadError(false);
         setSpaces(fetched);
 
         // Handle invalid persisted space: if the stored space is not in the
@@ -138,7 +138,7 @@ export default function SpaceSwitcher() {
           height="14"
           fill="none"
           viewBox="0 0 24 24"
-          stroke="#64748b"
+          stroke="var(--sidebar-muted)"
           strokeWidth={2}
         >
           <path
@@ -149,7 +149,7 @@ export default function SpaceSwitcher() {
         </svg>
         <span
           style={{
-            color: "#94a3b8",
+            color: "var(--sidebar-muted)",
             fontSize: 11,
             flex: 1,
             overflow: "hidden",
@@ -164,7 +164,7 @@ export default function SpaceSwitcher() {
           height="10"
           fill="none"
           viewBox="0 0 24 24"
-          stroke="#64748b"
+          stroke="var(--sidebar-muted)"
           strokeWidth={2}
           style={{
             flexShrink: 0,
@@ -189,8 +189,8 @@ export default function SpaceSwitcher() {
             left: 0,
             right: 0,
             marginTop: 4,
-            background: "#1e293b",
-            border: "1px solid rgba(255,255,255,0.1)",
+            background: "var(--app-surface)",
+            border: "1px solid var(--sidebar-border)",
             borderRadius: 10,
             boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
             zIndex: 50,
@@ -211,7 +211,7 @@ export default function SpaceSwitcher() {
                   margin: "6px auto 0",
                   padding: "4px 10px",
                   borderRadius: 4,
-                  border: "1px solid rgba(255,255,255,0.15)",
+                  border: "1px solid var(--sidebar-border)",
                   background: "transparent",
                   color: "#0ea5e9",
                   fontSize: 11,
@@ -242,7 +242,7 @@ export default function SpaceSwitcher() {
                         ? "rgba(14,165,233,0.15)"
                         : "transparent",
                     color:
-                      space.id === currentSpaceId ? "#7dd3fc" : "#94a3b8",
+                      space.id === currentSpaceId ? "var(--sidebar-link-active-fg)" : "var(--sidebar-muted)",
                     fontSize: 12,
                     fontWeight: space.id === currentSpaceId ? 600 : 400,
                     cursor: "pointer",
@@ -275,7 +275,7 @@ export default function SpaceSwitcher() {
 
               <div
                 style={{
-                  borderTop: "1px solid rgba(255,255,255,0.08)",
+                  borderTop: "1px solid var(--sidebar-section-border)",
                   margin: "4px 0",
                 }}
               />

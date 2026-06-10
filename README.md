@@ -62,6 +62,9 @@ For Docker Compose, copy `infra/compose/.env.example` to `infra/compose/.env` an
 | `Jwt__Issuer` | JWT issuer claim |
 | `Jwt__Audience` | JWT audience claim |
 | `AI__ApiKey` | OpenAI API key (optional) |
+| `AI__Model` | OpenAI model for assistant/import features, defaults to `gpt-4o` |
+| `Feedback__DeveloperEmail` | Human support recipient for feedback/escalation emails |
+| `SendGrid__ApiKey` | SendGrid API key for real email delivery; without it feedback is logged only |
 | `Solver__BaseUrl` | URL of the Python solver service |
 | `NEXT_PUBLIC_API_URL` | Frontend base URL for the API |
 
