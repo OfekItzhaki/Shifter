@@ -33,7 +33,8 @@ public class SpecialLeaveRequestCommandTests
         await db.SaveChangesAsync();
 
         var notifications = Substitute.For<INotificationService>();
-        var handler = new SubmitSpecialLeaveRequestCommandHandler(db, notifications);
+        var audit = CreateAuditLogger();
+        var handler = new SubmitSpecialLeaveRequestCommandHandler(db, notifications, audit);
         var start = DateTime.UtcNow.AddDays(3);
 
         var requestId = await handler.Handle(new SubmitSpecialLeaveRequestCommand(
@@ -50,6 +51,21 @@ public class SpecialLeaveRequestCommandTests
             Arg.Is<string>(body => body.Contains("Ofek") && body.Contains("requested time off")),
             Arg.Is<string>(metadata => metadata.Contains(requestId.ToString()) && metadata.Contains("\"reason\":\"Wedding\"")),
             null,
+            Arg.Any<CancellationToken>());
+
+        await audit.Received(1).LogAsync(
+            spaceId,
+            userId,
+            "self_service.submit_special_leave",
+            "special_leave_request",
+            requestId,
+            Arg.Is<string?>(json => json == null),
+            Arg.Is<string?>(json => json != null
+                && json.Contains(requestId.ToString())
+                && json.Contains(person.Id.ToString())
+                && json.Contains("\"reason\":\"Wedding\"")
+                && json.Contains("\"status\":\"pending\"")),
+            Arg.Is<string?>(ipAddress => ipAddress == null),
             Arg.Any<CancellationToken>());
     }
 
@@ -139,7 +155,10 @@ public class SpecialLeaveRequestCommandTests
             spaceId, person.Id, start, start.AddDays(1), "Family event", userId));
         await db.SaveChangesAsync();
 
-        var handler = new SubmitSpecialLeaveRequestCommandHandler(db, Substitute.For<INotificationService>());
+        var handler = new SubmitSpecialLeaveRequestCommandHandler(
+            db,
+            Substitute.For<INotificationService>(),
+            CreateAuditLogger());
 
         var act = () => handler.Handle(new SubmitSpecialLeaveRequestCommand(
             spaceId, person.Id, start.AddHours(2), start.AddHours(4), "Other event", userId), CancellationToken.None);
@@ -164,7 +183,8 @@ public class SpecialLeaveRequestCommandTests
         await db.SaveChangesAsync();
 
         var notifications = Substitute.For<INotificationService>();
-        var handler = new CancelSpecialLeaveRequestCommandHandler(db, notifications);
+        var audit = CreateAuditLogger();
+        var handler = new CancelSpecialLeaveRequestCommandHandler(db, notifications, audit);
 
         await handler.Handle(new CancelSpecialLeaveRequestCommand(
             spaceId, request.Id, person.Id), CancellationToken.None);
@@ -178,6 +198,23 @@ public class SpecialLeaveRequestCommandTests
             Arg.Is<string>(body => body.Contains("Ofek") && body.Contains("cancelled a time-off request")),
             Arg.Is<string>(metadata => metadata.Contains(request.Id.ToString()) && metadata.Contains("\"reason\":\"Family event\"")),
             null,
+            Arg.Any<CancellationToken>());
+
+        await audit.Received(1).LogAsync(
+            spaceId,
+            userId,
+            "self_service.cancel_special_leave",
+            "special_leave_request",
+            request.Id,
+            Arg.Is<string?>(json => json != null
+                && json.Contains(request.Id.ToString())
+                && json.Contains("\"status\":\"pending\"")),
+            Arg.Is<string?>(json => json != null
+                && json.Contains(request.Id.ToString())
+                && json.Contains(person.Id.ToString())
+                && json.Contains("\"reason\":\"Family event\"")
+                && json.Contains("\"status\":\"cancelled\"")),
+            Arg.Is<string?>(ipAddress => ipAddress == null),
             Arg.Any<CancellationToken>());
     }
 
@@ -245,5 +282,22 @@ public class SpecialLeaveRequestCommandTests
         result.Should().ContainSingle();
         result[0].Id.Should().Be(request.Id);
         result[0].PersonId.Should().Be(member.Id);
+    }
+
+    private static IAuditLogger CreateAuditLogger()
+    {
+        var audit = Substitute.For<IAuditLogger>();
+        audit.LogAsync(
+                Arg.Any<Guid?>(),
+                Arg.Any<Guid?>(),
+                Arg.Any<string>(),
+                Arg.Any<string?>(),
+                Arg.Any<Guid?>(),
+                Arg.Any<string?>(),
+                Arg.Any<string?>(),
+                Arg.Any<string?>(),
+                Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+        return audit;
     }
 }

@@ -23,11 +23,16 @@ public class SubmitSpecialLeaveRequestCommandHandler
 {
     private readonly AppDbContext _db;
     private readonly INotificationService _notifications;
+    private readonly IAuditLogger _audit;
 
-    public SubmitSpecialLeaveRequestCommandHandler(AppDbContext db, INotificationService notifications)
+    public SubmitSpecialLeaveRequestCommandHandler(
+        AppDbContext db,
+        INotificationService notifications,
+        IAuditLogger audit)
     {
         _db = db;
         _notifications = notifications;
+        _audit = audit;
     }
 
     public async Task<Guid> Handle(SubmitSpecialLeaveRequestCommand req, CancellationToken ct)
@@ -58,6 +63,24 @@ public class SubmitSpecialLeaveRequestCommandHandler
 
         _db.SpecialLeaveRequests.Add(request);
         await _db.SaveChangesAsync(ct);
+
+        await _audit.LogAsync(
+            req.SpaceId,
+            req.RequestedByUserId,
+            "self_service.submit_special_leave",
+            "special_leave_request",
+            request.Id,
+            afterJson: JsonSerializer.Serialize(new
+            {
+                request_id = request.Id,
+                person_id = req.PersonId,
+                starts_at = request.StartsAt,
+                ends_at = request.EndsAt,
+                reason = request.Reason,
+                status = request.Status.ToString().ToLowerInvariant()
+            }),
+            ct: ct);
+
         await _notifications.NotifySpaceAdminsAsync(
             req.SpaceId,
             "self_service.special_leave_requested",
@@ -256,11 +279,16 @@ public class CancelSpecialLeaveRequestCommandHandler
 {
     private readonly AppDbContext _db;
     private readonly INotificationService _notifications;
+    private readonly IAuditLogger _audit;
 
-    public CancelSpecialLeaveRequestCommandHandler(AppDbContext db, INotificationService notifications)
+    public CancelSpecialLeaveRequestCommandHandler(
+        AppDbContext db,
+        INotificationService notifications,
+        IAuditLogger audit)
     {
         _db = db;
         _notifications = notifications;
+        _audit = audit;
     }
 
     public async Task Handle(CancelSpecialLeaveRequestCommand req, CancellationToken ct)
@@ -271,25 +299,52 @@ public class CancelSpecialLeaveRequestCommandHandler
                 && r.PersonId == req.PersonId, ct)
             ?? throw new KeyNotFoundException("Special leave request not found.");
 
-        var personName = await _db.People
+        var person = await _db.People
             .AsNoTracking()
             .Where(p => p.Id == request.PersonId && p.SpaceId == request.SpaceId)
-            .Select(p => p.DisplayName ?? p.FullName)
-            .FirstOrDefaultAsync(ct) ?? "Member";
+            .Select(p => new { Name = p.DisplayName ?? p.FullName, p.LinkedUserId })
+            .FirstOrDefaultAsync(ct);
 
+        var previousStatus = request.Status.ToString().ToLowerInvariant();
         request.Cancel();
         await _db.SaveChangesAsync(ct);
+
+        await _audit.LogAsync(
+            req.SpaceId,
+            person?.LinkedUserId,
+            "self_service.cancel_special_leave",
+            "special_leave_request",
+            request.Id,
+            beforeJson: JsonSerializer.Serialize(new
+            {
+                request_id = request.Id,
+                person_id = request.PersonId,
+                starts_at = request.StartsAt,
+                ends_at = request.EndsAt,
+                reason = request.Reason,
+                status = previousStatus
+            }),
+            afterJson: JsonSerializer.Serialize(new
+            {
+                request_id = request.Id,
+                person_id = request.PersonId,
+                starts_at = request.StartsAt,
+                ends_at = request.EndsAt,
+                reason = request.Reason,
+                status = request.Status.ToString().ToLowerInvariant()
+            }),
+            ct: ct);
 
         await _notifications.NotifySpaceAdminsAsync(
             req.SpaceId,
             "self_service.special_leave_cancelled",
             "Time-off Request Cancelled",
-            $"{personName} cancelled a time-off request from {request.StartsAt:MMM dd HH:mm} to {request.EndsAt:MMM dd HH:mm}.",
+            $"{person?.Name ?? "Member"} cancelled a time-off request from {request.StartsAt:MMM dd HH:mm} to {request.EndsAt:MMM dd HH:mm}.",
             JsonSerializer.Serialize(new
             {
                 requestId = request.Id,
                 personId = request.PersonId,
-                personName,
+                personName = person?.Name ?? "Member",
                 startsAt = request.StartsAt,
                 endsAt = request.EndsAt,
                 reason = request.Reason
