@@ -2,7 +2,7 @@
 
 import { useTranslations } from "next-intl";
 
-export type PickerTab = "slots" | "my-shifts" | "waitlist" | "swaps";
+export type PickerTab = "status" | "slots" | "my-shifts" | "waitlist" | "swaps";
 
 export interface PickerTabsProps {
   activeTab: PickerTab;
@@ -20,6 +20,7 @@ export default function PickerTabs({ activeTab, onTabChange }: PickerTabsProps) 
   const t = useTranslations("pick");
 
   const tabs: { id: PickerTab; label: string }[] = [
+    { id: "status", label: t("tabs.status") },
     { id: "slots", label: t("tabs.slots") },
     { id: "my-shifts", label: t("tabs.myShifts") },
     { id: "waitlist", label: t("tabs.waitlist") },
@@ -28,7 +29,7 @@ export default function PickerTabs({ activeTab, onTabChange }: PickerTabsProps) 
 
   return (
     <div
-      className="flex gap-1 bg-slate-100 p-1 rounded-xl"
+      className="flex gap-1 overflow-x-auto bg-slate-100 p-1 rounded-xl"
       role="tablist"
       aria-label={t("title")}
     >
@@ -39,7 +40,7 @@ export default function PickerTabs({ activeTab, onTabChange }: PickerTabsProps) 
           aria-selected={activeTab === tab.id}
           aria-controls={`panel-${tab.id}`}
           onClick={() => onTabChange(tab.id)}
-          className={`flex-1 min-h-[44px] min-w-[44px] px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all ${
+          className={`min-h-[44px] min-w-fit flex-1 px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all ${
             activeTab === tab.id
               ? "bg-white text-slate-900 shadow-sm"
               : "text-slate-500 hover:text-slate-700"

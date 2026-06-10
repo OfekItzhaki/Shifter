@@ -2237,6 +2237,7 @@
     "selectGroup": "Select Group",
     "noGroups": "No self-service groups available",
     "tabs": {
+      "status": "Status",
       "slots": "Available Shifts",
       "myShifts": "My Shifts",
       "waitlist": "Waitlist",
@@ -2246,7 +2247,43 @@
     "back": "Back",
     "memberCount": "{count} members",
     "error": "Error loading data",
-    "retry": "Retry"
+    "retry": "Retry",
+    "status": {
+      "title": "My status",
+      "shiftProgress": "{current}/{max} shifts selected. Minimum: {min}.",
+      "belowMinimum": "Below minimum",
+      "onTrack": "On track",
+      "approved": "Approved",
+      "openSlots": "Open slots",
+      "pendingRequests": "Pending requests",
+      "activeWaitlist": "Waitlist",
+      "nextShift": "Next shift",
+      "noUpcomingShift": "No upcoming approved shift yet.",
+      "cards": {
+        "pick": {
+          "title": "Pick shifts",
+          "description": "Browse open shifts and request another slot when needed.",
+          "underMinimum": "You are below the minimum for this cycle. Pick another shift if you can.",
+          "button": "Browse shifts"
+        },
+        "waitlist": {
+          "title": "Waitlist",
+          "description": "Track waiting positions and offers for full shifts.",
+          "offer": "You have a waitlist offer waiting for action.",
+          "button": "Open waitlist"
+        },
+        "swaps": {
+          "title": "Swaps",
+          "description": "Review incoming swaps or propose a swap with another member.",
+          "button": "Open swaps"
+        },
+        "requests": {
+          "title": "Requests",
+          "description": "{count} shift-change request(s) are waiting for review.",
+          "button": "Open my shifts"
+        }
+      }
+    }
   },
   "trialBanner": {
     "subscriptionEnded": "Your subscription has ended. Renew to continue using the automatic scheduler.",

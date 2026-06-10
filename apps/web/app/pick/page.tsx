@@ -21,6 +21,7 @@ import ErrorRetry from "@/components/groups/selfService/ErrorRetry";
 
 // Lazy-load tab content components for code splitting
 const SlotBrowserTab = lazy(() => import("@/app/groups/[groupId]/tabs/SlotBrowserTab"));
+const PickStatusTab = lazy(() => import("@/components/pick/PickStatusTab"));
 const MyShiftsTab = lazy(() => import("@/components/groups/selfService/MyShiftsTab"));
 const WaitlistTab = lazy(() => import("@/app/groups/[groupId]/tabs/WaitlistTab"));
 const SwapsTab = lazy(() => import("@/app/groups/[groupId]/tabs/SwapsTab"));
@@ -44,7 +45,7 @@ export default function PickPage() {
   const [selfServiceGroups, setSelfServiceGroups] = useState<GroupWithMemberCountDto[]>([]);
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
   const [selectedGroupName, setSelectedGroupName] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<PickerTab>("slots");
+  const [activeTab, setActiveTab] = useState<PickerTab>("status");
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -92,7 +93,7 @@ export default function PickPage() {
 
   useEffect(() => {
     if (isLoggedIn && currentSpaceId) {
-      loadGroups();
+      void Promise.resolve().then(loadGroups);
     }
   }, [isLoggedIn, currentSpaceId, loadGroups]);
 
@@ -103,7 +104,7 @@ export default function PickPage() {
     setSelectedGroupName(groupName);
     setMembers([]);
     setMembersError(null);
-    setActiveTab("slots");
+    setActiveTab("status");
     setPhase("slot-browser");
   }, []);
 
@@ -204,6 +205,14 @@ export default function PickPage() {
                     spaceId={currentSpaceId}
                     groupId={selectedGroupId}
                     isAdmin={false}
+                  />
+                )}
+                {activeTab === "status" && (
+                  <PickStatusTab
+                    key={`status-${refreshKey}`}
+                    spaceId={currentSpaceId}
+                    groupId={selectedGroupId}
+                    onNavigate={handleTabChange}
                   />
                 )}
                 {activeTab === "my-shifts" && (
