@@ -25,6 +25,7 @@ public class ShiftRequestsController : ControllerBase
     private readonly IPermissionService _permissions;
     private readonly IShiftRequestService _shiftRequestService;
     private readonly IPushNotificationSender _pushSender;
+    private readonly IAuditLogger _audit;
     private readonly AppDbContext _db;
 
     public ShiftRequestsController(
@@ -32,12 +33,14 @@ public class ShiftRequestsController : ControllerBase
         IPermissionService permissions,
         IShiftRequestService shiftRequestService,
         IPushNotificationSender pushSender,
+        IAuditLogger audit,
         AppDbContext db)
     {
         _mediator = mediator;
         _permissions = permissions;
         _shiftRequestService = shiftRequestService;
         _pushSender = pushSender;
+        _audit = audit;
         _db = db;
     }
 
@@ -304,6 +307,36 @@ public class ShiftRequestsController : ControllerBase
         {
             report.Approve(CurrentUserId, req.AdminNote);
             await _db.SaveChangesAsync(ct);
+            await _audit.LogAsync(
+                spaceId,
+                CurrentUserId,
+                "self_service.approve_absence_report",
+                "shift_absence_report",
+                report.Id,
+                beforeJson: JsonSerializer.Serialize(new
+                {
+                    absence_report_id = report.Id,
+                    shift_request_id = report.ShiftRequestId,
+                    person_id = report.PersonId,
+                    group_id = report.GroupId,
+                    scheduling_cycle_id = report.SchedulingCycleId,
+                    shift_slot_id = report.ShiftSlotId,
+                    is_late = report.IsLate,
+                    status = "pending"
+                }),
+                afterJson: JsonSerializer.Serialize(new
+                {
+                    absence_report_id = report.Id,
+                    shift_request_id = report.ShiftRequestId,
+                    person_id = report.PersonId,
+                    group_id = report.GroupId,
+                    scheduling_cycle_id = report.SchedulingCycleId,
+                    shift_slot_id = report.ShiftSlotId,
+                    is_late = report.IsLate,
+                    status = report.Status.ToString().ToLowerInvariant(),
+                    admin_note = report.AdminNote
+                }),
+                ct: ct);
             await SendAbsenceReviewNotificationAsync(report, approved: true, ct);
         }
         catch (InvalidOperationException ex)
@@ -334,6 +367,36 @@ public class ShiftRequestsController : ControllerBase
         {
             report.Reject(CurrentUserId, req.AdminNote);
             await _db.SaveChangesAsync(ct);
+            await _audit.LogAsync(
+                spaceId,
+                CurrentUserId,
+                "self_service.reject_absence_report",
+                "shift_absence_report",
+                report.Id,
+                beforeJson: JsonSerializer.Serialize(new
+                {
+                    absence_report_id = report.Id,
+                    shift_request_id = report.ShiftRequestId,
+                    person_id = report.PersonId,
+                    group_id = report.GroupId,
+                    scheduling_cycle_id = report.SchedulingCycleId,
+                    shift_slot_id = report.ShiftSlotId,
+                    is_late = report.IsLate,
+                    status = "pending"
+                }),
+                afterJson: JsonSerializer.Serialize(new
+                {
+                    absence_report_id = report.Id,
+                    shift_request_id = report.ShiftRequestId,
+                    person_id = report.PersonId,
+                    group_id = report.GroupId,
+                    scheduling_cycle_id = report.SchedulingCycleId,
+                    shift_slot_id = report.ShiftSlotId,
+                    is_late = report.IsLate,
+                    status = report.Status.ToString().ToLowerInvariant(),
+                    admin_note = report.AdminNote
+                }),
+                ct: ct);
             await SendAbsenceReviewNotificationAsync(report, approved: false, ct);
         }
         catch (InvalidOperationException ex)

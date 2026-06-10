@@ -166,6 +166,7 @@ public class SelfServiceScopeTests
             services.Permissions,
             services.ShiftRequestService,
             services.PushSender,
+            services.Audit,
             db);
         controller.ControllerContext = CreateControllerContext(userId);
 
@@ -1017,6 +1018,83 @@ public class SelfServiceScopeTests
     }
 
     [Fact]
+    public async Task ApproveAbsenceReport_AuditsReview_WhenPendingReportIsApproved()
+    {
+        using var db = CreateDb();
+        var services = CreateControllerServices();
+        var spaceId = Guid.NewGuid();
+        var group = Group.Create(spaceId, null, "Route Group");
+        var userId = Guid.NewGuid();
+        var adminUserId = Guid.NewGuid();
+        var ownerUserId = Guid.NewGuid();
+        var person = Person.Create(spaceId, "Member", linkedUserId: userId);
+        var cycle = CreateCycle(spaceId, group.Id);
+        var task = CreateTask(spaceId, group.Id, "Task", ownerUserId);
+        var slot = CreateSlot(spaceId, group.Id, task.Id, cycle.Id, daysFromNow: 2);
+        var shiftRequest = ShiftRequest.Create(spaceId, slot.Id, person.Id, group.Id, cycle.Id);
+        shiftRequest.Approve();
+        var report = ShiftAbsenceReport.Create(
+            spaceId,
+            group.Id,
+            cycle.Id,
+            shiftRequest.Id,
+            slot.Id,
+            person.Id,
+            "Sick",
+            isLate: true,
+            DateTime.UtcNow);
+
+        db.People.Add(person);
+        db.Groups.Add(group);
+        db.GroupMemberships.Add(GroupMembership.Create(spaceId, group.Id, person.Id));
+        db.SchedulingCycles.Add(cycle);
+        db.GroupTasks.Add(task);
+        db.ShiftSlots.Add(slot);
+        db.ShiftRequests.Add(shiftRequest);
+        db.ShiftAbsenceReports.Add(report);
+        await db.SaveChangesAsync();
+
+        services.Permissions
+            .RequirePermissionAsync(adminUserId, spaceId, Permissions.ConstraintsManage, Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+
+        var controller = new ShiftRequestsController(
+            services.Mediator,
+            services.Permissions,
+            services.ShiftRequestService,
+            services.PushSender,
+            services.Audit,
+            db);
+        controller.ControllerContext = CreateControllerContext(adminUserId);
+
+        var result = await controller.ApproveAbsenceReport(
+            spaceId,
+            group.Id,
+            report.Id,
+            new ReviewAbsenceReportRequest("Accepted"),
+            CancellationToken.None);
+
+        result.Should().BeOfType<NoContentResult>();
+
+        await services.Audit.Received(1).LogAsync(
+            spaceId,
+            adminUserId,
+            "self_service.approve_absence_report",
+            "shift_absence_report",
+            report.Id,
+            Arg.Is<string?>(json => json != null
+                && json.Contains(report.Id.ToString())
+                && json.Contains("\"status\":\"pending\"")
+                && json.Contains("\"is_late\":true")),
+            Arg.Is<string?>(json => json != null
+                && json.Contains(shiftRequest.Id.ToString())
+                && json.Contains("\"status\":\"approved\"")
+                && json.Contains("\"admin_note\":\"Accepted\"")),
+            Arg.Is<string?>(ipAddress => ipAddress == null),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task ApproveAbsenceReport_Returns422_WhenReportIsAlreadyReviewed()
     {
         using var db = CreateDb();
@@ -1063,6 +1141,7 @@ public class SelfServiceScopeTests
             services.Permissions,
             services.ShiftRequestService,
             services.PushSender,
+            services.Audit,
             db);
         controller.ControllerContext = CreateControllerContext(adminUserId);
 
@@ -1167,6 +1246,7 @@ public class SelfServiceScopeTests
             services.Permissions,
             services.ShiftRequestService,
             services.PushSender,
+            services.Audit,
             db);
         controller.ControllerContext = CreateControllerContext(userId);
 

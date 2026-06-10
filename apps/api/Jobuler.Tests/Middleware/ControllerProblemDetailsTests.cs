@@ -29,6 +29,7 @@ public class ControllerProblemDetailsTests
     private readonly IShiftRequestService _shiftRequestService = Substitute.For<IShiftRequestService>();
     private readonly IWaitlistService _waitlistService = Substitute.For<IWaitlistService>();
     private readonly IPushNotificationSender _pushSender = Substitute.For<IPushNotificationSender>();
+    private readonly IAuditLogger _audit = Substitute.For<IAuditLogger>();
 
     private static AppDbContext CreateDb()
     {
@@ -53,7 +54,7 @@ public class ControllerProblemDetailsTests
 
     private ShiftRequestsController CreateShiftRequestsController(AppDbContext db, HttpContext httpContext)
     {
-        var controller = new ShiftRequestsController(_mediator, _permissions, _shiftRequestService, _pushSender, db);
+        var controller = new ShiftRequestsController(_mediator, _permissions, _shiftRequestService, _pushSender, _audit, db);
         controller.ControllerContext = new ControllerContext
         {
             HttpContext = httpContext
