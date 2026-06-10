@@ -71,6 +71,51 @@ public class SelfServiceScopeTests
     }
 
     [Fact]
+    public async Task GetAdminWaitlistEntriesQuery_ReturnsOnlyActiveEntriesForRequestedGroup()
+    {
+        using var db = CreateDb();
+        var spaceId = Guid.NewGuid();
+        var ownerUserId = Guid.NewGuid();
+        var routeMember = Person.Create(spaceId, "Route Member", displayName: "Route Display", linkedUserId: Guid.NewGuid());
+        var otherMember = Person.Create(spaceId, "Other Member", linkedUserId: Guid.NewGuid());
+        var removedMember = Person.Create(spaceId, "Removed Member", linkedUserId: Guid.NewGuid());
+        var groupA = Group.Create(spaceId, null, "Group A");
+        var groupB = Group.Create(spaceId, null, "Group B");
+        var cycleA = CreateCycle(spaceId, groupA.Id);
+        var cycleB = CreateCycle(spaceId, groupB.Id);
+        var taskA = CreateTask(spaceId, groupA.Id, "A", ownerUserId);
+        var taskB = CreateTask(spaceId, groupB.Id, "B", ownerUserId);
+        var slotA = CreateSlot(spaceId, groupA.Id, taskA.Id, cycleA.Id, daysFromNow: 2);
+        var slotB = CreateSlot(spaceId, groupB.Id, taskB.Id, cycleB.Id, daysFromNow: 3);
+        var activeEntry = WaitlistEntry.Create(spaceId, slotA.Id, routeMember.Id, position: 1);
+        var removedEntry = WaitlistEntry.Create(spaceId, slotA.Id, removedMember.Id, position: 2);
+        removedEntry.Remove();
+
+        db.People.AddRange(routeMember, otherMember, removedMember);
+        db.Groups.AddRange(groupA, groupB);
+        db.SchedulingCycles.AddRange(cycleA, cycleB);
+        db.GroupTasks.AddRange(taskA, taskB);
+        db.ShiftSlots.AddRange(slotA, slotB);
+        db.WaitlistEntries.AddRange(
+            activeEntry,
+            removedEntry,
+            WaitlistEntry.Create(spaceId, slotB.Id, otherMember.Id, position: 1));
+        await db.SaveChangesAsync();
+
+        var handler = new GetAdminWaitlistEntriesQueryHandler(db);
+
+        var result = await handler.Handle(
+            new GetAdminWaitlistEntriesQuery(spaceId, groupA.Id),
+            CancellationToken.None);
+
+        result.Should().ContainSingle();
+        result[0].ShiftSlotId.Should().Be(slotA.Id);
+        result[0].PersonId.Should().Be(routeMember.Id);
+        result[0].PersonName.Should().Be("Route Display");
+        result[0].TaskName.Should().Be("A");
+    }
+
+    [Fact]
     public async Task GetAvailableSlotsQuery_ReturnsEmpty_WhenLinkedPersonIsNotGroupMember()
     {
         using var db = CreateDb();

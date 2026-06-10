@@ -1735,7 +1735,7 @@ export default function GroupDetailPage() {
           )}
 
           {activeTab === "waitlist" && currentSpaceId && (
-            <WaitlistTab spaceId={currentSpaceId} groupId={groupId} />
+            <WaitlistTab spaceId={currentSpaceId} groupId={groupId} isAdmin={isAdmin} />
           )}
 
           {activeTab === "swaps" && currentSpaceId && (

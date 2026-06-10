@@ -17,7 +17,7 @@ import MutationButton from "./MutationButton";
 interface CycleControlPanelProps {
   spaceId: string;
   groupId: string;
-  onNavigate?: (tab: "absence-reports") => void;
+  onNavigate?: (tab: "absence-reports" | "waitlist") => void;
 }
 
 function formatDateTime(value: string | null): string {
@@ -128,7 +128,13 @@ export default function CycleControlPanel({ spaceId, groupId, onNavigate }: Cycl
                 <Metric label={t("metrics.openSeats")} value={`${Math.max(status.totalCapacity - status.filledCount, 0)}`} />
                 <Metric label={t("metrics.approved")} value={`${status.approvedCount}`} />
                 <Metric label={t("metrics.pending")} value={`${status.pendingCount}`} />
-                <Metric label={t("metrics.waitlist")} value={`${status.waitlistCount}`} />
+                <Metric
+                  label={t("metrics.waitlist")}
+                  value={`${status.waitlistCount}`}
+                  tone={status.waitlistCount > 0 ? "warning" : "default"}
+                  actionLabel={t("openReviewQueue", { queue: t("metrics.waitlist") })}
+                  onClick={onNavigate ? () => onNavigate("waitlist") : undefined}
+                />
                 <Metric
                   label={t("metrics.absenceReview")}
                   value={`${status.pendingAbsenceReportCount}`}

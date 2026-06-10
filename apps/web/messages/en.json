@@ -2053,6 +2053,9 @@
       "countdown": "{time} remaining",
       "offerExpires": "Offer expires in {time}",
       "noEntries": "No waitlist entries",
+      "adminTitle": "Active waitlist queue",
+      "adminDescription": "Members currently waiting or holding an offer for this group.",
+      "adminCount": "{count} active",
       "maxShiftsReached": "You have reached the maximum shifts. The offer has been passed to the next person."
     },
     "swaps": {
@@ -2225,6 +2228,10 @@
         "reviews": {
           "title": "Review requests",
           "description": "Approve absence reports, shift-change requests, and time-off requests."
+        },
+        "waitlist": {
+          "title": "Waitlist queue",
+          "description": "See who is waiting or holding an offer when full shifts open up."
         },
         "overrides": {
           "title": "Manual overrides",

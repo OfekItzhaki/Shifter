@@ -7,7 +7,8 @@ type SelfServiceOpsTarget =
   | "absence-reports"
   | "admin-overrides"
   | "shift-templates"
-  | "self-service-config";
+  | "self-service-config"
+  | "waitlist";
 
 interface SelfServiceOperationsTabProps {
   spaceId: string;
@@ -17,6 +18,7 @@ interface SelfServiceOperationsTabProps {
 
 const ACTIONS: { target: SelfServiceOpsTarget; key: string }[] = [
   { target: "absence-reports", key: "reviews" },
+  { target: "waitlist", key: "waitlist" },
   { target: "admin-overrides", key: "overrides" },
   { target: "shift-templates", key: "templates" },
   { target: "self-service-config", key: "policy" },

@@ -4,9 +4,11 @@ import { useEffect, useState, useCallback } from "react";
 import { useTranslations } from "next-intl";
 import Modal from "@/components/Modal";
 import {
+  getAdminWaitlistEntries,
   getMyWaitlistEntries,
   acceptWaitlistOffer,
   leaveWaitlist,
+  AdminWaitlistEntryDto,
   WaitlistEntryDto,
 } from "@/lib/api/selfService";
 import { formatSlotDate, formatTime24h, formatCountdown } from "@/lib/utils/selfServiceFormat";
@@ -16,6 +18,7 @@ import { LoadingCard, ErrorRetry, MutationButton } from "@/components/groups/sel
 interface WaitlistTabProps {
   spaceId: string;
   groupId: string;
+  isAdmin?: boolean;
 }
 
 const STATUS_BADGE_STYLES: Record<WaitlistEntryDto["status"], string> = {
@@ -27,10 +30,11 @@ const STATUS_BADGE_STYLES: Record<WaitlistEntryDto["status"], string> = {
   Removed: "bg-slate-100 text-slate-500 border-slate-200",
 };
 
-export default function WaitlistTab({ spaceId, groupId }: WaitlistTabProps) {
+export default function WaitlistTab({ spaceId, groupId, isAdmin = false }: WaitlistTabProps) {
   const t = useTranslations("selfService.waitlist");
 
   const [entries, setEntries] = useState<WaitlistEntryDto[]>([]);
+  const [adminEntries, setAdminEntries] = useState<AdminWaitlistEntryDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -49,22 +53,28 @@ export default function WaitlistTab({ spaceId, groupId }: WaitlistTabProps) {
   const fetchEntries = useCallback(async () => {
     try {
       setError(null);
-      const data = await getMyWaitlistEntries(spaceId, groupId);
-      setEntries(data);
+      const [myEntries, allEntries] = await Promise.all([
+        getMyWaitlistEntries(spaceId, groupId),
+        isAdmin ? getAdminWaitlistEntries(spaceId, groupId) : Promise.resolve([]),
+      ]);
+      setEntries(myEntries);
+      setAdminEntries(allEntries);
     } catch {
       setError(t("title")); // generic error — will show retry
     } finally {
       setLoading(false);
     }
-  }, [spaceId, groupId, t]);
+  }, [spaceId, groupId, isAdmin, t]);
 
   useEffect(() => {
-    fetchEntries();
+    void Promise.resolve().then(fetchEntries);
   }, [fetchEntries]);
 
   // Refresh countdown timers every 30 seconds
   useEffect(() => {
-    const hasOffered = entries.some((e) => e.status === "Offered" && e.expiresAt);
+    const hasOffered =
+      entries.some((e) => e.status === "Offered" && e.expiresAt)
+      || adminEntries.some((e) => e.status === "Offered" && e.expiresAt);
     if (!hasOffered) return;
 
     const interval = setInterval(() => {
@@ -72,7 +82,7 @@ export default function WaitlistTab({ spaceId, groupId }: WaitlistTabProps) {
     }, 30_000);
 
     return () => clearInterval(interval);
-  }, [entries]);
+  }, [entries, adminEntries]);
 
   const handleAccept = async (entry: WaitlistEntryDto) => {
     setAcceptingId(entry.id);
@@ -144,7 +154,7 @@ export default function WaitlistTab({ spaceId, groupId }: WaitlistTabProps) {
   }
 
   // Empty state
-  if (entries.length === 0) {
+  if (entries.length === 0 && adminEntries.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-center bg-white rounded-xl border border-slate-200">
         <p className="text-slate-400 text-sm">{t("noEntries")}</p>
@@ -166,6 +176,51 @@ export default function WaitlistTab({ spaceId, groupId }: WaitlistTabProps) {
       )}
 
       {/* Offered entries — highlighted prominently */}
+      {isAdmin && adminEntries.length > 0 && (
+        <div className="rounded-2xl border border-slate-200 bg-white p-4">
+          <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h3 className="text-sm font-semibold text-slate-900">{t("adminTitle")}</h3>
+              <p className="text-xs text-slate-500">{t("adminDescription")}</p>
+            </div>
+            <span className="inline-flex w-fit rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-600">
+              {t("adminCount", { count: adminEntries.length })}
+            </span>
+          </div>
+
+          <div className="mt-4 divide-y divide-slate-100">
+            {adminEntries.map((entry) => (
+              <div
+                key={entry.id}
+                className="grid gap-3 py-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"
+              >
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span
+                      className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${STATUS_BADGE_STYLES[entry.status]}`}
+                    >
+                      {getStatusLabel(entry.status)}
+                    </span>
+                    <span className="text-sm font-semibold text-slate-900">{entry.personName}</span>
+                    <span className="text-xs text-slate-500">
+                      {t("position", { position: entry.position })}
+                    </span>
+                  </div>
+                  <p className="mt-1 truncate text-sm text-slate-600">
+                    {entry.taskName} - {formatSlotDate(entry.slotDate)} - {formatTime24h(entry.slotStartTime)}-{formatTime24h(entry.slotEndTime)}
+                  </p>
+                </div>
+                {entry.status === "Offered" && entry.expiresAt && (
+                  <div className="text-sm font-medium text-sky-700">
+                    {t("offerExpires", { time: formatCountdown(entry.expiresAt) })}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {offeredEntries.length > 0 && (
         <div className="space-y-3">
           {offeredEntries.map((entry) => (

@@ -156,6 +156,23 @@ public class WaitlistController : ControllerBase
     }
 
     /// <summary>
+    /// Get active waitlist entries for this group so admins can monitor who is waiting or holding an offer.
+    /// </summary>
+    [HttpGet("admin")]
+    public async Task<IActionResult> ListForAdmin(
+        Guid spaceId,
+        Guid groupId,
+        CancellationToken ct)
+    {
+        await _permissions.RequirePermissionAsync(CurrentUserId, spaceId, Permissions.ConstraintsManage, ct);
+
+        var result = await _mediator.Send(
+            new GetAdminWaitlistEntriesQuery(spaceId, groupId), ct);
+
+        return Ok(result);
+    }
+
+    /// <summary>
     /// Resolves the current authenticated user's person ID within the given space.
     /// Returns null if the user has no linked person in this space.
     /// </summary>

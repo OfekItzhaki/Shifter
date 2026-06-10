@@ -220,6 +220,11 @@ export interface WaitlistEntryDto {
   expiresAt: string | null;
 }
 
+export interface AdminWaitlistEntryDto extends WaitlistEntryDto {
+  personId: string;
+  personName: string;
+}
+
 // ── Swap Request ─────────────────────────────────────────────────────────────
 
 export interface SwapRequestDto {
@@ -631,6 +636,16 @@ export async function getMyWaitlistEntries(
 ): Promise<WaitlistEntryDto[]> {
   const { data } = await apiClient.get(
     `/spaces/${spaceId}/groups/${groupId}/waitlist/mine`
+  );
+  return data;
+}
+
+export async function getAdminWaitlistEntries(
+  spaceId: string,
+  groupId: string
+): Promise<AdminWaitlistEntryDto[]> {
+  const { data } = await apiClient.get(
+    `/spaces/${spaceId}/groups/${groupId}/waitlist/admin`
   );
   return data;
 }

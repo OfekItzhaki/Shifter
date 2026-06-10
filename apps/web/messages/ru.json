@@ -2053,7 +2053,10 @@
       "countdown": "Осталось {time}",
       "offerExpires": "Предложение истекает через {time}",
       "noEntries": "Нет записей в листе ожидания",
-      "maxShiftsReached": "Вы достигли максимального числа смен. Предложение передано следующему участнику."
+      "maxShiftsReached": "Вы достигли максимального числа смен. Предложение передано следующему участнику.",
+      "adminTitle": "Active waitlist queue",
+      "adminDescription": "Members currently waiting or holding an offer for this group.",
+      "adminCount": "{count} active"
     },
     "swaps": {
       "title": "Обмен сменами",
@@ -2237,6 +2240,10 @@
         "policy": {
           "title": "???????",
           "description": "????????? ??????, ???? ??????, ????? ?????? ? ????? ??????????? waitlist."
+        },
+        "waitlist": {
+          "title": "Waitlist queue",
+          "description": "See who is waiting or holding an offer when full shifts open up."
         }
       },
       "cycle": {

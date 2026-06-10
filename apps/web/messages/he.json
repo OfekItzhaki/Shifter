@@ -2065,7 +2065,10 @@
       "countdown": "נותרו {time}",
       "offerExpires": "ההצעה פגה בעוד {time}",
       "noEntries": "אין רשומות ברשימת ההמתנה",
-      "maxShiftsReached": "הגעת למקסימום המשמרות. ההצעה הועברה לבא בתור."
+      "maxShiftsReached": "הגעת למקסימום המשמרות. ההצעה הועברה לבא בתור.",
+      "adminTitle": "Active waitlist queue",
+      "adminDescription": "Members currently waiting or holding an offer for this group.",
+      "adminCount": "{count} active"
     },
     "swaps": {
       "title": "החלפות משמרות",
@@ -2249,6 +2252,10 @@
         "policy": {
           "title": "?????? ???????",
           "description": "???? ??????, ?????? ???, ????? ????? ???? ???? ?????."
+        },
+        "waitlist": {
+          "title": "Waitlist queue",
+          "description": "See who is waiting or holding an offer when full shifts open up."
         }
       },
       "cycle": {
