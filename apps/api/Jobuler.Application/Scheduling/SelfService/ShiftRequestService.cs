@@ -1,3 +1,4 @@
+using Jobuler.Application.Common;
 using Jobuler.Application.Notifications;
 using Jobuler.Application.Scheduling.SelfService.Models;
 using Jobuler.Domain.Notifications;
@@ -21,6 +22,7 @@ public class ShiftRequestService : IShiftRequestService
     private readonly IWaitlistService? _waitlistService;
     private readonly INotificationService _notificationService;
     private readonly IPushNotificationSender _pushSender;
+    private readonly IAuditLogger _audit;
     private readonly TimeProvider _timeProvider;
     private readonly ILogger<ShiftRequestService> _logger;
 
@@ -33,6 +35,7 @@ public class ShiftRequestService : IShiftRequestService
         ILogger<ShiftRequestService> logger,
         INotificationService notificationService,
         IPushNotificationSender pushSender,
+        IAuditLogger audit,
         IWaitlistService? waitlistService = null)
     {
         _db = db;
@@ -41,6 +44,7 @@ public class ShiftRequestService : IShiftRequestService
         _logger = logger;
         _notificationService = notificationService;
         _pushSender = pushSender;
+        _audit = audit;
         _waitlistService = waitlistService;
     }
 
@@ -418,6 +422,12 @@ public class ShiftRequestService : IShiftRequestService
                     return new AbsenceReportResult(false, null, false, 0, 0, "The associated shift slot could not be found.");
                 }
 
+                var actorUserId = await _db.People
+                    .AsNoTracking()
+                    .Where(p => p.Id == personId && p.SpaceId == shiftRequest.SpaceId)
+                    .Select(p => p.LinkedUserId)
+                    .FirstOrDefaultAsync(ct);
+
                 var config = await _db.SelfServiceConfigs
                     .AsNoTracking()
                     .FirstOrDefaultAsync(c => c.GroupId == slot.GroupId, ct);
@@ -470,10 +480,12 @@ public class ShiftRequestService : IShiftRequestService
 
                 _db.ShiftAbsenceReports.Add(absenceReport);
 
+                var fillCountBeforeAbsence = slot.CurrentFillCount;
                 shiftRequest.Cancel(wasLate
                     ? $"Late absence report: {reason.Trim()}"
                     : $"Cannot attend: {reason.Trim()}");
                 slot.DecrementFillCount();
+                var fillCountAfterAbsence = slot.CurrentFillCount;
 
                 await _db.SaveChangesAsync(ct);
 
@@ -481,6 +493,40 @@ public class ShiftRequestService : IShiftRequestService
                 {
                     await _waitlistService.ProcessSlotReleasedAsync(slot.Id, ct);
                 }
+
+                await _audit.LogAsync(
+                    shiftRequest.SpaceId,
+                    actorUserId,
+                    "self_service.report_absence",
+                    "shift_absence_report",
+                    absenceReport.Id,
+                    beforeJson: JsonSerializer.Serialize(new
+                    {
+                        shift_request_id = shiftRequest.Id,
+                        shift_request_status = "approved",
+                        shift_slot_id = slot.Id,
+                        person_id = personId,
+                        group_id = shiftRequest.GroupId,
+                        scheduling_cycle_id = shiftRequest.SchedulingCycleId,
+                        fill_count = fillCountBeforeAbsence
+                    }),
+                    afterJson: JsonSerializer.Serialize(new
+                    {
+                        absence_report_id = absenceReport.Id,
+                        shift_request_id = shiftRequest.Id,
+                        shift_request_status = "cancelled",
+                        shift_slot_id = slot.Id,
+                        person_id = personId,
+                        group_id = shiftRequest.GroupId,
+                        scheduling_cycle_id = shiftRequest.SchedulingCycleId,
+                        was_late = wasLate,
+                        late_reports_used = wasLate ? lateReportsUsed + 1 : lateReportsUsed,
+                        max_late_reports = maxLateReports,
+                        late_window_hours = lateWindowHours,
+                        fill_count = fillCountAfterAbsence,
+                        waitlist_processing_requested = _waitlistService is not null
+                    }),
+                    ct: ct);
 
                 await transaction.CommitAsync(ct);
 

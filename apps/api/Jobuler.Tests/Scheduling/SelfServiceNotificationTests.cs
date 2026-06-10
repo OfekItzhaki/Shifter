@@ -34,9 +34,11 @@ public class SelfServiceNotificationTests
     {
         using var db = CreateDb();
         var notifications = Substitute.For<INotificationService>();
+        var audit = CreateAuditLogger();
         var (spaceId, groupId, cycleId, taskId, _) = SeedBaseData(db);
 
-        var person = Person.Create(spaceId, "Alex Member", linkedUserId: Guid.NewGuid());
+        var linkedUserId = Guid.NewGuid();
+        var person = Person.Create(spaceId, "Alex Member", linkedUserId: linkedUserId);
         var slot = AddSlot(db, spaceId, groupId, taskId, cycleId, daysFromNow: 2);
         slot.IncrementFillCount();
 
@@ -53,7 +55,8 @@ public class SelfServiceNotificationTests
             TimeProvider.System,
             NullLogger<ShiftRequestService>.Instance,
             notifications,
-            Substitute.For<IPushNotificationSender>());
+            Substitute.For<IPushNotificationSender>(),
+            audit);
 
         var result = await service.ReportCannotAttendAsync(person.Id, request.Id, "Sick");
 
@@ -65,6 +68,22 @@ public class SelfServiceNotificationTests
             Arg.Is<string>(body => body.Contains("Alex Member") && body.Contains("Guard")),
             Arg.Is<string>(metadata => metadata.Contains("\"reason\":\"Sick\"")),
             groupId,
+            Arg.Any<CancellationToken>());
+
+        await audit.Received(1).LogAsync(
+            spaceId,
+            linkedUserId,
+            "self_service.report_absence",
+            "shift_absence_report",
+            result.AbsenceReportId,
+            Arg.Is<string?>(json => json != null
+                && json.Contains(request.Id.ToString())
+                && json.Contains("\"shift_request_status\":\"approved\"")),
+            Arg.Is<string?>(json => json != null
+                && json.Contains(result.AbsenceReportId!.Value.ToString())
+                && json.Contains("\"shift_request_status\":\"cancelled\"")
+                && json.Contains("\"was_late\":false")),
+            Arg.Is<string?>(ipAddress => ipAddress == null),
             Arg.Any<CancellationToken>());
     }
 
