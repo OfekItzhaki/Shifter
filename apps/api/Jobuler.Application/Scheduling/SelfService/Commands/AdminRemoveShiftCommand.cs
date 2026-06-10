@@ -45,6 +45,7 @@ public class AdminRemoveShiftCommandHandler : IRequestHandler<AdminRemoveShiftCo
 {
     private readonly AppDbContext _db;
     private readonly IPermissionService _permissions;
+    private readonly IAuditLogger _audit;
     private readonly IWaitlistService _waitlistService;
     private readonly IPushNotificationSender _pushSender;
     private readonly ILogger<AdminRemoveShiftCommandHandler> _logger;
@@ -52,12 +53,14 @@ public class AdminRemoveShiftCommandHandler : IRequestHandler<AdminRemoveShiftCo
     public AdminRemoveShiftCommandHandler(
         AppDbContext db,
         IPermissionService permissions,
+        IAuditLogger audit,
         IWaitlistService waitlistService,
         IPushNotificationSender pushSender,
         ILogger<AdminRemoveShiftCommandHandler> logger)
     {
         _db = db;
         _permissions = permissions;
+        _audit = audit;
         _waitlistService = waitlistService;
         _pushSender = pushSender;
         _logger = logger;
@@ -105,6 +108,34 @@ public class AdminRemoveShiftCommandHandler : IRequestHandler<AdminRemoveShiftCo
         slot.DecrementFillCount();
 
         await _db.SaveChangesAsync(ct);
+
+        await _audit.LogAsync(
+            request.SpaceId,
+            request.RequestingUserId,
+            "self_service.admin_remove_shift",
+            "shift_request",
+            shiftRequest.Id,
+            beforeJson: JsonSerializer.Serialize(new
+            {
+                group_id = request.GroupId,
+                shift_slot_id = request.ShiftSlotId,
+                shift_request_id = shiftRequest.Id,
+                person_id = request.PersonId,
+                scheduling_cycle_id = slot.SchedulingCycleId,
+                status = "approved",
+                is_admin_override = shiftRequest.IsAdminOverride
+            }),
+            afterJson: JsonSerializer.Serialize(new
+            {
+                group_id = request.GroupId,
+                shift_slot_id = request.ShiftSlotId,
+                shift_request_id = shiftRequest.Id,
+                person_id = request.PersonId,
+                scheduling_cycle_id = slot.SchedulingCycleId,
+                status = "cancelled",
+                cancellation_reason = "admin_removed"
+            }),
+            ct: ct);
 
         // Req 10.4: Trigger waitlist processing if slot now has capacity below required headcount
         if (slot.CurrentFillCount < slot.Capacity)

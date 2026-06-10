@@ -139,15 +139,18 @@ public class SelfServiceNotificationTests
         permissions
             .RequirePermissionAsync(Arg.Any<Guid>(), spaceId, Permissions.SchedulePublish, Arg.Any<CancellationToken>())
             .Returns(Task.CompletedTask);
+        var audit = CreateAuditLogger();
 
         var handler = new AdminAssignShiftCommandHandler(
             db,
             permissions,
+            audit,
             Substitute.For<IPushNotificationSender>(),
             NullLogger<AdminAssignShiftCommandHandler>.Instance);
 
+        var requestingUserId = Guid.NewGuid();
         var result = await handler.Handle(
-            new AdminAssignShiftCommand(spaceId, groupId, slot.Id, member.Id, Guid.NewGuid()),
+            new AdminAssignShiftCommand(spaceId, groupId, slot.Id, member.Id, requestingUserId),
             CancellationToken.None);
 
         result.Success.Should().BeTrue();
@@ -156,6 +159,20 @@ public class SelfServiceNotificationTests
             .SingleAsync(n => n.EventType == "self_service.admin_assigned");
         notification.UserId.Should().Be(assignedUserId);
         notification.MetadataJson.Should().Contain(slot.Id.ToString());
+
+        await audit.Received(1).LogAsync(
+            spaceId,
+            requestingUserId,
+            "self_service.admin_assign_shift",
+            "shift_request",
+            result.ShiftRequestId,
+            Arg.Is<string?>(json => json == null),
+            Arg.Is<string?>(json => json != null
+                && json.Contains(slot.Id.ToString())
+                && json.Contains(member.Id.ToString())
+                && json.Contains("\"is_admin_override\":true")),
+            Arg.Is<string?>(ipAddress => ipAddress == null),
+            Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -176,10 +193,12 @@ public class SelfServiceNotificationTests
         permissions
             .RequirePermissionAsync(Arg.Any<Guid>(), spaceId, Permissions.SchedulePublish, Arg.Any<CancellationToken>())
             .Returns(Task.CompletedTask);
+        var audit = CreateAuditLogger();
 
         var handler = new AdminAssignShiftCommandHandler(
             db,
             permissions,
+            audit,
             Substitute.For<IPushNotificationSender>(),
             NullLogger<AdminAssignShiftCommandHandler>.Instance);
 
@@ -197,6 +216,19 @@ public class SelfServiceNotificationTests
             && r.Status == ShiftRequestStatus.Approved
             && r.IsAdminOverride);
         hasApprovedOverride.Should().BeTrue();
+
+        await audit.Received(1).LogAsync(
+            spaceId,
+            Arg.Any<Guid?>(),
+            "self_service.admin_assign_shift",
+            "shift_request",
+            result.ShiftRequestId,
+            Arg.Is<string?>(json => json == null),
+            Arg.Is<string?>(json => json != null
+                && json.Contains(entry.Id.ToString())
+                && json.Contains("\"waitlist_entry_accepted\":true")),
+            Arg.Is<string?>(ipAddress => ipAddress == null),
+            Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -221,16 +253,19 @@ public class SelfServiceNotificationTests
         permissions
             .RequirePermissionAsync(Arg.Any<Guid>(), spaceId, Permissions.SchedulePublish, Arg.Any<CancellationToken>())
             .Returns(Task.CompletedTask);
+        var audit = CreateAuditLogger();
 
         var handler = new AdminRemoveShiftCommandHandler(
             db,
             permissions,
+            audit,
             Substitute.For<IWaitlistService>(),
             Substitute.For<IPushNotificationSender>(),
             NullLogger<AdminRemoveShiftCommandHandler>.Instance);
 
+        var requestingUserId = Guid.NewGuid();
         var result = await handler.Handle(
-            new AdminRemoveShiftCommand(spaceId, groupId, slot.Id, member.Id, Guid.NewGuid()),
+            new AdminRemoveShiftCommand(spaceId, groupId, slot.Id, member.Id, requestingUserId),
             CancellationToken.None);
 
         result.Success.Should().BeTrue();
@@ -239,6 +274,39 @@ public class SelfServiceNotificationTests
             .SingleAsync(n => n.EventType == "self_service.admin_removed");
         notification.UserId.Should().Be(removedUserId);
         notification.MetadataJson.Should().Contain(shiftRequest.Id.ToString());
+
+        await audit.Received(1).LogAsync(
+            spaceId,
+            requestingUserId,
+            "self_service.admin_remove_shift",
+            "shift_request",
+            shiftRequest.Id,
+            Arg.Is<string?>(json => json != null
+                && json.Contains(slot.Id.ToString())
+                && json.Contains("\"status\":\"approved\"")),
+            Arg.Is<string?>(json => json != null
+                && json.Contains(member.Id.ToString())
+                && json.Contains("\"status\":\"cancelled\"")
+                && json.Contains("\"cancellation_reason\":\"admin_removed\"")),
+            Arg.Is<string?>(ipAddress => ipAddress == null),
+            Arg.Any<CancellationToken>());
+    }
+
+    private static IAuditLogger CreateAuditLogger()
+    {
+        var audit = Substitute.For<IAuditLogger>();
+        audit.LogAsync(
+                Arg.Any<Guid?>(),
+                Arg.Any<Guid?>(),
+                Arg.Any<string>(),
+                Arg.Any<string?>(),
+                Arg.Any<Guid?>(),
+                Arg.Any<string?>(),
+                Arg.Any<string?>(),
+                Arg.Any<string?>(),
+                Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+        return audit;
     }
 
     private static (Guid spaceId, Guid groupId, Guid cycleId, Guid taskId, Guid ownerUserId) SeedBaseData(AppDbContext db)

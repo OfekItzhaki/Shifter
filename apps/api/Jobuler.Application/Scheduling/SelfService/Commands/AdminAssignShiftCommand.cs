@@ -45,17 +45,20 @@ public class AdminAssignShiftCommandHandler : IRequestHandler<AdminAssignShiftCo
 {
     private readonly AppDbContext _db;
     private readonly IPermissionService _permissions;
+    private readonly IAuditLogger _audit;
     private readonly IPushNotificationSender _pushSender;
     private readonly ILogger<AdminAssignShiftCommandHandler> _logger;
 
     public AdminAssignShiftCommandHandler(
         AppDbContext db,
         IPermissionService permissions,
+        IAuditLogger audit,
         IPushNotificationSender pushSender,
         ILogger<AdminAssignShiftCommandHandler> logger)
     {
         _db = db;
         _permissions = permissions;
+        _audit = audit;
         _pushSender = pushSender;
         _logger = logger;
     }
@@ -120,6 +123,25 @@ public class AdminAssignShiftCommandHandler : IRequestHandler<AdminAssignShiftCo
 
         _db.ShiftRequests.Add(shiftRequest);
         await _db.SaveChangesAsync(ct);
+
+        await _audit.LogAsync(
+            request.SpaceId,
+            request.RequestingUserId,
+            "self_service.admin_assign_shift",
+            "shift_request",
+            shiftRequest.Id,
+            afterJson: JsonSerializer.Serialize(new
+            {
+                group_id = request.GroupId,
+                shift_slot_id = request.ShiftSlotId,
+                shift_request_id = shiftRequest.Id,
+                person_id = request.PersonId,
+                scheduling_cycle_id = slot.SchedulingCycleId,
+                is_admin_override = true,
+                waitlist_entry_accepted = waitlistEntry is not null,
+                waitlist_entry_id = waitlistEntry?.Id
+            }),
+            ct: ct);
 
         _logger.LogInformation(
             "Admin {AdminUserId} assigned person {PersonId} to slot {SlotId} (admin override). Request {RequestId}. Waitlist entry accepted: {AcceptedWaitlistEntry}",
