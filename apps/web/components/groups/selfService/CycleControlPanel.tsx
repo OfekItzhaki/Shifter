@@ -128,6 +128,7 @@ export default function CycleControlPanel({ spaceId, groupId }: CycleControlPane
                 <Metric label="Waitlist" value={`${status.waitlistCount}`} />
                 <Metric label="Absence review" value={`${status.pendingAbsenceReportCount}`} tone={status.pendingAbsenceReportCount > 0 ? "warning" : "default"} />
                 <Metric label="Late reports" value={`${status.latePendingAbsenceReportCount}`} tone={status.latePendingAbsenceReportCount > 0 ? "danger" : "default"} />
+                <Metric label="Change review" value={`${status.pendingShiftChangeRequestCount}`} tone={status.pendingShiftChangeRequestCount > 0 ? "warning" : "default"} />
                 <Metric label="Generated" value={status.isGenerated ? "Yes" : "No"} />
               </div>
 
@@ -146,7 +147,7 @@ export default function CycleControlPanel({ spaceId, groupId }: CycleControlPane
                         <div className="min-w-0">
                           <p className="truncate text-sm font-medium text-slate-900">{slot.taskName}</p>
                           <p className="text-xs text-slate-500">
-                            {formatDate(slot.date)} · {slot.startTime}-{slot.endTime}
+                            {formatDate(slot.date)} | {slot.startTime}-{slot.endTime}
                           </p>
                         </div>
                         <div className="shrink-0 text-right">

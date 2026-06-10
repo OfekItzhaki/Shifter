@@ -223,6 +223,10 @@ public class SelfServiceCyclesController : ControllerBase
             .Select(r => new { r.IsLate })
             .ToListAsync(ct);
 
+        var pendingShiftChangeRequestCount = await _db.ShiftChangeRequests
+            .AsNoTracking()
+            .CountAsync(r => r.SchedulingCycleId == cycle.Id && r.Status == ShiftChangeRequestStatus.Pending, ct);
+
         var taskIds = slots
             .Where(s => s.CurrentFillCount < s.Capacity)
             .Select(s => s.GroupTaskId)
@@ -271,6 +275,7 @@ public class SelfServiceCyclesController : ControllerBase
             waitlistCount,
             pendingAbsenceReports.Count,
             pendingAbsenceReports.Count(r => r.IsLate),
+            pendingShiftChangeRequestCount,
             underfilledSlots);
     }
 }
@@ -303,8 +308,9 @@ public record SelfServiceCycleStatusResponse(
     int WaitlistCount,
     int PendingAbsenceReportCount,
     int LatePendingAbsenceReportCount,
+    int PendingShiftChangeRequestCount,
     IReadOnlyList<UnderfilledSlotResponse> UnderfilledSlots)
 {
     public static SelfServiceCycleStatusResponse Empty() =>
-        new(null, null, null, null, null, false, false, 0, 0, 0, 0, 0, 0, 0, 0, []);
+        new(null, null, null, null, null, false, false, 0, 0, 0, 0, 0, 0, 0, 0, 0, []);
 }
