@@ -1988,6 +1988,9 @@
       "cannotAttendSubmitting": "Отправка...",
       "cannotAttendSubmitted": "Сообщение об отсутствии отправлено администраторам.",
       "cannotAttendLateSubmitted": "Позднее сообщение об отсутствии отправлено. Использовано {used} / {max} поздних сообщений в этом цикле.",
+      "cannotAttendLatePolicy": "This report is late because the shift starts within {window} hours. Late reports used: {used}/{max}. Remaining: {remaining}.",
+      "cannotAttendNotLatePolicy": "This report is outside the late window. Reports become late within {window} hours of shift start.",
+      "cannotAttendLimitReached": "You have reached the late absence limit for this cycle.",
       "cancelDismiss": "Назад",
       "shiftCount": "{current} / {max} смен в этом цикле",
       "underScheduled": "⚠ У вас меньше смен, чем требуется минимумом ({min})",
@@ -2040,6 +2043,8 @@
       "summaryWaitlistLabel": "Waitlist",
       "summaryWaitlistValue": "{offered} offer(s) ? {waiting} waiting",
       "summaryOpenWaitlist": "Open waitlist",
+      "summaryLateAbsenceLabel": "Late absences",
+      "summaryLateAbsenceValue": "{used}/{max} used ? late inside {window}h",
       "summaryNextShiftLabel": "Next shift",
       "summaryNoNextShift": "No upcoming approved shift"
     },

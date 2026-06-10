@@ -2000,6 +2000,9 @@
       "cannotAttendSubmitting": "מדווח...",
       "cannotAttendSubmitted": "דיווח אי ההגעה נשלח למנהלים.",
       "cannotAttendLateSubmitted": "דיווח אי הגעה מאוחר נשלח. השתמשת ב-{used} / {max} דיווחים מאוחרים במחזור הזה.",
+      "cannotAttendLatePolicy": "This report is late because the shift starts within {window} hours. Late reports used: {used}/{max}. Remaining: {remaining}.",
+      "cannotAttendNotLatePolicy": "This report is outside the late window. Reports become late within {window} hours of shift start.",
+      "cannotAttendLimitReached": "You have reached the late absence limit for this cycle.",
       "cancelDismiss": "חזרה",
       "shiftCount": "{current} / {max} משמרות במחזור זה",
       "underScheduled": "⚠ אתה מתחת למינימום המשמרות הנדרש ({min})",
@@ -2052,6 +2055,8 @@
       "summaryWaitlistLabel": "Waitlist",
       "summaryWaitlistValue": "{offered} offer(s) ? {waiting} waiting",
       "summaryOpenWaitlist": "Open waitlist",
+      "summaryLateAbsenceLabel": "Late absences",
+      "summaryLateAbsenceValue": "{used}/{max} used ? late inside {window}h",
       "summaryNextShiftLabel": "Next shift",
       "summaryNoNextShift": "No upcoming approved shift"
     },

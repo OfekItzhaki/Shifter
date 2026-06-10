@@ -382,7 +382,9 @@ public class ShiftRequestsController : ControllerBase
             currentShiftCount,
             config?.MinShiftsPerCycle ?? 0,
             config?.MaxShiftsPerCycle ?? 7,
-            config?.CancellationCutoffHours ?? 24));
+            config?.CancellationCutoffHours ?? 24,
+            config?.MaxLateCancellationsPerCycle ?? 2,
+            config?.LateCancellationWindowHours ?? config?.CancellationCutoffHours ?? 24));
     }
 
     /// <summary>
@@ -535,7 +537,9 @@ public record MyShiftRequestsResponse(
     int CurrentShiftCount,
     int MinShiftsPerCycle,
     int MaxShiftsPerCycle,
-    int CancellationCutoffHours);
+    int CancellationCutoffHours,
+    int MaxLateReports,
+    int LateCancellationWindowHours);
 
 public record ShiftRequestResponse(
     Guid Id,

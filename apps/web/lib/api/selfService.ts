@@ -155,6 +155,8 @@ export interface MyShiftsResponse {
   minShiftsPerCycle: number;
   maxShiftsPerCycle: number;
   cancellationCutoffHours: number;
+  maxLateReports: number;
+  lateCancellationWindowHours: number;
 }
 
 export interface CannotAttendResponse {

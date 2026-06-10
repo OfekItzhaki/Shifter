@@ -109,6 +109,14 @@ function isFutureApprovedShift(request: ShiftRequestDto): boolean {
   return !isNaN(shiftStart.getTime()) && shiftStart.getTime() > Date.now();
 }
 
+function isLateAbsenceReport(request: ShiftRequestDto, lateWindowHours: number): boolean {
+  if (!isFutureApprovedShift(request)) return false;
+
+  const shiftStart = new Date(`${request.slotDate}T${request.slotStartTime}`);
+  const lateWindowMs = lateWindowHours * 60 * 60 * 1000;
+  return shiftStart.getTime() - Date.now() <= lateWindowMs;
+}
+
 export default function MyShiftsTab({ spaceId, groupId, onNavigate }: MyShiftsTabProps) {
   const t = useTranslations("selfService.myShifts");
 
@@ -429,13 +437,24 @@ export default function MyShiftsTab({ spaceId, groupId, onNavigate }: MyShiftsTa
   if (!data) return null;
 
   const { approved, pending, cancelled } = groupByStatus(data.requests);
-  const { currentShiftCount, minShiftsPerCycle, maxShiftsPerCycle, cancellationCutoffHours } = data;
+  const {
+    currentShiftCount,
+    minShiftsPerCycle,
+    maxShiftsPerCycle,
+    cancellationCutoffHours,
+    lateCancellationWindowHours,
+  } = data;
   const isUnderScheduled = currentShiftCount < minShiftsPerCycle;
   const pendingLeaveCount = specialLeaveRequests.filter((request) => request.status === "Pending").length;
   const pendingChangeCount = changeRequests.filter((request) => request.status === "Pending").length;
   const pendingAbsenceCount = absenceReports.filter((report) => report.status === "Pending").length;
+  const lateReportsRemaining = Math.max(0, maxLateReports - lateReportsUsed);
   const waitlistOfferCount = waitlistEntries.filter((entry) => entry.status === "Offered").length;
   const waitingCount = waitlistEntries.filter((entry) => entry.status === "Waiting").length;
+  const cannotAttendWouldBeLate = cannotAttendTarget
+    ? isLateAbsenceReport(cannotAttendTarget, lateCancellationWindowHours)
+    : false;
+  const cannotAttendLimitReached = cannotAttendWouldBeLate && lateReportsRemaining <= 0;
   const nextShift = [...approved]
     .filter(isFutureApprovedShift)
     .sort((a, b) =>
@@ -463,7 +482,7 @@ export default function MyShiftsTab({ spaceId, groupId, onNavigate }: MyShiftsTa
           )}
         </div>
 
-        <div className="mt-4 grid gap-2 md:grid-cols-2 xl:grid-cols-4">
+        <div className="mt-4 grid gap-2 md:grid-cols-2 xl:grid-cols-5">
           <SummaryCard
             label={t("summaryMinimumLabel")}
             value={t("summaryMinimumValue", {
@@ -491,6 +510,15 @@ export default function MyShiftsTab({ spaceId, groupId, onNavigate }: MyShiftsTa
             tone={waitlistOfferCount > 0 ? "danger" : waitingCount > 0 ? "warning" : "default"}
             onClick={onNavigate && waitlistEntries.length > 0 ? () => onNavigate("waitlist") : undefined}
             actionLabel={waitlistEntries.length > 0 ? t("summaryOpenWaitlist") : undefined}
+          />
+          <SummaryCard
+            label={t("summaryLateAbsenceLabel")}
+            value={t("summaryLateAbsenceValue", {
+              used: lateReportsUsed,
+              max: maxLateReports,
+              window: lateCancellationWindowHours,
+            })}
+            tone={lateReportsRemaining <= 0 ? "danger" : lateReportsRemaining === 1 ? "warning" : "default"}
           />
           <SummaryCard
             label={t("summaryNextShiftLabel")}
@@ -638,6 +666,8 @@ export default function MyShiftsTab({ spaceId, groupId, onNavigate }: MyShiftsTa
           requests={approved}
           statusKey="Approved"
           cancellationCutoffHours={cancellationCutoffHours}
+          lateCancellationWindowHours={lateCancellationWindowHours}
+          lateReportsRemaining={lateReportsRemaining}
           onCancel={openCancelDialog}
           onCannotAttend={openCannotAttendDialog}
           onChange={openChangeDialog}
@@ -651,6 +681,8 @@ export default function MyShiftsTab({ spaceId, groupId, onNavigate }: MyShiftsTa
           requests={pending}
           statusKey="Pending"
           cancellationCutoffHours={cancellationCutoffHours}
+          lateCancellationWindowHours={lateCancellationWindowHours}
+          lateReportsRemaining={lateReportsRemaining}
           onCancel={openCancelDialog}
           onCannotAttend={openCannotAttendDialog}
           onChange={openChangeDialog}
@@ -664,6 +696,8 @@ export default function MyShiftsTab({ spaceId, groupId, onNavigate }: MyShiftsTa
           requests={cancelled}
           statusKey="Cancelled"
           cancellationCutoffHours={cancellationCutoffHours}
+          lateCancellationWindowHours={lateCancellationWindowHours}
+          lateReportsRemaining={lateReportsRemaining}
           onCancel={openCancelDialog}
           onCannotAttend={openCannotAttendDialog}
           onChange={openChangeDialog}
@@ -737,6 +771,24 @@ export default function MyShiftsTab({ spaceId, groupId, onNavigate }: MyShiftsTa
       >
         <div className="space-y-4">
           <p className="text-sm text-slate-600">{t("cannotAttendDialogMessage")}</p>
+          {cannotAttendTarget && (
+            <div className={`rounded-lg border px-3 py-2 text-xs ${
+              cannotAttendLimitReached
+                ? "border-red-200 bg-red-50 text-red-700"
+                : cannotAttendWouldBeLate
+                  ? "border-amber-200 bg-amber-50 text-amber-800"
+                  : "border-slate-200 bg-slate-50 text-slate-600"
+            }`}>
+              {cannotAttendWouldBeLate
+                ? t("cannotAttendLatePolicy", {
+                    used: lateReportsUsed,
+                    max: maxLateReports,
+                    remaining: lateReportsRemaining,
+                    window: lateCancellationWindowHours,
+                  })
+                : t("cannotAttendNotLatePolicy", { window: lateCancellationWindowHours })}
+            </div>
+          )}
 
           <textarea
             value={cannotAttendReason}
@@ -763,6 +815,9 @@ export default function MyShiftsTab({ spaceId, groupId, onNavigate }: MyShiftsTa
           {cannotAttendError && (
             <p className="text-xs text-red-600">{cannotAttendError}</p>
           )}
+          {cannotAttendLimitReached && (
+            <p className="text-xs text-red-600">{t("cannotAttendLimitReached")}</p>
+          )}
 
           <div className="flex gap-3 justify-end">
             <button
@@ -775,7 +830,7 @@ export default function MyShiftsTab({ spaceId, groupId, onNavigate }: MyShiftsTa
             <MutationButton
               onClick={handleCannotAttendConfirm}
               loading={reportingCannotAttend}
-              disabled={cannotAttendReason.trim().length === 0}
+              disabled={cannotAttendReason.trim().length === 0 || cannotAttendLimitReached}
               label={t("cannotAttendConfirm")}
               loadingLabel={t("cannotAttendSubmitting")}
               variant="danger"
@@ -1052,12 +1107,24 @@ interface ShiftSectionProps {
   requests: ShiftRequestDto[];
   statusKey: ShiftRequestDto["status"];
   cancellationCutoffHours: number;
+  lateCancellationWindowHours: number;
+  lateReportsRemaining: number;
   onCancel: (request: ShiftRequestDto) => void;
   onCannotAttend: (request: ShiftRequestDto) => void;
   onChange: (request: ShiftRequestDto) => void;
 }
 
-function ShiftSection({ title, requests, statusKey, cancellationCutoffHours, onCancel, onCannotAttend, onChange }: ShiftSectionProps) {
+function ShiftSection({
+  title,
+  requests,
+  statusKey,
+  cancellationCutoffHours,
+  lateCancellationWindowHours,
+  lateReportsRemaining,
+  onCancel,
+  onCannotAttend,
+  onChange,
+}: ShiftSectionProps) {
   return (
     <div>
       <div className="flex items-center gap-2 mb-2">
@@ -1072,6 +1139,8 @@ function ShiftSection({ title, requests, statusKey, cancellationCutoffHours, onC
             key={request.id}
             request={request}
             cancellationCutoffHours={cancellationCutoffHours}
+            lateCancellationWindowHours={lateCancellationWindowHours}
+            lateReportsRemaining={lateReportsRemaining}
             onCancel={onCancel}
             onCannotAttend={onCannotAttend}
             onChange={onChange}
@@ -1087,16 +1156,29 @@ function ShiftSection({ title, requests, statusKey, cancellationCutoffHours, onC
 interface ShiftCardProps {
   request: ShiftRequestDto;
   cancellationCutoffHours: number;
+  lateCancellationWindowHours: number;
+  lateReportsRemaining: number;
   onCancel: (request: ShiftRequestDto) => void;
   onCannotAttend: (request: ShiftRequestDto) => void;
   onChange: (request: ShiftRequestDto) => void;
 }
 
-function ShiftCard({ request, cancellationCutoffHours, onCancel, onCannotAttend, onChange }: ShiftCardProps) {
+function ShiftCard({
+  request,
+  cancellationCutoffHours,
+  lateCancellationWindowHours,
+  lateReportsRemaining,
+  onCancel,
+  onCannotAttend,
+  onChange,
+}: ShiftCardProps) {
   const t = useTranslations("selfService.myShifts");
   const style = STATUS_BADGE_STYLES[request.status];
   const showCancelButton = canCancelShift(request, cancellationCutoffHours);
   const showCannotAttendButton = isFutureApprovedShift(request);
+  const lateReportWouldBeBlocked = showCannotAttendButton
+    && isLateAbsenceReport(request, lateCancellationWindowHours)
+    && lateReportsRemaining <= 0;
 
   // Get Hebrew day name from the date
   const dayName = (() => {
@@ -1163,7 +1245,9 @@ function ShiftCard({ request, cancellationCutoffHours, onCancel, onCannotAttend,
         {showCannotAttendButton && (
           <button
             onClick={() => onCannotAttend(request)}
-            className="text-xs text-amber-700 hover:text-amber-800 border border-amber-200 bg-amber-50 hover:bg-amber-100 px-2.5 py-1 rounded-lg transition-colors"
+            disabled={lateReportWouldBeBlocked}
+            title={lateReportWouldBeBlocked ? t("cannotAttendLimitReached") : undefined}
+            className="text-xs text-amber-700 hover:text-amber-800 border border-amber-200 bg-amber-50 hover:bg-amber-100 px-2.5 py-1 rounded-lg transition-colors disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400"
           >
             {t("cannotAttendButton")}
           </button>
