@@ -3,6 +3,12 @@
 import { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import {
+  approveSpecialLeaveRequest,
+  getAdminSpecialLeaveRequests,
+  rejectSpecialLeaveRequest,
+  SpecialLeaveRequestDto,
+} from "@/lib/api/specialLeave";
+import {
   AbsenceReportDto,
   AvailableSlotDto,
   ShiftChangeRequestDto,
@@ -23,19 +29,21 @@ import MutationButton from "./MutationButton";
 interface Props {
   spaceId: string;
   groupId: string;
+  memberIds: string[];
 }
 
-const STATUS_STYLES: Record<AbsenceReportDto["status"] | ShiftChangeRequestDto["status"], string> = {
+const STATUS_STYLES: Record<AbsenceReportDto["status"] | ShiftChangeRequestDto["status"] | SpecialLeaveRequestDto["status"], string> = {
   Pending: "border-amber-200 bg-amber-50 text-amber-700",
   Approved: "border-emerald-200 bg-emerald-50 text-emerald-700",
   Rejected: "border-red-200 bg-red-50 text-red-700",
   Cancelled: "border-slate-200 bg-slate-50 text-slate-600",
 };
 
-export default function AbsenceReportsTab({ spaceId, groupId }: Props) {
+export default function AbsenceReportsTab({ spaceId, groupId, memberIds }: Props) {
   const t = useTranslations("selfService.absenceReports");
   const [reports, setReports] = useState<AbsenceReportDto[]>([]);
   const [changeRequests, setChangeRequests] = useState<ShiftChangeRequestDto[]>([]);
+  const [leaveRequests, setLeaveRequests] = useState<SpecialLeaveRequestDto[]>([]);
   const [changeSlotOptions, setChangeSlotOptions] = useState<AvailableSlotDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -43,19 +51,23 @@ export default function AbsenceReportsTab({ spaceId, groupId }: Props) {
   const [changeTargetSlots, setChangeTargetSlots] = useState<Record<string, string>>({});
   const [actionLoading, setActionLoading] = useState<Record<string, "approve" | "reject">>({});
   const [changeActionLoading, setChangeActionLoading] = useState<Record<string, "approve" | "reject">>({});
+  const [leaveActionLoading, setLeaveActionLoading] = useState<Record<string, "approve" | "reject">>({});
   const [actionError, setActionError] = useState<string | null>(null);
 
   const fetchReports = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      const [absenceRows, changeRows, targetSlots] = await Promise.all([
+      const [absenceRows, changeRows, targetSlots, leaveRows] = await Promise.all([
         getAbsenceReports(spaceId, groupId),
         getShiftChangeRequests(spaceId, groupId),
         getShiftChangeTargetSlots(spaceId, groupId, "current"),
+        getAdminSpecialLeaveRequests(spaceId, "Pending"),
       ]);
       setReports(absenceRows);
       setChangeRequests(changeRows);
+      const groupMemberIds = new Set(memberIds);
+      setLeaveRequests(leaveRows.filter((request) => groupMemberIds.has(request.personId)));
       setChangeSlotOptions(targetSlots);
       setChangeTargetSlots((prev) => {
         const next = { ...prev };
@@ -76,7 +88,7 @@ export default function AbsenceReportsTab({ spaceId, groupId }: Props) {
     } finally {
       setLoading(false);
     }
-  }, [spaceId, groupId]);
+  }, [spaceId, groupId, memberIds]);
 
   useEffect(() => {
     void Promise.resolve().then(fetchReports);
@@ -136,6 +148,30 @@ export default function AbsenceReportsTab({ spaceId, groupId }: Props) {
     }
   }
 
+  async function reviewLeave(requestId: string, action: "approve" | "reject") {
+    setLeaveActionLoading((prev) => ({ ...prev, [requestId]: action }));
+    setActionError(null);
+
+    try {
+      const note = adminNotes[requestId] ?? "";
+      if (action === "approve") {
+        await approveSpecialLeaveRequest(spaceId, requestId, note);
+      } else {
+        await rejectSpecialLeaveRequest(spaceId, requestId, note);
+      }
+      await fetchReports();
+    } catch (err) {
+      const { message } = getSelfServiceErrorMessage(err);
+      setActionError(message);
+    } finally {
+      setLeaveActionLoading((prev) => {
+        const next = { ...prev };
+        delete next[requestId];
+        return next;
+      });
+    }
+  }
+
   function formatTargetSlot(slot: AvailableSlotDto) {
     return `${formatSlotDate(slot.date)} - ${formatTime24h(slot.startTime)}-${formatTime24h(slot.endTime)} - ${slot.taskName} (${slot.currentFillCount}/${slot.capacity})`;
   }
@@ -145,6 +181,18 @@ export default function AbsenceReportsTab({ spaceId, groupId }: Props) {
     return changeSlotOptions.some((slot) => slot.id === targetShiftSlotId && slot.id !== request.originalShiftSlotId)
       ? targetShiftSlotId
       : "";
+  }
+
+  function formatLeaveDate(value: string) {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return value;
+
+    return new Intl.DateTimeFormat(undefined, {
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    }).format(date);
   }
 
   if (loading) return <LoadingCard rows={4} variant="list" />;
@@ -307,6 +355,70 @@ export default function AbsenceReportsTab({ spaceId, groupId }: Props) {
                         onClick={() => reviewChange(request.id, "reject")}
                         loading={changeActionLoading[request.id] === "reject"}
                         disabled={!!changeActionLoading[request.id]}
+                        label={t("reject")}
+                        loadingLabel={t("rejecting")}
+                        variant="danger"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="flex items-center justify-between pt-2">
+        <h2 className="text-sm font-semibold text-slate-700">{t("leaveRequestsTitle")}</h2>
+      </div>
+
+      {leaveRequests.length === 0 ? (
+        <div className="flex flex-col items-center justify-center rounded-xl border border-slate-200 bg-white py-12 text-center">
+          <p className="text-sm text-slate-400">{t("leaveRequestsEmpty")}</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {leaveRequests.map((request) => (
+            <div key={request.id} className="rounded-xl border border-slate-200 bg-white p-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="text-sm font-semibold text-slate-900">{request.personName}</p>
+                    <span className={`rounded-full border px-2 py-0.5 text-xs font-medium ${STATUS_STYLES[request.status]}`}>
+                      {t(`status${request.status}`)}
+                    </span>
+                  </div>
+                  <p className="mt-1 text-xs text-slate-500">
+                    {formatLeaveDate(request.startsAt)} - {formatLeaveDate(request.endsAt)}
+                  </p>
+                  <p className="mt-2 text-sm text-slate-700">{request.reason}</p>
+                  {request.adminNote && (
+                    <p className="mt-2 text-xs text-slate-500">{t("adminNote")}: {request.adminNote}</p>
+                  )}
+                </div>
+
+                {request.status === "Pending" && (
+                  <div className="w-full shrink-0 space-y-2 sm:w-64">
+                    <input
+                      value={adminNotes[request.id] ?? ""}
+                      onChange={(e) => setAdminNotes((prev) => ({ ...prev, [request.id]: e.target.value }))}
+                      maxLength={500}
+                      placeholder={t("adminNotePlaceholder")}
+                      className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-sky-400"
+                    />
+                    <div className="flex gap-2">
+                      <MutationButton
+                        onClick={() => reviewLeave(request.id, "approve")}
+                        loading={leaveActionLoading[request.id] === "approve"}
+                        disabled={!!leaveActionLoading[request.id]}
+                        label={t("approve")}
+                        loadingLabel={t("approving")}
+                        variant="primary"
+                      />
+                      <MutationButton
+                        onClick={() => reviewLeave(request.id, "reject")}
+                        loading={leaveActionLoading[request.id] === "reject"}
+                        disabled={!!leaveActionLoading[request.id]}
                         label={t("reject")}
                         loadingLabel={t("rejecting")}
                         variant="danger"

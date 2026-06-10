@@ -1937,7 +1937,7 @@
       "swaps": "Swaps",
       "shiftTemplates": "Shift Templates",
       "selfServiceConfig": "Self-Service Config",
-      "absenceReports": "Absence Reports",
+      "absenceReports": "Review Requests",
       "adminOverrides": "Admin Overrides"
     },
     "slotBrowser": {
@@ -2089,7 +2089,7 @@
       "invalidOwnership": "You do not own the selected shift"
     },
     "absenceReports": {
-      "title": "Absence Reports",
+      "title": "Review Requests",
       "refresh": "Refresh",
       "empty": "No absence reports",
       "late": "Late",
@@ -2109,7 +2109,9 @@
       "changeTo": "To",
       "changeFlexibleTarget": "Flexible replacement",
       "changeTargetShift": "Target shift",
-      "changeTargetRequired": "Choose a target shift to approve"
+      "changeTargetRequired": "Choose a target shift to approve",
+      "leaveRequestsTitle": "Time-off Requests",
+      "leaveRequestsEmpty": "No time-off requests"
     },
     "templates": {
       "title": "Shift Templates",
@@ -2220,7 +2222,7 @@
       "actions": {
         "reviews": {
           "title": "Review requests",
-          "description": "Approve absence reports and shift-change requests."
+          "description": "Approve absence reports, shift-change requests, and time-off requests."
         },
         "overrides": {
           "title": "Manual overrides",

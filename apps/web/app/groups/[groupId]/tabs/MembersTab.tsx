@@ -10,12 +10,6 @@ import { useSpaceStore } from "@/lib/store/spaceStore";
 import { useAuthStore } from "@/lib/store/authStore";
 import { formatLocalDate } from "@/lib/utils/formatTime";
 import { getReasons, type UnavailabilityReasonDto } from "@/lib/api/unavailabilityReasons";
-import {
-  approveSpecialLeaveRequest,
-  getAdminSpecialLeaveRequests,
-  rejectSpecialLeaveRequest,
-  SpecialLeaveRequestDto,
-} from "@/lib/api/specialLeave";
 
 interface Props {
   isAdmin: boolean;
@@ -70,8 +64,6 @@ export default function MembersTab({
 
   return (
     <div className="space-y-4">
-      {isAdmin && <SpecialLeaveAdminPanel />}
-
       <div className="flex items-center justify-between gap-3">
         <div className="relative flex-1 max-w-xs">
           <input
@@ -203,146 +195,6 @@ export default function MembersTab({
 }
 
 // ── Member profile modal ──────────────────────────────────────────────────────
-function SpecialLeaveAdminPanel() {
-  const t = useTranslations("groups.members_tab");
-  const tCommon = useTranslations("common");
-  const { currentSpaceId } = useSpaceStore();
-  const [requests, setRequests] = useState<SpecialLeaveRequestDto[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [actionId, setActionId] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [notes, setNotes] = useState<Record<string, string>>({});
-
-  async function loadRequests() {
-    if (!currentSpaceId) return;
-    setLoading(true);
-    setError(null);
-
-    try {
-      const data = await getAdminSpecialLeaveRequests(currentSpaceId, "Pending");
-      setRequests(data);
-    } catch {
-      setError(t("specialLeaveLoadError"));
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  useEffect(() => {
-    loadRequests();
-  }, [currentSpaceId]);
-
-  async function handleApprove(requestId: string) {
-    if (!currentSpaceId) return;
-    setActionId(requestId);
-    setError(null);
-
-    try {
-      await approveSpecialLeaveRequest(currentSpaceId, requestId, notes[requestId]);
-      await loadRequests();
-    } catch {
-      setError(t("specialLeaveActionError"));
-    } finally {
-      setActionId(null);
-    }
-  }
-
-  async function handleReject(requestId: string) {
-    if (!currentSpaceId) return;
-    setActionId(requestId);
-    setError(null);
-
-    try {
-      await rejectSpecialLeaveRequest(currentSpaceId, requestId, notes[requestId]);
-      await loadRequests();
-    } catch {
-      setError(t("specialLeaveActionError"));
-    } finally {
-      setActionId(null);
-    }
-  }
-
-  return (
-    <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 dark:border-slate-700 dark:bg-slate-800">
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">{t("specialLeaveAdminTitle")}</h3>
-          <p className="text-xs text-slate-500 dark:text-slate-400">{t("specialLeaveAdminDescription")}</p>
-        </div>
-        <button
-          type="button"
-          onClick={loadRequests}
-          className="rounded-lg border border-sky-200 bg-sky-50 px-3 py-1.5 text-xs font-medium text-sky-700 transition-colors hover:bg-sky-100 dark:border-sky-800 dark:bg-sky-900/20 dark:text-sky-300"
-        >
-          {t("specialLeaveRefresh")}
-        </button>
-      </div>
-
-      {loading && <p className="mt-3 text-xs text-slate-400">{tCommon("loading")}</p>}
-      {error && <p className="mt-3 text-xs text-red-600">{error}</p>}
-      {!loading && requests.length === 0 && (
-        <p className="mt-3 text-xs text-slate-400">{t("specialLeaveNoPending")}</p>
-      )}
-
-      {requests.length > 0 && (
-        <div className="mt-3 space-y-2">
-          {requests.map((request) => (
-            <div key={request.id} className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 dark:border-slate-700 dark:bg-slate-900/40">
-              <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
-                <div className="min-w-0">
-                  <p className="text-sm font-medium text-slate-900 dark:text-slate-100">{request.personName}</p>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">
-                    {formatSpecialLeaveDate(request.startsAt)} - {formatSpecialLeaveDate(request.endsAt)}
-                  </p>
-                  <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">{request.reason}</p>
-                </div>
-                <div className="flex flex-col gap-2 sm:min-w-80">
-                  <input
-                    value={notes[request.id] ?? ""}
-                    onChange={(e) => setNotes((prev) => ({ ...prev, [request.id]: e.target.value }))}
-                    placeholder={t("specialLeaveAdminNote")}
-                    maxLength={500}
-                    className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-sky-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
-                  />
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      disabled={actionId === request.id}
-                      onClick={() => handleApprove(request.id)}
-                      className="flex-1 rounded-lg bg-emerald-500 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-emerald-600 disabled:opacity-50"
-                    >
-                      {t("specialLeaveApprove")}
-                    </button>
-                    <button
-                      type="button"
-                      disabled={actionId === request.id}
-                      onClick={() => handleReject(request.id)}
-                      className="flex-1 rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-medium text-red-700 transition-colors hover:bg-red-100 disabled:opacity-50 dark:border-red-800 dark:bg-red-900/20 dark:text-red-300"
-                    >
-                      {t("specialLeaveReject")}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function formatSpecialLeaveDate(value: string): string {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-  return date.toLocaleString(undefined, {
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
-
 interface MemberProfileModalProps {
   member: GroupMemberDto;
   isAdmin: boolean;

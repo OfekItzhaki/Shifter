@@ -17,7 +17,7 @@ import MutationButton from "./MutationButton";
 interface CycleControlPanelProps {
   spaceId: string;
   groupId: string;
-  onNavigate?: (tab: "absence-reports" | "members") => void;
+  onNavigate?: (tab: "absence-reports") => void;
 }
 
 function formatDateTime(value: string | null): string {
@@ -155,7 +155,7 @@ export default function CycleControlPanel({ spaceId, groupId, onNavigate }: Cycl
                   value={`${status.pendingSpecialLeaveRequestCount}`}
                   tone={status.pendingSpecialLeaveRequestCount > 0 ? "warning" : "default"}
                   actionLabel={t("openReviewQueue", { queue: t("metrics.leaveReview") })}
-                  onClick={onNavigate ? () => onNavigate("members") : undefined}
+                  onClick={onNavigate ? () => onNavigate("absence-reports") : undefined}
                 />
                 <Metric label={t("metrics.generated")} value={status.isGenerated ? t("yes") : t("no")} />
               </div>

@@ -4,7 +4,6 @@ import { useTranslations } from "next-intl";
 import CycleControlPanel from "./CycleControlPanel";
 
 type SelfServiceOpsTarget =
-  | "members"
   | "absence-reports"
   | "admin-overrides"
   | "shift-templates"
