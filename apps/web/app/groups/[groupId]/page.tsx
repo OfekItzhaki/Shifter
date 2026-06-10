@@ -1402,6 +1402,7 @@ export default function GroupDetailPage() {
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
+              data-testid={`group-tab-${tab}`}
               className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium whitespace-nowrap transition-all ${
                 activeTab === tab
                   ? "bg-white text-slate-900 shadow-sm"
