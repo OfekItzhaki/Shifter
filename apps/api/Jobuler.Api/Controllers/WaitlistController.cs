@@ -51,7 +51,7 @@ public class WaitlistController : ControllerBase
     {
         await _permissions.RequirePermissionAsync(CurrentUserId, spaceId, Permissions.SpaceView, ct);
 
-        var personId = await ResolvePersonIdAsync(spaceId, ct);
+        var personId = await ResolvePersonIdAsync(spaceId, groupId, ct);
         if (personId is null)
             return Forbid();
 
@@ -85,7 +85,7 @@ public class WaitlistController : ControllerBase
     {
         await _permissions.RequirePermissionAsync(CurrentUserId, spaceId, Permissions.SpaceView, ct);
 
-        var personId = await ResolvePersonIdAsync(spaceId, ct);
+        var personId = await ResolvePersonIdAsync(spaceId, groupId, ct);
         if (personId is null)
             return Forbid();
 
@@ -116,7 +116,7 @@ public class WaitlistController : ControllerBase
     {
         await _permissions.RequirePermissionAsync(CurrentUserId, spaceId, Permissions.SpaceView, ct);
 
-        var personId = await ResolvePersonIdAsync(spaceId, ct);
+        var personId = await ResolvePersonIdAsync(spaceId, groupId, ct);
         if (personId is null)
             return Forbid();
 
@@ -136,12 +136,12 @@ public class WaitlistController : ControllerBase
     {
         await _permissions.RequirePermissionAsync(CurrentUserId, spaceId, Permissions.SpaceView, ct);
 
-        var personId = await ResolvePersonIdAsync(spaceId, ct);
+        var personId = await ResolvePersonIdAsync(spaceId, groupId, ct);
         if (personId is null)
             return Forbid();
 
         var result = await _mediator.Send(
-            new GetMyWaitlistEntriesQuery(spaceId, personId.Value), ct);
+            new GetMyWaitlistEntriesQuery(spaceId, groupId, personId.Value), ct);
 
         return Ok(result);
     }
@@ -150,12 +150,17 @@ public class WaitlistController : ControllerBase
     /// Resolves the current authenticated user's person ID within the given space.
     /// Returns null if the user has no linked person in this space.
     /// </summary>
-    private async Task<Guid?> ResolvePersonIdAsync(Guid spaceId, CancellationToken ct)
+    private async Task<Guid?> ResolvePersonIdAsync(Guid spaceId, Guid groupId, CancellationToken ct)
     {
         var personId = await _db.People
             .AsNoTracking()
             .Where(p => p.SpaceId == spaceId && p.LinkedUserId == CurrentUserId)
-            .Select(p => p.Id)
+            .Join(
+                _db.GroupMemberships.AsNoTracking()
+                    .Where(gm => gm.SpaceId == spaceId && gm.GroupId == groupId),
+                p => p.Id,
+                gm => gm.PersonId,
+                (p, _) => p.Id)
             .FirstOrDefaultAsync(ct);
 
         return personId == Guid.Empty ? null : personId;

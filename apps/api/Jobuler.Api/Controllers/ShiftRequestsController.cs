@@ -54,7 +54,7 @@ public class ShiftRequestsController : ControllerBase
         [FromBody] SubmitShiftRequestRequest req,
         CancellationToken ct)
     {
-        var personId = await ResolvePersonIdAsync(spaceId, ct);
+        var personId = await ResolvePersonIdAsync(spaceId, groupId, ct);
         if (personId is null)
             return Forbid();
 
@@ -89,7 +89,7 @@ public class ShiftRequestsController : ControllerBase
         [FromBody] CancelShiftRequestRequest req,
         CancellationToken ct)
     {
-        var personId = await ResolvePersonIdAsync(spaceId, ct);
+        var personId = await ResolvePersonIdAsync(spaceId, groupId, ct);
         if (personId is null)
             return Forbid();
 
@@ -118,7 +118,7 @@ public class ShiftRequestsController : ControllerBase
         [FromBody] CannotAttendShiftRequest req,
         CancellationToken ct)
     {
-        var personId = await ResolvePersonIdAsync(spaceId, ct);
+        var personId = await ResolvePersonIdAsync(spaceId, groupId, ct);
         if (personId is null)
             return Forbid();
 
@@ -249,7 +249,7 @@ public class ShiftRequestsController : ControllerBase
         [FromQuery] Guid? schedulingCycleId,
         CancellationToken ct)
     {
-        var personId = await ResolvePersonIdAsync(spaceId, ct);
+        var personId = await ResolvePersonIdAsync(spaceId, groupId, ct);
         if (personId is null)
             return Forbid();
 
@@ -285,12 +285,17 @@ public class ShiftRequestsController : ControllerBase
     /// Resolves the current authenticated user's person ID within the given space.
     /// Returns null if the user has no linked person in this space.
     /// </summary>
-    private async Task<Guid?> ResolvePersonIdAsync(Guid spaceId, CancellationToken ct)
+    private async Task<Guid?> ResolvePersonIdAsync(Guid spaceId, Guid groupId, CancellationToken ct)
     {
         var personId = await _db.People
             .AsNoTracking()
             .Where(p => p.SpaceId == spaceId && p.LinkedUserId == CurrentUserId)
-            .Select(p => p.Id)
+            .Join(
+                _db.GroupMemberships.AsNoTracking()
+                    .Where(gm => gm.SpaceId == spaceId && gm.GroupId == groupId),
+                p => p.Id,
+                gm => gm.PersonId,
+                (p, _) => p.Id)
             .FirstOrDefaultAsync(ct);
 
         return personId == Guid.Empty ? null : personId;

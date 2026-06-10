@@ -11,6 +11,7 @@ namespace Jobuler.Application.Scheduling.SelfService.Queries;
 /// </summary>
 public record GetMyWaitlistEntriesQuery(
     Guid SpaceId,
+    Guid GroupId,
     Guid PersonId) : IRequest<IReadOnlyList<WaitlistEntryDto>>;
 
 public record WaitlistEntryDto(
@@ -46,6 +47,7 @@ public class GetMyWaitlistEntriesQueryHandler : IRequestHandler<GetMyWaitlistEnt
                 entry => entry.ShiftSlotId,
                 slot => slot.Id,
                 (entry, slot) => new { Entry = entry, Slot = slot })
+            .Where(x => x.Slot.GroupId == request.GroupId)
             .Join(
                 _db.GroupTasks.AsNoTracking(),
                 combined => combined.Slot.GroupTaskId,

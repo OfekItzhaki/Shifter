@@ -31,7 +31,13 @@ public class GetAvailableSlotsQueryHandler : IRequestHandler<GetAvailableSlotsQu
     {
         // Resolve person from user in this space
         var person = await _db.People.AsNoTracking()
-            .FirstOrDefaultAsync(p => p.SpaceId == req.SpaceId && p.LinkedUserId == req.UserId, ct);
+            .Where(p => p.SpaceId == req.SpaceId && p.LinkedUserId == req.UserId)
+            .Join(
+                _db.GroupMemberships.AsNoTracking().Where(gm => gm.SpaceId == req.SpaceId && gm.GroupId == req.GroupId),
+                p => p.Id,
+                gm => gm.PersonId,
+                (p, _) => p)
+            .FirstOrDefaultAsync(ct);
 
         if (person is null)
             return new SlotAvailabilityResult([], false, null);
@@ -67,6 +73,19 @@ public class GetShiftSlotDetailQueryHandler : IRequestHandler<GetShiftSlotDetail
                                       && s.GroupId == req.GroupId, ct);
 
         if (slot is null)
+            return null;
+
+        var isGroupMember = await _db.People
+            .AsNoTracking()
+            .Where(p => p.SpaceId == req.SpaceId && p.LinkedUserId == req.UserId)
+            .Join(
+                _db.GroupMemberships.AsNoTracking().Where(gm => gm.SpaceId == req.SpaceId && gm.GroupId == req.GroupId),
+                p => p.Id,
+                gm => gm.PersonId,
+                (p, _) => p.Id)
+            .AnyAsync(ct);
+
+        if (!isGroupMember)
             return null;
 
         // Get the task name

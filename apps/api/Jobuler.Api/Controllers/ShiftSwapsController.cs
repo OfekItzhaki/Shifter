@@ -33,11 +33,16 @@ public class ShiftSwapsController : ControllerBase
     /// <summary>
     /// Resolves the current user's person ID within the given space.
     /// </summary>
-    private async Task<Guid?> GetCurrentPersonIdAsync(Guid spaceId, CancellationToken ct)
+    private async Task<Guid?> GetCurrentPersonIdAsync(Guid spaceId, Guid groupId, CancellationToken ct)
     {
         return await _db.People
             .Where(p => p.SpaceId == spaceId && p.LinkedUserId == CurrentUserId)
-            .Select(p => p.Id)
+            .Join(
+                _db.GroupMemberships.AsNoTracking()
+                    .Where(gm => gm.SpaceId == spaceId && gm.GroupId == groupId),
+                p => p.Id,
+                gm => gm.PersonId,
+                (p, _) => p.Id)
             .FirstOrDefaultAsync(ct);
     }
 
@@ -53,7 +58,7 @@ public class ShiftSwapsController : ControllerBase
         [FromBody] ProposeSwapRequest req,
         CancellationToken ct)
     {
-        var personId = await GetCurrentPersonIdAsync(spaceId, ct);
+        var personId = await GetCurrentPersonIdAsync(spaceId, groupId, ct);
         if (personId is null || personId == Guid.Empty)
             return Forbid();
 
@@ -78,7 +83,7 @@ public class ShiftSwapsController : ControllerBase
         Guid swapRequestId,
         CancellationToken ct)
     {
-        var personId = await GetCurrentPersonIdAsync(spaceId, ct);
+        var personId = await GetCurrentPersonIdAsync(spaceId, groupId, ct);
         if (personId is null || personId == Guid.Empty)
             return Forbid();
 
@@ -101,7 +106,7 @@ public class ShiftSwapsController : ControllerBase
         Guid swapRequestId,
         CancellationToken ct)
     {
-        var personId = await GetCurrentPersonIdAsync(spaceId, ct);
+        var personId = await GetCurrentPersonIdAsync(spaceId, groupId, ct);
         if (personId is null || personId == Guid.Empty)
             return Forbid();
 
@@ -121,7 +126,7 @@ public class ShiftSwapsController : ControllerBase
         Guid swapRequestId,
         CancellationToken ct)
     {
-        var personId = await GetCurrentPersonIdAsync(spaceId, ct);
+        var personId = await GetCurrentPersonIdAsync(spaceId, groupId, ct);
         if (personId is null || personId == Guid.Empty)
             return Forbid();
 
@@ -140,7 +145,7 @@ public class ShiftSwapsController : ControllerBase
         Guid groupId,
         CancellationToken ct)
     {
-        var personId = await GetCurrentPersonIdAsync(spaceId, ct);
+        var personId = await GetCurrentPersonIdAsync(spaceId, groupId, ct);
         if (personId is null || personId == Guid.Empty)
             return Forbid();
 
@@ -216,7 +221,7 @@ public class ShiftSwapsController : ControllerBase
         Guid targetPersonId,
         CancellationToken ct)
     {
-        var currentPersonId = await GetCurrentPersonIdAsync(spaceId, ct);
+        var currentPersonId = await GetCurrentPersonIdAsync(spaceId, groupId, ct);
         if (currentPersonId is null || currentPersonId == Guid.Empty)
             return Forbid();
 
