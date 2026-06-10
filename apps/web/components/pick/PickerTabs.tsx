@@ -2,7 +2,7 @@
 
 import { useTranslations } from "next-intl";
 
-export type PickerTab = "slots" | "my-shifts" | "waitlist";
+export type PickerTab = "slots" | "my-shifts" | "waitlist" | "swaps";
 
 export interface PickerTabsProps {
   activeTab: PickerTab;
@@ -23,6 +23,7 @@ export default function PickerTabs({ activeTab, onTabChange }: PickerTabsProps) 
     { id: "slots", label: t("tabs.slots") },
     { id: "my-shifts", label: t("tabs.myShifts") },
     { id: "waitlist", label: t("tabs.waitlist") },
+    { id: "swaps", label: t("tabs.swaps") },
   ];
 
   return (

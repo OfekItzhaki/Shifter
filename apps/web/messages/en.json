@@ -2210,7 +2210,8 @@
     "tabs": {
       "slots": "Available Shifts",
       "myShifts": "My Shifts",
-      "waitlist": "Waitlist"
+      "waitlist": "Waitlist",
+      "swaps": "Swaps"
     },
     "refresh": "Refresh",
     "back": "Back",

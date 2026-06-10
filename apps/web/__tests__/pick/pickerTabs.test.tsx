@@ -20,6 +20,7 @@ vi.mock("next-intl", () => ({
       "tabs.slots": "Available",
       "tabs.myShifts": "My Shifts",
       "tabs.waitlist": "Waitlist",
+      "tabs.swaps": "Swaps",
       title: "Shift Picker",
     };
     return translations[key] ?? key;
@@ -38,6 +39,7 @@ describe("PickerTabs (Task 7.1)", () => {
     expect(screen.getByText("Available")).toBeInTheDocument();
     expect(screen.getByText("My Shifts")).toBeInTheDocument();
     expect(screen.getByText("Waitlist")).toBeInTheDocument();
+    expect(screen.getByText("Swaps")).toBeInTheDocument();
   });
 
   it("renders tabs with tablist role for accessibility", () => {
@@ -45,7 +47,7 @@ describe("PickerTabs (Task 7.1)", () => {
 
     expect(screen.getByRole("tablist")).toBeInTheDocument();
     const tabs = screen.getAllByRole("tab");
-    expect(tabs).toHaveLength(3);
+    expect(tabs).toHaveLength(4);
   });
 
   it("marks the active tab with aria-selected=true", () => {
@@ -55,6 +57,7 @@ describe("PickerTabs (Task 7.1)", () => {
     expect(tabs[0]).toHaveAttribute("aria-selected", "true");
     expect(tabs[1]).toHaveAttribute("aria-selected", "false");
     expect(tabs[2]).toHaveAttribute("aria-selected", "false");
+    expect(tabs[3]).toHaveAttribute("aria-selected", "false");
   });
 
   it("marks my-shifts tab as active when activeTab is my-shifts", () => {
@@ -64,6 +67,7 @@ describe("PickerTabs (Task 7.1)", () => {
     expect(tabs[0]).toHaveAttribute("aria-selected", "false");
     expect(tabs[1]).toHaveAttribute("aria-selected", "true");
     expect(tabs[2]).toHaveAttribute("aria-selected", "false");
+    expect(tabs[3]).toHaveAttribute("aria-selected", "false");
   });
 
   it("marks waitlist tab as active when activeTab is waitlist", () => {
@@ -73,6 +77,17 @@ describe("PickerTabs (Task 7.1)", () => {
     expect(tabs[0]).toHaveAttribute("aria-selected", "false");
     expect(tabs[1]).toHaveAttribute("aria-selected", "false");
     expect(tabs[2]).toHaveAttribute("aria-selected", "true");
+    expect(tabs[3]).toHaveAttribute("aria-selected", "false");
+  });
+
+  it("marks swaps tab as active when activeTab is swaps", () => {
+    render(<PickerTabs {...defaultProps} activeTab="swaps" />);
+
+    const tabs = screen.getAllByRole("tab");
+    expect(tabs[0]).toHaveAttribute("aria-selected", "false");
+    expect(tabs[1]).toHaveAttribute("aria-selected", "false");
+    expect(tabs[2]).toHaveAttribute("aria-selected", "false");
+    expect(tabs[3]).toHaveAttribute("aria-selected", "true");
   });
 
   it("highlights active tab with distinct styling", () => {
@@ -113,6 +128,16 @@ describe("PickerTabs (Task 7.1)", () => {
 
     expect(onTabChange).toHaveBeenCalledTimes(1);
     expect(onTabChange).toHaveBeenCalledWith("waitlist");
+  });
+
+  it("calls onTabChange with 'swaps' when swaps tab is clicked", () => {
+    const onTabChange = vi.fn();
+    render(<PickerTabs activeTab="slots" onTabChange={onTabChange} />);
+
+    fireEvent.click(screen.getByText("Swaps"));
+
+    expect(onTabChange).toHaveBeenCalledTimes(1);
+    expect(onTabChange).toHaveBeenCalledWith("swaps");
   });
 
   it("tab buttons have minimum 44px height for touch targets", () => {

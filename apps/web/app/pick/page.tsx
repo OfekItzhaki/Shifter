@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useSpaceStore } from "@/lib/store/spaceStore";
 import { useEffectiveAuth } from "@/lib/hooks/useEffectiveAuth";
-import { getGroups, type GroupWithMemberCountDto } from "@/lib/api/groups";
+import { getGroupMembers, getGroups, type GroupMemberDto, type GroupWithMemberCountDto } from "@/lib/api/groups";
 import { filterSelfServiceGroups } from "@/lib/utils/pickGroupFilter";
 import {
   getLastGroup,
@@ -23,6 +23,7 @@ import ErrorRetry from "@/components/groups/selfService/ErrorRetry";
 const SlotBrowserTab = lazy(() => import("@/app/groups/[groupId]/tabs/SlotBrowserTab"));
 const MyShiftsTab = lazy(() => import("@/components/groups/selfService/MyShiftsTab"));
 const WaitlistTab = lazy(() => import("@/app/groups/[groupId]/tabs/WaitlistTab"));
+const SwapsTab = lazy(() => import("@/app/groups/[groupId]/tabs/SwapsTab"));
 
 type Phase = "loading" | "group-select" | "slot-browser";
 
@@ -47,6 +48,9 @@ export default function PickPage() {
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [members, setMembers] = useState<GroupMemberDto[]>([]);
+  const [membersLoading, setMembersLoading] = useState(false);
+  const [membersError, setMembersError] = useState<string | null>(null);
 
   // Auth guard: redirect to login if not authenticated
   useEffect(() => {
@@ -73,6 +77,8 @@ export default function PickPage() {
         const group = filtered.find((g) => g.id === validGroupId);
         setSelectedGroupId(validGroupId);
         setSelectedGroupName(group?.name ?? null);
+        setMembers([]);
+        setMembersError(null);
         setPhase("slot-browser");
       } else {
         clearLastGroup();
@@ -95,6 +101,8 @@ export default function PickPage() {
     setLastGroup(groupId);
     setSelectedGroupId(groupId);
     setSelectedGroupName(groupName);
+    setMembers([]);
+    setMembersError(null);
     setActiveTab("slots");
     setPhase("slot-browser");
   }, []);
@@ -108,14 +116,38 @@ export default function PickPage() {
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
     setRefreshKey((k) => k + 1);
+    if (activeTab === "swaps") {
+      setMembers([]);
+      setMembersError(null);
+    }
     // Small delay to show the spinner
     setTimeout(() => setRefreshing(false), 600);
-  }, []);
+  }, [activeTab]);
 
   // Handle tab change
   const handleTabChange = useCallback((tab: PickerTab) => {
     setActiveTab(tab);
   }, []);
+
+  const loadMembers = useCallback(async () => {
+    if (!currentSpaceId || !selectedGroupId) return;
+
+    setMembersLoading(true);
+    setMembersError(null);
+    try {
+      setMembers(await getGroupMembers(currentSpaceId, selectedGroupId));
+    } catch {
+      setMembersError(t("error"));
+    } finally {
+      setMembersLoading(false);
+    }
+  }, [currentSpaceId, selectedGroupId, t]);
+
+  useEffect(() => {
+    if (activeTab === "swaps" && selectedGroupId && currentSpaceId && members.length === 0 && !membersLoading) {
+      void Promise.resolve().then(loadMembers);
+    }
+  }, [activeTab, currentSpaceId, loadMembers, members.length, membersLoading, selectedGroupId]);
 
   // Don't render anything if not authenticated (redirect in progress)
   if (!isHydrated || !isLoggedIn) {
@@ -187,6 +219,20 @@ export default function PickPage() {
                     spaceId={currentSpaceId}
                     groupId={selectedGroupId}
                   />
+                )}
+                {activeTab === "swaps" && (
+                  membersLoading ? (
+                    <LoadingCard rows={3} variant="list" />
+                  ) : membersError ? (
+                    <ErrorRetry message={membersError} onRetry={loadMembers} />
+                  ) : (
+                    <SwapsTab
+                      key={`swaps-${refreshKey}`}
+                      spaceId={currentSpaceId}
+                      groupId={selectedGroupId}
+                      members={members}
+                    />
+                  )
                 )}
               </Suspense>
             </div>
