@@ -2209,7 +2209,8 @@
     "noGroups": "No self-service groups available",
     "tabs": {
       "slots": "Available Shifts",
-      "myShifts": "My Shifts"
+      "myShifts": "My Shifts",
+      "waitlist": "Waitlist"
     },
     "refresh": "Refresh",
     "back": "Back",

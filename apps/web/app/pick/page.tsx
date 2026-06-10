@@ -22,6 +22,7 @@ import ErrorRetry from "@/components/groups/selfService/ErrorRetry";
 // Lazy-load tab content components for code splitting
 const SlotBrowserTab = lazy(() => import("@/app/groups/[groupId]/tabs/SlotBrowserTab"));
 const MyShiftsTab = lazy(() => import("@/components/groups/selfService/MyShiftsTab"));
+const WaitlistTab = lazy(() => import("@/app/groups/[groupId]/tabs/WaitlistTab"));
 
 type Phase = "loading" | "group-select" | "slot-browser";
 
@@ -176,6 +177,13 @@ export default function PickPage() {
                 {activeTab === "my-shifts" && (
                   <MyShiftsTab
                     key={`my-shifts-${refreshKey}`}
+                    spaceId={currentSpaceId}
+                    groupId={selectedGroupId}
+                  />
+                )}
+                {activeTab === "waitlist" && (
+                  <WaitlistTab
+                    key={`waitlist-${refreshKey}`}
                     spaceId={currentSpaceId}
                     groupId={selectedGroupId}
                   />
