@@ -1438,58 +1438,66 @@ function ShiftCard({
   })();
 
   return (
-    <div className="flex items-center justify-between gap-3 bg-white border border-slate-200 rounded-xl px-4 py-3">
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <p className="text-sm font-medium text-slate-900 truncate">
-            {formatSlotDate(request.slotDate)}
+    <div className="bg-white border border-slate-200 rounded-xl px-4 py-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <p className="text-sm font-medium text-slate-900 truncate">
+              {formatSlotDate(request.slotDate)}
+            </p>
+            {request.isAdminOverride && (
+              <span className="text-xs text-purple-600 bg-purple-50 border border-purple-200 px-1.5 py-0.5 rounded">
+                {t("adminOverride")}
+              </span>
+            )}
+          </div>
+          <p className="text-xs text-slate-500 mt-0.5">
+            {formatTime24h(request.slotStartTime)} – {formatTime24h(request.slotEndTime)} · {request.taskName}
           </p>
-          {request.isAdminOverride && (
-            <span className="text-xs text-purple-600 bg-purple-50 border border-purple-200 px-1.5 py-0.5 rounded">
-              {t("adminOverride")}
-            </span>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2 sm:flex-shrink-0">
+          {/* Status badge */}
+          <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium border ${style.badge}`}>
+            <span className={`w-1.5 h-1.5 rounded-full ${style.dot}`} />
+            {statusLabel}
+          </span>
+
+          {/* Cancel button */}
+          {showCancelButton && (
+            <button
+              onClick={() => onCancel(request)}
+              className="text-xs text-red-600 hover:text-red-700 border border-red-200 bg-red-50 hover:bg-red-100 px-2.5 py-1 rounded-lg transition-colors"
+            >
+              {t("cancelButton")}
+            </button>
+          )}
+          {showCannotAttendButton && (
+            <button
+              onClick={() => onChange(request)}
+              className="text-xs text-sky-700 hover:text-sky-800 border border-sky-200 bg-sky-50 hover:bg-sky-100 px-2.5 py-1 rounded-lg transition-colors"
+            >
+              {t("changeButton")}
+            </button>
+          )}
+          {showCannotAttendButton && (
+            <button
+              onClick={() => onCannotAttend(request)}
+              disabled={lateReportWouldBeBlocked}
+              title={lateReportWouldBeBlocked ? t("cannotAttendLimitReached") : undefined}
+              className="text-xs text-amber-700 hover:text-amber-800 border border-amber-200 bg-amber-50 hover:bg-amber-100 px-2.5 py-1 rounded-lg transition-colors disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400"
+            >
+              {t("cannotAttendButton")}
+            </button>
           )}
         </div>
-        <p className="text-xs text-slate-500 mt-0.5">
-          {formatTime24h(request.slotStartTime)} – {formatTime24h(request.slotEndTime)} · {request.taskName}
+      </div>
+
+      {lateReportWouldBeBlocked && (
+        <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-800">
+          {t("cannotAttendLimitReached")}
         </p>
-      </div>
-
-      <div className="flex items-center gap-2 flex-shrink-0">
-        {/* Status badge */}
-        <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium border ${style.badge}`}>
-          <span className={`w-1.5 h-1.5 rounded-full ${style.dot}`} />
-          {statusLabel}
-        </span>
-
-        {/* Cancel button */}
-        {showCancelButton && (
-          <button
-            onClick={() => onCancel(request)}
-            className="text-xs text-red-600 hover:text-red-700 border border-red-200 bg-red-50 hover:bg-red-100 px-2.5 py-1 rounded-lg transition-colors"
-          >
-            {t("cancelButton")}
-          </button>
-        )}
-        {showCannotAttendButton && (
-          <button
-            onClick={() => onChange(request)}
-            className="text-xs text-sky-700 hover:text-sky-800 border border-sky-200 bg-sky-50 hover:bg-sky-100 px-2.5 py-1 rounded-lg transition-colors"
-          >
-            {t("changeButton")}
-          </button>
-        )}
-        {showCannotAttendButton && (
-          <button
-            onClick={() => onCannotAttend(request)}
-            disabled={lateReportWouldBeBlocked}
-            title={lateReportWouldBeBlocked ? t("cannotAttendLimitReached") : undefined}
-            className="text-xs text-amber-700 hover:text-amber-800 border border-amber-200 bg-amber-50 hover:bg-amber-100 px-2.5 py-1 rounded-lg transition-colors disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400"
-          >
-            {t("cannotAttendButton")}
-          </button>
-        )}
-      </div>
+      )}
     </div>
   );
 }

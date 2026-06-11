@@ -191,6 +191,7 @@ describe("MyShiftsTab", () => {
       "title",
       "You have reached the late absence limit for this cycle.",
     );
+    expect(screen.getByText("You have reached the late absence limit for this cycle.")).toBeInTheDocument();
     expect(screen.getByText("2/2 used inside 24h")).toBeInTheDocument();
     expect(screen.getByText("Which action should I use?")).toBeInTheDocument();
     expect(screen.getByText("Use before the 48h cutoff.")).toBeInTheDocument();
