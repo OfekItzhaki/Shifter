@@ -44,6 +44,8 @@ packaging, and self-service export/import readiness.
 - Wires public frontend deployment variables through the web Docker build and
   runtime environment, including legal/support email, Crisp, PostHog, Sentry,
   VAPID, app version, and the public API URL.
+- Adds `infra/scripts/restore-compose.sh` and restore runbook docs for
+  customer-hosted PostgreSQL dumps and optional uploads-volume archives.
 
 ## Verification
 
@@ -62,6 +64,8 @@ packaging, and self-service export/import readiness.
   passed locally; live execution still depends on a responsive seeded API/web
   stack.
 - `infra/scripts/validate-customer-env.ps1` parser check passed locally.
+- `C:\\Program Files\\Git\\bin\\bash.exe -n infra/scripts/restore-compose.sh`
+  passed.
 - `dotnet test apps\\api\\Jobuler.Tests\\Jobuler.Tests.csproj --filter FullyQualifiedName~AiAssistantSupportTests`
   passed: 6 passed, 0 failed.
 - `dotnet test apps\\api\\Jobuler.Tests\\Jobuler.Tests.csproj --filter FullyQualifiedName~SpaceSpecialDayCommandTests`
