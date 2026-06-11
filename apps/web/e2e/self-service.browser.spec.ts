@@ -48,6 +48,7 @@ interface ShiftRequestDto {
   id: string;
   shiftSlotId: string;
   status: "Pending" | "Approved" | "Rejected" | "Cancelled";
+  cancellationReason: string | null;
 }
 
 interface MyShiftsResponse {
@@ -270,6 +271,63 @@ async function enterElevatedGroup(page: Page, groupId: string): Promise<void> {
 }
 
 test.describe("Self-service browser lifecycle", () => {
+  test("member cancels an approved shift through the UI", async ({ page, request }) => {
+    const adminEmail = process.env.E2E_ADMIN_EMAIL ?? "admin@demo.local";
+    const memberEmail = process.env.E2E_CANCEL_MEMBER_EMAIL ?? "yael@demo.local";
+    const adminToken = await login(request, adminEmail);
+    const memberToken = await login(request, memberEmail);
+    const { spaceId, groupId } = await findDemoSelfServiceGroup(request, adminToken);
+    const status = await api<CycleStatusDto>(
+      request,
+      adminToken,
+      "GET",
+      `/spaces/${spaceId}/groups/${groupId}/self-service-cycles/status`
+    );
+    expect(status.cycleId).toBeTruthy();
+
+    const member = await getGroupMemberByEmail(request, adminToken, spaceId, groupId, memberEmail);
+    const ownedShift = await ensureApprovedShift(
+      request,
+      adminToken,
+      memberToken,
+      spaceId,
+      groupId,
+      status.cycleId!,
+      member.personId
+    );
+    const reason = `Browser E2E cancellation ${Date.now()}`;
+
+    await loginAsUser(page, memberEmail, DEMO_PASSWORD);
+    await page.evaluate((targetGroupId) => {
+      localStorage.setItem("shifter-pick-last-group", targetGroupId);
+    }, groupId);
+    await page.goto(`${BASE}/pick`);
+    await page.getByTestId("pick-tab-my-shifts").click();
+    const shiftCard = page.locator(`[data-testid="self-service-shift-card"][data-shift-request-id="${ownedShift.id}"]`);
+    await expect(shiftCard.getByTestId("self-service-cancel-shift")).toBeVisible({ timeout: 15000 });
+    await shiftCard.getByTestId("self-service-cancel-shift").click();
+    await page.locator("textarea").fill(reason);
+    await Promise.all([
+      page.waitForResponse((response) =>
+        response.url().includes(`/shift-requests/${ownedShift.id}/cancel`)
+        && response.request().method() === "POST"
+      ),
+      page.getByTestId("self-service-confirm-cancel-shift").click(),
+    ]);
+
+    const refreshedShifts = await api<MyShiftsResponse>(
+      request,
+      memberToken,
+      "GET",
+      `/spaces/${spaceId}/groups/${groupId}/shift-requests/mine`
+    );
+    const cancelledShift = refreshedShifts.requests.find((row) => row.id === ownedShift.id);
+    expect(cancelledShift?.status).toBe("Cancelled");
+    expect(cancelledShift?.cancellationReason).toBe(reason);
+
+    await expect(shiftCard).toBeVisible({ timeout: 15000 });
+  });
+
   test("member submits and admin approves a shift-change request through the UI", async ({ page, request }) => {
     const adminEmail = process.env.E2E_ADMIN_EMAIL ?? "admin@demo.local";
     const memberEmail = process.env.E2E_CHANGE_MEMBER_EMAIL ?? "ofek@demo.local";

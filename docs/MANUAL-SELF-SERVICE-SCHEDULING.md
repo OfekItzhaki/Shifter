@@ -234,6 +234,8 @@ group:
   approval from the review queue
 - a member/admin browser lifecycle test for shift-change request submission,
   admin approval, and reassignment verification
+- a member browser lifecycle test for cancelling an approved shift and verifying
+  the cancelled state
 
 ## Customer-Hosted Use
 
@@ -260,9 +262,10 @@ These are not blockers for an MVP rollout, but they are worth improving before
 large deployments:
 
 - Broader browser end-to-end coverage for the complete member/admin cycle:
-  cancellation, swaps, rejection paths, and final slot-state verification. The
+  swaps, rejection paths, and final slot-state verification. The
   browser suite already covers picking, waitlist entry, cannot-attend reporting,
-  absence approval, and shift-change approval with reassignment.
+  absence approval, shift cancellation, and shift-change approval with
+  reassignment.
 - Organization-level defaults for self-service policy through the admin UI.
   Space owners can configure space-level defaults today; a higher-level
   organization template for multi-space installs is still deferred.

@@ -906,6 +906,7 @@ export default function MyShiftsTab({ spaceId, groupId, onNavigate }: MyShiftsTa
             </button>
             <MutationButton
               onClick={handleCancelConfirm}
+              data-testid="self-service-confirm-cancel-shift"
               loading={cancelling}
               disabled={cancelReason.trim().length === 0}
               label={t("cancelConfirm")}
@@ -1487,7 +1488,11 @@ function ShiftCard({
   })();
 
   return (
-    <div className="bg-white border border-slate-200 rounded-xl px-4 py-3">
+    <div
+      data-testid="self-service-shift-card"
+      data-shift-request-id={request.id}
+      className="bg-white border border-slate-200 rounded-xl px-4 py-3"
+    >
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
