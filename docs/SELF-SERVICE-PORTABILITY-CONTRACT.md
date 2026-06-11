@@ -10,7 +10,8 @@ managers see in self-service scheduling.
 
 ## Required Data
 
-Portable exports must include these self-service records:
+Portable exports and dry-run import validation must include these self-service
+records:
 
 - `SpaceSelfServiceDefaults`: space-level defaults for request windows, absence
   limits, waitlist offer timing, and workflow toggles.
@@ -50,7 +51,8 @@ boundary.
 
 ## Import Rules
 
-Imports must rebuild a usable self-service state, not only seed configuration.
+When an executable package import is added, imports must rebuild a usable
+self-service state, not only seed configuration.
 
 - Import defaults before group config.
 - Import templates, cycles, slots, and shift requests before review queues.
@@ -81,8 +83,13 @@ Before merging portable isolation after manual self-service:
 
 1. Confirm `SpecialLeaveRequestsController`, special leave commands, queries,
    DTOs, domain entity, EF configuration, and migrations are still present.
-2. Confirm export/import tests include every record type listed above.
+2. Confirm export and dry-run import validation tests include every record type
+   listed above.
 3. Confirm tenant isolation tests cover both member and admin self-service
    endpoints.
-4. Confirm closeout metrics survive export/import with matching counts.
-5. Run the manual self-service QA checklist after the merge.
+4. Confirm closeout metrics survive export and dry-run import validation with
+   matching counts.
+5. Before selling tenant-by-tenant package migration, add and test the actual
+   import executor. Whole-deployment customer restores use the compose
+   backup/restore scripts instead.
+6. Run the manual self-service QA checklist after the merge.

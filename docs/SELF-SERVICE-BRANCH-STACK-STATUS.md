@@ -86,7 +86,8 @@ Remaining manual/product check:
 ### `feat/self-service-portable-integration`
 
 Purpose: integrate organization/tenant portability, contact protection, and
-export/import boundaries on top of self-service and holiday calendars.
+export plus import-validation boundaries on top of self-service and holiday
+calendars.
 
 PR:
 
@@ -117,8 +118,9 @@ Preserved self-service files:
 
 Validated integration:
 
-- Organization export manifests, packages, and import validation counts now
-  include manual self-service workflow records listed in the portability contract.
+- Organization export manifests, packages, and dry-run import validation counts
+  now include manual self-service workflow records listed in the portability
+  contract.
 
 Remaining manual/product check:
 
@@ -155,8 +157,8 @@ Known verification:
 
 Validated integration:
 
-- Organization export manifests, packages, and import validation counts include
-  manual self-service workflow records.
+- Organization export manifests, packages, and dry-run import validation counts
+  include manual self-service workflow records.
 - Member-facing self-service slots show marked special days.
 - Admin cycle status exposes special-day counts and labels underfilled slots on
   marked special days.
@@ -205,6 +207,9 @@ Remaining manual/product check:
   web/API stack.
 - Smoke-test customer-hosted setup with real customer secrets and a real
   database.
+- Build the actual organization package import executor before promising
+  tenant-by-tenant package migration; this branch currently packages full
+  deployment restore plus organization export/dry-run validation.
 
 ## PR Opening Notes
 

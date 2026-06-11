@@ -63,7 +63,8 @@ as the merge gate for product behavior, policy, data scope, and tests.
 `feat/portable-space-isolation` is related to customer-hosted deployments and
 organization boundaries, but it is not the same feature as manual self-service.
 
-That branch appears to contain organization export/import, organization billing,
+That branch appears to contain organization export and import validation,
+organization billing,
 tenant isolation, and contact-field protection work. It also has a wide diff
 against `main`, so it should not be merged casually into self-service.
 
@@ -74,7 +75,8 @@ Recommended sequence:
    requests, waitlists, swaps, attendance, special leave, and closeout data.
 3. Verify tenant scoping/RLS for every self-service table before using it for
    customer-hosted installs.
-4. Re-run customer-hosted health checks and export/import tests after merging.
+4. Re-run customer-hosted health checks and export/import-validation tests after
+   merging.
 
 Known reconciliation points from the branch diff:
 
@@ -83,7 +85,8 @@ Known reconciliation points from the branch diff:
   `SpecialLeaveRequestDto`, and the `SpecialLeaveRequest` domain entity when
   compared with `main`. That conflicts with the current manual self-service
   branch, where special leave is a supported workflow and has browser coverage.
-- Organization export/import must include all self-service workflow data:
+- Organization export and dry-run import validation must include all
+  self-service workflow data:
   shift requests, absence reports, shift change requests, waitlist entries, swap
   requests, attendance records, special leave requests, self-service defaults,
   templates, slots, cycles, and closeout artifacts.
@@ -93,7 +96,7 @@ Known reconciliation points from the branch diff:
   behavior until organization-level billing is explicitly rolled out.
 
 Use the [self-service portability contract](SELF-SERVICE-PORTABILITY-CONTRACT.md)
-as the merge gate for export/import, tenant isolation, and special leave
+as the merge gate for export/import-validation, tenant isolation, and special leave
 preservation.
 
 ## Practical Merge Order

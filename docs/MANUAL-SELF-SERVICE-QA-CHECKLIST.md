@@ -83,6 +83,8 @@ Before merging `feat/holiday-calendars` after this branch:
 Before merging `feat/portable-space-isolation` after this branch:
 
 - Confirm special leave API/application/domain files are preserved.
-- Confirm organization export/import includes all self-service tables.
+- Confirm organization export and dry-run import validation include all
+  self-service tables. Use compose backup/restore for full customer-hosted
+  deployment restores until a tenant package import executor is built.
 - Confirm tenant/RLS checks cover member and admin self-service endpoints.
 - Confirm billing behavior remains correct for current space-level plans.

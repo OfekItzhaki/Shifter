@@ -9,7 +9,7 @@ Self-service scheduling with holidays and client-hosted readiness
 This PR exports the complete manual self-service scheduling stack to a single
 review branch. It includes the manual member/admin workflows, holiday/special-day
 integration, portable organization isolation, customer-hosted deployment
-packaging, and self-service export/import readiness.
+packaging, and self-service export package validation readiness.
 
 ## Highlights
 
@@ -25,7 +25,8 @@ packaging, and self-service export/import readiness.
   and import validation counts, including scoped notifications and audit logs
   tied to those workflows.
 - Validates package references for exported users, owner/member links, core
-  scheduling rows, and self-service workflow relationships before import.
+  scheduling rows, and self-service workflow relationships before a future
+  package import executor.
 - Wires `FIELD_ENCRYPTION_KEY` through customer compose configuration and makes
   it required by the customer-hosted env validator.
 - Adds a Windows/PowerShell customer env validator alongside the Bash validator.
@@ -86,6 +87,9 @@ packaging, and self-service export/import readiness.
 - Run `infra/scripts/smoke-self-service-client-ready.ps1` against a live seeded
   stack before demo/merge.
 - Run a customer-hosted smoke with real customer secrets and a real database.
+- Build and verify an actual organization package import executor before
+  promising tenant-by-tenant package migration. This branch supports full
+  deployment restore plus organization package export/dry-run validation.
 
 PR URL:
 

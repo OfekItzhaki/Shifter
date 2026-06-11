@@ -9,13 +9,14 @@ Integrate portable space isolation with self-service scheduling
 This PR stacks on top of the manual self-service and holiday-calendar
 integration branches. It reconciles `feat/portable-space-isolation` with the
 self-service scheduling work so customer-hosted/on-prem style deployments can
-preserve organization, billing, contact protection, and export/import boundaries
+preserve organization, billing, contact protection, and export plus import
+validation boundaries
 without dropping self-service review workflows.
 
 ## Highlights
 
 - Adds organization and organization-subscription domain/application/API support.
-- Adds organization export/import validation and manifest queries.
+- Adds organization export, dry-run import validation, and manifest queries.
 - Adds contact lookup protection and field encryption for user contact fields.
 - Adds organization portability tests and contact field protection tests.
 - Includes manual self-service workflow records in organization export manifests,
