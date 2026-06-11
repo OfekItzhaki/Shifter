@@ -1999,6 +1999,125 @@ public class SelfServiceScopeTests
     }
 
     [Fact]
+    public async Task GetAvailable_AllowsGroupMemberWithoutSpaceViewGrant()
+    {
+        using var db = CreateDb();
+        var services = CreateControllerServices();
+        var spaceId = Guid.NewGuid();
+        var group = Group.Create(spaceId, null, "Route Group");
+        var userId = Guid.NewGuid();
+        var ownerUserId = Guid.NewGuid();
+        var person = Person.Create(spaceId, "Member", linkedUserId: userId);
+        var cycle = CreateCycle(spaceId, group.Id);
+        var task = CreateTask(spaceId, group.Id, "Task", ownerUserId);
+        var slot = CreateSlot(spaceId, group.Id, task.Id, cycle.Id, daysFromNow: 2);
+
+        db.People.Add(person);
+        db.Groups.Add(group);
+        db.GroupMemberships.Add(GroupMembership.Create(spaceId, group.Id, person.Id));
+        db.SchedulingCycles.Add(cycle);
+        db.GroupTasks.Add(task);
+        db.ShiftSlots.Add(slot);
+        await db.SaveChangesAsync();
+
+        services.Mediator
+            .Send(
+                Arg.Is<GetAvailableSlotsQuery>(q =>
+                    q.SpaceId == spaceId
+                    && q.GroupId == group.Id
+                    && q.SchedulingCycleId == cycle.Id
+                    && q.UserId == userId
+                    && q.IncludeFullSlots),
+                Arg.Any<CancellationToken>())
+            .Returns(new SlotAvailabilityResult(
+                new[]
+                {
+                    new AvailableSlotDto(
+                        slot.Id,
+                        slot.Date,
+                        slot.StartTime,
+                        slot.EndTime,
+                        "Task",
+                        slot.CurrentFillCount,
+                        slot.Capacity)
+                },
+                IsReadOnly: false,
+                Message: null));
+
+        var controller = new ShiftSlotsController(services.Mediator, services.Permissions, db);
+        controller.ControllerContext = CreateControllerContext(userId);
+
+        var result = await controller.GetAvailable(
+            spaceId,
+            group.Id,
+            cycle.Id.ToString(),
+            CancellationToken.None);
+
+        result.Should().BeOfType<OkObjectResult>();
+        await services.Permissions.DidNotReceiveWithAnyArgs()
+            .RequirePermissionAsync(default, default, default!, default);
+    }
+
+    [Fact]
+    public async Task GetById_AllowsGroupMemberWithoutSpaceViewGrant()
+    {
+        using var db = CreateDb();
+        var services = CreateControllerServices();
+        var spaceId = Guid.NewGuid();
+        var group = Group.Create(spaceId, null, "Route Group");
+        var userId = Guid.NewGuid();
+        var ownerUserId = Guid.NewGuid();
+        var person = Person.Create(spaceId, "Member", linkedUserId: userId);
+        var cycle = CreateCycle(spaceId, group.Id);
+        var task = CreateTask(spaceId, group.Id, "Task", ownerUserId);
+        var slot = CreateSlot(spaceId, group.Id, task.Id, cycle.Id, daysFromNow: 2);
+
+        db.People.Add(person);
+        db.Groups.Add(group);
+        db.GroupMemberships.Add(GroupMembership.Create(spaceId, group.Id, person.Id));
+        db.SchedulingCycles.Add(cycle);
+        db.GroupTasks.Add(task);
+        db.ShiftSlots.Add(slot);
+        await db.SaveChangesAsync();
+
+        services.Mediator
+            .Send(
+                Arg.Is<GetShiftSlotDetailQuery>(q =>
+                    q.SpaceId == spaceId
+                    && q.GroupId == group.Id
+                    && q.ShiftSlotId == slot.Id
+                    && q.UserId == userId),
+                Arg.Any<CancellationToken>())
+            .Returns(new ShiftSlotDetailDto(
+                slot.Id,
+                group.Id,
+                task.Id,
+                "Task",
+                slot.ShiftTemplateId,
+                cycle.Id,
+                slot.Date,
+                slot.StartTime,
+                slot.EndTime,
+                slot.Capacity,
+                slot.CurrentFillCount,
+                slot.Status.ToString(),
+                IsReadOnly: false));
+
+        var controller = new ShiftSlotsController(services.Mediator, services.Permissions, db);
+        controller.ControllerContext = CreateControllerContext(userId);
+
+        var result = await controller.GetById(
+            spaceId,
+            group.Id,
+            slot.Id,
+            CancellationToken.None);
+
+        result.Should().BeOfType<OkObjectResult>();
+        await services.Permissions.DidNotReceiveWithAnyArgs()
+            .RequirePermissionAsync(default, default, default!, default);
+    }
+
+    [Fact]
     public async Task ListAdminShiftRequests_ReturnsCancelledRequestsForRequestedGroupOnly()
     {
         using var db = CreateDb();

@@ -16,6 +16,8 @@ public class ShiftSlot : AuditableEntity, ITenantScoped
     public DateOnly Date { get; private set; }
     public TimeOnly StartTime { get; private set; }
     public TimeOnly EndTime { get; private set; }
+    public DateTime StartsAt { get; private set; }
+    public DateTime EndsAt { get; private set; }
     public int Capacity { get; private set; }
     public int CurrentFillCount { get; private set; }
     public ShiftSlotStatus Status { get; private set; }
@@ -42,6 +44,8 @@ public class ShiftSlot : AuditableEntity, ITenantScoped
             Date = date,
             StartTime = startTime,
             EndTime = endTime,
+            StartsAt = ToUtcDateTime(date, startTime),
+            EndsAt = ToUtcDateTime(date, endTime, endTime <= startTime),
             Capacity = capacity,
             CurrentFillCount = 0,
             Status = ShiftSlotStatus.Open
@@ -83,11 +87,19 @@ public class ShiftSlot : AuditableEntity, ITenantScoped
     {
         StartTime = startTime;
         EndTime = endTime;
+        StartsAt = ToUtcDateTime(Date, startTime);
+        EndsAt = ToUtcDateTime(Date, endTime, endTime <= startTime);
         Capacity = capacity;
 
         if (groupTaskId.HasValue)
             GroupTaskId = groupTaskId.Value;
 
         Touch();
+    }
+
+    private static DateTime ToUtcDateTime(DateOnly date, TimeOnly time, bool nextDay = false)
+    {
+        var resolvedDate = nextDay ? date.AddDays(1) : date;
+        return DateTime.SpecifyKind(resolvedDate.ToDateTime(time), DateTimeKind.Utc);
     }
 }

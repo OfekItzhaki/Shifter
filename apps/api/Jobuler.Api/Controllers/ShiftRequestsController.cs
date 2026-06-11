@@ -197,6 +197,7 @@ public class ShiftRequestsController : ControllerBase
                         && r.GroupId == groupId
                         && r.PersonId == personId.Value
                         && r.SchedulingCycleId == resolvedCycleId)
+            .OrderByDescending(r => r.ReportedAt)
             .Join(_db.People.AsNoTracking(), r => r.PersonId, p => p.Id, (r, p) => new { Report = r, PersonName = p.DisplayName ?? p.FullName })
             .Join(_db.ShiftSlots.AsNoTracking(), rp => rp.Report.ShiftSlotId, s => s.Id, (rp, s) => new { rp.Report, rp.PersonName, Slot = s })
             .Join(_db.GroupTasks.AsNoTracking(), rps => rps.Slot.GroupTaskId, t => t.Id, (rps, t) => new { rps.Report, rps.PersonName, rps.Slot, TaskName = t.Name })
@@ -216,7 +217,6 @@ public class ShiftRequestsController : ControllerBase
                 r.Report.ReportedAt,
                 r.Report.AdminNote,
                 r.Report.ReviewedAt))
-            .OrderByDescending(r => r.ReportedAt)
             .ToListAsync(ct);
 
         var lateReportsUsed = await _db.ShiftAbsenceReports
@@ -263,6 +263,7 @@ public class ShiftRequestsController : ControllerBase
         }
 
         var reports = await query
+            .OrderByDescending(r => r.ReportedAt)
             .Join(_db.People.AsNoTracking(), r => r.PersonId, p => p.Id, (r, p) => new { Report = r, PersonName = p.DisplayName ?? p.FullName })
             .Join(_db.ShiftSlots.AsNoTracking(), rp => rp.Report.ShiftSlotId, s => s.Id, (rp, s) => new { rp.Report, rp.PersonName, Slot = s })
             .Join(_db.GroupTasks.AsNoTracking(), rps => rps.Slot.GroupTaskId, t => t.Id, (rps, t) => new AbsenceReportResponse(
@@ -281,7 +282,6 @@ public class ShiftRequestsController : ControllerBase
                 rps.Report.ReportedAt,
                 rps.Report.AdminNote,
                 rps.Report.ReviewedAt))
-            .OrderByDescending(r => r.ReportedAt)
             .ToListAsync(ct);
 
         return Ok(reports);

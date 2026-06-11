@@ -92,6 +92,8 @@ public class ShiftSlotConfiguration : IEntityTypeConfiguration<ShiftSlot>
         builder.Property(s => s.Date).HasColumnName("date");
         builder.Property(s => s.StartTime).HasColumnName("start_time");
         builder.Property(s => s.EndTime).HasColumnName("end_time");
+        builder.Property(s => s.StartsAt).HasColumnName("starts_at");
+        builder.Property(s => s.EndsAt).HasColumnName("ends_at");
         builder.Property(s => s.Capacity).HasColumnName("capacity");
         builder.Property(s => s.CurrentFillCount).HasColumnName("current_fill_count").HasDefaultValue(0);
         builder.Property(s => s.Status).HasColumnName("status")

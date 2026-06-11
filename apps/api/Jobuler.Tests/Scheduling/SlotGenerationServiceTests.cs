@@ -78,11 +78,15 @@ public class SlotGenerationServiceTests
         slots.Where(s => s.ShiftTemplateId == mondayTemplate.Id).Should().OnlyContain(s =>
             s.StartTime == new TimeOnly(9, 0)
             && s.EndTime == new TimeOnly(17, 0)
+            && s.StartsAt == DateTime.SpecifyKind(s.Date.ToDateTime(new TimeOnly(9, 0)), DateTimeKind.Utc)
+            && s.EndsAt == DateTime.SpecifyKind(s.Date.ToDateTime(new TimeOnly(17, 0)), DateTimeKind.Utc)
             && s.Capacity == 2
             && s.CurrentFillCount == 0);
         slots.Where(s => s.ShiftTemplateId == wednesdayTemplate.Id).Should().OnlyContain(s =>
             s.StartTime == new TimeOnly(10, 0)
             && s.EndTime == new TimeOnly(18, 0)
+            && s.StartsAt == DateTime.SpecifyKind(s.Date.ToDateTime(new TimeOnly(10, 0)), DateTimeKind.Utc)
+            && s.EndsAt == DateTime.SpecifyKind(s.Date.ToDateTime(new TimeOnly(18, 0)), DateTimeKind.Utc)
             && s.Capacity == 1
             && s.CurrentFillCount == 0);
 

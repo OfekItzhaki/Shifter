@@ -146,8 +146,6 @@ public class ShiftSlotsController : ControllerBase
         [FromQuery] string cycleId,
         CancellationToken ct)
     {
-        await _permissions.RequirePermissionAsync(CurrentUserId, spaceId, Permissions.SpaceView, ct);
-
         Guid resolvedCycleId;
         if (string.Equals(cycleId, "current", StringComparison.OrdinalIgnoreCase))
         {
@@ -195,8 +193,6 @@ public class ShiftSlotsController : ControllerBase
         Guid spaceId, Guid groupId, Guid slotId,
         CancellationToken ct)
     {
-        await _permissions.RequirePermissionAsync(CurrentUserId, spaceId, Permissions.SpaceView, ct);
-
         var result = await _mediator.Send(
             new GetShiftSlotDetailQuery(spaceId, groupId, slotId, CurrentUserId), ct);
 
