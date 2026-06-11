@@ -323,6 +323,9 @@ public class ShiftChangeRequestsController : ControllerBase
         if (changeRequest is null)
             return NotFound();
 
+        if (changeRequest.Status != ShiftChangeRequestStatus.Pending)
+            return Rejected("Only pending change requests can be approved.");
+
         var targetShiftSlotId = req.TargetShiftSlotId ?? changeRequest.RequestedShiftSlotId;
         if (!targetShiftSlotId.HasValue)
             return Rejected("Choose a target shift before approving this change request.");
