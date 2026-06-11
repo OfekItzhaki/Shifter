@@ -88,7 +88,7 @@ export default function ShiftTemplatesTab({ spaceId, groupId, tasks }: ShiftTemp
   }, [spaceId, groupId]);
 
   useEffect(() => {
-    fetchTemplates();
+    void Promise.resolve().then(fetchTemplates);
   }, [fetchTemplates]);
 
   // ── Day name helper ──────────────────────────────────────────────────────

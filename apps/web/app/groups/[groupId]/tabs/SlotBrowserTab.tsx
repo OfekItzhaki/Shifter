@@ -53,7 +53,7 @@ export default function SlotBrowserTab({ spaceId, groupId }: SlotBrowserTabProps
   }, [spaceId, groupId, tSelfService]);
 
   useEffect(() => {
-    fetchSlots();
+    void Promise.resolve().then(fetchSlots);
   }, [fetchSlots]);
 
   // ── Sorted and filtered slots ────────────────────────────────────────────
