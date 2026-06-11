@@ -180,6 +180,10 @@ The values are applied only when the group's self-service policy record is first
 created. Existing group policies remain under admin control and are not
 overwritten by later env changes.
 
+Space owners can also configure the same template inside Shifter from
+`Space Settings` -> `Self-Service`. A saved space template is used before the
+install-level env defaults when a group is first switched to `SelfService`.
+
 ## Backups
 
 The compose backup script creates PostgreSQL and upload-volume backups:
@@ -223,7 +227,6 @@ These are good next iterations, but not required for the first sellable
 customer-hosted package:
 
 - Helm chart for Kubernetes customers.
-- Customer-facing space UI for self-service default policy templates.
 - One-command restore script.
 - Offline image bundle for air-gapped sites.
 - License/entitlement enforcement for on-prem contracts.

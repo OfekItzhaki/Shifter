@@ -1112,7 +1112,8 @@
       "members": "Участники",
       "permissions": "Права",
       "billing": "Оплата",
-      "danger": "Опасная зона"
+      "danger": "Опасная зона",
+      "selfService": "Self-Service"
     },
     "managementTimeout": {
       "title": "Тайм-аут режима управления",
@@ -1122,6 +1123,38 @@
       "validationError": "Тайм-аут должен быть целым числом от 5 до 120 минут.",
       "saveError": "Не удалось обновить тайм-аут. Попробуйте снова.",
       "saved": "Тайм-аут управления успешно обновлён."
+    },
+    "selfServiceDefaults": {
+      "title": "Self-service defaults",
+      "description": "Policy template used when a group is first switched to self-service scheduling.",
+      "loading": "Loading defaults...",
+      "loadError": "Failed to load self-service defaults.",
+      "saveError": "Failed to save self-service defaults.",
+      "saved": "Self-service defaults saved.",
+      "validationError": "All numeric values must be whole numbers within their allowed range.",
+      "minMaxError": "Minimum shifts must be less than or equal to maximum shifts.",
+      "windowError": "Request window open offset must be greater than the close offset.",
+      "source": {
+        "install": "Install default",
+        "space": "Space default"
+      },
+      "fields": {
+        "minShiftsPerCycle": "Minimum shifts per cycle",
+        "maxShiftsPerCycle": "Maximum shifts per cycle",
+        "requestWindowOpenOffsetHours": "Request window opens before cycle (hours)",
+        "requestWindowCloseOffsetHours": "Request window closes before cycle (hours)",
+        "cancellationCutoffHours": "Cancellation cutoff (hours)",
+        "maxAbsencesPerCycle": "Absence reports per cycle",
+        "maxLateCancellationsPerCycle": "Late cancellations per cycle",
+        "lateCancellationWindowHours": "Late cancellation window (hours)",
+        "waitlistOfferMinutes": "Waitlist offer duration (minutes)",
+        "cycleDurationDays": "Cycle duration (days)",
+        "allowMemberShiftClaims": "Members can claim shifts",
+        "allowWaitlist": "Waitlist enabled",
+        "allowShiftChangeRequests": "Shift change requests enabled",
+        "allowAbsenceReports": "Absence reports enabled",
+        "allowShiftSwaps": "Shift swaps enabled"
+      }
     }
   },
   "spaceOnboarding": {

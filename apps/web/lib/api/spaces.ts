@@ -99,6 +99,31 @@ export interface UpdateSpaceHomeLeaveConfigPayload {
   emergencyUseForScheduling: boolean;
 }
 
+export interface SpaceSelfServiceDefaultsDto {
+  id: string | null;
+  source: "space" | "install";
+  minShiftsPerCycle: number;
+  maxShiftsPerCycle: number;
+  requestWindowOpenOffsetHours: number;
+  requestWindowCloseOffsetHours: number;
+  cancellationCutoffHours: number;
+  maxAbsencesPerCycle: number;
+  maxLateCancellationsPerCycle: number;
+  lateCancellationWindowHours: number;
+  waitlistOfferMinutes: number;
+  cycleDurationDays: number;
+  allowMemberShiftClaims: boolean;
+  allowWaitlist: boolean;
+  allowShiftChangeRequests: boolean;
+  allowAbsenceReports: boolean;
+  allowShiftSwaps: boolean;
+}
+
+export type UpdateSpaceSelfServiceDefaultsPayload = Omit<
+  SpaceSelfServiceDefaultsDto,
+  "id" | "source"
+>;
+
 export async function getMySpaces(): Promise<SpaceDto[]> {
   const { data } = await apiClient.get("/spaces");
   return data;
@@ -204,6 +229,21 @@ export async function getHomeLeaveConfig(
     }
     throw err;
   }
+}
+
+export async function getSpaceSelfServiceDefaults(
+  spaceId: string
+): Promise<SpaceSelfServiceDefaultsDto> {
+  const { data } = await apiClient.get(`/spaces/${spaceId}/self-service-defaults`);
+  return data;
+}
+
+export async function updateSpaceSelfServiceDefaults(
+  spaceId: string,
+  payload: UpdateSpaceSelfServiceDefaultsPayload
+): Promise<SpaceSelfServiceDefaultsDto> {
+  const { data } = await apiClient.put(`/spaces/${spaceId}/self-service-defaults`, payload);
+  return data;
 }
 
 export async function regenerateSpaceInviteCode(

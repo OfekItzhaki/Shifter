@@ -190,6 +190,41 @@ public class SpacesController : ControllerBase
         return result is null ? NotFound() : Ok(result);
     }
 
+    /// <summary>Get the space-level self-service default policy template.</summary>
+    [HttpGet("{spaceId:guid}/self-service-defaults")]
+    public async Task<IActionResult> GetSelfServiceDefaults(Guid spaceId, CancellationToken ct)
+    {
+        var result = await _mediator.Send(new GetSpaceSelfServiceDefaultsQuery(spaceId), ct);
+        return Ok(result);
+    }
+
+    /// <summary>Update the space-level self-service default policy template (owner only).</summary>
+    [HttpPut("{spaceId:guid}/self-service-defaults")]
+    public async Task<IActionResult> UpdateSelfServiceDefaults(
+        Guid spaceId, [FromBody] UpdateSpaceSelfServiceDefaultsRequest req, CancellationToken ct)
+    {
+        var result = await _mediator.Send(new UpdateSpaceSelfServiceDefaultsCommand(
+            spaceId,
+            CurrentUserId,
+            req.MinShiftsPerCycle,
+            req.MaxShiftsPerCycle,
+            req.RequestWindowOpenOffsetHours,
+            req.RequestWindowCloseOffsetHours,
+            req.CancellationCutoffHours,
+            req.MaxAbsencesPerCycle,
+            req.MaxLateCancellationsPerCycle,
+            req.LateCancellationWindowHours,
+            req.WaitlistOfferMinutes,
+            req.CycleDurationDays,
+            req.AllowMemberShiftClaims,
+            req.AllowWaitlist,
+            req.AllowShiftChangeRequests,
+            req.AllowAbsenceReports,
+            req.AllowShiftSwaps), ct);
+
+        return Ok(result);
+    }
+
     /// <summary>Regenerate the space invite code (owner only). Alternative route.</summary>
     [HttpPost("{spaceId:guid}/regenerate-invite-code")]
     public async Task<IActionResult> RegenerateInviteCodeAlt(Guid spaceId, CancellationToken ct)
@@ -219,3 +254,19 @@ public record UpdateHomeLeaveConfigRequest(
     decimal LeaveDurationHours,
     bool EmergencyFreezeActive,
     bool EmergencyUseForScheduling);
+public record UpdateSpaceSelfServiceDefaultsRequest(
+    int MinShiftsPerCycle,
+    int MaxShiftsPerCycle,
+    int RequestWindowOpenOffsetHours,
+    int RequestWindowCloseOffsetHours,
+    int CancellationCutoffHours,
+    int MaxAbsencesPerCycle,
+    int MaxLateCancellationsPerCycle,
+    int LateCancellationWindowHours,
+    int WaitlistOfferMinutes,
+    int CycleDurationDays,
+    bool AllowMemberShiftClaims,
+    bool AllowWaitlist,
+    bool AllowShiftChangeRequests,
+    bool AllowAbsenceReports,
+    bool AllowShiftSwaps);

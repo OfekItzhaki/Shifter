@@ -16,10 +16,11 @@ import SpaceBillingCard from "@/components/billing/SpaceBillingCard";
 import InviteCodeCard from "@/components/spaces/InviteCodeCard";
 import RoleAssignmentCard from "@/components/spaces/RoleAssignmentCard";
 import ManagementTimeoutCard from "@/components/spaces/ManagementTimeoutCard";
+import SelfServiceDefaultsCard from "@/components/spaces/SelfServiceDefaultsCard";
 import DangerZoneCard from "@/components/spaces/DangerZoneCard";
 import { isRtl as isRtlLocale } from "@/lib/i18n/locales";
 
-type SettingsTab = "general" | "members" | "permissions" | "billing" | "danger";
+type SettingsTab = "general" | "selfService" | "members" | "permissions" | "billing" | "danger";
 
 export default function SpaceSettingsPage() {
   const t = useTranslations("spaces");
@@ -147,6 +148,7 @@ export default function SpaceSettingsPage() {
           {(
             [
               "general",
+              "selfService",
               "members",
               "permissions",
               "billing",
@@ -238,6 +240,13 @@ export default function SpaceSettingsPage() {
                 }
               />
             </>
+          )}
+
+          {activeTab === "selfService" && (
+            <SelfServiceDefaultsCard
+              spaceId={currentSpaceId!}
+              isOwner={space.isOwner}
+            />
           )}
 
           {/* Members */}

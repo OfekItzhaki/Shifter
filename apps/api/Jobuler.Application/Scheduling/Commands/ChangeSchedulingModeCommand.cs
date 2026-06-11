@@ -88,7 +88,15 @@ public class ChangeSchedulingModeCommandHandler : IRequestHandler<ChangeScheduli
                 c.SpaceId == request.SpaceId, ct);
 
             if (!hasConfig)
-                _db.SelfServiceConfigs.Add(_selfServiceDefaults.ToConfig(request.SpaceId, request.GroupId));
+            {
+                var spaceDefaults = await _db.SpaceSelfServiceDefaults
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(d => d.SpaceId == request.SpaceId, ct);
+
+                _db.SelfServiceConfigs.Add(
+                    spaceDefaults?.ToConfig(request.GroupId)
+                    ?? _selfServiceDefaults.ToConfig(request.SpaceId, request.GroupId));
+            }
         }
 
         await _db.SaveChangesAsync(ct);

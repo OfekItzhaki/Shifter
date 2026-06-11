@@ -123,6 +123,77 @@ public class ChangeSchedulingModeCommandTests
     }
 
     [Fact]
+    public async Task Handle_ChangesToSelfService_UsesSpaceDefaultsBeforeInstallDefaults()
+    {
+        // Arrange
+        using var db = CreateDb();
+        var spaceId = Guid.NewGuid();
+        var group = Group.Create(spaceId, null, "Test Group");
+        var spaceDefaults = SpaceSelfServiceDefaults.Create(
+            spaceId,
+            minShiftsPerCycle: 2,
+            maxShiftsPerCycle: 6,
+            requestWindowOpenOffsetHours: 192,
+            requestWindowCloseOffsetHours: 36,
+            cancellationCutoffHours: 30,
+            maxAbsencesPerCycle: 1,
+            maxLateCancellationsPerCycle: 0,
+            lateCancellationWindowHours: 12,
+            waitlistOfferMinutes: 90,
+            cycleDurationDays: 10,
+            allowMemberShiftClaims: true,
+            allowWaitlist: false,
+            allowShiftChangeRequests: true,
+            allowAbsenceReports: false,
+            allowShiftSwaps: true);
+
+        db.Groups.Add(group);
+        db.SpaceSelfServiceDefaults.Add(spaceDefaults);
+        await db.SaveChangesAsync();
+
+        var installDefaults = new SelfServiceDefaultPolicyOptions
+        {
+            MinShiftsPerCycle = 0,
+            MaxShiftsPerCycle = 3,
+            RequestWindowOpenOffsetHours = 120,
+            RequestWindowCloseOffsetHours = 24,
+            CancellationCutoffHours = 24,
+            MaxAbsencesPerCycle = 9,
+            MaxLateCancellationsPerCycle = 9,
+            LateCancellationWindowHours = 24,
+            WaitlistOfferMinutes = 30,
+            CycleDurationDays = 7,
+            AllowMemberShiftClaims = false,
+            AllowWaitlist = true,
+            AllowShiftChangeRequests = false,
+            AllowAbsenceReports = true,
+            AllowShiftSwaps = false
+        };
+
+        var handler = new ChangeSchedulingModeCommandHandler(db, AllowAll(), Options.Create(installDefaults));
+        var command = new ChangeSchedulingModeCommand(spaceId, group.Id, Guid.NewGuid(), SchedulingMode.SelfService);
+
+        // Act
+        await handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        var config = await db.SelfServiceConfigs.SingleAsync(c => c.GroupId == group.Id);
+        config.MinShiftsPerCycle.Should().Be(2);
+        config.MaxShiftsPerCycle.Should().Be(6);
+        config.RequestWindowOpenOffsetHours.Should().Be(192);
+        config.RequestWindowCloseOffsetHours.Should().Be(36);
+        config.CancellationCutoffHours.Should().Be(30);
+        config.MaxAbsencesPerCycle.Should().Be(1);
+        config.MaxLateCancellationsPerCycle.Should().Be(0);
+        config.LateCancellationWindowHours.Should().Be(12);
+        config.WaitlistOfferMinutes.Should().Be(90);
+        config.CycleDurationDays.Should().Be(10);
+        config.AllowWaitlist.Should().BeFalse();
+        config.AllowAbsenceReports.Should().BeFalse();
+        config.AllowShiftSwaps.Should().BeTrue();
+    }
+
+    [Fact]
     public async Task Handle_ChangesToSelfService_WhenConfigAlreadyExists_DoesNotOverwritePolicy()
     {
         // Arrange

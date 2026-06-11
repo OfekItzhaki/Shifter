@@ -77,7 +77,9 @@ The strongest manager entry point is the self-service group operations tab.
 1. Create or edit a group and set the scheduling mode to `SelfService`.
    Shifter creates a default self-service policy record when the mode is
    enabled, so the group has concrete limits before the first cycle is opened.
-   Customer-hosted deployments can set install-level defaults with
+   Space owners can set the default template from `Space Settings` ->
+   `Self-Service`. Customer-hosted deployments can also set install-level
+   defaults with
    `SELF_SERVICE_DEFAULT_*` env vars before groups are switched to
    `SelfService`.
 2. Add members, roles, qualifications, and tasks as usual.
@@ -253,9 +255,8 @@ large deployments:
   pick shift, fill slot, join waitlist, cancel, report absence, request change,
   review as admin, and verify final slot state.
 - Organization-level defaults for self-service policy through the admin UI.
-  Customer-hosted installs can already set install-level defaults through
-  environment configuration.
+  Space owners can configure space-level defaults today; a higher-level
+  organization template for multi-space installs is still deferred.
 - Formal certificate signing for closeout reports. PDF closeout reports already
   include a verification fingerprint for archive/tamper checks, but they are not
   certificate-signed legal documents.
-- Space-level self-service default policies through a non-platform admin UI.
