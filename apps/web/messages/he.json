@@ -1227,59 +1227,59 @@
           "body": "בקשת המשמרת נדחתה — המשבצת מלאה."
         },
         "shift_cancelled": {
-          "title": "Shift Cancelled",
+          "title": "משמרת בוטלה",
           "body": "A member cancelled an approved shift."
         },
         "absence_reported": {
-          "title": "Absence Reported",
-          "body": "A member reported they cannot attend a shift."
+          "title": "דווחה היעדרות",
+          "body": "חבר דיווח שלא יוכל להגיע למשמרת."
         },
         "absence_approved": {
-          "title": "Absence Approved",
-          "body": "Your absence report has been approved."
+          "title": "היעדרות אושרה",
+          "body": "דיווח ההיעדרות שלך אושר."
         },
         "absence_rejected": {
-          "title": "Absence Rejected",
-          "body": "Your absence report was rejected."
+          "title": "היעדרות נדחתה",
+          "body": "דיווח ההיעדרות שלך נדחה."
         },
         "change_requested": {
-          "title": "Shift Change Requested",
+          "title": "בקשת שינוי משמרת",
           "body": "A member requested a shift change."
         },
         "change_cancelled": {
-          "title": "Shift Change Cancelled",
+          "title": "בקשת שינוי בוטלה",
           "body": "A member cancelled a shift-change request."
         },
         "change_approved": {
-          "title": "Shift Change Approved",
+          "title": "בקשת שינוי אושרה",
           "body": "Your shift-change request has been approved."
         },
         "change_rejected": {
-          "title": "Shift Change Rejected",
+          "title": "בקשת שינוי נדחתה",
           "body": "Your shift-change request was rejected."
         },
         "special_leave_requested": {
-          "title": "Time-Off Requested",
+          "title": "בקשת חופשה",
           "body": "A member submitted a time-off request."
         },
         "special_leave_cancelled": {
-          "title": "Time-Off Cancelled",
+          "title": "בקשת חופשה בוטלה",
           "body": "A member cancelled a time-off request."
         },
         "special_leave_approved": {
-          "title": "Time-Off Approved",
+          "title": "חופשה אושרה",
           "body": "Your time-off request has been approved."
         },
         "special_leave_rejected": {
-          "title": "Time-Off Rejected",
+          "title": "חופשה נדחתה",
           "body": "Your time-off request was rejected."
         },
         "admin_assigned": {
-          "title": "Shift Assigned",
+          "title": "שובצת למשמרת",
           "body": "An admin assigned you to a shift."
         },
         "admin_removed": {
-          "title": "Shift Removed",
+          "title": "הוסרת ממשמרת",
           "body": "An admin removed you from a shift."
         },
         "swap_proposal_received": {
@@ -1287,28 +1287,28 @@
           "body": "מישהו רוצה להחליף איתך משמרת."
         },
         "swap_accepted": {
-          "title": "Swap Accepted",
-          "body": "A shift swap was accepted."
+          "title": "החלפה אושרה",
+          "body": "החלפת משמרת אושרה."
         },
         "swap_declined": {
           "title": "החלפה נדחתה",
           "body": "הצעת ההחלפה שלך נדחתה."
         },
         "swap_cancelled": {
-          "title": "Swap Cancelled",
-          "body": "A shift swap proposal was cancelled."
+          "title": "החלפה בוטלה",
+          "body": "הצעת החלפת משמרת בוטלה."
         },
         "swap_expired": {
-          "title": "Swap Expired",
-          "body": "A shift swap proposal expired."
+          "title": "החלפה פגה",
+          "body": "הצעת החלפת משמרת פגה."
         },
         "waitlist_offer": {
           "title": "משבצת פנויה",
           "body": "התפנה מקום במשמרת שאתה ממתין לה."
         },
         "waitlist_offer_expired": {
-          "title": "Waitlist Offer Expired",
-          "body": "Your waitlist offer expired and moved to the next member."
+          "title": "הצעת רשימת המתנה פגה",
+          "body": "הצעת רשימת ההמתנה שלך פגה ועברה לחבר הבא."
         },
         "under_scheduled_members": {
           "title": "חברים עם חוסר שיבוצים",
@@ -2014,14 +2014,14 @@
       "cancel": "חזרה"
     },
     "tabs": {
-      "operations": "?????",
+      "operations": "ניהול",
       "availableSlots": "משמרות זמינות",
       "myShifts": "המשמרות שלי",
       "waitlist": "רשימת המתנה",
       "swaps": "החלפות",
       "shiftTemplates": "תבניות משמרות",
       "selfServiceConfig": "הגדרות שירות עצמי",
-      "absenceReports": "????? ??????",
+      "absenceReports": "בדיקת בקשות",
       "adminOverrides": "עקיפות מנהל"
     },
     "slotBrowser": {
@@ -2072,9 +2072,9 @@
       "cannotAttendSubmitting": "מדווח...",
       "cannotAttendSubmitted": "דיווח אי ההגעה נשלח למנהלים.",
       "cannotAttendLateSubmitted": "דיווח אי הגעה מאוחר נשלח. השתמשת ב-{used} / {max} דיווחים מאוחרים במחזור הזה.",
-      "cannotAttendLatePolicy": "This report is late because the shift starts within {window} hours. Late reports used: {used}/{max}. Remaining: {remaining}.",
-      "cannotAttendNotLatePolicy": "This report is outside the late window. Reports become late within {window} hours of shift start.",
-      "cannotAttendLimitReached": "You have reached the late absence limit for this cycle.",
+      "cannotAttendLatePolicy": "הדיווח מאוחר כי המשמרת מתחילה בתוך {window} שעות. דיווחים מאוחרים שנוצלו: {used}/{max}. נותרו: {remaining}.",
+      "cannotAttendNotLatePolicy": "הדיווח מחוץ לחלון האיחור. דיווחים נחשבים מאוחרים בתוך {window} שעות מתחילת המשמרת.",
+      "cannotAttendLimitReached": "הגעת למגבלת דיווחי ההיעדרות המאוחרים בסבב הזה.",
       "cancelDismiss": "חזרה",
       "shiftCount": "{current} / {max} משמרות במחזור זה",
       "underScheduled": "⚠ אתה מתחת למינימום המשמרות הנדרש ({min})",
@@ -2113,11 +2113,11 @@
       "changeRequestedTo": "מבוקש",
       "changeCancel": "בטל בקשה",
       "changeRequestCancelled": "בקשת השינוי בוטלה",
-      "absenceReportsTitle": "?????? ?? ????",
-      "absenceReportsDescription": "??????? ??????? ?????? ?????? ???: {used} / {max}.",
-      "absenceReportsEmpty": "??? ?????? ?? ????",
-      "absenceLate": "?????",
-      "absenceAdminNote": "???? ????",
+      "absenceReportsTitle": "דיווחי היעדרות",
+      "absenceReportsDescription": "דיווחים מאוחרים שנוצלו בסבב הזה: {used} / {max}.",
+      "absenceReportsEmpty": "אין דיווחי היעדרות",
+      "absenceLate": "מאוחר",
+      "absenceAdminNote": "הערת מנהל",
       "summaryTitle": "סטטוס השירות העצמי שלי",
       "summaryDescription": "מבט מהיר על כמות המשמרות, בקשות ממתינות, רשימת המתנה והמשמרת הבאה.",
       "summaryPickShifts": "בחר עוד משמרות",
@@ -2187,15 +2187,15 @@
       "offerExpires": "ההצעה פגה בעוד {time}",
       "noEntries": "אין רשומות ברשימת ההמתנה",
       "maxShiftsReached": "הגעת למקסימום המשמרות. ההצעה הועברה לבא בתור.",
-      "adminTitle": "Active waitlist queue",
-      "adminDescription": "Members currently waiting or holding an offer for this group.",
-      "adminCount": "{count} active",
-      "adminAssignButton": "Assign now",
-      "adminAssigning": "Assigning...",
-      "acceptSuccess": "Waitlist offer accepted. The shift was added to your shifts.",
-      "declineSuccess": "Offer declined and passed to the next person.",
-      "leaveSuccess": "You left the waitlist.",
-      "adminAssignSuccess": "Waitlist member assigned to the shift."
+      "adminTitle": "תור רשימת המתנה פעיל",
+      "adminDescription": "חברים שממתינים או מחזיקים הצעה בקבוצה הזאת.",
+      "adminCount": "{count} פעילים",
+      "adminAssignButton": "שבץ עכשיו",
+      "adminAssigning": "משבץ...",
+      "acceptSuccess": "הצעת רשימת ההמתנה אושרה. המשמרת נוספה למשמרות שלך.",
+      "declineSuccess": "ההצעה נדחתה ועברה לחבר הבא.",
+      "leaveSuccess": "יצאת מרשימת ההמתנה.",
+      "adminAssignSuccess": "החבר מרשימת ההמתנה שובץ למשמרת."
     },
     "swaps": {
       "title": "החלפות משמרות",
@@ -2231,7 +2231,7 @@
       "invalidOwnership": "אינך הבעלים של המשמרת שנבחרה"
     },
     "absenceReports": {
-      "title": "????? ??????",
+      "title": "בדיקת בקשות",
       "refresh": "רענן",
       "empty": "אין דיווחי אי הגעה",
       "emptyPending": "אין דיווחי אי הגעה ממתינים",
@@ -2250,12 +2250,12 @@
       "reject": "דחה",
       "approving": "מאשר...",
       "rejecting": "דוחה...",
-      "absenceApproveSuccess": "Absence report approved.",
-      "absenceRejectSuccess": "Absence report rejected.",
-      "changeApproveSuccess": "Shift-change request approved.",
-      "changeRejectSuccess": "Shift-change request rejected.",
-      "leaveApproveSuccess": "Time-off request approved.",
-      "leaveRejectSuccess": "Time-off request rejected.",
+      "absenceApproveSuccess": "דיווח ההיעדרות אושר.",
+      "absenceRejectSuccess": "דיווח ההיעדרות נדחה.",
+      "changeApproveSuccess": "בקשת שינוי המשמרת אושרה.",
+      "changeRejectSuccess": "בקשת שינוי המשמרת נדחתה.",
+      "leaveApproveSuccess": "בקשת החופשה אושרה.",
+      "leaveRejectSuccess": "בקשת החופשה נדחתה.",
       "statusPending": "ממתין",
       "statusApproved": "אושר",
       "statusRejected": "נדחה",
@@ -2268,19 +2268,19 @@
       "changeFlexibleTarget": "החלפה גמישה",
       "changeTargetShift": "משמרת יעד",
       "changeTargetRequired": "בחר משמרת יעד כדי לאשר",
-      "leaveRequestsTitle": "????? ????? ???????",
-      "leaveRequestsEmpty": "??? ????? ????? ???????",
-      "leaveRequestsEmptyPending": "No pending time-off requests",
-      "absenceReportsTitle": "?????? ?? ????",
-      "pendingSummary": "{pending} ????? / {total} ????",
-      "activityTitle": "Recent review activity",
-      "activityDescription": "Latest handled self-service requests across absence, shift changes, and time off.",
-      "activityCount": "{count} recent",
-      "activityEmpty": "No reviewed or cancelled requests yet.",
-      "activityKindabsence": "Absence",
-      "activityKindchange": "Shift change",
-      "activityKindleave": "Time off",
-      "activityKindshift": "Shift"
+      "leaveRequestsTitle": "בקשות חופשה מיוחדת",
+      "leaveRequestsEmpty": "אין בקשות חופשה מיוחדת",
+      "leaveRequestsEmptyPending": "אין בקשות חופשה ממתינות",
+      "absenceReportsTitle": "דיווחי היעדרות",
+      "pendingSummary": "{pending} ממתינות / {total} סהכ",
+      "activityTitle": "פעילות בדיקה אחרונה",
+      "activityDescription": "בקשות שירות עצמי שטופלו לאחרונה: היעדרות, שינויי משמרת וחופשה.",
+      "activityCount": "{count} אחרונות",
+      "activityEmpty": "עדיין אין בקשות שנבדקו או בוטלו.",
+      "activityKindabsence": "היעדרות",
+      "activityKindchange": "שינוי",
+      "activityKindleave": "חופשה",
+      "activityKindshift": "משמרת"
     },
     "templates": {
       "title": "תבניות משמרות",
@@ -2334,21 +2334,21 @@
       "cycleDurationDays": "משך מחזור (ימים)",
       "range": "{min}-{max}",
       "units": {
-        "shifts": "shifts",
-        "hours": "hours",
-        "minutes": "minutes",
-        "days": "days",
-        "reports": "reports"
+        "shifts": "משמרות",
+        "hours": "שעות",
+        "minutes": "דקות",
+        "days": "ימים",
+        "reports": "דיווחים"
       },
       "summary": {
-        "shiftLimits": "Shift limits",
-        "shiftLimitsValue": "{min}-{max} shifts / {days} days",
-        "requestWindow": "Request window",
-        "requestWindowValue": "Opens {open}h before, closes {close}h before",
-        "absence": "Changes and absence",
-        "absenceValue": "Cancel until {cutoff}h, late inside {lateWindow}h, max {max}",
-        "waitlist": "Waitlist",
-        "waitlistValue": "{minutes}m offer timer"
+        "shiftLimits": "מגבלות משמרות",
+        "shiftLimitsValue": "{min}-{max} משמרות / {days} ימים",
+        "requestWindow": "חלון בקשות",
+        "requestWindowValue": "נפתח {open} שעות לפני, נסגר {close} שעות לפני",
+        "absence": "שינויים והיעדרות",
+        "absenceValue": "ביטול עד {cutoff} שעות, מאוחר בתוך {lateWindow} שעות, מקסימום {max}",
+        "waitlist": "רשימת המתנה",
+        "waitlistValue": "תוקף הצעה {minutes} דקות"
       },
       "recommended": "מומלץ: {value}",
       "recommendations": {
@@ -2363,43 +2363,43 @@
         "waitlistOfferMinutes": "{value} דקות"
       },
       "insights": {
-        "title": "????? ????????",
-        "balanced": "???????? ????? ?????? ???? ????? ???? ???? ?? ?????? ??????? ?????? ???????.",
-        "noMinimum": "?? ????? ????? ??????? ??????, ??? ????? ?? ??? ?????? ?? ?????? ??? ????.",
-        "noLateReports": "????? ?? ????? ????? ?? ??????? ?????? ?????? ???.",
-        "strictLateReports": "???? ????? ????? ??? ????, ??? ???? ????? ????? ?????? ??????.",
-        "requestClosesBeforeCancellation": "???? ?????? ???? ???? ???? ????? ???????, ?? ?????? ????? ????? ???? ???? ??????? ?????.",
-        "lateWindowLongerThanCancel": "???? ???????? ??????? ???? ????? ??????, ?? ???? ???????? ????? ???????? ??? ???? ????? ????????.",
-        "shortWaitlistOffer": "????? ?????? ????? ???? ?-30 ???? ?????? ???? ???? ?????? ???? ??."
+        "title": "השפעת המדיניות",
+        "balanced": "המדיניות נותנת לחברים חלון שירות עצמי רגיל עם נקודות גיבוי ברורות למנהלים.",
+        "noMinimum": "לא נאכפת דרישת מינימום משמרות, ולכן חברים עם חוסר לא יסומנו לפי כמות.",
+        "noLateReports": "חברים לא יכולים לשלוח דיווחי היעדרות מאוחרים בסבב הזה.",
+        "strictLateReports": "מותר רק דיווח היעדרות מאוחר אחד, לכן מנהלים צריכים לצפות ליותר חריגות ידניות.",
+        "requestClosesBeforeCancellation": "חלון הבקשות נסגר לפני מועד הביטול, לכן חברים עדיין יכולים לבטל אחרי שחלון הבחירה נסגר.",
+        "lateWindowLongerThanCancel": "חלון ההיעדרות המאוחרת ארוך ממועד הביטול, לכן חלק מהמשמרות הופכות למאוחרות מיד אחרי שהביטול נסגר.",
+        "shortWaitlistOffer": "הצעות רשימת המתנה מתחת ל-30 דקות עלולות לפוג לפני שחברים שמים לב."
       },
       "sections": {
         "shiftLimits": {
-          "title": "Shift limits",
-          "description": "Control how many shifts a member should take in each self-service cycle."
+          "title": "מגבלות משמרות",
+          "description": "קבע כמה משמרות חבר צריך לקחת בכל סבב שירות עצמי."
         },
         "requestWindow": {
-          "title": "Request window",
-          "description": "Decide when members can start and stop picking shifts before the schedule starts."
+          "title": "חלון בקשות",
+          "description": "קבע מתי חברים יכולים להתחיל ולהפסיק לבחור משמרות לפני תחילת הסידור."
         },
         "changesAbsence": {
-          "title": "Changes and absence",
-          "description": "Set when cancellations stop, when absence reports are considered late, and how many late reports are allowed."
+          "title": "שינויים והיעדרות",
+          "description": "קבע מתי ביטולים נסגרים, מתי דיווחי היעדרות נחשבים מאוחרים וכמה דיווחים מאוחרים מותרים."
         },
         "waitlist": {
-          "title": "Waitlist",
-          "description": "Control how long a member has to accept an offered shift before it moves to the next person."
+          "title": "רשימת המתנה",
+          "description": "קבע כמה זמן יש לחבר לאשר משמרת שהוצעה לפני שהיא עוברת לבא בתור."
         }
       },
       "descriptions": {
-        "minShiftsPerCycle": "Members below this count are flagged before the cycle closes.",
-        "maxShiftsPerCycle": "Members cannot pick more than this many approved shifts.",
-        "cycleDurationDays": "How many days each generated self-service cycle covers.",
-        "requestWindowOpenOffsetHours": "How many hours before cycle start the picking window opens.",
-        "requestWindowCloseOffsetHours": "How many hours before cycle start the picking window closes.",
-        "cancellationCutoffHours": "Approved shifts cannot be cancelled inside this cutoff.",
-        "lateCancellationWindowHours": "Absence reports inside this window count as late.",
-        "maxLateCancellationsPerCycle": "Maximum late absence reports allowed per member per cycle.",
-        "waitlistOfferMinutes": "How long an offered waitlist shift is held for one member."
+        "minShiftsPerCycle": "מספר המשמרות המינימלי שחבר צריך לקחת בכל סבב.",
+        "maxShiftsPerCycle": "מספר המשמרות המקסימלי שחבר יכול לקחת בכל סבב.",
+        "cycleDurationDays": "כמה ימים כל סבב שירות עצמי שנוצר מכסה.",
+        "requestWindowOpenOffsetHours": "כמה שעות לפני תחילת הסבב חלון הבחירה נפתח.",
+        "requestWindowCloseOffsetHours": "כמה שעות לפני תחילת הסבב חלון הבחירה נסגר.",
+        "cancellationCutoffHours": "כמה שעות לפני תחילת המשמרת ביטול רגיל נסגר.",
+        "lateCancellationWindowHours": "דיווחי היעדרות בתוך החלון הזה נחשבים מאוחרים.",
+        "maxLateCancellationsPerCycle": "מספר דיווחי ההיעדרות המאוחרים המקסימלי לכל חבר בסבב.",
+        "waitlistOfferMinutes": "כמה זמן משמרת שהוצעה מרשימת המתנה נשמרת לחבר אחד."
       },
       "save": "שמור הגדרות",
       "saving": "שומר...",
@@ -2409,10 +2409,10 @@
         "minShiftsRange": "מינימום משמרות חייב להיות בין 0 ל-100",
         "maxShiftsRange": "מקסימום משמרות חייב להיות בין 1 ל-100",
         "offsetRange": "ערך חייב להיות בין 1 ל-720 שעות",
-        "waitlistOfferRange": "Offer duration must be between 15 and 1440 minutes",
+        "waitlistOfferRange": "משך הצעה חייב להיות בין 15 ל-1440 דקות",
         "cycleDurationRange": "Cycle duration must be between 1 and 30 days",
-        "openCloseOrder": "Request window open offset must be greater than close offset",
-        "maxLateRange": "Late absence limit must be between 0 and 100"
+        "openCloseOrder": "מועד פתיחת החלון חייב להיות גדול ממועד הסגירה",
+        "maxLateRange": "מגבלת דיווחים מאוחרים חייבת להיות בין 0 ל-100"
       }
     },
     "adminOverrides": {
@@ -2458,14 +2458,14 @@
     "error": "שגיאה בטעינת הנתונים",
     "retry": "נסה שוב",
     "operations": {
-      "title": "????? ????? ????",
-      "description": "??? ?? ?????? ??????, ???? ????? ????? ?????? ?????? ?????? ????.",
-      "statusLoading": "Checking queues...",
-      "activeSignals": "{count} item(s) need attention",
-      "allClear": "No urgent items",
+      "title": "ניהול סבב ידני",
+      "description": "נהל את חלון הבחירה, בדוק כיסוי וטפל בבקשות לפני סגירת הסבב.",
+      "statusLoading": "בודק תורים...",
+      "activeSignals": "{count} פריטים דורשים טיפול",
+      "allClear": "אין פריטים דחופים",
       "priority": {
         "title": "סימנים דחופים",
-        "description": "טפל בזה לפני עבודת הסבב השגרתית.",
+        "description": "טפל בזה לפני עבודת הסבב השוטפת.",
         "count": "{count} סימנים דחופים",
         "clear": "אין סימנים דחופים",
         "empty": "אין משהו דחוף כרגע. המשך לעקוב אחרי כיסוי ותורי בדיקה.",
@@ -2476,7 +2476,7 @@
             "description": "{count} דיווחים מאוחרים דורשים בדיקת מנהל."
           },
           "expiringWaitlist": {
-            "title": "הצעות המתנה שפגות בקרוב",
+            "title": "הצעות רשימת המתנה שפגות בקרוב",
             "description": "{count} הצעות מרשימת ההמתנה פגות בתוך {minutes} דקות."
           },
           "underfilled": {
@@ -2486,28 +2486,28 @@
         }
       },
       "reviews": {
-        "title": "Review breakdown",
-        "description": "See which member requests need admin decisions before the cycle can settle.",
-        "count": "{count} pending decision(s)",
-        "clear": "No pending decisions",
+        "title": "פירוט בקשות לבדיקה",
+        "description": "ראה אילו בקשות חברים דורשות החלטת מנהל לפני שהסבב מתייצב.",
+        "count": "{count} החלטות ממתינות",
+        "clear": "אין החלטות ממתינות",
         "items": {
           "absences": {
-            "title": "Absence reports",
-            "description": "{count} absence report(s) waiting."
+            "title": "דיווחי היעדרות",
+            "description": "{count} דיווחי היעדרות ממתינים."
           },
           "changes": {
-            "title": "Shift changes",
-            "description": "{count} shift-change request(s) waiting."
+            "title": "שינויי משמרת",
+            "description": "{count} בקשות שינוי משמרת ממתינות."
           },
           "leave": {
-            "title": "Special leave",
-            "description": "{count} time-off request(s) waiting."
+            "title": "חופשה מיוחדת",
+            "description": "{count} בקשות חופשה ממתינות."
           }
         }
       },
       "guide": {
         "title": "איך מריצים סבב",
-        "description": "קצב עבודה פשוט לשירות עצמי: מכינים את החוקים, פותחים חלון בחירה, מטפלים בחריגות ומשפרים את הסבב הבא.",
+        "description": "קצב עבודה פשוט לשירות עצמי ידני: מכינים את החוקים, פותחים חלון בחירה, מטפלים בחריגות ומשפרים את הסבב הבא.",
         "steps": {
           "prepare": {
             "title": "הכנה",
@@ -2527,125 +2527,125 @@
           }
         },
         "workflows": {
-          "member": "????? ???",
-          "admin": "????? ????",
-          "result": "????? ?????",
+          "member": "פעולת חבר",
+          "admin": "טיפול מנהל",
+          "result": "תוצאה צפויה",
           "picking": {
-            "title": "????? ?????? ?????? ?????",
-            "member": "????? ?????? ?????? ??????; ?????? ????? ?????? ????? ?????.",
-            "admin": "?????? ???? ?????? ?????, ????? ??????? ???? ?????? ????? ?????.",
-            "result": "?????? ?????? ??????? ?????? ????? ?????."
+            "title": "בחירת משמרות ורשימת המתנה",
+            "member": "חברים בוחרים משמרות פתוחות; משמרות מלאות מציעות רשימת המתנה.",
+            "admin": "עוקבים אחרי משמרות חסרות, הצעות שפגות ורשימת המתנה פעילה.",
+            "result": "בחירות שאושרו והצעות שהתקבלו יוצרות שיבוצי משמרות מאושרים."
           },
           "changes": {
-            "title": "??????? ??????????",
-            "member": "????? ?????? ????? ????? ?? ??????? ??? ????? ?????.",
-            "admin": "?????? ????? ????? ???????? ???? ????? ????.",
-            "result": "????? ????? ????? ?????; ????? ??????? ????? ????? ?????? ??????."
+            "title": "שינויים והיעדרות",
+            "member": "חברים מבקשים שינוי משמרת או מדווחים שלא יוכלו להגיע.",
+            "admin": "בודקים תורי שינוי והיעדרות לפני סגירת הסבב.",
+            "result": "שינויים שאושרו מזיזים שיבוצים; דיווחי היעדרות משחררים כיסוי לרשימת ההמתנה."
           },
           "leave": {
-            "title": "????? ??????",
-            "member": "????? ?????? ????? ????? ??????? ?? ????.",
-            "admin": "?????? ?? ????? ????? ???????? ???? ?????? ????.",
-            "result": "????? ????? ???? ???? ?????? ???? ?????? ?? ????."
+            "title": "חופשה מיוחדת",
+            "member": "חברים מבקשים חופשה לטווח תאריכים עם סיבה.",
+            "admin": "מאשרים או דוחים בקשות ומוסיפים הערות כשצריך הקשר.",
+            "result": "חופשה מאושרת יוצרת חלון נוכחות בבית ומעדכנת את החבר."
           }
         }
       },
       "actions": {
         "reviews": {
-          "title": "????? ?????",
-          "description": "??? ?????? ?? ????, ????? ????? ????? ?????? ????? ???????.",
-          "metric": "{count} pending review item(s)"
-        },
-        "overrides": {
-          "title": "?????? ??????",
-          "description": "??? ?? ??? ????? ?????? ????? ???? ????.",
-          "metric": "{count} under-filled slot(s)"
-        },
-        "templates": {
-          "title": "?????? ??????",
-          "description": "???? ?? ??????? ???????? ??????? ?????? ????? ?????."
-        },
-        "policy": {
-          "title": "?????? ???????",
-          "description": "???? ??????, ?????? ???, ????? ????? ???? ???? ?????."
+          "title": "בדיקת בקשות",
+          "description": "אשר דיווחי היעדרות, בקשות שינוי משמרת ובקשות חופשה.",
+          "metric": "{count} פריטי בדיקה ממתינים"
         },
         "waitlist": {
-          "title": "Waitlist queue",
-          "description": "See who is waiting or holding an offer when full shifts open up.",
-          "metric": "{count} active waitlist item(s)"
+          "title": "תור רשימת המתנה",
+          "description": "ראה מי ממתין או מחזיק הצעה כשנפתח מקום במשמרת מלאה.",
+          "metric": "{count} פריטי רשימת המתנה פעילים"
+        },
+        "overrides": {
+          "title": "שיבוצים ידניים",
+          "description": "שבץ או הסר חברים כשהסידור צריך תיקון ישיר.",
+          "metric": "{count} משמרות חסרות"
+        },
+        "templates": {
+          "title": "תבניות משמרות",
+          "description": "עדכן את המשבצות שייווצרו לסבבי השירות העצמי הבאים."
+        },
+        "policy": {
+          "title": "הגדרות מדיניות",
+          "description": "כוון מגבלות, חלונות זמן, זמני ביטול ותוקף הצעות רשימת המתנה."
         }
       },
       "cycle": {
-        "title": "???? ?????",
-        "description": "??? ??????, ??? ?? ???? ?????? ????? ????? ??????.",
-        "windowOpen": "????? ????",
-        "windowClosed": "????? ????",
-        "yes": "??",
-        "no": "??",
-        "noCycle": "??? ????? ????? ????? ???? ????.",
-        "underfilledTitle": "?????? ?? ?????",
-        "underfilledCount": "?????? {count} ?????? ???????",
-        "openSeatCount": "{count} ??????",
-        "underScheduledNone": "???? ?????? ???????? ???????.",
-        "underScheduledCount": "{count} ????? ???? ????????.",
+        "title": "בקרת סבב",
+        "description": "צור משבצות, נהל את חלון הבקשות ובדוק כיסוי משמרות.",
+        "windowOpen": "החלון פתוח",
+        "windowClosed": "החלון סגור",
+        "yes": "כן",
+        "no": "לא",
+        "noCycle": "עדיין לא קיים סבב שירות עצמי קרוב.",
+        "underfilledTitle": "משמרות חסרות",
+        "underfilledCount": "מציג את {count} הפערים הקרובים",
+        "openSeatCount": "{count} פתוחים",
+        "underScheduledNone": "כולם עומדים במינימום המשמרות.",
+        "underScheduledCount": "{count} חברים מתחת למינימום.",
         "metrics": {
-          "cycleStarts": "????? ?????",
-          "windowCloses": "????? ????",
-          "slots": "??????",
-          "filled": "?????",
-          "coverage": "?????",
-          "openSeats": "?????? ??????",
-          "approved": "???????",
-          "pending": "???????",
-          "waitlist": "?????",
-          "absenceReview": "????? ?? ????",
-          "lateReports": "??????? ???????",
-          "changeReview": "????? ???????",
-          "generated": "????",
-          "leaveReview": "????? ??????"
+          "cycleStarts": "תחילת סבב",
+          "windowCloses": "סגירת חלון",
+          "slots": "משבצות",
+          "filled": "מאויש",
+          "coverage": "כיסוי",
+          "openSeats": "מקומות פתוחים",
+          "approved": "מאושר",
+          "pending": "ממתין",
+          "waitlist": "רשימת המתנה",
+          "absenceReview": "בדיקת היעדרות",
+          "lateReports": "דיווחים מאוחרים",
+          "changeReview": "בדיקת שינוי",
+          "generated": "נוצר",
+          "leaveReview": "בדיקת חופשה"
         },
         "buttons": {
-          "open": "??? ?-24??",
-          "opening": "????...",
-          "close": "???? ????",
-          "closing": "????...",
-          "checkUnder": "???? ??????",
-          "checking": "????...",
-          "generateNext": "??? ????? ???",
-          "generateFirst": "??? ????? ?????",
-          "generating": "????...",
-          "refresh": "????",
-          "refreshing": "?????..."
+          "open": "פתח ל-24 שעות",
+          "opening": "פותח...",
+          "close": "סגור חלון",
+          "closing": "סוגר...",
+          "checkUnder": "בדוק חוסרים",
+          "checking": "בודק...",
+          "generateNext": "צור סבב הבא",
+          "generateFirst": "צור סבב ראשון",
+          "generating": "יוצר...",
+          "refresh": "רענן",
+          "refreshing": "מרענן..."
         },
-        "openReviewQueue": "??? ?? {queue}",
+        "openReviewQueue": "פתח את {queue}",
         "closeChecklist": {
-          "title": "Close readiness",
-          "description": "Review these signals before closing the request window.",
-          "ready": "Ready",
-          "needsCheck": "Run check",
-          "warningCount": "{count} item(s)",
-          "open": "Open",
+          "title": "מוכנות לסגירה",
+          "description": "בדוק את הסימנים האלה לפני סגירת חלון הבקשות.",
+          "ready": "מוכן",
+          "needsCheck": "צריך בדיקה",
+          "warningCount": "{count} פריטים",
+          "open": "פתח",
           "items": {
             "coverage": {
-              "label": "Coverage",
-              "ok": "All generated slots are filled.",
-              "warning": "{count} under-filled slot(s) still need coverage."
+              "label": "כיסוי",
+              "ok": "כל המשבצות שנוצרו מאוישות.",
+              "warning": "{count} משמרות חסרות עדיין צריכות כיסוי."
             },
             "reviews": {
-              "label": "Review queues",
-              "ok": "No pending absence, change, or time-off reviews.",
-              "warning": "{count} pending review item(s)."
+              "label": "תורי בדיקה",
+              "ok": "אין בקשות היעדרות, שינוי או חופשה ממתינות.",
+              "warning": "{count} פריטי בדיקה ממתינים."
             },
             "waitlist": {
-              "label": "Waitlist",
-              "ok": "No active waitlist entries or offers.",
-              "warning": "{count} active waitlist entry/offer item(s)."
+              "label": "רשימת המתנה",
+              "ok": "אין רשומות או הצעות פעילות ברשימת ההמתנה.",
+              "warning": "{count} רשומות/הצעות פעילות ברשימת ההמתנה."
             },
             "underScheduled": {
-              "label": "Minimum shifts",
-              "ok": "Everyone meets the minimum after the latest check.",
-              "warning": "{count} member(s) are still below minimum.",
-              "unknown": "Run the under-scheduled check before closing."
+              "label": "מינימום משמרות",
+              "ok": "כולם עומדים במינימום אחרי הבדיקה האחרונה.",
+              "warning": "{count} חברים עדיין מתחת למינימום.",
+              "unknown": "הרץ בדיקת חוסרים לפני סגירת החלון."
             }
           }
         }
@@ -2657,7 +2657,7 @@
     "selectGroup": "בחר קבוצה",
     "noGroups": "אין קבוצות שירות עצמי זמינות",
     "tabs": {
-      "status": "?????",
+      "status": "סטטוס",
       "slots": "משמרות פנויות",
       "myShifts": "המשמרות שלי",
       "waitlist": "רשימת המתנה",
@@ -2669,87 +2669,87 @@
     "error": "שגיאה בטעינת הנתונים",
     "retry": "נסה שוב",
     "status": {
-      "title": "?????? ???",
-      "shiftProgress": "????? {current}/{max} ??????. ???????: {min}.",
-      "belowMinimum": "???? ????????",
-      "onTrack": "???? ???",
-      "approved": "???????",
-      "openSlots": "?????? ??????",
-      "pendingRequests": "????? ???????",
-      "activeWaitlist": "????? ?????",
-      "nextShift": "?????? ????",
-      "noUpcomingShift": "??? ????? ????? ?????? ?????.",
+      "title": "הסטטוס שלי",
+      "shiftProgress": "נבחרו {current}/{max} משמרות. מינימום: {min}.",
+      "belowMinimum": "מתחת למינימום",
+      "onTrack": "בקצב תקין",
+      "approved": "מאושר",
+      "openSlots": "משמרות פתוחות",
+      "pendingRequests": "בקשות ממתינות",
+      "activeWaitlist": "רשימת המתנה",
+      "nextShift": "המשמרת הבאה",
+      "noUpcomingShift": "עדיין אין משמרת מאושרת קרובה.",
       "priority": {
         "waitlistOffer": {
-          "title": "Waitlist offer needs action",
-          "description": "You have {count} waitlist offer(s) waiting. Accept before the timer expires.",
-          "button": "Open waitlist"
+          "title": "הצעת רשימת המתנה דורשת פעולה",
+          "description": "יש לך {count} הצעות מרשימת ההמתנה. אשר לפני שהזמן נגמר.",
+          "button": "פתח רשימת המתנה"
         },
         "belowMinimum": {
-          "title": "Pick more shifts",
-          "description": "You have {current}/{min} required shifts for this cycle.",
-          "button": "Browse shifts"
+          "title": "בחר עוד משמרות",
+          "description": "יש לך {current}/{min} משמרות נדרשות בסבב הזה.",
+          "button": "עיין במשמרות"
         },
         "pendingRequests": {
-          "title": "Requests are waiting",
-          "description": "{count} request(s) are still waiting for admin review.",
-          "button": "Open my shifts"
+          "title": "בקשות ממתינות",
+          "description": "{count} בקשות עדיין ממתינות לבדיקת מנהל.",
+          "button": "פתח את המשמרות שלי"
         },
         "pendingSwaps": {
-          "title": "Swap request waiting",
-          "description": "{count} swap request(s) need your attention.",
-          "button": "Open swaps"
+          "title": "בקשת החלפה ממתינה",
+          "description": "{count} בקשות החלפה דורשות את תשומת הלב שלך.",
+          "button": "פתח החלפות"
         },
         "allClear": {
-          "title": "You are on track",
-          "description": "No urgent self-service actions right now."
+          "title": "אתה בקצב תקין",
+          "description": "אין פעולות שירות עצמי דחופות כרגע."
         }
       },
       "cards": {
         "pick": {
-          "title": "????? ??????",
-          "description": "???? ??????? ?????? ???? ????? ????? ??????.",
-          "underMinimum": "??? ???? ???????? ?????? ???. ??? ??? ????? ?? ????.",
-          "button": "??? ??????"
+          "title": "בחירת משמרות",
+          "description": "עיין במשמרות פתוחות ובקש משבצת נוספת כשצריך.",
+          "underMinimum": "אתה מתחת למינימום בסבב הזה. בחר עוד משמרת אם אפשר.",
+          "button": "עיין במשמרות"
         },
         "waitlist": {
-          "title": "????? ?????",
-          "description": "???? ???? ????? ?????? ??????? ?????.",
-          "offer": "?? ?? ???? ????? ????? ??????.",
-          "button": "??? ?????"
+          "title": "רשימת המתנה",
+          "description": "עקוב אחרי מיקומים והצעות למשמרות מלאות.",
+          "offer": "יש לך הצעת רשימת המתנה שמחכה לפעולה.",
+          "button": "פתח רשימת המתנה"
         },
         "swaps": {
-          "title": "??????",
-          "description": "???? ?????? ?????? ?? ??? ????? ?? ??? ???.",
-          "button": "??? ??????"
+          "title": "החלפות",
+          "description": "בדוק החלפות נכנסות או הצע החלפה עם חבר אחר.",
+          "button": "פתח החלפות"
         },
         "requests": {
-          "title": "?????",
-          "description": "{changes} ????? ????? ?-{absences} ?????? ?? ???? ??????? ??????.",
-          "button": "??? ??????? ???"
+          "title": "בקשות",
+          "description": "{changes} בקשות שינוי ו-{absences} דיווחי היעדרות ממתינים לבדיקה.",
+          "button": "פתח את המשמרות שלי"
         },
         "leave": {
-          "title": "????? ????",
-          "description": "???? ???? ????? ???? ??????? ???? ???? ???? ??????.",
-          "button": "??? ??????? ???"
+          "title": "חופשה",
+          "description": "עקוב אחרי בקשות חופשה מיוחדת ושלח בקשה חדשה כשצריך.",
+          "button": "פתח את המשמרות שלי"
         }
       },
-      "lateAbsences": "???????",
-      "pendingAbsences": "?????? ?? ????",
+      "lateAbsences": "היעדרויות מאוחרות",
+      "pendingAbsences": "דיווחי היעדרות",
       "rules": {
-        "title": "?????",
-        "shiftRange": "???? ??????",
-        "shiftRangeValue": "??? ????? {min} ??? {max} ?????? ??????.",
-        "requestWindow": "???? ?????",
-        "requestWindowValue": "???? ??? ???? {open} ???? ???? ?????? ????? {close} ???? ???? ???? ?????.",
-        "cancellation": "???? ?????",
-        "cancellationValue": "????? ???? ???? {hours} ???? ???? ????? ??????.",
-        "lateAbsence": "????? ???????",
-        "lateAbsenceValue": "????? {used}/{max}. ??????? ???? {hours} ????? ???????? ?????? ???????.",
-        "waitlist": "????? ?????",
-        "waitlistValue": "??????? ?? ????? ????, ?? ?? {minutes} ???? ????."
+        "title": "חוקים",
+        "shiftRange": "טווח משמרות",
+        "shiftRangeValue": "בחר לפחות {min} ועד {max} משמרות בכל סבב.",
+        "requestWindow": "חלון בקשות",
+        "requestWindowValue": "בדרך כלל נפתח {open} שעות לפני הסבב ונסגר {close} שעות לפני שהוא מתחיל.",
+        "cancellation": "מועד אחרון לביטול",
+        "cancellationValue": "ביטול רגיל נסגר {hours} שעות לפני תחילת המשמרת.",
+        "lateAbsence": "מגבלת היעדרות מאוחרת",
+        "lateAbsenceValue": "נוצלו {used}/{max}. דיווחים בתוך {hours} השעות האחרונות נחשבים מאוחרים.",
+        "waitlist": "הצעות רשימת המתנה",
+        "waitlistValue": "כשמוצעת לך משמרת מלאה, יש לך {minutes} דקות לאשר."
       },
-      "pendingLeave": "??????"
+      "pendingLeave": "חופשה ממתינה"
     }
   },
   "trialBanner": {
