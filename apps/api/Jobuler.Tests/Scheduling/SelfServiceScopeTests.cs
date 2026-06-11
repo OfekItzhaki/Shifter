@@ -16,6 +16,7 @@ using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using NSubstitute;
 using System.Security.Claims;
 using System.Text.Json;
@@ -29,6 +30,7 @@ public class SelfServiceScopeTests
     {
         var options = new DbContextOptionsBuilder<AppDbContext>()
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning))
             .Options;
 
         return new AppDbContext(options);
@@ -676,6 +678,71 @@ public class SelfServiceScopeTests
     }
 
     [Fact]
+    public async Task RejectShiftChange_AuditFailure_DoesNotNotifyMemberOrPush()
+    {
+        using var db = CreateDb();
+        var services = CreateControllerServices(audit: CreateFailingAuditLogger());
+        var spaceId = Guid.NewGuid();
+        var group = Group.Create(spaceId, null, "Route Group");
+        var memberUserId = Guid.NewGuid();
+        var adminUserId = Guid.NewGuid();
+        var ownerUserId = Guid.NewGuid();
+        var person = Person.Create(spaceId, "Member", displayName: "Display Member", linkedUserId: memberUserId);
+        var cycle = CreateCycle(spaceId, group.Id);
+        var task = CreateTask(spaceId, group.Id, "Task", ownerUserId);
+        var originalSlot = CreateSlot(spaceId, group.Id, task.Id, cycle.Id, daysFromNow: 2);
+        var requestedSlot = CreateSlot(spaceId, group.Id, task.Id, cycle.Id, daysFromNow: 3);
+        var shiftRequest = ShiftRequest.Create(spaceId, originalSlot.Id, person.Id, group.Id, cycle.Id);
+        shiftRequest.Approve();
+        originalSlot.IncrementFillCount();
+        var changeRequest = ShiftChangeRequest.Create(
+            spaceId,
+            group.Id,
+            cycle.Id,
+            shiftRequest.Id,
+            originalSlot.Id,
+            requestedSlot.Id,
+            person.Id,
+            "Need to move",
+            DateTime.UtcNow);
+
+        db.People.Add(person);
+        db.Groups.Add(group);
+        db.GroupMemberships.Add(GroupMembership.Create(spaceId, group.Id, person.Id));
+        db.SchedulingCycles.Add(cycle);
+        db.GroupTasks.Add(task);
+        db.ShiftSlots.AddRange(originalSlot, requestedSlot);
+        db.ShiftRequests.Add(shiftRequest);
+        db.ShiftChangeRequests.Add(changeRequest);
+        await db.SaveChangesAsync();
+
+        services.Permissions
+            .RequirePermissionAsync(adminUserId, spaceId, Permissions.ConstraintsManage, Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+
+        var controller = new ShiftChangeRequestsController(
+            services.Permissions,
+            services.NotificationService,
+            services.PushSender,
+            services.Audit,
+            db);
+        controller.ControllerContext = CreateControllerContext(adminUserId);
+
+        var result = await controller.Reject(
+            spaceId,
+            group.Id,
+            changeRequest.Id,
+            new ReviewShiftChangeRequest("Not enough coverage"),
+            CancellationToken.None);
+
+        var problem = result.Should().BeAssignableTo<ObjectResult>().Subject;
+        problem.StatusCode.Should().Be(StatusCodes.Status422UnprocessableEntity);
+        (await db.Notifications.CountAsync(n => n.EventType == "self_service.change_rejected")).Should().Be(0);
+        await services.PushSender.DidNotReceiveWithAnyArgs()
+            .SendPushToUserAsync(default, default, default!, default);
+    }
+
+    [Fact]
     public async Task SubmitShiftChange_Returns422_WhenOriginalShiftAlreadyStarted()
     {
         using var db = CreateDb();
@@ -841,6 +908,71 @@ public class SelfServiceScopeTests
             .SingleAsync(n => n.EventType == "self_service.change_approved");
         notification.UserId.Should().Be(userId);
         notification.MetadataJson.Should().Contain(changeRequest.Id.ToString());
+    }
+
+    [Fact]
+    public async Task ApproveShiftChange_AuditFailure_DoesNotNotifyMemberOrPush()
+    {
+        using var db = CreateDb();
+        var services = CreateControllerServices(audit: CreateFailingAuditLogger());
+        var spaceId = Guid.NewGuid();
+        var group = Group.Create(spaceId, null, "Route Group");
+        var userId = Guid.NewGuid();
+        var adminUserId = Guid.NewGuid();
+        var ownerUserId = Guid.NewGuid();
+        var person = Person.Create(spaceId, "Member", linkedUserId: userId);
+        var cycle = CreateCycle(spaceId, group.Id);
+        var task = CreateTask(spaceId, group.Id, "Task", ownerUserId);
+        var originalSlot = CreateSlot(spaceId, group.Id, task.Id, cycle.Id, daysFromNow: 2);
+        var requestedSlot = CreateSlot(spaceId, group.Id, task.Id, cycle.Id, daysFromNow: 3);
+        var shiftRequest = ShiftRequest.Create(spaceId, originalSlot.Id, person.Id, group.Id, cycle.Id);
+        shiftRequest.Approve();
+        originalSlot.IncrementFillCount();
+        var changeRequest = ShiftChangeRequest.Create(
+            spaceId,
+            group.Id,
+            cycle.Id,
+            shiftRequest.Id,
+            originalSlot.Id,
+            requestedSlot.Id,
+            person.Id,
+            "Can I move to the next day?",
+            DateTime.UtcNow);
+
+        db.People.Add(person);
+        db.Groups.Add(group);
+        db.GroupMemberships.Add(GroupMembership.Create(spaceId, group.Id, person.Id));
+        db.SchedulingCycles.Add(cycle);
+        db.GroupTasks.Add(task);
+        db.ShiftSlots.AddRange(originalSlot, requestedSlot);
+        db.ShiftRequests.Add(shiftRequest);
+        db.ShiftChangeRequests.Add(changeRequest);
+        await db.SaveChangesAsync();
+
+        services.Permissions
+            .RequirePermissionAsync(adminUserId, spaceId, Permissions.ConstraintsManage, Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+
+        var controller = new ShiftChangeRequestsController(
+            services.Permissions,
+            services.NotificationService,
+            services.PushSender,
+            services.Audit,
+            db);
+        controller.ControllerContext = CreateControllerContext(adminUserId);
+
+        var result = await controller.Approve(
+            spaceId,
+            group.Id,
+            changeRequest.Id,
+            new ReviewShiftChangeRequest("Approved"),
+            CancellationToken.None);
+
+        var problem = result.Should().BeAssignableTo<ObjectResult>().Subject;
+        problem.StatusCode.Should().Be(StatusCodes.Status422UnprocessableEntity);
+        (await db.Notifications.CountAsync(n => n.EventType == "self_service.change_approved")).Should().Be(0);
+        await services.PushSender.DidNotReceiveWithAnyArgs()
+            .SendPushToUserAsync(default, default, default!, default);
     }
 
     [Fact]
@@ -2166,6 +2298,23 @@ public class SelfServiceScopeTests
         return audit;
     }
 
+    private static IAuditLogger CreateFailingAuditLogger()
+    {
+        var audit = Substitute.For<IAuditLogger>();
+        audit.LogAsync(
+                Arg.Any<Guid?>(),
+                Arg.Any<Guid?>(),
+                Arg.Any<string>(),
+                Arg.Any<string?>(),
+                Arg.Any<Guid?>(),
+                Arg.Any<string?>(),
+                Arg.Any<string?>(),
+                Arg.Any<string?>(),
+                Arg.Any<CancellationToken>())
+            .Returns<Task>(_ => throw new InvalidOperationException("Audit failed."));
+        return audit;
+    }
+
 
     private static ControllerContext CreateControllerContext(Guid userId)
     {
@@ -2179,7 +2328,7 @@ public class SelfServiceScopeTests
         return new ControllerContext { HttpContext = httpContext };
     }
 
-    private static ControllerServices CreateControllerServices() =>
+    private static ControllerServices CreateControllerServices(IAuditLogger? audit = null) =>
         new(
             Substitute.For<IMediator>(),
             Substitute.For<IPermissionService>(),
@@ -2188,7 +2337,7 @@ public class SelfServiceScopeTests
             Substitute.For<IWaitlistService>(),
             Substitute.For<IShiftSwapService>(),
             Substitute.For<IPushNotificationSender>(),
-            CreateAuditLogger());
+            audit ?? CreateAuditLogger());
 
     private sealed record ControllerServices(
         IMediator Mediator,
