@@ -35,6 +35,9 @@ packaging, and self-service export/import readiness.
 - Routes native assistant contact payloads to the configured
   `NEXT_PUBLIC_LEGAL_EMAIL`, so customer-hosted installs can point support
   requests at the customer's own help address.
+- Wires public frontend deployment variables through the web Docker build and
+  runtime environment, including legal/support email, Crisp, PostHog, Sentry,
+  VAPID, app version, and the public API URL.
 
 ## Verification
 
@@ -57,6 +60,8 @@ packaging, and self-service export/import readiness.
   passed: 6 passed, 0 failed.
 - `node_modules\\.bin\\eslint.cmd components\\shell\\ShifterAssistant.tsx`
   passed.
+- `docker compose -f infra\\compose\\docker-compose.yml config --quiet`
+  passed after public frontend env wiring.
 
 ## Remaining Product Checks
 
