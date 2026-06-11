@@ -123,6 +123,43 @@ describe("WaitlistTab", () => {
     expect(screen.queryByRole("button", { name: "Accept Offer" })).not.toBeInTheDocument();
   });
 
+  it("refreshes entries after a stale waitlist leave failure", async () => {
+    mockLeaveWaitlist.mockRejectedValue({
+      response: {
+        status: 400,
+        data: { detail: "This waitlist entry is no longer active." },
+      },
+    });
+    mockGetMyWaitlistEntries
+      .mockResolvedValueOnce([
+        {
+          id: "waitlist-waiting",
+          shiftSlotId: "slot-waiting",
+          slotDate: "2026-06-20",
+          slotStartTime: "08:00:00",
+          slotEndTime: "16:00:00",
+          taskName: "Desk",
+          position: 1,
+          status: "Waiting",
+          offeredAt: null,
+          expiresAt: null,
+        },
+      ])
+      .mockResolvedValueOnce([]);
+
+    render(<WaitlistTab spaceId="space-1" groupId="group-1" isAdmin={false} />);
+
+    fireEvent.click(await screen.findByRole("button", { name: "Leave" }));
+    fireEvent.click(screen.getByRole("button", { name: "Yes, leave" }));
+
+    expect(await screen.findByText("This waitlist entry is no longer active.")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(mockGetMyWaitlistEntries).toHaveBeenCalledTimes(2);
+    });
+    expect(await screen.findByText("No waitlist entries")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Leave" })).not.toBeInTheDocument();
+  });
+
   it("shows confirmation after an admin assigns a waitlisted member", async () => {
     mockGetMyWaitlistEntries.mockResolvedValue([]);
     mockGetAdminWaitlistEntries.mockResolvedValue([

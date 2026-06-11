@@ -126,6 +126,7 @@ export default function WaitlistTab({ spaceId, groupId, isAdmin = false }: Waitl
     } catch (err) {
       const errorResult = getSelfServiceErrorMessage(err);
       setActionError(errorResult.message);
+      await fetchEntries();
     } finally {
       setDecliningId(null);
     }
@@ -145,6 +146,7 @@ export default function WaitlistTab({ spaceId, groupId, isAdmin = false }: Waitl
     } catch (err) {
       const errorResult = getSelfServiceErrorMessage(err);
       setActionError(errorResult.message);
+      await fetchEntries();
     } finally {
       setLeavingId(null);
     }
@@ -162,6 +164,7 @@ export default function WaitlistTab({ spaceId, groupId, isAdmin = false }: Waitl
     } catch (err) {
       const errorResult = getSelfServiceErrorMessage(err);
       setActionError(errorResult.message);
+      await fetchEntries();
     } finally {
       setAdminAssigningId(null);
     }
