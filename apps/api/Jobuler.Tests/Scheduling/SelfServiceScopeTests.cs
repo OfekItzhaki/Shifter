@@ -1777,6 +1777,61 @@ public class SelfServiceScopeTests
     }
 
     [Fact]
+    public async Task GenerateNext_CreatesCycleFromConfigAndRunsSlotGeneration()
+    {
+        using var db = CreateDb();
+        var services = CreateControllerServices();
+        var spaceId = Guid.NewGuid();
+        var group = Group.Create(spaceId, null, "Route Group");
+        group.SetSchedulingMode(SchedulingMode.SelfService);
+        var adminUserId = Guid.NewGuid();
+        var config = SelfServiceConfig.Create(
+            spaceId,
+            group.Id,
+            minShiftsPerCycle: 1,
+            maxShiftsPerCycle: 4,
+            requestWindowOpenOffsetHours: 168,
+            requestWindowCloseOffsetHours: 24,
+            cancellationCutoffHours: 24,
+            maxLateCancellationsPerCycle: 2,
+            lateCancellationWindowHours: 24,
+            waitlistOfferMinutes: 60,
+            cycleDurationDays: 10);
+
+        db.Groups.Add(group);
+        db.SelfServiceConfigs.Add(config);
+        await db.SaveChangesAsync();
+
+        services.Permissions
+            .RequirePermissionAsync(adminUserId, spaceId, Permissions.ConstraintsManage, Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+
+        var slotGeneration = Substitute.For<ISlotGenerationService>();
+        var controller = new SelfServiceCyclesController(
+            db,
+            services.Permissions,
+            slotGeneration,
+            services.Mediator);
+        controller.ControllerContext = CreateControllerContext(adminUserId);
+
+        var result = await controller.GenerateNext(spaceId, group.Id, CancellationToken.None);
+
+        var ok = result.Should().BeOfType<OkObjectResult>().Subject;
+        var response = ok.Value.Should().BeOfType<SelfServiceCycleStatusResponse>().Subject;
+
+        var cycle = await db.SchedulingCycles.SingleAsync(c => c.Id == response.CycleId);
+        cycle.SpaceId.Should().Be(spaceId);
+        cycle.GroupId.Should().Be(group.Id);
+        (cycle.EndsAt - cycle.StartsAt).Should().Be(TimeSpan.FromDays(10));
+        cycle.RequestWindowOpensAt.Should().Be(cycle.StartsAt.AddHours(-168));
+        cycle.RequestWindowClosesAt.Should().Be(cycle.StartsAt.AddHours(-24));
+
+        await slotGeneration.Received(1)
+            .GenerateSlotsForCycleAsync(group.Id, cycle.Id, Arg.Any<CancellationToken>());
+        response.SlotCount.Should().Be(0);
+    }
+
+    [Fact]
     public async Task GetCycleStatus_IncludesPendingSpecialLeaveRequestsForCycleMembers()
     {
         using var db = CreateDb();
