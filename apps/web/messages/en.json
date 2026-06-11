@@ -2513,6 +2513,29 @@
             "title": "Improve",
             "description": "After the cycle, review late reports, cancellations, overrides, and adjust the next policy."
           }
+        },
+        "workflows": {
+          "member": "Member action",
+          "admin": "Admin follow-up",
+          "result": "Expected result",
+          "picking": {
+            "title": "Pick shifts and waitlist",
+            "member": "Members pick open shifts; full shifts offer a waitlist path.",
+            "admin": "Watch under-filled slots, expiring offers, and active waitlist entries.",
+            "result": "Accepted picks and waitlist offers create approved shift assignments."
+          },
+          "changes": {
+            "title": "Changes and absence",
+            "member": "Members request a shift change or report that they cannot attend.",
+            "admin": "Review pending change and absence queues before closing the cycle.",
+            "result": "Approved changes move assignments; absence reports release coverage to the waitlist."
+          },
+          "leave": {
+            "title": "Special leave",
+            "member": "Members request time off for a date range with a reason.",
+            "admin": "Approve or reject requests, adding notes when context matters.",
+            "result": "Approved leave creates an at-home presence window and notifies the member."
+          }
         }
       },
       "actions": {

@@ -45,6 +45,21 @@ vi.mock("next-intl", () => ({
       "guide.steps.review.description": "Handle absences and changes.",
       "guide.steps.improve.title": "Improve",
       "guide.steps.improve.description": "Tune the next cycle.",
+      "guide.workflows.member": "Member action",
+      "guide.workflows.admin": "Admin follow-up",
+      "guide.workflows.result": "Expected result",
+      "guide.workflows.picking.title": "Pick shifts and waitlist",
+      "guide.workflows.picking.member": "Members pick open shifts.",
+      "guide.workflows.picking.admin": "Watch waitlist offers.",
+      "guide.workflows.picking.result": "Accepted offers create assignments.",
+      "guide.workflows.changes.title": "Changes and absence",
+      "guide.workflows.changes.member": "Members request changes or report absence.",
+      "guide.workflows.changes.admin": "Review pending queues.",
+      "guide.workflows.changes.result": "Changes move assignments.",
+      "guide.workflows.leave.title": "Special leave",
+      "guide.workflows.leave.member": "Members request time off.",
+      "guide.workflows.leave.admin": "Approve or reject requests.",
+      "guide.workflows.leave.result": "Approved leave creates presence.",
       "actions.reviews.title": "Review requests",
       "actions.reviews.description": "Approve review requests.",
       "actions.reviews.metric": `${values?.count ?? 0} pending review item(s)`,
@@ -143,6 +158,10 @@ describe("SelfServiceOperationsTab", () => {
     expect(screen.getByText("1 time-off request(s) waiting.")).toBeInTheDocument();
     expect(screen.getByText("How to run the cycle")).toBeInTheDocument();
     expect(screen.getByText("Set policy and templates.")).toBeInTheDocument();
+    expect(screen.getByText("Pick shifts and waitlist")).toBeInTheDocument();
+    expect(screen.getByText("Changes and absence")).toBeInTheDocument();
+    expect(screen.getAllByText("Special leave").length).toBeGreaterThan(1);
+    expect(screen.getByText("Approved leave creates presence.")).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: /Review requests/i }));
 

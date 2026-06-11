@@ -32,6 +32,7 @@ const ACTIONS: { target: SelfServiceOpsTarget; key: string; metric?: "reviews" |
 ];
 
 const GUIDE_STEPS = ["prepare", "open", "review", "improve"] as const;
+const WORKFLOW_ITEMS = ["picking", "changes", "leave"] as const;
 const WAITLIST_EXPIRY_WARNING_MINUTES = 30;
 const REVIEW_BREAKDOWN = [
   {
@@ -358,6 +359,29 @@ export default function SelfServiceOperationsTab({
             </li>
           ))}
         </ol>
+        <div className="mt-5 grid gap-3 lg:grid-cols-3">
+          {WORKFLOW_ITEMS.map((item) => (
+            <div key={item} className="rounded-lg border border-slate-200 bg-white p-4">
+              <h4 className="text-sm font-semibold text-slate-900">
+                {t(`guide.workflows.${item}.title`)}
+              </h4>
+              <dl className="mt-3 space-y-2 text-xs leading-5">
+                <div>
+                  <dt className="font-medium text-slate-500">{t("guide.workflows.member")}</dt>
+                  <dd className="text-slate-700">{t(`guide.workflows.${item}.member`)}</dd>
+                </div>
+                <div>
+                  <dt className="font-medium text-slate-500">{t("guide.workflows.admin")}</dt>
+                  <dd className="text-slate-700">{t(`guide.workflows.${item}.admin`)}</dd>
+                </div>
+                <div>
+                  <dt className="font-medium text-slate-500">{t("guide.workflows.result")}</dt>
+                  <dd className="text-slate-700">{t(`guide.workflows.${item}.result`)}</dd>
+                </div>
+              </dl>
+            </div>
+          ))}
+        </div>
       </div>
 
       <CycleControlPanel spaceId={spaceId} groupId={groupId} onNavigate={onNavigate} />
