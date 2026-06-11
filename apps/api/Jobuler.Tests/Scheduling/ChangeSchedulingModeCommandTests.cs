@@ -58,6 +58,62 @@ public class ChangeSchedulingModeCommandTests
         // Assert
         var updated = await db.Groups.FindAsync(group.Id);
         updated!.SchedulingMode.Should().Be(SchedulingMode.SelfService);
+
+        var config = await db.SelfServiceConfigs.SingleAsync(c => c.GroupId == group.Id);
+        config.SpaceId.Should().Be(spaceId);
+        config.MinShiftsPerCycle.Should().Be(0);
+        config.MaxShiftsPerCycle.Should().Be(7);
+        config.MaxAbsencesPerCycle.Should().Be(3);
+        config.MaxLateCancellationsPerCycle.Should().Be(2);
+        config.AllowMemberShiftClaims.Should().BeTrue();
+        config.AllowWaitlist.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task Handle_ChangesToSelfService_WhenConfigAlreadyExists_DoesNotOverwritePolicy()
+    {
+        // Arrange
+        using var db = CreateDb();
+        var spaceId = Guid.NewGuid();
+        var group = Group.Create(spaceId, null, "Test Group");
+        var existingConfig = SelfServiceConfig.Create(
+            spaceId,
+            group.Id,
+            minShiftsPerCycle: 2,
+            maxShiftsPerCycle: 4,
+            requestWindowOpenOffsetHours: 96,
+            requestWindowCloseOffsetHours: 12,
+            cancellationCutoffHours: 18,
+            maxLateCancellationsPerCycle: 1,
+            lateCancellationWindowHours: 12,
+            waitlistOfferMinutes: 30,
+            cycleDurationDays: 14);
+        existingConfig.SetAbsenceReportLimit(1);
+        existingConfig.SetWorkflowPermissions(
+            allowMemberShiftClaims: true,
+            allowWaitlist: false,
+            allowShiftChangeRequests: true,
+            allowAbsenceReports: true,
+            allowShiftSwaps: false);
+
+        db.Groups.Add(group);
+        db.SelfServiceConfigs.Add(existingConfig);
+        await db.SaveChangesAsync();
+
+        var handler = new ChangeSchedulingModeCommandHandler(db, AllowAll());
+        var command = new ChangeSchedulingModeCommand(spaceId, group.Id, Guid.NewGuid(), SchedulingMode.SelfService);
+
+        // Act
+        await handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        var configs = await db.SelfServiceConfigs.Where(c => c.GroupId == group.Id).ToListAsync();
+        configs.Should().ContainSingle();
+        configs[0].MinShiftsPerCycle.Should().Be(2);
+        configs[0].MaxShiftsPerCycle.Should().Be(4);
+        configs[0].MaxAbsencesPerCycle.Should().Be(1);
+        configs[0].AllowWaitlist.Should().BeFalse();
+        configs[0].AllowShiftSwaps.Should().BeFalse();
     }
 
     [Fact]

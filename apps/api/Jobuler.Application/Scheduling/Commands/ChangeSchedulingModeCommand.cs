@@ -68,6 +68,17 @@ public class ChangeSchedulingModeCommandHandler : IRequestHandler<ChangeScheduli
                 "All unresolved requests must be cancelled or completed before switching modes.");
 
         group.SetSchedulingMode(request.TargetMode);
+
+        if (request.TargetMode == SchedulingMode.SelfService)
+        {
+            var hasConfig = await _db.SelfServiceConfigs.AnyAsync(c =>
+                c.GroupId == request.GroupId &&
+                c.SpaceId == request.SpaceId, ct);
+
+            if (!hasConfig)
+                _db.SelfServiceConfigs.Add(SelfServiceConfig.Create(request.SpaceId, request.GroupId));
+        }
+
         await _db.SaveChangesAsync(ct);
     }
 }
