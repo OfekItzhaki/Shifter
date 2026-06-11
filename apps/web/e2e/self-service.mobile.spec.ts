@@ -30,12 +30,11 @@ test.describe("Mobile self-service admin", () => {
     });
     expect(response.ok()).toBeTruthy();
 
-    const groups = await response.json() as Array<{ id: string; schedulingMode?: string }>;
-    const selfServiceGroup = groups.find((group) => group.schedulingMode === "SelfService");
-    if (!selfServiceGroup) {
-      test.skip(true, "No self-service group exists in the E2E seed.");
-      return;
-    }
+    const groups = await response.json() as Array<{ id: string; name?: string; schedulingMode?: string }>;
+    const selfServiceGroup = groups.find((group) =>
+      group.name === "Self-Service Demo" && group.schedulingMode === "SelfService"
+    );
+    expect(selfServiceGroup, "seed.sql should create the Self-Service Demo group").toBeTruthy();
 
     await page.evaluate((groupId) => {
       const authRaw = localStorage.getItem("jobuler-auth");
@@ -54,13 +53,18 @@ test.describe("Mobile self-service admin", () => {
         },
         version: 0,
       }));
-    }, selfServiceGroup.id);
+    }, selfServiceGroup!.id);
 
-    await page.goto(`${BASE}/groups/${selfServiceGroup.id}`);
+    await page.goto(`${BASE}/groups/${selfServiceGroup!.id}`);
     await page.getByTestId("group-tab-self-service-config").click();
 
     await expect(page.getByText("Cycle controls")).toBeVisible({ timeout: 15000 });
     await expect(page.getByText("Generate first cycle").or(page.getByText("Generate next cycle"))).toBeVisible();
+    await expect(page.getByTestId("group-tab-self-service-ops")).toBeVisible();
+
+    await page.getByTestId("group-tab-self-service-ops").click();
+    await expect(page.getByText("Self-service operations")).toBeVisible({ timeout: 15000 });
+    await expect(page.getByText("Cycle controls")).toBeVisible();
 
     const horizontalOverflow = await page.evaluate(() =>
       document.documentElement.scrollWidth - document.documentElement.clientWidth
