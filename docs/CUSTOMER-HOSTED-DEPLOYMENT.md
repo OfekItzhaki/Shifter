@@ -214,12 +214,35 @@ The compose backup script creates PostgreSQL and upload-volume backups:
 SHIFTER_DIR=/opt/shifter bash /opt/shifter/infra/scripts/backup-compose.sh
 ```
 
+Restore requires an explicit confirmation flag and should be run during a
+maintenance window:
+
+```bash
+CONFIRM=restore \
+DB_BACKUP=/opt/shifter/backups/postgres_shifter_20260612_030000.dump \
+SHIFTER_DIR=/opt/shifter \
+bash /opt/shifter/infra/scripts/restore-compose.sh
+```
+
+To restore uploaded files from the matching `uploads_*.tar.gz` archive:
+
+```bash
+CONFIRM=restore \
+RESTORE_UPLOADS=1 \
+DB_BACKUP=/opt/shifter/backups/postgres_shifter_20260612_030000.dump \
+UPLOADS_BACKUP=/opt/shifter/backups/uploads_shifter_20260612_030000.tar.gz \
+SHIFTER_DIR=/opt/shifter \
+bash /opt/shifter/infra/scripts/restore-compose.sh
+```
+
 Recommended production policy:
 
 - Run backups at least daily.
 - Copy backups to customer-owned off-host storage.
 - Test restore before go-live and once per quarter.
 - Keep database dumps and uploaded files under the same retention policy.
+- If using an external S3-compatible bucket instead of local uploads, back up
+  and restore that bucket through the customer's storage provider tooling.
 
 ## Upgrades
 
@@ -252,6 +275,5 @@ These are good next iterations, but not required for the first sellable
 customer-hosted package:
 
 - Helm chart for Kubernetes customers.
-- One-command restore script.
 - Offline image bundle for air-gapped sites.
 - License/entitlement enforcement for on-prem contracts.
