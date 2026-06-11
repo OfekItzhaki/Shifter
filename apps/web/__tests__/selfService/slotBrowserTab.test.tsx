@@ -79,4 +79,34 @@ describe("SlotBrowserTab", () => {
     expect(await screen.findByText("Shift confirmed. It was added to your shifts.")).toBeInTheDocument();
     expect(screen.getByText("1/2")).toBeInTheDocument();
   });
+
+  it("joins the waitlist when a shift is already full", async () => {
+    mockGetAvailableSlots.mockResolvedValue({
+      requestWindowOpen: true,
+      requestWindowOpensAt: null,
+      requestWindowClosesAt: "2026-06-19T00:00:00Z",
+      slots: [
+        {
+          id: "slot-full",
+          date: "2026-06-20",
+          startTime: "09:00:00",
+          endTime: "17:00:00",
+          taskName: "Desk",
+          capacity: 1,
+          currentFillCount: 1,
+        },
+      ],
+    });
+    mockJoinWaitlist.mockResolvedValue({ position: 3 });
+
+    render(<SlotBrowserTab spaceId="space-1" groupId="group-1" isAdmin={false} />);
+
+    fireEvent.click(await screen.findByRole("button", { name: "Join Waitlist" }));
+
+    await waitFor(() => {
+      expect(mockJoinWaitlist).toHaveBeenCalledWith("space-1", "group-1", "slot-full");
+    });
+    expect(await screen.findByText("Joined waitlist at position 3")).toBeInTheDocument();
+    expect(mockSubmitShiftRequest).not.toHaveBeenCalled();
+  });
 });
