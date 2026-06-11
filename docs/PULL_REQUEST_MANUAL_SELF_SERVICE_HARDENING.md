@@ -72,3 +72,5 @@ tenant-boundary work; it must be reconciled carefully because its current diff
 conflicts with special leave and other self-service review data.
 
 See [Self-service integration plan](SELF-SERVICE-INTEGRATION-PLAN.md).
+For customer-hosted export/import requirements, see the
+[self-service portability contract](SELF-SERVICE-PORTABILITY-CONTRACT.md).

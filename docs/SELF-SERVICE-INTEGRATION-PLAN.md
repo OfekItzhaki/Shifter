@@ -88,6 +88,10 @@ Known reconciliation points from the branch diff:
 - Billing changes should preserve the current space-level self-service billing
   behavior until organization-level billing is explicitly rolled out.
 
+Use the [self-service portability contract](SELF-SERVICE-PORTABILITY-CONTRACT.md)
+as the merge gate for export/import, tenant isolation, and special leave
+preservation.
+
 ## Practical Merge Order
 
 Use this order unless a production fix forces a different path:

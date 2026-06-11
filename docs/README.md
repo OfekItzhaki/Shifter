@@ -13,6 +13,8 @@ manual self-service scheduling decisions.
   - title, description, verification, and branch relationship notes.
 - [Manual self-service QA checklist](MANUAL-SELF-SERVICE-QA-CHECKLIST.md) -
   smoke tests and automated checks before merge or demo.
+- [Self-service portability contract](SELF-SERVICE-PORTABILITY-CONTRACT.md) -
+  data and tenant-isolation requirements for customer-hosted exports/imports.
 - [Architecture](ARCHITECTURE.md) - current system architecture and service
   boundaries.
 - [Data model](DATA-MODEL.md) - major entities and persistence structure.
