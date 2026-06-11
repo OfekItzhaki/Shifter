@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import type { AdminWaitlistEntryDto, WaitlistEntryDto } from "../../lib/api/selfService";
-import { classifyWaitlistEntries, summarizeWaitlist } from "../../lib/utils/selfServiceWaitlist";
+import {
+  classifyWaitlistEntries,
+  isActiveWaitlistStatus,
+  summarizeWaitlist,
+} from "../../lib/utils/selfServiceWaitlist";
 
 describe("self-service waitlist utilities", () => {
   it("keeps offered entries separate from the rest of a member's waitlist", () => {
@@ -39,6 +43,15 @@ describe("self-service waitlist utilities", () => {
       waitingCount: 1,
       activeAdminCount: 2,
     });
+  });
+
+  it("treats only waiting and offered entries as active for admin assignment", () => {
+    expect(isActiveWaitlistStatus("Waiting")).toBe(true);
+    expect(isActiveWaitlistStatus("Offered")).toBe(true);
+    expect(isActiveWaitlistStatus("Accepted")).toBe(false);
+    expect(isActiveWaitlistStatus("Expired")).toBe(false);
+    expect(isActiveWaitlistStatus("Declined")).toBe(false);
+    expect(isActiveWaitlistStatus("Removed")).toBe(false);
   });
 });
 

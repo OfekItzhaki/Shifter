@@ -11,6 +11,10 @@ export interface WaitlistSummary {
   activeAdminCount: number;
 }
 
+export function isActiveWaitlistStatus(status: WaitlistEntryDto["status"]): boolean {
+  return status === "Offered" || status === "Waiting";
+}
+
 export function classifyWaitlistEntries(entries: WaitlistEntryDto[]): ClassifiedWaitlistEntries {
   return {
     offeredEntries: entries.filter((entry) => entry.status === "Offered"),
@@ -25,8 +29,6 @@ export function summarizeWaitlist(
   return {
     offeredCount: entries.filter((entry) => entry.status === "Offered").length,
     waitingCount: entries.filter((entry) => entry.status === "Waiting").length,
-    activeAdminCount: adminEntries.filter(
-      (entry) => entry.status === "Offered" || entry.status === "Waiting"
-    ).length,
+    activeAdminCount: adminEntries.filter((entry) => isActiveWaitlistStatus(entry.status)).length,
   };
 }

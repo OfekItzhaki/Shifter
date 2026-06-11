@@ -14,7 +14,11 @@ import {
 } from "@/lib/api/selfService";
 import { formatSlotDate, formatTime24h, formatCountdown } from "@/lib/utils/selfServiceFormat";
 import { getSelfServiceErrorMessage } from "@/lib/utils/selfServiceErrors";
-import { classifyWaitlistEntries, summarizeWaitlist } from "@/lib/utils/selfServiceWaitlist";
+import {
+  classifyWaitlistEntries,
+  isActiveWaitlistStatus,
+  summarizeWaitlist,
+} from "@/lib/utils/selfServiceWaitlist";
 import { LoadingCard, ErrorRetry, MutationButton } from "@/components/groups/selfService";
 
 interface WaitlistTabProps {
@@ -233,14 +237,16 @@ export default function WaitlistTab({ spaceId, groupId, isAdmin = false }: Waitl
                       {t("offerExpires", { time: formatCountdown(entry.expiresAt) })}
                     </div>
                   )}
-                  <button
-                    type="button"
-                    onClick={() => handleAdminAssign(entry)}
-                    disabled={adminAssigningId === entry.id}
-                    className="inline-flex items-center rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    {adminAssigningId === entry.id ? t("adminAssigning") : t("adminAssignButton")}
-                  </button>
+                  {isActiveWaitlistStatus(entry.status) && (
+                    <button
+                      type="button"
+                      onClick={() => handleAdminAssign(entry)}
+                      disabled={adminAssigningId === entry.id}
+                      className="inline-flex items-center rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {adminAssigningId === entry.id ? t("adminAssigning") : t("adminAssignButton")}
+                    </button>
+                  )}
                 </div>
               </div>
             ))}
