@@ -127,6 +127,95 @@ public class SpecialLeaveRequestCommandTests
     }
 
     [Fact]
+    public async Task SubmitThenApprove_CreatesPresenceWindowAndNotifiesMember()
+    {
+        await using var db = CreateDb();
+        var spaceId = Guid.NewGuid();
+        var memberUserId = Guid.NewGuid();
+        var adminUserId = Guid.NewGuid();
+        var person = Person.Create(spaceId, "Ofek", displayName: "Ofek I.", linkedUserId: memberUserId);
+        var start = DateTime.UtcNow.AddDays(4);
+        var end = start.AddDays(2);
+
+        db.People.Add(person);
+        await db.SaveChangesAsync();
+
+        var notifications = Substitute.For<INotificationService>();
+        var audit = CreateAuditLogger();
+        var submitHandler = new SubmitSpecialLeaveRequestCommandHandler(db, notifications, audit);
+        var requestId = await submitHandler.Handle(new SubmitSpecialLeaveRequestCommand(
+            spaceId,
+            person.Id,
+            start,
+            end,
+            "Family trip",
+            memberUserId), CancellationToken.None);
+
+        var submittedRequest = await db.SpecialLeaveRequests.SingleAsync(r => r.Id == requestId);
+        submittedRequest.Status.Should().Be(SpecialLeaveRequestStatus.Pending);
+
+        var cumulative = Substitute.For<ICumulativeTracker>();
+        var cache = Substitute.For<ICacheService>();
+        var approveHandler = new ApproveSpecialLeaveRequestCommandHandler(db, cumulative, cache, audit);
+        var presenceWindowId = await approveHandler.Handle(new ApproveSpecialLeaveRequestCommand(
+            spaceId,
+            requestId,
+            adminUserId,
+            "Enjoy"), CancellationToken.None);
+
+        var approvedRequest = await db.SpecialLeaveRequests.SingleAsync(r => r.Id == requestId);
+        approvedRequest.Status.Should().Be(SpecialLeaveRequestStatus.Approved);
+        approvedRequest.AdminNote.Should().Be("Enjoy");
+        approvedRequest.PresenceWindowId.Should().Be(presenceWindowId);
+
+        var presence = await db.PresenceWindows.SingleAsync(p => p.Id == presenceWindowId);
+        presence.PersonId.Should().Be(person.Id);
+        presence.SpaceId.Should().Be(spaceId);
+        presence.State.Should().Be(PresenceState.AtHome);
+        presence.StartsAt.Should().Be(start);
+        presence.EndsAt.Should().Be(end);
+        presence.Note.Should().Contain("Family trip");
+        presence.Note.Should().Contain("Enjoy");
+
+        var memberNotification = await db.Notifications
+            .SingleAsync(n => n.EventType == "self_service.special_leave_approved");
+        memberNotification.UserId.Should().Be(memberUserId);
+        memberNotification.MetadataJson.Should().Contain(requestId.ToString());
+        memberNotification.MetadataJson.Should().Contain("\"adminNote\":\"Enjoy\"");
+
+        await notifications.Received(1).NotifySpaceAdminsAsync(
+            spaceId,
+            "self_service.special_leave_requested",
+            "Time-off Requested",
+            Arg.Is<string>(body => body.Contains("Ofek I.") && body.Contains("requested time off")),
+            Arg.Is<string>(metadata => metadata.Contains(requestId.ToString()) && metadata.Contains("\"reason\":\"Family trip\"")),
+            null,
+            Arg.Any<CancellationToken>());
+        await cumulative.Received(1).RecomputeForPersonAsync(spaceId, person.Id, Arg.Any<CancellationToken>());
+        await cache.Received(1).RemoveByPatternAsync($"status:{spaceId}:*", Arg.Any<CancellationToken>());
+        await audit.Received(1).LogAsync(
+            spaceId,
+            memberUserId,
+            "self_service.submit_special_leave",
+            "special_leave_request",
+            requestId,
+            Arg.Any<string?>(),
+            Arg.Any<string?>(),
+            Arg.Any<string?>(),
+            Arg.Any<CancellationToken>());
+        await audit.Received(1).LogAsync(
+            spaceId,
+            adminUserId,
+            "approve_special_leave_request",
+            "special_leave_request",
+            requestId,
+            Arg.Any<string?>(),
+            Arg.Any<string?>(),
+            Arg.Any<string?>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task Reject_NotifiesLinkedMember()
     {
         await using var db = CreateDb();
