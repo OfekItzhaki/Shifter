@@ -32,6 +32,9 @@ packaging, and self-service export/import readiness.
   running.
 - Adds AI support fallback coverage for private/local AI endpoint failure and
   readable localized support actions when AI is disabled.
+- Routes native assistant contact payloads to the configured
+  `NEXT_PUBLIC_LEGAL_EMAIL`, so customer-hosted installs can point support
+  requests at the customer's own help address.
 
 ## Verification
 
@@ -52,6 +55,8 @@ packaging, and self-service export/import readiness.
 - `infra/scripts/validate-customer-env.ps1` parser check passed locally.
 - `dotnet test apps\\api\\Jobuler.Tests\\Jobuler.Tests.csproj --filter FullyQualifiedName~AiAssistantSupportTests`
   passed: 6 passed, 0 failed.
+- `node_modules\\.bin\\eslint.cmd components\\shell\\ShifterAssistant.tsx`
+  passed.
 
 ## Remaining Product Checks
 

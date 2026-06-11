@@ -13,7 +13,7 @@ interface AssistantMessage extends AiChatMessage {
   actions?: AiChatAction[];
 }
 
-const SUPPORT_EMAIL = "ofeklabs@outlook.com";
+const SUPPORT_EMAIL = process.env.NEXT_PUBLIC_LEGAL_EMAIL?.trim() || "ofeklabs@outlook.com";
 
 function newId() {
   return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
