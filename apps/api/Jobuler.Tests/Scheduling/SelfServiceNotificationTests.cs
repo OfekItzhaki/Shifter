@@ -939,6 +939,57 @@ public class SelfServiceNotificationTests
     }
 
     [Fact]
+    public async Task AdminAssignShiftCommand_AuditFailure_DoesNotNotifyAssignedMember()
+    {
+        using var db = CreateDb();
+        var (spaceId, groupId, cycleId, taskId, _) = SeedBaseData(db);
+        var assignedUserId = Guid.NewGuid();
+        var member = Person.Create(spaceId, "Assigned Member", linkedUserId: assignedUserId);
+        var slot = AddSlot(db, spaceId, groupId, taskId, cycleId, daysFromNow: 2);
+
+        db.People.Add(member);
+        db.GroupMemberships.Add(GroupMembership.Create(spaceId, groupId, member.Id));
+        await db.SaveChangesAsync();
+
+        var permissions = Substitute.For<IPermissionService>();
+        permissions
+            .RequirePermissionAsync(Arg.Any<Guid>(), spaceId, Permissions.SchedulePublish, Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+        var audit = Substitute.For<IAuditLogger>();
+        audit
+            .LogAsync(
+                Arg.Any<Guid?>(),
+                Arg.Any<Guid?>(),
+                Arg.Any<string>(),
+                Arg.Any<string?>(),
+                Arg.Any<Guid?>(),
+                Arg.Any<string?>(),
+                Arg.Any<string?>(),
+                Arg.Any<string?>(),
+                Arg.Any<CancellationToken>())
+            .Returns<Task>(_ => throw new InvalidOperationException("Audit failed."));
+        var pushSender = Substitute.For<IPushNotificationSender>();
+
+        var handler = new AdminAssignShiftCommandHandler(
+            db,
+            permissions,
+            audit,
+            pushSender,
+            NullLogger<AdminAssignShiftCommandHandler>.Instance);
+
+        var act = () => handler.Handle(
+            new AdminAssignShiftCommand(spaceId, groupId, slot.Id, member.Id, Guid.NewGuid()),
+            CancellationToken.None);
+
+        await act.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("Audit failed.");
+
+        await pushSender.DidNotReceiveWithAnyArgs()
+            .SendPushToUserAsync(default, default, default!, default);
+        (await db.Notifications.CountAsync(n => n.EventType == "self_service.admin_assigned")).Should().Be(0);
+    }
+
+    [Fact]
     public async Task AdminAssignShiftCommand_RejectsStartedSlots()
     {
         using var db = CreateDb();

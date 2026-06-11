@@ -65,101 +65,121 @@ public class AdminAssignShiftCommandHandler : IRequestHandler<AdminAssignShiftCo
 
     public async Task<AdminAssignShiftResult> Handle(AdminAssignShiftCommand request, CancellationToken ct)
     {
-        // Req 10.5: Validate SchedulePublish permission
-        await _permissions.RequirePermissionAsync(
-            request.RequestingUserId, request.SpaceId, Permissions.SchedulePublish, ct);
+        var strategy = _db.Database.CreateExecutionStrategy();
 
-        // Load the shift slot
-        var slot = await _db.ShiftSlots
-            .FirstOrDefaultAsync(s => s.Id == request.ShiftSlotId && s.SpaceId == request.SpaceId, ct);
+        return await strategy.ExecuteAsync(async () =>
+        {
+            // Req 10.5: Validate SchedulePublish permission
+            await _permissions.RequirePermissionAsync(
+                request.RequestingUserId, request.SpaceId, Permissions.SchedulePublish, ct);
 
-        if (slot is null)
-            throw new KeyNotFoundException("Shift slot not found.");
+            await using var transaction = await _db.Database.BeginTransactionAsync(ct);
 
-        // Validate the slot belongs to the specified group
-        if (slot.GroupId != request.GroupId)
-            throw new InvalidOperationException("The shift slot does not belong to the specified group.");
-
-        if (slot.Status != ShiftSlotStatus.Open)
-            throw new InvalidOperationException("Only open shift slots can receive admin assignments.");
-
-        var shiftStartUtc = slot.Date.ToDateTime(slot.StartTime, DateTimeKind.Utc);
-        if (shiftStartUtc <= DateTime.UtcNow)
-            throw new InvalidOperationException("Cannot assign a member to a shift that has already started.");
-
-        // Req 10.8: Validate member belongs to the group
-        var isMember = await _db.GroupMemberships
-            .AnyAsync(gm => gm.GroupId == request.GroupId
-                            && gm.PersonId == request.PersonId
-                            && gm.SpaceId == request.SpaceId, ct);
-
-        if (!isMember)
-            throw new InvalidOperationException("The specified member does not belong to the group.");
-
-        // Req 10.6: Check for duplicate assignment (Pending or Approved request on same slot by same person)
-        var hasDuplicate = await _db.ShiftRequests
-            .AnyAsync(r => r.ShiftSlotId == request.ShiftSlotId
-                           && r.PersonId == request.PersonId
-                           && (r.Status == ShiftRequestStatus.Pending || r.Status == ShiftRequestStatus.Approved), ct);
-
-        if (hasDuplicate)
-            throw new InvalidOperationException("The member is already assigned to this shift slot.");
-
-        var waitlistEntry = await _db.WaitlistEntries
-            .FirstOrDefaultAsync(e => e.SpaceId == request.SpaceId
-                                      && e.ShiftSlotId == request.ShiftSlotId
-                                      && e.PersonId == request.PersonId
-                                      && (e.Status == WaitlistEntryStatus.Waiting || e.Status == WaitlistEntryStatus.Offered), ct);
-
-        // Req 10.1, 10.2: Admin override bypasses capacity and Max_Shifts constraints
-        // Create an approved ShiftRequest with admin override flag
-        var shiftRequest = ShiftRequest.Create(
-            spaceId: slot.SpaceId,
-            shiftSlotId: slot.Id,
-            personId: request.PersonId,
-            groupId: slot.GroupId,
-            schedulingCycleId: slot.SchedulingCycleId,
-            isAdminOverride: true,
-            processedByUserId: request.RequestingUserId);
-
-        shiftRequest.Approve(request.RequestingUserId);
-
-        // Req 10.3: Increment fill count (even beyond capacity for admin override)
-        slot.IncrementFillCount();
-        waitlistEntry?.Accept();
-
-        _db.ShiftRequests.Add(shiftRequest);
-        await _db.SaveChangesAsync(ct);
-
-        await _audit.LogAsync(
-            request.SpaceId,
-            request.RequestingUserId,
-            "self_service.admin_assign_shift",
-            "shift_request",
-            shiftRequest.Id,
-            afterJson: JsonSerializer.Serialize(new
+            try
             {
-                group_id = request.GroupId,
-                shift_slot_id = request.ShiftSlotId,
-                shift_request_id = shiftRequest.Id,
-                person_id = request.PersonId,
-                scheduling_cycle_id = slot.SchedulingCycleId,
-                is_admin_override = true,
-                waitlist_entry_accepted = waitlistEntry is not null,
-                waitlist_entry_id = waitlistEntry?.Id
-            }),
-            ct: ct);
+                // Load the shift slot
+                var slot = await _db.ShiftSlots
+                    .FirstOrDefaultAsync(s => s.Id == request.ShiftSlotId && s.SpaceId == request.SpaceId, ct);
 
-        _logger.LogInformation(
-            "Admin {AdminUserId} assigned person {PersonId} to slot {SlotId} (admin override). Request {RequestId}. Waitlist entry accepted: {AcceptedWaitlistEntry}",
-            request.RequestingUserId, request.PersonId, request.ShiftSlotId, shiftRequest.Id, waitlistEntry is not null);
+                if (slot is null)
+                    throw new KeyNotFoundException("Shift slot not found.");
 
-        await SendAdminAssignedNotificationAsync(request.PersonId, slot, shiftRequest.Id, ct);
+                // Validate the slot belongs to the specified group
+                if (slot.GroupId != request.GroupId)
+                    throw new InvalidOperationException("The shift slot does not belong to the specified group.");
 
-        return new AdminAssignShiftResult(
-            Success: true,
-            ShiftRequestId: shiftRequest.Id,
-            ErrorMessage: null);
+                if (slot.Status != ShiftSlotStatus.Open)
+                    throw new InvalidOperationException("Only open shift slots can receive admin assignments.");
+
+                var shiftStartUtc = slot.Date.ToDateTime(slot.StartTime, DateTimeKind.Utc);
+                if (shiftStartUtc <= DateTime.UtcNow)
+                    throw new InvalidOperationException("Cannot assign a member to a shift that has already started.");
+
+                // Req 10.8: Validate member belongs to the group
+                var isMember = await _db.GroupMemberships
+                    .AnyAsync(gm => gm.GroupId == request.GroupId
+                                    && gm.PersonId == request.PersonId
+                                    && gm.SpaceId == request.SpaceId, ct);
+
+                if (!isMember)
+                    throw new InvalidOperationException("The specified member does not belong to the group.");
+
+                // Req 10.6: Check for duplicate assignment (Pending or Approved request on same slot by same person)
+                var hasDuplicate = await _db.ShiftRequests
+                    .AnyAsync(r => r.ShiftSlotId == request.ShiftSlotId
+                                   && r.PersonId == request.PersonId
+                                   && (r.Status == ShiftRequestStatus.Pending || r.Status == ShiftRequestStatus.Approved), ct);
+
+                if (hasDuplicate)
+                    throw new InvalidOperationException("The member is already assigned to this shift slot.");
+
+                var waitlistEntry = await _db.WaitlistEntries
+                    .FirstOrDefaultAsync(e => e.SpaceId == request.SpaceId
+                                              && e.ShiftSlotId == request.ShiftSlotId
+                                              && e.PersonId == request.PersonId
+                                              && (e.Status == WaitlistEntryStatus.Waiting || e.Status == WaitlistEntryStatus.Offered), ct);
+
+                // Req 10.1, 10.2: Admin override bypasses capacity and Max_Shifts constraints
+                // Create an approved ShiftRequest with admin override flag
+                var shiftRequest = ShiftRequest.Create(
+                    spaceId: slot.SpaceId,
+                    shiftSlotId: slot.Id,
+                    personId: request.PersonId,
+                    groupId: slot.GroupId,
+                    schedulingCycleId: slot.SchedulingCycleId,
+                    isAdminOverride: true,
+                    processedByUserId: request.RequestingUserId);
+
+                shiftRequest.Approve(request.RequestingUserId);
+
+                // Req 10.3: Increment fill count (even beyond capacity for admin override)
+                slot.IncrementFillCount();
+                waitlistEntry?.Accept();
+
+                _db.ShiftRequests.Add(shiftRequest);
+                await _db.SaveChangesAsync(ct);
+
+                await _audit.LogAsync(
+                    request.SpaceId,
+                    request.RequestingUserId,
+                    "self_service.admin_assign_shift",
+                    "shift_request",
+                    shiftRequest.Id,
+                    afterJson: JsonSerializer.Serialize(new
+                    {
+                        group_id = request.GroupId,
+                        shift_slot_id = request.ShiftSlotId,
+                        shift_request_id = shiftRequest.Id,
+                        person_id = request.PersonId,
+                        scheduling_cycle_id = slot.SchedulingCycleId,
+                        is_admin_override = true,
+                        waitlist_entry_accepted = waitlistEntry is not null,
+                        waitlist_entry_id = waitlistEntry?.Id
+                    }),
+                    ct: ct);
+
+                await transaction.CommitAsync(ct);
+
+                _logger.LogInformation(
+                    "Admin {AdminUserId} assigned person {PersonId} to slot {SlotId} (admin override). Request {RequestId}. Waitlist entry accepted: {AcceptedWaitlistEntry}",
+                    request.RequestingUserId, request.PersonId, request.ShiftSlotId, shiftRequest.Id, waitlistEntry is not null);
+
+                await SendAdminAssignedNotificationAsync(request.PersonId, slot, shiftRequest.Id, ct);
+
+                return new AdminAssignShiftResult(
+                    Success: true,
+                    ShiftRequestId: shiftRequest.Id,
+                    ErrorMessage: null);
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                await transaction.RollbackAsync(ct);
+                _logger.LogError(ex,
+                    "Error assigning person {PersonId} to slot {SlotId} by admin {AdminUserId}.",
+                    request.PersonId, request.ShiftSlotId, request.RequestingUserId);
+                throw;
+            }
+        });
     }
 
     private async Task SendAdminAssignedNotificationAsync(
