@@ -68,97 +68,117 @@ public class AdminRemoveShiftCommandHandler : IRequestHandler<AdminRemoveShiftCo
 
     public async Task<AdminRemoveShiftResult> Handle(AdminRemoveShiftCommand request, CancellationToken ct)
     {
-        // Req 10.5: Validate SchedulePublish permission
-        await _permissions.RequirePermissionAsync(
-            request.RequestingUserId, request.SpaceId, Permissions.SchedulePublish, ct);
+        var strategy = _db.Database.CreateExecutionStrategy();
 
-        // Load the shift slot
-        var slot = await _db.ShiftSlots
-            .FirstOrDefaultAsync(s => s.Id == request.ShiftSlotId && s.SpaceId == request.SpaceId, ct);
-
-        if (slot is null)
-            throw new KeyNotFoundException("Shift slot not found.");
-
-        // Validate the slot belongs to the specified group
-        if (slot.GroupId != request.GroupId)
-            throw new InvalidOperationException("The shift slot does not belong to the specified group.");
-
-        // Req 10.8: Validate member belongs to the group
-        var isMember = await _db.GroupMemberships
-            .AnyAsync(gm => gm.GroupId == request.GroupId
-                            && gm.PersonId == request.PersonId
-                            && gm.SpaceId == request.SpaceId, ct);
-
-        if (!isMember)
-            throw new InvalidOperationException("The specified member does not belong to the group.");
-
-        // Req 10.7: Find the member's active (Approved) request for this slot
-        var shiftRequest = await _db.ShiftRequests
-            .FirstOrDefaultAsync(r => r.ShiftSlotId == request.ShiftSlotId
-                                      && r.PersonId == request.PersonId
-                                      && r.Status == ShiftRequestStatus.Approved, ct);
-
-        if (shiftRequest is null)
-            throw new InvalidOperationException("No active assignment exists for this member on the specified slot.");
-
-        if (shiftRequest.SpaceId != slot.SpaceId
-            || shiftRequest.GroupId != slot.GroupId
-            || shiftRequest.SchedulingCycleId != slot.SchedulingCycleId)
+        return await strategy.ExecuteAsync(async () =>
         {
-            throw new InvalidOperationException("Shift request metadata no longer matches its assigned slot.");
-        }
+            // Req 10.5: Validate SchedulePublish permission
+            await _permissions.RequirePermissionAsync(
+                request.RequestingUserId, request.SpaceId, Permissions.SchedulePublish, ct);
 
-        // Req 10.4: Cancel the request with reason "admin_removed"
-        shiftRequest.Cancel("admin_removed");
+            await using var transaction = await _db.Database.BeginTransactionAsync(ct);
 
-        // Decrement fill count
-        slot.DecrementFillCount();
-
-        await _db.SaveChangesAsync(ct);
-
-        await _audit.LogAsync(
-            request.SpaceId,
-            request.RequestingUserId,
-            "self_service.admin_remove_shift",
-            "shift_request",
-            shiftRequest.Id,
-            beforeJson: JsonSerializer.Serialize(new
+            try
             {
-                group_id = request.GroupId,
-                shift_slot_id = request.ShiftSlotId,
-                shift_request_id = shiftRequest.Id,
-                person_id = request.PersonId,
-                scheduling_cycle_id = slot.SchedulingCycleId,
-                status = "approved",
-                is_admin_override = shiftRequest.IsAdminOverride
-            }),
-            afterJson: JsonSerializer.Serialize(new
+                // Load the shift slot
+                var slot = await _db.ShiftSlots
+                    .FirstOrDefaultAsync(s => s.Id == request.ShiftSlotId && s.SpaceId == request.SpaceId, ct);
+
+                if (slot is null)
+                    throw new KeyNotFoundException("Shift slot not found.");
+
+                // Validate the slot belongs to the specified group
+                if (slot.GroupId != request.GroupId)
+                    throw new InvalidOperationException("The shift slot does not belong to the specified group.");
+
+                // Req 10.8: Validate member belongs to the group
+                var isMember = await _db.GroupMemberships
+                    .AnyAsync(gm => gm.GroupId == request.GroupId
+                                    && gm.PersonId == request.PersonId
+                                    && gm.SpaceId == request.SpaceId, ct);
+
+                if (!isMember)
+                    throw new InvalidOperationException("The specified member does not belong to the group.");
+
+                // Req 10.7: Find the member's active (Approved) request for this slot
+                var shiftRequest = await _db.ShiftRequests
+                    .FirstOrDefaultAsync(r => r.ShiftSlotId == request.ShiftSlotId
+                                              && r.PersonId == request.PersonId
+                                              && r.Status == ShiftRequestStatus.Approved, ct);
+
+                if (shiftRequest is null)
+                    throw new InvalidOperationException("No active assignment exists for this member on the specified slot.");
+
+                if (shiftRequest.SpaceId != slot.SpaceId
+                    || shiftRequest.GroupId != slot.GroupId
+                    || shiftRequest.SchedulingCycleId != slot.SchedulingCycleId)
+                {
+                    throw new InvalidOperationException("Shift request metadata no longer matches its assigned slot.");
+                }
+
+                // Req 10.4: Cancel the request with reason "admin_removed"
+                shiftRequest.Cancel("admin_removed");
+
+                // Decrement fill count
+                slot.DecrementFillCount();
+
+                await _db.SaveChangesAsync(ct);
+
+                // Req 10.4: Trigger waitlist processing if slot now has capacity below required headcount
+                if (slot.CurrentFillCount < slot.Capacity)
+                {
+                    await _waitlistService.ProcessSlotReleasedAsync(slot.Id, ct);
+                }
+
+                await _audit.LogAsync(
+                    request.SpaceId,
+                    request.RequestingUserId,
+                    "self_service.admin_remove_shift",
+                    "shift_request",
+                    shiftRequest.Id,
+                    beforeJson: JsonSerializer.Serialize(new
+                    {
+                        group_id = request.GroupId,
+                        shift_slot_id = request.ShiftSlotId,
+                        shift_request_id = shiftRequest.Id,
+                        person_id = request.PersonId,
+                        scheduling_cycle_id = slot.SchedulingCycleId,
+                        status = "approved",
+                        is_admin_override = shiftRequest.IsAdminOverride
+                    }),
+                    afterJson: JsonSerializer.Serialize(new
+                    {
+                        group_id = request.GroupId,
+                        shift_slot_id = request.ShiftSlotId,
+                        shift_request_id = shiftRequest.Id,
+                        person_id = request.PersonId,
+                        scheduling_cycle_id = slot.SchedulingCycleId,
+                        status = "cancelled",
+                        cancellation_reason = "admin_removed"
+                    }),
+                    ct: ct);
+
+                await transaction.CommitAsync(ct);
+
+                _logger.LogInformation(
+                    "Admin {AdminUserId} removed person {PersonId} from slot {SlotId}. Request {RequestId} cancelled with reason 'admin_removed'.",
+                    request.RequestingUserId, request.PersonId, request.ShiftSlotId, shiftRequest.Id);
+
+                await SendAdminRemovedNotificationAsync(request.PersonId, slot, shiftRequest.Id, ct);
+
+                return new AdminRemoveShiftResult(
+                    Success: true,
+                    ErrorMessage: null);
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
             {
-                group_id = request.GroupId,
-                shift_slot_id = request.ShiftSlotId,
-                shift_request_id = shiftRequest.Id,
-                person_id = request.PersonId,
-                scheduling_cycle_id = slot.SchedulingCycleId,
-                status = "cancelled",
-                cancellation_reason = "admin_removed"
-            }),
-            ct: ct);
-
-        // Req 10.4: Trigger waitlist processing if slot now has capacity below required headcount
-        if (slot.CurrentFillCount < slot.Capacity)
-        {
-            await _waitlistService.ProcessSlotReleasedAsync(slot.Id, ct);
-        }
-
-        _logger.LogInformation(
-            "Admin {AdminUserId} removed person {PersonId} from slot {SlotId}. Request {RequestId} cancelled with reason 'admin_removed'.",
-            request.RequestingUserId, request.PersonId, request.ShiftSlotId, shiftRequest.Id);
-
-        await SendAdminRemovedNotificationAsync(request.PersonId, slot, shiftRequest.Id, ct);
-
-        return new AdminRemoveShiftResult(
-            Success: true,
-            ErrorMessage: null);
+                await transaction.RollbackAsync(ct);
+                _logger.LogError(ex,
+                    "Error removing person {PersonId} from slot {SlotId} by admin {AdminUserId}.",
+                    request.PersonId, request.ShiftSlotId, request.RequestingUserId);
+                throw;
+            }
+        });
     }
 
     private async Task SendAdminRemovedNotificationAsync(

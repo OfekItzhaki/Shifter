@@ -1238,6 +1238,56 @@ public class SelfServiceNotificationTests
             .SendPushToUserAsync(default, default, default!, default);
     }
 
+    [Fact]
+    public async Task AdminRemoveShiftCommand_WaitlistFailure_DoesNotAuditOrNotifyRemovedMember()
+    {
+        using var db = CreateDb();
+        var (spaceId, groupId, cycleId, taskId, _) = SeedBaseData(db);
+        var removedUserId = Guid.NewGuid();
+        var member = Person.Create(spaceId, "Removed Member", linkedUserId: removedUserId);
+        var slot = AddSlot(db, spaceId, groupId, taskId, cycleId, daysFromNow: 2);
+        slot.IncrementFillCount();
+
+        var shiftRequest = ShiftRequest.Create(spaceId, slot.Id, member.Id, groupId, cycleId);
+        shiftRequest.Approve();
+
+        db.People.Add(member);
+        db.GroupMemberships.Add(GroupMembership.Create(spaceId, groupId, member.Id));
+        db.ShiftRequests.Add(shiftRequest);
+        await db.SaveChangesAsync();
+
+        var permissions = Substitute.For<IPermissionService>();
+        permissions
+            .RequirePermissionAsync(Arg.Any<Guid>(), spaceId, Permissions.SchedulePublish, Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+        var audit = CreateAuditLogger();
+        var waitlistService = Substitute.For<IWaitlistService>();
+        waitlistService
+            .ProcessSlotReleasedAsync(slot.Id, Arg.Any<CancellationToken>())
+            .Returns<Task>(_ => throw new InvalidOperationException("Waitlist cascade failed."));
+        var pushSender = Substitute.For<IPushNotificationSender>();
+
+        var handler = new AdminRemoveShiftCommandHandler(
+            db,
+            permissions,
+            audit,
+            waitlistService,
+            pushSender,
+            NullLogger<AdminRemoveShiftCommandHandler>.Instance);
+
+        var act = () => handler.Handle(
+            new AdminRemoveShiftCommand(spaceId, groupId, slot.Id, member.Id, Guid.NewGuid()),
+            CancellationToken.None);
+
+        await act.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("Waitlist cascade failed.");
+
+        await audit.DidNotReceiveWithAnyArgs()
+            .LogAsync(default, default, default!, default, default, default, default, default, default);
+        await pushSender.DidNotReceiveWithAnyArgs()
+            .SendPushToUserAsync(default, default, default!, default);
+    }
+
     private static IAuditLogger CreateAuditLogger()
     {
         var audit = Substitute.For<IAuditLogger>();
