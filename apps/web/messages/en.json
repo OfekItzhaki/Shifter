@@ -2350,6 +2350,16 @@
         "maxLateCancellationsPerCycle": "{value} reports",
         "waitlistOfferMinutes": "{value} minutes"
       },
+      "insights": {
+        "title": "Policy impact",
+        "balanced": "This policy gives members a normal self-service window with clear admin fallback points.",
+        "noMinimum": "No minimum shift requirement is enforced, so underfilled members will not be flagged by count.",
+        "noLateReports": "Members cannot submit late absence reports in this cycle.",
+        "strictLateReports": "Only one late absence report is allowed, so admins should expect more manual exceptions.",
+        "requestClosesBeforeCancellation": "The request window closes before the cancellation cutoff, so members may still cancel after picking closes.",
+        "lateWindowLongerThanCancel": "The late absence window is longer than the cancellation cutoff, so some shifts become late immediately after cancellation closes.",
+        "shortWaitlistOffer": "Waitlist offers under 30 minutes may expire before members notice them."
+      },
       "sections": {
         "shiftLimits": {
           "title": "Shift limits",

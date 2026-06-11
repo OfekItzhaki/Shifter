@@ -94,6 +94,38 @@ function getConfigValidationMessage(
   }
 }
 
+function getPolicyInsightKeys(values: UpdateSelfServiceConfigPayload): string[] {
+  const insights: string[] = [];
+
+  if (values.minShiftsPerCycle === 0) {
+    insights.push("insights.noMinimum");
+  }
+
+  if (values.maxLateCancellationsPerCycle === 0) {
+    insights.push("insights.noLateReports");
+  } else if (values.maxLateCancellationsPerCycle <= 1) {
+    insights.push("insights.strictLateReports");
+  }
+
+  if (values.requestWindowCloseOffsetHours > values.cancellationCutoffHours) {
+    insights.push("insights.requestClosesBeforeCancellation");
+  }
+
+  if (values.lateCancellationWindowHours > values.cancellationCutoffHours) {
+    insights.push("insights.lateWindowLongerThanCancel");
+  }
+
+  if (values.waitlistOfferMinutes < 30) {
+    insights.push("insights.shortWaitlistOffer");
+  }
+
+  if (insights.length === 0) {
+    insights.push("insights.balanced");
+  }
+
+  return insights;
+}
+
 export default function SelfServiceConfigTab({ spaceId, groupId }: SelfServiceConfigTabProps) {
   const t = useTranslations("selfService.config");
 
@@ -195,6 +227,8 @@ export default function SelfServiceConfigTab({ spaceId, groupId }: SelfServiceCo
     return <ErrorRetry message={error} onRetry={fetchConfig} />;
   }
 
+  const policyInsightKeys = getPolicyInsightKeys(formValues);
+
   // ── Render ───────────────────────────────────────────────────────────────
 
   return (
@@ -233,6 +267,19 @@ export default function SelfServiceConfigTab({ spaceId, groupId }: SelfServiceCo
             label={t("summary.waitlist")}
             value={t("summary.waitlistValue", { minutes: formValues.waitlistOfferMinutes })}
           />
+        </div>
+
+        <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+          <p className="text-xs font-semibold uppercase tracking-wide text-amber-800">
+            {t("insights.title")}
+          </p>
+          <ul className="mt-2 space-y-1.5">
+            {policyInsightKeys.map((key) => (
+              <li key={key} className="text-sm leading-5 text-amber-900">
+                {t(key)}
+              </li>
+            ))}
+          </ul>
         </div>
 
         <div className="mt-6 space-y-4">

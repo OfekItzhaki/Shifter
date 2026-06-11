@@ -43,6 +43,14 @@ vi.mock("next-intl", () => ({
       "recommendations.lateCancellationWindowHours": `${values?.value} hours`,
       "recommendations.maxLateCancellationsPerCycle": `${values?.value} reports`,
       "recommendations.waitlistOfferMinutes": `${values?.value} minutes`,
+      "insights.title": "Policy impact",
+      "insights.balanced": "This policy gives members a normal self-service window.",
+      "insights.noMinimum": "No minimum shift requirement is enforced.",
+      "insights.noLateReports": "Members cannot submit late absence reports.",
+      "insights.strictLateReports": "Only one late absence report is allowed.",
+      "insights.requestClosesBeforeCancellation": "Members may still cancel after picking closes.",
+      "insights.lateWindowLongerThanCancel": "Some shifts become late immediately after cancellation closes.",
+      "insights.shortWaitlistOffer": "Waitlist offers under 30 minutes may expire before members notice them.",
       "sections.shiftLimits.title": "Shift limits",
       "sections.shiftLimits.description": "Control how many shifts members should take.",
       "sections.requestWindow.title": "Request window",
@@ -104,6 +112,11 @@ describe("SelfServiceConfigTab", () => {
     expect(screen.getByText("Opens 168h before, closes 24h before")).toBeInTheDocument();
     expect(screen.getByText("Recommended: 1-2 shifts")).toBeInTheDocument();
     expect(screen.getByText("Recommended: 30-60 minutes")).toBeInTheDocument();
+    expect(screen.getByText("Policy impact")).toBeInTheDocument();
+    expect(screen.getByText("Members may still cancel after picking closes.")).toBeInTheDocument();
+    expect(
+      screen.getByText("Some shifts become late immediately after cancellation closes."),
+    ).toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText("Maximum shifts per cycle"), {
       target: { value: "6" },
@@ -111,13 +124,19 @@ describe("SelfServiceConfigTab", () => {
 
     expect(screen.getByText("2-6 shifts / 7 days")).toBeInTheDocument();
 
+    fireEvent.change(screen.getByLabelText("Cancellation cutoff"), {
+      target: { value: "36" },
+    });
+
+    expect(screen.getByText("This policy gives members a normal self-service window.")).toBeInTheDocument();
+
     fireEvent.click(screen.getByRole("button", { name: "Save Configuration" }));
 
     await waitFor(() => {
       expect(mockUpdateSelfServiceConfig).toHaveBeenCalledWith(
         "space-1",
         "group-1",
-        expect.objectContaining({ maxShiftsPerCycle: 6 }),
+        expect.objectContaining({ maxShiftsPerCycle: 6, cancellationCutoffHours: 36 }),
       );
     });
   });
