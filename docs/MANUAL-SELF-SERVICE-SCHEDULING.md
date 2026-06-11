@@ -22,6 +22,8 @@ Manual self-service currently supports:
 - Special leave requests.
 - Admin assignment and removal overrides.
 - Admin review queues for absences, shift changes, and special leave.
+- Cycle closeout summary for coverage, unresolved items, overrides, absences,
+  swaps, waitlist state, and special leave.
 
 The deterministic solver is still available for automatic groups. Self-service
 groups do not require hosted AI.
@@ -40,7 +42,7 @@ when the organization accepts an admin-operated review queue:
 | Members swap shifts | Supported through member-to-member swap requests with ownership and schedule-safety checks. |
 | Members request planned time off | Supported through special leave requests and admin review. |
 | Admin fills gaps manually | Supported through admin assignment/removal overrides. Overrides can exceed capacity when needed, but still reject started/closed slots, duplicate assignments, overlap conflicts, and rest-window violations. |
-| Admin sees the operating state | Supported through operations status, underfilled slots, review counts, waitlist/admin queues, and manual assignment tools. |
+| Admin sees the operating state | Supported through operations status, closeout summary, underfilled slots, review counts, waitlist/admin queues, and manual assignment tools. |
 | Customer-hosted/no-AI use | Supported. Manual self-service does not require hosted AI. |
 
 This is not yet a fully autonomous scheduling product. Admins still need to
@@ -62,6 +64,7 @@ present in the product.
 | Planned time off | Special leave form in `My shifts` | `Reviews` queue for special leave | special leave API and review flow |
 | Fill gaps manually | Not applicable | `Admin overrides` assignment/removal | admin override commands with safety checks |
 | Run cycles | Members see generated slots | Config, templates, cycle controls, operations dashboard | self-service config, templates, cycle generation jobs |
+| Close out cycles | Not applicable | Closeout summary in Operations | `SelfServiceCyclesController` closeout endpoint |
 
 The strongest member entry point is `/pick`, especially for PWA/mobile users.
 The strongest manager entry point is the self-service group operations tab.
@@ -114,7 +117,9 @@ The strongest manager entry point is the self-service group operations tab.
 
 ### After The Cycle
 
-- Review rejected, cancelled, late, and admin-overridden activity.
+- Review the closeout summary for coverage, unresolved requests, late reports,
+  cancellations, overrides, swaps, waitlist outcomes, and special leave.
+- Clear or document any remaining underfilled slots and pending review items.
 - Adjust the next cycle policy if the group was overbooked, underfilled, or had
   too many late reports.
 
@@ -196,6 +201,8 @@ The implementation has focused unit/property coverage for:
 - self-service config validation and policy warnings
 - admin overrides, absence/change/special-leave review queues, and cycle
   operations status
+- cycle closeout metrics, including coverage totals, unresolved items,
+  absences, changes, swaps, waitlists, special leave, and admin overrides
 - API lifecycle tests for request limits, notifications, waitlist processing,
   swaps, absence reports, shift changes, and scope isolation
 
@@ -228,8 +235,9 @@ large deployments:
   review as admin, and verify final slot state.
 - Organization-level defaults for self-service policy so new groups inherit the
   right limits.
-- A cycle closeout report for attendance, late reports, overrides, rejected
-  requests, and no-shows.
+- Exportable closeout reporting and explicit attendance/no-show confirmation.
+  The current closeout summary covers scheduling and request state, but not a
+  signed attendance rollup.
 - Manager decision support for which underfilled slots should be handled first.
 - Provider health checks for email, push, and optional AI in customer-hosted
   installs.
