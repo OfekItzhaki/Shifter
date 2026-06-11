@@ -32,6 +32,9 @@ interface CycleStatusDto {
 interface AvailableSlotDto {
   id?: string;
   shiftSlotId?: string;
+  date?: string;
+  startTime?: string;
+  endTime?: string;
   taskName: string;
   capacity: number;
   currentFillCount: number;
@@ -44,6 +47,10 @@ interface AvailableSlotsResponse {
 interface ShiftRequestDto {
   id: string;
   shiftSlotId: string;
+  schedulingCycleId?: string;
+  slotDate?: string;
+  slotStartTime?: string;
+  slotEndTime?: string;
   taskName: string;
   status: "Pending" | "Approved" | "Rejected" | "Cancelled";
   cancellationReason: string | null;
@@ -71,6 +78,16 @@ interface AdminWaitlistEntryDto {
   shiftSlotId: string;
   personName: string;
   status: "Waiting" | "Offered" | "Accepted" | "Expired" | "Declined" | "Removed";
+}
+
+interface ShiftChangeRequestDto {
+  id: string;
+  shiftRequestId: string;
+  originalShiftSlotId: string;
+  requestedShiftSlotId: string | null;
+  status: "Pending" | "Approved" | "Rejected" | "Cancelled";
+  reason: string;
+  adminNote: string | null;
 }
 
 async function login(request: APIRequestContext, identifier: string): Promise<string> {
@@ -271,5 +288,126 @@ test.describe("Self-service scheduling lifecycle", () => {
     );
     expect(refreshedStatus.slotCount).toBeGreaterThanOrEqual(2);
     expect(refreshedStatus.waitlistCount).toBeGreaterThanOrEqual(1);
+  });
+
+  test("seeded group supports member shift-change request and admin approval workflow", async ({ request }) => {
+    const adminToken = await login(request, process.env.E2E_ADMIN_EMAIL ?? "admin@demo.local");
+    const memberToken = await login(request, process.env.E2E_MEMBER_EMAIL ?? "ofek@demo.local");
+    const { spaceId, groupId } = await findDemoSelfServiceGroup(request, adminToken);
+
+    const status = await api<CycleStatusDto>(
+      request,
+      adminToken,
+      "GET",
+      `/spaces/${spaceId}/groups/${groupId}/self-service-cycles/status`
+    );
+    expect(status.cycleId).toBeTruthy();
+
+    const ownedShift = await getOrCreateApprovedMemberShift(
+      request,
+      memberToken,
+      spaceId,
+      groupId,
+      status.cycleId!
+    );
+
+    const available = await api<AvailableSlotsResponse>(
+      request,
+      memberToken,
+      "GET",
+      `/spaces/${spaceId}/groups/${groupId}/shift-slots/available?cycleId=${status.cycleId}`
+    );
+    const targetSlot = available.slots.find((slot) => {
+      const slotId = slot.id ?? slot.shiftSlotId;
+      return slotId
+        && slotId !== ownedShift.shiftSlotId
+        && slot.currentFillCount < slot.capacity;
+    });
+    expect(targetSlot, "shift-change lifecycle test needs another open slot in the same cycle").toBeTruthy();
+
+    const targetSlotId = targetSlot!.id ?? targetSlot!.shiftSlotId;
+    expect(targetSlotId).toBeTruthy();
+
+    let changeRequests = await api<ShiftChangeRequestDto[]>(
+      request,
+      memberToken,
+      "GET",
+      `/spaces/${spaceId}/groups/${groupId}/shift-change-requests/mine`
+    );
+    let changeRequest = changeRequests.find((row) =>
+      row.shiftRequestId === ownedShift.id
+      && row.requestedShiftSlotId === targetSlotId
+      && row.status === "Pending"
+    );
+
+    if (!changeRequest) {
+      const created = await api<{ id: string }>(
+        request,
+        memberToken,
+        "POST",
+        `/spaces/${spaceId}/groups/${groupId}/shift-change-requests`,
+        {
+          shiftRequestId: ownedShift.id,
+          requestedShiftSlotId: targetSlotId,
+          reason: "E2E shift-change lifecycle coverage",
+        }
+      );
+
+      changeRequests = await api<ShiftChangeRequestDto[]>(
+        request,
+        memberToken,
+        "GET",
+        `/spaces/${spaceId}/groups/${groupId}/shift-change-requests/mine`
+      );
+      changeRequest = changeRequests.find((row) => row.id === created.id);
+    }
+
+    expect(changeRequest, "member shift-change flow should create or expose a pending change request").toBeTruthy();
+    expect(changeRequest!.status).toBe("Pending");
+
+    const adminQueue = await api<ShiftChangeRequestDto[]>(
+      request,
+      adminToken,
+      "GET",
+      `/spaces/${spaceId}/groups/${groupId}/shift-change-requests/admin?status=Pending`
+    );
+    expect(adminQueue.some((row) => row.id === changeRequest!.id)).toBeTruthy();
+
+    const targetSlots = await api<AvailableSlotDto[]>(
+      request,
+      adminToken,
+      "GET",
+      `/spaces/${spaceId}/groups/${groupId}/shift-change-requests/admin/target-slots?cycleId=${status.cycleId}&changeRequestId=${changeRequest!.id}`
+    );
+    expect(targetSlots.some((slot) => (slot.id ?? slot.shiftSlotId) === targetSlotId)).toBeTruthy();
+
+    await api<void>(
+      request,
+      adminToken,
+      "POST",
+      `/spaces/${spaceId}/groups/${groupId}/shift-change-requests/admin/${changeRequest!.id}/approve`,
+      {
+        targetShiftSlotId: targetSlotId,
+        adminNote: "Approved by self-service lifecycle E2E",
+      }
+    );
+
+    const reviewed = await api<ShiftChangeRequestDto[]>(
+      request,
+      memberToken,
+      "GET",
+      `/spaces/${spaceId}/groups/${groupId}/shift-change-requests/mine`
+    );
+    expect(reviewed.find((row) => row.id === changeRequest!.id)?.status).toBe("Approved");
+
+    const refreshedShifts = await api<MyShiftsResponse>(
+      request,
+      memberToken,
+      "GET",
+      `/spaces/${spaceId}/groups/${groupId}/shift-requests/mine`
+    );
+    const reassignedShift = refreshedShifts.requests.find((row) => row.id === ownedShift.id);
+    expect(reassignedShift?.status).toBe("Approved");
+    expect(reassignedShift?.shiftSlotId).toBe(targetSlotId);
   });
 });

@@ -243,7 +243,7 @@ INSERT INTO group_qualifications (id, space_id, group_id, name, is_active, creat
   ('c1a2b3c4-d5e6-4f7a-8b9c-0d1e2f3a4b5c', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'a3b4c5d6-e7f8-4a9b-0c1d-e2f3a4b5c6d7', 'מפקד כיתה',  TRUE, NOW(), NOW()),
   ('d2b3c4d5-e6f7-4a8b-9c0d-1e2f3a4b5c6d', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'a3b4c5d6-e7f8-4a9b-0c1d-e2f3a4b5c6d7', 'חובש',       TRUE, NOW(), NOW()),
   ('e3c4d5e6-f7a8-4b9c-0d1e-2f3a4b5c6d7e', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'a3b4c5d6-e7f8-4a9b-0c1d-e2f3a4b5c6d7', 'נהג',        TRUE, NOW(), NOW()),
-  ('f4d5e6f7-a8b9-4c0d-1e2f-3a4b5c6d7e8f', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'a3b4c5d6-e7f8-4a9b-0c1d-e2f3a4b5c6d7', 'צלף',        TRUE, NOW(), NOW()),
+  ('f4d5e6f7-a8b9-4c0d-1e2f-3a4b5c6d7e8f', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'a3b4c5d6-e7f8-4a9b-0c1d-e2f3a4b5c6d7', 'Sniper',     TRUE, NOW(), NOW()),
   ('a5e6f7a8-b9c0-4d1e-2f3a-4b5c6d7e8f9a', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'a3b4c5d6-e7f8-4a9b-0c1d-e2f3a4b5c6d7', 'מפקד מחלקה', TRUE, NOW(), NOW())
 ON CONFLICT DO NOTHING;
 
@@ -442,7 +442,8 @@ ON CONFLICT (group_id) DO UPDATE SET
 
 INSERT INTO tasks (id, space_id, group_id, name, starts_at, ends_at, shift_duration_minutes, required_headcount, burden_level, allows_double_shift, allows_overlap, qualification_requirements, created_by_user_id) VALUES
   ('c2d3e4f5-a6b7-4c8d-9e0f-1a2b3c4d5e6f', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'c6d7e8f9-a0b1-4c2d-8e3f-4a5b6c7d8e9f', 'Front Desk', date_trunc('day', NOW()) + INTERVAL '2 days 8 hours', NOW() + INTERVAL '90 days', 480, 1, 'normal', false, false, '[]', 'a1b2c3d4-e5f6-4a7b-8c9d-e0f1a2b3c4d5'),
-  ('d3e4f5a6-b7c8-4d9e-8f1a-2b3c4d5e6f7a', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'c6d7e8f9-a0b1-4c2d-8e3f-4a5b6c7d8e9f', 'Evening Cover', date_trunc('day', NOW()) + INTERVAL '2 days 16 hours', NOW() + INTERVAL '90 days', 480, 1, 'normal', false, false, '[]', 'a1b2c3d4-e5f6-4a7b-8c9d-e0f1a2b3c4d5')
+  ('d3e4f5a6-b7c8-4d9e-8f1a-2b3c4d5e6f7a', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'c6d7e8f9-a0b1-4c2d-8e3f-4a5b6c7d8e9f', 'Evening Cover', date_trunc('day', NOW()) + INTERVAL '2 days 16 hours', NOW() + INTERVAL '90 days', 480, 1, 'normal', false, false, '[]', 'a1b2c3d4-e5f6-4a7b-8c9d-e0f1a2b3c4d5'),
+  ('e4f5a6b7-c8d9-4e0f-9a2b-3c4d5e6f7a8c', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'c6d7e8f9-a0b1-4c2d-8e3f-4a5b6c7d8e9f', 'Night Watch', date_trunc('day', NOW()) + INTERVAL '3 days 8 hours', NOW() + INTERVAL '90 days', 480, 1, 'normal', false, false, '[]', 'a1b2c3d4-e5f6-4a7b-8c9d-e0f1a2b3c4d5')
 ON CONFLICT (id) DO UPDATE SET
   starts_at = EXCLUDED.starts_at,
   ends_at = EXCLUDED.ends_at,
@@ -450,7 +451,8 @@ ON CONFLICT (id) DO UPDATE SET
 
 INSERT INTO shift_templates (id, space_id, group_id, name, starts_at_time, ends_at_time, days_of_week, required_headcount, required_qualification_ids, required_role_ids, is_active, group_task_id, day_of_week, start_time, end_time, is_deleted, created_by_user_id, created_at, updated_at) VALUES
   ('e4f5a6b7-c8d9-4e0f-9a2b-3c4d5e6f7a8b', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'c6d7e8f9-a0b1-4c2d-8e3f-4a5b6c7d8e9f', 'Front Desk', '08:00', '16:00', '[]', 1, '[]', '[]', TRUE, 'c2d3e4f5-a6b7-4c8d-9e0f-1a2b3c4d5e6f', EXTRACT(DOW FROM NOW() + INTERVAL '2 days')::int, '08:00', '16:00', FALSE, 'a1b2c3d4-e5f6-4a7b-8c9d-e0f1a2b3c4d5', NOW(), NOW()),
-  ('f5a6b7c8-d9e0-4f1a-8b3c-4d5e6f7a8b9c', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'c6d7e8f9-a0b1-4c2d-8e3f-4a5b6c7d8e9f', 'Evening Cover', '16:00', '23:00', '[]', 1, '[]', '[]', TRUE, 'd3e4f5a6-b7c8-4d9e-8f1a-2b3c4d5e6f7a', EXTRACT(DOW FROM NOW() + INTERVAL '2 days')::int, '16:00', '23:00', FALSE, 'a1b2c3d4-e5f6-4a7b-8c9d-e0f1a2b3c4d5', NOW(), NOW())
+  ('f5a6b7c8-d9e0-4f1a-8b3c-4d5e6f7a8b9c', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'c6d7e8f9-a0b1-4c2d-8e3f-4a5b6c7d8e9f', 'Evening Cover', '16:00', '23:00', '[]', 1, '[]', '[]', TRUE, 'd3e4f5a6-b7c8-4d9e-8f1a-2b3c4d5e6f7a', EXTRACT(DOW FROM NOW() + INTERVAL '2 days')::int, '16:00', '23:00', FALSE, 'a1b2c3d4-e5f6-4a7b-8c9d-e0f1a2b3c4d5', NOW(), NOW()),
+  ('a6b7c8d9-e0f1-4a2b-8c3d-5e6f7a8b9c0d', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'c6d7e8f9-a0b1-4c2d-8e3f-4a5b6c7d8e9f', 'Night Watch', '08:00', '16:00', '[]', 1, '[]', '[]', TRUE, 'e4f5a6b7-c8d9-4e0f-9a2b-3c4d5e6f7a8c', EXTRACT(DOW FROM NOW() + INTERVAL '3 days')::int, '08:00', '16:00', FALSE, 'a1b2c3d4-e5f6-4a7b-8c9d-e0f1a2b3c4d5', NOW(), NOW())
 ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
   starts_at_time = EXCLUDED.starts_at_time,
@@ -487,7 +489,8 @@ ON CONFLICT (id) DO UPDATE SET
 
 INSERT INTO shift_slots (id, space_id, group_id, cycle_id, template_id, starts_at, ends_at, required_headcount, max_headcount, current_headcount, group_task_id, shift_template_id, scheduling_cycle_id, date, start_time, end_time, capacity, current_fill_count, status, created_at, updated_at) VALUES
   ('b7c8d9e0-f1a2-4b3c-8d4e-6f7a8b9c0d1e', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'c6d7e8f9-a0b1-4c2d-8e3f-4a5b6c7d8e9f', 'a6b7c8d9-e0f1-4a2b-9c3d-5e6f7a8b9c0d', 'e4f5a6b7-c8d9-4e0f-9a2b-3c4d5e6f7a8b', date_trunc('day', NOW()) + INTERVAL '2 days 8 hours', date_trunc('day', NOW()) + INTERVAL '2 days 16 hours', 1, 1, 1, 'c2d3e4f5-a6b7-4c8d-9e0f-1a2b3c4d5e6f', 'e4f5a6b7-c8d9-4e0f-9a2b-3c4d5e6f7a8b', 'a6b7c8d9-e0f1-4a2b-9c3d-5e6f7a8b9c0d', (NOW() + INTERVAL '2 days')::date, '08:00', '16:00', 1, 1, 'Open', NOW(), NOW()),
-  ('c8d9e0f1-a2b3-4c4d-9e5f-7a8b9c0d1e2f', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'c6d7e8f9-a0b1-4c2d-8e3f-4a5b6c7d8e9f', 'a6b7c8d9-e0f1-4a2b-9c3d-5e6f7a8b9c0d', 'f5a6b7c8-d9e0-4f1a-8b3c-4d5e6f7a8b9c', date_trunc('day', NOW()) + INTERVAL '2 days 16 hours', date_trunc('day', NOW()) + INTERVAL '2 days 23 hours', 1, 1, 0, 'd3e4f5a6-b7c8-4d9e-8f1a-2b3c4d5e6f7a', 'f5a6b7c8-d9e0-4f1a-8b3c-4d5e6f7a8b9c', 'a6b7c8d9-e0f1-4a2b-9c3d-5e6f7a8b9c0d', (NOW() + INTERVAL '2 days')::date, '16:00', '23:00', 1, 0, 'Open', NOW(), NOW())
+  ('c8d9e0f1-a2b3-4c4d-9e5f-7a8b9c0d1e2f', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'c6d7e8f9-a0b1-4c2d-8e3f-4a5b6c7d8e9f', 'a6b7c8d9-e0f1-4a2b-9c3d-5e6f7a8b9c0d', 'f5a6b7c8-d9e0-4f1a-8b3c-4d5e6f7a8b9c', date_trunc('day', NOW()) + INTERVAL '2 days 16 hours', date_trunc('day', NOW()) + INTERVAL '2 days 23 hours', 1, 1, 0, 'd3e4f5a6-b7c8-4d9e-8f1a-2b3c4d5e6f7a', 'f5a6b7c8-d9e0-4f1a-8b3c-4d5e6f7a8b9c', 'a6b7c8d9-e0f1-4a2b-9c3d-5e6f7a8b9c0d', (NOW() + INTERVAL '2 days')::date, '16:00', '23:00', 1, 0, 'Open', NOW(), NOW()),
+  ('d9e0f1a2-b3c4-4d5e-9f6a-8b9c0d1e2f3a', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'c6d7e8f9-a0b1-4c2d-8e3f-4a5b6c7d8e9f', 'a6b7c8d9-e0f1-4a2b-9c3d-5e6f7a8b9c0d', 'a6b7c8d9-e0f1-4a2b-8c3d-5e6f7a8b9c0d', date_trunc('day', NOW()) + INTERVAL '3 days 8 hours', date_trunc('day', NOW()) + INTERVAL '3 days 16 hours', 1, 1, 0, 'e4f5a6b7-c8d9-4e0f-9a2b-3c4d5e6f7a8c', 'a6b7c8d9-e0f1-4a2b-8c3d-5e6f7a8b9c0d', 'a6b7c8d9-e0f1-4a2b-9c3d-5e6f7a8b9c0d', (NOW() + INTERVAL '3 days')::date, '08:00', '16:00', 1, 0, 'Open', NOW(), NOW())
 ON CONFLICT (id) DO UPDATE SET
   cycle_id = EXCLUDED.cycle_id,
   template_id = EXCLUDED.template_id,
