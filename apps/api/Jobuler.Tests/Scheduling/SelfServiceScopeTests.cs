@@ -2623,6 +2623,119 @@ public class SelfServiceScopeTests
     }
 
     [Fact]
+    public async Task GetCycleStatus_IgnoresRowsOutsideResolvedCycleScope()
+    {
+        using var db = CreateDb();
+        var services = CreateControllerServices();
+        var spaceId = Guid.NewGuid();
+        var otherSpaceId = Guid.NewGuid();
+        var group = Group.Create(spaceId, null, "Route Group");
+        var otherGroup = Group.Create(otherSpaceId, null, "Other Group");
+        var userId = Guid.NewGuid();
+        var ownerUserId = Guid.NewGuid();
+        var member = Person.Create(spaceId, "Member", linkedUserId: userId);
+        var noisyMember = Person.Create(otherSpaceId, "Noisy Member", linkedUserId: Guid.NewGuid());
+        var cycle = CreateCycle(spaceId, group.Id);
+        var task = CreateTask(spaceId, group.Id, "Task", ownerUserId);
+        var otherTask = CreateTask(otherSpaceId, otherGroup.Id, "Other Task", ownerUserId);
+        var approvedSlot = CreateSlot(spaceId, group.Id, task.Id, cycle.Id, daysFromNow: 2);
+        var pendingSlot = CreateSlot(spaceId, group.Id, task.Id, cycle.Id, daysFromNow: 3);
+        var noisySlot = CreateSlot(otherSpaceId, otherGroup.Id, otherTask.Id, cycle.Id, daysFromNow: 4);
+        var noisyTargetSlot = CreateSlot(otherSpaceId, otherGroup.Id, otherTask.Id, cycle.Id, daysFromNow: 5);
+        approvedSlot.IncrementFillCount();
+        noisySlot.IncrementFillCount();
+
+        var approvedRequest = ShiftRequest.Create(spaceId, approvedSlot.Id, member.Id, group.Id, cycle.Id);
+        approvedRequest.Approve();
+        var pendingRequest = ShiftRequest.Create(spaceId, pendingSlot.Id, member.Id, group.Id, cycle.Id);
+        var noisyApprovedRequest = ShiftRequest.Create(otherSpaceId, noisySlot.Id, noisyMember.Id, otherGroup.Id, cycle.Id);
+        noisyApprovedRequest.Approve();
+        var noisyPendingRequest = ShiftRequest.Create(otherSpaceId, noisySlot.Id, noisyMember.Id, otherGroup.Id, cycle.Id);
+
+        var absenceReport = ShiftAbsenceReport.Create(
+            spaceId,
+            group.Id,
+            cycle.Id,
+            approvedRequest.Id,
+            approvedSlot.Id,
+            member.Id,
+            "Sick",
+            isLate: true,
+            DateTime.UtcNow);
+        var noisyAbsenceReport = ShiftAbsenceReport.Create(
+            otherSpaceId,
+            otherGroup.Id,
+            cycle.Id,
+            noisyApprovedRequest.Id,
+            noisySlot.Id,
+            noisyMember.Id,
+            "Wrong scope",
+            isLate: true,
+            DateTime.UtcNow);
+        var changeRequest = ShiftChangeRequest.Create(
+            spaceId,
+            group.Id,
+            cycle.Id,
+            approvedRequest.Id,
+            approvedSlot.Id,
+            pendingSlot.Id,
+            member.Id,
+            "Need to move",
+            DateTime.UtcNow);
+        var noisyChangeRequest = ShiftChangeRequest.Create(
+            otherSpaceId,
+            otherGroup.Id,
+            cycle.Id,
+            noisyApprovedRequest.Id,
+            noisySlot.Id,
+            noisyTargetSlot.Id,
+            noisyMember.Id,
+            "Wrong scope",
+            DateTime.UtcNow);
+
+        db.People.AddRange(member, noisyMember);
+        db.Groups.AddRange(group, otherGroup);
+        db.GroupMemberships.Add(GroupMembership.Create(spaceId, group.Id, member.Id));
+        db.SchedulingCycles.Add(cycle);
+        db.GroupTasks.AddRange(task, otherTask);
+        db.ShiftSlots.AddRange(approvedSlot, pendingSlot, noisySlot, noisyTargetSlot);
+        db.ShiftRequests.AddRange(approvedRequest, pendingRequest, noisyApprovedRequest, noisyPendingRequest);
+        db.ShiftAbsenceReports.AddRange(absenceReport, noisyAbsenceReport);
+        db.ShiftChangeRequests.AddRange(changeRequest, noisyChangeRequest);
+        db.WaitlistEntries.AddRange(
+            WaitlistEntry.Create(spaceId, pendingSlot.Id, member.Id, position: 1),
+            WaitlistEntry.Create(otherSpaceId, noisySlot.Id, noisyMember.Id, position: 1));
+        await db.SaveChangesAsync();
+
+        services.Permissions
+            .RequirePermissionAsync(userId, spaceId, Permissions.SpaceView, Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+
+        var controller = new SelfServiceCyclesController(
+            db,
+            services.Permissions,
+            Substitute.For<ISlotGenerationService>(),
+            services.Mediator);
+        controller.ControllerContext = CreateControllerContext(userId);
+
+        var result = await controller.GetStatus(spaceId, group.Id, CancellationToken.None);
+
+        var ok = result.Should().BeOfType<OkObjectResult>().Subject;
+        var response = ok.Value.Should().BeOfType<SelfServiceCycleStatusResponse>().Subject;
+        response.SlotCount.Should().Be(2);
+        response.TotalCapacity.Should().Be(2);
+        response.FilledCount.Should().Be(1);
+        response.ApprovedCount.Should().Be(1);
+        response.PendingCount.Should().Be(1);
+        response.WaitlistCount.Should().Be(1);
+        response.PendingAbsenceReportCount.Should().Be(1);
+        response.LatePendingAbsenceReportCount.Should().Be(1);
+        response.PendingShiftChangeRequestCount.Should().Be(1);
+        response.UnderfilledSlotCount.Should().Be(1);
+        response.UnderfilledSlots.Should().ContainSingle(s => s.ShiftSlotId == pendingSlot.Id);
+    }
+
+    [Fact]
     public async Task GenerateNext_CreatesCycleFromConfigAndRunsSlotGeneration()
     {
         using var db = CreateDb();

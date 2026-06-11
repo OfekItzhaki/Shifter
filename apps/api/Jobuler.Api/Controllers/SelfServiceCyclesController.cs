@@ -192,7 +192,9 @@ public class SelfServiceCyclesController : ControllerBase
     {
         var slots = await _db.ShiftSlots
             .AsNoTracking()
-            .Where(s => s.SchedulingCycleId == cycle.Id)
+            .Where(s => s.SpaceId == cycle.SpaceId
+                        && s.GroupId == cycle.GroupId
+                        && s.SchedulingCycleId == cycle.Id)
             .Select(s => new
             {
                 s.Id,
@@ -207,32 +209,41 @@ public class SelfServiceCyclesController : ControllerBase
 
         var approvedCount = await _db.ShiftRequests
             .AsNoTracking()
-            .CountAsync(r => r.SchedulingCycleId == cycle.Id && r.Status == ShiftRequestStatus.Approved, ct);
+            .CountAsync(r => r.SpaceId == cycle.SpaceId
+                             && r.GroupId == cycle.GroupId
+                             && r.SchedulingCycleId == cycle.Id
+                             && r.Status == ShiftRequestStatus.Approved, ct);
 
         var pendingCount = await _db.ShiftRequests
             .AsNoTracking()
-            .CountAsync(r => r.SchedulingCycleId == cycle.Id && r.Status == ShiftRequestStatus.Pending, ct);
+            .CountAsync(r => r.SpaceId == cycle.SpaceId
+                             && r.GroupId == cycle.GroupId
+                             && r.SchedulingCycleId == cycle.Id
+                             && r.Status == ShiftRequestStatus.Pending, ct);
 
-        var cycleSlotIds = await _db.ShiftSlots
-            .AsNoTracking()
-            .Where(s => s.SchedulingCycleId == cycle.Id)
-            .Select(s => s.Id)
-            .ToListAsync(ct);
+        var cycleSlotIds = slots.Select(s => s.Id).ToList();
 
         var waitlistCount = await _db.WaitlistEntries
             .AsNoTracking()
-            .CountAsync(w => cycleSlotIds.Contains(w.ShiftSlotId)
+            .CountAsync(w => w.SpaceId == cycle.SpaceId
+                             && cycleSlotIds.Contains(w.ShiftSlotId)
                              && (w.Status == WaitlistEntryStatus.Waiting || w.Status == WaitlistEntryStatus.Offered), ct);
 
         var pendingAbsenceReports = await _db.ShiftAbsenceReports
             .AsNoTracking()
-            .Where(r => r.SchedulingCycleId == cycle.Id && r.Status == ShiftAbsenceReportStatus.Pending)
+            .Where(r => r.SpaceId == cycle.SpaceId
+                        && r.GroupId == cycle.GroupId
+                        && r.SchedulingCycleId == cycle.Id
+                        && r.Status == ShiftAbsenceReportStatus.Pending)
             .Select(r => new { r.IsLate })
             .ToListAsync(ct);
 
         var pendingShiftChangeRequestCount = await _db.ShiftChangeRequests
             .AsNoTracking()
-            .CountAsync(r => r.SchedulingCycleId == cycle.Id && r.Status == ShiftChangeRequestStatus.Pending, ct);
+            .CountAsync(r => r.SpaceId == cycle.SpaceId
+                             && r.GroupId == cycle.GroupId
+                             && r.SchedulingCycleId == cycle.Id
+                             && r.Status == ShiftChangeRequestStatus.Pending, ct);
 
         var pendingSpecialLeaveRequestCount = await _db.SpecialLeaveRequests
             .AsNoTracking()
