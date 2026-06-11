@@ -88,6 +88,84 @@ public class SelfServiceNotificationTests
     }
 
     [Fact]
+    public async Task ReportCannotAttendAsync_EnforcesLateAbsenceLimit_ExcludingRejectedReports()
+    {
+        using var db = CreateDb();
+        var notifications = Substitute.For<INotificationService>();
+        var audit = CreateAuditLogger();
+        var (spaceId, groupId, cycleId, taskId, ownerUserId) = SeedBaseData(db);
+
+        db.SelfServiceConfigs.Add(SelfServiceConfig.Create(
+            spaceId,
+            groupId,
+            minShiftsPerCycle: 0,
+            maxShiftsPerCycle: 5,
+            requestWindowOpenOffsetHours: 48,
+            requestWindowCloseOffsetHours: 12,
+            cancellationCutoffHours: 24,
+            maxLateCancellationsPerCycle: 1,
+            lateCancellationWindowHours: 24,
+            waitlistOfferMinutes: 60,
+            cycleDurationDays: 7));
+
+        var person = Person.Create(spaceId, "Late Member", linkedUserId: Guid.NewGuid());
+        db.People.Add(person);
+
+        var rejectedSlot = AddLateSlot(db, spaceId, groupId, taskId, cycleId, startsInHours: 2);
+        var firstSlot = AddLateSlot(db, spaceId, groupId, taskId, cycleId, startsInHours: 3);
+        var secondSlot = AddLateSlot(db, spaceId, groupId, taskId, cycleId, startsInHours: 4);
+
+        var rejectedRequest = AddApprovedRequest(db, spaceId, groupId, cycleId, person.Id, rejectedSlot);
+        var firstRequest = AddApprovedRequest(db, spaceId, groupId, cycleId, person.Id, firstSlot);
+        var secondRequest = AddApprovedRequest(db, spaceId, groupId, cycleId, person.Id, secondSlot);
+
+        var rejectedReport = ShiftAbsenceReport.Create(
+            spaceId,
+            groupId,
+            cycleId,
+            rejectedRequest.Id,
+            rejectedSlot.Id,
+            person.Id,
+            "Rejected earlier",
+            isLate: true,
+            reportedAt: DateTime.UtcNow);
+        rejectedReport.Reject(ownerUserId, "Does not count");
+        db.ShiftAbsenceReports.Add(rejectedReport);
+        await db.SaveChangesAsync();
+
+        var service = new ShiftRequestService(
+            db,
+            Substitute.For<ISlotLockService>(),
+            TimeProvider.System,
+            NullLogger<ShiftRequestService>.Instance,
+            notifications,
+            Substitute.For<IPushNotificationSender>(),
+            audit);
+
+        var firstResult = await service.ReportCannotAttendAsync(person.Id, firstRequest.Id, "Cannot make first late shift");
+
+        firstResult.Success.Should().BeTrue();
+        firstResult.WasLate.Should().BeTrue();
+        firstResult.LateReportsUsed.Should().Be(1);
+        firstResult.MaxLateReports.Should().Be(1);
+
+        var secondResult = await service.ReportCannotAttendAsync(person.Id, secondRequest.Id, "Cannot make second late shift");
+
+        secondResult.Success.Should().BeFalse();
+        secondResult.WasLate.Should().BeTrue();
+        secondResult.LateReportsUsed.Should().Be(1);
+        secondResult.MaxLateReports.Should().Be(1);
+        secondResult.ErrorMessage.Should().Contain("late absence limit");
+
+        var persistedReports = await db.ShiftAbsenceReports
+            .Where(r => r.PersonId == person.Id)
+            .ToListAsync();
+        persistedReports.Should().HaveCount(2);
+        persistedReports.Count(r => r.Status == ShiftAbsenceReportStatus.Rejected).Should().Be(1);
+        persistedReports.Count(r => r.Status == ShiftAbsenceReportStatus.Pending).Should().Be(1);
+    }
+
+    [Fact]
     public async Task CancelRequestAsync_NotifiesSpaceAdminsAndAuditsCancellation()
     {
         using var db = CreateDb();
@@ -843,5 +921,45 @@ public class SelfServiceNotificationTests
 
         db.ShiftSlots.Add(slot);
         return slot;
+    }
+
+    private static ShiftSlot AddLateSlot(
+        AppDbContext db,
+        Guid spaceId,
+        Guid groupId,
+        Guid taskId,
+        Guid cycleId,
+        int startsInHours)
+    {
+        var start = DateTime.UtcNow.AddHours(startsInHours);
+        var end = start.AddHours(1);
+        var slot = ShiftSlot.Create(
+            spaceId,
+            groupId,
+            taskId,
+            shiftTemplateId: Guid.NewGuid(),
+            schedulingCycleId: cycleId,
+            date: DateOnly.FromDateTime(start),
+            startTime: TimeOnly.FromDateTime(start),
+            endTime: TimeOnly.FromDateTime(end),
+            capacity: 1);
+
+        db.ShiftSlots.Add(slot);
+        return slot;
+    }
+
+    private static ShiftRequest AddApprovedRequest(
+        AppDbContext db,
+        Guid spaceId,
+        Guid groupId,
+        Guid cycleId,
+        Guid personId,
+        ShiftSlot slot)
+    {
+        slot.IncrementFillCount();
+        var request = ShiftRequest.Create(spaceId, slot.Id, personId, groupId, cycleId);
+        request.Approve();
+        db.ShiftRequests.Add(request);
+        return request;
     }
 }
