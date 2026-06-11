@@ -766,6 +766,25 @@ export async function getAdminShiftSlotAssignments(
   return data;
 }
 
+export async function getAdminShiftSlots(
+  spaceId: string,
+  groupId: string,
+  cycleId = "current"
+): Promise<AvailableSlotsResponse> {
+  const { data } = await apiClient.get(
+    `/spaces/${spaceId}/groups/${groupId}/shift-slots/admin/slots`,
+    { params: { cycleId } }
+  );
+  return {
+    ...data,
+    slots: (data.slots ?? []).map((slot: AvailableSlotDto) => ({
+      ...slot,
+      id: slot.id ?? slot.shiftSlotId,
+      shiftSlotId: slot.shiftSlotId ?? slot.id,
+    })),
+  };
+}
+
 export async function adminRemoveMember(
   spaceId: string,
   groupId: string,

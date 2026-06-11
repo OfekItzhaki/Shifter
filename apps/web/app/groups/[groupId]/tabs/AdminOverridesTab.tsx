@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { useTranslations } from "next-intl";
 import {
-  getAvailableSlots,
+  getAdminShiftSlots,
   getAdminShiftSlotAssignments,
   adminAssignMember,
   adminRemoveMember,
@@ -71,7 +71,7 @@ export default function AdminOverridesTab({
     setError(null);
     try {
       const [data, assignments] = await Promise.all([
-        getAvailableSlots(spaceId, groupId, "current"),
+        getAdminShiftSlots(spaceId, groupId, "current"),
         getAdminShiftSlotAssignments(spaceId, groupId, "current"),
       ]);
       setSlotsResponse(data);

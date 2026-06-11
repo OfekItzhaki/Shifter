@@ -67,6 +67,74 @@ public class ShiftSlotsController : ControllerBase
     }
 
     /// <summary>
+    /// Get all shift slots for a cycle for admin manual assignment tooling.
+    /// This intentionally does not use member availability filtering because admins need to see
+    /// the complete coverage board, including full slots that may receive manual overrides.
+    /// </summary>
+    [HttpGet("admin/slots")]
+    public async Task<IActionResult> GetAdminSlots(
+        Guid spaceId,
+        Guid groupId,
+        [FromQuery] string cycleId,
+        CancellationToken ct)
+    {
+        await _permissions.RequirePermissionAsync(CurrentUserId, spaceId, Permissions.SchedulePublish, ct);
+
+        var resolvedCycleId = await TryResolveCycleIdAsync(spaceId, groupId, cycleId, ct);
+        if (resolvedCycleId is null)
+            return Ok(new AdminShiftSlotsResponse(
+                Array.Empty<AdminShiftSlotResponse>(),
+                false,
+                null,
+                null,
+                null));
+
+        var cycle = await _db.SchedulingCycles
+            .AsNoTracking()
+            .Where(c => c.Id == resolvedCycleId.Value && c.SpaceId == spaceId && c.GroupId == groupId)
+            .Select(c => new { c.Id, c.RequestWindowOpensAt, c.RequestWindowClosesAt })
+            .FirstOrDefaultAsync(ct);
+
+        if (cycle is null)
+            return Ok(new AdminShiftSlotsResponse(
+                Array.Empty<AdminShiftSlotResponse>(),
+                false,
+                null,
+                null,
+                null));
+
+        var slots = await _db.ShiftSlots
+            .AsNoTracking()
+            .Where(s => s.SpaceId == spaceId
+                        && s.GroupId == groupId
+                        && s.SchedulingCycleId == resolvedCycleId.Value
+                        && s.Status == Domain.Scheduling.ShiftSlotStatus.Open)
+            .Join(
+                _db.GroupTasks.AsNoTracking(),
+                slot => slot.GroupTaskId,
+                task => task.Id,
+                (slot, task) => new AdminShiftSlotResponse(
+                    slot.Id,
+                    slot.Date,
+                    slot.StartTime,
+                    slot.EndTime,
+                    task.Name,
+                    slot.CurrentFillCount,
+                    slot.Capacity,
+                    slot.SchedulingCycleId))
+            .OrderBy(s => s.Date)
+            .ThenBy(s => s.StartTime)
+            .ToListAsync(ct);
+
+        return Ok(new AdminShiftSlotsResponse(
+            slots,
+            false,
+            cycle.RequestWindowOpensAt,
+            cycle.RequestWindowClosesAt,
+            cycle.Id));
+    }
+
+    /// <summary>
     /// Get available shift slots for the current member in a scheduling cycle.
     /// Returns safe slots for picking, plus safe full slots that can be joined through the waitlist.
     /// Excludes already-claimed and overlapping slots.
@@ -160,3 +228,20 @@ public record ShiftSlotAssignmentResponse(
     Guid ShiftSlotId,
     Guid PersonId,
     string PersonName);
+
+public record AdminShiftSlotsResponse(
+    IReadOnlyList<AdminShiftSlotResponse> Slots,
+    bool RequestWindowOpen,
+    DateTime? RequestWindowOpensAt,
+    DateTime? RequestWindowClosesAt,
+    Guid? CurrentCycleId);
+
+public record AdminShiftSlotResponse(
+    Guid ShiftSlotId,
+    DateOnly Date,
+    TimeOnly StartTime,
+    TimeOnly EndTime,
+    string TaskName,
+    int CurrentFillCount,
+    int Capacity,
+    Guid SchedulingCycleId);

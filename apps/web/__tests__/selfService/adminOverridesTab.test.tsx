@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import AdminOverridesTab from "../../app/groups/[groupId]/tabs/AdminOverridesTab";
 import type { GroupMemberDto } from "../../lib/api/groups";
 
-const mockGetAvailableSlots = vi.fn();
+const mockGetAdminShiftSlots = vi.fn();
 const mockGetAdminShiftSlotAssignments = vi.fn();
 const mockAdminAssignMember = vi.fn();
 const mockAdminRemoveMember = vi.fn();
@@ -34,7 +34,7 @@ vi.mock("next-intl", () => ({
 }));
 
 vi.mock("@/lib/api/selfService", () => ({
-  getAvailableSlots: (...args: unknown[]) => mockGetAvailableSlots(...args),
+  getAdminShiftSlots: (...args: unknown[]) => mockGetAdminShiftSlots(...args),
   getAdminShiftSlotAssignments: (...args: unknown[]) => mockGetAdminShiftSlotAssignments(...args),
   adminAssignMember: (...args: unknown[]) => mockAdminAssignMember(...args),
   adminRemoveMember: (...args: unknown[]) => mockAdminRemoveMember(...args),
@@ -88,7 +88,7 @@ const members: GroupMemberDto[] = [
 describe("AdminOverridesTab", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockGetAvailableSlots.mockResolvedValue({
+    mockGetAdminShiftSlots.mockResolvedValue({
       requestWindowOpen: true,
       requestWindowOpensAt: null,
       requestWindowClosesAt: "2026-06-19T00:00:00Z",
@@ -110,7 +110,7 @@ describe("AdminOverridesTab", () => {
   });
 
   it("lets admins manually assign an available member to an unfilled slot", async () => {
-    mockGetAvailableSlots
+    mockGetAdminShiftSlots
       .mockResolvedValueOnce({
         requestWindowOpen: true,
         requestWindowOpensAt: null,
@@ -170,7 +170,7 @@ describe("AdminOverridesTab", () => {
       expect(mockAdminAssignMember).toHaveBeenCalledWith("space-1", "group-1", "slot-1", "person-1");
     });
     await waitFor(() => {
-      expect(mockGetAvailableSlots).toHaveBeenCalledTimes(2);
+      expect(mockGetAdminShiftSlots).toHaveBeenCalledTimes(2);
       expect(mockGetAdminShiftSlotAssignments).toHaveBeenCalledTimes(2);
     });
     expect(await screen.findByText("Alice")).toBeInTheDocument();
@@ -178,7 +178,7 @@ describe("AdminOverridesTab", () => {
   });
 
   it("lets admins remove an existing manual assignment from a slot", async () => {
-    mockGetAvailableSlots.mockResolvedValue({
+    mockGetAdminShiftSlots.mockResolvedValue({
       requestWindowOpen: true,
       requestWindowOpensAt: null,
       requestWindowClosesAt: "2026-06-19T00:00:00Z",
@@ -194,7 +194,7 @@ describe("AdminOverridesTab", () => {
         },
       ],
     });
-    mockGetAvailableSlots
+    mockGetAdminShiftSlots
       .mockResolvedValueOnce({
         requestWindowOpen: true,
         requestWindowOpensAt: null,
@@ -253,7 +253,7 @@ describe("AdminOverridesTab", () => {
       expect(mockAdminRemoveMember).toHaveBeenCalledWith("space-1", "group-1", "slot-1", "person-1");
     });
     await waitFor(() => {
-      expect(mockGetAvailableSlots).toHaveBeenCalledTimes(2);
+      expect(mockGetAdminShiftSlots).toHaveBeenCalledTimes(2);
       expect(mockGetAdminShiftSlotAssignments).toHaveBeenCalledTimes(2);
     });
     expect(screen.queryByText("Alice")).not.toBeInTheDocument();
@@ -261,7 +261,7 @@ describe("AdminOverridesTab", () => {
   });
 
   it("lets admins assign beyond capacity as a manual override", async () => {
-    mockGetAvailableSlots.mockResolvedValue({
+    mockGetAdminShiftSlots.mockResolvedValue({
       requestWindowOpen: false,
       requestWindowOpensAt: null,
       requestWindowClosesAt: "2026-06-19T00:00:00Z",
@@ -315,7 +315,7 @@ describe("AdminOverridesTab", () => {
     mockAdminAssignMember.mockRejectedValue({
       response: { data: { detail: "The member is already assigned to this shift slot." } },
     });
-    mockGetAvailableSlots
+    mockGetAdminShiftSlots
       .mockResolvedValueOnce({
         requestWindowOpen: true,
         requestWindowOpensAt: null,

@@ -1951,6 +1951,54 @@ public class SelfServiceScopeTests
     }
 
     [Fact]
+    public async Task GetAdminSlots_ReturnsFullCycleSlotsWithoutMemberAvailabilityFiltering()
+    {
+        using var db = CreateDb();
+        var services = CreateControllerServices();
+        var spaceId = Guid.NewGuid();
+        var group = Group.Create(spaceId, null, "Route Group");
+        var otherGroup = Group.Create(spaceId, null, "Other Group");
+        var adminUserId = Guid.NewGuid();
+        var ownerUserId = Guid.NewGuid();
+        var cycle = CreateCycle(spaceId, group.Id);
+        var otherCycle = CreateCycle(spaceId, otherGroup.Id);
+        var task = CreateTask(spaceId, group.Id, "Coverage", ownerUserId);
+        var otherTask = CreateTask(spaceId, otherGroup.Id, "Other Task", ownerUserId);
+        var fullSlot = CreateSlot(spaceId, group.Id, task.Id, cycle.Id, daysFromNow: 2);
+        fullSlot.IncrementFillCount();
+        var openSlot = CreateSlot(spaceId, group.Id, task.Id, cycle.Id, daysFromNow: 3);
+        var otherGroupSlot = CreateSlot(spaceId, otherGroup.Id, otherTask.Id, otherCycle.Id, daysFromNow: 4);
+
+        db.Groups.AddRange(group, otherGroup);
+        db.SchedulingCycles.AddRange(cycle, otherCycle);
+        db.GroupTasks.AddRange(task, otherTask);
+        db.ShiftSlots.AddRange(fullSlot, openSlot, otherGroupSlot);
+        await db.SaveChangesAsync();
+
+        services.Permissions
+            .RequirePermissionAsync(adminUserId, spaceId, Permissions.SchedulePublish, Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+
+        var controller = new ShiftSlotsController(services.Mediator, services.Permissions, db);
+        controller.ControllerContext = CreateControllerContext(adminUserId);
+
+        var result = await controller.GetAdminSlots(
+            spaceId,
+            group.Id,
+            cycle.Id.ToString(),
+            CancellationToken.None);
+
+        var ok = result.Should().BeOfType<OkObjectResult>().Subject;
+        var response = ok.Value.Should().BeAssignableTo<AdminShiftSlotsResponse>().Subject;
+        response.CurrentCycleId.Should().Be(cycle.Id);
+        response.Slots.Select(s => s.ShiftSlotId).Should().Equal(fullSlot.Id, openSlot.Id);
+        response.Slots[0].CurrentFillCount.Should().Be(1);
+        response.Slots[0].Capacity.Should().Be(1);
+        response.Slots[0].TaskName.Should().Be("Coverage");
+        response.Slots.Should().NotContain(s => s.ShiftSlotId == otherGroupSlot.Id);
+    }
+
+    [Fact]
     public async Task ListAdminShiftRequests_ReturnsCancelledRequestsForRequestedGroupOnly()
     {
         using var db = CreateDb();
