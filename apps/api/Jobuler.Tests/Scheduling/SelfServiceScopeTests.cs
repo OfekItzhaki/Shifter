@@ -2444,6 +2444,7 @@ public class SelfServiceScopeTests
         var slot = CreateSlot(spaceId, group.Id, task.Id, cycle.Id, daysFromNow: 2);
         var shiftRequest = ShiftRequest.Create(spaceId, slot.Id, person.Id, group.Id, cycle.Id);
         shiftRequest.Approve();
+        slot.IncrementFillCount();
         var report = ShiftAbsenceReport.Create(
             spaceId,
             group.Id,
@@ -2454,6 +2455,8 @@ public class SelfServiceScopeTests
             "Sick",
             isLate: true,
             DateTime.UtcNow);
+        shiftRequest.Cancel("Late absence report: Sick");
+        slot.DecrementFillCount();
 
         db.People.Add(person);
         db.Groups.Add(group);
@@ -2491,6 +2494,14 @@ public class SelfServiceScopeTests
         updatedReport.Status.Should().Be(ShiftAbsenceReportStatus.Rejected);
         updatedReport.AdminNote.Should().Be("Need documentation");
 
+        var restoredRequest = await db.ShiftRequests.SingleAsync(r => r.Id == shiftRequest.Id);
+        restoredRequest.Status.Should().Be(ShiftRequestStatus.Approved);
+        restoredRequest.CancellationReason.Should().BeNull();
+        restoredRequest.CancelledAt.Should().BeNull();
+
+        var restoredSlot = await db.ShiftSlots.SingleAsync(s => s.Id == slot.Id);
+        restoredSlot.CurrentFillCount.Should().Be(1);
+
         var memberNotification = await db.Notifications
             .SingleAsync(n => n.EventType == "self_service.absence_rejected");
         memberNotification.UserId.Should().Be(userId);
@@ -2512,7 +2523,9 @@ public class SelfServiceScopeTests
             Arg.Is<string?>(json => json != null
                 && json.Contains(shiftRequest.Id.ToString())
                 && json.Contains("\"status\":\"rejected\"")
-                && json.Contains("\"admin_note\":\"Need documentation\"")),
+                && json.Contains("\"admin_note\":\"Need documentation\"")
+                && json.Contains("\"reinstated_shift\":true")
+                && json.Contains("\"shift_request_status\":\"approved\"")),
             Arg.Is<string?>(ipAddress => ipAddress == null),
             Arg.Any<CancellationToken>());
     }

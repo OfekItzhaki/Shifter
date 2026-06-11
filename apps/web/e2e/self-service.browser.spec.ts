@@ -205,6 +205,71 @@ async function ensureApprovedShift(
   return assigned!;
 }
 
+async function ensureAbsenceReportableApprovedShift(
+  request: APIRequestContext,
+  adminToken: string,
+  memberToken: string,
+  spaceId: string,
+  groupId: string,
+  cycleId: string,
+  personId: string
+): Promise<ShiftRequestDto> {
+  const reports = await api<MyAbsenceReportsResponse>(
+    request,
+    memberToken,
+    "GET",
+    `/spaces/${spaceId}/groups/${groupId}/shift-requests/absence-reports/mine`
+  );
+  const reportedShiftIds = new Set(reports.reports.map((report) => report.shiftRequestId));
+
+  const mine = await api<MyShiftsResponse>(
+    request,
+    memberToken,
+    "GET",
+    `/spaces/${spaceId}/groups/${groupId}/shift-requests/mine`
+  );
+  const approved = mine.requests.find((row) =>
+    row.status === "Approved" && !reportedShiftIds.has(row.id)
+  );
+  if (approved) return approved;
+
+  const unavailableSlotIds = new Set(
+    mine.requests
+      .filter((row) => row.status === "Approved" || row.status === "Pending")
+      .map((row) => row.shiftSlotId)
+  );
+  const adminSlots = await api<AvailableSlotsResponse>(
+    request,
+    adminToken,
+    "GET",
+    `/spaces/${spaceId}/groups/${groupId}/shift-slots/admin/slots?cycleId=${cycleId}`
+  );
+  const targetSlot = adminSlots.slots.find((slot) => {
+    const slotId = slot.id ?? slot.shiftSlotId;
+    return slotId && !unavailableSlotIds.has(slotId);
+  });
+  expect(targetSlot, "browser absence rejection test needs an assignable shift without an existing report").toBeTruthy();
+
+  const shiftSlotId = targetSlot!.id ?? targetSlot!.shiftSlotId;
+  const created = await api<{ shiftRequestId: string }>(
+    request,
+    adminToken,
+    "POST",
+    `/spaces/${spaceId}/groups/${groupId}/shift-slots/${shiftSlotId}/admin-overrides/assign`,
+    { personId }
+  );
+
+  const refreshed = await api<MyShiftsResponse>(
+    request,
+    memberToken,
+    "GET",
+    `/spaces/${spaceId}/groups/${groupId}/shift-requests/mine`
+  );
+  const assigned = refreshed.requests.find((row) => row.id === created.shiftRequestId);
+  expect(assigned?.status).toBe("Approved");
+  return assigned!;
+}
+
 async function getPendingSwapShiftIds(
   request: APIRequestContext,
   token: string,
@@ -920,5 +985,105 @@ test.describe("Self-service browser lifecycle", () => {
       `/spaces/${spaceId}/groups/${groupId}/shift-requests/absence-reports`
     );
     expect(reviewed.find((report) => report.id === createdReport!.id)?.status).toBe("Approved");
+  });
+
+  test("member reports cannot attend and admin rejects it through the UI", async ({ page, request }) => {
+    const adminEmail = process.env.E2E_ADMIN_EMAIL ?? "admin@demo.local";
+    const memberEmail = process.env.E2E_REJECT_ABSENCE_MEMBER_EMAIL ?? "ofek@demo.local";
+    const adminToken = await login(request, adminEmail);
+    const memberToken = await login(request, memberEmail);
+    const { spaceId, groupId } = await findDemoSelfServiceGroup(request, adminToken);
+    const status = await api<CycleStatusDto>(
+      request,
+      adminToken,
+      "GET",
+      `/spaces/${spaceId}/groups/${groupId}/self-service-cycles/status`
+    );
+    expect(status.cycleId).toBeTruthy();
+
+    const limits = await api<MyAbsenceReportsResponse>(
+      request,
+      memberToken,
+      "GET",
+      `/spaces/${spaceId}/groups/${groupId}/shift-requests/absence-reports/mine`
+    );
+    test.skip(
+      limits.absenceReportsUsed >= limits.maxAbsenceReports,
+      `${memberEmail} has used all absence reports in the seeded demo cycle`
+    );
+
+    const member = await getGroupMemberByEmail(request, adminToken, spaceId, groupId, memberEmail);
+    const ownedShift = await ensureAbsenceReportableApprovedShift(
+      request,
+      adminToken,
+      memberToken,
+      spaceId,
+      groupId,
+      status.cycleId!,
+      member.personId
+    );
+    const reason = `Browser E2E reject cannot attend ${Date.now()}`;
+
+    await loginAsUser(page, memberEmail, DEMO_PASSWORD);
+    await page.evaluate((targetGroupId) => {
+      localStorage.setItem("shifter-pick-last-group", targetGroupId);
+    }, groupId);
+    await page.goto(`${BASE}/pick`);
+    await page.getByTestId("pick-tab-my-shifts").click();
+    const shiftCard = page.locator(`[data-testid="self-service-shift-card"][data-shift-request-id="${ownedShift.id}"]`);
+    await expect(shiftCard.getByTestId("self-service-cannot-attend")).toBeVisible({ timeout: 15000 });
+    await shiftCard.getByTestId("self-service-cannot-attend").click();
+    await page.locator("textarea").fill(reason);
+    await Promise.all([
+      page.waitForResponse((response) =>
+        response.url().includes("/cannot-attend") && response.request().method() === "POST"
+      ),
+      page.getByTestId("self-service-confirm-cannot-attend").click(),
+    ]);
+
+    const memberReports = await api<MyAbsenceReportsResponse>(
+      request,
+      memberToken,
+      "GET",
+      `/spaces/${spaceId}/groups/${groupId}/shift-requests/absence-reports/mine`
+    );
+    const createdReport = memberReports.reports.find((report) => report.reason === reason);
+    expect(createdReport?.status).toBe("Pending");
+
+    await loginAsUser(page, adminEmail, DEMO_PASSWORD);
+    await enterElevatedGroup(page, groupId);
+    await page.goto(`${BASE}/groups/${groupId}`);
+    await page.getByTestId("group-tab-absence-reports").click();
+
+    const reportCard = page
+      .getByTestId("self-service-absence-report")
+      .filter({ hasText: reason });
+    await expect(reportCard).toBeVisible({ timeout: 15000 });
+    await Promise.all([
+      page.waitForResponse((response) =>
+        response.url().includes(`/absence-reports/${createdReport!.id}/reject`)
+        && response.request().method() === "POST"
+      ),
+      reportCard.getByTestId("self-service-reject-absence").click(),
+    ]);
+
+    const reviewed = await api<AbsenceReportDto[]>(
+      request,
+      adminToken,
+      "GET",
+      `/spaces/${spaceId}/groups/${groupId}/shift-requests/absence-reports`
+    );
+    expect(reviewed.find((report) => report.id === createdReport!.id)?.status).toBe("Rejected");
+
+    const restoredShifts = await api<MyShiftsResponse>(
+      request,
+      memberToken,
+      "GET",
+      `/spaces/${spaceId}/groups/${groupId}/shift-requests/mine`
+    );
+    const restoredShift = restoredShifts.requests.find((row) => row.id === ownedShift.id);
+    expect(restoredShift?.status).toBe("Approved");
+    expect(restoredShift?.shiftSlotId).toBe(ownedShift.shiftSlotId);
+    expect(restoredShift?.cancellationReason).toBeNull();
   });
 });

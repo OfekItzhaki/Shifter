@@ -240,6 +240,8 @@ group:
   swap with final assignment verification
 - an admin browser lifecycle test for rejecting a shift-change request while
   preserving the member's original assignment
+- an admin browser lifecycle test for rejecting a cannot-attend report and
+  reinstating the member's released shift
 
 ## Customer-Hosted Use
 
@@ -268,8 +270,9 @@ large deployments:
 - Broader browser end-to-end coverage for the complete member/admin cycle:
   remaining rejection paths and richer final slot-state verification. The
   browser suite already covers picking, waitlist entry, cannot-attend reporting,
-  absence approval, shift cancellation, shift-change approval with
-  reassignment, shift-change rejection, and member-to-member swap acceptance.
+  absence approval, absence rejection with shift reinstatement, shift
+  cancellation, shift-change approval with reassignment, shift-change rejection,
+  and member-to-member swap acceptance.
 - Organization-level defaults for self-service policy through the admin UI.
   Space owners can configure space-level defaults today; a higher-level
   organization template for multi-space installs is still deferred.

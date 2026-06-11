@@ -407,6 +407,35 @@ public class ShiftRequestsController : ControllerBase
 
                 try
                 {
+                    var shiftRequest = await _db.ShiftRequests
+                        .FirstOrDefaultAsync(r => r.Id == report.ShiftRequestId
+                                                  && r.SpaceId == spaceId
+                                                  && r.GroupId == groupId,
+                            ct);
+                    var slot = await _db.ShiftSlots
+                        .FirstOrDefaultAsync(s => s.Id == report.ShiftSlotId
+                                                  && s.SpaceId == spaceId
+                                                  && s.GroupId == groupId,
+                            ct);
+
+                    var reinstatedShift = false;
+                    int? fillCountBeforeReinstatement = null;
+                    int? fillCountAfterReinstatement = null;
+
+                    if (shiftRequest is not null && slot is not null && shiftRequest.Status == ShiftRequestStatus.Cancelled)
+                    {
+                        if (!slot.HasAvailableCapacity())
+                        {
+                            throw new InvalidOperationException("Cannot reject this absence report because the released shift slot is already full.");
+                        }
+
+                        fillCountBeforeReinstatement = slot.CurrentFillCount;
+                        shiftRequest.ReinstateRejectedAbsenceCancellation();
+                        slot.IncrementFillCount();
+                        fillCountAfterReinstatement = slot.CurrentFillCount;
+                        reinstatedShift = true;
+                    }
+
                     report.Reject(CurrentUserId, req.AdminNote);
                     await _db.SaveChangesAsync(ct);
                     await _audit.LogAsync(
@@ -436,7 +465,11 @@ public class ShiftRequestsController : ControllerBase
                             shift_slot_id = report.ShiftSlotId,
                             is_late = report.IsLate,
                             status = report.Status.ToString().ToLowerInvariant(),
-                            admin_note = report.AdminNote
+                            admin_note = report.AdminNote,
+                            reinstated_shift = reinstatedShift,
+                            shift_request_status = shiftRequest?.Status.ToString().ToLowerInvariant(),
+                            fill_count_before_reinstatement = fillCountBeforeReinstatement,
+                            fill_count_after_reinstatement = fillCountAfterReinstatement
                         }),
                         ct: ct);
                     var push = await AddAbsenceReviewNotificationAsync(report, approved: false, ct);

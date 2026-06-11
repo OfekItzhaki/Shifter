@@ -74,6 +74,22 @@ public class ShiftRequest : AuditableEntity, ITenantScoped
         Touch();
     }
 
+    public void ReinstateRejectedAbsenceCancellation()
+    {
+        if (Status != ShiftRequestStatus.Cancelled)
+            throw new InvalidOperationException("Only cancelled requests can be reinstated.");
+
+        if (CancellationReason is null
+            || (!CancellationReason.StartsWith("Cannot attend:", StringComparison.Ordinal)
+                && !CancellationReason.StartsWith("Late absence report:", StringComparison.Ordinal)))
+            throw new InvalidOperationException("Only absence-report cancellations can be reinstated.");
+
+        Status = ShiftRequestStatus.Approved;
+        CancellationReason = null;
+        CancelledAt = null;
+        Touch();
+    }
+
     /// <summary>
     /// Reassigns this shift request to a different person and slot as part of a swap operation.
     /// Only approved requests can be reassigned.
