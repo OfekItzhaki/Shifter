@@ -9,6 +9,8 @@ manual self-service scheduling decisions.
   run groups where members pick, change, swap, and report shifts themselves.
 - [Self-service integration plan](SELF-SERVICE-INTEGRATION-PLAN.md) - branch
   sequencing for manual self-service, holiday calendars, and portable isolation.
+- [Self-service branch stack status](SELF-SERVICE-BRANCH-STACK-STATUS.md) -
+  current PR order, verification, links, and remaining manual checks.
 - [Manual self-service PR summary](PULL_REQUEST_MANUAL_SELF_SERVICE_HARDENING.md)
   - title, description, verification, and branch relationship notes.
 - [Self-service holiday integration PR summary](PULL_REQUEST_SELF_SERVICE_HOLIDAY_INTEGRATION.md)
