@@ -2325,18 +2325,24 @@
     "operations": {
       "title": "Self-service operations",
       "description": "Run the current cycle, watch coverage, and jump into the queues that need admin action.",
+      "statusLoading": "Checking queues...",
+      "activeSignals": "{count} item(s) need attention",
+      "allClear": "No urgent items",
       "actions": {
         "reviews": {
           "title": "Review requests",
-          "description": "Approve absence reports, shift-change requests, and time-off requests."
+          "description": "Approve absence reports, shift-change requests, and time-off requests.",
+          "metric": "{count} pending review item(s)"
         },
         "waitlist": {
           "title": "Waitlist queue",
-          "description": "See who is waiting or holding an offer when full shifts open up."
+          "description": "See who is waiting or holding an offer when full shifts open up.",
+          "metric": "{count} active waitlist item(s)"
         },
         "overrides": {
           "title": "Manual overrides",
-          "description": "Assign or remove members when the schedule needs a direct correction."
+          "description": "Assign or remove members when the schedule needs a direct correction.",
+          "metric": "{count} under-filled slot(s)"
         },
         "templates": {
           "title": "Shift templates",
