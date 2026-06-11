@@ -22,7 +22,8 @@ packaging, and self-service export/import readiness.
 - Integrates portable organization isolation and contact-field protection for
   future dedicated/customer-hosted installs.
 - Includes self-service workflow data in organization export manifests/packages
-  and import validation counts.
+  and import validation counts, including scoped notifications and audit logs
+  tied to those workflows.
 - Wires `FIELD_ENCRYPTION_KEY` through customer compose configuration and makes
   it required by the customer-hosted env validator.
 - Adds a Windows/PowerShell customer env validator alongside the Bash validator.

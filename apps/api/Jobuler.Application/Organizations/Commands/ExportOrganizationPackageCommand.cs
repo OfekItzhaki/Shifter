@@ -43,7 +43,9 @@ public record OrganizationPackageDataDto(
     List<object> ShiftChangeRequests,
     List<object> WaitlistEntries,
     List<object> SwapRequests,
-    List<object> SpecialLeaveRequests);
+    List<object> SpecialLeaveRequests,
+    List<object> Notifications,
+    List<object> AuditLogs);
 
 public class ExportOrganizationPackageCommandHandler
     : IRequestHandler<ExportOrganizationPackageCommand, OrganizationExportPackageResult>
@@ -388,6 +390,16 @@ public class ExportOrganizationPackageCommandHandler
             SpecialLeaveRequests: await _db.SpecialLeaveRequests.AsNoTracking()
                 .Where(r => spaceIds.Contains(r.SpaceId))
                 .OrderBy(r => r.SpaceId).ThenBy(r => r.StartsAt)
+                .Cast<object>()
+                .ToListAsync(ct),
+            Notifications: await _db.Notifications.AsNoTracking()
+                .Where(n => spaceIds.Contains(n.SpaceId))
+                .OrderBy(n => n.SpaceId).ThenBy(n => n.CreatedAt)
+                .Cast<object>()
+                .ToListAsync(ct),
+            AuditLogs: await _db.AuditLogs.AsNoTracking()
+                .Where(l => l.SpaceId.HasValue && spaceIds.Contains(l.SpaceId.Value))
+                .OrderBy(l => l.SpaceId).ThenBy(l => l.CreatedAt)
                 .Cast<object>()
                 .ToListAsync(ct));
 

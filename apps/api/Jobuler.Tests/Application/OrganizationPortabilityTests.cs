@@ -9,6 +9,7 @@ using Jobuler.Application.Spaces.Queries;
 using Jobuler.Domain.Billing;
 using Jobuler.Domain.Groups;
 using Jobuler.Domain.Logs;
+using Jobuler.Domain.Notifications;
 using Jobuler.Domain.Organizations;
 using Jobuler.Domain.People;
 using Jobuler.Domain.Scheduling;
@@ -608,6 +609,31 @@ public class OrganizationPortabilityTests
             cycleStart.AddDays(2),
             "Family event",
             ownerId);
+        var notification = Notification.Create(
+            space.Id,
+            ownerId,
+            "self_service.request_approved",
+            "Shift approved",
+            "Your shift was approved.",
+            metadataJson: $$"""{"shiftRequestId":"{{shiftRequest.Id}}"}""");
+        var outsideNotification = Notification.Create(
+            outsideSpace.Id,
+            ownerId,
+            "outside",
+            "Outside",
+            "Outside notification");
+        var auditLog = AuditLog.Create(
+            space.Id,
+            ownerId,
+            "self_service.request_approved",
+            "ShiftRequest",
+            shiftRequest.Id);
+        var outsideAuditLog = AuditLog.Create(
+            outsideSpace.Id,
+            ownerId,
+            "outside.kept",
+            "Space",
+            outsideSpace.Id);
 
         db.Organizations.AddRange(organization, outsideOrganization);
         db.Spaces.AddRange(space, outsideSpace);
@@ -627,6 +653,8 @@ public class OrganizationPortabilityTests
         db.WaitlistEntries.Add(waitlist);
         db.SwapRequests.Add(swap);
         db.SpecialLeaveRequests.Add(specialLeave);
+        db.Notifications.AddRange(notification, outsideNotification);
+        db.AuditLogs.AddRange(auditLog, outsideAuditLog);
         await db.SaveChangesAsync();
 
         var mediator = Substitute.For<MediatR.IMediator>();
@@ -667,6 +695,8 @@ public class OrganizationPortabilityTests
         data.GetProperty("waitlistEntries").EnumerateArray().Should().ContainSingle();
         data.GetProperty("swapRequests").EnumerateArray().Should().ContainSingle();
         data.GetProperty("specialLeaveRequests").EnumerateArray().Should().ContainSingle();
+        data.GetProperty("notifications").EnumerateArray().Should().ContainSingle();
+        data.GetProperty("auditLogs").EnumerateArray().Should().ContainSingle();
     }
 
     [Fact]
@@ -710,9 +740,23 @@ public class OrganizationPortabilityTests
             SpaceSpecialDayKind.Holiday,
             homeLeaveWeightMultiplier: 3m,
             requiresCoverage: true);
+        var notification = Notification.Create(
+            space.Id,
+            ownerId,
+            "self_service.calendar_ready",
+            "Calendar ready",
+            "Holiday calendar was imported.");
+        var auditLog = AuditLog.Create(
+            space.Id,
+            ownerId,
+            "space.special_day.imported",
+            "SpaceSpecialDay",
+            specialDay.Id);
         db.Organizations.Add(organization);
         db.Spaces.Add(space);
         db.SpaceSpecialDays.Add(specialDay);
+        db.Notifications.Add(notification);
+        db.AuditLogs.Add(auditLog);
         await db.SaveChangesAsync();
 
         var package = await ExportPackageAsync(db, organization.Id);
@@ -725,6 +769,8 @@ public class OrganizationPortabilityTests
         result.Conflicts.Should().Contain(c => c.Contains("Organization id already exists"));
         result.Conflicts.Should().Contain(c => c.Contains("space id"));
         result.Conflicts.Should().Contain(c => c.Contains("space special day id"));
+        result.Conflicts.Should().Contain(c => c.Contains("notification id"));
+        result.Conflicts.Should().Contain(c => c.Contains("audit log id"));
     }
 
     private static Task<OrganizationExportPackageResult> ExportPackageAsync(AppDbContext db, Guid organizationId)

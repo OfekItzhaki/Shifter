@@ -43,7 +43,9 @@ public record OrganizationImportValidationCounts(
     int ShiftChangeRequests,
     int WaitlistEntries,
     int SwapRequests,
-    int SpecialLeaveRequests);
+    int SpecialLeaveRequests,
+    int Notifications,
+    int AuditLogs);
 
 public class ValidateOrganizationImportPackageCommandHandler
     : IRequestHandler<ValidateOrganizationImportPackageCommand, OrganizationImportValidationResult>
@@ -62,7 +64,7 @@ public class ValidateOrganizationImportPackageCommandHandler
         Guid? organizationId = null;
         string? organizationName = null;
         var schemaVersion = 0;
-        var counts = new OrganizationImportValidationCounts(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+        var counts = new OrganizationImportValidationCounts(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 
         JsonDocument document;
         try
@@ -132,6 +134,8 @@ public class ValidateOrganizationImportPackageCommandHandler
                 var waitlistEntries = GetArray(data, "waitlistEntries");
                 var swapRequests = GetArray(data, "swapRequests");
                 var specialLeaveRequests = GetArray(data, "specialLeaveRequests");
+                var notifications = GetArray(data, "notifications");
+                var auditLogs = GetArray(data, "auditLogs");
 
                 counts = new OrganizationImportValidationCounts(
                     spaces.Count,
@@ -158,7 +162,9 @@ public class ValidateOrganizationImportPackageCommandHandler
                     shiftChangeRequests.Count,
                     waitlistEntries.Count,
                     swapRequests.Count,
-                    specialLeaveRequests.Count);
+                    specialLeaveRequests.Count,
+                    notifications.Count,
+                    auditLogs.Count);
 
                 ValidateManifestCounts(manifest, counts, errors);
 
@@ -191,6 +197,8 @@ public class ValidateOrganizationImportPackageCommandHandler
                 await AddEntityConflictsAsync(_db.WaitlistEntries, ExtractIds(waitlistEntries), "waitlist entry", conflicts, ct);
                 await AddEntityConflictsAsync(_db.SwapRequests, ExtractIds(swapRequests), "swap request", conflicts, ct);
                 await AddEntityConflictsAsync(_db.SpecialLeaveRequests, ExtractIds(specialLeaveRequests), "special leave request", conflicts, ct);
+                await AddEntityConflictsAsync(_db.Notifications, ExtractIds(notifications), "notification", conflicts, ct);
+                await AddEntityConflictsAsync(_db.AuditLogs, ExtractIds(auditLogs), "audit log", conflicts, ct);
 
                 var userIds = ExtractIds(GetArray(data, "users"));
                 var existingUserCount = await _db.Users.CountAsync(u => userIds.Contains(u.Id), ct);
@@ -267,6 +275,8 @@ public class ValidateOrganizationImportPackageCommandHandler
         Compare("waitlistEntries", actual.WaitlistEntries);
         Compare("swapRequests", actual.SwapRequests);
         Compare("specialLeaveRequests", actual.SpecialLeaveRequests);
+        Compare("notifications", actual.Notifications);
+        Compare("auditLogs", actual.AuditLogs);
 
         void Compare(string propertyName, int actualValue)
         {
