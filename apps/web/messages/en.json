@@ -2209,6 +2209,7 @@
     },
     "config": {
       "title": "Self-Service Configuration",
+      "description": "Set the rules that control how members pick shifts, request changes, report absence, and move through the waitlist.",
       "minShiftsPerCycle": "Minimum shifts per cycle",
       "maxShiftsPerCycle": "Maximum shifts per cycle",
       "requestWindowOpenOffsetHours": "Request window open (hours before)",
@@ -2218,6 +2219,53 @@
       "lateCancellationWindowHours": "Late absence window (hours before)",
       "waitlistOfferMinutes": "Waitlist offer duration (minutes)",
       "cycleDurationDays": "Cycle duration (days)",
+      "range": "{min}-{max}",
+      "units": {
+        "shifts": "shifts",
+        "hours": "hours",
+        "minutes": "minutes",
+        "days": "days",
+        "reports": "reports"
+      },
+      "summary": {
+        "shiftLimits": "Shift limits",
+        "shiftLimitsValue": "{min}-{max} shifts / {days} days",
+        "requestWindow": "Request window",
+        "requestWindowValue": "Opens {open}h before, closes {close}h before",
+        "absence": "Changes and absence",
+        "absenceValue": "Cancel until {cutoff}h, late inside {lateWindow}h, max {max}",
+        "waitlist": "Waitlist",
+        "waitlistValue": "{minutes}m offer timer"
+      },
+      "sections": {
+        "shiftLimits": {
+          "title": "Shift limits",
+          "description": "Control how many shifts a member should take in each self-service cycle."
+        },
+        "requestWindow": {
+          "title": "Request window",
+          "description": "Decide when members can start and stop picking shifts before the schedule starts."
+        },
+        "changesAbsence": {
+          "title": "Changes and absence",
+          "description": "Set when cancellations stop, when absence reports are considered late, and how many late reports are allowed."
+        },
+        "waitlist": {
+          "title": "Waitlist",
+          "description": "Control how long a member has to accept an offered shift before it moves to the next person."
+        }
+      },
+      "descriptions": {
+        "minShiftsPerCycle": "Members below this count are flagged before the cycle closes.",
+        "maxShiftsPerCycle": "Members cannot pick more than this many approved shifts.",
+        "cycleDurationDays": "How many days each generated self-service cycle covers.",
+        "requestWindowOpenOffsetHours": "How many hours before cycle start the picking window opens.",
+        "requestWindowCloseOffsetHours": "How many hours before cycle start the picking window closes.",
+        "cancellationCutoffHours": "Approved shifts cannot be cancelled inside this cutoff.",
+        "lateCancellationWindowHours": "Absence reports inside this window count as late.",
+        "maxLateCancellationsPerCycle": "Maximum late absence reports allowed per member per cycle.",
+        "waitlistOfferMinutes": "How long an offered waitlist shift is held for one member."
+      },
       "save": "Save Configuration",
       "saving": "Saving...",
       "saved": "Configuration saved successfully",

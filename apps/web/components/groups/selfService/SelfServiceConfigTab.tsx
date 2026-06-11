@@ -24,18 +24,44 @@ interface ConfigField {
   key: keyof UpdateSelfServiceConfigPayload;
   min: number;
   max: number;
+  unit: "shifts" | "hours" | "minutes" | "days" | "reports";
 }
 
-const CONFIG_FIELDS: ConfigField[] = [
-  { key: "minShiftsPerCycle", min: 0, max: 100 },
-  { key: "maxShiftsPerCycle", min: 1, max: 100 },
-  { key: "requestWindowOpenOffsetHours", min: 1, max: 720 },
-  { key: "requestWindowCloseOffsetHours", min: 1, max: 720 },
-  { key: "cancellationCutoffHours", min: 1, max: 720 },
-  { key: "maxLateCancellationsPerCycle", min: 0, max: 100 },
-  { key: "lateCancellationWindowHours", min: 1, max: 720 },
-  { key: "waitlistOfferMinutes", min: 15, max: 1440 },
-  { key: "cycleDurationDays", min: 1, max: 30 },
+interface ConfigSection {
+  key: "shiftLimits" | "requestWindow" | "changesAbsence" | "waitlist";
+  fields: ConfigField[];
+}
+
+const CONFIG_SECTIONS: ConfigSection[] = [
+  {
+    key: "shiftLimits",
+    fields: [
+      { key: "minShiftsPerCycle", min: 0, max: 100, unit: "shifts" },
+      { key: "maxShiftsPerCycle", min: 1, max: 100, unit: "shifts" },
+      { key: "cycleDurationDays", min: 1, max: 30, unit: "days" },
+    ],
+  },
+  {
+    key: "requestWindow",
+    fields: [
+      { key: "requestWindowOpenOffsetHours", min: 1, max: 720, unit: "hours" },
+      { key: "requestWindowCloseOffsetHours", min: 1, max: 720, unit: "hours" },
+    ],
+  },
+  {
+    key: "changesAbsence",
+    fields: [
+      { key: "cancellationCutoffHours", min: 1, max: 720, unit: "hours" },
+      { key: "lateCancellationWindowHours", min: 1, max: 720, unit: "hours" },
+      { key: "maxLateCancellationsPerCycle", min: 0, max: 100, unit: "reports" },
+    ],
+  },
+  {
+    key: "waitlist",
+    fields: [
+      { key: "waitlistOfferMinutes", min: 15, max: 1440, unit: "minutes" },
+    ],
+  },
 ];
 
 function getConfigValidationMessage(
@@ -173,28 +199,87 @@ export default function SelfServiceConfigTab({ spaceId, groupId }: SelfServiceCo
   return (
     <div className="space-y-5">
       <div className="bg-white border border-slate-200 rounded-xl p-6">
-        <h3 className="text-base font-semibold text-slate-900 mb-6">{t("title")}</h3>
+        <div className="flex flex-col gap-1">
+          <h3 className="text-base font-semibold text-slate-900">{t("title")}</h3>
+          <p className="text-sm text-slate-500">{t("description")}</p>
+        </div>
 
-        <div className="space-y-5">
-          {CONFIG_FIELDS.map((field) => (
-            <div key={field.key}>
-              <label
-                htmlFor={`config-${field.key}`}
-                className="block text-sm font-medium text-slate-700 mb-1.5"
-              >
-                {t(field.key)}
-              </label>
-              <input
-                id={`config-${field.key}`}
-                type="number"
-                min={field.min}
-                max={field.max}
-                value={formValues[field.key]}
-                onChange={(e) => handleFieldChange(field.key, e.target.value)}
-                className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400 focus:border-transparent"
-                dir="ltr"
-              />
-            </div>
+        <div className="mt-5 grid gap-3 lg:grid-cols-4">
+          <PolicySummaryCard
+            label={t("summary.shiftLimits")}
+            value={t("summary.shiftLimitsValue", {
+              min: formValues.minShiftsPerCycle,
+              max: formValues.maxShiftsPerCycle,
+              days: formValues.cycleDurationDays,
+            })}
+          />
+          <PolicySummaryCard
+            label={t("summary.requestWindow")}
+            value={t("summary.requestWindowValue", {
+              open: formValues.requestWindowOpenOffsetHours,
+              close: formValues.requestWindowCloseOffsetHours,
+            })}
+          />
+          <PolicySummaryCard
+            label={t("summary.absence")}
+            value={t("summary.absenceValue", {
+              cutoff: formValues.cancellationCutoffHours,
+              lateWindow: formValues.lateCancellationWindowHours,
+              max: formValues.maxLateCancellationsPerCycle,
+            })}
+          />
+          <PolicySummaryCard
+            label={t("summary.waitlist")}
+            value={t("summary.waitlistValue", { minutes: formValues.waitlistOfferMinutes })}
+          />
+        </div>
+
+        <div className="mt-6 space-y-4">
+          {CONFIG_SECTIONS.map((section) => (
+            <section key={section.key} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+              <div className="mb-4">
+                <h4 className="text-sm font-semibold text-slate-900">
+                  {t(`sections.${section.key}.title`)}
+                </h4>
+                <p className="mt-1 text-xs leading-5 text-slate-500">
+                  {t(`sections.${section.key}.description`)}
+                </p>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                {section.fields.map((field) => (
+                  <div key={field.key} className="rounded-lg border border-slate-200 bg-white p-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <label
+                        htmlFor={`config-${field.key}`}
+                        className="text-sm font-medium text-slate-700"
+                      >
+                        {t(field.key)}
+                      </label>
+                      <span className="shrink-0 rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-xs font-medium text-slate-500">
+                        {t(`units.${field.unit}`)}
+                      </span>
+                    </div>
+                    <p className="mt-1 min-h-10 text-xs leading-5 text-slate-500">
+                      {t(`descriptions.${field.key}`)}
+                    </p>
+                    <input
+                      id={`config-${field.key}`}
+                      type="number"
+                      min={field.min}
+                      max={field.max}
+                      value={formValues[field.key]}
+                      onChange={(e) => handleFieldChange(field.key, e.target.value)}
+                      className="mt-3 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-sky-400"
+                      dir="ltr"
+                    />
+                    <p className="mt-1 text-xs text-slate-400">
+                      {t("range", { min: field.min, max: field.max })}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </section>
           ))}
         </div>
 
@@ -230,6 +315,15 @@ export default function SelfServiceConfigTab({ spaceId, groupId }: SelfServiceCo
           />
         </div>
       </div>
+    </div>
+  );
+}
+
+function PolicySummaryCard({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+      <p className="text-xs font-medium text-slate-500">{label}</p>
+      <p className="mt-1 text-sm font-semibold text-slate-900">{value}</p>
     </div>
   );
 }
