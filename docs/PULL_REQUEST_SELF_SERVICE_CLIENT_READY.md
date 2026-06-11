@@ -30,6 +30,8 @@ packaging, and self-service export/import readiness.
   the special-day Playwright picker flow.
 - Supports `-SkipBrowserTest` for API/seed preflight when the web app is not
   running.
+- Adds AI support fallback coverage for private/local AI endpoint failure and
+  readable localized support actions when AI is disabled.
 
 ## Verification
 
@@ -48,6 +50,8 @@ packaging, and self-service export/import readiness.
   passed locally; live execution still depends on a responsive seeded API/web
   stack.
 - `infra/scripts/validate-customer-env.ps1` parser check passed locally.
+- `dotnet test apps\\api\\Jobuler.Tests\\Jobuler.Tests.csproj --filter FullyQualifiedName~AiAssistantSupportTests`
+  passed: 6 passed, 0 failed.
 
 ## Remaining Product Checks
 
