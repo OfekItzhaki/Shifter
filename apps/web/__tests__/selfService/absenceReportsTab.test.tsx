@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import AbsenceReportsTab from "../../components/groups/selfService/AbsenceReportsTab";
 
 const mockGetAbsenceReports = vi.fn();
+const mockGetAdminShiftRequests = vi.fn();
 const mockGetShiftChangeRequests = vi.fn();
 const mockGetShiftChangeTargetSlots = vi.fn();
 const mockApproveAbsenceReport = vi.fn();
@@ -34,6 +35,7 @@ vi.mock("next-intl", () => ({
       activityKindabsence: "Absence",
       activityKindchange: "Shift change",
       activityKindleave: "Time off",
+      activityKindshift: "Shift",
       statusPending: "Pending",
       statusApproved: "Approved",
       statusRejected: "Rejected",
@@ -63,6 +65,7 @@ vi.mock("next-intl", () => ({
 
 vi.mock("../../lib/api/selfService", () => ({
   getAbsenceReports: (...args: unknown[]) => mockGetAbsenceReports(...args),
+  getAdminShiftRequests: (...args: unknown[]) => mockGetAdminShiftRequests(...args),
   getShiftChangeRequests: (...args: unknown[]) => mockGetShiftChangeRequests(...args),
   getShiftChangeTargetSlots: (...args: unknown[]) => mockGetShiftChangeTargetSlots(...args),
   approveAbsenceReport: (...args: unknown[]) => mockApproveAbsenceReport(...args),
@@ -93,6 +96,9 @@ describe("AbsenceReportsTab", () => {
       makeLeaveRequest("leave-pending", "Pending", "Pending leave reason"),
       makeLeaveRequest("leave-cancelled", "Cancelled", "Cancelled leave reason"),
     ]);
+    mockGetAdminShiftRequests.mockResolvedValue([
+      makeCancelledShiftRequest("shift-cancelled", "Cancelled shift reason"),
+    ]);
 
     render(<AbsenceReportsTab spaceId="space-1" groupId="group-1" />);
 
@@ -106,6 +112,8 @@ describe("AbsenceReportsTab", () => {
     expect(screen.queryByText("Approved absence reason")).not.toBeInTheDocument();
     expect(screen.queryByText("Rejected change reason")).not.toBeInTheDocument();
     expect(screen.queryByText("Cancelled leave reason")).not.toBeInTheDocument();
+    expect(screen.getByText(/Cancelled shift reason/)).toBeInTheDocument();
+    expect(screen.getByText("Shift")).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "All" }));
     expect(screen.getByText("Approved absence reason")).toBeInTheDocument();
@@ -183,5 +191,26 @@ function makeLeaveRequest(id: string, status: "Pending" | "Cancelled", reason: s
     adminNote: null,
     presenceWindowId: null,
     updatedAt: "2026-06-10T09:00:00Z",
+  };
+}
+
+function makeCancelledShiftRequest(id: string, reason: string) {
+  return {
+    id,
+    shiftSlotId: `${id}-slot`,
+    personId: "person-4",
+    personName: "Member Four",
+    groupId: "group-1",
+    schedulingCycleId: "cycle-1",
+    slotDate: "2026-06-15",
+    slotStartTime: "08:00:00",
+    slotEndTime: "16:00:00",
+    taskName: "Lobby",
+    status: "Cancelled",
+    isAdminOverride: false,
+    rejectionReason: null,
+    cancellationReason: reason,
+    cancelledAt: "2026-06-10T10:00:00Z",
+    createdAt: "2026-06-09T08:00:00Z",
   };
 }

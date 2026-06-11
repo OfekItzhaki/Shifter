@@ -408,6 +408,77 @@ public class ShiftRequestsController : ControllerBase
     }
 
     /// <summary>
+    /// List shift requests in this group for admin review/activity surfaces.
+    /// </summary>
+    [HttpGet("admin")]
+    public async Task<IActionResult> ListAdmin(
+        Guid spaceId,
+        Guid groupId,
+        [FromQuery] string? status,
+        [FromQuery] int limit = 50,
+        CancellationToken ct = default)
+    {
+        await _permissions.RequirePermissionAsync(CurrentUserId, spaceId, Permissions.ConstraintsManage, ct);
+
+        ShiftRequestStatus? parsedStatus = null;
+        if (!string.IsNullOrWhiteSpace(status))
+        {
+            if (!Enum.TryParse<ShiftRequestStatus>(status, true, out var nextStatus))
+                return BadRequest(new { error = "Invalid shift request status." });
+
+            parsedStatus = nextStatus;
+        }
+
+        limit = Math.Clamp(limit, 1, 100);
+
+        var query = _db.ShiftRequests
+            .AsNoTracking()
+            .Where(r => r.SpaceId == spaceId && r.GroupId == groupId);
+
+        if (parsedStatus.HasValue)
+            query = query.Where(r => r.Status == parsedStatus.Value);
+
+        var requests = await query
+            .Join(
+                _db.People.AsNoTracking(),
+                r => r.PersonId,
+                p => p.Id,
+                (r, p) => new { Request = r, PersonName = p.DisplayName ?? p.FullName })
+            .Join(
+                _db.ShiftSlots.AsNoTracking(),
+                rp => rp.Request.ShiftSlotId,
+                s => s.Id,
+                (rp, s) => new { rp.Request, rp.PersonName, Slot = s })
+            .Join(
+                _db.GroupTasks.AsNoTracking(),
+                rps => rps.Slot.GroupTaskId,
+                t => t.Id,
+                (rps, t) => new { rps.Request, rps.PersonName, rps.Slot, TaskName = t.Name })
+            .OrderByDescending(x => x.Request.CancelledAt ?? x.Request.CreatedAt)
+            .Take(limit)
+            .Select(x => new AdminShiftRequestResponse(
+                x.Request.Id,
+                x.Request.ShiftSlotId,
+                x.Request.PersonId,
+                x.PersonName,
+                x.Request.GroupId,
+                x.Request.SchedulingCycleId,
+                x.Slot.Date,
+                x.Slot.StartTime,
+                x.Slot.EndTime,
+                x.TaskName,
+                x.Request.Status.ToString(),
+                x.Request.IsAdminOverride,
+                x.Request.RejectionReason,
+                x.Request.CancellationReason,
+                x.Request.CancelledAt,
+                x.Request.CreatedAt))
+            .ToListAsync(ct);
+
+        return Ok(requests);
+    }
+
+    /// <summary>
     /// List the current member's shift requests for a group, optionally filtered by scheduling cycle.
     /// </summary>
     [HttpGet("mine")]
@@ -607,6 +678,24 @@ public record MyShiftRequestsResponse(
 public record ShiftRequestResponse(
     Guid Id,
     Guid ShiftSlotId,
+    DateOnly SlotDate,
+    TimeOnly SlotStartTime,
+    TimeOnly SlotEndTime,
+    string TaskName,
+    string Status,
+    bool IsAdminOverride,
+    string? RejectionReason,
+    string? CancellationReason,
+    DateTime? CancelledAt,
+    DateTime CreatedAt);
+
+public record AdminShiftRequestResponse(
+    Guid Id,
+    Guid ShiftSlotId,
+    Guid PersonId,
+    string PersonName,
+    Guid GroupId,
+    Guid SchedulingCycleId,
     DateOnly SlotDate,
     TimeOnly SlotStartTime,
     TimeOnly SlotEndTime,

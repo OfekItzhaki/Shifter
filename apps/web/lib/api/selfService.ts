@@ -150,6 +150,13 @@ export interface ShiftRequestDto {
   createdAt: string;
 }
 
+export interface AdminShiftRequestDto extends ShiftRequestDto {
+  personId: string;
+  personName: string;
+  groupId: string;
+  schedulingCycleId: string;
+}
+
 export interface MyShiftsResponse {
   requests: ShiftRequestDto[];
   currentShiftCount: number;
@@ -453,6 +460,19 @@ export async function getMyShiftRequests(
   const { data } = await apiClient.get(
     `/spaces/${spaceId}/groups/${groupId}/shift-requests/mine`,
     { params: schedulingCycleId ? { schedulingCycleId } : undefined }
+  );
+  return data;
+}
+
+export async function getAdminShiftRequests(
+  spaceId: string,
+  groupId: string,
+  status?: AdminShiftRequestDto["status"],
+  limit?: number
+): Promise<AdminShiftRequestDto[]> {
+  const { data } = await apiClient.get(
+    `/spaces/${spaceId}/groups/${groupId}/shift-requests/admin`,
+    { params: { ...(status ? { status } : {}), ...(limit ? { limit } : {}) } }
   );
   return data;
 }

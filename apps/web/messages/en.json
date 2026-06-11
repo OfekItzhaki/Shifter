@@ -2256,7 +2256,8 @@
       "activityEmpty": "No reviewed or cancelled requests yet.",
       "activityKindabsence": "Absence",
       "activityKindchange": "Shift change",
-      "activityKindleave": "Time off"
+      "activityKindleave": "Time off",
+      "activityKindshift": "Shift"
     },
     "templates": {
       "title": "Shift Templates",

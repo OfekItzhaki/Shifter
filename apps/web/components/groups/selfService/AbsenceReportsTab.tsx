@@ -10,10 +10,12 @@ import {
 } from "@/lib/api/specialLeave";
 import {
   AbsenceReportDto,
+  AdminShiftRequestDto,
   AvailableSlotDto,
   ShiftChangeRequestDto,
   approveAbsenceReport,
   approveShiftChangeRequest,
+  getAdminShiftRequests,
   getAbsenceReports,
   getShiftChangeRequests,
   getShiftChangeTargetSlots,
@@ -79,7 +81,7 @@ function filterReviewItems<T extends { status: string }>(items: T[], filter: Rev
 
 interface ReviewActivityItem {
   id: string;
-  kind: "absence" | "change" | "leave";
+  kind: "absence" | "change" | "leave" | "shift";
   personName: string;
   status: "Approved" | "Rejected" | "Cancelled";
   summary: string;
@@ -104,6 +106,7 @@ export default function AbsenceReportsTab({ spaceId, groupId, onReviewed }: Prop
   const [reports, setReports] = useState<AbsenceReportDto[]>([]);
   const [changeRequests, setChangeRequests] = useState<ShiftChangeRequestDto[]>([]);
   const [leaveRequests, setLeaveRequests] = useState<SpecialLeaveRequestDto[]>([]);
+  const [cancelledShiftRequests, setCancelledShiftRequests] = useState<AdminShiftRequestDto[]>([]);
   const [changeSlotOptions, setChangeSlotOptions] = useState<AvailableSlotDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -119,15 +122,17 @@ export default function AbsenceReportsTab({ spaceId, groupId, onReviewed }: Prop
     try {
       setLoading(true);
       setError(null);
-      const [absenceRows, changeRows, targetSlots, leaveRows] = await Promise.all([
+      const [absenceRows, changeRows, targetSlots, leaveRows, cancelledRows] = await Promise.all([
         getAbsenceReports(spaceId, groupId),
         getShiftChangeRequests(spaceId, groupId),
         getShiftChangeTargetSlots(spaceId, groupId, "current"),
         getAdminSpecialLeaveRequests(spaceId, undefined, undefined, undefined, groupId),
+        getAdminShiftRequests(spaceId, groupId, "Cancelled", 20),
       ]);
       setReports(absenceRows);
       setChangeRequests(changeRows);
       setLeaveRequests(leaveRows);
+      setCancelledShiftRequests(cancelledRows);
       setChangeSlotOptions(targetSlots);
       setChangeTargetSlots((prev) => {
         const next = { ...prev };
@@ -145,6 +150,7 @@ export default function AbsenceReportsTab({ spaceId, groupId, onReviewed }: Prop
     } catch (err) {
       const { message } = getSelfServiceErrorMessage(err);
       setError(message);
+      setCancelledShiftRequests([]);
     } finally {
       setLoading(false);
     }
@@ -306,6 +312,15 @@ export default function AbsenceReportsTab({ spaceId, groupId, onReviewed }: Prop
         occurredAt: request.processedAt ?? request.updatedAt,
         note: request.adminNote,
       })),
+    ...cancelledShiftRequests.map((request) => ({
+      id: `shift-${request.id}`,
+      kind: "shift" as const,
+      personName: request.personName,
+      status: "Cancelled" as const,
+      summary: `${formatSlotDate(request.slotDate)} | ${formatTime24h(request.slotStartTime)}-${formatTime24h(request.slotEndTime)} | ${request.taskName}`,
+      occurredAt: request.cancelledAt ?? request.createdAt,
+      note: request.cancellationReason,
+    })),
   ]
     .sort((a, b) => new Date(b.occurredAt).getTime() - new Date(a.occurredAt).getTime())
     .slice(0, 5);
