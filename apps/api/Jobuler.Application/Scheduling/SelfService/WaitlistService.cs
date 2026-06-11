@@ -296,15 +296,41 @@ public class WaitlistService : IWaitlistService
             return;
         }
 
-        // Find the next waiting entry by lowest position
-        var nextEntry = await _db.WaitlistEntries
+        // Find the next safe waiting entry by FIFO order.
+        var waitingEntries = await _db.WaitlistEntries
             .Where(e => e.ShiftSlotId == shiftSlotId
                         && e.Status == WaitlistEntryStatus.Waiting)
             .OrderBy(e => e.Position)
-            .FirstOrDefaultAsync(ct);
+            .ToListAsync(ct);
+
+        WaitlistEntry? nextEntry = null;
+        foreach (var entry in waitingEntries)
+        {
+            var assignmentConflict = await ShiftAssignmentSafety.FindApprovedAssignmentConflictAsync(
+                _db,
+                entry.PersonId,
+                slot,
+                ct);
+
+            if (assignmentConflict == ShiftAssignmentConflictKind.None)
+            {
+                nextEntry = entry;
+                break;
+            }
+
+            entry.Remove();
+            _logger.LogInformation(
+                "Removed waitlist entry {WaitlistEntryId} for person {PersonId} on slot {SlotId} during offer cascade. Conflict: {ConflictKind}.",
+                entry.Id, entry.PersonId, shiftSlotId, assignmentConflict);
+        }
 
         if (nextEntry is null)
         {
+            if (waitingEntries.Count > 0)
+            {
+                await _db.SaveChangesAsync(ct);
+            }
+
             _logger.LogDebug(
                 "No waiting members on waitlist for slot {SlotId}. Slot remains open.",
                 shiftSlotId);

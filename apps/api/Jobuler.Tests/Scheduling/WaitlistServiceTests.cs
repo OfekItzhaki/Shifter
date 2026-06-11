@@ -648,6 +648,47 @@ public class WaitlistServiceTests
     }
 
     [Fact]
+    public async Task ProcessSlotReleasedAsync_SkipsUnsafeWaitingMemberAndOffersNextSafeMember()
+    {
+        using var db = CreateDb();
+        var (spaceId, groupId, cycleId, taskId) = SeedBaseData(db);
+        var unsafePerson = Person.Create(spaceId, "Unsafe", linkedUserId: Guid.NewGuid());
+        var safePerson = Person.Create(spaceId, "Safe", linkedUserId: Guid.NewGuid());
+        var shiftDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(2));
+        var existingSlot = CreateSlot(spaceId, groupId, taskId, cycleId, shiftDate, new TimeOnly(10, 0), new TimeOnly(14, 0));
+        var releasedSlot = CreateSlot(spaceId, groupId, taskId, cycleId, shiftDate, new TimeOnly(12, 0), new TimeOnly(16, 0));
+        var existingRequest = ShiftRequest.Create(spaceId, existingSlot.Id, unsafePerson.Id, groupId, cycleId);
+        existingRequest.Approve();
+        existingSlot.IncrementFillCount();
+        var unsafeEntry = WaitlistEntry.Create(spaceId, releasedSlot.Id, unsafePerson.Id, position: 1);
+        var safeEntry = WaitlistEntry.Create(spaceId, releasedSlot.Id, safePerson.Id, position: 2);
+
+        db.People.AddRange(unsafePerson, safePerson);
+        db.ShiftSlots.AddRange(existingSlot, releasedSlot);
+        db.ShiftRequests.Add(existingRequest);
+        db.WaitlistEntries.AddRange(unsafeEntry, safeEntry);
+        await db.SaveChangesAsync();
+
+        var pushSender = Substitute.For<IPushNotificationSender>();
+        var service = CreateService(db, pushSender);
+
+        await service.ProcessSlotReleasedAsync(releasedSlot.Id);
+
+        var updatedUnsafeEntry = await db.WaitlistEntries.SingleAsync(e => e.Id == unsafeEntry.Id);
+        updatedUnsafeEntry.Status.Should().Be(WaitlistEntryStatus.Removed);
+
+        var updatedSafeEntry = await db.WaitlistEntries.SingleAsync(e => e.Id == safeEntry.Id);
+        updatedSafeEntry.Status.Should().Be(WaitlistEntryStatus.Offered);
+        updatedSafeEntry.OfferedAt.Should().NotBeNull();
+        updatedSafeEntry.ExpiresAt.Should().NotBeNull();
+
+        await pushSender.Received(1)
+            .SendPushToUserAsync(safePerson.LinkedUserId!.Value, spaceId, Arg.Any<PushPayload>(), Arg.Any<CancellationToken>());
+        await pushSender.DidNotReceive()
+            .SendPushToUserAsync(unsafePerson.LinkedUserId!.Value, spaceId, Arg.Any<PushPayload>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task ProcessSlotReleasedAsync_UsesConfiguredWaitlistOfferMinutes()
     {
         using var db = CreateDb();
