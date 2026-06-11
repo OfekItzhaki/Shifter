@@ -681,6 +681,13 @@ public class OrganizationPortabilityTests
         var root = document.RootElement;
         root.GetProperty("schemaVersion").GetInt32().Should().Be(1);
         root.GetProperty("manifest").GetProperty("organizationId").GetGuid().Should().Be(organization.Id);
+        var manifestCounts = root.GetProperty("manifest").GetProperty("counts");
+        manifestCounts.GetProperty("shiftAttendanceRecords").GetInt32().Should().Be(1);
+        manifestCounts.GetProperty("shiftAbsenceReports").GetInt32().Should().Be(1);
+        manifestCounts.GetProperty("shiftChangeRequests").GetInt32().Should().Be(1);
+        manifestCounts.GetProperty("waitlistEntries").GetInt32().Should().Be(1);
+        manifestCounts.GetProperty("swapRequests").GetInt32().Should().Be(1);
+        manifestCounts.GetProperty("specialLeaveRequests").GetInt32().Should().Be(1);
 
         var spaces = root.GetProperty("data").GetProperty("spaces").EnumerateArray().ToList();
         spaces.Should().ContainSingle();
@@ -709,6 +716,17 @@ public class OrganizationPortabilityTests
         data.GetProperty("specialLeaveRequests").EnumerateArray().Should().ContainSingle();
         data.GetProperty("notifications").EnumerateArray().Should().ContainSingle();
         data.GetProperty("auditLogs").EnumerateArray().Should().ContainSingle();
+
+        var importValidation = await new ValidateOrganizationImportPackageCommandHandler(CreateDb())
+            .Handle(new ValidateOrganizationImportPackageCommand(
+                System.Text.Encoding.UTF8.GetString(result.Content)), CancellationToken.None);
+        importValidation.IsImportSafe.Should().BeTrue();
+        importValidation.Counts.ShiftAttendanceRecords.Should().Be(1);
+        importValidation.Counts.ShiftAbsenceReports.Should().Be(1);
+        importValidation.Counts.ShiftChangeRequests.Should().Be(1);
+        importValidation.Counts.WaitlistEntries.Should().Be(1);
+        importValidation.Counts.SwapRequests.Should().Be(1);
+        importValidation.Counts.SpecialLeaveRequests.Should().Be(1);
     }
 
     [Fact]
