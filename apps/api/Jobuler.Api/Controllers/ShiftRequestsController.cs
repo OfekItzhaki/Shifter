@@ -305,39 +305,57 @@ public class ShiftRequestsController : ControllerBase
 
         try
         {
-            report.Approve(CurrentUserId, req.AdminNote);
-            await _db.SaveChangesAsync(ct);
-            await _audit.LogAsync(
-                spaceId,
-                CurrentUserId,
-                "self_service.approve_absence_report",
-                "shift_absence_report",
-                report.Id,
-                beforeJson: JsonSerializer.Serialize(new
+            var strategy = _db.Database.CreateExecutionStrategy();
+            var push = await strategy.ExecuteAsync(async () =>
+            {
+                await using var transaction = await _db.Database.BeginTransactionAsync(ct);
+
+                try
                 {
-                    absence_report_id = report.Id,
-                    shift_request_id = report.ShiftRequestId,
-                    person_id = report.PersonId,
-                    group_id = report.GroupId,
-                    scheduling_cycle_id = report.SchedulingCycleId,
-                    shift_slot_id = report.ShiftSlotId,
-                    is_late = report.IsLate,
-                    status = "pending"
-                }),
-                afterJson: JsonSerializer.Serialize(new
+                    report.Approve(CurrentUserId, req.AdminNote);
+                    await _db.SaveChangesAsync(ct);
+                    await _audit.LogAsync(
+                        spaceId,
+                        CurrentUserId,
+                        "self_service.approve_absence_report",
+                        "shift_absence_report",
+                        report.Id,
+                        beforeJson: JsonSerializer.Serialize(new
+                        {
+                            absence_report_id = report.Id,
+                            shift_request_id = report.ShiftRequestId,
+                            person_id = report.PersonId,
+                            group_id = report.GroupId,
+                            scheduling_cycle_id = report.SchedulingCycleId,
+                            shift_slot_id = report.ShiftSlotId,
+                            is_late = report.IsLate,
+                            status = "pending"
+                        }),
+                        afterJson: JsonSerializer.Serialize(new
+                        {
+                            absence_report_id = report.Id,
+                            shift_request_id = report.ShiftRequestId,
+                            person_id = report.PersonId,
+                            group_id = report.GroupId,
+                            scheduling_cycle_id = report.SchedulingCycleId,
+                            shift_slot_id = report.ShiftSlotId,
+                            is_late = report.IsLate,
+                            status = report.Status.ToString().ToLowerInvariant(),
+                            admin_note = report.AdminNote
+                        }),
+                        ct: ct);
+                    var push = await AddAbsenceReviewNotificationAsync(report, approved: true, ct);
+                    await _db.SaveChangesAsync(ct);
+                    await transaction.CommitAsync(ct);
+                    return push;
+                }
+                catch
                 {
-                    absence_report_id = report.Id,
-                    shift_request_id = report.ShiftRequestId,
-                    person_id = report.PersonId,
-                    group_id = report.GroupId,
-                    scheduling_cycle_id = report.SchedulingCycleId,
-                    shift_slot_id = report.ShiftSlotId,
-                    is_late = report.IsLate,
-                    status = report.Status.ToString().ToLowerInvariant(),
-                    admin_note = report.AdminNote
-                }),
-                ct: ct);
-            await SendAbsenceReviewNotificationAsync(report, approved: true, ct);
+                    await transaction.RollbackAsync(ct);
+                    throw;
+                }
+            });
+            await SendAbsenceReviewPushAsync(push, ct);
         }
         catch (InvalidOperationException ex)
         {
@@ -365,39 +383,57 @@ public class ShiftRequestsController : ControllerBase
 
         try
         {
-            report.Reject(CurrentUserId, req.AdminNote);
-            await _db.SaveChangesAsync(ct);
-            await _audit.LogAsync(
-                spaceId,
-                CurrentUserId,
-                "self_service.reject_absence_report",
-                "shift_absence_report",
-                report.Id,
-                beforeJson: JsonSerializer.Serialize(new
+            var strategy = _db.Database.CreateExecutionStrategy();
+            var push = await strategy.ExecuteAsync(async () =>
+            {
+                await using var transaction = await _db.Database.BeginTransactionAsync(ct);
+
+                try
                 {
-                    absence_report_id = report.Id,
-                    shift_request_id = report.ShiftRequestId,
-                    person_id = report.PersonId,
-                    group_id = report.GroupId,
-                    scheduling_cycle_id = report.SchedulingCycleId,
-                    shift_slot_id = report.ShiftSlotId,
-                    is_late = report.IsLate,
-                    status = "pending"
-                }),
-                afterJson: JsonSerializer.Serialize(new
+                    report.Reject(CurrentUserId, req.AdminNote);
+                    await _db.SaveChangesAsync(ct);
+                    await _audit.LogAsync(
+                        spaceId,
+                        CurrentUserId,
+                        "self_service.reject_absence_report",
+                        "shift_absence_report",
+                        report.Id,
+                        beforeJson: JsonSerializer.Serialize(new
+                        {
+                            absence_report_id = report.Id,
+                            shift_request_id = report.ShiftRequestId,
+                            person_id = report.PersonId,
+                            group_id = report.GroupId,
+                            scheduling_cycle_id = report.SchedulingCycleId,
+                            shift_slot_id = report.ShiftSlotId,
+                            is_late = report.IsLate,
+                            status = "pending"
+                        }),
+                        afterJson: JsonSerializer.Serialize(new
+                        {
+                            absence_report_id = report.Id,
+                            shift_request_id = report.ShiftRequestId,
+                            person_id = report.PersonId,
+                            group_id = report.GroupId,
+                            scheduling_cycle_id = report.SchedulingCycleId,
+                            shift_slot_id = report.ShiftSlotId,
+                            is_late = report.IsLate,
+                            status = report.Status.ToString().ToLowerInvariant(),
+                            admin_note = report.AdminNote
+                        }),
+                        ct: ct);
+                    var push = await AddAbsenceReviewNotificationAsync(report, approved: false, ct);
+                    await _db.SaveChangesAsync(ct);
+                    await transaction.CommitAsync(ct);
+                    return push;
+                }
+                catch
                 {
-                    absence_report_id = report.Id,
-                    shift_request_id = report.ShiftRequestId,
-                    person_id = report.PersonId,
-                    group_id = report.GroupId,
-                    scheduling_cycle_id = report.SchedulingCycleId,
-                    shift_slot_id = report.ShiftSlotId,
-                    is_late = report.IsLate,
-                    status = report.Status.ToString().ToLowerInvariant(),
-                    admin_note = report.AdminNote
-                }),
-                ct: ct);
-            await SendAbsenceReviewNotificationAsync(report, approved: false, ct);
+                    await transaction.RollbackAsync(ct);
+                    throw;
+                }
+            });
+            await SendAbsenceReviewPushAsync(push, ct);
         }
         catch (InvalidOperationException ex)
         {
@@ -608,7 +644,7 @@ public class ShiftRequestsController : ControllerBase
             detail: detail,
             typeSlug: "shift-absence-rejected");
 
-    private async Task SendAbsenceReviewNotificationAsync(
+    private async Task<AbsenceReviewPush?> AddAbsenceReviewNotificationAsync(
         ShiftAbsenceReport report,
         bool approved,
         CancellationToken ct)
@@ -629,7 +665,7 @@ public class ShiftRequestsController : ControllerBase
             .FirstOrDefaultAsync(ct);
 
         if (detail?.LinkedUserId is null)
-            return;
+            return null;
 
         var title = approved ? "Absence Report Approved" : "Absence Report Rejected";
         var body = approved
@@ -656,14 +692,23 @@ public class ShiftRequestsController : ControllerBase
                 reviewedAt = report.ReviewedAt
             })));
 
-        await _db.SaveChangesAsync(ct);
+        return new AbsenceReviewPush(
+            detail.LinkedUserId.Value,
+            report.SpaceId,
+            new PushPayload(title, body, "/favicon.jpeg", "/shifts"));
+    }
+
+    private async Task SendAbsenceReviewPushAsync(AbsenceReviewPush? push, CancellationToken ct)
+    {
+        if (push is null)
+            return;
 
         try
         {
             await _pushSender.SendPushToUserAsync(
-                detail.LinkedUserId.Value,
-                report.SpaceId,
-                new PushPayload(title, body, "/favicon.jpeg", "/shifts"),
+                push.UserId,
+                push.SpaceId,
+                push.Payload,
                 ct);
         }
         catch
@@ -671,6 +716,8 @@ public class ShiftRequestsController : ControllerBase
             // In-app notification is the source of truth; push failures must not affect review.
         }
     }
+
+    private sealed record AbsenceReviewPush(Guid UserId, Guid SpaceId, PushPayload Payload);
 }
 
 // --- Request DTOs ---

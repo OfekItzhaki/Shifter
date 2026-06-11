@@ -1770,6 +1770,70 @@ public class SelfServiceScopeTests
     }
 
     [Fact]
+    public async Task ApproveAbsenceReport_AuditFailure_DoesNotNotifyMemberOrPush()
+    {
+        using var db = CreateDb();
+        var services = CreateControllerServices(audit: CreateFailingAuditLogger());
+        var spaceId = Guid.NewGuid();
+        var group = Group.Create(spaceId, null, "Route Group");
+        var userId = Guid.NewGuid();
+        var adminUserId = Guid.NewGuid();
+        var ownerUserId = Guid.NewGuid();
+        var person = Person.Create(spaceId, "Member", linkedUserId: userId);
+        var cycle = CreateCycle(spaceId, group.Id);
+        var task = CreateTask(spaceId, group.Id, "Task", ownerUserId);
+        var slot = CreateSlot(spaceId, group.Id, task.Id, cycle.Id, daysFromNow: 2);
+        var shiftRequest = ShiftRequest.Create(spaceId, slot.Id, person.Id, group.Id, cycle.Id);
+        shiftRequest.Approve();
+        var report = ShiftAbsenceReport.Create(
+            spaceId,
+            group.Id,
+            cycle.Id,
+            shiftRequest.Id,
+            slot.Id,
+            person.Id,
+            "Sick",
+            isLate: true,
+            DateTime.UtcNow);
+
+        db.People.Add(person);
+        db.Groups.Add(group);
+        db.GroupMemberships.Add(GroupMembership.Create(spaceId, group.Id, person.Id));
+        db.SchedulingCycles.Add(cycle);
+        db.GroupTasks.Add(task);
+        db.ShiftSlots.Add(slot);
+        db.ShiftRequests.Add(shiftRequest);
+        db.ShiftAbsenceReports.Add(report);
+        await db.SaveChangesAsync();
+
+        services.Permissions
+            .RequirePermissionAsync(adminUserId, spaceId, Permissions.ConstraintsManage, Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+
+        var controller = new ShiftRequestsController(
+            services.Mediator,
+            services.Permissions,
+            services.ShiftRequestService,
+            services.PushSender,
+            services.Audit,
+            db);
+        controller.ControllerContext = CreateControllerContext(adminUserId);
+
+        var result = await controller.ApproveAbsenceReport(
+            spaceId,
+            group.Id,
+            report.Id,
+            new ReviewAbsenceReportRequest("Accepted"),
+            CancellationToken.None);
+
+        var problem = result.Should().BeAssignableTo<ObjectResult>().Subject;
+        problem.StatusCode.Should().Be(StatusCodes.Status422UnprocessableEntity);
+        (await db.Notifications.CountAsync(n => n.EventType == "self_service.absence_approved")).Should().Be(0);
+        await services.PushSender.DidNotReceiveWithAnyArgs()
+            .SendPushToUserAsync(default, default, default!, default);
+    }
+
+    [Fact]
     public async Task RejectAbsenceReport_AuditsReviewAndNotifiesMember_WhenPendingReportIsRejected()
     {
         using var db = CreateDb();
@@ -1856,6 +1920,70 @@ public class SelfServiceScopeTests
                 && json.Contains("\"admin_note\":\"Need documentation\"")),
             Arg.Is<string?>(ipAddress => ipAddress == null),
             Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task RejectAbsenceReport_AuditFailure_DoesNotNotifyMemberOrPush()
+    {
+        using var db = CreateDb();
+        var services = CreateControllerServices(audit: CreateFailingAuditLogger());
+        var spaceId = Guid.NewGuid();
+        var group = Group.Create(spaceId, null, "Route Group");
+        var userId = Guid.NewGuid();
+        var adminUserId = Guid.NewGuid();
+        var ownerUserId = Guid.NewGuid();
+        var person = Person.Create(spaceId, "Member", linkedUserId: userId);
+        var cycle = CreateCycle(spaceId, group.Id);
+        var task = CreateTask(spaceId, group.Id, "Task", ownerUserId);
+        var slot = CreateSlot(spaceId, group.Id, task.Id, cycle.Id, daysFromNow: 2);
+        var shiftRequest = ShiftRequest.Create(spaceId, slot.Id, person.Id, group.Id, cycle.Id);
+        shiftRequest.Approve();
+        var report = ShiftAbsenceReport.Create(
+            spaceId,
+            group.Id,
+            cycle.Id,
+            shiftRequest.Id,
+            slot.Id,
+            person.Id,
+            "Sick",
+            isLate: true,
+            DateTime.UtcNow);
+
+        db.People.Add(person);
+        db.Groups.Add(group);
+        db.GroupMemberships.Add(GroupMembership.Create(spaceId, group.Id, person.Id));
+        db.SchedulingCycles.Add(cycle);
+        db.GroupTasks.Add(task);
+        db.ShiftSlots.Add(slot);
+        db.ShiftRequests.Add(shiftRequest);
+        db.ShiftAbsenceReports.Add(report);
+        await db.SaveChangesAsync();
+
+        services.Permissions
+            .RequirePermissionAsync(adminUserId, spaceId, Permissions.ConstraintsManage, Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+
+        var controller = new ShiftRequestsController(
+            services.Mediator,
+            services.Permissions,
+            services.ShiftRequestService,
+            services.PushSender,
+            services.Audit,
+            db);
+        controller.ControllerContext = CreateControllerContext(adminUserId);
+
+        var result = await controller.RejectAbsenceReport(
+            spaceId,
+            group.Id,
+            report.Id,
+            new ReviewAbsenceReportRequest("Need documentation"),
+            CancellationToken.None);
+
+        var problem = result.Should().BeAssignableTo<ObjectResult>().Subject;
+        problem.StatusCode.Should().Be(StatusCodes.Status422UnprocessableEntity);
+        (await db.Notifications.CountAsync(n => n.EventType == "self_service.absence_rejected")).Should().Be(0);
+        await services.PushSender.DidNotReceiveWithAnyArgs()
+            .SendPushToUserAsync(default, default, default!, default);
     }
 
     [Fact]
