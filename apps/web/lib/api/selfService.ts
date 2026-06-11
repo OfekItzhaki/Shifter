@@ -138,6 +138,7 @@ export interface ShiftSlotAssignmentDto {
 export interface ShiftRequestDto {
   id: string;
   shiftSlotId: string;
+  schedulingCycleId: string;
   slotDate: string;
   slotStartTime: string;
   slotEndTime: string;

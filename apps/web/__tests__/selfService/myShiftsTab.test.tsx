@@ -154,6 +154,7 @@ describe("MyShiftsTab", () => {
         {
           id: "request-1",
           shiftSlotId: "slot-1",
+          schedulingCycleId: "cycle-1",
           slotDate: formatLocalDate(lateShiftStart),
           slotStartTime: formatLocalTime(lateShiftStart),
           slotEndTime: formatLocalTime(lateShiftEnd),
@@ -243,6 +244,9 @@ describe("MyShiftsTab", () => {
     render(<MyShiftsTab spaceId="space-1" groupId="group-1" />);
 
     fireEvent.click(await screen.findByRole("button", { name: "Request change" }));
+    await waitFor(() => {
+      expect(mockGetAvailableSlots).toHaveBeenCalledWith("space-1", "group-1", "cycle-1");
+    });
     fireEvent.change(screen.getByPlaceholderText("Why do you need to change this shift?"), {
       target: { value: "Need a different shift time" },
     });
@@ -269,6 +273,7 @@ describe("MyShiftsTab", () => {
         {
           id: "request-2",
           shiftSlotId: "slot-2",
+          schedulingCycleId: "cycle-2",
           slotDate: formatLocalDate(futureShiftStart),
           slotStartTime: formatLocalTime(futureShiftStart),
           slotEndTime: formatLocalTime(futureShiftEnd),
@@ -320,6 +325,7 @@ describe("MyShiftsTab", () => {
         {
           id: "request-window-open",
           shiftSlotId: "slot-window-open",
+          schedulingCycleId: "cycle-window-open",
           slotDate: formatLocalDate(soonShiftStart),
           slotStartTime: formatLocalTime(soonShiftStart),
           slotEndTime: formatLocalTime(soonShiftEnd),
@@ -374,6 +380,7 @@ describe("MyShiftsTab", () => {
         {
           id: "request-3",
           shiftSlotId: "slot-3",
+          schedulingCycleId: "cycle-3",
           slotDate: formatLocalDate(shiftStart),
           slotStartTime: formatLocalTime(shiftStart),
           slotEndTime: formatLocalTime(shiftEnd),

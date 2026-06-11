@@ -332,7 +332,7 @@ export default function MyShiftsTab({ spaceId, groupId, onNavigate }: MyShiftsTa
     setChangeSlotsLoading(true);
 
     try {
-      const slots = await getAvailableSlots(spaceId, groupId, "current");
+      const slots = await getAvailableSlots(spaceId, groupId, request.schedulingCycleId);
       setChangeSlotOptions(
         slots.slots.filter(
           (slot) => slot.id !== request.shiftSlotId && slot.currentFillCount < slot.capacity

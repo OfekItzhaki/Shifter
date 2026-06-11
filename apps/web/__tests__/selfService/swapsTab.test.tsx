@@ -251,6 +251,7 @@ function baseShift(): ShiftRequestDto {
   return {
     id: "shift-1",
     shiftSlotId: "slot-1",
+    schedulingCycleId: "cycle-1",
     slotDate: "2099-01-01",
     slotStartTime: "08:00:00",
     slotEndTime: "16:00:00",

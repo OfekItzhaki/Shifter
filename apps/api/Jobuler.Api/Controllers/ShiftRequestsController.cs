@@ -522,6 +522,7 @@ public class ShiftRequestsController : ControllerBase
             result.Select(r => new ShiftRequestResponse(
                 r.Id,
                 r.ShiftSlotId,
+                r.SchedulingCycleId,
                 r.Date,
                 r.StartTime,
                 r.EndTime,
@@ -698,6 +699,7 @@ public record MyShiftRequestsResponse(
 public record ShiftRequestResponse(
     Guid Id,
     Guid ShiftSlotId,
+    Guid SchedulingCycleId,
     DateOnly SlotDate,
     TimeOnly SlotStartTime,
     TimeOnly SlotEndTime,
