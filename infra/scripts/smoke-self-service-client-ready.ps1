@@ -80,9 +80,6 @@ function Login {
 Write-Step "Checking API health at $ApiBaseUrl"
 Assert-HttpOk "$ApiBaseUrl/health"
 
-Write-Step "Checking web app at $WebBaseUrl"
-Assert-HttpOk $WebBaseUrl
-
 Write-Step "Checking seeded demo users"
 $adminToken = Login $AdminEmail
 $memberToken = Login $MemberEmail
@@ -116,6 +113,9 @@ if (-not $slots.slots -or @($slots.slots).Count -eq 0) {
 Write-Host "Seed smoke passed: $($space.name) / $($group.name), cycle $($status.cycleId), available slots $(@($slots.slots).Count)." -ForegroundColor Green
 
 if (-not $SkipBrowserTest) {
+    Write-Step "Checking web app at $WebBaseUrl"
+    Assert-HttpOk $WebBaseUrl
+
     Write-Step "Running special-day browser label flow"
     Push-Location $webDir
     try {
