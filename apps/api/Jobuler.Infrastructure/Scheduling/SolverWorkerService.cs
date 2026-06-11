@@ -573,7 +573,7 @@ public class SolverWorkerService : BackgroundService
                 detailsJson: summaryJson, actorUserId: job.RequestedByUserId, ct: ct);
 
             // In-app notification — locale-aware
-            var locale = input.Locale ?? "en";
+            var locale = input?.Locale ?? "en";
             string notifTitle, notifBody;
 
             if (!shouldDiscard)

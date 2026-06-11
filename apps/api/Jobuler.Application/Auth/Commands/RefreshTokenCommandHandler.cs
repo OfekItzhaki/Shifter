@@ -41,18 +41,18 @@ public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, L
         if (existing.IsRevoked)
         {
             var gracePeriod = TimeSpan.FromSeconds(30);
-            var revokedRecently = existing.RevokedAt.HasValue
-                && (DateTime.UtcNow - existing.RevokedAt.Value) < gracePeriod;
-
-            if (!revokedRecently)
+            if (existing.RevokedAt is not { } revokedAt
+                || (DateTime.UtcNow - revokedAt) >= gracePeriod)
+            {
                 throw new UnauthorizedAccessException("Invalid or expired refresh token.");
+            }
 
             // Find the replacement token that was created around the same time
             var replacement = await _db.RefreshTokens
                 .Include(t => t.User)
                 .Where(t => t.UserId == existing.UserId
-                    && t.CreatedAt >= existing.RevokedAt.Value.AddSeconds(-2)
-                    && t.CreatedAt <= existing.RevokedAt.Value.AddSeconds(2)
+                    && t.CreatedAt >= revokedAt.AddSeconds(-2)
+                    && t.CreatedAt <= revokedAt.AddSeconds(2)
                     && t.TokenHash != existing.TokenHash
                     && t.RevokedAt == null)
                 .OrderByDescending(t => t.CreatedAt)
