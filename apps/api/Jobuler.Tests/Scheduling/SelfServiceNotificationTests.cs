@@ -88,6 +88,48 @@ public class SelfServiceNotificationTests
     }
 
     [Fact]
+    public async Task ReportCannotAttendAsync_RejectsWhenRequestSlotMetadataDoesNotMatch()
+    {
+        using var db = CreateDb();
+        var notifications = Substitute.For<INotificationService>();
+        var audit = CreateAuditLogger();
+        var (spaceId, groupId, cycleId, taskId, _) = SeedBaseData(db);
+        var otherCycle = AddCycle(db, spaceId, groupId, daysFromNow: 9);
+
+        var person = Person.Create(spaceId, "Alex Member", linkedUserId: Guid.NewGuid());
+        var slot = AddSlot(db, spaceId, groupId, taskId, cycleId, daysFromNow: 2);
+        slot.IncrementFillCount();
+
+        var request = ShiftRequest.Create(spaceId, slot.Id, person.Id, groupId, otherCycle.Id);
+        request.Approve();
+
+        db.People.Add(person);
+        db.ShiftRequests.Add(request);
+        await db.SaveChangesAsync();
+
+        var service = new ShiftRequestService(
+            db,
+            Substitute.For<ISlotLockService>(),
+            TimeProvider.System,
+            NullLogger<ShiftRequestService>.Instance,
+            notifications,
+            Substitute.For<IPushNotificationSender>(),
+            audit);
+
+        var result = await service.ReportCannotAttendAsync(person.Id, request.Id, "Sick");
+
+        result.Success.Should().BeFalse();
+        result.ErrorMessage.Should().Be("Shift request metadata no longer matches its assigned slot.");
+        (await db.ShiftRequests.SingleAsync(r => r.Id == request.Id)).Status.Should().Be(ShiftRequestStatus.Approved);
+        (await db.ShiftSlots.SingleAsync(s => s.Id == slot.Id)).CurrentFillCount.Should().Be(1);
+        (await db.ShiftAbsenceReports.CountAsync()).Should().Be(0);
+        await audit.DidNotReceiveWithAnyArgs()
+            .LogAsync(default, default, default!, default, default, default, default, default, default);
+        await notifications.DidNotReceiveWithAnyArgs()
+            .NotifySpaceAdminsAsync(default, default!, default!, default!, default!, default, default);
+    }
+
+    [Fact]
     public async Task ReportCannotAttendAsync_EnforcesLateAbsenceLimit_ExcludingRejectedReports()
     {
         using var db = CreateDb();
@@ -225,6 +267,53 @@ public class SelfServiceNotificationTests
                 && json.Contains("\"cancellation_reason\":\"Family issue\"")),
             Arg.Is<string?>(ipAddress => ipAddress == null),
             Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task CancelRequestAsync_RejectsWhenRequestSlotMetadataDoesNotMatch()
+    {
+        using var db = CreateDb();
+        var notifications = Substitute.For<INotificationService>();
+        var audit = CreateAuditLogger();
+        var waitlistService = Substitute.For<IWaitlistService>();
+        var (spaceId, groupId, cycleId, taskId, _) = SeedBaseData(db);
+        var otherCycle = AddCycle(db, spaceId, groupId, daysFromNow: 9);
+
+        var person = Person.Create(spaceId, "Alex Member", linkedUserId: Guid.NewGuid());
+        var slot = AddSlot(db, spaceId, groupId, taskId, cycleId, daysFromNow: 2);
+        slot.IncrementFillCount();
+
+        var request = ShiftRequest.Create(spaceId, slot.Id, person.Id, groupId, otherCycle.Id);
+        request.Approve();
+
+        db.People.Add(person);
+        db.ShiftRequests.Add(request);
+        await db.SaveChangesAsync();
+
+        var service = new ShiftRequestService(
+            db,
+            Substitute.For<ISlotLockService>(),
+            TimeProvider.System,
+            NullLogger<ShiftRequestService>.Instance,
+            notifications,
+            Substitute.For<IPushNotificationSender>(),
+            audit,
+            waitlistService);
+
+        var result = await service.CancelRequestAsync(person.Id, request.Id, "Family issue");
+
+        result.Success.Should().BeFalse();
+        result.ErrorMessage.Should().Be("Shift request metadata no longer matches its assigned slot.");
+        var updatedRequest = await db.ShiftRequests.SingleAsync(r => r.Id == request.Id);
+        updatedRequest.Status.Should().Be(ShiftRequestStatus.Approved);
+        updatedRequest.CancelledAt.Should().BeNull();
+        (await db.ShiftSlots.SingleAsync(s => s.Id == slot.Id)).CurrentFillCount.Should().Be(1);
+        await audit.DidNotReceiveWithAnyArgs()
+            .LogAsync(default, default, default!, default, default, default, default, default, default);
+        await notifications.DidNotReceiveWithAnyArgs()
+            .NotifySpaceAdminsAsync(default, default!, default!, default!, default!, default, default);
+        await waitlistService.DidNotReceiveWithAnyArgs()
+            .ProcessSlotReleasedAsync(default, default);
     }
 
     [Fact]

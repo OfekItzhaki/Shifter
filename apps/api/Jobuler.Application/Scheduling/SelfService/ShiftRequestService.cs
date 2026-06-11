@@ -274,6 +274,14 @@ public class ShiftRequestService : IShiftRequestService
                         ErrorMessage: "The associated shift slot could not be found.");
                 }
 
+                if (!SlotMatchesRequest(shiftRequest, slot))
+                {
+                    await transaction.RollbackAsync(ct);
+                    return new CancellationResult(
+                        Success: false,
+                        ErrorMessage: "Shift request metadata no longer matches its assigned slot.");
+                }
+
                 // Load the scheduling cycle to check if request window is closed
                 var cycle = await _db.SchedulingCycles
                     .AsNoTracking()
@@ -462,6 +470,12 @@ public class ShiftRequestService : IShiftRequestService
                     return new AbsenceReportResult(false, null, false, 0, 0, "The associated shift slot could not be found.");
                 }
 
+                if (!SlotMatchesRequest(shiftRequest, slot))
+                {
+                    await transaction.RollbackAsync(ct);
+                    return new AbsenceReportResult(false, null, false, 0, 0, "Shift request metadata no longer matches its assigned slot.");
+                }
+
                 var actorUserId = await _db.People
                     .AsNoTracking()
                     .Where(p => p.Id == personId && p.SpaceId == shiftRequest.SpaceId)
@@ -594,6 +608,11 @@ public class ShiftRequestService : IShiftRequestService
             }
         });
     }
+
+    private static bool SlotMatchesRequest(ShiftRequest request, ShiftSlot slot) =>
+        request.SpaceId == slot.SpaceId
+        && request.GroupId == slot.GroupId
+        && request.SchedulingCycleId == slot.SchedulingCycleId;
 
     /// <summary>
     /// Returns up to 5 alternative available slots for the same day as the target slot.
