@@ -49,10 +49,12 @@ holiday-calendar and portable-space-isolation branches.
 
 Recent branch verification included:
 
-- `npm run build`
-- `npm run lint`
-- `npx playwright test e2e/self-service.browser.spec.ts --list`
-- targeted backend tests for changed self-service behavior
+- `pnpm --dir apps/web run build`
+- `pnpm --dir apps/web run lint` - passes with 89 existing warnings and 0 errors
+- `pnpm --dir apps/web exec playwright test e2e/self-service.browser.spec.ts --list`
+  - 13 self-service browser lifecycle tests discovered
+- `dotnet test Jobuler.sln --filter "FullyQualifiedName~SelfService|FullyQualifiedName~Waitlist|FullyQualifiedName~SpecialLeave|FullyQualifiedName~ShiftChange|FullyQualifiedName~ShiftSwap"`
+  - 204 targeted backend tests passed
 
 Note: frontend lint currently passes with the existing warning backlog.
 
