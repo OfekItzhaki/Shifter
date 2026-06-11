@@ -129,6 +129,13 @@ function countExpiringWaitlistOffers(entries: AdminWaitlistEntryDto[]): number {
   }).length;
 }
 
+function formatSlotDate(value: string): string {
+  return new Intl.DateTimeFormat(undefined, {
+    month: "short",
+    day: "numeric",
+  }).format(new Date(value));
+}
+
 export default function SelfServiceOperationsTab({
   spaceId,
   groupId,
@@ -216,6 +223,7 @@ export default function SelfServiceOperationsTab({
         },
       ].filter((signal) => signal.count > 0)
     : [];
+  const priorityUnderfilledSlots = status?.underfilledSlots.slice(0, 3) ?? [];
 
   return (
     <div className="space-y-5">
@@ -538,42 +546,87 @@ export default function SelfServiceOperationsTab({
             {t("priority.empty")}
           </p>
         ) : (
-          <div className="mt-4 grid gap-3 lg:grid-cols-3">
-            {prioritySignals.map((signal) => (
-              <button
-                key={signal.key}
-                type="button"
-                onClick={() => onNavigate(signal.target)}
-                className={`rounded-lg border px-4 py-3 text-left transition-colors focus:outline-none focus:ring-2 focus:ring-sky-400 ${
-                  signal.tone === "danger"
-                    ? "border-red-200 bg-red-50 hover:border-red-300 hover:bg-red-100"
-                    : "border-amber-200 bg-amber-50 hover:border-amber-300 hover:bg-amber-100"
-                }`}
-              >
-                <span className="flex items-start justify-between gap-3">
-                  <span className="text-sm font-semibold text-slate-900">
-                    {t(`priority.signals.${signal.key}.title`)}
-                  </span>
-                  <span className={`shrink-0 rounded-full border bg-white px-2 py-0.5 text-xs font-medium ${
+          <>
+            <div className="mt-4 grid gap-3 lg:grid-cols-3">
+              {prioritySignals.map((signal) => (
+                <button
+                  key={signal.key}
+                  type="button"
+                  onClick={() => onNavigate(signal.target)}
+                  className={`rounded-lg border px-4 py-3 text-left transition-colors focus:outline-none focus:ring-2 focus:ring-sky-400 ${
                     signal.tone === "danger"
-                      ? "border-red-200 text-red-700"
-                      : "border-amber-300 text-amber-800"
-                  }`}>
-                    {signal.count}
+                      ? "border-red-200 bg-red-50 hover:border-red-300 hover:bg-red-100"
+                      : "border-amber-200 bg-amber-50 hover:border-amber-300 hover:bg-amber-100"
+                  }`}
+                >
+                  <span className="flex items-start justify-between gap-3">
+                    <span className="text-sm font-semibold text-slate-900">
+                      {t(`priority.signals.${signal.key}.title`)}
+                    </span>
+                    <span className={`shrink-0 rounded-full border bg-white px-2 py-0.5 text-xs font-medium ${
+                      signal.tone === "danger"
+                        ? "border-red-200 text-red-700"
+                        : "border-amber-300 text-amber-800"
+                    }`}>
+                      {signal.count}
+                    </span>
                   </span>
-                </span>
-                <span className="mt-1 block text-xs leading-5 text-slate-600">
-                  {t(`priority.signals.${signal.key}.description`, {
-                    count: signal.count,
-                    minutes: WAITLIST_EXPIRY_WARNING_MINUTES,
-                  })}
-                </span>
-                <span className="mt-2 block text-xs font-medium text-sky-700">
-                  {t("priority.open")}
-                </span>
-              </button>
-            ))}
-          </div>
+                  <span className="mt-1 block text-xs leading-5 text-slate-600">
+                    {t(`priority.signals.${signal.key}.description`, {
+                      count: signal.count,
+                      minutes: WAITLIST_EXPIRY_WARNING_MINUTES,
+                    })}
+                  </span>
+                  <span className="mt-2 block text-xs font-medium text-sky-700">
+                    {t("priority.open")}
+                  </span>
+                </button>
+              ))}
+            </div>
+
+            {priorityUnderfilledSlots.length > 0 && (
+              <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50/70 p-4">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <h4 className="text-sm font-semibold text-amber-950">{t("priority.underfilledList.title")}</h4>
+                    <p className="text-xs leading-5 text-amber-800">
+                      {t("priority.underfilledList.description", { count: priorityUnderfilledSlots.length })}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => onNavigate("admin-overrides")}
+                    className="inline-flex w-fit rounded-lg border border-amber-300 bg-white px-3 py-1.5 text-xs font-semibold text-amber-900 transition hover:bg-amber-100 focus:outline-none focus:ring-2 focus:ring-amber-300"
+                  >
+                    {t("priority.underfilledList.openOverrides")}
+                  </button>
+                </div>
+                <div className="mt-3 grid gap-2 lg:grid-cols-3">
+                  {priorityUnderfilledSlots.map((slot) => (
+                    <button
+                      key={slot.shiftSlotId}
+                      type="button"
+                      onClick={() => onNavigate("admin-overrides")}
+                      className="flex items-center justify-between gap-3 rounded-md border border-amber-200 bg-white px-3 py-2 text-left transition hover:border-amber-300 hover:bg-amber-50 focus:outline-none focus:ring-2 focus:ring-amber-300"
+                    >
+                      <span className="min-w-0">
+                        <span className="block truncate text-sm font-semibold text-slate-900">{slot.taskName}</span>
+                        <span className="block text-xs text-slate-500">
+                          {formatSlotDate(slot.date)} | {slot.startTime}-{slot.endTime}
+                        </span>
+                      </span>
+                      <span className="shrink-0 text-right">
+                        <span className="block text-sm font-semibold text-amber-800">
+                          {t("priority.underfilledList.openSeats", { count: slot.openSeats })}
+                        </span>
+                        <span className="block text-xs text-slate-500">{slot.currentFillCount}/{slot.capacity}</span>
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
         )}
       </div>
 

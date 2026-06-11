@@ -2575,6 +2575,12 @@
         "clear": "No urgent signals",
         "empty": "Nothing urgent right now. Continue monitoring coverage and review queues.",
         "open": "Open queue",
+        "underfilledList": {
+          "title": "Coverage gaps to fix first",
+          "description": "Showing the next {count} under-filled slot(s).",
+          "openOverrides": "Open manual overrides",
+          "openSeats": "{count} open"
+        },
         "signals": {
           "lateReports": {
             "title": "Late absence reports",

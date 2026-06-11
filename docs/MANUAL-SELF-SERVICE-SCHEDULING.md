@@ -44,7 +44,7 @@ when the organization accepts an admin-operated review queue:
 | Members swap shifts | Supported through member-to-member swap requests with ownership and schedule-safety checks. |
 | Members request planned time off | Supported through special leave requests and admin review. |
 | Admin fills gaps manually | Supported through admin assignment/removal overrides. Overrides can exceed capacity when needed, but still reject started/closed slots, duplicate assignments, overlap conflicts, and rest-window violations. |
-| Admin sees the operating state | Supported through operations status, closeout summary, attendance/no-show counts, underfilled slots, review counts, waitlist/admin queues, and manual assignment tools. |
+| Admin sees the operating state | Supported through operations status, prioritized underfilled-slot gaps, closeout summary, attendance/no-show counts, review counts, waitlist/admin queues, and manual assignment tools. |
 | Customer-hosted/no-AI use | Supported. Manual self-service does not require hosted AI. |
 
 This is not yet a fully autonomous scheduling product. Admins still need to
@@ -105,6 +105,7 @@ The strongest manager entry point is the self-service group operations tab.
 - Generate the next cycle and verify total capacity.
 - Open the request window.
 - Watch the operations tab for underfilled slots and review queue counts.
+- Use the priority coverage gaps to handle the nearest underfilled slots first.
 
 ### While Members Are Picking Shifts
 
@@ -249,6 +250,5 @@ large deployments:
   right customer-specific limits instead of the built-in defaults.
 - Signed/PDF closeout reports. The current closeout summary and CSV export
   support archiving, but they do not yet produce a signed PDF report.
-- Manager decision support for which underfilled slots should be handled first.
 - Provider health checks for email, push, and optional AI in customer-hosted
   installs.

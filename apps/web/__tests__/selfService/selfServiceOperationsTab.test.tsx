@@ -63,6 +63,10 @@ vi.mock("next-intl", () => ({
       "priority.clear": "No urgent signals",
       "priority.empty": "Nothing urgent right now.",
       "priority.open": "Open queue",
+      "priority.underfilledList.title": "Coverage gaps to fix first",
+      "priority.underfilledList.description": `Showing the next ${values?.count ?? 0} under-filled slot(s).`,
+      "priority.underfilledList.openOverrides": "Open manual overrides",
+      "priority.underfilledList.openSeats": `${values?.count ?? 0} open`,
       "priority.signals.lateReports.title": "Late absence reports",
       "priority.signals.lateReports.description": `${values?.count ?? 0} late report(s) need review.`,
       "priority.signals.expiringWaitlist.title": "Expiring waitlist offers",
@@ -282,6 +286,10 @@ describe("SelfServiceOperationsTab", () => {
     expect(screen.getByText("Expiring waitlist offers")).toBeInTheDocument();
     expect(screen.getByText("Pending peer swaps")).toBeInTheDocument();
     expect(screen.getByText("Under-filled slots")).toBeInTheDocument();
+    expect(screen.getByText("Coverage gaps to fix first")).toBeInTheDocument();
+    expect(screen.getByText("Showing the next 1 under-filled slot(s).")).toBeInTheDocument();
+    expect(screen.getByText("Front desk")).toBeInTheDocument();
+    expect(screen.getByText("1 open")).toBeInTheDocument();
     expect(screen.getByText("Review breakdown")).toBeInTheDocument();
     expect(screen.getByText("2 absence report(s) waiting.")).toBeInTheDocument();
     expect(screen.getByText("3 shift-change request(s) waiting.")).toBeInTheDocument();
@@ -336,6 +344,12 @@ describe("SelfServiceOperationsTab", () => {
 
     await waitFor(() => {
       expect(onNavigate).toHaveBeenCalledWith("swaps");
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: /Open manual overrides/i }));
+
+    await waitFor(() => {
+      expect(onNavigate).toHaveBeenCalledWith("admin-overrides");
     });
 
     fireEvent.click(screen.getByTestId("cycle-control-panel"));
