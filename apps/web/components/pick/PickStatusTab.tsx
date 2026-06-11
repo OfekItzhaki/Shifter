@@ -39,6 +39,14 @@ interface StatusData {
   specialLeave: SpecialLeaveRequestDto[];
 }
 
+interface PriorityAction {
+  title: string;
+  description: string;
+  target: PickerTab | null;
+  button: string | null;
+  tone: "default" | "warning" | "danger" | "success";
+}
+
 export default function PickStatusTab({ spaceId, groupId, onNavigate }: PickStatusTabProps) {
   const t = useTranslations("pick.status");
   const [data, setData] = useState<StatusData | null>(null);
@@ -110,9 +118,56 @@ export default function PickStatusTab({ spaceId, groupId, onNavigate }: PickStat
 
   const isUnderMinimum = data.shifts.currentShiftCount < data.shifts.minShiftsPerCycle;
   const openSlots = Math.max(data.shifts.maxShiftsPerCycle - data.shifts.currentShiftCount, 0);
+  const pendingReviewCount = summary.pendingChanges.length
+    + summary.pendingAbsences.length
+    + summary.pendingSpecialLeave.length;
+  const priorityAction: PriorityAction = summary.offeredWaitlist.length > 0
+    ? {
+        title: t("priority.waitlistOffer.title"),
+        description: t("priority.waitlistOffer.description", { count: summary.offeredWaitlist.length }),
+        target: "waitlist",
+        button: t("priority.waitlistOffer.button"),
+        tone: "danger",
+      }
+    : isUnderMinimum
+      ? {
+          title: t("priority.belowMinimum.title"),
+          description: t("priority.belowMinimum.description", {
+            current: data.shifts.currentShiftCount,
+            min: data.shifts.minShiftsPerCycle,
+          }),
+          target: "slots",
+          button: t("priority.belowMinimum.button"),
+          tone: "warning",
+        }
+      : pendingReviewCount > 0
+        ? {
+            title: t("priority.pendingRequests.title"),
+            description: t("priority.pendingRequests.description", { count: pendingReviewCount }),
+            target: "my-shifts",
+            button: t("priority.pendingRequests.button"),
+            tone: "warning",
+          }
+        : summary.pendingSwaps.length > 0
+          ? {
+              title: t("priority.pendingSwaps.title"),
+              description: t("priority.pendingSwaps.description", { count: summary.pendingSwaps.length }),
+              target: "swaps",
+              button: t("priority.pendingSwaps.button"),
+              tone: "warning",
+            }
+          : {
+              title: t("priority.allClear.title"),
+              description: t("priority.allClear.description"),
+              target: null,
+              button: null,
+              tone: "success",
+            };
 
   return (
     <div className="space-y-4">
+      <PriorityActionBanner action={priorityAction} onNavigate={onNavigate} />
+
       <section className="rounded-xl border border-slate-200 bg-white p-4">
         <div className="flex items-start justify-between gap-3">
           <div>
@@ -249,6 +304,47 @@ export default function PickStatusTab({ spaceId, groupId, onNavigate }: PickStat
         />
       </div>
     </div>
+  );
+}
+
+function PriorityActionBanner({
+  action,
+  onNavigate,
+}: {
+  action: PriorityAction;
+  onNavigate: (tab: PickerTab) => void;
+}) {
+  const toneClass = {
+    default: "border-slate-200 bg-white text-slate-900",
+    warning: "border-amber-200 bg-amber-50 text-amber-950",
+    danger: "border-red-200 bg-red-50 text-red-950",
+    success: "border-emerald-200 bg-emerald-50 text-emerald-950",
+  }[action.tone];
+
+  const buttonClass = action.tone === "danger"
+    ? "bg-red-600 text-white hover:bg-red-700"
+    : action.tone === "warning"
+      ? "bg-amber-600 text-white hover:bg-amber-700"
+      : "bg-emerald-600 text-white hover:bg-emerald-700";
+
+  return (
+    <section className={`rounded-xl border p-4 ${toneClass}`}>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <p className="text-sm font-semibold">{action.title}</p>
+          <p className="mt-1 text-sm opacity-80">{action.description}</p>
+        </div>
+        {action.target && action.button && (
+          <button
+            type="button"
+            onClick={() => onNavigate(action.target!)}
+            className={`inline-flex w-fit shrink-0 rounded-lg px-3 py-2 text-xs font-semibold transition-colors ${buttonClass}`}
+          >
+            {action.button}
+          </button>
+        )}
+      </div>
+    </section>
   );
 }
 

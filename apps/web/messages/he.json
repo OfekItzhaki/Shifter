@@ -2609,6 +2609,32 @@
       "activeWaitlist": "????? ?????",
       "nextShift": "?????? ????",
       "noUpcomingShift": "??? ????? ????? ?????? ?????.",
+      "priority": {
+        "waitlistOffer": {
+          "title": "Waitlist offer needs action",
+          "description": "You have {count} waitlist offer(s) waiting. Accept before the timer expires.",
+          "button": "Open waitlist"
+        },
+        "belowMinimum": {
+          "title": "Pick more shifts",
+          "description": "You have {current}/{min} required shifts for this cycle.",
+          "button": "Browse shifts"
+        },
+        "pendingRequests": {
+          "title": "Requests are waiting",
+          "description": "{count} request(s) are still waiting for admin review.",
+          "button": "Open my shifts"
+        },
+        "pendingSwaps": {
+          "title": "Swap request waiting",
+          "description": "{count} swap request(s) need your attention.",
+          "button": "Open swaps"
+        },
+        "allClear": {
+          "title": "You are on track",
+          "description": "No urgent self-service actions right now."
+        }
+      },
       "cards": {
         "pick": {
           "title": "????? ??????",
