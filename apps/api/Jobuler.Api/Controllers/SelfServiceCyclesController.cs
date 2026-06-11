@@ -138,12 +138,18 @@ public class SelfServiceCyclesController : ControllerBase
         if (cycle is null)
             return NotFound();
 
+        var wasOpen = cycle.IsRequestWindowOpen(DateTime.UtcNow);
         var closeAt = DateTime.UtcNow;
         if (closeAt > cycle.StartsAt)
             closeAt = cycle.StartsAt;
 
         cycle.UpdateRequestWindowClose(closeAt);
         await _db.SaveChangesAsync(ct);
+
+        if (wasOpen)
+        {
+            await _mediator.Send(new CheckUnderScheduledMembersCommand(spaceId, groupId, cycleId), ct);
+        }
 
         return Ok(await BuildStatusAsync(cycle, ct));
     }

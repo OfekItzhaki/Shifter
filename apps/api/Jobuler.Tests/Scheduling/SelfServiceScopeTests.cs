@@ -3,6 +3,7 @@ using Jobuler.Api.Controllers;
 using Jobuler.Application.Common;
 using Jobuler.Application.Notifications;
 using Jobuler.Application.Scheduling.SelfService;
+using Jobuler.Application.Scheduling.SelfService.Commands;
 using Jobuler.Application.Scheduling.SelfService.Models;
 using Jobuler.Application.Scheduling.SelfService.Queries;
 using Jobuler.Domain.Groups;
@@ -1829,6 +1830,81 @@ public class SelfServiceScopeTests
         await slotGeneration.Received(1)
             .GenerateSlotsForCycleAsync(group.Id, cycle.Id, Arg.Any<CancellationToken>());
         response.SlotCount.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task CloseWindow_WhenWindowIsOpen_RunsUnderScheduledCheck()
+    {
+        using var db = CreateDb();
+        var services = CreateControllerServices();
+        var spaceId = Guid.NewGuid();
+        var group = Group.Create(spaceId, null, "Self-service group");
+        group.SetSchedulingMode(SchedulingMode.SelfService);
+        var adminUserId = Guid.NewGuid();
+        var cycle = CreateCycle(spaceId, group.Id);
+
+        db.Groups.Add(group);
+        db.SchedulingCycles.Add(cycle);
+        await db.SaveChangesAsync();
+
+        services.Permissions
+            .RequirePermissionAsync(adminUserId, spaceId, Permissions.ConstraintsManage, Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+        services.Mediator
+            .Send(Arg.Any<CheckUnderScheduledMembersCommand>(), Arg.Any<CancellationToken>())
+            .Returns(new CheckUnderScheduledMembersResult(true, []));
+
+        var controller = new SelfServiceCyclesController(
+            db,
+            services.Permissions,
+            Substitute.For<ISlotGenerationService>(),
+            services.Mediator);
+        controller.ControllerContext = CreateControllerContext(adminUserId);
+
+        var result = await controller.CloseWindow(spaceId, group.Id, cycle.Id, CancellationToken.None);
+
+        result.Should().BeOfType<OkObjectResult>();
+        await services.Mediator.Received(1)
+            .Send(
+                Arg.Is<CheckUnderScheduledMembersCommand>(command =>
+                    command.SpaceId == spaceId
+                    && command.GroupId == group.Id
+                    && command.SchedulingCycleId == cycle.Id),
+                Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task CloseWindow_WhenWindowIsAlreadyClosed_DoesNotRunUnderScheduledCheckAgain()
+    {
+        using var db = CreateDb();
+        var services = CreateControllerServices();
+        var spaceId = Guid.NewGuid();
+        var group = Group.Create(spaceId, null, "Self-service group");
+        group.SetSchedulingMode(SchedulingMode.SelfService);
+        var adminUserId = Guid.NewGuid();
+        var cycle = CreateCycle(spaceId, group.Id);
+        cycle.UpdateRequestWindowClose(DateTime.UtcNow.AddHours(-1));
+
+        db.Groups.Add(group);
+        db.SchedulingCycles.Add(cycle);
+        await db.SaveChangesAsync();
+
+        services.Permissions
+            .RequirePermissionAsync(adminUserId, spaceId, Permissions.ConstraintsManage, Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+
+        var controller = new SelfServiceCyclesController(
+            db,
+            services.Permissions,
+            Substitute.For<ISlotGenerationService>(),
+            services.Mediator);
+        controller.ControllerContext = CreateControllerContext(adminUserId);
+
+        var result = await controller.CloseWindow(spaceId, group.Id, cycle.Id, CancellationToken.None);
+
+        result.Should().BeOfType<OkObjectResult>();
+        await services.Mediator.DidNotReceiveWithAnyArgs()
+            .Send(default(CheckUnderScheduledMembersCommand)!, default);
     }
 
     [Fact]
