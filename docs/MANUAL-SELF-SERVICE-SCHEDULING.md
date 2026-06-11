@@ -272,7 +272,8 @@ large deployments:
   browser suite already covers picking, waitlist entry, cannot-attend reporting,
   absence approval, absence rejection with shift reinstatement, shift
   cancellation, shift-change approval with reassignment, shift-change rejection,
-  member-to-member swap acceptance, and member-to-member swap decline.
+  member-to-member swap acceptance, member-to-member swap decline, and
+  initiator swap cancellation.
 - Organization-level defaults for self-service policy through the admin UI.
   Space owners can configure space-level defaults today; a higher-level
   organization template for multi-space installs is still deferred.

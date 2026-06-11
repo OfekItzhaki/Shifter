@@ -678,6 +678,109 @@ test.describe("Self-service browser lifecycle", () => {
     expect(targetShifts.requests.find((row) => row.id === targetShift.id)?.shiftSlotId).toBe(targetShift.shiftSlotId);
   });
 
+  test("member proposes and cancels a pending shift swap through the UI", async ({ page, request }) => {
+    const adminEmail = process.env.E2E_ADMIN_EMAIL ?? "admin@demo.local";
+    const initiatorEmail = process.env.E2E_CANCEL_SWAP_INITIATOR_EMAIL ?? "ofek@demo.local";
+    const targetEmail = process.env.E2E_CANCEL_SWAP_TARGET_EMAIL ?? "viewer@demo.local";
+    const adminToken = await login(request, adminEmail);
+    const initiatorToken = await login(request, initiatorEmail);
+    const targetToken = await login(request, targetEmail);
+    const { spaceId, groupId } = await findDemoSelfServiceGroup(request, adminToken);
+    const status = await api<CycleStatusDto>(
+      request,
+      adminToken,
+      "GET",
+      `/spaces/${spaceId}/groups/${groupId}/self-service-cycles/status`
+    );
+    expect(status.cycleId).toBeTruthy();
+
+    const initiatorMember = await getGroupMemberByEmail(request, adminToken, spaceId, groupId, initiatorEmail);
+    const targetMember = await getGroupMemberByEmail(request, adminToken, spaceId, groupId, targetEmail);
+    const initiatorShift = await ensureSwappableApprovedShift(
+      request,
+      adminToken,
+      initiatorToken,
+      spaceId,
+      groupId,
+      status.cycleId!,
+      initiatorMember.personId
+    );
+    const targetShift = await ensureSwappableApprovedShift(
+      request,
+      adminToken,
+      targetToken,
+      spaceId,
+      groupId,
+      status.cycleId!,
+      targetMember.personId,
+      [initiatorShift.shiftSlotId]
+    );
+    expect(targetShift.shiftSlotId).not.toBe(initiatorShift.shiftSlotId);
+
+    await loginAsUser(page, initiatorEmail, DEMO_PASSWORD);
+    await page.evaluate((targetGroupId) => {
+      localStorage.setItem("shifter-pick-last-group", targetGroupId);
+    }, groupId);
+    await page.goto(`${BASE}/pick`);
+    await page.getByTestId("pick-tab-swaps").click();
+    await expect(page.getByTestId("self-service-propose-swap")).toBeVisible({ timeout: 15000 });
+    await page.getByTestId("self-service-propose-swap").click();
+    await page.locator(`[data-testid="self-service-swap-my-shift"][data-shift-request-id="${initiatorShift.id}"]`).click();
+    await page.locator(`[data-testid="self-service-swap-target-member"][data-person-id="${targetMember.personId}"]`).click();
+    await Promise.all([
+      page.waitForResponse((response) =>
+        response.url().includes("/shift-swaps/propose") && response.request().method() === "POST"
+      ),
+      page.locator(`[data-testid="self-service-swap-target-shift"][data-shift-request-id="${targetShift.id}"]`).click(),
+    ]);
+
+    const proposedSwaps = await api<SwapRequestDto[]>(
+      request,
+      initiatorToken,
+      "GET",
+      `/spaces/${spaceId}/groups/${groupId}/shift-swaps/my`
+    );
+    const proposedSwap = proposedSwaps.find((row) =>
+      row.initiatorShiftRequestId === initiatorShift.id
+      && row.targetShiftRequestId === targetShift.id
+      && row.status === "Pending"
+    );
+    expect(proposedSwap, "browser swap proposal should create a pending swap to cancel").toBeTruthy();
+
+    const outgoingSwapCard = page.locator(`[data-testid="self-service-swap-card"][data-swap-request-id="${proposedSwap!.id}"]`);
+    await expect(outgoingSwapCard.getByTestId("self-service-cancel-swap")).toBeVisible({ timeout: 15000 });
+    await Promise.all([
+      page.waitForResponse((response) =>
+        response.url().includes(`/shift-swaps/${proposedSwap!.id}/cancel`)
+        && response.request().method() === "POST"
+      ),
+      outgoingSwapCard.getByTestId("self-service-cancel-swap").click(),
+    ]);
+
+    const reviewedSwaps = await api<SwapRequestDto[]>(
+      request,
+      initiatorToken,
+      "GET",
+      `/spaces/${spaceId}/groups/${groupId}/shift-swaps/my`
+    );
+    expect(reviewedSwaps.find((row) => row.id === proposedSwap!.id)?.status).toBe("Cancelled");
+
+    const initiatorShifts = await api<MyShiftsResponse>(
+      request,
+      initiatorToken,
+      "GET",
+      `/spaces/${spaceId}/groups/${groupId}/shift-requests/mine`
+    );
+    const targetShifts = await api<MyShiftsResponse>(
+      request,
+      targetToken,
+      "GET",
+      `/spaces/${spaceId}/groups/${groupId}/shift-requests/mine`
+    );
+    expect(initiatorShifts.requests.find((row) => row.id === initiatorShift.id)?.shiftSlotId).toBe(initiatorShift.shiftSlotId);
+    expect(targetShifts.requests.find((row) => row.id === targetShift.id)?.shiftSlotId).toBe(targetShift.shiftSlotId);
+  });
+
   test("member cancels an approved shift through the UI", async ({ page, request }) => {
     const adminEmail = process.env.E2E_ADMIN_EMAIL ?? "admin@demo.local";
     const memberEmail = process.env.E2E_CANCEL_MEMBER_EMAIL ?? "yael@demo.local";
