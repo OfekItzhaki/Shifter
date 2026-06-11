@@ -202,6 +202,54 @@ public class ValidateOrganizationImportPackageCommandHandler
                 ValidateRowsAreScopedToExportedSpaces("notifications", notifications, exportedSpaceIds, errors);
                 ValidateRowsAreScopedToExportedSpaces("auditLogs", auditLogs, exportedSpaceIds, errors, allowMissingSpaceId: true);
 
+                var groupIds = ExtractIds(groups).ToHashSet();
+                var personIds = ExtractIds(people).ToHashSet();
+                var groupTaskIds = ExtractIds(groupTasks).ToHashSet();
+                var cycleIds = ExtractIds(schedulingCycles).ToHashSet();
+                var shiftTemplateIds = ExtractIds(shiftTemplates).ToHashSet();
+                var shiftSlotIds = ExtractIds(shiftSlots).ToHashSet();
+                var shiftRequestIds = ExtractIds(shiftRequests).ToHashSet();
+
+                ValidateReferences("groupMemberships", groupMemberships, "groupId", groupIds, "groups", errors);
+                ValidateReferences("groupMemberships", groupMemberships, "personId", personIds, "people", errors);
+                ValidateReferences("groupTasks", groupTasks, "groupId", groupIds, "groups", errors);
+                ValidateReferences("selfServiceConfigs", selfServiceConfigs, "groupId", groupIds, "groups", errors);
+                ValidateReferences("schedulingCycles", schedulingCycles, "groupId", groupIds, "groups", errors);
+                ValidateReferences("shiftTemplates", shiftTemplates, "groupId", groupIds, "groups", errors);
+                ValidateReferences("shiftTemplates", shiftTemplates, "groupTaskId", groupTaskIds, "groupTasks", errors);
+                ValidateReferences("shiftSlots", shiftSlots, "groupId", groupIds, "groups", errors);
+                ValidateReferences("shiftSlots", shiftSlots, "groupTaskId", groupTaskIds, "groupTasks", errors);
+                ValidateReferences("shiftSlots", shiftSlots, "shiftTemplateId", shiftTemplateIds, "shiftTemplates", errors);
+                ValidateReferences("shiftSlots", shiftSlots, "schedulingCycleId", cycleIds, "schedulingCycles", errors);
+                ValidateReferences("shiftRequests", shiftRequests, "groupId", groupIds, "groups", errors);
+                ValidateReferences("shiftRequests", shiftRequests, "schedulingCycleId", cycleIds, "schedulingCycles", errors);
+                ValidateReferences("shiftRequests", shiftRequests, "shiftSlotId", shiftSlotIds, "shiftSlots", errors);
+                ValidateReferences("shiftRequests", shiftRequests, "personId", personIds, "people", errors);
+                ValidateReferences("shiftAttendanceRecords", shiftAttendanceRecords, "groupId", groupIds, "groups", errors);
+                ValidateReferences("shiftAttendanceRecords", shiftAttendanceRecords, "schedulingCycleId", cycleIds, "schedulingCycles", errors);
+                ValidateReferences("shiftAttendanceRecords", shiftAttendanceRecords, "shiftRequestId", shiftRequestIds, "shiftRequests", errors);
+                ValidateReferences("shiftAttendanceRecords", shiftAttendanceRecords, "shiftSlotId", shiftSlotIds, "shiftSlots", errors);
+                ValidateReferences("shiftAttendanceRecords", shiftAttendanceRecords, "personId", personIds, "people", errors);
+                ValidateReferences("shiftAbsenceReports", shiftAbsenceReports, "groupId", groupIds, "groups", errors);
+                ValidateReferences("shiftAbsenceReports", shiftAbsenceReports, "schedulingCycleId", cycleIds, "schedulingCycles", errors);
+                ValidateReferences("shiftAbsenceReports", shiftAbsenceReports, "shiftRequestId", shiftRequestIds, "shiftRequests", errors);
+                ValidateReferences("shiftAbsenceReports", shiftAbsenceReports, "shiftSlotId", shiftSlotIds, "shiftSlots", errors);
+                ValidateReferences("shiftAbsenceReports", shiftAbsenceReports, "personId", personIds, "people", errors);
+                ValidateReferences("shiftChangeRequests", shiftChangeRequests, "groupId", groupIds, "groups", errors);
+                ValidateReferences("shiftChangeRequests", shiftChangeRequests, "schedulingCycleId", cycleIds, "schedulingCycles", errors);
+                ValidateReferences("shiftChangeRequests", shiftChangeRequests, "shiftRequestId", shiftRequestIds, "shiftRequests", errors);
+                ValidateReferences("shiftChangeRequests", shiftChangeRequests, "originalShiftSlotId", shiftSlotIds, "shiftSlots", errors);
+                ValidateReferences("shiftChangeRequests", shiftChangeRequests, "requestedShiftSlotId", shiftSlotIds, "shiftSlots", errors, allowMissingReference: true);
+                ValidateReferences("shiftChangeRequests", shiftChangeRequests, "personId", personIds, "people", errors);
+                ValidateReferences("waitlistEntries", waitlistEntries, "shiftSlotId", shiftSlotIds, "shiftSlots", errors);
+                ValidateReferences("waitlistEntries", waitlistEntries, "personId", personIds, "people", errors);
+                ValidateReferences("swapRequests", swapRequests, "groupId", groupIds, "groups", errors);
+                ValidateReferences("swapRequests", swapRequests, "initiatorPersonId", personIds, "people", errors);
+                ValidateReferences("swapRequests", swapRequests, "targetPersonId", personIds, "people", errors);
+                ValidateReferences("swapRequests", swapRequests, "initiatorShiftRequestId", shiftRequestIds, "shiftRequests", errors);
+                ValidateReferences("swapRequests", swapRequests, "targetShiftRequestId", shiftRequestIds, "shiftRequests", errors);
+                ValidateReferences("specialLeaveRequests", specialLeaveRequests, "personId", personIds, "people", errors);
+
                 await AddConflictAsync(
                     organizationId.HasValue
                         ? await _db.Organizations.AnyAsync(o => o.Id == organizationId.Value, ct)
@@ -358,6 +406,39 @@ public class ValidateOrganizationImportPackageCommandHandler
 
         if (leakedCount > 0)
             errors.Add($"{collectionName} contains {leakedCount} row(s) outside the exported spaces.");
+    }
+
+    private static void ValidateReferences(
+        string collectionName,
+        IEnumerable<JsonElement> rows,
+        string propertyName,
+        IReadOnlySet<Guid> allowedIds,
+        string targetCollectionName,
+        List<string> errors,
+        bool allowMissingReference = false)
+    {
+        var missingCount = 0;
+        var invalidCount = 0;
+
+        foreach (var row in rows)
+        {
+            var id = TryGetGuid(row, propertyName);
+            if (!id.HasValue)
+            {
+                if (!allowMissingReference)
+                    missingCount++;
+                continue;
+            }
+
+            if (!allowedIds.Contains(id.Value))
+                invalidCount++;
+        }
+
+        if (missingCount > 0)
+            errors.Add($"{collectionName} contains {missingCount} row(s) without a valid {propertyName}.");
+
+        if (invalidCount > 0)
+            errors.Add($"{collectionName} contains {invalidCount} row(s) whose {propertyName} is not in exported {targetCollectionName}.");
     }
 
     private static bool TryGetObject(JsonElement parent, string propertyName, out JsonElement value)

@@ -803,6 +803,79 @@ public class OrganizationPortabilityTests
         result.Errors.Should().Contain(error => error.Contains("groups contains 1 row(s) outside the exported spaces"));
     }
 
+    [Fact]
+    public async Task ValidateImportPackage_RejectsBrokenSelfServiceReferences()
+    {
+        var sourceDb = CreateDb();
+        var ownerId = Guid.NewGuid();
+        var organization = Organization.Create("Pizza Hut Israel", ownerId, "IL", "restaurant_hospitality", "he");
+        var space = Space.Create("Pizza Hut Haifa", ownerId, locale: "he", organizationId: organization.Id);
+        var group = Group.Create(space.Id, null, "Kitchen");
+        var person = Person.Create(space.Id, "Worker 1");
+        var cycleStart = new DateTime(2026, 6, 15, 0, 0, 0, DateTimeKind.Utc);
+        var groupTask = GroupTask.Create(
+            space.Id,
+            group.Id,
+            "Kitchen shift",
+            cycleStart,
+            cycleStart.AddDays(7),
+            shiftDurationMinutes: 240,
+            requiredHeadcount: 1,
+            TaskBurdenLevel.Normal,
+            allowsDoubleShift: false,
+            allowsOverlap: false,
+            ownerId);
+        var cycle = SchedulingCycle.Create(
+            space.Id,
+            group.Id,
+            cycleStart,
+            cycleStart.AddDays(7),
+            cycleStart.AddDays(-7),
+            cycleStart.AddDays(-1));
+        var template = ShiftTemplate.Create(
+            space.Id,
+            group.Id,
+            groupTask.Id,
+            DayOfWeek.Monday,
+            new TimeOnly(8, 0),
+            new TimeOnly(12, 0),
+            requiredHeadcount: 1,
+            createdByUserId: ownerId);
+        var slot = ShiftSlot.Create(
+            space.Id,
+            group.Id,
+            groupTask.Id,
+            template.Id,
+            cycle.Id,
+            DateOnly.FromDateTime(cycleStart),
+            new TimeOnly(8, 0),
+            new TimeOnly(12, 0),
+            capacity: 1);
+        var request = ShiftRequest.Create(space.Id, slot.Id, person.Id, group.Id, cycle.Id);
+
+        sourceDb.Organizations.Add(organization);
+        sourceDb.Spaces.Add(space);
+        sourceDb.Groups.Add(group);
+        sourceDb.People.Add(person);
+        sourceDb.GroupTasks.Add(groupTask);
+        sourceDb.SchedulingCycles.Add(cycle);
+        sourceDb.ShiftTemplates.Add(template);
+        sourceDb.ShiftSlots.Add(slot);
+        sourceDb.ShiftRequests.Add(request);
+        await sourceDb.SaveChangesAsync();
+
+        var package = await ExportPackageAsync(sourceDb, organization.Id);
+        var packageJson = JsonNode.Parse(System.Text.Encoding.UTF8.GetString(package.Content))!;
+        packageJson["data"]!["shiftRequests"]!.AsArray()[0]!["groupId"] = Guid.NewGuid().ToString();
+
+        var result = await new ValidateOrganizationImportPackageCommandHandler(CreateDb())
+            .Handle(new ValidateOrganizationImportPackageCommand(packageJson.ToJsonString()), CancellationToken.None);
+
+        result.IsImportSafe.Should().BeFalse();
+        result.Errors.Should().Contain(error =>
+            error.Contains("shiftRequests contains 1 row(s) whose groupId is not in exported groups"));
+    }
+
     private static Task<OrganizationExportPackageResult> ExportPackageAsync(AppDbContext db, Guid organizationId)
     {
         var mediator = Substitute.For<MediatR.IMediator>();

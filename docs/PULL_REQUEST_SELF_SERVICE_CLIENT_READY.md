@@ -65,7 +65,7 @@ packaging, and self-service export/import readiness.
 - `dotnet test apps\\api\\Jobuler.Tests\\Jobuler.Tests.csproj --filter FullyQualifiedName~SpaceSpecialDayCommandTests`
   passed: 4 passed, 0 failed.
 - `dotnet test apps\\api\\Jobuler.Tests\\Jobuler.Tests.csproj --filter FullyQualifiedName~OrganizationPortabilityTests`
-  passed: 18 passed, 0 failed.
+  passed: 19 passed, 0 failed.
 - `node_modules\\.bin\\eslint.cmd components\\spaces\\SpecialDaysCard.tsx lib\\api\\spaceSpecialDays.ts`
   passed.
 - `node_modules\\.bin\\eslint.cmd components\\shell\\ShifterAssistant.tsx`
