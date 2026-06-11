@@ -74,6 +74,21 @@ Requirements:
 - Disable analytics, external chat widgets, and external error tracking unless
   explicitly approved by the customer.
 
+## Health Check
+
+`GET /health/detailed` includes an `ai` service result:
+
+- `skipped` when AI is disabled.
+- `healthy` when the configured OpenAI-compatible endpoint responds to
+  `GET {AI_BASE_URL}/models`.
+- `unhealthy` when the endpoint or credentials fail.
+
+The AI health check does not send prompts, schedules, files, or customer data.
+It only checks endpoint/auth reachability. For SaaS with `AI_API_KEY` and no
+`AI_BASE_URL`, the API checks `https://api.openai.com/v1/models`. For
+customer-hosted no-export installs, it checks the customer's private
+`AI_BASE_URL`.
+
 ## Provider Choice
 
 The product should prefer this order:

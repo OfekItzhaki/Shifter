@@ -95,8 +95,14 @@ Customer-hosted means:
 
    ```bash
    curl -fsS http://127.0.0.1:5000/health
+   curl -fsS http://127.0.0.1:5000/health/detailed
    curl -fsS http://127.0.0.1:3000
    ```
+
+   The detailed report includes `ai`, `resend`, `solver`, `postgres`, and
+   `redis`. The `ai` check is `skipped` when AI is disabled, and otherwise calls
+   `{AI_BASE_URL}/models` without sending prompts, schedules, files, or customer
+   data.
 
 8. Put HTTPS in front of the web/API ports using the customer's proxy or WAF.
 
