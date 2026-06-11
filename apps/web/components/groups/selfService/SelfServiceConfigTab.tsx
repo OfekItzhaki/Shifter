@@ -25,6 +25,7 @@ interface ConfigField {
   min: number;
   max: number;
   unit: "shifts" | "hours" | "minutes" | "days" | "reports";
+  recommended: string;
 }
 
 interface ConfigSection {
@@ -36,30 +37,30 @@ const CONFIG_SECTIONS: ConfigSection[] = [
   {
     key: "shiftLimits",
     fields: [
-      { key: "minShiftsPerCycle", min: 0, max: 100, unit: "shifts" },
-      { key: "maxShiftsPerCycle", min: 1, max: 100, unit: "shifts" },
-      { key: "cycleDurationDays", min: 1, max: 30, unit: "days" },
+      { key: "minShiftsPerCycle", min: 0, max: 100, unit: "shifts", recommended: "1-2" },
+      { key: "maxShiftsPerCycle", min: 1, max: 100, unit: "shifts", recommended: "team-based" },
+      { key: "cycleDurationDays", min: 1, max: 30, unit: "days", recommended: "7" },
     ],
   },
   {
     key: "requestWindow",
     fields: [
-      { key: "requestWindowOpenOffsetHours", min: 1, max: 720, unit: "hours" },
-      { key: "requestWindowCloseOffsetHours", min: 1, max: 720, unit: "hours" },
+      { key: "requestWindowOpenOffsetHours", min: 1, max: 720, unit: "hours", recommended: "72" },
+      { key: "requestWindowCloseOffsetHours", min: 1, max: 720, unit: "hours", recommended: "12-24" },
     ],
   },
   {
     key: "changesAbsence",
     fields: [
-      { key: "cancellationCutoffHours", min: 1, max: 720, unit: "hours" },
-      { key: "lateCancellationWindowHours", min: 1, max: 720, unit: "hours" },
-      { key: "maxLateCancellationsPerCycle", min: 0, max: 100, unit: "reports" },
+      { key: "cancellationCutoffHours", min: 1, max: 720, unit: "hours", recommended: "24" },
+      { key: "lateCancellationWindowHours", min: 1, max: 720, unit: "hours", recommended: "24" },
+      { key: "maxLateCancellationsPerCycle", min: 0, max: 100, unit: "reports", recommended: "1-2" },
     ],
   },
   {
     key: "waitlist",
     fields: [
-      { key: "waitlistOfferMinutes", min: 15, max: 1440, unit: "minutes" },
+      { key: "waitlistOfferMinutes", min: 15, max: 1440, unit: "minutes", recommended: "30-60" },
     ],
   },
 ];
@@ -263,6 +264,11 @@ export default function SelfServiceConfigTab({ spaceId, groupId }: SelfServiceCo
                     <p className="mt-1 min-h-10 text-xs leading-5 text-slate-500">
                       {t(`descriptions.${field.key}`)}
                     </p>
+                    <div className="mt-2 inline-flex rounded-full border border-sky-200 bg-sky-50 px-2.5 py-1 text-xs font-medium text-sky-700">
+                      {t("recommended", {
+                        value: t(`recommendations.${field.key}`, { value: field.recommended }),
+                      })}
+                    </div>
                     <input
                       id={`config-${field.key}`}
                       type="number"

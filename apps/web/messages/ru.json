@@ -2237,6 +2237,18 @@
         "waitlist": "Waitlist",
         "waitlistValue": "{minutes}m offer timer"
       },
+      "recommended": "Recommended: {value}",
+      "recommendations": {
+        "minShiftsPerCycle": "{value} shifts",
+        "maxShiftsPerCycle": "Based on team size",
+        "cycleDurationDays": "{value} days",
+        "requestWindowOpenOffsetHours": "{value} hours",
+        "requestWindowCloseOffsetHours": "{value} hours",
+        "cancellationCutoffHours": "{value} hours",
+        "lateCancellationWindowHours": "{value} hours",
+        "maxLateCancellationsPerCycle": "{value} reports",
+        "waitlistOfferMinutes": "{value} minutes"
+      },
       "sections": {
         "shiftLimits": {
           "title": "Shift limits",

@@ -33,6 +33,16 @@ vi.mock("next-intl", () => ({
       "summary.absenceValue": `Cancel until ${values?.cutoff}h, late inside ${values?.lateWindow}h, max ${values?.max}`,
       "summary.waitlist": "Waitlist",
       "summary.waitlistValue": `${values?.minutes}m offer timer`,
+      recommended: `Recommended: ${values?.value}`,
+      "recommendations.minShiftsPerCycle": `${values?.value} shifts`,
+      "recommendations.maxShiftsPerCycle": "Based on team size",
+      "recommendations.cycleDurationDays": `${values?.value} days`,
+      "recommendations.requestWindowOpenOffsetHours": `${values?.value} hours`,
+      "recommendations.requestWindowCloseOffsetHours": `${values?.value} hours`,
+      "recommendations.cancellationCutoffHours": `${values?.value} hours`,
+      "recommendations.lateCancellationWindowHours": `${values?.value} hours`,
+      "recommendations.maxLateCancellationsPerCycle": `${values?.value} reports`,
+      "recommendations.waitlistOfferMinutes": `${values?.value} minutes`,
       "sections.shiftLimits.title": "Shift limits",
       "sections.shiftLimits.description": "Control how many shifts members should take.",
       "sections.requestWindow.title": "Request window",
@@ -92,6 +102,8 @@ describe("SelfServiceConfigTab", () => {
     expect(screen.getAllByText("Waitlist").length).toBeGreaterThan(0);
     expect(screen.getByText("2-5 shifts / 7 days")).toBeInTheDocument();
     expect(screen.getByText("Opens 168h before, closes 24h before")).toBeInTheDocument();
+    expect(screen.getByText("Recommended: 1-2 shifts")).toBeInTheDocument();
+    expect(screen.getByText("Recommended: 30-60 minutes")).toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText("Maximum shifts per cycle"), {
       target: { value: "6" },

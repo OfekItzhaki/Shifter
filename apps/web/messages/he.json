@@ -2249,6 +2249,18 @@
         "waitlist": "Waitlist",
         "waitlistValue": "{minutes}m offer timer"
       },
+      "recommended": "מומלץ: {value}",
+      "recommendations": {
+        "minShiftsPerCycle": "{value} משמרות",
+        "maxShiftsPerCycle": "לפי גודל הצוות",
+        "cycleDurationDays": "{value} ימים",
+        "requestWindowOpenOffsetHours": "{value} שעות",
+        "requestWindowCloseOffsetHours": "{value} שעות",
+        "cancellationCutoffHours": "{value} שעות",
+        "lateCancellationWindowHours": "{value} שעות",
+        "maxLateCancellationsPerCycle": "{value} דיווחים",
+        "waitlistOfferMinutes": "{value} דקות"
+      },
       "sections": {
         "shiftLimits": {
           "title": "Shift limits",
