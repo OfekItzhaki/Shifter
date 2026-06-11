@@ -227,4 +227,29 @@ describe("CycleControlPanel", () => {
     });
     expect(await screen.findByText("Window open")).toBeInTheDocument();
   });
+
+  it("refreshes cycle status after a stale close failure", async () => {
+    mockGetSelfServiceCycleStatus
+      .mockResolvedValueOnce(makeStatus({ requestWindowOpen: true }))
+      .mockResolvedValueOnce(makeStatus({ requestWindowOpen: false }));
+    mockCloseSelfServiceCycleWindow.mockRejectedValue({
+      response: {
+        status: 400,
+        data: { detail: "The request window is already closed." },
+      },
+    });
+
+    const onStatusChanged = vi.fn();
+    render(<CycleControlPanel spaceId="space-1" groupId="group-1" onStatusChanged={onStatusChanged} />);
+
+    expect(await screen.findByText("Window open")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Close window" }));
+
+    expect(await screen.findByText("The request window is already closed.")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(mockGetSelfServiceCycleStatus).toHaveBeenCalledTimes(2);
+    });
+    expect(await screen.findByText("Window closed")).toBeInTheDocument();
+    expect(onStatusChanged).toHaveBeenCalledTimes(1);
+  });
 });

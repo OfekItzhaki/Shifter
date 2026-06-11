@@ -49,21 +49,34 @@ export default function CycleControlPanel({ spaceId, groupId, onNavigate, onStat
   const [error, setError] = useState<string | null>(null);
   const [underScheduled, setUnderScheduled] = useState<UnderScheduledMemberDto[] | null>(null);
 
-  const load = useCallback(async () => {
-    setLoading(true);
+  const load = useCallback(async (showLoading = true) => {
+    if (showLoading) {
+      setLoading(true);
+    }
     setError(null);
     try {
       setStatus(await getSelfServiceCycleStatus(spaceId, groupId));
     } catch (err) {
       setError(getSelfServiceErrorMessage(err).message);
     } finally {
-      setLoading(false);
+      if (showLoading) {
+        setLoading(false);
+      }
     }
   }, [spaceId, groupId]);
 
   useEffect(() => {
-    void Promise.resolve().then(load);
+    void Promise.resolve().then(() => load());
   }, [load]);
+
+  const refreshStatusAfterFailure = useCallback(async () => {
+    try {
+      setStatus(await getSelfServiceCycleStatus(spaceId, groupId));
+      await onStatusChanged?.();
+    } catch {
+      // Keep the original action error visible when the follow-up refresh fails.
+    }
+  }, [spaceId, groupId, onStatusChanged]);
 
   async function run(name: string, fn: () => Promise<SelfServiceCycleStatusDto | void>) {
     setAction(name);
@@ -76,6 +89,18 @@ export default function CycleControlPanel({ spaceId, groupId, onNavigate, onStat
       await onStatusChanged?.();
     } catch (err) {
       setError(getSelfServiceErrorMessage(err).message);
+      await refreshStatusAfterFailure();
+    } finally {
+      setAction(null);
+    }
+  }
+
+  async function handleRefresh() {
+    setAction("refresh");
+    setUnderScheduled(null);
+    try {
+      await load(false);
+      await onStatusChanged?.();
     } finally {
       setAction(null);
     }
@@ -93,6 +118,7 @@ export default function CycleControlPanel({ spaceId, groupId, onNavigate, onStat
       await onStatusChanged?.();
     } catch (err) {
       setError(getSelfServiceErrorMessage(err).message);
+      await refreshStatusAfterFailure();
     } finally {
       setAction(null);
     }
@@ -325,7 +351,7 @@ export default function CycleControlPanel({ spaceId, groupId, onNavigate, onStat
               disabled={!!action}
             />
             <MutationButton
-              onClick={load}
+              onClick={handleRefresh}
               loading={action === "refresh"}
               label={t("buttons.refresh")}
               loadingLabel={t("buttons.refreshing")}
