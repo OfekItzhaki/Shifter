@@ -2328,6 +2328,28 @@
       "statusLoading": "Checking queues...",
       "activeSignals": "{count} item(s) need attention",
       "allClear": "No urgent items",
+      "priority": {
+        "title": "Priority signals",
+        "description": "Handle these before routine cycle work.",
+        "count": "{count} urgent signal(s)",
+        "clear": "No urgent signals",
+        "empty": "Nothing urgent right now. Continue monitoring coverage and review queues.",
+        "open": "Open queue",
+        "signals": {
+          "lateReports": {
+            "title": "Late absence reports",
+            "description": "{count} late report(s) need admin review."
+          },
+          "expiringWaitlist": {
+            "title": "Expiring waitlist offers",
+            "description": "{count} waitlist offer(s) expire in the next {minutes} minutes."
+          },
+          "underfilled": {
+            "title": "Under-filled slots",
+            "description": "{count} slot(s) still need coverage."
+          }
+        }
+      },
       "guide": {
         "title": "How to run the cycle",
         "description": "A simple rhythm for manual self-service scheduling: prepare the rules, open the window, review exceptions, then tune the next cycle.",

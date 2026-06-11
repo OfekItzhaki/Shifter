@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import SelfServiceOperationsTab from "../../components/groups/selfService/SelfServiceOperationsTab";
 
 const mockGetSelfServiceCycleStatus = vi.fn();
+const mockGetAdminWaitlistEntries = vi.fn();
 
 vi.mock("next-intl", () => ({
   useTranslations: () => (key: string, values?: Record<string, unknown>) => {
@@ -12,6 +13,18 @@ vi.mock("next-intl", () => ({
       statusLoading: "Checking queues...",
       activeSignals: `${values?.count ?? 0} item(s) need attention`,
       allClear: "No urgent items",
+      "priority.title": "Priority signals",
+      "priority.description": "Handle these first.",
+      "priority.count": `${values?.count ?? 0} urgent signal(s)`,
+      "priority.clear": "No urgent signals",
+      "priority.empty": "Nothing urgent right now.",
+      "priority.open": "Open queue",
+      "priority.signals.lateReports.title": "Late absence reports",
+      "priority.signals.lateReports.description": `${values?.count ?? 0} late report(s) need review.`,
+      "priority.signals.expiringWaitlist.title": "Expiring waitlist offers",
+      "priority.signals.expiringWaitlist.description": `${values?.count ?? 0} waitlist offer(s) expire in ${values?.minutes ?? 0} minutes.`,
+      "priority.signals.underfilled.title": "Under-filled slots",
+      "priority.signals.underfilled.description": `${values?.count ?? 0} slot(s) still need coverage.`,
       "guide.title": "How to run the cycle",
       "guide.description": "Use this rhythm for manual self-service scheduling.",
       "guide.steps.prepare.title": "Prepare",
@@ -42,6 +55,7 @@ vi.mock("next-intl", () => ({
 
 vi.mock("../../lib/api/selfService", () => ({
   getSelfServiceCycleStatus: (...args: unknown[]) => mockGetSelfServiceCycleStatus(...args),
+  getAdminWaitlistEntries: (...args: unknown[]) => mockGetAdminWaitlistEntries(...args),
 }));
 
 vi.mock("../../components/groups/selfService/CycleControlPanel", () => ({
@@ -82,6 +96,22 @@ describe("SelfServiceOperationsTab", () => {
         },
       ],
     });
+    mockGetAdminWaitlistEntries.mockResolvedValue([
+      {
+        id: "waitlist-1",
+        shiftSlotId: "slot-2",
+        slotDate: "2026-06-21",
+        slotStartTime: "10:00",
+        slotEndTime: "12:00",
+        taskName: "Front desk",
+        position: 1,
+        status: "Offered",
+        offeredAt: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
+        expiresAt: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
+        personId: "person-1",
+        personName: "Ofek",
+      },
+    ]);
   });
 
   it("shows action counts and navigates to the selected queue", async () => {
@@ -92,6 +122,10 @@ describe("SelfServiceOperationsTab", () => {
     expect(screen.getByText("6 pending review item(s)")).toBeInTheDocument();
     expect(screen.getByText("4 active waitlist item(s)")).toBeInTheDocument();
     expect(screen.getByText("1 under-filled slot(s)")).toBeInTheDocument();
+    expect(screen.getByText("3 urgent signal(s)")).toBeInTheDocument();
+    expect(screen.getByText("Late absence reports")).toBeInTheDocument();
+    expect(screen.getByText("Expiring waitlist offers")).toBeInTheDocument();
+    expect(screen.getByText("Under-filled slots")).toBeInTheDocument();
     expect(screen.getByText("How to run the cycle")).toBeInTheDocument();
     expect(screen.getByText("Set policy and templates.")).toBeInTheDocument();
 
@@ -99,6 +133,12 @@ describe("SelfServiceOperationsTab", () => {
 
     await waitFor(() => {
       expect(onNavigate).toHaveBeenCalledWith("absence-reports");
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: /Expiring waitlist offers/i }));
+
+    await waitFor(() => {
+      expect(onNavigate).toHaveBeenCalledWith("waitlist");
     });
   });
 });

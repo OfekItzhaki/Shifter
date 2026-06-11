@@ -2340,6 +2340,28 @@
       "statusLoading": "Checking queues...",
       "activeSignals": "{count} item(s) need attention",
       "allClear": "No urgent items",
+      "priority": {
+        "title": "סימנים דחופים",
+        "description": "טפל בזה לפני עבודת הסבב השגרתית.",
+        "count": "{count} סימנים דחופים",
+        "clear": "אין סימנים דחופים",
+        "empty": "אין משהו דחוף כרגע. המשך לעקוב אחרי כיסוי ותורי בדיקה.",
+        "open": "פתח תור",
+        "signals": {
+          "lateReports": {
+            "title": "דיווחי היעדרות מאוחרים",
+            "description": "{count} דיווחים מאוחרים דורשים בדיקת מנהל."
+          },
+          "expiringWaitlist": {
+            "title": "הצעות המתנה שפגות בקרוב",
+            "description": "{count} הצעות מרשימת ההמתנה פגות בתוך {minutes} דקות."
+          },
+          "underfilled": {
+            "title": "משמרות לא מלאות",
+            "description": "{count} משמרות עדיין צריכות כיסוי."
+          }
+        }
+      },
       "guide": {
         "title": "איך מריצים סבב",
         "description": "קצב עבודה פשוט לשירות עצמי: מכינים את החוקים, פותחים חלון בחירה, מטפלים בחריגות ומשפרים את הסבב הבא.",

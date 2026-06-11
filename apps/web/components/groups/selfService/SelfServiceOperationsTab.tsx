@@ -3,7 +3,9 @@
 import { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import {
+  getAdminWaitlistEntries,
   getSelfServiceCycleStatus,
+  AdminWaitlistEntryDto,
   SelfServiceCycleStatusDto,
 } from "@/lib/api/selfService";
 import CycleControlPanel from "./CycleControlPanel";
@@ -30,6 +32,7 @@ const ACTIONS: { target: SelfServiceOpsTarget; key: string; metric?: "reviews" |
 ];
 
 const GUIDE_STEPS = ["prepare", "open", "review", "improve"] as const;
+const WAITLIST_EXPIRY_WARNING_MINUTES = 30;
 
 function getPendingReviewCount(status: SelfServiceCycleStatusDto | null): number {
   if (!status) return 0;
@@ -50,6 +53,20 @@ function getActionCount(
   return status.underfilledSlots.length;
 }
 
+function countExpiringWaitlistOffers(entries: AdminWaitlistEntryDto[]): number {
+  const now = Date.now();
+  const warningWindowMs = WAITLIST_EXPIRY_WARNING_MINUTES * 60 * 1000;
+
+  return entries.filter((entry) => {
+    if (entry.status !== "Offered" || !entry.expiresAt) return false;
+
+    const expiresAt = new Date(entry.expiresAt).getTime();
+    return Number.isFinite(expiresAt)
+      && expiresAt > now
+      && expiresAt - now <= warningWindowMs;
+  }).length;
+}
+
 export default function SelfServiceOperationsTab({
   spaceId,
   groupId,
@@ -57,14 +74,21 @@ export default function SelfServiceOperationsTab({
 }: SelfServiceOperationsTabProps) {
   const t = useTranslations("selfService.operations");
   const [status, setStatus] = useState<SelfServiceCycleStatusDto | null>(null);
+  const [waitlistEntries, setWaitlistEntries] = useState<AdminWaitlistEntryDto[]>([]);
   const [statusLoading, setStatusLoading] = useState(true);
 
   const loadStatus = useCallback(async () => {
     setStatusLoading(true);
     try {
-      setStatus(await getSelfServiceCycleStatus(spaceId, groupId));
+      const [nextStatus, nextWaitlistEntries] = await Promise.all([
+        getSelfServiceCycleStatus(spaceId, groupId),
+        getAdminWaitlistEntries(spaceId, groupId),
+      ]);
+      setStatus(nextStatus);
+      setWaitlistEntries(nextWaitlistEntries);
     } catch {
       setStatus(null);
+      setWaitlistEntries([]);
     } finally {
       setStatusLoading(false);
     }
@@ -78,6 +102,29 @@ export default function SelfServiceOperationsTab({
   const activeSignalCount = status
     ? pendingReviewCount + status.waitlistCount + status.underfilledSlots.length
     : 0;
+  const expiringWaitlistOfferCount = countExpiringWaitlistOffers(waitlistEntries);
+  const prioritySignals = status
+    ? [
+        {
+          key: "lateReports",
+          count: status.latePendingAbsenceReportCount,
+          target: "absence-reports" as const,
+          tone: "danger" as const,
+        },
+        {
+          key: "expiringWaitlist",
+          count: expiringWaitlistOfferCount,
+          target: "waitlist" as const,
+          tone: "warning" as const,
+        },
+        {
+          key: "underfilled",
+          count: status.underfilledSlots.length,
+          target: "admin-overrides" as const,
+          tone: "warning" as const,
+        },
+      ].filter((signal) => signal.count > 0)
+    : [];
 
   return (
     <div className="space-y-5">
@@ -142,6 +189,73 @@ export default function SelfServiceOperationsTab({
             );
           })}
         </div>
+      </div>
+
+      <div className="rounded-xl border border-slate-200 bg-white p-6">
+        <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h3 className="text-sm font-semibold text-slate-900">{t("priority.title")}</h3>
+            <p className="text-sm text-slate-500">{t("priority.description")}</p>
+          </div>
+          <span className={`inline-flex w-fit rounded-full border px-2.5 py-1 text-xs font-medium ${
+            statusLoading
+              ? "border-slate-200 bg-slate-50 text-slate-500"
+              : prioritySignals.length > 0
+                ? "border-red-200 bg-red-50 text-red-700"
+                : "border-emerald-200 bg-emerald-50 text-emerald-700"
+          }`}>
+            {statusLoading
+              ? t("statusLoading")
+              : prioritySignals.length > 0
+                ? t("priority.count", { count: prioritySignals.length })
+                : t("priority.clear")}
+          </span>
+        </div>
+
+        {statusLoading ? (
+          <div className="mt-4 h-20 animate-pulse rounded-lg bg-slate-100" />
+        ) : prioritySignals.length === 0 ? (
+          <p className="mt-4 rounded-lg border border-dashed border-slate-200 bg-slate-50 px-3 py-4 text-center text-sm text-slate-500">
+            {t("priority.empty")}
+          </p>
+        ) : (
+          <div className="mt-4 grid gap-3 lg:grid-cols-3">
+            {prioritySignals.map((signal) => (
+              <button
+                key={signal.key}
+                type="button"
+                onClick={() => onNavigate(signal.target)}
+                className={`rounded-lg border px-4 py-3 text-left transition-colors focus:outline-none focus:ring-2 focus:ring-sky-400 ${
+                  signal.tone === "danger"
+                    ? "border-red-200 bg-red-50 hover:border-red-300 hover:bg-red-100"
+                    : "border-amber-200 bg-amber-50 hover:border-amber-300 hover:bg-amber-100"
+                }`}
+              >
+                <span className="flex items-start justify-between gap-3">
+                  <span className="text-sm font-semibold text-slate-900">
+                    {t(`priority.signals.${signal.key}.title`)}
+                  </span>
+                  <span className={`shrink-0 rounded-full border bg-white px-2 py-0.5 text-xs font-medium ${
+                    signal.tone === "danger"
+                      ? "border-red-200 text-red-700"
+                      : "border-amber-300 text-amber-800"
+                  }`}>
+                    {signal.count}
+                  </span>
+                </span>
+                <span className="mt-1 block text-xs leading-5 text-slate-600">
+                  {t(`priority.signals.${signal.key}.description`, {
+                    count: signal.count,
+                    minutes: WAITLIST_EXPIRY_WARNING_MINUTES,
+                  })}
+                </span>
+                <span className="mt-2 block text-xs font-medium text-sky-700">
+                  {t("priority.open")}
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="rounded-xl border border-slate-200 bg-white p-6">
