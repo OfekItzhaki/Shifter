@@ -113,18 +113,32 @@ describe("SwapsTab", () => {
   });
 
   it("lets the target member accept and decline incoming swaps", async () => {
-    render(<SwapsTab spaceId="space-1" groupId="group-1" members={members} />);
+    const onSwapsChanged = vi.fn();
+    render(
+      <SwapsTab
+        spaceId="space-1"
+        groupId="group-1"
+        members={members}
+        onSwapsChanged={onSwapsChanged}
+      />
+    );
 
     fireEvent.click(await screen.findByRole("button", { name: "Accept" }));
 
     await waitFor(() => {
       expect(mockAcceptSwap).toHaveBeenCalledWith("space-1", "group-1", "incoming-swap");
     });
+    await waitFor(() => {
+      expect(onSwapsChanged).toHaveBeenCalledTimes(1);
+    });
 
     fireEvent.click(await screen.findByRole("button", { name: "Decline" }));
 
     await waitFor(() => {
       expect(mockDeclineSwap).toHaveBeenCalledWith("space-1", "group-1", "incoming-swap");
+    });
+    await waitFor(() => {
+      expect(onSwapsChanged).toHaveBeenCalledTimes(2);
     });
     expect(mockGetMySwaps).toHaveBeenCalledTimes(3);
   });
@@ -167,12 +181,23 @@ describe("SwapsTab", () => {
   });
 
   it("lets the initiator cancel outgoing swaps", async () => {
-    render(<SwapsTab spaceId="space-1" groupId="group-1" members={members} />);
+    const onSwapsChanged = vi.fn();
+    render(
+      <SwapsTab
+        spaceId="space-1"
+        groupId="group-1"
+        members={members}
+        onSwapsChanged={onSwapsChanged}
+      />
+    );
 
     fireEvent.click(await screen.findByRole("button", { name: "Cancel" }));
 
     await waitFor(() => {
       expect(mockCancelSwap).toHaveBeenCalledWith("space-1", "group-1", "outgoing-swap");
+    });
+    await waitFor(() => {
+      expect(onSwapsChanged).toHaveBeenCalledTimes(1);
     });
     expect(mockGetMySwaps).toHaveBeenCalledTimes(2);
   });
@@ -231,7 +256,15 @@ describe("SwapsTab", () => {
       }),
     ]);
 
-    render(<SwapsTab spaceId="space-1" groupId="group-1" members={members} />);
+    const onSwapsChanged = vi.fn();
+    render(
+      <SwapsTab
+        spaceId="space-1"
+        groupId="group-1"
+        members={members}
+        onSwapsChanged={onSwapsChanged}
+      />
+    );
 
     fireEvent.click(await screen.findByRole("button", { name: "Propose swap" }));
 
@@ -256,6 +289,7 @@ describe("SwapsTab", () => {
       );
     });
     expect(await screen.findByText("Swap proposal sent.")).toBeInTheDocument();
+    expect(onSwapsChanged).toHaveBeenCalledTimes(1);
   });
 
   it("renders swap time ranges without treating them as invalid single times", async () => {

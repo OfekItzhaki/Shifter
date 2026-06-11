@@ -27,6 +27,7 @@ interface Props {
   groupId: string;
   members: GroupMemberDto[];
   isAdmin?: boolean;
+  onSwapsChanged?: () => void | Promise<void>;
 }
 
 type ProposeStep = "idle" | "selectMyShift" | "selectTargetMember" | "selectTargetShift";
@@ -57,7 +58,13 @@ function formatSlotTimeRange(value: string): string {
  *
  * Validates: Requirements 8.1, 8.2, 8.3, 8.4, 8.5, 8.6, 8.7, 8.8, 8.9, 8.10
  */
-export default function SwapsTab({ spaceId, groupId, members, isAdmin = false }: Props) {
+export default function SwapsTab({
+  spaceId,
+  groupId,
+  members,
+  isAdmin = false,
+  onSwapsChanged,
+}: Props) {
   const t = useTranslations("selfService.swaps");
   const tCommon = useTranslations("selfService");
   const { userId } = useAuthStore();
@@ -123,6 +130,7 @@ export default function SwapsTab({ spaceId, groupId, members, isAdmin = false }:
     try {
       await acceptSwap(currentSpaceId, groupId, swapId);
       await fetchSwaps();
+      await onSwapsChanged?.();
     } catch (err) {
       const { message } = getSelfServiceErrorMessage(err);
       setActionError(message);
@@ -144,6 +152,7 @@ export default function SwapsTab({ spaceId, groupId, members, isAdmin = false }:
     try {
       await declineSwap(currentSpaceId, groupId, swapId);
       await fetchSwaps();
+      await onSwapsChanged?.();
     } catch (err) {
       const { message } = getSelfServiceErrorMessage(err);
       setActionError(message);
@@ -165,6 +174,7 @@ export default function SwapsTab({ spaceId, groupId, members, isAdmin = false }:
     try {
       await cancelSwap(currentSpaceId, groupId, swapId);
       await fetchSwaps();
+      await onSwapsChanged?.();
     } catch (err) {
       const { message } = getSelfServiceErrorMessage(err);
       setActionError(message);
@@ -232,6 +242,7 @@ export default function SwapsTab({ spaceId, groupId, members, isAdmin = false }:
       resetProposeFlow();
       setSuccessMessage(t("proposeSuccess"));
       await fetchSwaps();
+      await onSwapsChanged?.();
     } catch (err) {
       const { message } = getSelfServiceErrorMessage(err);
       setProposeError(message);

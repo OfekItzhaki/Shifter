@@ -1839,7 +1839,13 @@ export default function GroupDetailPage() {
           )}
 
           {activeTab === "swaps" && currentSpaceId && (
-            <SwapsTab spaceId={currentSpaceId} groupId={groupId} members={members} isAdmin={isAdmin} />
+            <SwapsTab
+              spaceId={currentSpaceId}
+              groupId={groupId}
+              members={members}
+              isAdmin={isAdmin}
+              onSwapsChanged={refreshSelfServiceReviewCount}
+            />
           )}
 
           {activeTab === "shift-templates" && currentSpaceId && (
