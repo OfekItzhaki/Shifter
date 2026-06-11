@@ -64,6 +64,8 @@ packaging, and self-service export/import readiness.
   passed.
 - `docker compose -f infra\\compose\\docker-compose.yml config --quiet`
   passed after public frontend env wiring.
+- `docker compose --env-file infra\\compose\\.env.customer.example -f infra\\compose\\docker-compose.yml config --quiet`
+  passed, proving the checked-in customer env template renders through Compose.
 
 ## Remaining Product Checks
 
