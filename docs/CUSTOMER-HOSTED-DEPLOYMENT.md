@@ -76,6 +76,7 @@ Customer-hosted means:
    APP_FRONTEND_BASE_URL=https://shifter.customer.example
    APP_API_BASE_URL=https://api-shifter.customer.example
    NEXT_PUBLIC_API_URL=https://api-shifter.customer.example
+   NEXT_PUBLIC_LEGAL_EMAIL=it-support@customer.example
    FIELD_ENCRYPTION_KEY=<unique-customer-secret-at-least-32-chars>
    ```
 

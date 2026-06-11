@@ -35,6 +35,8 @@ packaging, and self-service export/import readiness.
 - Routes native assistant contact payloads to the configured
   `NEXT_PUBLIC_LEGAL_EMAIL`, so customer-hosted installs can point support
   requests at the customer's own help address.
+- Requires `NEXT_PUBLIC_LEGAL_EMAIL` in customer env validation so private
+  installs do not silently route support/contact UI to the SaaS fallback.
 - Wires public frontend deployment variables through the web Docker build and
   runtime environment, including legal/support email, Crisp, PostHog, Sentry,
   VAPID, app version, and the public API URL.
