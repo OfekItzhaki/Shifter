@@ -289,15 +289,83 @@ public class WaitlistServiceTests
             Arg.Any<CancellationToken>());
     }
 
+    [Fact]
+    public async Task ProcessSlotReleasedAsync_DoesNotOfferNextMember_WhenSlotAlreadyHasActiveOffer()
+    {
+        using var db = CreateDb();
+        var (spaceId, groupId, cycleId, taskId) = SeedBaseData(db);
+        var offeredPerson = Person.Create(spaceId, "Offered", linkedUserId: Guid.NewGuid());
+        var waitingPerson = Person.Create(spaceId, "Waiting", linkedUserId: Guid.NewGuid());
+        var slot = CreateSlot(spaceId, groupId, taskId, cycleId);
+        var offeredEntry = WaitlistEntry.Create(spaceId, slot.Id, offeredPerson.Id, position: 1);
+        offeredEntry.Offer(DateTime.UtcNow.AddMinutes(30));
+        var waitingEntry = WaitlistEntry.Create(spaceId, slot.Id, waitingPerson.Id, position: 2);
+
+        db.People.AddRange(offeredPerson, waitingPerson);
+        db.ShiftSlots.Add(slot);
+        db.WaitlistEntries.AddRange(offeredEntry, waitingEntry);
+        await db.SaveChangesAsync();
+
+        var pushSender = Substitute.For<IPushNotificationSender>();
+        var service = CreateService(db, pushSender);
+
+        await service.ProcessSlotReleasedAsync(slot.Id);
+
+        var updatedWaitingEntry = await db.WaitlistEntries.SingleAsync(e => e.Id == waitingEntry.Id);
+        updatedWaitingEntry.Status.Should().Be(WaitlistEntryStatus.Waiting);
+        updatedWaitingEntry.OfferedAt.Should().BeNull();
+        updatedWaitingEntry.ExpiresAt.Should().BeNull();
+        await pushSender.DidNotReceiveWithAnyArgs()
+            .SendPushToUserAsync(default, default, default!, default);
+    }
+
+    [Fact]
+    public async Task ProcessSlotReleasedAsync_UsesConfiguredWaitlistOfferMinutes()
+    {
+        using var db = CreateDb();
+        var fixedNow = new DateTimeOffset(2026, 6, 11, 8, 30, 0, TimeSpan.Zero);
+        var (spaceId, groupId, cycleId, taskId) = SeedBaseData(db);
+        var waitingPerson = Person.Create(spaceId, "Waiting", linkedUserId: Guid.NewGuid());
+        var slot = CreateSlot(spaceId, groupId, taskId, cycleId);
+        var waitingEntry = WaitlistEntry.Create(spaceId, slot.Id, waitingPerson.Id, position: 1);
+        db.SelfServiceConfigs.Add(SelfServiceConfig.Create(
+            spaceId,
+            groupId,
+            minShiftsPerCycle: 1,
+            maxShiftsPerCycle: 3,
+            requestWindowOpenOffsetHours: 168,
+            requestWindowCloseOffsetHours: 24,
+            cancellationCutoffHours: 24,
+            maxLateCancellationsPerCycle: 2,
+            lateCancellationWindowHours: 24,
+            waitlistOfferMinutes: 45,
+            cycleDurationDays: 7));
+
+        db.People.Add(waitingPerson);
+        db.ShiftSlots.Add(slot);
+        db.WaitlistEntries.Add(waitingEntry);
+        await db.SaveChangesAsync();
+
+        var service = CreateService(db, timeProvider: new FixedTimeProvider(fixedNow));
+
+        await service.ProcessSlotReleasedAsync(slot.Id);
+
+        var updatedWaitingEntry = await db.WaitlistEntries.SingleAsync(e => e.Id == waitingEntry.Id);
+        updatedWaitingEntry.Status.Should().Be(WaitlistEntryStatus.Offered);
+        updatedWaitingEntry.OfferedAt.Should().NotBeNull();
+        updatedWaitingEntry.ExpiresAt.Should().Be(fixedNow.UtcDateTime.AddMinutes(45));
+    }
+
     private static WaitlistService CreateService(
         AppDbContext db,
         IPushNotificationSender? pushSender = null,
-        INotificationService? notificationService = null) =>
+        INotificationService? notificationService = null,
+        TimeProvider? timeProvider = null) =>
         new(
             db,
             pushSender ?? Substitute.For<IPushNotificationSender>(),
             notificationService ?? Substitute.For<INotificationService>(),
-            TimeProvider.System,
+            timeProvider ?? TimeProvider.System,
             NullLogger<WaitlistService>.Instance);
 
     private static (Guid spaceId, Guid groupId, Guid cycleId, Guid taskId) SeedBaseData(AppDbContext db)
@@ -351,4 +419,9 @@ public class WaitlistServiceTests
             startTime: new TimeOnly(8, 0),
             endTime: new TimeOnly(16, 0),
             capacity: 1);
+
+    private sealed class FixedTimeProvider(DateTimeOffset utcNow) : TimeProvider
+    {
+        public override DateTimeOffset GetUtcNow() => utcNow;
+    }
 }
