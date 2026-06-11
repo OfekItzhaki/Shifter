@@ -115,6 +115,43 @@ describe("SwapsTab", () => {
     expect(mockGetMySwaps).toHaveBeenCalledTimes(3);
   });
 
+  it("refreshes swaps after a stale accept failure", async () => {
+    mockAcceptSwap.mockRejectedValue({
+      response: { data: { error: "Only pending swap requests can be accepted." } },
+    });
+    mockGetMySwaps
+      .mockResolvedValueOnce([
+        makeSwap({
+          id: "incoming-swap",
+          initiatorPersonId: "person-other",
+          targetPersonId: "person-current",
+          initiatorPersonName: "Other Member",
+          targetPersonName: "Current Member",
+        }),
+      ])
+      .mockResolvedValueOnce([
+        makeSwap({
+          id: "incoming-swap",
+          initiatorPersonId: "person-other",
+          targetPersonId: "person-current",
+          initiatorPersonName: "Other Member",
+          targetPersonName: "Current Member",
+          status: "Declined",
+        }),
+      ]);
+
+    render(<SwapsTab spaceId="space-1" groupId="group-1" members={members} />);
+
+    fireEvent.click(await screen.findByRole("button", { name: "Accept" }));
+
+    expect(await screen.findByText("Only pending swap requests can be accepted.")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(mockGetMySwaps).toHaveBeenCalledTimes(2);
+    });
+    expect(screen.queryByRole("button", { name: "Accept" })).not.toBeInTheDocument();
+    expect(screen.getByText("Declined")).toBeInTheDocument();
+  });
+
   it("lets the initiator cancel outgoing swaps", async () => {
     render(<SwapsTab spaceId="space-1" groupId="group-1" members={members} />);
 

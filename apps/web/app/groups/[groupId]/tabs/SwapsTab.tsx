@@ -74,9 +74,9 @@ export default function SwapsTab({ spaceId, groupId, members }: Props) {
   const [proposing, setProposing] = useState(false);
   const [proposeError, setProposeError] = useState<string | null>(null);
 
-  const fetchSwaps = useCallback(async () => {
+  const fetchSwaps = useCallback(async (showLoading = true) => {
     if (!currentSpaceId || !groupId) return;
-    setLoading(true);
+    if (showLoading) setLoading(true);
     setError(null);
     try {
       const data = await getMySwaps(currentSpaceId, groupId);
@@ -84,12 +84,12 @@ export default function SwapsTab({ spaceId, groupId, members }: Props) {
     } catch {
       setError(tCommon("error"));
     } finally {
-      setLoading(false);
+      if (showLoading) setLoading(false);
     }
   }, [currentSpaceId, groupId, tCommon]);
 
   useEffect(() => {
-    void Promise.resolve().then(fetchSwaps);
+    void Promise.resolve().then(() => fetchSwaps());
   }, [fetchSwaps]);
 
   const currentPersonId = members.find((m) => m.linkedUserId === userId)?.personId ?? null;
@@ -110,6 +110,7 @@ export default function SwapsTab({ spaceId, groupId, members }: Props) {
     } catch (err) {
       const { message } = getSelfServiceErrorMessage(err);
       setActionError(message);
+      await fetchSwaps(false);
     } finally {
       setActionLoading((prev) => {
         const next = { ...prev };
@@ -129,6 +130,7 @@ export default function SwapsTab({ spaceId, groupId, members }: Props) {
     } catch (err) {
       const { message } = getSelfServiceErrorMessage(err);
       setActionError(message);
+      await fetchSwaps(false);
     } finally {
       setActionLoading((prev) => {
         const next = { ...prev };
@@ -148,6 +150,7 @@ export default function SwapsTab({ spaceId, groupId, members }: Props) {
     } catch (err) {
       const { message } = getSelfServiceErrorMessage(err);
       setActionError(message);
+      await fetchSwaps(false);
     } finally {
       setActionLoading((prev) => {
         const next = { ...prev };
@@ -212,6 +215,7 @@ export default function SwapsTab({ spaceId, groupId, members }: Props) {
     } catch (err) {
       const { message } = getSelfServiceErrorMessage(err);
       setProposeError(message);
+      await fetchSwaps(false);
     } finally {
       setProposing(false);
     }
@@ -252,7 +256,7 @@ export default function SwapsTab({ spaceId, groupId, members }: Props) {
   }
 
   if (error) {
-    return <ErrorRetry message={error} onRetry={fetchSwaps} />;
+    return <ErrorRetry message={error} onRetry={() => fetchSwaps()} />;
   }
 
   return (
