@@ -122,6 +122,12 @@ public class ShiftSwapService : IShiftSwapService
                 ErrorMessage: "One or both shift slots could not be found.");
         }
 
+        if (!SlotMatchesRequest(initiatorRequest, initiatorSlot) || !SlotMatchesRequest(targetRequest, targetSlot))
+        {
+            return new SwapResult(Success: false, SwapRequestId: null,
+                ErrorMessage: "Shift request metadata no longer matches its assigned slot.");
+        }
+
         var initiatorShiftStart = initiatorSlot.Date.ToDateTime(initiatorSlot.StartTime, DateTimeKind.Utc);
         var targetShiftStart = targetSlot.Date.ToDateTime(targetSlot.StartTime, DateTimeKind.Utc);
 
@@ -301,6 +307,13 @@ public class ShiftSwapService : IShiftSwapService
                         ErrorMessage: "One or both shift slots could not be found.");
                 }
 
+                if (!SlotMatchesRequest(initiatorRequest, initiatorSlot) || !SlotMatchesRequest(targetRequest, targetSlot))
+                {
+                    await transaction.RollbackAsync(ct);
+                    return new SwapResult(Success: false, SwapRequestId: swapRequestId,
+                        ErrorMessage: "Shift request metadata no longer matches its assigned slot.");
+                }
+
                 // Req 12.3, 12.4: Run ConflictDetector on hypothetical post-swap state
                 // After swap: initiator gets target's slot, target gets initiator's slot
                 var conflictResult = await DetectSwapConflictsAsync(
@@ -392,6 +405,11 @@ public class ShiftSwapService : IShiftSwapService
             }
         });
     }
+
+    private static bool SlotMatchesRequest(ShiftRequest request, ShiftSlot slot) =>
+        request.SpaceId == slot.SpaceId
+        && request.GroupId == slot.GroupId
+        && request.SchedulingCycleId == slot.SchedulingCycleId;
 
     /// <inheritdoc />
     public async Task DeclineSwapAsync(

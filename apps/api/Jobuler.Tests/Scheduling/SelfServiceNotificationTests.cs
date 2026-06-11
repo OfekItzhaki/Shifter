@@ -412,6 +412,47 @@ public class SelfServiceNotificationTests
     }
 
     [Fact]
+    public async Task ProposeSwapAsync_RejectsWhenRequestSlotMetadataDoesNotMatch()
+    {
+        using var db = CreateDb();
+        var (spaceId, groupId, cycleId, guardTaskId, ownerUserId) = SeedBaseData(db);
+        var deskTask = AddTask(db, spaceId, groupId, "Desk", ownerUserId);
+        var otherCycle = AddCycle(db, spaceId, groupId, daysFromNow: 9);
+        var audit = CreateAuditLogger();
+        var pushSender = Substitute.For<IPushNotificationSender>();
+
+        var initiator = Person.Create(spaceId, "Initiator", linkedUserId: Guid.NewGuid());
+        var target = Person.Create(spaceId, "Target", linkedUserId: Guid.NewGuid());
+
+        var initiatorSlot = AddSlot(db, spaceId, groupId, guardTaskId, cycleId, daysFromNow: 3);
+        var mismatchedTargetSlot = AddSlot(db, spaceId, groupId, deskTask.Id, otherCycle.Id, daysFromNow: 10);
+
+        var initiatorRequest = ShiftRequest.Create(spaceId, initiatorSlot.Id, initiator.Id, groupId, cycleId);
+        initiatorRequest.Approve();
+        var targetRequest = ShiftRequest.Create(spaceId, mismatchedTargetSlot.Id, target.Id, groupId, cycleId);
+        targetRequest.Approve();
+
+        db.People.AddRange(initiator, target);
+        db.ShiftRequests.AddRange(initiatorRequest, targetRequest);
+        await db.SaveChangesAsync();
+
+        var service = new ShiftSwapService(
+            db,
+            pushSender,
+            audit,
+            TimeProvider.System,
+            NullLogger<ShiftSwapService>.Instance);
+
+        var result = await service.ProposeSwapAsync(initiator.Id, initiatorRequest.Id, targetRequest.Id);
+
+        result.Success.Should().BeFalse();
+        result.ErrorMessage.Should().Be("Shift request metadata no longer matches its assigned slot.");
+        (await db.SwapRequests.CountAsync()).Should().Be(0);
+        await pushSender.DidNotReceiveWithAnyArgs()
+            .SendPushToUserAsync(default, default, default!, default);
+    }
+
+    [Fact]
     public async Task ProposeThenAcceptSwapAsync_SwapsAssignmentsAndNotifiesBothMembers()
     {
         using var db = CreateDb();
@@ -555,6 +596,60 @@ public class SelfServiceNotificationTests
         updatedSwap.Status.Should().Be(SwapRequestStatus.Pending);
         (await db.ShiftRequests.SingleAsync(r => r.Id == initiatorRequest.Id)).ShiftSlotId.Should().Be(initiatorSlot.Id);
         (await db.ShiftRequests.SingleAsync(r => r.Id == targetRequest.Id)).ShiftSlotId.Should().Be(targetSlot.Id);
+        await pushSender.DidNotReceiveWithAnyArgs()
+            .SendPushToUserAsync(default, default, default!, default);
+    }
+
+    [Fact]
+    public async Task AcceptSwapAsync_RejectsWhenRequestSlotMetadataDoesNotMatch()
+    {
+        using var db = CreateDb();
+        var (spaceId, groupId, cycleId, guardTaskId, ownerUserId) = SeedBaseData(db);
+        var deskTask = AddTask(db, spaceId, groupId, "Desk", ownerUserId);
+        var otherCycle = AddCycle(db, spaceId, groupId, daysFromNow: 9);
+        var audit = CreateAuditLogger();
+        var pushSender = Substitute.For<IPushNotificationSender>();
+
+        var initiator = Person.Create(spaceId, "Initiator", linkedUserId: Guid.NewGuid());
+        var target = Person.Create(spaceId, "Target", linkedUserId: Guid.NewGuid());
+
+        var initiatorSlot = AddSlot(db, spaceId, groupId, guardTaskId, cycleId, daysFromNow: 3);
+        var mismatchedTargetSlot = AddSlot(db, spaceId, groupId, deskTask.Id, otherCycle.Id, daysFromNow: 10);
+
+        var initiatorRequest = ShiftRequest.Create(spaceId, initiatorSlot.Id, initiator.Id, groupId, cycleId);
+        initiatorRequest.Approve();
+        var targetRequest = ShiftRequest.Create(spaceId, mismatchedTargetSlot.Id, target.Id, groupId, cycleId);
+        targetRequest.Approve();
+
+        var swap = SwapRequest.Create(
+            spaceId,
+            groupId,
+            initiator.Id,
+            target.Id,
+            initiatorRequest.Id,
+            targetRequest.Id);
+
+        db.People.AddRange(initiator, target);
+        db.ShiftRequests.AddRange(initiatorRequest, targetRequest);
+        db.SwapRequests.Add(swap);
+        await db.SaveChangesAsync();
+
+        var service = new ShiftSwapService(
+            db,
+            pushSender,
+            audit,
+            TimeProvider.System,
+            NullLogger<ShiftSwapService>.Instance);
+
+        var result = await service.AcceptSwapAsync(target.Id, swap.Id);
+
+        result.Success.Should().BeFalse();
+        result.ErrorMessage.Should().Be("Shift request metadata no longer matches its assigned slot.");
+
+        var updatedSwap = await db.SwapRequests.SingleAsync(s => s.Id == swap.Id);
+        updatedSwap.Status.Should().Be(SwapRequestStatus.Pending);
+        (await db.ShiftRequests.SingleAsync(r => r.Id == initiatorRequest.Id)).ShiftSlotId.Should().Be(initiatorSlot.Id);
+        (await db.ShiftRequests.SingleAsync(r => r.Id == targetRequest.Id)).ShiftSlotId.Should().Be(mismatchedTargetSlot.Id);
         await pushSender.DidNotReceiveWithAnyArgs()
             .SendPushToUserAsync(default, default, default!, default);
     }
