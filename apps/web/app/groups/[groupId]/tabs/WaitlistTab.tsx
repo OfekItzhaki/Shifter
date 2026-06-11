@@ -106,6 +106,7 @@ export default function WaitlistTab({ spaceId, groupId, isAdmin = false }: Waitl
     } catch (err) {
       const errorResult = getSelfServiceErrorMessage(err);
       setActionError(errorResult.message);
+      await fetchEntries();
     } finally {
       setAcceptingId(null);
     }
@@ -191,8 +192,22 @@ export default function WaitlistTab({ spaceId, groupId, isAdmin = false }: Waitl
   // Empty state
   if (entries.length === 0 && adminEntries.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-16 text-center bg-white rounded-xl border border-slate-200">
-        <p className="text-slate-400 text-sm">{t("noEntries")}</p>
+      <div className="space-y-4">
+        {actionError && (
+          <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700">
+            {actionError}
+          </div>
+        )}
+
+        {successMessage && (
+          <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+            {successMessage}
+          </div>
+        )}
+
+        <div className="flex flex-col items-center justify-center py-16 text-center bg-white rounded-xl border border-slate-200">
+          <p className="text-slate-400 text-sm">{t("noEntries")}</p>
+        </div>
       </div>
     );
   }
