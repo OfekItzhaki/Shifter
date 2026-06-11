@@ -19,6 +19,8 @@ payload changes forward for scheduling.
 - Adds `SpaceSpecialDay` domain, EF configuration, migration, commands,
   queries, API controller, and tests.
 - Adds `SpecialDaysCard` to space settings under the `Self-service` tab.
+- Adds self-service slot labels and cycle warning counts for marked special
+  days, without enforcing automatic holiday restrictions yet.
 - Adds `spaceSpecialDays` web API helpers and EN/HE/RU locale strings.
 - Integrates holiday/special-day weighting into solver payloads and solver
   home-leave behavior.
@@ -29,6 +31,10 @@ payload changes forward for scheduling.
 
 - `dotnet build Jobuler.sln` passed.
 - Targeted API tests passed: 206 passed, 0 failed.
+- Holiday-aware self-service API tests passed in the top integration branch:
+  71 passed, 0 failed.
+- Holiday-aware self-service component tests passed in the top integration
+  branch: 7 passed, 0 failed.
 - `node_modules\\.bin\\next.cmd build` from `apps/web` passed.
 - Frontend lint passes on the current branch stack with 89 existing warnings
   and 0 errors.

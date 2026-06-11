@@ -2105,6 +2105,8 @@
       "highAvailability": "Много мест",
       "nearlyFull": "Почти заполнено",
       "full": "Заполнено",
+      "specialDay": "Особый день",
+      "specialDayNamed": "Особый день: {name}",
       "dateFilter": "Фильтр по дате",
       "allDates": "Все даты",
       "noSlots": "Нет доступных смен",
@@ -2803,7 +2805,8 @@
           "changeReview": "???????? ?????????",
           "pendingSwaps": "Ожидающие обмены",
           "generated": "???????",
-          "leaveReview": "???????? ????????"
+          "leaveReview": "???????? ????????",
+          "specialDays": "Особые дни"
         },
         "buttons": {
           "open": "??????? ?? 24?",

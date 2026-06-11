@@ -36,6 +36,7 @@ const translations: Record<string, string> = {
   "metrics.changeReview": "Changes",
   "metrics.pendingSwaps": "Pending swaps",
   "metrics.leaveReview": "Leave",
+  "metrics.specialDays": "Special days",
   "metrics.generated": "Generated",
   "closeChecklist.title": "Close checklist",
   "closeChecklist.description": "Check before closing.",
@@ -76,6 +77,7 @@ vi.mock("next-intl", () => ({
   useTranslations: () => (key: string, values?: Record<string, unknown>) => {
     if (key === "openReviewQueue") return `Open ${values?.queue ?? ""}`;
     if (key === "underScheduledCount") return `${values?.count ?? 0} under-scheduled member(s)`;
+    if (key === "specialDayNamed") return `${values?.name ?? ""}`;
     return translations[key] ?? key;
   },
 }));
@@ -108,6 +110,7 @@ function makeStatus(overrides: Record<string, unknown> = {}) {
     pendingShiftChangeRequestCount: 1,
     pendingSwapRequestCount: 2,
     pendingSpecialLeaveRequestCount: 1,
+    specialDayCount: 1,
     underfilledSlotCount: 1,
     underfilledSlots: [
       {
@@ -119,6 +122,9 @@ function makeStatus(overrides: Record<string, unknown> = {}) {
         currentFillCount: 1,
         capacity: 2,
         openSeats: 1,
+        isSpecialDay: true,
+        specialDayName: "Festival",
+        specialDayKind: "Holiday",
       },
     ],
     ...overrides,
@@ -159,6 +165,8 @@ describe("CycleControlPanel", () => {
     expect(await screen.findByText("Window open")).toBeInTheDocument();
     expect(screen.getByText("6/8")).toBeInTheDocument();
     expect(screen.getByText("75%")).toBeInTheDocument();
+    expect(screen.getByText("Special days")).toBeInTheDocument();
+    expect(screen.getByText("Festival")).toBeInTheDocument();
     expect(screen.getByText("Under-filled slots")).toBeInTheDocument();
     expect(screen.getByText("4 warning(s)")).toBeInTheDocument();
     expect(screen.getByText("Run the check")).toBeInTheDocument();

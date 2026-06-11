@@ -2117,6 +2117,8 @@
       "highAvailability": "זמינות גבוהה",
       "nearlyFull": "כמעט מלא",
       "full": "מלא",
+      "specialDay": "יום מיוחד",
+      "specialDayNamed": "יום מיוחד: {name}",
       "dateFilter": "סנן לפי תאריך",
       "allDates": "כל התאריכים",
       "noSlots": "אין משמרות זמינות",
@@ -2815,7 +2817,8 @@
           "changeReview": "בדיקת שינוי",
           "pendingSwaps": "החלפות ממתינות",
           "generated": "נוצר",
-          "leaveReview": "בדיקת חופשה"
+          "leaveReview": "בדיקת חופשה",
+          "specialDays": "ימים מיוחדים"
         },
         "buttons": {
           "open": "פתח ל-24 שעות",

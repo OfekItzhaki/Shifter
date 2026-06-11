@@ -2105,6 +2105,8 @@
       "highAvailability": "High availability",
       "nearlyFull": "Nearly full",
       "full": "Full",
+      "specialDay": "Special day",
+      "specialDayNamed": "Special day: {name}",
       "dateFilter": "Filter by date",
       "allDates": "All dates",
       "noSlots": "No available slots",
@@ -2805,7 +2807,8 @@
           "changeReview": "Change review",
           "pendingSwaps": "Pending swaps",
           "generated": "Generated",
-          "leaveReview": "Leave review"
+          "leaveReview": "Leave review",
+          "specialDays": "Special days"
         },
         "buttons": {
           "open": "Open 24h",

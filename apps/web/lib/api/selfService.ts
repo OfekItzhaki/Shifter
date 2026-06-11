@@ -84,6 +84,9 @@ export interface AvailableSlotDto {
   capacity: number;
   currentFillCount: number;
   schedulingCycleId: string;
+  isSpecialDay?: boolean;
+  specialDayName?: string | null;
+  specialDayKind?: string | null;
 }
 
 export interface AvailableSlotsResponse {
@@ -113,6 +116,7 @@ export interface SelfServiceCycleStatusDto {
   pendingShiftChangeRequestCount: number;
   pendingSwapRequestCount: number;
   pendingSpecialLeaveRequestCount: number;
+  specialDayCount: number;
   underfilledSlotCount: number;
   underfilledSlots: UnderfilledSlotDto[];
 }
@@ -171,6 +175,9 @@ export interface UnderfilledSlotDto {
   currentFillCount: number;
   capacity: number;
   openSeats: number;
+  isSpecialDay?: boolean;
+  specialDayName?: string | null;
+  specialDayKind?: string | null;
 }
 
 export interface UnderScheduledMemberDto {

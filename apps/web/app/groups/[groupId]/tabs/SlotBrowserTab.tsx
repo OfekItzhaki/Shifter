@@ -237,6 +237,13 @@ export default function SlotBrowserTab({ spaceId, groupId }: SlotBrowserTabProps
                         {formatTime24h(slot.startTime)} – {formatTime24h(slot.endTime)}
                       </span>
                     </div>
+                    {slot.isSpecialDay && (
+                      <span className="mt-1 inline-flex w-fit items-center rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700">
+                        {slot.specialDayName
+                          ? t("specialDayNamed", { name: slot.specialDayName })
+                          : t("specialDay")}
+                      </span>
+                    )}
                     <div className="flex items-center gap-2 mt-1">
                       <span className="text-xs text-slate-600">{slot.taskName}</span>
                       <span

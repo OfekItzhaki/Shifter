@@ -347,6 +347,22 @@ public class SelfServiceCyclesController : ControllerBase
             .Select(t => new { t.Id, t.Name })
             .ToDictionaryAsync(t => t.Id, t => t.Name, ct);
 
+        var cycleStartDate = DateOnly.FromDateTime(cycle.StartsAt);
+        var cycleEndDate = DateOnly.FromDateTime(cycle.EndsAt);
+        var specialDays = await _db.SpaceSpecialDays
+            .AsNoTracking()
+            .Where(d => d.SpaceId == cycle.SpaceId
+                        && d.Date >= cycleStartDate
+                        && d.Date < cycleEndDate)
+            .OrderByDescending(d => d.RequiresCoverage)
+            .ThenBy(d => d.Name)
+            .Select(d => new { d.Date, d.Name, d.Kind })
+            .ToListAsync(ct);
+
+        var specialDayLookup = specialDays
+            .GroupBy(d => d.Date)
+            .ToDictionary(g => g.Key, g => g.First());
+
         var underfilledSlotCount = slots.Count(s => s.CurrentFillCount < s.Capacity);
 
         var underfilledSlots = slots
@@ -354,15 +370,22 @@ public class SelfServiceCyclesController : ControllerBase
             .OrderBy(s => s.Date)
             .ThenBy(s => s.StartTime)
             .Take(12)
-            .Select(s => new UnderfilledSlotResponse(
-                s.Id,
-                s.Date,
-                s.StartTime,
-                s.EndTime,
-                taskNames.GetValueOrDefault(s.GroupTaskId, "Shift"),
-                s.CurrentFillCount,
-                s.Capacity,
-                s.Capacity - s.CurrentFillCount))
+            .Select(s =>
+            {
+                specialDayLookup.TryGetValue(s.Date, out var specialDay);
+                return new UnderfilledSlotResponse(
+                    s.Id,
+                    s.Date,
+                    s.StartTime,
+                    s.EndTime,
+                    taskNames.GetValueOrDefault(s.GroupTaskId, "Shift"),
+                    s.CurrentFillCount,
+                    s.Capacity,
+                    s.Capacity - s.CurrentFillCount,
+                    specialDay is not null,
+                    specialDay?.Name,
+                    specialDay?.Kind.ToString());
+            })
             .ToList();
 
         var now = DateTime.UtcNow;
@@ -388,6 +411,7 @@ public class SelfServiceCyclesController : ControllerBase
             pendingShiftChangeRequestCount,
             pendingSwapRequestCount,
             pendingSpecialLeaveRequestCount,
+            specialDays.Count,
             underfilledSlotCount,
             underfilledSlots);
     }
@@ -690,7 +714,10 @@ public record UnderfilledSlotResponse(
     string TaskName,
     int CurrentFillCount,
     int Capacity,
-    int OpenSeats);
+    int OpenSeats,
+    bool IsSpecialDay = false,
+    string? SpecialDayName = null,
+    string? SpecialDayKind = null);
 
 public record SelfServiceCycleStatusResponse(
     Guid? CycleId,
@@ -711,11 +738,12 @@ public record SelfServiceCycleStatusResponse(
     int PendingShiftChangeRequestCount,
     int PendingSwapRequestCount,
     int PendingSpecialLeaveRequestCount,
+    int SpecialDayCount,
     int UnderfilledSlotCount,
     IReadOnlyList<UnderfilledSlotResponse> UnderfilledSlots)
 {
     public static SelfServiceCycleStatusResponse Empty() =>
-        new(null, null, null, null, null, false, false, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, []);
+        new(null, null, null, null, null, false, false, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, []);
 }
 
 public record SelfServiceCycleCloseoutResponse(

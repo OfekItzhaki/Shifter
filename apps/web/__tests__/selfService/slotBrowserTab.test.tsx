@@ -31,6 +31,9 @@ vi.mock("next-intl", () => ({
         if (`${namespace}.${key}` === "selfService.slotBrowser.windowOpensAt") {
           return `Opens ${values?.date ?? ""}`;
         }
+        if (`${namespace}.${key}` === "selfService.slotBrowser.specialDayNamed") {
+          return `Special day: ${values?.name ?? ""}`;
+        }
         return translations[`${namespace}.${key}`] ?? key;
       });
     }
@@ -146,5 +149,29 @@ describe("SlotBrowserTab", () => {
     });
     expect(await screen.findByText("Joined waitlist at position 3")).toBeInTheDocument();
     expect(mockSubmitShiftRequest).not.toHaveBeenCalled();
+  });
+
+  it("shows special-day labels on matching slots", async () => {
+    mockGetAvailableSlots.mockResolvedValue({
+      ...makeAvailableResponse(0),
+      slots: [
+        {
+          id: "slot-holiday",
+          date: "2026-06-20",
+          startTime: "09:00:00",
+          endTime: "17:00:00",
+          taskName: "Desk",
+          capacity: 2,
+          currentFillCount: 0,
+          isSpecialDay: true,
+          specialDayName: "Festival",
+          specialDayKind: "Holiday",
+        },
+      ],
+    });
+
+    render(<SlotBrowserTab spaceId="space-1" groupId="group-1" isAdmin={false} />);
+
+    expect(await screen.findByText("Special day: Festival")).toBeInTheDocument();
   });
 });

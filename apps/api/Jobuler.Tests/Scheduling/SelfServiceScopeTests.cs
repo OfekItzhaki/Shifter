@@ -3038,6 +3038,62 @@ public class SelfServiceScopeTests
     }
 
     [Fact]
+    public async Task GetCycleStatus_IncludesSpaceSpecialDayWarningsForCycleSlots()
+    {
+        using var db = CreateDb();
+        var services = CreateControllerServices();
+        var spaceId = Guid.NewGuid();
+        var otherSpaceId = Guid.NewGuid();
+        var group = Group.Create(spaceId, null, "Route Group");
+        var userId = Guid.NewGuid();
+        var ownerUserId = Guid.NewGuid();
+        var cycle = CreateCycle(spaceId, group.Id);
+        var task = CreateTask(spaceId, group.Id, "Holiday Shift", ownerUserId);
+        var slot = CreateSlot(spaceId, group.Id, task.Id, cycle.Id, daysFromNow: 2);
+        var specialDate = slot.Date;
+
+        db.Groups.Add(group);
+        db.SchedulingCycles.Add(cycle);
+        db.GroupTasks.Add(task);
+        db.ShiftSlots.Add(slot);
+        db.SpaceSpecialDays.Add(SpaceSpecialDay.Create(
+            spaceId,
+            specialDate,
+            "Festival",
+            SpaceSpecialDayKind.Holiday,
+            requiresCoverage: true));
+        db.SpaceSpecialDays.Add(SpaceSpecialDay.Create(
+            otherSpaceId,
+            specialDate,
+            "Other Space Festival",
+            SpaceSpecialDayKind.Holiday,
+            requiresCoverage: true));
+        await db.SaveChangesAsync();
+
+        services.Permissions
+            .RequirePermissionAsync(userId, spaceId, Permissions.SpaceView, Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+
+        var controller = new SelfServiceCyclesController(
+            db,
+            services.Permissions,
+            Substitute.For<ISlotGenerationService>(),
+            services.Mediator,
+            Substitute.For<IPdfRenderer>());
+        controller.ControllerContext = CreateControllerContext(userId);
+
+        var result = await controller.GetStatus(spaceId, group.Id, CancellationToken.None);
+
+        var ok = result.Should().BeOfType<OkObjectResult>().Subject;
+        var response = ok.Value.Should().BeOfType<SelfServiceCycleStatusResponse>().Subject;
+        response.SpecialDayCount.Should().Be(1);
+        response.UnderfilledSlots.Should().ContainSingle();
+        response.UnderfilledSlots[0].IsSpecialDay.Should().BeTrue();
+        response.UnderfilledSlots[0].SpecialDayName.Should().Be("Festival");
+        response.UnderfilledSlots[0].SpecialDayKind.Should().Be(nameof(SpaceSpecialDayKind.Holiday));
+    }
+
+    [Fact]
     public async Task GetCycleCloseout_SummarizesCurrentCycleOperatingMetrics()
     {
         using var db = CreateDb();

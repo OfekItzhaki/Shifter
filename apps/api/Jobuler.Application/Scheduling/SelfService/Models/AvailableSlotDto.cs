@@ -10,6 +10,9 @@ namespace Jobuler.Application.Scheduling.SelfService.Models;
 /// <param name="TaskName">Display name of the associated group task.</param>
 /// <param name="CurrentFillCount">Number of members currently assigned to this slot.</param>
 /// <param name="Capacity">Maximum number of members this slot can hold.</param>
+/// <param name="IsSpecialDay">True when the slot date matches a marked space special day.</param>
+/// <param name="SpecialDayName">Display name of the matching special day, when any.</param>
+/// <param name="SpecialDayKind">Special day kind, when any.</param>
 public record AvailableSlotDto(
     Guid ShiftSlotId,
     DateOnly Date,
@@ -17,4 +20,7 @@ public record AvailableSlotDto(
     TimeOnly EndTime,
     string TaskName,
     int CurrentFillCount,
-    int Capacity);
+    int Capacity,
+    bool IsSpecialDay = false,
+    string? SpecialDayName = null,
+    string? SpecialDayKind = null);
