@@ -293,6 +293,100 @@ public class SelfServiceNotificationTests
     }
 
     [Fact]
+    public async Task ProposeThenAcceptSwapAsync_SwapsAssignmentsAndNotifiesBothMembers()
+    {
+        using var db = CreateDb();
+        var (spaceId, groupId, cycleId, guardTaskId, ownerUserId) = SeedBaseData(db);
+        var deskTask = AddTask(db, spaceId, groupId, "Desk", ownerUserId);
+        var audit = CreateAuditLogger();
+        var pushSender = Substitute.For<IPushNotificationSender>();
+
+        var initiatorUserId = Guid.NewGuid();
+        var targetUserId = Guid.NewGuid();
+        var initiator = Person.Create(spaceId, "Initiator", linkedUserId: initiatorUserId);
+        var target = Person.Create(spaceId, "Target", linkedUserId: targetUserId);
+
+        var initiatorSlot = AddSlot(db, spaceId, groupId, guardTaskId, cycleId, daysFromNow: 3);
+        var targetSlot = AddSlot(db, spaceId, groupId, deskTask.Id, cycleId, daysFromNow: 4);
+
+        var initiatorRequest = ShiftRequest.Create(spaceId, initiatorSlot.Id, initiator.Id, groupId, cycleId);
+        initiatorRequest.Approve();
+        var targetRequest = ShiftRequest.Create(spaceId, targetSlot.Id, target.Id, groupId, cycleId);
+        targetRequest.Approve();
+
+        db.People.AddRange(initiator, target);
+        db.ShiftRequests.AddRange(initiatorRequest, targetRequest);
+        await db.SaveChangesAsync();
+
+        var service = new ShiftSwapService(
+            db,
+            pushSender,
+            audit,
+            TimeProvider.System,
+            NullLogger<ShiftSwapService>.Instance);
+
+        var proposal = await service.ProposeSwapAsync(initiator.Id, initiatorRequest.Id, targetRequest.Id);
+        proposal.Success.Should().BeTrue();
+        proposal.SwapRequestId.Should().NotBeNull();
+
+        var acceptance = await service.AcceptSwapAsync(target.Id, proposal.SwapRequestId!.Value);
+        acceptance.Success.Should().BeTrue();
+
+        var updatedSwap = await db.SwapRequests.SingleAsync(s => s.Id == proposal.SwapRequestId);
+        updatedSwap.Status.Should().Be(SwapRequestStatus.Accepted);
+
+        var updatedInitiatorRequest = await db.ShiftRequests.SingleAsync(r => r.Id == initiatorRequest.Id);
+        updatedInitiatorRequest.PersonId.Should().Be(target.Id);
+        updatedInitiatorRequest.ShiftSlotId.Should().Be(targetSlot.Id);
+
+        var updatedTargetRequest = await db.ShiftRequests.SingleAsync(r => r.Id == targetRequest.Id);
+        updatedTargetRequest.PersonId.Should().Be(initiator.Id);
+        updatedTargetRequest.ShiftSlotId.Should().Be(initiatorSlot.Id);
+
+        var proposalNotification = await db.Notifications
+            .SingleAsync(n => n.EventType == "self_service.swap_proposal_received");
+        proposalNotification.UserId.Should().Be(targetUserId);
+        proposalNotification.MetadataJson.Should().Contain(updatedSwap.Id.ToString());
+
+        var acceptedNotifications = await db.Notifications
+            .Where(n => n.EventType == "self_service.swap_accepted")
+            .ToListAsync();
+        acceptedNotifications.Should().HaveCount(2);
+        acceptedNotifications.Select(n => n.UserId)
+            .Should().BeEquivalentTo([initiatorUserId, targetUserId]);
+        acceptedNotifications.Should().AllSatisfy(n =>
+            n.MetadataJson.Should().Contain(updatedSwap.Id.ToString()));
+        acceptedNotifications.Select(n => n.MetadataJson).Should().Contain(metadata =>
+            metadata.Contains(initiatorSlot.Id.ToString()));
+        acceptedNotifications.Select(n => n.MetadataJson).Should().Contain(metadata =>
+            metadata.Contains(targetSlot.Id.ToString()));
+
+        await pushSender.Received(1)
+            .SendPushToUserAsync(targetUserId, spaceId, Arg.Is<PushPayload>(p => p.Title.Contains("Swap Proposal")), Arg.Any<CancellationToken>());
+
+        await audit.Received(1).LogAsync(
+            spaceId,
+            initiatorUserId,
+            "self_service.propose_swap",
+            "swap_request",
+            updatedSwap.Id,
+            Arg.Any<string?>(),
+            Arg.Any<string?>(),
+            Arg.Any<string?>(),
+            Arg.Any<CancellationToken>());
+        await audit.Received(1).LogAsync(
+            spaceId,
+            targetUserId,
+            "self_service.accept_swap",
+            "swap_request",
+            updatedSwap.Id,
+            Arg.Any<string?>(),
+            Arg.Any<string?>(),
+            Arg.Any<string?>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task DeclineSwapAsync_NotifiesInitiatorAndAuditsReview()
     {
         using var db = CreateDb();
