@@ -73,6 +73,7 @@ describe("WaitlistTab", () => {
       },
     ]);
     mockAcceptWaitlistOffer.mockResolvedValue(undefined);
+    mockAdminAssignMember.mockResolvedValue(undefined);
   });
 
   it("shows confirmation after accepting a waitlist offer", async () => {
@@ -84,5 +85,34 @@ describe("WaitlistTab", () => {
       expect(mockAcceptWaitlistOffer).toHaveBeenCalledWith("space-1", "group-1", "slot-1");
     });
     expect(await screen.findByText("Waitlist offer accepted. The shift was added to your shifts.")).toBeInTheDocument();
+  });
+
+  it("shows confirmation after an admin assigns a waitlisted member", async () => {
+    mockGetMyWaitlistEntries.mockResolvedValue([]);
+    mockGetAdminWaitlistEntries.mockResolvedValue([
+      {
+        id: "admin-waitlist-1",
+        shiftSlotId: "slot-2",
+        personId: "person-2",
+        personName: "Member Two",
+        slotDate: "2026-06-21",
+        slotStartTime: "10:00:00",
+        slotEndTime: "18:00:00",
+        taskName: "Gate",
+        position: 1,
+        status: "Waiting",
+        offeredAt: null,
+        expiresAt: null,
+      },
+    ]);
+
+    render(<WaitlistTab spaceId="space-1" groupId="group-1" isAdmin />);
+
+    fireEvent.click(await screen.findByRole("button", { name: "Assign now" }));
+
+    await waitFor(() => {
+      expect(mockAdminAssignMember).toHaveBeenCalledWith("space-1", "group-1", "slot-2", "person-2");
+    });
+    expect(await screen.findByText("Waitlist member assigned to the shift.")).toBeInTheDocument();
   });
 });
