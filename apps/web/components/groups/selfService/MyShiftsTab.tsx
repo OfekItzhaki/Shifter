@@ -1066,6 +1066,7 @@ export default function MyShiftsTab({ spaceId, groupId, onNavigate }: MyShiftsTa
             </button>
             <MutationButton
               onClick={handleChangeConfirm}
+              data-testid="self-service-confirm-change"
               loading={submittingChange}
               disabled={changeReason.trim().length === 0}
               label={t("changeConfirm")}

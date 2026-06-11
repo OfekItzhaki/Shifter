@@ -596,7 +596,11 @@ export default function AbsenceReportsTab({ spaceId, groupId, onReviewed }: Prop
       ) : (
         <div className="space-y-3">
           {sortedChangeRequests.map((request) => (
-            <div key={request.id} className="rounded-xl border border-slate-200 bg-white p-4">
+            <div
+              key={request.id}
+              data-testid="self-service-change-request"
+              className="rounded-xl border border-slate-200 bg-white p-4"
+            >
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">

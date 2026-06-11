@@ -61,6 +61,13 @@ interface AbsenceReportDto {
   status: "Pending" | "Approved" | "Rejected";
 }
 
+interface ShiftChangeRequestDto {
+  id: string;
+  shiftRequestId: string;
+  reason: string;
+  status: "Pending" | "Approved" | "Rejected" | "Cancelled";
+}
+
 interface MyAbsenceReportsResponse {
   reports: AbsenceReportDto[];
   absenceReportsUsed: number;
@@ -183,6 +190,41 @@ async function ensureApprovedShift(
   return assigned!;
 }
 
+async function ensureChangeableApprovedShift(
+  request: APIRequestContext,
+  adminToken: string,
+  memberToken: string,
+  spaceId: string,
+  groupId: string,
+  cycleId: string,
+  personId: string
+): Promise<ShiftRequestDto> {
+  const changes = await api<ShiftChangeRequestDto[]>(
+    request,
+    memberToken,
+    "GET",
+    `/spaces/${spaceId}/groups/${groupId}/shift-change-requests/mine`
+  );
+  const pendingShiftIds = new Set(
+    changes
+      .filter((row) => row.status === "Pending")
+      .map((row) => row.shiftRequestId)
+  );
+
+  const mine = await api<MyShiftsResponse>(
+    request,
+    memberToken,
+    "GET",
+    `/spaces/${spaceId}/groups/${groupId}/shift-requests/mine`
+  );
+  const approved = mine.requests.find((row) =>
+    row.status === "Approved" && !pendingShiftIds.has(row.id)
+  );
+  if (approved) return approved;
+
+  return ensureApprovedShift(request, adminToken, memberToken, spaceId, groupId, cycleId, personId);
+}
+
 async function enterElevatedGroup(page: Page, groupId: string): Promise<void> {
   await page.evaluate((targetGroupId) => {
     const authRaw = localStorage.getItem("jobuler-auth");
@@ -205,6 +247,68 @@ async function enterElevatedGroup(page: Page, groupId: string): Promise<void> {
 }
 
 test.describe("Self-service browser lifecycle", () => {
+  test("member submits a shift-change request and admin sees it in the review queue", async ({ page, request }) => {
+    const adminEmail = process.env.E2E_ADMIN_EMAIL ?? "admin@demo.local";
+    const memberEmail = process.env.E2E_CHANGE_MEMBER_EMAIL ?? "ofek@demo.local";
+    const adminToken = await login(request, adminEmail);
+    const memberToken = await login(request, memberEmail);
+    const { spaceId, groupId } = await findDemoSelfServiceGroup(request, adminToken);
+    const status = await api<CycleStatusDto>(
+      request,
+      adminToken,
+      "GET",
+      `/spaces/${spaceId}/groups/${groupId}/self-service-cycles/status`
+    );
+    expect(status.cycleId).toBeTruthy();
+
+    const member = await getGroupMemberByEmail(request, adminToken, spaceId, groupId, memberEmail);
+    await ensureChangeableApprovedShift(
+      request,
+      adminToken,
+      memberToken,
+      spaceId,
+      groupId,
+      status.cycleId!,
+      member.personId
+    );
+
+    const reason = `Browser E2E shift change ${Date.now()}`;
+
+    await loginAsUser(page, memberEmail, DEMO_PASSWORD);
+    await page.evaluate((targetGroupId) => {
+      localStorage.setItem("shifter-pick-last-group", targetGroupId);
+    }, groupId);
+    await page.goto(`${BASE}/pick`);
+    await page.getByTestId("pick-tab-my-shifts").click();
+    await expect(page.getByTestId("self-service-change-shift").first()).toBeVisible({ timeout: 15000 });
+    await page.getByTestId("self-service-change-shift").first().click();
+    await page.locator("textarea").fill(reason);
+    await Promise.all([
+      page.waitForResponse((response) =>
+        response.url().includes("/shift-change-requests") && response.request().method() === "POST"
+      ),
+      page.getByTestId("self-service-confirm-change").click(),
+    ]);
+
+    const changes = await api<ShiftChangeRequestDto[]>(
+      request,
+      memberToken,
+      "GET",
+      `/spaces/${spaceId}/groups/${groupId}/shift-change-requests/mine`
+    );
+    const createdChange = changes.find((row) => row.reason === reason);
+    expect(createdChange?.status).toBe("Pending");
+
+    await loginAsUser(page, adminEmail, DEMO_PASSWORD);
+    await enterElevatedGroup(page, groupId);
+    await page.goto(`${BASE}/groups/${groupId}`);
+    await page.getByTestId("group-tab-absence-reports").click();
+
+    await expect(
+      page.getByTestId("self-service-change-request").filter({ hasText: reason })
+    ).toBeVisible({ timeout: 15000 });
+  });
+
   test("member can pick an open shift and join a full-slot waitlist through the UI", async ({ page, request }) => {
     const adminEmail = process.env.E2E_ADMIN_EMAIL ?? "admin@demo.local";
     const memberEmail = process.env.E2E_PICK_MEMBER_EMAIL ?? "viewer@demo.local";

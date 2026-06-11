@@ -232,6 +232,8 @@ group:
   a full-slot waitlist
 - a member/admin browser lifecycle test for cannot-attend reporting and admin
   approval from the review queue
+- a member/admin browser lifecycle test for shift-change request submission and
+  review-queue visibility
 
 ## Customer-Hosted Use
 
@@ -258,9 +260,9 @@ These are not blockers for an MVP rollout, but they are worth improving before
 large deployments:
 
 - Broader browser end-to-end coverage for the complete member/admin cycle:
-  cancellation, request change, swaps, and final slot-state verification. The
+  cancellation, swaps, change approval, and final slot-state verification. The
   browser suite already covers picking, waitlist entry, cannot-attend reporting,
-  and admin approval.
+  absence approval, and shift-change request visibility.
 - Organization-level defaults for self-service policy through the admin UI.
   Space owners can configure space-level defaults today; a higher-level
   organization template for multi-space installs is still deferred.
