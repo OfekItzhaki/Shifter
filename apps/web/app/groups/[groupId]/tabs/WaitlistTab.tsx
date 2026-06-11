@@ -14,6 +14,7 @@ import {
 } from "@/lib/api/selfService";
 import { formatSlotDate, formatTime24h, formatCountdown } from "@/lib/utils/selfServiceFormat";
 import { getSelfServiceErrorMessage } from "@/lib/utils/selfServiceErrors";
+import { classifyWaitlistEntries, summarizeWaitlist } from "@/lib/utils/selfServiceWaitlist";
 import { LoadingCard, ErrorRetry, MutationButton } from "@/components/groups/selfService";
 
 interface WaitlistTabProps {
@@ -179,8 +180,8 @@ export default function WaitlistTab({ spaceId, groupId, isAdmin = false }: Waitl
   }
 
   // Separate offered entries (highlighted) from others
-  const offeredEntries = entries.filter((e) => e.status === "Offered");
-  const otherEntries = entries.filter((e) => e.status !== "Offered");
+  const { offeredEntries, otherEntries } = classifyWaitlistEntries(entries);
+  const summary = summarizeWaitlist(entries, adminEntries);
 
   return (
     <div className="space-y-4">
@@ -200,7 +201,7 @@ export default function WaitlistTab({ spaceId, groupId, isAdmin = false }: Waitl
               <p className="text-xs text-slate-500">{t("adminDescription")}</p>
             </div>
             <span className="inline-flex w-fit rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-600">
-              {t("adminCount", { count: adminEntries.length })}
+              {t("adminCount", { count: summary.activeAdminCount })}
             </span>
           </div>
 
