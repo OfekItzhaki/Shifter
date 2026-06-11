@@ -314,17 +314,15 @@ public class ShiftSwapService : IShiftSwapService
                                       $"({firstConflict.B.StartsAt:u} - {firstConflict.B.EndsAt:u}).");
                 }
 
-                // Req 12.3: Atomically reassign both shifts
-                // Swap the PersonId on both shift requests
+                // Req 12.3: Atomically reassign both shifts.
+                // Each member keeps their own shift request record; only the assigned slots change.
                 var initiatorPersonId = initiatorRequest.PersonId;
                 var targetPersonIdOnRequest = targetRequest.PersonId;
                 var initiatorSlotId = initiatorRequest.ShiftSlotId;
                 var targetSlotId = targetRequest.ShiftSlotId;
 
-                // Initiator's request now points to target's slot and target's person
-                initiatorRequest.ReassignTo(targetPersonIdOnRequest, targetSlotId);
-                // Target's request now points to initiator's slot and initiator's person
-                targetRequest.ReassignTo(initiatorPersonId, initiatorSlotId);
+                initiatorRequest.ReassignTo(initiatorPersonId, targetSlotId);
+                targetRequest.ReassignTo(targetPersonIdOnRequest, initiatorSlotId);
 
                 // Mark swap as accepted
                 swapRequest.Accept();

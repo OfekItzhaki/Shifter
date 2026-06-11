@@ -414,11 +414,11 @@ public class SelfServiceNotificationTests
         updatedSwap.Status.Should().Be(SwapRequestStatus.Accepted);
 
         var updatedInitiatorRequest = await db.ShiftRequests.SingleAsync(r => r.Id == initiatorRequest.Id);
-        updatedInitiatorRequest.PersonId.Should().Be(target.Id);
+        updatedInitiatorRequest.PersonId.Should().Be(initiator.Id);
         updatedInitiatorRequest.ShiftSlotId.Should().Be(targetSlot.Id);
 
         var updatedTargetRequest = await db.ShiftRequests.SingleAsync(r => r.Id == targetRequest.Id);
-        updatedTargetRequest.PersonId.Should().Be(initiator.Id);
+        updatedTargetRequest.PersonId.Should().Be(target.Id);
         updatedTargetRequest.ShiftSlotId.Should().Be(initiatorSlot.Id);
 
         var proposalNotification = await db.Notifications
