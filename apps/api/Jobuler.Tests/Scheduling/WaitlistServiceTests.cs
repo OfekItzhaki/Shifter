@@ -211,7 +211,8 @@ public class WaitlistServiceTests
         await db.SaveChangesAsync();
 
         var pushSender = Substitute.For<IPushNotificationSender>();
-        var service = CreateService(db, pushSender);
+        var notificationService = Substitute.For<INotificationService>();
+        var service = CreateService(db, pushSender, notificationService);
 
         await service.LeaveWaitlistAsync(offeredPerson.Id, slot.Id);
 
@@ -226,6 +227,14 @@ public class WaitlistServiceTests
 
         await pushSender.Received(1)
             .SendPushToUserAsync(waitingPerson.LinkedUserId!.Value, spaceId, Arg.Any<PushPayload>(), Arg.Any<CancellationToken>());
+        await notificationService.Received(1).NotifySpaceAdminsAsync(
+            spaceId,
+            "self_service.waitlist_offer_declined",
+            "Waitlist Offer Declined",
+            Arg.Is<string>(body => body.Contains("Offered") && body.Contains("declined") && body.Contains("Guard")),
+            Arg.Is<string>(metadata => metadata.Contains(offeredEntry.Id.ToString()) && metadata.Contains(slot.Id.ToString())),
+            groupId,
+            Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -246,7 +255,8 @@ public class WaitlistServiceTests
         await db.SaveChangesAsync();
 
         var pushSender = Substitute.For<IPushNotificationSender>();
-        var service = CreateService(db, pushSender);
+        var notificationService = Substitute.For<INotificationService>();
+        var service = CreateService(db, pushSender, notificationService);
 
         await service.ProcessExpiredOffersAsync();
 
@@ -269,12 +279,24 @@ public class WaitlistServiceTests
             .SendPushToUserAsync(expiredPerson.LinkedUserId!.Value, spaceId, Arg.Any<PushPayload>(), Arg.Any<CancellationToken>());
         await pushSender.Received(1)
             .SendPushToUserAsync(waitingPerson.LinkedUserId!.Value, spaceId, Arg.Any<PushPayload>(), Arg.Any<CancellationToken>());
+        await notificationService.Received(1).NotifySpaceAdminsAsync(
+            spaceId,
+            "self_service.waitlist_offer_expired",
+            "Waitlist Offer Expired",
+            Arg.Is<string>(body => body.Contains("Expired") && body.Contains("expired") && body.Contains("Guard")),
+            Arg.Is<string>(metadata => metadata.Contains(expiredEntry.Id.ToString()) && metadata.Contains(slot.Id.ToString())),
+            groupId,
+            Arg.Any<CancellationToken>());
     }
 
-    private static WaitlistService CreateService(AppDbContext db, IPushNotificationSender? pushSender = null) =>
+    private static WaitlistService CreateService(
+        AppDbContext db,
+        IPushNotificationSender? pushSender = null,
+        INotificationService? notificationService = null) =>
         new(
             db,
             pushSender ?? Substitute.For<IPushNotificationSender>(),
+            notificationService ?? Substitute.For<INotificationService>(),
             TimeProvider.System,
             NullLogger<WaitlistService>.Instance);
 

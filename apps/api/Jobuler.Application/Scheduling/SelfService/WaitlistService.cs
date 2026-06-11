@@ -18,17 +18,20 @@ public class WaitlistService : IWaitlistService
 {
     private readonly AppDbContext _db;
     private readonly IPushNotificationSender _pushSender;
+    private readonly INotificationService _notificationService;
     private readonly TimeProvider _timeProvider;
     private readonly ILogger<WaitlistService> _logger;
 
     public WaitlistService(
         AppDbContext db,
         IPushNotificationSender pushSender,
+        INotificationService notificationService,
         TimeProvider timeProvider,
         ILogger<WaitlistService> logger)
     {
         _db = db;
         _pushSender = pushSender;
+        _notificationService = notificationService;
         _timeProvider = timeProvider;
         _logger = logger;
     }
@@ -168,6 +171,7 @@ public class WaitlistService : IWaitlistService
         // Req 9.6: If member had an active offer, cascade to next waiting member
         if (hadActiveOffer)
         {
+            await NotifyAdminsWaitlistOfferDeclinedAsync(entry, ct);
             await OfferToNextWaitingMemberAsync(shiftSlotId, ct);
         }
     }
@@ -226,6 +230,11 @@ public class WaitlistService : IWaitlistService
         foreach (var notification in expiredNotifications)
         {
             await TrySendWaitlistOfferExpiredPushAsync(notification, ct);
+        }
+
+        foreach (var entry in expiredEntries)
+        {
+            await NotifyAdminsWaitlistOfferExpiredAsync(entry, ct);
         }
 
         // Cascade to next waiting member for each affected slot
@@ -453,6 +462,93 @@ public class WaitlistService : IWaitlistService
                 "In-app notification was persisted successfully.",
                 notification.UserId,
                 notification.SpaceId);
+        }
+    }
+
+    private Task NotifyAdminsWaitlistOfferDeclinedAsync(WaitlistEntry entry, CancellationToken ct) =>
+        NotifyAdminsWaitlistOutcomeAsync(
+            entry,
+            "self_service.waitlist_offer_declined",
+            "Waitlist Offer Declined",
+            "declined",
+            ct);
+
+    private Task NotifyAdminsWaitlistOfferExpiredAsync(WaitlistEntry entry, CancellationToken ct) =>
+        NotifyAdminsWaitlistOutcomeAsync(
+            entry,
+            "self_service.waitlist_offer_expired",
+            "Waitlist Offer Expired",
+            "expired",
+            ct);
+
+    private async Task NotifyAdminsWaitlistOutcomeAsync(
+        WaitlistEntry entry,
+        string eventType,
+        string title,
+        string outcome,
+        CancellationToken ct)
+    {
+        try
+        {
+            var detail = await _db.WaitlistEntries
+                .AsNoTracking()
+                .Where(e => e.Id == entry.Id)
+                .Join(
+                    _db.People.AsNoTracking(),
+                    e => e.PersonId,
+                    p => p.Id,
+                    (e, p) => new { Entry = e, PersonName = p.DisplayName ?? p.FullName })
+                .Join(
+                    _db.ShiftSlots.AsNoTracking(),
+                    ep => ep.Entry.ShiftSlotId,
+                    s => s.Id,
+                    (ep, slot) => new { ep.Entry, ep.PersonName, Slot = slot })
+                .Join(
+                    _db.GroupTasks.AsNoTracking(),
+                    eps => eps.Slot.GroupTaskId,
+                    task => task.Id,
+                    (eps, task) => new
+                    {
+                        eps.Entry,
+                        eps.PersonName,
+                        eps.Slot,
+                        TaskName = task.Name
+                    })
+                .FirstOrDefaultAsync(ct);
+
+            if (detail is null)
+                return;
+
+            await _notificationService.NotifySpaceAdminsAsync(
+                detail.Slot.SpaceId,
+                eventType,
+                title,
+                $"{detail.PersonName} {outcome} a waitlist offer for {detail.TaskName} on {detail.Slot.Date:MMM dd} ({detail.Slot.StartTime:HH:mm}-{detail.Slot.EndTime:HH:mm}).",
+                JsonSerializer.Serialize(new
+                {
+                    waitlistEntryId = detail.Entry.Id,
+                    shiftSlotId = detail.Entry.ShiftSlotId,
+                    personId = detail.Entry.PersonId,
+                    personName = detail.PersonName,
+                    groupId = detail.Slot.GroupId,
+                    schedulingCycleId = detail.Slot.SchedulingCycleId,
+                    date = detail.Slot.Date,
+                    startTime = detail.Slot.StartTime.ToString("HH:mm"),
+                    endTime = detail.Slot.EndTime.ToString("HH:mm"),
+                    taskName = detail.TaskName,
+                    outcome,
+                    offeredAt = detail.Entry.OfferedAt,
+                    expiresAt = detail.Entry.ExpiresAt
+                }),
+                groupId: detail.Slot.GroupId,
+                ct);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex,
+                "Failed to notify admins about waitlist offer {Outcome} for entry {WaitlistEntryId}",
+                outcome,
+                entry.Id);
         }
     }
 
