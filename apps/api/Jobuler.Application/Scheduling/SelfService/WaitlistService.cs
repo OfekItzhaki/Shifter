@@ -210,6 +210,8 @@ public class WaitlistService : IWaitlistService
         _logger.LogInformation(
             "Processing {Count} expired waitlist offers.", expiredEntries.Count);
 
+        var expiredNotifications = await BuildWaitlistOfferExpiredNotificationsAsync(expiredEntries, ct);
+
         // Group by slot to cascade offers per slot
         var slotIds = expiredEntries.Select(e => e.ShiftSlotId).Distinct().ToList();
 
@@ -218,7 +220,13 @@ public class WaitlistService : IWaitlistService
             entry.Expire();
         }
 
+        _db.Notifications.AddRange(expiredNotifications.Select(n => n.Notification));
         await _db.SaveChangesAsync(ct);
+
+        foreach (var notification in expiredNotifications)
+        {
+            await TrySendWaitlistOfferExpiredPushAsync(notification, ct);
+        }
 
         // Cascade to next waiting member for each affected slot
         foreach (var slotId in slotIds)
@@ -359,4 +367,99 @@ public class WaitlistService : IWaitlistService
                 personId, slot.Id);
         }
     }
+
+    private async Task<List<WaitlistExpiryNotification>> BuildWaitlistOfferExpiredNotificationsAsync(
+        IReadOnlyCollection<WaitlistEntry> expiredEntries,
+        CancellationToken ct)
+    {
+        if (expiredEntries.Count == 0)
+            return [];
+
+        var personIds = expiredEntries.Select(e => e.PersonId).Distinct().ToList();
+        var slotIds = expiredEntries.Select(e => e.ShiftSlotId).Distinct().ToList();
+
+        var linkedUsers = await _db.People
+            .AsNoTracking()
+            .Where(p => personIds.Contains(p.Id) && p.LinkedUserId != null)
+            .Select(p => new { p.Id, p.LinkedUserId })
+            .ToDictionaryAsync(p => p.Id, p => p.LinkedUserId!.Value, ct);
+
+        var slotDetails = await _db.ShiftSlots
+            .AsNoTracking()
+            .Where(s => slotIds.Contains(s.Id))
+            .Join(
+                _db.GroupTasks.AsNoTracking(),
+                s => s.GroupTaskId,
+                t => t.Id,
+                (s, t) => new { Slot = s, TaskName = t.Name })
+            .ToDictionaryAsync(s => s.Slot.Id, s => s, ct);
+
+        var notifications = new List<WaitlistExpiryNotification>();
+
+        foreach (var entry in expiredEntries)
+        {
+            if (!linkedUsers.TryGetValue(entry.PersonId, out var userId)
+                || !slotDetails.TryGetValue(entry.ShiftSlotId, out var detail))
+            {
+                continue;
+            }
+
+            var title = "Waitlist Offer Expired";
+            var body = $"Your waitlist offer for {detail.TaskName} on {detail.Slot.Date:MMM dd} expired.";
+            var metadataJson = JsonSerializer.Serialize(new
+            {
+                waitlistEntryId = entry.Id,
+                shiftSlotId = entry.ShiftSlotId,
+                groupId = detail.Slot.GroupId,
+                date = detail.Slot.Date,
+                startTime = detail.Slot.StartTime.ToString("HH:mm"),
+                endTime = detail.Slot.EndTime.ToString("HH:mm"),
+                taskName = detail.TaskName,
+                offeredAt = entry.OfferedAt,
+                expiresAt = entry.ExpiresAt
+            });
+
+            notifications.Add(new WaitlistExpiryNotification(
+                Notification.Create(
+                    detail.Slot.SpaceId,
+                    userId,
+                    "self_service.waitlist_offer_expired",
+                    title,
+                    body,
+                    metadataJson),
+                userId,
+                detail.Slot.SpaceId,
+                title,
+                body));
+        }
+
+        return notifications;
+    }
+
+    private async Task TrySendWaitlistOfferExpiredPushAsync(WaitlistExpiryNotification notification, CancellationToken ct)
+    {
+        try
+        {
+            await _pushSender.SendPushToUserAsync(
+                notification.UserId,
+                notification.SpaceId,
+                new PushPayload(notification.Title, notification.Body, "/favicon.jpeg", "/shifts"),
+                ct);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex,
+                "Push notification delivery failed for expired waitlist offer (user {UserId}, space {SpaceId}). " +
+                "In-app notification was persisted successfully.",
+                notification.UserId,
+                notification.SpaceId);
+        }
+    }
+
+    private sealed record WaitlistExpiryNotification(
+        Notification Notification,
+        Guid UserId,
+        Guid SpaceId,
+        string Title,
+        string Body);
 }

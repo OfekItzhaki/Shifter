@@ -249,6 +249,14 @@ public class WaitlistServiceTests
         updatedWaitingEntry.ExpiresAt.Should().NotBeNull();
         updatedWaitingEntry.ExpiresAt.Should().BeAfter(DateTime.UtcNow);
 
+        var expiredNotification = await db.Notifications
+            .SingleAsync(n => n.EventType == "self_service.waitlist_offer_expired");
+        expiredNotification.UserId.Should().Be(expiredPerson.LinkedUserId!.Value);
+        expiredNotification.MetadataJson.Should().Contain(expiredEntry.Id.ToString());
+        expiredNotification.MetadataJson.Should().Contain(slot.Id.ToString());
+
+        await pushSender.Received(1)
+            .SendPushToUserAsync(expiredPerson.LinkedUserId!.Value, spaceId, Arg.Any<PushPayload>(), Arg.Any<CancellationToken>());
         await pushSender.Received(1)
             .SendPushToUserAsync(waitingPerson.LinkedUserId!.Value, spaceId, Arg.Any<PushPayload>(), Arg.Any<CancellationToken>());
     }
