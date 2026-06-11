@@ -2026,9 +2026,9 @@
     },
     "slotBrowser": {
       "title": "משמרות זמינות",
-      "requestButton": "בקש משמרת",
+      "requestButton": "בחר משמרת",
       "joinWaitlistButton": "הצטרף לרשימת המתנה",
-      "requesting": "שולח בקשה...",
+      "requesting": "בוחר...",
       "windowClosed": "חלון הבקשות סגור כעת",
       "windowOpensAt": "חלון הבקשות ייפתח ב-{date}",
       "windowClosesAt": "חלון הבקשות נסגר ב-{date}",
@@ -2040,7 +2040,7 @@
       "allDates": "כל התאריכים",
       "noSlots": "אין משמרות זמינות",
       "alternativeSlots": "משמרות חלופיות:",
-      "requestSuccess": "הבקשה נשלחה בהצלחה",
+      "requestSuccess": "המשמרת אושרה ונוספה למשמרות שלך",
       "waitlistSuccess": "הצטרפת לרשימת ההמתנה במיקום {position}",
       "dayNames": [
         "ראשון",

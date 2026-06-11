@@ -2014,9 +2014,9 @@
     },
     "slotBrowser": {
       "title": "Available Slots",
-      "requestButton": "Request Shift",
+      "requestButton": "Pick Shift",
       "joinWaitlistButton": "Join Waitlist",
-      "requesting": "Requesting...",
+      "requesting": "Picking...",
       "windowClosed": "Request window is currently closed",
       "windowOpensAt": "Request window opens at {date}",
       "windowClosesAt": "Request window closes at {date}",
@@ -2028,7 +2028,7 @@
       "allDates": "All dates",
       "noSlots": "No available slots",
       "alternativeSlots": "Alternative slots:",
-      "requestSuccess": "Request submitted successfully",
+      "requestSuccess": "Shift confirmed. It was added to your shifts.",
       "waitlistSuccess": "Joined waitlist at position {position}",
       "dayNames": [
         "Sunday",

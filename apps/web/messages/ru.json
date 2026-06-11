@@ -2014,9 +2014,9 @@
     },
     "slotBrowser": {
       "title": "Доступные смены",
-      "requestButton": "Запросить смену",
+      "requestButton": "Выбрать смену",
       "joinWaitlistButton": "Встать в лист ожидания",
-      "requesting": "Отправка...",
+      "requesting": "Выбор...",
       "windowClosed": "Окно запросов сейчас закрыто",
       "windowOpensAt": "Окно запросов откроется {date}",
       "windowClosesAt": "Окно запросов закроется {date}",
@@ -2028,7 +2028,7 @@
       "allDates": "Все даты",
       "noSlots": "Нет доступных смен",
       "alternativeSlots": "Другие варианты:",
-      "requestSuccess": "Запрос успешно отправлен",
+      "requestSuccess": "Смена подтверждена и добавлена в ваши смены.",
       "waitlistSuccess": "Вы добавлены в лист ожидания на позицию {position}",
       "dayNames": [
         "Воскресенье",
