@@ -19,6 +19,81 @@ namespace Jobuler.Tests.Scheduling;
 public class ManualSelfServiceLifecycleTests
 {
     [Fact]
+    public async Task LateAbsenceLimit_DoesNotReleaseShiftOrWaitlist_WhenLimitIsReached()
+    {
+        using var db = CreateDb();
+        var notifications = Substitute.For<INotificationService>();
+        var pushSender = Substitute.For<IPushNotificationSender>();
+        var audit = Substitute.For<IAuditLogger>();
+        var slotLock = Substitute.For<ISlotLockService>();
+        var waitlistService = Substitute.For<IWaitlistService>();
+        var fixedNow = DateTimeOffset.UtcNow;
+
+        var (spaceId, groupId, cycleId, taskId) = SeedSelfServiceCycle(db);
+        var config = await db.SelfServiceConfigs.SingleAsync(c => c.GroupId == groupId);
+        config.SetLateCancellationLimits(maxPerCycle: 1, windowHours: 72);
+
+        var member = Person.Create(spaceId, "Limited Member", linkedUserId: Guid.NewGuid());
+        var targetSlot = AddSlot(db, spaceId, groupId, taskId, cycleId);
+        var targetRequest = ShiftRequest.Create(spaceId, targetSlot.Id, member.Id, groupId, cycleId);
+        targetRequest.Approve();
+        targetSlot.IncrementFillCount();
+
+        var priorSlot = AddSlot(db, spaceId, groupId, taskId, cycleId);
+        var priorRequest = ShiftRequest.Create(spaceId, priorSlot.Id, member.Id, groupId, cycleId);
+        priorRequest.Approve();
+        var priorReport = ShiftAbsenceReport.Create(
+            spaceId,
+            groupId,
+            cycleId,
+            priorRequest.Id,
+            priorSlot.Id,
+            member.Id,
+            "Already used late absence",
+            isLate: true,
+            fixedNow.UtcDateTime);
+
+        db.People.Add(member);
+        db.ShiftRequests.AddRange(targetRequest, priorRequest);
+        db.ShiftAbsenceReports.Add(priorReport);
+        await db.SaveChangesAsync();
+
+        var shiftRequests = new ShiftRequestService(
+            db,
+            slotLock,
+            new FixedTimeProvider(fixedNow),
+            NullLogger<ShiftRequestService>.Instance,
+            notifications,
+            pushSender,
+            audit,
+            waitlistService);
+
+        var result = await shiftRequests.ReportCannotAttendAsync(
+            member.Id,
+            targetRequest.Id,
+            "Cannot make this shift",
+            CancellationToken.None);
+
+        result.Success.Should().BeFalse();
+        result.WasLate.Should().BeTrue();
+        result.LateReportsUsed.Should().Be(1);
+        result.MaxLateReports.Should().Be(1);
+        result.ErrorMessage.Should().Contain("late absence limit");
+
+        var unchangedRequest = await db.ShiftRequests.SingleAsync(r => r.Id == targetRequest.Id);
+        unchangedRequest.Status.Should().Be(ShiftRequestStatus.Approved);
+        unchangedRequest.CancellationReason.Should().BeNull();
+
+        var unchangedSlot = await db.ShiftSlots.SingleAsync(s => s.Id == targetSlot.Id);
+        unchangedSlot.CurrentFillCount.Should().Be(1);
+
+        (await db.ShiftAbsenceReports.CountAsync()).Should().Be(1);
+        await waitlistService.DidNotReceiveWithAnyArgs().ProcessSlotReleasedAsync(default, default);
+        await audit.DidNotReceiveWithAnyArgs().LogAsync(default, default, default!, default, default, default, default, default, default);
+        await notifications.DidNotReceiveWithAnyArgs().NotifySpaceAdminsAsync(default, default!, default!, default!, default!, default, default);
+    }
+
+    [Fact]
     public async Task PickAbsenceWaitlistAcceptance_RebuildsCoverageAndNotifiesAdmins()
     {
         using var db = CreateDb();
@@ -216,5 +291,10 @@ public class ManualSelfServiceLifecycleTests
 
         db.ShiftSlots.Add(slot);
         return slot;
+    }
+
+    private sealed class FixedTimeProvider(DateTimeOffset utcNow) : TimeProvider
+    {
+        public override DateTimeOffset GetUtcNow() => utcNow;
     }
 }
