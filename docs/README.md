@@ -7,6 +7,8 @@ manual self-service scheduling decisions.
 
 - [Manual self-service scheduling](MANUAL-SELF-SERVICE-SCHEDULING.md) - how to
   run groups where members pick, change, swap, and report shifts themselves.
+- [Self-service integration plan](SELF-SERVICE-INTEGRATION-PLAN.md) - branch
+  sequencing for manual self-service, holiday calendars, and portable isolation.
 - [Architecture](ARCHITECTURE.md) - current system architecture and service
   boundaries.
 - [Data model](DATA-MODEL.md) - major entities and persistence structure.
