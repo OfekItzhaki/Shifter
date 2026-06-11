@@ -47,3 +47,34 @@ public class ListSpaceSpecialDaysQueryHandler
             .ToListAsync(ct);
     }
 }
+
+public record PreviewHolidayCalendarQuery(
+    Guid SpaceId,
+    string CountryCode,
+    int Year) : IRequest<IReadOnlyList<HolidayCalendarDayDto>>;
+
+public class PreviewHolidayCalendarQueryHandler
+    : IRequestHandler<PreviewHolidayCalendarQuery, IReadOnlyList<HolidayCalendarDayDto>>
+{
+    private readonly AppDbContext _db;
+
+    public PreviewHolidayCalendarQueryHandler(AppDbContext db) => _db = db;
+
+    public async Task<IReadOnlyList<HolidayCalendarDayDto>> Handle(
+        PreviewHolidayCalendarQuery request,
+        CancellationToken ct)
+    {
+        var from = new DateOnly(request.Year, 1, 1);
+        var to = new DateOnly(request.Year, 12, 31);
+        var existing = await _db.SpaceSpecialDays
+            .AsNoTracking()
+            .Where(d => d.SpaceId == request.SpaceId && d.Date >= from && d.Date <= to)
+            .Select(d => new { d.Date, d.Name })
+            .ToListAsync(ct);
+
+        return HolidayCalendarGenerator.Generate(
+            request.CountryCode,
+            request.Year,
+            existing.Select(d => (d.Date, d.Name)).ToHashSet());
+    }
+}

@@ -5,7 +5,10 @@ import { useTranslations, useLocale } from "next-intl";
 import {
   createSpaceSpecialDay,
   deleteSpaceSpecialDay,
+  HolidayCalendarDayDto,
+  importHolidayCalendar,
   listSpaceSpecialDays,
+  previewHolidayCalendar,
   SpaceSpecialDayDto,
   SpaceSpecialDayKind,
   updateSpaceSpecialDay,
@@ -48,6 +51,11 @@ export default function SpecialDaysCard({ spaceId, isOwner }: SpecialDaysCardPro
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  const [calendarYear, setCalendarYear] = useState(() => String(new Date().getFullYear()));
+  const [calendarPreview, setCalendarPreview] = useState<HolidayCalendarDayDto[]>([]);
+  const [calendarLoading, setCalendarLoading] = useState(false);
+  const [calendarImporting, setCalendarImporting] = useState(false);
+  const [calendarMessage, setCalendarMessage] = useState<string | null>(null);
 
   const loadDays = useCallback(async () => {
     if (!spaceId) return;
@@ -148,6 +156,55 @@ export default function SpecialDaysCard({ spaceId, isOwner }: SpecialDaysCardPro
     }
   }
 
+  async function handlePreviewCalendar() {
+    const year = Number(calendarYear);
+    if (!Number.isInteger(year) || year < 2000 || year > 2100) {
+      setError(t("calendar.yearError"));
+      return;
+    }
+
+    setCalendarLoading(true);
+    setError(null);
+    setCalendarMessage(null);
+    try {
+      const preview = await previewHolidayCalendar(spaceId, "IL", year);
+      setCalendarPreview(preview);
+      setCalendarMessage(t("calendar.previewLoaded", {
+        count: preview.length,
+        newCount: preview.filter(day => !day.alreadyExists).length,
+      }));
+    } catch {
+      setError(t("calendar.previewError"));
+    } finally {
+      setCalendarLoading(false);
+    }
+  }
+
+  async function handleImportCalendar() {
+    const year = Number(calendarYear);
+    if (!Number.isInteger(year) || year < 2000 || year > 2100) {
+      setError(t("calendar.yearError"));
+      return;
+    }
+
+    setCalendarImporting(true);
+    setError(null);
+    setCalendarMessage(null);
+    try {
+      const result = await importHolidayCalendar(spaceId, "IL", year);
+      setCalendarPreview([]);
+      setCalendarMessage(t("calendar.imported", {
+        imported: result.imported.length,
+        skipped: result.skipped.length,
+      }));
+      await loadDays();
+    } catch {
+      setError(t("calendar.importError"));
+    } finally {
+      setCalendarImporting(false);
+    }
+  }
+
   function formatDate(value: string) {
     const date = new Date(`${value}T12:00:00Z`);
     return new Intl.DateTimeFormat(locale, {
@@ -169,6 +226,70 @@ export default function SpecialDaysCard({ spaceId, isOwner }: SpecialDaysCardPro
       </div>
 
       <div className="space-y-4">
+        <div className="rounded-xl border border-sky-100 bg-sky-50/70 p-3 dark:border-sky-900/60 dark:bg-sky-950/20">
+          <div className="mb-3">
+            <h3 className="text-xs font-semibold uppercase tracking-wide text-sky-800 dark:text-sky-200">
+              {t("calendar.title")}
+            </h3>
+            <p className="mt-1 text-xs text-sky-700 dark:text-sky-300">
+              {t("calendar.description")}
+            </p>
+          </div>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+            <div className="sm:w-36">
+              <label className="block text-xs font-medium text-slate-600 dark:text-slate-300 mb-1">
+                {t("calendar.yearLabel")}
+              </label>
+              <input
+                type="number"
+                min={2000}
+                max={2100}
+                value={calendarYear}
+                onChange={(e) => { setCalendarYear(e.target.value); setCalendarPreview([]); setCalendarMessage(null); }}
+                disabled={calendarLoading || calendarImporting}
+                className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm disabled:opacity-50 focus:outline-none focus:border-sky-500"
+              />
+            </div>
+            <button
+              type="button"
+              onClick={handlePreviewCalendar}
+              disabled={calendarLoading || calendarImporting}
+              className="px-4 py-2 rounded-lg bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700 border border-sky-200 dark:border-sky-800 text-sky-700 dark:text-sky-200 font-semibold text-sm transition-colors disabled:opacity-50"
+            >
+              {calendarLoading ? t("calendar.previewing") : t("calendar.preview")}
+            </button>
+            <button
+              type="button"
+              onClick={handleImportCalendar}
+              disabled={calendarLoading || calendarImporting}
+              className="px-4 py-2 rounded-lg bg-sky-500 hover:bg-sky-600 text-white font-semibold text-sm transition-colors disabled:opacity-50"
+            >
+              {calendarImporting ? t("calendar.importing") : t("calendar.import")}
+            </button>
+          </div>
+          {calendarMessage && (
+            <p className="mt-2 text-xs text-sky-700 dark:text-sky-300">{calendarMessage}</p>
+          )}
+          {calendarPreview.length > 0 && (
+            <div className="mt-3 flex flex-wrap gap-2">
+              {calendarPreview.slice(0, 6).map(day => (
+                <span
+                  key={`${day.date}-${day.name}`}
+                  className="rounded-full bg-white px-2.5 py-1 text-xs font-medium text-slate-700 ring-1 ring-slate-200 dark:bg-slate-900 dark:text-slate-200 dark:ring-slate-700"
+                >
+                  {formatDate(day.date)} · {day.name}
+                  {day.alreadyExists ? ` · ${t("calendar.exists")}` : ""}
+                </span>
+              ))}
+              {calendarPreview.length > 6 && (
+                <span className="rounded-full px-2.5 py-1 text-xs font-medium text-slate-500 dark:text-slate-400">
+                  {t("calendar.more", { count: calendarPreview.length - 6 })}
+                </span>
+              )}
+            </div>
+          )}
+        </div>
+
         <div className="grid gap-3 sm:grid-cols-[1fr_1fr]">
           <div>
             <label className="block text-xs font-medium text-slate-600 dark:text-slate-300 mb-1">

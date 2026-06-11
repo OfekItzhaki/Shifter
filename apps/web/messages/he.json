@@ -1136,6 +1136,22 @@
         "Holiday": "חג",
         "Weekend": "סוף שבוע",
         "Custom": "מותאם"
+      },
+      "calendar": {
+        "title": "לוח חגים",
+        "description": "ייבא את החגים המרכזיים בישראל עבור שנה. ימים שכבר קיימים ידולגו.",
+        "yearLabel": "שנה",
+        "preview": "תצוגה מקדימה",
+        "previewing": "בודק...",
+        "import": "ייבא חגים בישראל",
+        "importing": "מייבא...",
+        "exists": "כבר נוסף",
+        "more": "+עוד {count}",
+        "previewLoaded": "נמצאו {count} חגים, {newCount} חדשים.",
+        "imported": "יובאו {imported} חגים. דולגו {skipped} ימים קיימים.",
+        "yearError": "השתמש בשנה בין 2000 ל-2100.",
+        "previewError": "לא ניתן להציג את לוח החגים.",
+        "importError": "לא ניתן לייבא את לוח החגים."
       }
     },
     "dangerZone": {

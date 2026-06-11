@@ -1163,6 +1163,22 @@
         "Holiday": "Holiday",
         "Weekend": "Weekend",
         "Custom": "Custom"
+      },
+      "calendar": {
+        "title": "Holiday calendar",
+        "description": "Import the main Israel holidays for a year. Existing days are skipped.",
+        "yearLabel": "Year",
+        "preview": "Preview",
+        "previewing": "Previewing...",
+        "import": "Import Israel holidays",
+        "importing": "Importing...",
+        "exists": "already added",
+        "more": "+{count} more",
+        "previewLoaded": "{count} holidays found, {newCount} new.",
+        "imported": "Imported {imported} holidays. Skipped {skipped} existing days.",
+        "yearError": "Use a year between 2000 and 2100.",
+        "previewError": "Could not preview the holiday calendar.",
+        "importError": "Could not import the holiday calendar."
       }
     },
     "dangerZone": {

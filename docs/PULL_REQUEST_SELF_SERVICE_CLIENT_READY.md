@@ -16,8 +16,9 @@ packaging, and self-service export/import readiness.
 - Hardens manual self-service scheduling for member picks, waitlists,
   cancellations, cannot-attend reports, shift changes, swaps, special leave,
   admin overrides, attendance, and cycle closeout.
-- Adds holiday/special-day scheduling support and surfaces special-day labels in
-  self-service slot browsing and admin cycle context.
+- Adds holiday/special-day scheduling support, including Israel holiday calendar
+  preview/import, and surfaces special-day labels in self-service slot browsing
+  and admin cycle context.
 - Integrates portable organization isolation and contact-field protection for
   future dedicated/customer-hosted installs.
 - Includes self-service workflow data in organization export manifests/packages
@@ -60,6 +61,10 @@ packaging, and self-service export/import readiness.
 - `infra/scripts/validate-customer-env.ps1` parser check passed locally.
 - `dotnet test apps\\api\\Jobuler.Tests\\Jobuler.Tests.csproj --filter FullyQualifiedName~AiAssistantSupportTests`
   passed: 6 passed, 0 failed.
+- `dotnet test apps\\api\\Jobuler.Tests\\Jobuler.Tests.csproj --filter FullyQualifiedName~SpaceSpecialDayCommandTests`
+  passed: 4 passed, 0 failed.
+- `node_modules\\.bin\\eslint.cmd components\\spaces\\SpecialDaysCard.tsx lib\\api\\spaceSpecialDays.ts`
+  passed.
 - `node_modules\\.bin\\eslint.cmd components\\shell\\ShifterAssistant.tsx`
   passed.
 - `docker compose -f infra\\compose\\docker-compose.yml config --quiet`

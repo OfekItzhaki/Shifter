@@ -23,6 +23,20 @@ export interface SaveSpaceSpecialDayPayload {
   requiresCoverage: boolean;
 }
 
+export interface HolidayCalendarDayDto {
+  date: string;
+  name: string;
+  kind: SpaceSpecialDayKind;
+  homeLeaveWeightMultiplier: number;
+  requiresCoverage: boolean;
+  alreadyExists: boolean;
+}
+
+export interface ImportHolidayCalendarResult {
+  imported: SpaceSpecialDayDto[];
+  skipped: HolidayCalendarDayDto[];
+}
+
 export async function listSpaceSpecialDays(
   spaceId: string,
   from?: string,
@@ -39,6 +53,29 @@ export async function createSpaceSpecialDay(
   payload: SaveSpaceSpecialDayPayload
 ): Promise<{ id: string }> {
   const { data } = await apiClient.post(`/spaces/${spaceId}/special-days`, payload);
+  return data;
+}
+
+export async function previewHolidayCalendar(
+  spaceId: string,
+  countryCode: string,
+  year: number
+): Promise<HolidayCalendarDayDto[]> {
+  const { data } = await apiClient.get(`/spaces/${spaceId}/special-days/calendar-preview`, {
+    params: { countryCode, year },
+  });
+  return data;
+}
+
+export async function importHolidayCalendar(
+  spaceId: string,
+  countryCode: string,
+  year: number
+): Promise<ImportHolidayCalendarResult> {
+  const { data } = await apiClient.post(`/spaces/${spaceId}/special-days/calendar-import`, {
+    countryCode,
+    year,
+  });
   return data;
 }
 

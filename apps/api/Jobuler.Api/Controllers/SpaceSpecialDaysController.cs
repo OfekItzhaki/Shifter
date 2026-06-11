@@ -67,6 +67,47 @@ public class SpaceSpecialDaysController : ControllerBase
         }
     }
 
+    [HttpGet("calendar-preview")]
+    public async Task<IActionResult> PreviewCalendar(
+        Guid spaceId,
+        [FromQuery] string countryCode,
+        [FromQuery] int year,
+        CancellationToken ct)
+    {
+        await _permissions.RequirePermissionAsync(CurrentUserId, spaceId, Permissions.SpaceView, ct);
+
+        try
+        {
+            return Ok(await _mediator.Send(
+                new PreviewHolidayCalendarQuery(spaceId, countryCode, year),
+                ct));
+        }
+        catch (ArgumentException ex)
+        {
+            return InvalidSpecialDay(ex.Message);
+        }
+    }
+
+    [HttpPost("calendar-import")]
+    public async Task<IActionResult> ImportCalendar(
+        Guid spaceId,
+        [FromBody] ImportHolidayCalendarRequest req,
+        CancellationToken ct)
+    {
+        await _permissions.RequirePermissionAsync(CurrentUserId, spaceId, Permissions.ScheduleRecalculate, ct);
+
+        try
+        {
+            return Ok(await _mediator.Send(
+                new ImportHolidayCalendarCommand(spaceId, req.CountryCode, req.Year),
+                ct));
+        }
+        catch (ArgumentException ex)
+        {
+            return InvalidSpecialDay(ex.Message);
+        }
+    }
+
     [HttpPut("{specialDayId:guid}")]
     public async Task<IActionResult> Update(
         Guid spaceId,
@@ -134,3 +175,7 @@ public record SaveSpaceSpecialDayRequest(
     SpaceSpecialDayKind Kind,
     decimal HomeLeaveWeightMultiplier,
     bool RequiresCoverage);
+
+public record ImportHolidayCalendarRequest(
+    string CountryCode,
+    int Year);
