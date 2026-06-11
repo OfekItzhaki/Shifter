@@ -68,6 +68,14 @@ vi.mock("next-intl", () => ({
       "descriptions.lateCancellationWindowHours": "Absence reports inside this window count as late.",
       "descriptions.maxLateCancellationsPerCycle": "Maximum late absence reports per member.",
       "descriptions.waitlistOfferMinutes": "How long an offered shift is held.",
+      "validation.minShiftsRange": "Minimum shifts must be between 0 and 100.",
+      "validation.maxShiftsRange": "Maximum shifts must be between 1 and 100.",
+      "validation.minGreaterThanMax": "Minimum shifts cannot be greater than maximum shifts.",
+      "validation.offsetRange": "Offsets must be between 1 and 720 hours.",
+      "validation.openCloseOrder": "Request opening must be earlier than request closing.",
+      "validation.maxLateRange": "Late absence limit must be between 0 and 100.",
+      "validation.waitlistOfferRange": "Waitlist offers must last between 15 and 1440 minutes.",
+      "validation.cycleDurationRange": "Cycle duration must be between 1 and 30 days.",
       save: "Save Configuration",
       saving: "Saving...",
       saved: "Configuration saved successfully",
@@ -139,5 +147,44 @@ describe("SelfServiceConfigTab", () => {
         expect.objectContaining({ maxShiftsPerCycle: 6, cancellationCutoffHours: 36 }),
       );
     });
+  });
+
+  it("blocks invalid policy settings before saving", async () => {
+    render(<SelfServiceConfigTab spaceId="space-1" groupId="group-1" />);
+
+    expect(await screen.findByText("Self-Service Configuration")).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText("Minimum shifts per cycle"), {
+      target: { value: "6" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Save Configuration" }));
+
+    expect(await screen.findByText("Minimum shifts cannot be greater than maximum shifts.")).toBeInTheDocument();
+    expect(mockUpdateSelfServiceConfig).not.toHaveBeenCalled();
+
+    fireEvent.change(screen.getByLabelText("Minimum shifts per cycle"), {
+      target: { value: "2" },
+    });
+    fireEvent.change(screen.getByLabelText("Request window open"), {
+      target: { value: "12" },
+    });
+    fireEvent.change(screen.getByLabelText("Request window close"), {
+      target: { value: "24" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Save Configuration" }));
+
+    expect(await screen.findByText("Request opening must be earlier than request closing.")).toBeInTheDocument();
+    expect(mockUpdateSelfServiceConfig).not.toHaveBeenCalled();
+
+    fireEvent.change(screen.getByLabelText("Request window open"), {
+      target: { value: "168" },
+    });
+    fireEvent.change(screen.getByLabelText("Waitlist offer duration"), {
+      target: { value: "10" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Save Configuration" }));
+
+    expect(await screen.findByText("Waitlist offers must last between 15 and 1440 minutes.")).toBeInTheDocument();
+    expect(mockUpdateSelfServiceConfig).not.toHaveBeenCalled();
   });
 });
