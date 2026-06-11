@@ -2492,6 +2492,29 @@
       "statusLoading": "Checking queues...",
       "activeSignals": "{count} item(s) need attention",
       "allClear": "No urgent items",
+      "policy": {
+        "title": "Active member policy",
+        "description": "Current rules for what members can do during this manual cycle.",
+        "edit": "Edit policy",
+        "enabled": "Enabled",
+        "disabled": "Off",
+        "loading": "-",
+        "workflows": {
+          "claims": "Claims",
+          "waitlist": "Waitlist",
+          "changes": "Changes",
+          "absence": "Absence",
+          "swaps": "Swaps"
+        },
+        "metrics": {
+          "shiftLimit": "Shift limit",
+          "shiftLimitValue": "{min}-{max} per cycle",
+          "absenceLimit": "Late absence",
+          "absenceLimitValue": "{max} inside {hours}h",
+          "cutoff": "Cutoff and offers",
+          "cutoffValue": "Cancel {hours}h / offer {minutes}m"
+        }
+      },
       "priority": {
         "title": "Priority signals",
         "description": "Handle these before routine cycle work.",

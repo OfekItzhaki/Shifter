@@ -2504,6 +2504,29 @@
       "statusLoading": "בודק תורים...",
       "activeSignals": "{count} פריטים דורשים טיפול",
       "allClear": "אין פריטים דחופים",
+      "policy": {
+        "title": "מדיניות חברים פעילה",
+        "description": "הכללים הנוכחיים למה שחברים יכולים לעשות בסבב הידני.",
+        "edit": "ערוך מדיניות",
+        "enabled": "פעיל",
+        "disabled": "כבוי",
+        "loading": "-",
+        "workflows": {
+          "claims": "בחירה",
+          "waitlist": "המתנה",
+          "changes": "שינויים",
+          "absence": "היעדרות",
+          "swaps": "החלפות"
+        },
+        "metrics": {
+          "shiftLimit": "מגבלת משמרות",
+          "shiftLimitValue": "{min}-{max} לסבב",
+          "absenceLimit": "היעדרות מאוחרת",
+          "absenceLimitValue": "{max} בתוך {hours} שעות",
+          "cutoff": "ביטול והצעות",
+          "cutoffValue": "ביטול {hours} שעות / הצעה {minutes} דקות"
+        }
+      },
       "priority": {
         "title": "סימנים דחופים",
         "description": "טפל בזה לפני עבודת הסבב השוטפת.",

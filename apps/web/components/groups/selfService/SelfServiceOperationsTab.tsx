@@ -4,8 +4,10 @@ import { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import {
   getAdminWaitlistEntries,
+  getSelfServiceConfig,
   getSelfServiceCycleStatus,
   AdminWaitlistEntryDto,
+  SelfServiceConfigDto,
   SelfServiceCycleStatusDto,
 } from "@/lib/api/selfService";
 import CycleControlPanel from "./CycleControlPanel";
@@ -35,6 +37,23 @@ const ACTIONS: { target: SelfServiceOpsTarget; key: string; metric?: "reviews" |
 
 const GUIDE_STEPS = ["prepare", "open", "review", "improve"] as const;
 const WORKFLOW_ITEMS = ["picking", "changes", "leave"] as const;
+const POLICY_WORKFLOWS = [
+  { key: "claims", configKey: "allowMemberShiftClaims" },
+  { key: "waitlist", configKey: "allowWaitlist" },
+  { key: "changes", configKey: "allowShiftChangeRequests" },
+  { key: "absence", configKey: "allowAbsenceReports" },
+  { key: "swaps", configKey: "allowShiftSwaps" },
+] as const satisfies readonly {
+  key: string;
+  configKey: keyof Pick<
+    SelfServiceConfigDto,
+    | "allowMemberShiftClaims"
+    | "allowWaitlist"
+    | "allowShiftChangeRequests"
+    | "allowAbsenceReports"
+    | "allowShiftSwaps"
+  >;
+}[];
 const WAITLIST_EXPIRY_WARNING_MINUTES = 30;
 const REVIEW_BREAKDOWN = [
   {
@@ -102,20 +121,24 @@ export default function SelfServiceOperationsTab({
 }: SelfServiceOperationsTabProps) {
   const t = useTranslations("selfService.operations");
   const [status, setStatus] = useState<SelfServiceCycleStatusDto | null>(null);
+  const [config, setConfig] = useState<SelfServiceConfigDto | null>(null);
   const [waitlistEntries, setWaitlistEntries] = useState<AdminWaitlistEntryDto[]>([]);
   const [statusLoading, setStatusLoading] = useState(true);
 
   const loadStatus = useCallback(async () => {
     setStatusLoading(true);
     try {
-      const [nextStatus, nextWaitlistEntries] = await Promise.all([
+      const [nextStatus, nextConfig, nextWaitlistEntries] = await Promise.all([
         getSelfServiceCycleStatus(spaceId, groupId),
+        getSelfServiceConfig(spaceId, groupId),
         getAdminWaitlistEntries(spaceId, groupId),
       ]);
       setStatus(nextStatus);
+      setConfig(nextConfig);
       setWaitlistEntries(nextWaitlistEntries);
     } catch {
       setStatus(null);
+      setConfig(null);
       setWaitlistEntries([]);
     } finally {
       setStatusLoading(false);
@@ -222,6 +245,70 @@ export default function SelfServiceOperationsTab({
               </button>
             );
           })}
+        </div>
+
+        <div className="mt-5 rounded-xl border border-slate-200 bg-slate-50 p-4">
+          <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h3 className="text-sm font-semibold text-slate-900">{t("policy.title")}</h3>
+              <p className="text-xs leading-5 text-slate-500">{t("policy.description")}</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => onNavigate("self-service-config")}
+              className="mt-2 inline-flex w-fit rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-sky-700 transition hover:border-sky-200 hover:bg-sky-50 focus:outline-none focus:ring-2 focus:ring-sky-400 sm:mt-0"
+            >
+              {t("policy.edit")}
+            </button>
+          </div>
+
+          <div className="mt-3 grid gap-2 md:grid-cols-2 xl:grid-cols-5">
+            {POLICY_WORKFLOWS.map((workflow) => {
+              const enabled = config ? config[workflow.configKey] : null;
+              return (
+                <div
+                  key={workflow.key}
+                  className={`rounded-lg border px-3 py-2 ${
+                    enabled === false
+                      ? "border-slate-300 bg-white text-slate-500"
+                      : "border-emerald-200 bg-white text-emerald-800"
+                  }`}
+                >
+                  <p className="text-xs font-semibold text-slate-700">
+                    {t(`policy.workflows.${workflow.key}`)}
+                  </p>
+                  <p className="mt-1 text-xs font-medium">
+                    {statusLoading || enabled === null
+                      ? t("policy.loading")
+                      : enabled
+                        ? t("policy.enabled")
+                        : t("policy.disabled")}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="mt-3 grid gap-2 md:grid-cols-3">
+            <PolicyMetric label={t("policy.metrics.shiftLimit")} value={
+              config ? t("policy.metrics.shiftLimitValue", {
+                min: config.minShiftsPerCycle,
+                max: config.maxShiftsPerCycle,
+              }) : t("policy.loading")
+            } />
+            <PolicyMetric label={t("policy.metrics.absenceLimit")} value={
+              config ? t("policy.metrics.absenceLimitValue", {
+                max: config.maxLateCancellationsPerCycle,
+                hours: config.lateCancellationWindowHours,
+              }) : t("policy.loading")
+            } />
+            <PolicyMetric label={t("policy.metrics.cutoff")} value={
+              config ? t("policy.metrics.cutoffValue", {
+                hours: config.cancellationCutoffHours,
+                minutes: config.waitlistOfferMinutes,
+              }) : t("policy.loading")
+            } />
+          </div>
         </div>
       </div>
 
@@ -399,6 +486,15 @@ export default function SelfServiceOperationsTab({
         onNavigate={onNavigate}
         onStatusChanged={loadStatus}
       />
+    </div>
+  );
+}
+
+function PolicyMetric({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-lg border border-slate-200 bg-white px-3 py-2">
+      <p className="text-xs font-medium text-slate-500">{label}</p>
+      <p className="mt-1 text-sm font-semibold text-slate-900">{value}</p>
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import SelfServiceOperationsTab from "../../components/groups/selfService/SelfServiceOperationsTab";
 
 const mockGetSelfServiceCycleStatus = vi.fn();
+const mockGetSelfServiceConfig = vi.fn();
 const mockGetAdminWaitlistEntries = vi.fn();
 const mockCycleControlPanel = vi.fn();
 
@@ -14,6 +15,23 @@ vi.mock("next-intl", () => ({
       statusLoading: "Checking queues...",
       activeSignals: `${values?.count ?? 0} item(s) need attention`,
       allClear: "No urgent items",
+      "policy.title": "Active member policy",
+      "policy.description": "Current rules for members.",
+      "policy.edit": "Edit policy",
+      "policy.enabled": "Enabled",
+      "policy.disabled": "Off",
+      "policy.loading": "-",
+      "policy.workflows.claims": "Claims",
+      "policy.workflows.waitlist": "Waitlist",
+      "policy.workflows.changes": "Changes",
+      "policy.workflows.absence": "Absence",
+      "policy.workflows.swaps": "Swaps",
+      "policy.metrics.shiftLimit": "Shift limit",
+      "policy.metrics.shiftLimitValue": `${values?.min ?? 0}-${values?.max ?? 0} per cycle`,
+      "policy.metrics.absenceLimit": "Late absence",
+      "policy.metrics.absenceLimitValue": `${values?.max ?? 0} inside ${values?.hours ?? 0}h`,
+      "policy.metrics.cutoff": "Cutoff and offers",
+      "policy.metrics.cutoffValue": `Cancel ${values?.hours ?? 0}h / offer ${values?.minutes ?? 0}m`,
       "priority.title": "Priority signals",
       "priority.description": "Handle these first.",
       "priority.count": `${values?.count ?? 0} urgent signal(s)`,
@@ -86,6 +104,7 @@ vi.mock("next-intl", () => ({
 
 vi.mock("../../lib/api/selfService", () => ({
   getSelfServiceCycleStatus: (...args: unknown[]) => mockGetSelfServiceCycleStatus(...args),
+  getSelfServiceConfig: (...args: unknown[]) => mockGetSelfServiceConfig(...args),
   getAdminWaitlistEntries: (...args: unknown[]) => mockGetAdminWaitlistEntries(...args),
 }));
 
@@ -136,6 +155,24 @@ describe("SelfServiceOperationsTab", () => {
         },
       ],
     });
+    mockGetSelfServiceConfig.mockResolvedValue({
+      id: "config-1",
+      groupId: "group-1",
+      minShiftsPerCycle: 1,
+      maxShiftsPerCycle: 5,
+      requestWindowOpenOffsetHours: 168,
+      requestWindowCloseOffsetHours: 24,
+      cancellationCutoffHours: 12,
+      maxLateCancellationsPerCycle: 2,
+      lateCancellationWindowHours: 24,
+      waitlistOfferMinutes: 45,
+      cycleDurationDays: 7,
+      allowMemberShiftClaims: true,
+      allowWaitlist: true,
+      allowShiftChangeRequests: false,
+      allowAbsenceReports: true,
+      allowShiftSwaps: true,
+    });
     mockGetAdminWaitlistEntries.mockResolvedValue([
       {
         id: "waitlist-1",
@@ -173,6 +210,12 @@ describe("SelfServiceOperationsTab", () => {
     expect(screen.getByText("3 shift-change request(s) waiting.")).toBeInTheDocument();
     expect(screen.getByText("1 time-off request(s) waiting.")).toBeInTheDocument();
     expect(screen.getByText("How to run the cycle")).toBeInTheDocument();
+    expect(screen.getByText("Active member policy")).toBeInTheDocument();
+    expect(screen.getByText("1-5 per cycle")).toBeInTheDocument();
+    expect(screen.getByText("2 inside 24h")).toBeInTheDocument();
+    expect(screen.getByText("Cancel 12h / offer 45m")).toBeInTheDocument();
+    expect(screen.getByText("Changes")).toBeInTheDocument();
+    expect(screen.getByText("Off")).toBeInTheDocument();
     expect(screen.getByText("Set policy and templates.")).toBeInTheDocument();
     expect(screen.getByText("Pick shifts and waitlist")).toBeInTheDocument();
     expect(screen.getByText("Changes and absence")).toBeInTheDocument();
@@ -186,6 +229,12 @@ describe("SelfServiceOperationsTab", () => {
 
     await waitFor(() => {
       expect(onNavigate).toHaveBeenCalledWith("absence-reports");
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: /Edit policy/i }));
+
+    await waitFor(() => {
+      expect(onNavigate).toHaveBeenCalledWith("self-service-config");
     });
 
     fireEvent.click(screen.getByRole("button", { name: /Shift changes/i }));
@@ -210,6 +259,7 @@ describe("SelfServiceOperationsTab", () => {
 
     await waitFor(() => {
       expect(mockGetSelfServiceCycleStatus).toHaveBeenCalledTimes(2);
+      expect(mockGetSelfServiceConfig).toHaveBeenCalledTimes(2);
     });
   });
 });
