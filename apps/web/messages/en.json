@@ -1462,7 +1462,24 @@
     "saveSettings": "Save",
     "saved": "Saved",
     "settingsSaveError": "Failed to save settings.",
-    "loading": "Loading..."
+    "loading": "Loading...",
+    "health": {
+      "title": "Provider Health",
+      "description": "Live readiness for infrastructure and optional providers used by hosted and customer-hosted installs.",
+      "loading": "Checking providers...",
+      "refresh": "Refresh",
+      "refreshing": "Refreshing...",
+      "loadError": "Could not load provider health.",
+      "summary": "{healthy}/{total} healthy, {unhealthy} unhealthy, {skipped} skipped",
+      "updated": "Updated {time}",
+      "responseTime": "Response {time}",
+      "status": {
+        "healthy": "Healthy",
+        "degraded": "Degraded",
+        "unhealthy": "Unhealthy",
+        "skipped": "Skipped"
+      }
+    }
   },
   "verifyEmail": {
     "loading": "Verifying your email...",

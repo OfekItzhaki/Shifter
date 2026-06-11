@@ -1474,7 +1474,24 @@
     "saveSettings": "שמור",
     "saved": "נשמר",
     "settingsSaveError": "שמירת ההגדרות נכשלה.",
-    "loading": "טוען..."
+    "loading": "טוען...",
+    "health": {
+      "title": "תקינות ספקים",
+      "description": "מצב חי של תשתיות וספקים אופציונליים עבור התקנות בענן ואצל לקוחות.",
+      "loading": "בודק ספקים...",
+      "refresh": "רענן",
+      "refreshing": "מרענן...",
+      "loadError": "לא ניתן לטעון את מצב הספקים.",
+      "summary": "{healthy}/{total} תקינים, {unhealthy} לא תקינים, {skipped} דולגו",
+      "updated": "עודכן {time}",
+      "responseTime": "תגובה {time}",
+      "status": {
+        "healthy": "תקין",
+        "degraded": "חלקי",
+        "unhealthy": "לא תקין",
+        "skipped": "דולג"
+      }
+    }
   },
   "verifyEmail": {
     "loading": "מאמת את האימייל שלך...",

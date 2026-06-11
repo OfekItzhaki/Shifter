@@ -258,5 +258,4 @@ large deployments:
 - Formal certificate signing for closeout reports. PDF closeout reports already
   include a verification fingerprint for archive/tamper checks, but they are not
   certificate-signed legal documents.
-- Admin UI for provider health checks. The API already exposes detailed
-  provider status through `/health/detailed`.
+- Space-level self-service default policies through a non-platform admin UI.

@@ -8,6 +8,7 @@ import { getPlatformStats, PlatformStats } from "@/lib/api/platform";
 import { apiClient } from "@/lib/api/client";
 import BillingTestPanel from "@/components/platform/BillingTestPanel";
 import PlatformSettings from "@/components/platform/PlatformSettings";
+import ProviderHealthPanel from "@/components/platform/ProviderHealthPanel";
 import ReAuthDialog from "@/components/admin/ReAuthDialog";
 import { useAdminSessionStore } from "@/lib/store/adminSessionStore";
 import { useEffectiveAuth } from "@/lib/hooks/useEffectiveAuth";
@@ -197,6 +198,9 @@ export default function PlatformPage() {
 
             {/* Billing Test */}
             <BillingTestPanel />
+
+            {/* Provider Health */}
+            <ProviderHealthPanel />
 
             {/* Platform Settings */}
             <PlatformSettings />

@@ -105,6 +105,9 @@ Customer-hosted means:
    customer data. The `push` check validates VAPID configuration locally and
    does not contact external push providers.
 
+   Platform admins can also review the same provider status inside Shifter on
+   the Platform page.
+
 8. Put HTTPS in front of the web/API ports using the customer's proxy or WAF.
 
 ## AI Choices
@@ -220,7 +223,7 @@ These are good next iterations, but not required for the first sellable
 customer-hosted package:
 
 - Helm chart for Kubernetes customers.
-- Admin UI for AI/email/provider health checks.
+- Customer-facing space UI for self-service default policy templates.
 - One-command restore script.
 - Offline image bundle for air-gapped sites.
 - License/entitlement enforcement for on-prem contracts.

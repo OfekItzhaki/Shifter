@@ -28,3 +28,26 @@ export async function getPlatformStats(): Promise<PlatformStats> {
   const { data } = await apiClient.get<PlatformStats>("/platform/stats");
   return data;
 }
+
+export type ProviderHealthStatus = "healthy" | "unhealthy" | "skipped" | string;
+
+export interface ProviderHealthCheck {
+  serviceName: string;
+  status: ProviderHealthStatus;
+  errorMessage: string | null;
+  responseTime: string | null;
+}
+
+export interface ProviderHealthReport {
+  overallStatus: "healthy" | "degraded" | string;
+  version: string;
+  timestamp: string;
+  checks: ProviderHealthCheck[];
+}
+
+export async function getProviderHealthReport(): Promise<ProviderHealthReport> {
+  const { data } = await apiClient.get<ProviderHealthReport>("/health/detailed", {
+    validateStatus: (status) => status === 200 || status === 503,
+  });
+  return data;
+}
