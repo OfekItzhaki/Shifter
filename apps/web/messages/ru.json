@@ -2328,6 +2328,28 @@
       "statusLoading": "Checking queues...",
       "activeSignals": "{count} item(s) need attention",
       "allClear": "No urgent items",
+      "guide": {
+        "title": "How to run the cycle",
+        "description": "A simple rhythm for manual self-service scheduling: prepare the rules, open the window, review exceptions, then tune the next cycle.",
+        "steps": {
+          "prepare": {
+            "title": "Prepare",
+            "description": "Set policy, confirm templates, generate the cycle, and check expected capacity."
+          },
+          "open": {
+            "title": "Open",
+            "description": "Open the request window and let members pick shifts, join waitlists, and propose swaps."
+          },
+          "review": {
+            "title": "Review",
+            "description": "Handle absences, shift-change requests, special leave, under-filled slots, and urgent overrides."
+          },
+          "improve": {
+            "title": "Improve",
+            "description": "After the cycle, review late reports, cancellations, overrides, and adjust the next policy."
+          }
+        }
+      },
       "actions": {
         "reviews": {
           "title": "????????? ??????",

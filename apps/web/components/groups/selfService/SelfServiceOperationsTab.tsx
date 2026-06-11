@@ -29,6 +29,8 @@ const ACTIONS: { target: SelfServiceOpsTarget; key: string; metric?: "reviews" |
   { target: "self-service-config", key: "policy" },
 ];
 
+const GUIDE_STEPS = ["prepare", "open", "review", "improve"] as const;
+
 function getPendingReviewCount(status: SelfServiceCycleStatusDto | null): number {
   if (!status) return 0;
 
@@ -140,6 +142,26 @@ export default function SelfServiceOperationsTab({
             );
           })}
         </div>
+      </div>
+
+      <div className="rounded-xl border border-slate-200 bg-white p-6">
+        <div className="max-w-3xl">
+          <h3 className="text-sm font-semibold text-slate-900">{t("guide.title")}</h3>
+          <p className="mt-1 text-sm text-slate-500">{t("guide.description")}</p>
+        </div>
+        <ol className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          {GUIDE_STEPS.map((step, index) => (
+            <li key={step} className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+              <div className="flex items-center gap-2">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-sky-100 text-xs font-semibold text-sky-700">
+                  {index + 1}
+                </span>
+                <span className="text-sm font-semibold text-slate-900">{t(`guide.steps.${step}.title`)}</span>
+              </div>
+              <p className="mt-2 text-xs leading-5 text-slate-500">{t(`guide.steps.${step}.description`)}</p>
+            </li>
+          ))}
+        </ol>
       </div>
 
       <CycleControlPanel spaceId={spaceId} groupId={groupId} onNavigate={onNavigate} />

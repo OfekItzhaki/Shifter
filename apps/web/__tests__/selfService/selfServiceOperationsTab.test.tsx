@@ -12,6 +12,16 @@ vi.mock("next-intl", () => ({
       statusLoading: "Checking queues...",
       activeSignals: `${values?.count ?? 0} item(s) need attention`,
       allClear: "No urgent items",
+      "guide.title": "How to run the cycle",
+      "guide.description": "Use this rhythm for manual self-service scheduling.",
+      "guide.steps.prepare.title": "Prepare",
+      "guide.steps.prepare.description": "Set policy and templates.",
+      "guide.steps.open.title": "Open",
+      "guide.steps.open.description": "Let members pick shifts.",
+      "guide.steps.review.title": "Review",
+      "guide.steps.review.description": "Handle absences and changes.",
+      "guide.steps.improve.title": "Improve",
+      "guide.steps.improve.description": "Tune the next cycle.",
       "actions.reviews.title": "Review requests",
       "actions.reviews.description": "Approve review requests.",
       "actions.reviews.metric": `${values?.count ?? 0} pending review item(s)`,
@@ -82,6 +92,8 @@ describe("SelfServiceOperationsTab", () => {
     expect(screen.getByText("6 pending review item(s)")).toBeInTheDocument();
     expect(screen.getByText("4 active waitlist item(s)")).toBeInTheDocument();
     expect(screen.getByText("1 under-filled slot(s)")).toBeInTheDocument();
+    expect(screen.getByText("How to run the cycle")).toBeInTheDocument();
+    expect(screen.getByText("Set policy and templates.")).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: /Review requests/i }));
 
