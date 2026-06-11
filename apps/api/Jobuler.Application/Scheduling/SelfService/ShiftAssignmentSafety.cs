@@ -4,20 +4,21 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Jobuler.Application.Scheduling.SelfService;
 
-internal enum ShiftAssignmentConflictKind
+public enum ShiftAssignmentConflictKind
 {
     None,
     Overlap,
     RestViolation
 }
 
-internal static class ShiftAssignmentSafety
+public static class ShiftAssignmentSafety
 {
     public static async Task<ShiftAssignmentConflictKind> FindApprovedAssignmentConflictAsync(
         AppDbContext db,
         Guid personId,
         ShiftSlot targetSlot,
-        CancellationToken ct)
+        CancellationToken ct,
+        Guid? excludeShiftSlotId = null)
     {
         var targetDate = targetSlot.Date;
         var candidateSlots = await db.ShiftRequests
@@ -31,6 +32,7 @@ internal static class ShiftAssignmentSafety
                 slot => slot.Id,
                 (request, slot) => slot)
             .Where(slot => slot.Id != targetSlot.Id
+                           && (!excludeShiftSlotId.HasValue || slot.Id != excludeShiftSlotId.Value)
                            && slot.Date >= targetDate.AddDays(-2)
                            && slot.Date <= targetDate.AddDays(2))
             .ToListAsync(ct);

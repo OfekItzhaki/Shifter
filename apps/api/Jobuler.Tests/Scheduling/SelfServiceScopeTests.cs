@@ -1014,6 +1014,160 @@ public class SelfServiceScopeTests
     }
 
     [Fact]
+    public async Task ApproveShiftChange_Returns422_WhenRequestedSlotOverlapsAnotherApprovedShift()
+    {
+        using var db = CreateDb();
+        var services = CreateControllerServices();
+        var spaceId = Guid.NewGuid();
+        var group = Group.Create(spaceId, null, "Route Group");
+        var userId = Guid.NewGuid();
+        var adminUserId = Guid.NewGuid();
+        var ownerUserId = Guid.NewGuid();
+        var person = Person.Create(spaceId, "Member", linkedUserId: userId);
+        var cycle = CreateCycle(spaceId, group.Id);
+        var task = CreateTask(spaceId, group.Id, "Task", ownerUserId);
+        var originalSlot = CreateSlot(spaceId, group.Id, task.Id, cycle.Id, daysFromNow: 2);
+        var requestedSlot = CreateSlot(spaceId, group.Id, task.Id, cycle.Id, daysFromNow: 4);
+        var otherApprovedSlot = CreateSlot(spaceId, group.Id, task.Id, cycle.Id, daysFromNow: 4);
+        var shiftRequest = ShiftRequest.Create(spaceId, originalSlot.Id, person.Id, group.Id, cycle.Id);
+        shiftRequest.Approve();
+        originalSlot.IncrementFillCount();
+        var otherRequest = ShiftRequest.Create(spaceId, otherApprovedSlot.Id, person.Id, group.Id, cycle.Id);
+        otherRequest.Approve();
+        otherApprovedSlot.IncrementFillCount();
+        var changeRequest = ShiftChangeRequest.Create(
+            spaceId,
+            group.Id,
+            cycle.Id,
+            shiftRequest.Id,
+            originalSlot.Id,
+            requestedSlot.Id,
+            person.Id,
+            "Can I move to the overlapping shift?",
+            DateTime.UtcNow);
+
+        db.People.Add(person);
+        db.Groups.Add(group);
+        db.GroupMemberships.Add(GroupMembership.Create(spaceId, group.Id, person.Id));
+        db.SchedulingCycles.Add(cycle);
+        db.GroupTasks.Add(task);
+        db.ShiftSlots.AddRange(originalSlot, requestedSlot, otherApprovedSlot);
+        db.ShiftRequests.AddRange(shiftRequest, otherRequest);
+        db.ShiftChangeRequests.Add(changeRequest);
+        await db.SaveChangesAsync();
+
+        services.Permissions
+            .RequirePermissionAsync(adminUserId, spaceId, Permissions.ConstraintsManage, Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+
+        var controller = new ShiftChangeRequestsController(
+            services.Permissions,
+            services.NotificationService,
+            services.PushSender,
+            services.Audit,
+            db);
+        controller.ControllerContext = CreateControllerContext(adminUserId);
+
+        var result = await controller.Approve(
+            spaceId,
+            group.Id,
+            changeRequest.Id,
+            new ReviewShiftChangeRequest("Approved"),
+            CancellationToken.None);
+
+        var problem = result.Should().BeAssignableTo<ObjectResult>().Subject;
+        problem.StatusCode.Should().Be(StatusCodes.Status422UnprocessableEntity);
+
+        var updatedRequest = await db.ShiftRequests.SingleAsync(r => r.Id == shiftRequest.Id);
+        var updatedOriginalSlot = await db.ShiftSlots.SingleAsync(s => s.Id == originalSlot.Id);
+        var updatedRequestedSlot = await db.ShiftSlots.SingleAsync(s => s.Id == requestedSlot.Id);
+        var updatedChange = await db.ShiftChangeRequests.SingleAsync(r => r.Id == changeRequest.Id);
+
+        updatedRequest.ShiftSlotId.Should().Be(originalSlot.Id);
+        updatedOriginalSlot.CurrentFillCount.Should().Be(1);
+        updatedRequestedSlot.CurrentFillCount.Should().Be(0);
+        updatedChange.Status.Should().Be(ShiftChangeRequestStatus.Pending);
+    }
+
+    [Fact]
+    public async Task ApproveShiftChange_Returns422_WhenRequestedSlotViolatesMinimumRest()
+    {
+        using var db = CreateDb();
+        var services = CreateControllerServices();
+        var spaceId = Guid.NewGuid();
+        var group = Group.Create(spaceId, null, "Route Group");
+        group.SetMinRestBetweenShifts(8);
+        var userId = Guid.NewGuid();
+        var adminUserId = Guid.NewGuid();
+        var ownerUserId = Guid.NewGuid();
+        var person = Person.Create(spaceId, "Member", linkedUserId: userId);
+        var cycle = CreateCycle(spaceId, group.Id);
+        var task = CreateTask(spaceId, group.Id, "Task", ownerUserId);
+        var originalSlot = CreateSlot(spaceId, group.Id, task.Id, cycle.Id, daysFromNow: 2);
+        var date = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(4));
+        var otherApprovedSlot = CreateSlot(spaceId, group.Id, task.Id, cycle.Id, date, new TimeOnly(8, 0), new TimeOnly(12, 0));
+        var requestedSlot = CreateSlot(spaceId, group.Id, task.Id, cycle.Id, date, new TimeOnly(18, 0), new TimeOnly(22, 0));
+        var shiftRequest = ShiftRequest.Create(spaceId, originalSlot.Id, person.Id, group.Id, cycle.Id);
+        shiftRequest.Approve();
+        originalSlot.IncrementFillCount();
+        var otherRequest = ShiftRequest.Create(spaceId, otherApprovedSlot.Id, person.Id, group.Id, cycle.Id);
+        otherRequest.Approve();
+        otherApprovedSlot.IncrementFillCount();
+        var changeRequest = ShiftChangeRequest.Create(
+            spaceId,
+            group.Id,
+            cycle.Id,
+            shiftRequest.Id,
+            originalSlot.Id,
+            requestedSlot.Id,
+            person.Id,
+            "Can I move to the evening shift?",
+            DateTime.UtcNow);
+
+        db.People.Add(person);
+        db.Groups.Add(group);
+        db.GroupMemberships.Add(GroupMembership.Create(spaceId, group.Id, person.Id));
+        db.SchedulingCycles.Add(cycle);
+        db.GroupTasks.Add(task);
+        db.ShiftSlots.AddRange(originalSlot, requestedSlot, otherApprovedSlot);
+        db.ShiftRequests.AddRange(shiftRequest, otherRequest);
+        db.ShiftChangeRequests.Add(changeRequest);
+        await db.SaveChangesAsync();
+
+        services.Permissions
+            .RequirePermissionAsync(adminUserId, spaceId, Permissions.ConstraintsManage, Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+
+        var controller = new ShiftChangeRequestsController(
+            services.Permissions,
+            services.NotificationService,
+            services.PushSender,
+            services.Audit,
+            db);
+        controller.ControllerContext = CreateControllerContext(adminUserId);
+
+        var result = await controller.Approve(
+            spaceId,
+            group.Id,
+            changeRequest.Id,
+            new ReviewShiftChangeRequest("Approved"),
+            CancellationToken.None);
+
+        var problem = result.Should().BeAssignableTo<ObjectResult>().Subject;
+        problem.StatusCode.Should().Be(StatusCodes.Status422UnprocessableEntity);
+
+        var updatedRequest = await db.ShiftRequests.SingleAsync(r => r.Id == shiftRequest.Id);
+        var updatedOriginalSlot = await db.ShiftSlots.SingleAsync(s => s.Id == originalSlot.Id);
+        var updatedRequestedSlot = await db.ShiftSlots.SingleAsync(s => s.Id == requestedSlot.Id);
+        var updatedChange = await db.ShiftChangeRequests.SingleAsync(r => r.Id == changeRequest.Id);
+
+        updatedRequest.ShiftSlotId.Should().Be(originalSlot.Id);
+        updatedOriginalSlot.CurrentFillCount.Should().Be(1);
+        updatedRequestedSlot.CurrentFillCount.Should().Be(0);
+        updatedChange.Status.Should().Be(ShiftChangeRequestStatus.Pending);
+    }
+
+    [Fact]
     public async Task ApproveShiftChange_AuditFailure_DoesNotNotifyMemberOrPush()
     {
         using var db = CreateDb();
@@ -2510,6 +2664,25 @@ public class SelfServiceScopeTests
             date: DateOnly.FromDateTime(DateTime.UtcNow.AddDays(daysFromNow)),
             startTime: new TimeOnly(8, 0),
             endTime: new TimeOnly(16, 0),
+            capacity: 1);
+
+    private static ShiftSlot CreateSlot(
+        Guid spaceId,
+        Guid groupId,
+        Guid taskId,
+        Guid cycleId,
+        DateOnly date,
+        TimeOnly startTime,
+        TimeOnly endTime) =>
+        ShiftSlot.Create(
+            spaceId,
+            groupId,
+            taskId,
+            shiftTemplateId: Guid.NewGuid(),
+            schedulingCycleId: cycleId,
+            date: date,
+            startTime: startTime,
+            endTime: endTime,
             capacity: 1);
 
     private static IAuditLogger CreateAuditLogger()

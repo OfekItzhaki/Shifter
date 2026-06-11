@@ -1,6 +1,7 @@
 using Jobuler.Api.Middleware;
 using Jobuler.Application.Common;
 using Jobuler.Application.Notifications;
+using Jobuler.Application.Scheduling.SelfService;
 using Jobuler.Domain.Notifications;
 using Jobuler.Domain.Scheduling;
 using Jobuler.Domain.Spaces;
@@ -420,6 +421,18 @@ public class ShiftChangeRequestsController : ControllerBase
 
             if (hasDuplicateRequest)
                 return Rejected("Member already has an active request for the requested shift.");
+
+            var assignmentConflict = await ShiftAssignmentSafety.FindApprovedAssignmentConflictAsync(
+                _db,
+                changeRequest.PersonId,
+                requestedSlot,
+                ct,
+                excludeShiftSlotId: originalSlot.Id);
+
+            if (assignmentConflict == ShiftAssignmentConflictKind.Overlap)
+                return Rejected("Requested shift overlaps with another approved shift for this member.");
+            if (assignmentConflict == ShiftAssignmentConflictKind.RestViolation)
+                return Rejected("Requested shift does not leave enough rest time for this member.");
 
             originalSlot.DecrementFillCount();
             requestedSlot.IncrementFillCount();
