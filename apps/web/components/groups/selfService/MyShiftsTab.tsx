@@ -97,8 +97,8 @@ function groupByStatus(requests: ShiftRequestDto[]): {
 }
 
 /**
- * Determines if a shift can be cancelled based on the cancellation cutoff.
- * A shift can be cancelled if the shift start time is more than `cutoffHours` in the future.
+ * Determines if a shift can be cancelled based on the request window and cancellation cutoff.
+ * Backend allows cancellation while the request window is open; after it closes, cutoff applies.
  */
 function canCancelShift(request: ShiftRequestDto, cancellationCutoffHours: number): boolean {
   if (request.status !== "Approved") return false;
@@ -109,6 +109,9 @@ function canCancelShift(request: ShiftRequestDto, cancellationCutoffHours: numbe
     if (isNaN(shiftStart.getTime())) return false;
 
     const now = new Date();
+    if (shiftStart.getTime() <= now.getTime()) return false;
+    if (request.requestWindowOpen) return true;
+
     const cutoffMs = cancellationCutoffHours * 60 * 60 * 1000;
     return shiftStart.getTime() - now.getTime() > cutoffMs;
   } catch {

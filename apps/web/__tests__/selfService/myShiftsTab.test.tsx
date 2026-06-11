@@ -311,6 +311,54 @@ describe("MyShiftsTab", () => {
     expect(mockGetMyShiftRequests).toHaveBeenCalledTimes(2);
   });
 
+  it("lets members cancel inside the cutoff while the request window is still open", async () => {
+    const soonShiftStart = new Date(Date.now() + 2 * 60 * 60 * 1000);
+    const soonShiftEnd = new Date(soonShiftStart.getTime() + 8 * 60 * 60 * 1000);
+    mockCancelShiftRequest.mockResolvedValue(undefined);
+    mockGetMyShiftRequests.mockResolvedValue({
+      requests: [
+        {
+          id: "request-window-open",
+          shiftSlotId: "slot-window-open",
+          slotDate: formatLocalDate(soonShiftStart),
+          slotStartTime: formatLocalTime(soonShiftStart),
+          slotEndTime: formatLocalTime(soonShiftEnd),
+          taskName: "Desk",
+          status: "Approved",
+          isAdminOverride: false,
+          rejectionReason: null,
+          cancellationReason: null,
+          cancelledAt: null,
+          createdAt: "2026-06-10T08:00:00",
+          requestWindowOpen: true,
+        },
+      ],
+      currentShiftCount: 1,
+      minShiftsPerCycle: 1,
+      maxShiftsPerCycle: 3,
+      cancellationCutoffHours: 48,
+      maxLateReports: 2,
+      lateCancellationWindowHours: 24,
+    });
+
+    render(<MyShiftsTab spaceId="space-1" groupId="group-1" />);
+
+    fireEvent.click(await screen.findByRole("button", { name: "Cancel" }));
+    fireEvent.change(screen.getByPlaceholderText("Why are you cancelling?"), {
+      target: { value: "Mistaken pick" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Cancel shift" }));
+
+    await waitFor(() => {
+      expect(mockCancelShiftRequest).toHaveBeenCalledWith(
+        "space-1",
+        "group-1",
+        "request-window-open",
+        "Mistaken pick",
+      );
+    });
+  });
+
   it("lets members report that they cannot attend a future shift", async () => {
     const shiftStart = new Date(Date.now() + 36 * 60 * 60 * 1000);
     const shiftEnd = new Date(shiftStart.getTime() + 8 * 60 * 60 * 1000);

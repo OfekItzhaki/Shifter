@@ -148,6 +148,7 @@ export interface ShiftRequestDto {
   cancellationReason: string | null;
   cancelledAt: string | null;
   createdAt: string;
+  requestWindowOpen?: boolean;
 }
 
 export interface AdminShiftRequestDto extends ShiftRequestDto {

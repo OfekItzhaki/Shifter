@@ -472,7 +472,8 @@ public class ShiftRequestsController : ControllerBase
                 x.Request.RejectionReason,
                 x.Request.CancellationReason,
                 x.Request.CancelledAt,
-                x.Request.CreatedAt))
+                x.Request.CreatedAt,
+                false))
             .ToListAsync(ct);
 
         return Ok(requests);
@@ -498,6 +499,24 @@ public class ShiftRequestsController : ControllerBase
         var config = await _db.SelfServiceConfigs
             .AsNoTracking()
             .FirstOrDefaultAsync(c => c.SpaceId == spaceId && c.GroupId == groupId, ct);
+        var cycleIds = result
+            .Select(r => r.SchedulingCycleId)
+            .Distinct()
+            .ToList();
+        var now = DateTime.UtcNow;
+        var requestWindowByCycle = await _db.SchedulingCycles
+            .AsNoTracking()
+            .Where(c => cycleIds.Contains(c.Id))
+            .Select(c => new
+            {
+                c.Id,
+                c.RequestWindowOpensAt,
+                c.RequestWindowClosesAt
+            })
+            .ToDictionaryAsync(
+                c => c.Id,
+                c => now >= c.RequestWindowOpensAt && now <= c.RequestWindowClosesAt,
+                ct);
 
         return Ok(new MyShiftRequestsResponse(
             result.Select(r => new ShiftRequestResponse(
@@ -512,7 +531,8 @@ public class ShiftRequestsController : ControllerBase
                 r.RejectionReason,
                 r.CancellationReason,
                 r.CancelledAt,
-                r.CreatedAt)).ToList(),
+                r.CreatedAt,
+                requestWindowByCycle.GetValueOrDefault(r.SchedulingCycleId, false))).ToList(),
             currentShiftCount,
             config?.MinShiftsPerCycle ?? 0,
             config?.MaxShiftsPerCycle ?? 7,
@@ -687,7 +707,8 @@ public record ShiftRequestResponse(
     string? RejectionReason,
     string? CancellationReason,
     DateTime? CancelledAt,
-    DateTime CreatedAt);
+    DateTime CreatedAt,
+    bool RequestWindowOpen);
 
 public record AdminShiftRequestResponse(
     Guid Id,
@@ -705,7 +726,8 @@ public record AdminShiftRequestResponse(
     string? RejectionReason,
     string? CancellationReason,
     DateTime? CancelledAt,
-    DateTime CreatedAt);
+    DateTime CreatedAt,
+    bool RequestWindowOpen);
 
 public record CannotAttendShiftResponse(
     Guid AbsenceReportId,
