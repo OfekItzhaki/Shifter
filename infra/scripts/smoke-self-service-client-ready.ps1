@@ -13,6 +13,7 @@ $ErrorActionPreference = "Stop"
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $repoRoot = Resolve-Path (Join-Path $scriptDir "..\..")
 $webDir = Join-Path $repoRoot "apps\web"
+$restoreScript = Join-Path $repoRoot "infra\scripts\restore-compose.sh"
 
 function Write-Step {
     param([string]$Message)
@@ -92,6 +93,36 @@ function Login {
 
     return $result.accessToken
 }
+
+function Test-BashScriptSyntax {
+    param([string]$ScriptPath)
+
+    if (-not (Test-Path -LiteralPath $ScriptPath)) {
+        throw "Missing restore script: $ScriptPath"
+    }
+
+    $bashCommand = Get-Command bash -ErrorAction SilentlyContinue
+    $bashPath = if ($bashCommand) { $bashCommand.Source } else { "" }
+    if ([string]::IsNullOrWhiteSpace($bashPath)) {
+        $gitBash = "C:\Program Files\Git\bin\bash.exe"
+        if (Test-Path -LiteralPath $gitBash) {
+            $bashPath = $gitBash
+        }
+    }
+
+    if ([string]::IsNullOrWhiteSpace($bashPath)) {
+        Write-Warning "Bash was not found; skipping restore-compose.sh syntax check."
+        return
+    }
+
+    & $bashPath -n $ScriptPath
+    if ($LASTEXITCODE -ne 0) {
+        throw "restore-compose.sh syntax check failed with exit code $LASTEXITCODE."
+    }
+}
+
+Write-Step "Checking customer-hosted restore script syntax"
+Test-BashScriptSyntax $restoreScript
 
 Write-Step "Checking API health at $ApiBaseUrl"
 Assert-HttpOk "$ApiBaseUrl/health" "API health"

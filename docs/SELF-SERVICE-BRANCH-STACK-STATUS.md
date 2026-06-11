@@ -195,6 +195,8 @@ Known verification:
   replacement.
 - Adds `infra/scripts/smoke-self-service-client-ready.ps1` for live seeded stack
   preflight plus the holiday/special-day picker browser flow.
+- The smoke script also checks `infra/scripts/restore-compose.sh` syntax when
+  Bash/Git Bash is available.
 - Adds `infra/scripts/restore-compose.sh` and customer-hosted restore runbook
   docs for PostgreSQL dumps and optional uploads-volume archives.
 - Adds package reference validation for exported users, owner/member links, core

@@ -32,7 +32,8 @@ packaging, and self-service export package validation readiness.
 - Adds a Windows/PowerShell customer env validator alongside the Bash validator.
 - Adds `infra/scripts/smoke-self-service-client-ready.ps1` to preflight web/API
   health, seeded demo users, the self-service demo cycle, available slots, and
-  the special-day Playwright picker flow.
+  the customer-hosted restore script syntax, plus the special-day Playwright
+  picker flow.
 - Supports `-SkipBrowserTest` for API/seed preflight when the web app is not
   running.
 - Adds AI support fallback coverage for private/local AI endpoint failure and
