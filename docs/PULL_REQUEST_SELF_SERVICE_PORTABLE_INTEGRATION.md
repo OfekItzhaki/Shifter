@@ -31,6 +31,8 @@ without dropping self-service review workflows.
 - Focused API tests passed: 223 passed, 0 failed.
 - Full API suite passed: 1,947 passed, 12 skipped, 0 failed.
 - `node_modules\\.bin\\next.cmd build` from `apps/web` passed.
+- `node_modules\\.bin\\eslint.cmd .` from `apps/web` passed with 89 existing
+  warnings and 0 errors.
 - `git diff --check --cached` passed before commit.
 
 ## Integration Notes

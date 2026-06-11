@@ -30,6 +30,8 @@ payload changes forward for scheduling.
 - `dotnet build Jobuler.sln` passed.
 - Targeted API tests passed: 206 passed, 0 failed.
 - `node_modules\\.bin\\next.cmd build` from `apps/web` passed.
+- Frontend lint passes on the current branch stack with 89 existing warnings
+  and 0 errors.
 - `git diff --check --cached` passed before commit.
 
 Solver Python tests were not run locally because this Windows Python
