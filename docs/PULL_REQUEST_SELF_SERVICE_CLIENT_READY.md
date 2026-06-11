@@ -24,6 +24,8 @@ packaging, and self-service export/import readiness.
 - Includes self-service workflow data in organization export manifests/packages
   and import validation counts, including scoped notifications and audit logs
   tied to those workflows.
+- Validates package references for exported users, owner/member links, core
+  scheduling rows, and self-service workflow relationships before import.
 - Wires `FIELD_ENCRYPTION_KEY` through customer compose configuration and makes
   it required by the customer-hosted env validator.
 - Adds a Windows/PowerShell customer env validator alongside the Bash validator.
@@ -65,7 +67,7 @@ packaging, and self-service export/import readiness.
 - `dotnet test apps\\api\\Jobuler.Tests\\Jobuler.Tests.csproj --filter FullyQualifiedName~SpaceSpecialDayCommandTests`
   passed: 4 passed, 0 failed.
 - `dotnet test apps\\api\\Jobuler.Tests\\Jobuler.Tests.csproj --filter FullyQualifiedName~OrganizationPortabilityTests`
-  passed: 19 passed, 0 failed.
+  passed: 20 passed, 0 failed.
 - `node_modules\\.bin\\eslint.cmd components\\spaces\\SpecialDaysCard.tsx lib\\api\\spaceSpecialDays.ts`
   passed.
 - `node_modules\\.bin\\eslint.cmd components\\shell\\ShifterAssistant.tsx`

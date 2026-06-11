@@ -202,17 +202,41 @@ public class ValidateOrganizationImportPackageCommandHandler
                 ValidateRowsAreScopedToExportedSpaces("notifications", notifications, exportedSpaceIds, errors);
                 ValidateRowsAreScopedToExportedSpaces("auditLogs", auditLogs, exportedSpaceIds, errors, allowMissingSpaceId: true);
 
+                var userIds = ExtractIds(GetArray(data, "users")).ToHashSet();
                 var groupIds = ExtractIds(groups).ToHashSet();
                 var personIds = ExtractIds(people).ToHashSet();
+                var taskTypeIds = ExtractIds(taskTypes).ToHashSet();
+                var taskSlotIds = ExtractIds(taskSlots).ToHashSet();
+                var scheduleRunIds = ExtractIds(scheduleRuns).ToHashSet();
+                var scheduleVersionIds = ExtractIds(scheduleVersions).ToHashSet();
                 var groupTaskIds = ExtractIds(groupTasks).ToHashSet();
                 var cycleIds = ExtractIds(schedulingCycles).ToHashSet();
                 var shiftTemplateIds = ExtractIds(shiftTemplates).ToHashSet();
                 var shiftSlotIds = ExtractIds(shiftSlots).ToHashSet();
                 var shiftRequestIds = ExtractIds(shiftRequests).ToHashSet();
 
+                ValidateReferences("spaces", spaces, "ownerUserId", userIds, "users", errors);
+                ValidateReferences("spaceMemberships", spaceMemberships, "userId", userIds, "users", errors);
+                ValidateReferences("people", people, "linkedUserId", userIds, "users", errors, allowMissingReference: true);
                 ValidateReferences("groupMemberships", groupMemberships, "groupId", groupIds, "groups", errors);
                 ValidateReferences("groupMemberships", groupMemberships, "personId", personIds, "people", errors);
+                ValidateReferences("groups", groups, "createdByUserId", userIds, "users", errors, allowMissingReference: true);
                 ValidateReferences("groupTasks", groupTasks, "groupId", groupIds, "groups", errors);
+                ValidateReferences("groupTasks", groupTasks, "createdByUserId", userIds, "users", errors);
+                ValidateReferences("groupTasks", groupTasks, "updatedByUserId", userIds, "users", errors, allowMissingReference: true);
+                ValidateReferences("taskSlots", taskSlots, "taskTypeId", taskTypeIds, "taskTypes", errors);
+                ValidateReferences("taskSlots", taskSlots, "createdByUserId", userIds, "users", errors);
+                ValidateReferences("constraints", constraints, "createdByUserId", userIds, "users", errors);
+                ValidateReferences("constraints", constraints, "updatedByUserId", userIds, "users", errors, allowMissingReference: true);
+                ValidateReferences("scheduleVersions", scheduleVersions, "sourceRunId", scheduleRunIds, "scheduleRuns", errors, allowMissingReference: true);
+                ValidateReferences("scheduleVersions", scheduleVersions, "baselineVersionId", scheduleVersionIds, "scheduleVersions", errors, allowMissingReference: true);
+                ValidateReferences("scheduleVersions", scheduleVersions, "rollbackSourceVersionId", scheduleVersionIds, "scheduleVersions", errors, allowMissingReference: true);
+                ValidateReferences("scheduleVersions", scheduleVersions, "supersedesVersionId", scheduleVersionIds, "scheduleVersions", errors, allowMissingReference: true);
+                ValidateReferences("scheduleVersions", scheduleVersions, "createdByUserId", userIds, "users", errors, allowMissingReference: true);
+                ValidateReferences("scheduleVersions", scheduleVersions, "publishedByUserId", userIds, "users", errors, allowMissingReference: true);
+                ValidateReferences("assignments", assignments, "scheduleVersionId", scheduleVersionIds, "scheduleVersions", errors);
+                ValidateReferences("assignments", assignments, "taskSlotId", taskSlotIds, "taskSlots", errors);
+                ValidateReferences("assignments", assignments, "personId", personIds, "people", errors);
                 ValidateReferences("selfServiceConfigs", selfServiceConfigs, "groupId", groupIds, "groups", errors);
                 ValidateReferences("schedulingCycles", schedulingCycles, "groupId", groupIds, "groups", errors);
                 ValidateReferences("shiftTemplates", shiftTemplates, "groupId", groupIds, "groups", errors);
@@ -249,6 +273,10 @@ public class ValidateOrganizationImportPackageCommandHandler
                 ValidateReferences("swapRequests", swapRequests, "initiatorShiftRequestId", shiftRequestIds, "shiftRequests", errors);
                 ValidateReferences("swapRequests", swapRequests, "targetShiftRequestId", shiftRequestIds, "shiftRequests", errors);
                 ValidateReferences("specialLeaveRequests", specialLeaveRequests, "personId", personIds, "people", errors);
+                ValidateReferences("specialLeaveRequests", specialLeaveRequests, "requestedByUserId", userIds, "users", errors);
+                ValidateReferences("specialLeaveRequests", specialLeaveRequests, "processedByUserId", userIds, "users", errors, allowMissingReference: true);
+                ValidateReferences("notifications", notifications, "userId", userIds, "users", errors);
+                ValidateReferences("auditLogs", auditLogs, "actorUserId", userIds, "users", errors, allowMissingReference: true);
 
                 await AddConflictAsync(
                     organizationId.HasValue
@@ -276,7 +304,6 @@ public class ValidateOrganizationImportPackageCommandHandler
                 await AddEntityConflictsAsync(_db.Notifications, ExtractIds(notifications), "notification", conflicts, ct);
                 await AddEntityConflictsAsync(_db.AuditLogs, ExtractIds(auditLogs), "audit log", conflicts, ct);
 
-                var userIds = ExtractIds(GetArray(data, "users"));
                 var existingUserCount = await _db.Users.CountAsync(u => userIds.Contains(u.Id), ct);
                 if (existingUserCount > 0)
                     warnings.Add($"{existingUserCount} user id(s) already exist; import must re-bind or confirm matching identities.");

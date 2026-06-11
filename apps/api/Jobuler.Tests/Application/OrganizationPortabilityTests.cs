@@ -36,6 +36,13 @@ public class OrganizationPortabilityTests
         return new AppDbContext(options);
     }
 
+    private static Jobuler.Domain.Identity.User CreateUser(Guid id, string email = "owner@example.com")
+    {
+        var user = Jobuler.Domain.Identity.User.Create(email, "Owner", "hash", "en");
+        typeof(Jobuler.Domain.Common.Entity).GetProperty("Id")!.SetValue(user, id);
+        return user;
+    }
+
     private static RegisterCommandHandler CreateRegisterHandler(AppDbContext db)
     {
         var emailSender = Substitute.For<IEmailSender>();
@@ -487,6 +494,7 @@ public class OrganizationPortabilityTests
     {
         var db = CreateDb();
         var ownerId = Guid.NewGuid();
+        var owner = CreateUser(ownerId);
         var organization = Organization.Create("Pizza Hut Israel", ownerId, "IL", "restaurant_hospitality", "he");
         var space = Space.Create("Pizza Hut Haifa", ownerId, locale: "he", organizationId: organization.Id);
         var outsideOrganization = Organization.Create("Other Org", ownerId, "IL", "general", "he");
@@ -636,6 +644,7 @@ public class OrganizationPortabilityTests
             "Space",
             outsideSpace.Id);
 
+        db.Users.Add(owner);
         db.Organizations.AddRange(organization, outsideOrganization);
         db.Spaces.AddRange(space, outsideSpace);
         db.Groups.AddRange(group, outsideGroup);
@@ -682,6 +691,8 @@ public class OrganizationPortabilityTests
         groups[0].GetProperty("spaceId").GetGuid().Should().Be(space.Id);
 
         var data = root.GetProperty("data");
+        data.GetProperty("users").EnumerateArray().Should().ContainSingle(user =>
+            user.GetProperty("id").GetGuid() == ownerId);
         data.GetProperty("spaceSelfServiceDefaults").EnumerateArray().Should().ContainSingle();
         data.GetProperty("spaceSpecialDays").EnumerateArray().Should().ContainSingle();
         data.GetProperty("selfServiceConfigs").EnumerateArray().Should().ContainSingle();
@@ -705,8 +716,10 @@ public class OrganizationPortabilityTests
     {
         var sourceDb = CreateDb();
         var ownerId = Guid.NewGuid();
+        var owner = CreateUser(ownerId);
         var organization = Organization.Create("Pizza Hut Israel", ownerId, "IL", "restaurant_hospitality", "he");
         var space = Space.Create("Pizza Hut Haifa", ownerId, locale: "he", organizationId: organization.Id);
+        sourceDb.Users.Add(owner);
         sourceDb.Organizations.Add(organization);
         sourceDb.Spaces.Add(space);
         sourceDb.Groups.Add(Jobuler.Domain.Groups.Group.Create(space.Id, null, "Kitchen"));
@@ -732,6 +745,7 @@ public class OrganizationPortabilityTests
     {
         var db = CreateDb();
         var ownerId = Guid.NewGuid();
+        var owner = CreateUser(ownerId);
         var organization = Organization.Create("Pizza Hut Israel", ownerId, "IL", "restaurant_hospitality", "he");
         var space = Space.Create("Pizza Hut Haifa", ownerId, locale: "he", organizationId: organization.Id);
         var specialDay = SpaceSpecialDay.Create(
@@ -753,6 +767,7 @@ public class OrganizationPortabilityTests
             "space.special_day.imported",
             "SpaceSpecialDay",
             specialDay.Id);
+        db.Users.Add(owner);
         db.Organizations.Add(organization);
         db.Spaces.Add(space);
         db.SpaceSpecialDays.Add(specialDay);
@@ -779,8 +794,10 @@ public class OrganizationPortabilityTests
     {
         var sourceDb = CreateDb();
         var ownerId = Guid.NewGuid();
+        var owner = CreateUser(ownerId);
         var organization = Organization.Create("Pizza Hut Israel", ownerId, "IL", "restaurant_hospitality", "he");
         var space = Space.Create("Pizza Hut Haifa", ownerId, locale: "he", organizationId: organization.Id);
+        sourceDb.Users.Add(owner);
         sourceDb.Organizations.Add(organization);
         sourceDb.Spaces.Add(space);
         sourceDb.Groups.Add(Group.Create(space.Id, null, "Kitchen"));
@@ -804,10 +821,36 @@ public class OrganizationPortabilityTests
     }
 
     [Fact]
+    public async Task ValidateImportPackage_RejectsBrokenCoreReferences()
+    {
+        var sourceDb = CreateDb();
+        var ownerId = Guid.NewGuid();
+        var owner = CreateUser(ownerId);
+        var organization = Organization.Create("Pizza Hut Israel", ownerId, "IL", "restaurant_hospitality", "he");
+        var space = Space.Create("Pizza Hut Haifa", ownerId, locale: "he", organizationId: organization.Id);
+        sourceDb.Users.Add(owner);
+        sourceDb.Organizations.Add(organization);
+        sourceDb.Spaces.Add(space);
+        await sourceDb.SaveChangesAsync();
+
+        var package = await ExportPackageAsync(sourceDb, organization.Id);
+        var packageJson = JsonNode.Parse(System.Text.Encoding.UTF8.GetString(package.Content))!;
+        packageJson["data"]!["spaces"]!.AsArray()[0]!["ownerUserId"] = Guid.NewGuid().ToString();
+
+        var result = await new ValidateOrganizationImportPackageCommandHandler(CreateDb())
+            .Handle(new ValidateOrganizationImportPackageCommand(packageJson.ToJsonString()), CancellationToken.None);
+
+        result.IsImportSafe.Should().BeFalse();
+        result.Errors.Should().Contain(error =>
+            error.Contains("spaces contains 1 row(s) whose ownerUserId is not in exported users"));
+    }
+
+    [Fact]
     public async Task ValidateImportPackage_RejectsBrokenSelfServiceReferences()
     {
         var sourceDb = CreateDb();
         var ownerId = Guid.NewGuid();
+        var owner = CreateUser(ownerId);
         var organization = Organization.Create("Pizza Hut Israel", ownerId, "IL", "restaurant_hospitality", "he");
         var space = Space.Create("Pizza Hut Haifa", ownerId, locale: "he", organizationId: organization.Id);
         var group = Group.Create(space.Id, null, "Kitchen");
@@ -853,6 +896,7 @@ public class OrganizationPortabilityTests
             capacity: 1);
         var request = ShiftRequest.Create(space.Id, slot.Id, person.Id, group.Id, cycle.Id);
 
+        sourceDb.Users.Add(owner);
         sourceDb.Organizations.Add(organization);
         sourceDb.Spaces.Add(space);
         sourceDb.Groups.Add(group);
