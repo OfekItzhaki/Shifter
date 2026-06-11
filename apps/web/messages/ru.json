@@ -2231,6 +2231,14 @@
         "all": "Все",
         "handled": "Обработанные"
       },
+      "signals": {
+        "pendingReviews": "Pending reviews",
+        "pendingReviewsDetail": "{absences} absences / {changes} changes / {leave} time off",
+        "lateReports": "Late absence reports",
+        "lateReportsDetail": "Late pending reports should be reviewed first.",
+        "repeatLateMembers": "Repeat late reporters",
+        "repeatLateMembersNone": "No repeated late reporters in this queue."
+      },
       "late": "Поздно",
       "adminNote": "Заметка администратора",
       "adminNotePlaceholder": "Заметка администратора...",

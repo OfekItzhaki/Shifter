@@ -2243,6 +2243,14 @@
         "all": "הכל",
         "handled": "טופלו"
       },
+      "signals": {
+        "pendingReviews": "בקשות ממתינות",
+        "pendingReviewsDetail": "{absences} היעדרויות / {changes} שינויים / {leave} חופשות",
+        "lateReports": "דיווחי היעדרות מאוחרים",
+        "lateReportsDetail": "כדאי לבדוק קודם דיווחים מאוחרים שממתינים.",
+        "repeatLateMembers": "מדווחים מאוחר שוב ושוב",
+        "repeatLateMembersNone": "אין מדווחים מאוחרים חוזרים בתור הזה."
+      },
       "late": "מאוחר",
       "adminNote": "הערת מנהל",
       "adminNotePlaceholder": "הערת מנהל...",

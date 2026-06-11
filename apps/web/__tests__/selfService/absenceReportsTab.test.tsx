@@ -24,6 +24,12 @@ vi.mock("next-intl", () => ({
       "filter.pending": "Pending",
       "filter.all": "All",
       "filter.handled": "Handled",
+      "signals.pendingReviews": "Pending reviews",
+      "signals.pendingReviewsDetail": `${values?.absences ?? 0} absences / ${values?.changes ?? 0} changes / ${values?.leave ?? 0} time off`,
+      "signals.lateReports": "Late absence reports",
+      "signals.lateReportsDetail": "Late pending reports should be reviewed first.",
+      "signals.repeatLateMembers": "Repeat late reporters",
+      "signals.repeatLateMembersNone": "No repeated late reporters in this queue.",
       absenceReportsTitle: "Absence Reports",
       changeRequestsTitle: "Shift Change Requests",
       leaveRequestsTitle: "Time-off Requests",
@@ -96,6 +102,7 @@ describe("AbsenceReportsTab", () => {
       makeAbsenceReport("absence-pending", "Pending", "Pending absence reason"),
       makeAbsenceReport("absence-late", "Pending", "Late absence reason", true),
       makeAbsenceReport("absence-approved", "Approved", "Approved absence reason"),
+      makeAbsenceReport("absence-approved-late", "Approved", "Approved late absence reason", true),
     ]);
     mockGetShiftChangeRequests.mockResolvedValue([
       makeShiftChangeRequest("change-pending", "Pending", "Pending change reason"),
@@ -113,6 +120,11 @@ describe("AbsenceReportsTab", () => {
     render(<AbsenceReportsTab spaceId="space-1" groupId="group-1" />);
 
     await waitFor(() => expect(screen.getByText("Pending absence reason")).toBeInTheDocument());
+    expect(screen.getByText("Pending reviews")).toBeInTheDocument();
+    expect(screen.getByText("2 absences / 1 changes / 1 time off")).toBeInTheDocument();
+    expect(screen.getByText("Late absence reports")).toBeInTheDocument();
+    expect(screen.getByText("Late pending reports should be reviewed first.")).toBeInTheDocument();
+    expect(screen.getByText("Repeat late reporters")).toBeInTheDocument();
     expect(screen.getByText("Late absence reason")).toBeInTheDocument();
     expect(screen.getAllByText("This shift has already been released for coverage.")).toHaveLength(2);
     expect(screen.getByText("Late absence reason").compareDocumentPosition(screen.getByText("Pending absence reason")))

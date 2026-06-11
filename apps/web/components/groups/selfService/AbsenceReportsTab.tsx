@@ -98,6 +98,13 @@ interface ReviewActivityItem {
   note: string | null;
 }
 
+interface ReviewSignals {
+  latePendingCount: number;
+  repeatLateMemberCount: number;
+  repeatLateMemberNames: string[];
+  totalPendingReviews: number;
+}
+
 function formatActivityTime(value: string) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
@@ -108,6 +115,36 @@ function formatActivityTime(value: string) {
     hour: "2-digit",
     minute: "2-digit",
   }).format(date);
+}
+
+function getReviewSignals(
+  reports: AbsenceReportDto[],
+  changeRequests: ShiftChangeRequestDto[],
+  leaveRequests: SpecialLeaveRequestDto[]
+): ReviewSignals {
+  const lateReportsByPerson = new Map<string, { name: string; count: number }>();
+
+  for (const report of reports) {
+    if (!report.isLate || report.status === "Rejected") continue;
+
+    const existing = lateReportsByPerson.get(report.personId);
+    lateReportsByPerson.set(report.personId, {
+      name: report.personName,
+      count: (existing?.count ?? 0) + 1,
+    });
+  }
+
+  const repeatLateMemberNames = Array.from(lateReportsByPerson.values())
+    .filter((entry) => entry.count > 1)
+    .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
+    .map((entry) => entry.name);
+
+  return {
+    latePendingCount: reports.filter((report) => report.status === "Pending" && report.isLate).length,
+    repeatLateMemberCount: repeatLateMemberNames.length,
+    repeatLateMemberNames,
+    totalPendingReviews: countPending(reports) + countPending(changeRequests) + countPending(leaveRequests),
+  };
 }
 
 export default function AbsenceReportsTab({ spaceId, groupId, onReviewed }: Props) {
@@ -303,6 +340,7 @@ export default function AbsenceReportsTab({ spaceId, groupId, onReviewed }: Prop
   const reportPendingCount = countPending(reports);
   const changePendingCount = countPending(changeRequests);
   const leavePendingCount = countPending(leaveRequests);
+  const reviewSignals = getReviewSignals(reports, changeRequests, leaveRequests);
   const recentActivity: ReviewActivityItem[] = [
     ...reports
       .filter((report) => report.status !== "Pending")
@@ -397,6 +435,35 @@ export default function AbsenceReportsTab({ spaceId, groupId, onReviewed }: Prop
           {successMessage}
         </div>
       )}
+
+      <div className="grid gap-3 md:grid-cols-3">
+        <ReviewSignalCard
+          label={t("signals.pendingReviews")}
+          value={reviewSignals.totalPendingReviews.toString()}
+          detail={t("signals.pendingReviewsDetail", {
+            absences: reportPendingCount,
+            changes: changePendingCount,
+            leave: leavePendingCount,
+          })}
+          tone={reviewSignals.totalPendingReviews > 0 ? "warning" : "default"}
+        />
+        <ReviewSignalCard
+          label={t("signals.lateReports")}
+          value={reviewSignals.latePendingCount.toString()}
+          detail={t("signals.lateReportsDetail")}
+          tone={reviewSignals.latePendingCount > 0 ? "danger" : "default"}
+        />
+        <ReviewSignalCard
+          label={t("signals.repeatLateMembers")}
+          value={reviewSignals.repeatLateMemberCount.toString()}
+          detail={
+            reviewSignals.repeatLateMemberNames.length > 0
+              ? reviewSignals.repeatLateMemberNames.slice(0, 3).join(", ")
+              : t("signals.repeatLateMembersNone")
+          }
+          tone={reviewSignals.repeatLateMemberCount > 0 ? "warning" : "default"}
+        />
+      </div>
 
       <div className="rounded-xl border border-slate-200 bg-white p-4">
         <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
@@ -668,6 +735,39 @@ export default function AbsenceReportsTab({ spaceId, groupId, onReviewed }: Prop
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+function ReviewSignalCard({
+  label,
+  value,
+  detail,
+  tone,
+}: {
+  label: string;
+  value: string;
+  detail: string;
+  tone: "default" | "warning" | "danger";
+}) {
+  const toneClass =
+    tone === "danger"
+      ? "border-orange-200 bg-orange-50"
+      : tone === "warning"
+        ? "border-amber-200 bg-amber-50"
+        : "border-slate-200 bg-white";
+  const valueClass =
+    tone === "danger"
+      ? "text-orange-700"
+      : tone === "warning"
+        ? "text-amber-700"
+        : "text-slate-900";
+
+  return (
+    <div className={`rounded-xl border px-4 py-3 ${toneClass}`}>
+      <p className="text-xs font-medium text-slate-500">{label}</p>
+      <p className={`mt-1 text-2xl font-semibold ${valueClass}`}>{value}</p>
+      <p className="mt-1 text-xs leading-5 text-slate-600">{detail}</p>
     </div>
   );
 }
