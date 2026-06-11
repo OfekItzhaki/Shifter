@@ -285,6 +285,63 @@ public class SpecialLeaveRequestCommandTests
             .WithMessage("An active special leave request already overlaps this time.");
     }
 
+    [Theory]
+    [InlineData(SpecialLeaveRequestStatus.Rejected)]
+    [InlineData(SpecialLeaveRequestStatus.Cancelled)]
+    public async Task Submit_AllowsOverlappingInactiveRequest(SpecialLeaveRequestStatus inactiveStatus)
+    {
+        await using var db = CreateDb();
+        var spaceId = Guid.NewGuid();
+        var userId = Guid.NewGuid();
+        var adminId = Guid.NewGuid();
+        var person = Person.Create(spaceId, "Ofek", linkedUserId: userId);
+        var start = DateTime.UtcNow.AddDays(3);
+        var inactiveRequest = SpecialLeaveRequest.Create(
+            spaceId,
+            person.Id,
+            start,
+            start.AddDays(1),
+            "Original event",
+            userId);
+
+        if (inactiveStatus == SpecialLeaveRequestStatus.Rejected)
+        {
+            inactiveRequest.Reject(adminId, "Rejected");
+        }
+        else
+        {
+            inactiveRequest.Cancel();
+        }
+
+        db.People.Add(person);
+        db.SpecialLeaveRequests.Add(inactiveRequest);
+        await db.SaveChangesAsync();
+
+        var handler = new SubmitSpecialLeaveRequestCommandHandler(
+            db,
+            Substitute.For<INotificationService>(),
+            CreateAuditLogger());
+
+        var newRequestId = await handler.Handle(new SubmitSpecialLeaveRequestCommand(
+            spaceId,
+            person.Id,
+            start.AddHours(2),
+            start.AddHours(4),
+            "Replacement event",
+            userId), CancellationToken.None);
+
+        var requests = await db.SpecialLeaveRequests
+            .Where(r => r.PersonId == person.Id)
+            .OrderBy(r => r.StartsAt)
+            .ToListAsync();
+
+        requests.Should().HaveCount(2);
+        requests.Should().Contain(r => r.Id == inactiveRequest.Id && r.Status == inactiveStatus);
+        requests.Should().Contain(r => r.Id == newRequestId
+            && r.Status == SpecialLeaveRequestStatus.Pending
+            && r.Reason == "Replacement event");
+    }
+
     [Fact]
     public async Task Cancel_NotifiesSpaceAdmins()
     {
