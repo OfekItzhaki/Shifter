@@ -219,6 +219,7 @@ export default function SlotBrowserTab({ spaceId, groupId }: SlotBrowserTabProps
             return (
               <div
                 key={slot.id}
+                data-testid={isFull ? "self-service-full-slot" : "self-service-open-slot"}
                 className={`bg-white border rounded-xl px-4 py-3 transition-colors ${
                   capacityClass === "high-availability"
                     ? "border-emerald-200"
@@ -269,6 +270,7 @@ export default function SlotBrowserTab({ spaceId, groupId }: SlotBrowserTabProps
                       isFull ? (
                         <button
                           onClick={() => handleJoinWaitlist(slot)}
+                          data-testid="self-service-join-waitlist"
                           disabled={isActing}
                           className="inline-flex items-center justify-center px-4 py-2 rounded-lg text-xs font-medium border border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
@@ -299,6 +301,7 @@ export default function SlotBrowserTab({ spaceId, groupId }: SlotBrowserTabProps
                       ) : (
                         <button
                           onClick={() => handleRequest(slot)}
+                          data-testid="self-service-request-shift"
                           disabled={isActing}
                           className="inline-flex items-center justify-center px-4 py-2 rounded-lg text-xs font-medium bg-sky-600 text-white hover:bg-sky-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >

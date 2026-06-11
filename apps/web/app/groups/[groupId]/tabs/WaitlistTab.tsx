@@ -252,6 +252,7 @@ export default function WaitlistTab({ spaceId, groupId, isAdmin = false }: Waitl
             {sortedAdminEntries.map((entry) => (
               <div
                 key={entry.id}
+                data-testid="self-service-admin-waitlist-entry"
                 className="grid gap-3 py-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"
               >
                 <div className="min-w-0">
@@ -298,6 +299,7 @@ export default function WaitlistTab({ spaceId, groupId, isAdmin = false }: Waitl
           {offeredEntries.map((entry) => (
             <div
               key={entry.id}
+              data-testid="self-service-offered-waitlist-entry"
               className="bg-sky-50 border-2 border-sky-300 rounded-2xl p-4 space-y-3"
             >
               {/* Header with status badge */}
@@ -360,6 +362,7 @@ export default function WaitlistTab({ spaceId, groupId, isAdmin = false }: Waitl
           {otherEntries.map((entry) => (
             <div
               key={entry.id}
+              data-testid="self-service-waitlist-entry"
               className="bg-white border border-slate-200 rounded-2xl p-4 space-y-2"
             >
               {/* Header with status badge */}

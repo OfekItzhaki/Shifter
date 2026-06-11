@@ -36,6 +36,8 @@ interface CycleStatusDto {
 interface AvailableSlotDto {
   id?: string;
   shiftSlotId?: string;
+  capacity: number;
+  currentFillCount: number;
 }
 
 interface AvailableSlotsResponse {
@@ -63,6 +65,12 @@ interface MyAbsenceReportsResponse {
   reports: AbsenceReportDto[];
   absenceReportsUsed: number;
   maxAbsenceReports: number;
+}
+
+interface WaitlistEntryDto {
+  id: string;
+  shiftSlotId: string;
+  status: "Waiting" | "Offered" | "Accepted" | "Expired" | "Declined" | "Removed";
 }
 
 async function login(request: APIRequestContext, identifier: string): Promise<string> {
@@ -197,6 +205,97 @@ async function enterElevatedGroup(page: Page, groupId: string): Promise<void> {
 }
 
 test.describe("Self-service browser lifecycle", () => {
+  test("member can pick an open shift and join a full-slot waitlist through the UI", async ({ page, request }) => {
+    const adminEmail = process.env.E2E_ADMIN_EMAIL ?? "admin@demo.local";
+    const memberEmail = process.env.E2E_PICK_MEMBER_EMAIL ?? "viewer@demo.local";
+    const adminToken = await login(request, adminEmail);
+    const memberToken = await login(request, memberEmail);
+    const { spaceId, groupId } = await findDemoSelfServiceGroup(request, adminToken);
+    const status = await api<CycleStatusDto>(
+      request,
+      adminToken,
+      "GET",
+      `/spaces/${spaceId}/groups/${groupId}/self-service-cycles/status`
+    );
+    expect(status.cycleId).toBeTruthy();
+
+    const availableBefore = await api<AvailableSlotsResponse>(
+      request,
+      memberToken,
+      "GET",
+      `/spaces/${spaceId}/groups/${groupId}/shift-slots/available?cycleId=${status.cycleId}`
+    );
+    const openSlot = availableBefore.slots.find((slot) => slot.currentFillCount < slot.capacity);
+    const fullSlot = availableBefore.slots.find((slot) => slot.currentFillCount >= slot.capacity);
+    const existingWaitlist = await api<WaitlistEntryDto[]>(
+      request,
+      memberToken,
+      "GET",
+      `/spaces/${spaceId}/groups/${groupId}/waitlist/mine`
+    );
+
+    await loginAsUser(page, memberEmail, DEMO_PASSWORD);
+    await page.evaluate((targetGroupId) => {
+      localStorage.setItem("shifter-pick-last-group", targetGroupId);
+    }, groupId);
+    await page.goto(`${BASE}/pick`);
+
+    if (openSlot) {
+      const openSlotId = openSlot.id ?? openSlot.shiftSlotId;
+      await page.getByTestId("pick-tab-slots").click();
+      await expect(page.getByTestId("self-service-open-slot").first()).toBeVisible({ timeout: 15000 });
+      await Promise.all([
+        page.waitForResponse((response) =>
+          response.url().includes("/shift-requests") && response.request().method() === "POST"
+        ),
+        page.getByTestId("self-service-request-shift").first().click(),
+      ]);
+
+      const shifts = await api<MyShiftsResponse>(
+        request,
+        memberToken,
+        "GET",
+        `/spaces/${spaceId}/groups/${groupId}/shift-requests/mine`
+      );
+      expect(shifts.requests.some((row) =>
+        row.shiftSlotId === openSlotId && row.status === "Approved"
+      )).toBeTruthy();
+    }
+
+    const alreadyWaitlisted = fullSlot
+      ? existingWaitlist.some((entry) =>
+          entry.shiftSlotId === (fullSlot.id ?? fullSlot.shiftSlotId)
+          && (entry.status === "Waiting" || entry.status === "Offered")
+        )
+      : existingWaitlist.some((entry) => entry.status === "Waiting" || entry.status === "Offered");
+
+    if (fullSlot && !alreadyWaitlisted) {
+      await page.getByTestId("pick-tab-slots").click();
+      await expect(page.getByTestId("self-service-full-slot").first()).toBeVisible({ timeout: 15000 });
+      await Promise.all([
+        page.waitForResponse((response) =>
+          response.url().includes("/waitlist") && response.request().method() === "POST"
+        ),
+        page.getByTestId("self-service-join-waitlist").first().click(),
+      ]);
+    }
+
+    const waitlistAfter = await api<WaitlistEntryDto[]>(
+      request,
+      memberToken,
+      "GET",
+      `/spaces/${spaceId}/groups/${groupId}/waitlist/mine`
+    );
+    expect(waitlistAfter.some((entry) => entry.status === "Waiting" || entry.status === "Offered")).toBeTruthy();
+
+    await page.getByTestId("pick-tab-waitlist").click();
+    await expect(
+      page.getByTestId("self-service-waitlist-entry")
+        .or(page.getByTestId("self-service-offered-waitlist-entry"))
+        .first()
+    ).toBeVisible({ timeout: 15000 });
+  });
+
   test("member reports cannot attend and admin approves it through the UI", async ({ page, request }) => {
     const adminEmail = process.env.E2E_ADMIN_EMAIL ?? "admin@demo.local";
     const memberEmail = process.env.E2E_BROWSER_MEMBER_EMAIL ?? "viewer@demo.local";

@@ -228,6 +228,8 @@ There are also browser Playwright checks using the seeded `Self-Service Demo`
 group:
 
 - a mobile smoke test for self-service admin cycle controls and operations
+- a member browser lifecycle test for picking an open shift and joining/viewing
+  a full-slot waitlist
 - a member/admin browser lifecycle test for cannot-attend reporting and admin
   approval from the review queue
 
@@ -256,9 +258,9 @@ These are not blockers for an MVP rollout, but they are worth improving before
 large deployments:
 
 - Broader browser end-to-end coverage for the complete member/admin cycle:
-  pick shift, fill slot, join waitlist, cancel, request change, swaps, and final
-  slot-state verification. The browser suite already covers cannot-attend
-  reporting and admin approval.
+  cancellation, request change, swaps, and final slot-state verification. The
+  browser suite already covers picking, waitlist entry, cannot-attend reporting,
+  and admin approval.
 - Organization-level defaults for self-service policy through the admin UI.
   Space owners can configure space-level defaults today; a higher-level
   organization template for multi-space installs is still deferred.
