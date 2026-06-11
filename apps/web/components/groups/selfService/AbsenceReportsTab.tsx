@@ -422,6 +422,11 @@ export default function AbsenceReportsTab({ spaceId, groupId, onReviewed }: Prop
                     {formatSlotDate(report.date)} | {formatTime24h(report.startTime)}-{formatTime24h(report.endTime)} | {report.taskName}
                   </p>
                   <p className="mt-2 text-sm text-slate-700">{report.reason}</p>
+                  {report.status === "Pending" && (
+                    <p className="mt-2 rounded-lg border border-sky-100 bg-sky-50 px-3 py-2 text-xs leading-5 text-sky-700">
+                      {t("absenceReleasedNotice")}
+                    </p>
+                  )}
                   {report.adminNote && (
                     <p className="mt-2 text-xs text-slate-500">{t("adminNote")}: {report.adminNote}</p>
                   )}

@@ -2230,6 +2230,7 @@
       "refresh": "רענן",
       "empty": "אין דיווחי אי הגעה",
       "emptyPending": "אין דיווחי אי הגעה ממתינים",
+      "absenceReleasedNotice": "This shift has already been released for coverage. Approving or rejecting reviews the absence report, not the seat release.",
       "filterLabel": "הצג",
       "filterAria": "מסנן תור בקשות לבדיקה",
       "filter": {

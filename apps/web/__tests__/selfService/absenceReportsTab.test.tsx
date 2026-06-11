@@ -40,6 +40,7 @@ vi.mock("next-intl", () => ({
       statusCancelled: "Cancelled",
       empty: "No absence reports",
       emptyPending: "No pending absence reports",
+      absenceReleasedNotice: "This shift has already been released for coverage.",
       changeRequestsEmpty: "No shift change requests",
       changeRequestsEmptyPending: "No pending shift change requests",
       leaveRequestsEmpty: "No time-off requests",
@@ -97,6 +98,7 @@ describe("AbsenceReportsTab", () => {
 
     await waitFor(() => expect(screen.getByText("Pending absence reason")).toBeInTheDocument());
     expect(screen.getByText("Late absence reason")).toBeInTheDocument();
+    expect(screen.getAllByText("This shift has already been released for coverage.")).toHaveLength(2);
     expect(screen.getByText("Late absence reason").compareDocumentPosition(screen.getByText("Pending absence reason")))
       .toBe(Node.DOCUMENT_POSITION_FOLLOWING);
     expect(screen.getByText("Pending change reason")).toBeInTheDocument();
@@ -107,6 +109,7 @@ describe("AbsenceReportsTab", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "All" }));
     expect(screen.getByText("Approved absence reason")).toBeInTheDocument();
+    expect(screen.getAllByText("This shift has already been released for coverage.")).toHaveLength(2);
     expect(screen.getByText("Rejected change reason")).toBeInTheDocument();
     expect(screen.getByText("Cancelled leave reason")).toBeInTheDocument();
 

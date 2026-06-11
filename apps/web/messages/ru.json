@@ -2218,6 +2218,7 @@
       "refresh": "Обновить",
       "empty": "Нет отчетов об отсутствии",
       "emptyPending": "Нет ожидающих отчетов об отсутствии",
+      "absenceReleasedNotice": "This shift has already been released for coverage. Approving or rejecting reviews the absence report, not the seat release.",
       "filterLabel": "Показать",
       "filterAria": "Фильтр очереди проверки",
       "filter": {
