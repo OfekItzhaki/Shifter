@@ -247,6 +247,8 @@ group:
   reinstating the member's released shift
 - a member/admin browser lifecycle test for special leave submission and admin
   approval
+- a member browser lifecycle test for special leave cancellation
+- a member/admin browser lifecycle test for special leave rejection
 
 ## Customer-Hosted Use
 
@@ -278,7 +280,8 @@ large deployments:
   absence approval, absence rejection with shift reinstatement, shift
   cancellation, shift-change approval with reassignment, shift-change rejection,
   member-to-member swap acceptance, member-to-member swap decline, and
-  initiator swap cancellation, and special leave approval.
+  initiator swap cancellation, special leave approval, special leave
+  cancellation, and special leave rejection.
 - Organization-level defaults for self-service policy through the admin UI.
   Space owners can configure space-level defaults today; a higher-level
   organization template for multi-space installs is still deferred.

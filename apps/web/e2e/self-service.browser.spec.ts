@@ -514,6 +514,49 @@ async function findSpecialLeaveWindow(
   throw new Error("Could not find a non-overlapping special leave window for the seeded member.");
 }
 
+async function submitSpecialLeaveThroughUi(
+  page: Page,
+  request: APIRequestContext,
+  memberToken: string,
+  spaceId: string,
+  groupId: string,
+  reason: string
+): Promise<SpecialLeaveRequestDto> {
+  const { startsAt, endsAt } = await findSpecialLeaveWindow(request, memberToken, spaceId);
+
+  await page.evaluate((targetGroupId) => {
+    localStorage.setItem("shifter-pick-last-group", targetGroupId);
+  }, groupId);
+  await page.goto(`${BASE}/pick`);
+  await page.getByTestId("pick-tab-my-shifts").click();
+  await page.getByTestId("self-service-special-leave-start").fill(toDateTimeLocalInput(startsAt));
+  await page.getByTestId("self-service-special-leave-end").fill(toDateTimeLocalInput(endsAt));
+  await page.getByTestId("self-service-special-leave-reason").fill(reason);
+  await Promise.all([
+    page.waitForResponse((response) =>
+      response.url().includes(`/spaces/${spaceId}/special-leave-requests`)
+      && !response.url().includes("/admin/")
+      && response.request().method() === "POST"
+    ),
+    page.getByTestId("self-service-submit-special-leave").click(),
+  ]);
+
+  const memberRequests = await api<SpecialLeaveRequestDto[]>(
+    request,
+    memberToken,
+    "GET",
+    `/spaces/${spaceId}/special-leave-requests/mine`
+  );
+  const createdRequest = memberRequests.find((row) => row.reason === reason);
+  expect(createdRequest?.status).toBe("Pending");
+
+  const memberCard = page.locator(
+    `[data-testid="self-service-special-leave-card"][data-special-leave-request-id="${createdRequest!.id}"]`
+  );
+  await expect(memberCard).toBeVisible({ timeout: 15000 });
+  return createdRequest!;
+}
+
 test.describe("Self-service browser lifecycle", () => {
   test("member proposes and target accepts a shift swap through the UI", async ({ page, request }) => {
     const adminEmail = process.env.E2E_ADMIN_EMAIL ?? "admin@demo.local";
@@ -1361,40 +1404,10 @@ test.describe("Self-service browser lifecycle", () => {
     const memberToken = await login(request, memberEmail);
     const { spaceId, groupId } = await findDemoSelfServiceGroup(request, adminToken);
     await getGroupMemberByEmail(request, adminToken, spaceId, groupId, memberEmail);
-    const { startsAt, endsAt } = await findSpecialLeaveWindow(request, memberToken, spaceId);
     const reason = `Browser E2E special leave ${Date.now()}`;
 
     await loginAsUser(page, memberEmail, DEMO_PASSWORD);
-    await page.evaluate((targetGroupId) => {
-      localStorage.setItem("shifter-pick-last-group", targetGroupId);
-    }, groupId);
-    await page.goto(`${BASE}/pick`);
-    await page.getByTestId("pick-tab-my-shifts").click();
-    await page.getByTestId("self-service-special-leave-start").fill(toDateTimeLocalInput(startsAt));
-    await page.getByTestId("self-service-special-leave-end").fill(toDateTimeLocalInput(endsAt));
-    await page.getByTestId("self-service-special-leave-reason").fill(reason);
-    await Promise.all([
-      page.waitForResponse((response) =>
-        response.url().includes(`/spaces/${spaceId}/special-leave-requests`)
-        && !response.url().includes("/admin/")
-        && response.request().method() === "POST"
-      ),
-      page.getByTestId("self-service-submit-special-leave").click(),
-    ]);
-
-    const memberRequests = await api<SpecialLeaveRequestDto[]>(
-      request,
-      memberToken,
-      "GET",
-      `/spaces/${spaceId}/special-leave-requests/mine`
-    );
-    const createdRequest = memberRequests.find((row) => row.reason === reason);
-    expect(createdRequest?.status).toBe("Pending");
-
-    const memberCard = page.locator(
-      `[data-testid="self-service-special-leave-card"][data-special-leave-request-id="${createdRequest!.id}"]`
-    );
-    await expect(memberCard).toBeVisible({ timeout: 15000 });
+    const createdRequest = await submitSpecialLeaveThroughUi(page, request, memberToken, spaceId, groupId, reason);
 
     await loginAsUser(page, adminEmail, DEMO_PASSWORD);
     await enterElevatedGroup(page, groupId);
@@ -1422,5 +1435,79 @@ test.describe("Self-service browser lifecycle", () => {
     const approved = reviewed.find((row) => row.id === createdRequest!.id);
     expect(approved?.status).toBe("Approved");
     expect(approved?.presenceWindowId).toBeTruthy();
+  });
+
+  test("member requests and cancels special leave through the UI", async ({ page, request }) => {
+    const adminEmail = process.env.E2E_ADMIN_EMAIL ?? "admin@demo.local";
+    const memberEmail = process.env.E2E_SPECIAL_LEAVE_CANCEL_MEMBER_EMAIL ?? "ofek@demo.local";
+    const adminToken = await login(request, adminEmail);
+    const memberToken = await login(request, memberEmail);
+    const { spaceId, groupId } = await findDemoSelfServiceGroup(request, adminToken);
+    await getGroupMemberByEmail(request, adminToken, spaceId, groupId, memberEmail);
+    const reason = `Browser E2E cancel special leave ${Date.now()}`;
+
+    await loginAsUser(page, memberEmail, DEMO_PASSWORD);
+    const createdRequest = await submitSpecialLeaveThroughUi(page, request, memberToken, spaceId, groupId, reason);
+    const memberCard = page.locator(
+      `[data-testid="self-service-special-leave-card"][data-special-leave-request-id="${createdRequest.id}"]`
+    );
+
+    await Promise.all([
+      page.waitForResponse((response) =>
+        response.url().includes(`/special-leave-requests/${createdRequest.id}/cancel`)
+        && response.request().method() === "POST"
+      ),
+      memberCard.getByTestId("self-service-cancel-special-leave").click(),
+    ]);
+
+    const memberRequests = await api<SpecialLeaveRequestDto[]>(
+      request,
+      memberToken,
+      "GET",
+      `/spaces/${spaceId}/special-leave-requests/mine`
+    );
+    const cancelled = memberRequests.find((row) => row.id === createdRequest.id);
+    expect(cancelled?.status).toBe("Cancelled");
+    expect(cancelled?.presenceWindowId).toBeNull();
+  });
+
+  test("member requests special leave and admin rejects it through the UI", async ({ page, request }) => {
+    const adminEmail = process.env.E2E_ADMIN_EMAIL ?? "admin@demo.local";
+    const memberEmail = process.env.E2E_SPECIAL_LEAVE_REJECT_MEMBER_EMAIL ?? "ofek@demo.local";
+    const adminToken = await login(request, adminEmail);
+    const memberToken = await login(request, memberEmail);
+    const { spaceId, groupId } = await findDemoSelfServiceGroup(request, adminToken);
+    await getGroupMemberByEmail(request, adminToken, spaceId, groupId, memberEmail);
+    const reason = `Browser E2E reject special leave ${Date.now()}`;
+
+    await loginAsUser(page, memberEmail, DEMO_PASSWORD);
+    const createdRequest = await submitSpecialLeaveThroughUi(page, request, memberToken, spaceId, groupId, reason);
+
+    await loginAsUser(page, adminEmail, DEMO_PASSWORD);
+    await enterElevatedGroup(page, groupId);
+    await page.goto(`${BASE}/groups/${groupId}`);
+    await page.getByTestId("group-tab-absence-reports").click();
+
+    const reviewCard = page.locator(
+      `[data-testid="self-service-special-leave-review"][data-special-leave-request-id="${createdRequest.id}"]`
+    );
+    await expect(reviewCard).toBeVisible({ timeout: 15000 });
+    await Promise.all([
+      page.waitForResponse((response) =>
+        response.url().includes(`/special-leave-requests/admin/${createdRequest.id}/reject`)
+        && response.request().method() === "POST"
+      ),
+      reviewCard.getByTestId("self-service-reject-special-leave").click(),
+    ]);
+
+    const reviewed = await api<SpecialLeaveRequestDto[]>(
+      request,
+      adminToken,
+      "GET",
+      `/spaces/${spaceId}/special-leave-requests/admin?groupId=${groupId}`
+    );
+    const rejected = reviewed.find((row) => row.id === createdRequest.id);
+    expect(rejected?.status).toBe("Rejected");
+    expect(rejected?.presenceWindowId).toBeNull();
   });
 });
