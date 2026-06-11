@@ -261,6 +261,45 @@ public class SpecialLeaveRequestCommandTests
     }
 
     [Fact]
+    public async Task Approve_HandledRequest_DoesNotTrackPresenceWindow()
+    {
+        await using var db = CreateDb();
+        var spaceId = Guid.NewGuid();
+        var userId = Guid.NewGuid();
+        var adminId = Guid.NewGuid();
+        var person = Person.Create(spaceId, "Ofek", linkedUserId: userId);
+        var start = DateTime.UtcNow.AddDays(3);
+        var request = SpecialLeaveRequest.Create(
+            spaceId, person.Id, start, start.AddDays(1), "Family event", userId);
+        request.Reject(adminId, "Already handled");
+
+        db.People.Add(person);
+        db.SpecialLeaveRequests.Add(request);
+        await db.SaveChangesAsync();
+
+        var cumulative = Substitute.For<ICumulativeTracker>();
+        var cache = Substitute.For<ICacheService>();
+        var audit = CreateAuditLogger();
+        var handler = new ApproveSpecialLeaveRequestCommandHandler(db, cumulative, cache, audit);
+
+        var act = () => handler.Handle(new ApproveSpecialLeaveRequestCommand(
+            spaceId, request.Id, adminId, "approved"), CancellationToken.None);
+
+        await act.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("Only pending special leave requests can be changed.");
+
+        await db.SaveChangesAsync();
+
+        (await db.PresenceWindows.CountAsync()).Should().Be(0);
+        await cumulative.DidNotReceiveWithAnyArgs()
+            .RecomputeForPersonAsync(default, default, default);
+        await cache.DidNotReceiveWithAnyArgs()
+            .RemoveByPatternAsync(default!, default);
+        await audit.DidNotReceiveWithAnyArgs()
+            .LogAsync(default, default, default!, default, default, default, default, default, default);
+    }
+
+    [Fact]
     public async Task Submit_RejectsOverlappingActiveRequest()
     {
         await using var db = CreateDb();

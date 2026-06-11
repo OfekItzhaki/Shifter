@@ -144,8 +144,8 @@ public class ApproveSpecialLeaveRequestCommandHandler
             BuildPresenceNote(request, req.AdminNote),
             req.ReasonId);
 
-        _db.PresenceWindows.Add(presence);
         request.Approve(req.ProcessedByUserId, presence.Id, req.AdminNote);
+        _db.PresenceWindows.Add(presence);
         await _db.SaveChangesAsync(ct);
 
         await _cumulativeTracker.RecomputeForPersonAsync(req.SpaceId, request.PersonId, ct);
