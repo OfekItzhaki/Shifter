@@ -17,11 +17,14 @@ set -euo pipefail
 SHIFTER_DIR="${SHIFTER_DIR:-/opt/shifter}"
 COMPOSE_DIR="${COMPOSE_DIR:-$SHIFTER_DIR/infra/compose}"
 ENV_FILE="${ENV_FILE:-$COMPOSE_DIR/.env}"
+BACKUP_DIR="${BACKUP_DIR:-$SHIFTER_DIR/backups}"
 DB_BACKUP="${DB_BACKUP:-${1:-}}"
 UPLOADS_BACKUP="${UPLOADS_BACKUP:-${2:-}}"
 RESTORE_UPLOADS="${RESTORE_UPLOADS:-0}"
 CONFIRM="${CONFIRM:-}"
 DRY_RUN="${DRY_RUN:-0}"
+SKIP_PRE_RESTORE_BACKUP="${SKIP_PRE_RESTORE_BACKUP:-0}"
+TIMESTAMP="$(date +%Y%m%d_%H%M%S)"
 
 if [ "$DRY_RUN" != "1" ] && [ "$CONFIRM" != "restore" ]; then
   echo "Refusing to restore without CONFIRM=restore." >&2
@@ -67,6 +70,7 @@ fi
 cd "$COMPOSE_DIR"
 
 if [ "$DRY_RUN" = "1" ]; then
+  PRE_RESTORE_BACKUP="$BACKUP_DIR/pre_restore_${COMPOSE_PROJECT_NAME}_${TIMESTAMP}.dump"
   echo "[$(date)] Restore dry run passed."
   echo "  Compose project: $COMPOSE_PROJECT_NAME"
   echo "  Compose dir:     $COMPOSE_DIR"
@@ -74,6 +78,11 @@ if [ "$DRY_RUN" = "1" ]; then
   echo "  Database:        $POSTGRES_DB"
   echo "  Database user:   $POSTGRES_USER"
   echo "  DB backup:       $DB_BACKUP"
+  if [ "$SKIP_PRE_RESTORE_BACKUP" = "1" ]; then
+    echo "  Safety backup:   skipped by SKIP_PRE_RESTORE_BACKUP=1"
+  else
+    echo "  Safety backup:   $PRE_RESTORE_BACKUP"
+  fi
   if [ "$RESTORE_UPLOADS" = "1" ]; then
     echo "  Uploads backup:  $UPLOADS_BACKUP"
     echo "  Uploads volume:  ${COMPOSE_PROJECT_NAME}_uploads_data"
@@ -90,6 +99,25 @@ docker compose --project-name "$COMPOSE_PROJECT_NAME" up -d postgres
 
 echo "[$(date)] Stopping app services before database restore..."
 docker compose --project-name "$COMPOSE_PROJECT_NAME" stop api web solver || true
+
+if [ "$SKIP_PRE_RESTORE_BACKUP" != "1" ]; then
+  mkdir -p "$BACKUP_DIR"
+  PRE_RESTORE_BACKUP="$BACKUP_DIR/pre_restore_${COMPOSE_PROJECT_NAME}_${TIMESTAMP}.dump"
+
+  echo "[$(date)] Creating pre-restore safety backup: $PRE_RESTORE_BACKUP"
+  docker compose --project-name "$COMPOSE_PROJECT_NAME" exec -T postgres \
+    pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" --format=custom --compress=9 > "$PRE_RESTORE_BACKUP"
+
+  if [ ! -s "$PRE_RESTORE_BACKUP" ]; then
+    echo "[$(date)] ERROR: pre-restore safety backup is empty" >&2
+    rm -f "$PRE_RESTORE_BACKUP"
+    exit 1
+  fi
+
+  echo "[$(date)] Pre-restore safety backup complete: $PRE_RESTORE_BACKUP ($(du -h "$PRE_RESTORE_BACKUP" | cut -f1))"
+else
+  echo "[$(date)] Skipping pre-restore safety backup because SKIP_PRE_RESTORE_BACKUP=1."
+fi
 
 echo "[$(date)] Restoring PostgreSQL database '$POSTGRES_DB' from $DB_BACKUP..."
 docker compose --project-name "$COMPOSE_PROJECT_NAME" exec -T postgres \
