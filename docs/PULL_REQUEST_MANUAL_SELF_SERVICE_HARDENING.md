@@ -55,6 +55,8 @@ Recent branch verification included:
   - 13 self-service browser lifecycle tests discovered
 - `dotnet test Jobuler.sln --filter "FullyQualifiedName~SelfService|FullyQualifiedName~Waitlist|FullyQualifiedName~SpecialLeave|FullyQualifiedName~ShiftChange|FullyQualifiedName~ShiftSwap"`
   - 204 targeted backend tests passed
+- `dotnet test Jobuler.sln`
+  - 1,921 backend tests passed, 12 skipped, 0 failed
 
 Note: frontend lint currently passes with the existing warning backlog.
 
