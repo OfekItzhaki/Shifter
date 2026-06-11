@@ -697,6 +697,7 @@ export default function MyShiftsTab({ spaceId, groupId, onNavigate }: MyShiftsTa
           <label className="space-y-1">
             <span className="text-xs font-medium text-slate-500">{t("specialLeaveStart")}</span>
             <input
+              data-testid="self-service-special-leave-start"
               type="datetime-local"
               value={leaveStart}
               onChange={(e) => setLeaveStart(e.target.value)}
@@ -706,6 +707,7 @@ export default function MyShiftsTab({ spaceId, groupId, onNavigate }: MyShiftsTa
           <label className="space-y-1">
             <span className="text-xs font-medium text-slate-500">{t("specialLeaveEnd")}</span>
             <input
+              data-testid="self-service-special-leave-end"
               type="datetime-local"
               value={leaveEnd}
               onChange={(e) => setLeaveEnd(e.target.value)}
@@ -715,6 +717,7 @@ export default function MyShiftsTab({ spaceId, groupId, onNavigate }: MyShiftsTa
           <label className="space-y-1">
             <span className="text-xs font-medium text-slate-500">{t("specialLeaveReason")}</span>
             <input
+              data-testid="self-service-special-leave-reason"
               value={leaveReason}
               onChange={(e) => setLeaveReason(e.target.value)}
               maxLength={500}
@@ -723,6 +726,7 @@ export default function MyShiftsTab({ spaceId, groupId, onNavigate }: MyShiftsTa
             />
           </label>
           <MutationButton
+            data-testid="self-service-submit-special-leave"
             onClick={handleSubmitSpecialLeave}
             loading={leaveSaving}
             disabled={leaveSaving}
@@ -1273,7 +1277,11 @@ function SpecialLeaveCard({
   })();
 
   return (
-    <div className="flex flex-col gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
+    <div
+      data-testid="self-service-special-leave-card"
+      data-special-leave-request-id={request.id}
+      className="flex flex-col gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 sm:flex-row sm:items-center sm:justify-between"
+    >
       <div className="min-w-0">
         <p className="text-xs font-medium text-slate-800">
           {formatSpecialLeaveDate(request.startsAt)} - {formatSpecialLeaveDate(request.endsAt)}
@@ -1288,6 +1296,7 @@ function SpecialLeaveCard({
         {request.status === "Pending" && (
           <button
             type="button"
+            data-testid="self-service-cancel-special-leave"
             onClick={() => onCancel(request.id)}
             className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-100"
           >

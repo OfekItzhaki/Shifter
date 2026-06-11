@@ -696,7 +696,12 @@ export default function AbsenceReportsTab({ spaceId, groupId, onReviewed }: Prop
       ) : (
         <div className="space-y-3">
           {sortedLeaveRequests.map((request) => (
-            <div key={request.id} className="rounded-xl border border-slate-200 bg-white p-4">
+            <div
+              key={request.id}
+              data-testid="self-service-special-leave-review"
+              data-special-leave-request-id={request.id}
+              className="rounded-xl border border-slate-200 bg-white p-4"
+            >
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
@@ -726,6 +731,7 @@ export default function AbsenceReportsTab({ spaceId, groupId, onReviewed }: Prop
                     <div className="flex gap-2">
                       <MutationButton
                         onClick={() => reviewLeave(request.id, "approve")}
+                        data-testid="self-service-approve-special-leave"
                         loading={leaveActionLoading[request.id] === "approve"}
                         disabled={!!leaveActionLoading[request.id]}
                         label={t("approve")}
@@ -734,6 +740,7 @@ export default function AbsenceReportsTab({ spaceId, groupId, onReviewed }: Prop
                       />
                       <MutationButton
                         onClick={() => reviewLeave(request.id, "reject")}
+                        data-testid="self-service-reject-special-leave"
                         loading={leaveActionLoading[request.id] === "reject"}
                         disabled={!!leaveActionLoading[request.id]}
                         label={t("reject")}

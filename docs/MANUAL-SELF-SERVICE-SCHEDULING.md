@@ -162,8 +162,8 @@ visibility.
 Absence reports:
 
 - Approving confirms the reported absence.
-- Rejecting marks the report as invalid but does not restore the original shift
-  assignment automatically.
+- Rejecting marks the report as invalid and reinstates the original shift
+  assignment when the report was the reason the shift was released.
 - Late reports count against the member's configured per-cycle limit unless
   rejected.
 
@@ -238,10 +238,15 @@ group:
   the cancelled state
 - a member-to-member browser lifecycle test for proposing and accepting a shift
   swap with final assignment verification
+- a member-to-member browser lifecycle test for proposing and declining a shift
+  swap
+- a member browser lifecycle test for cancelling an outgoing pending shift swap
 - an admin browser lifecycle test for rejecting a shift-change request while
   preserving the member's original assignment
 - an admin browser lifecycle test for rejecting a cannot-attend report and
   reinstating the member's released shift
+- a member/admin browser lifecycle test for special leave submission and admin
+  approval
 
 ## Customer-Hosted Use
 
@@ -273,7 +278,7 @@ large deployments:
   absence approval, absence rejection with shift reinstatement, shift
   cancellation, shift-change approval with reassignment, shift-change rejection,
   member-to-member swap acceptance, member-to-member swap decline, and
-  initiator swap cancellation.
+  initiator swap cancellation, and special leave approval.
 - Organization-level defaults for self-service policy through the admin UI.
   Space owners can configure space-level defaults today; a higher-level
   organization template for multi-space installs is still deferred.

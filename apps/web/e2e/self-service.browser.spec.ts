@@ -95,6 +95,15 @@ interface SwapRequestDto {
   status: "Pending" | "Accepted" | "Declined" | "Cancelled" | "Expired";
 }
 
+interface SpecialLeaveRequestDto {
+  id: string;
+  startsAt: string;
+  endsAt: string;
+  reason: string;
+  status: "Pending" | "Approved" | "Rejected" | "Cancelled";
+  presenceWindowId: string | null;
+}
+
 async function login(request: APIRequestContext, identifier: string): Promise<string> {
   const response = await request.post(`${API_URL}/auth/login`, {
     data: { identifier, password: DEMO_PASSWORD },
@@ -457,6 +466,52 @@ async function enterElevatedGroup(page: Page, groupId: string): Promise<void> {
       version: 0,
     }));
   }, groupId);
+}
+
+function toDateTimeLocalInput(value: Date): string {
+  const pad = (part: number) => String(part).padStart(2, "0");
+  return [
+    value.getFullYear(),
+    pad(value.getMonth() + 1),
+    pad(value.getDate()),
+  ].join("-") + `T${pad(value.getHours())}:${pad(value.getMinutes())}`;
+}
+
+function rangesOverlap(
+  startA: Date,
+  endA: Date,
+  startB: Date,
+  endB: Date
+): boolean {
+  return startA < endB && startB < endA;
+}
+
+async function findSpecialLeaveWindow(
+  request: APIRequestContext,
+  memberToken: string,
+  spaceId: string
+): Promise<{ startsAt: Date; endsAt: Date }> {
+  const existingRequests = await api<SpecialLeaveRequestDto[]>(
+    request,
+    memberToken,
+    "GET",
+    `/spaces/${spaceId}/special-leave-requests/mine`
+  );
+  const activeRequests = existingRequests.filter((row) =>
+    row.status === "Pending" || row.status === "Approved"
+  );
+
+  for (let offsetDays = 60; offsetDays < 120; offsetDays += 1) {
+    const startsAt = new Date(Date.now() + offsetDays * 24 * 60 * 60 * 1000);
+    startsAt.setHours(10, 0, 0, 0);
+    const endsAt = new Date(startsAt.getTime() + 4 * 60 * 60 * 1000);
+    const overlapsExisting = activeRequests.some((row) =>
+      rangesOverlap(startsAt, endsAt, new Date(row.startsAt), new Date(row.endsAt))
+    );
+    if (!overlapsExisting) return { startsAt, endsAt };
+  }
+
+  throw new Error("Could not find a non-overlapping special leave window for the seeded member.");
 }
 
 test.describe("Self-service browser lifecycle", () => {
@@ -1297,5 +1352,75 @@ test.describe("Self-service browser lifecycle", () => {
     expect(restoredShift?.status).toBe("Approved");
     expect(restoredShift?.shiftSlotId).toBe(ownedShift.shiftSlotId);
     expect(restoredShift?.cancellationReason).toBeNull();
+  });
+
+  test("member requests special leave and admin approves it through the UI", async ({ page, request }) => {
+    const adminEmail = process.env.E2E_ADMIN_EMAIL ?? "admin@demo.local";
+    const memberEmail = process.env.E2E_SPECIAL_LEAVE_MEMBER_EMAIL ?? "ofek@demo.local";
+    const adminToken = await login(request, adminEmail);
+    const memberToken = await login(request, memberEmail);
+    const { spaceId, groupId } = await findDemoSelfServiceGroup(request, adminToken);
+    await getGroupMemberByEmail(request, adminToken, spaceId, groupId, memberEmail);
+    const { startsAt, endsAt } = await findSpecialLeaveWindow(request, memberToken, spaceId);
+    const reason = `Browser E2E special leave ${Date.now()}`;
+
+    await loginAsUser(page, memberEmail, DEMO_PASSWORD);
+    await page.evaluate((targetGroupId) => {
+      localStorage.setItem("shifter-pick-last-group", targetGroupId);
+    }, groupId);
+    await page.goto(`${BASE}/pick`);
+    await page.getByTestId("pick-tab-my-shifts").click();
+    await page.getByTestId("self-service-special-leave-start").fill(toDateTimeLocalInput(startsAt));
+    await page.getByTestId("self-service-special-leave-end").fill(toDateTimeLocalInput(endsAt));
+    await page.getByTestId("self-service-special-leave-reason").fill(reason);
+    await Promise.all([
+      page.waitForResponse((response) =>
+        response.url().includes(`/spaces/${spaceId}/special-leave-requests`)
+        && !response.url().includes("/admin/")
+        && response.request().method() === "POST"
+      ),
+      page.getByTestId("self-service-submit-special-leave").click(),
+    ]);
+
+    const memberRequests = await api<SpecialLeaveRequestDto[]>(
+      request,
+      memberToken,
+      "GET",
+      `/spaces/${spaceId}/special-leave-requests/mine`
+    );
+    const createdRequest = memberRequests.find((row) => row.reason === reason);
+    expect(createdRequest?.status).toBe("Pending");
+
+    const memberCard = page.locator(
+      `[data-testid="self-service-special-leave-card"][data-special-leave-request-id="${createdRequest!.id}"]`
+    );
+    await expect(memberCard).toBeVisible({ timeout: 15000 });
+
+    await loginAsUser(page, adminEmail, DEMO_PASSWORD);
+    await enterElevatedGroup(page, groupId);
+    await page.goto(`${BASE}/groups/${groupId}`);
+    await page.getByTestId("group-tab-absence-reports").click();
+
+    const reviewCard = page.locator(
+      `[data-testid="self-service-special-leave-review"][data-special-leave-request-id="${createdRequest!.id}"]`
+    );
+    await expect(reviewCard).toBeVisible({ timeout: 15000 });
+    await Promise.all([
+      page.waitForResponse((response) =>
+        response.url().includes(`/special-leave-requests/admin/${createdRequest!.id}/approve`)
+        && response.request().method() === "POST"
+      ),
+      reviewCard.getByTestId("self-service-approve-special-leave").click(),
+    ]);
+
+    const reviewed = await api<SpecialLeaveRequestDto[]>(
+      request,
+      adminToken,
+      "GET",
+      `/spaces/${spaceId}/special-leave-requests/admin?groupId=${groupId}`
+    );
+    const approved = reviewed.find((row) => row.id === createdRequest!.id);
+    expect(approved?.status).toBe("Approved");
+    expect(approved?.presenceWindowId).toBeTruthy();
   });
 });
