@@ -26,6 +26,26 @@ Manual self-service currently supports:
 The deterministic solver is still available for automatic groups. Self-service
 groups do not require hosted AI.
 
+## MVP Completeness Checklist
+
+The current manual self-service implementation is suitable for a controlled MVP
+when the organization accepts an admin-operated review queue:
+
+| Need | Current support |
+|---|---|
+| Members choose shifts | Supported through available slots, with duplicate, overlap, rest-window, capacity, and max-shift checks. |
+| Full slots stay useful | Supported through waitlists and timed offers. |
+| Members cannot attend | Supported through absence reports, with late-report counting per cycle. |
+| Members ask to change shifts | Supported for specific target slots and flexible admin-selected targets. |
+| Members swap shifts | Supported through member-to-member swap requests with ownership and schedule-safety checks. |
+| Members request planned time off | Supported through special leave requests and admin review. |
+| Admin fills gaps manually | Supported through admin assignment/removal overrides. Overrides can exceed capacity when needed, but still reject started/closed slots, duplicate assignments, overlap conflicts, and rest-window violations. |
+| Admin sees the operating state | Supported through operations status, underfilled slots, review counts, waitlist/admin queues, and manual assignment tools. |
+| Customer-hosted/no-AI use | Supported. Manual self-service does not require hosted AI. |
+
+This is not yet a fully autonomous scheduling product. Admins still need to
+review exceptions, close gaps, and tune policy between cycles.
+
 ## Recommended Setup
 
 1. Create or edit a group and set the scheduling mode to `SelfService`.
@@ -120,6 +140,27 @@ Special leave:
 - Approved leave should be considered when planning future cycles and manual
   overrides.
 
+## Safety And Guardrails
+
+Manual self-service deliberately separates normal member actions from admin
+override actions:
+
+- Members cannot claim started slots, duplicate their own pending/approved
+  requests, exceed configured max shifts, or take slots that conflict with
+  approved shifts or minimum rest windows.
+- Members can join waitlists for full slots instead of directly overfilling a
+  slot.
+- Waitlist offers expire, and accepted offers are rechecked before assignment.
+- Admin assignment can exceed capacity for emergency coverage, but it still
+  blocks unsafe assignment conflicts and only targets open future slots.
+- Admin removal cancels the assignment, decrements fill count, and triggers
+  waitlist processing when capacity opens.
+- Review decisions are auditable through persisted request state and audit logs.
+
+Operationally, admins should treat overrides as an exception path. If overrides
+become frequent, adjust templates, capacity, request windows, or min/max shift
+policy before the next cycle.
+
 ## Customer-Hosted Use
 
 Manual self-service is a strong fit for customer-hosted installs because it does
@@ -143,10 +184,12 @@ large deployments:
 
 - A more opinionated admin dashboard for urgent late absences, expiring waitlist
   offers, and underfilled slots.
-- Browser end-to-end tests that exercise the complete member/admin self-service
-  cycle.
+- Browser end-to-end tests with a reliable seeded self-service group that
+  exercise the complete member/admin cycle.
 - Organization-level defaults for self-service policy so new groups inherit the
   right limits.
 - Better onboarding copy inside the self-service admin tabs.
 - Exportable cycle report for attendance, late reports, overrides, and rejected
   requests.
+- Provider health checks for email, push, and optional AI in customer-hosted
+  installs.
