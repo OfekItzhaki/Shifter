@@ -46,9 +46,8 @@ vi.mock("@/lib/api/selfService", () => ({
 }));
 
 describe("SlotBrowserTab", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    mockGetAvailableSlots.mockResolvedValue({
+  function makeAvailableResponse(currentFillCount = 0) {
+    return {
       requestWindowOpen: true,
       requestWindowOpensAt: null,
       requestWindowClosesAt: "2026-06-19T00:00:00Z",
@@ -60,15 +59,24 @@ describe("SlotBrowserTab", () => {
           endTime: "17:00:00",
           taskName: "Desk",
           capacity: 2,
-          currentFillCount: 0,
+          currentFillCount,
         },
       ],
-    });
+    };
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockGetAvailableSlots.mockResolvedValue(makeAvailableResponse());
     mockSubmitShiftRequest.mockResolvedValue({ shiftRequestId: "request-1" });
     mockJoinWaitlist.mockResolvedValue({ position: 1 });
   });
 
   it("confirms an available shift immediately after the member picks it", async () => {
+    mockGetAvailableSlots
+      .mockResolvedValueOnce(makeAvailableResponse(0))
+      .mockResolvedValueOnce(makeAvailableResponse(1));
+
     render(<SlotBrowserTab spaceId="space-1" groupId="group-1" isAdmin={false} />);
 
     fireEvent.click(await screen.findByRole("button", { name: "Pick Shift" }));
@@ -76,8 +84,38 @@ describe("SlotBrowserTab", () => {
     await waitFor(() => {
       expect(mockSubmitShiftRequest).toHaveBeenCalledWith("space-1", "group-1", "slot-1");
     });
+    await waitFor(() => {
+      expect(mockGetAvailableSlots).toHaveBeenCalledTimes(2);
+    });
     expect(await screen.findByText("Shift confirmed. It was added to your shifts.")).toBeInTheDocument();
     expect(screen.getByText("1/2")).toBeInTheDocument();
+  });
+
+  it("refreshes capacity after a stale pick rejection", async () => {
+    mockGetAvailableSlots
+      .mockResolvedValueOnce(makeAvailableResponse(0))
+      .mockResolvedValueOnce(makeAvailableResponse(2));
+    mockSubmitShiftRequest.mockRejectedValue({
+      response: {
+        status: 422,
+        data: {
+          status: 422,
+          type: "https://api.shifter.co.il/errors/shift-request-rejected",
+          detail: "The slot is at full capacity.",
+        },
+      },
+    });
+
+    render(<SlotBrowserTab spaceId="space-1" groupId="group-1" isAdmin={false} />);
+
+    fireEvent.click(await screen.findByRole("button", { name: "Pick Shift" }));
+
+    expect(await screen.findByText("The slot is at full capacity.")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(mockGetAvailableSlots).toHaveBeenCalledTimes(2);
+    });
+    expect(screen.getByText("2/2")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Join Waitlist" })).toBeInTheDocument();
   });
 
   it("joins the waitlist when a shift is already full", async () => {

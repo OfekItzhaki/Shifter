@@ -78,18 +78,7 @@ export default function SlotBrowserTab({ spaceId, groupId }: SlotBrowserTabProps
     setSuccessMessage(null);
     try {
       await submitShiftRequest(spaceId, groupId, slot.id);
-      // Update capacity locally
-      setSlotsResponse((prev) => {
-        if (!prev) return prev;
-        return {
-          ...prev,
-          slots: prev.slots.map((s) =>
-            s.id === slot.id
-              ? { ...s, currentFillCount: s.currentFillCount + 1 }
-              : s
-          ),
-        };
-      });
+      await fetchSlots();
       setSuccessMessage(t("requestSuccess"));
       setTimeout(() => setSuccessMessage(null), 3000);
     } catch (err) {
@@ -98,6 +87,7 @@ export default function SlotBrowserTab({ spaceId, groupId }: SlotBrowserTabProps
         slotId: slot.id,
         message: errorResult.message,
       });
+      await fetchSlots();
     } finally {
       setActionLoading(null);
     }
@@ -109,6 +99,7 @@ export default function SlotBrowserTab({ spaceId, groupId }: SlotBrowserTabProps
     setSuccessMessage(null);
     try {
       const result = await joinWaitlist(spaceId, groupId, slot.id);
+      await fetchSlots();
       setSuccessMessage(t("waitlistSuccess", { position: result.position }));
       setTimeout(() => setSuccessMessage(null), 3000);
     } catch (err) {
@@ -117,6 +108,7 @@ export default function SlotBrowserTab({ spaceId, groupId }: SlotBrowserTabProps
         slotId: slot.id,
         message: errorResult.message,
       });
+      await fetchSlots();
     } finally {
       setActionLoading(null);
     }
