@@ -11,12 +11,17 @@ Merge and test in this order:
 2. `feat/self-service-holiday-integration`
 3. `feat/self-service-portable-integration`
 4. `feat/self-service-portability-export-readiness`
+5. `feat/self-service-client-ready`
 
 The order matters because manual self-service defines the member/admin workflow,
 holiday calendars add scheduling semantics, and portable isolation packages the
 result for customer-owned infrastructure. The final export-readiness branch
 keeps a separate PR boundary for self-service export coverage and the first
 holiday-aware manual self-service labels/warnings.
+
+`feat/self-service-client-ready` is the umbrella branch when we want one PR for
+the complete sellable client-ready slice instead of reviewing the stack as
+separate PRs.
 
 ## Branches
 
@@ -165,6 +170,35 @@ Remaining manual/product check:
 - Smoke-test customer-hosted setup with real secrets, especially
   `FIELD_ENCRYPTION_KEY`.
 - Smoke-test member/admin self-service flows after migrations run on a real
+  database.
+
+### `feat/self-service-client-ready`
+
+Purpose: umbrella branch for manual self-service, holiday calendars, portable
+isolation, export readiness, and client-hosted packaging.
+
+PR:
+
+https://github.com/OfekItzhaki/Shifter/pull/new/feat/self-service-client-ready
+
+PR summary:
+
+[Client-ready PR summary](PULL_REQUEST_SELF_SERVICE_CLIENT_READY.md)
+
+Known verification:
+
+- Inherits all verification from `feat/self-service-portability-export-readiness`.
+- Adds compose/env wiring for `FIELD_ENCRYPTION_KEY`.
+- Adds customer env validation for `FIELD_ENCRYPTION_KEY` length and placeholder
+  replacement.
+- Adds `infra/scripts/smoke-self-service-client-ready.ps1` for live seeded stack
+  preflight plus the holiday/special-day picker browser flow.
+
+Remaining manual/product check:
+
+- Run `infra/scripts/smoke-self-service-client-ready.ps1` against a live seeded
+  web/API stack.
+- Smoke-test customer-hosted setup with real customer secrets and a real
   database.
 
 ## PR Opening Notes

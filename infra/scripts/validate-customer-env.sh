@@ -83,6 +83,7 @@ required_keys=(
   JWT_SECRET
   JWT_ISSUER
   JWT_AUDIENCE
+  FIELD_ENCRYPTION_KEY
   SOLVER_TIMEOUT_SECONDS
   APP_FRONTEND_BASE_URL
   APP_API_BASE_URL
@@ -99,6 +100,12 @@ done
 jwt_secret="$(env_value JWT_SECRET)"
 if [ -n "$jwt_secret" ] && [ "${#jwt_secret}" -lt 32 ]; then
   echo "ERROR: JWT_SECRET must be at least 32 characters." >&2
+  errors=$((errors + 1))
+fi
+
+field_encryption_key="$(env_value FIELD_ENCRYPTION_KEY)"
+if [ -n "$field_encryption_key" ] && [ "${#field_encryption_key}" -lt 32 ]; then
+  echo "ERROR: FIELD_ENCRYPTION_KEY must be at least 32 characters." >&2
   errors=$((errors + 1))
 fi
 

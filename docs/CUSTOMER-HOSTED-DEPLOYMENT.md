@@ -76,6 +76,7 @@ Customer-hosted means:
    APP_FRONTEND_BASE_URL=https://shifter.customer.example
    APP_API_BASE_URL=https://api-shifter.customer.example
    NEXT_PUBLIC_API_URL=https://api-shifter.customer.example
+   FIELD_ENCRYPTION_KEY=<unique-customer-secret-at-least-32-chars>
    ```
 
 5. Validate the env file:
@@ -107,6 +108,18 @@ Customer-hosted means:
 
    Platform admins can also review the same provider status inside Shifter on
    the Platform page.
+
+   Before a customer demo using the seeded self-service dataset, run:
+
+   ```powershell
+   .\infra\scripts\smoke-self-service-client-ready.ps1 `
+     -WebBaseUrl https://shifter.customer.example `
+     -ApiBaseUrl https://api-shifter.customer.example
+   ```
+
+   This verifies the web/API endpoints, seeded users, the self-service demo
+   cycle, available member slots, and the holiday/special-day picker label
+   browser flow.
 
 8. Put HTTPS in front of the web/API ports using the customer's proxy or WAF.
 
@@ -215,6 +228,9 @@ each upgrade.
 - Use HTTPS only for public access.
 - Restrict Postgres, Redis, MinIO, and Seq to private network or localhost.
 - Generate unique `JWT_SECRET`, database, Redis, MinIO, and Seq passwords.
+- Generate a unique `FIELD_ENCRYPTION_KEY` and keep it stable for the lifetime
+  of the customer database; changing it without a migration plan prevents
+  protected contact fields from decrypting.
 - Disable analytics/chat/error tracking unless approved.
 - Put WAF/rate limits in front of auth, billing, import, solver, and admin
   endpoints.

@@ -85,6 +85,7 @@ services:
       Jwt__Audience: ${JWT_AUDIENCE}
       Jwt__AccessTokenExpiryMinutes: ${JWT_ACCESS_TOKEN_EXPIRY_MINUTES}
       Jwt__RefreshTokenExpiryDays: ${JWT_REFRESH_TOKEN_EXPIRY_DAYS}
+      FIELD_ENCRYPTION_KEY: ${FIELD_ENCRYPTION_KEY:-}
       Solver__BaseUrl: "http://solver:${SOLVER_PORT}"
       App__FrontendBaseUrl: ${APP_FRONTEND_BASE_URL:-http://localhost:3000}
       App__ApiBaseUrl: ${APP_API_BASE_URL:-http://localhost:5000}

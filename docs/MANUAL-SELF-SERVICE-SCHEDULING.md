@@ -227,6 +227,8 @@ The implementation has focused unit/property coverage for:
 There are also browser Playwright checks using the seeded `Self-Service Demo`
 group:
 
+- a client-ready smoke runner:
+  `.\infra\scripts\smoke-self-service-client-ready.ps1`
 - a mobile smoke test for self-service admin cycle controls and operations
 - a member browser lifecycle test for picking an open shift and joining/viewing
   a full-slot waitlist
@@ -250,6 +252,8 @@ group:
   approval
 - a member browser lifecycle test for special leave cancellation
 - a member/admin browser lifecycle test for special leave rejection
+- a member browser lifecycle test for holiday/special-day labels on available
+  shifts
 
 ## Customer-Hosted Use
 

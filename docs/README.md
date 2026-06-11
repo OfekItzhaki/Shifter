@@ -17,6 +17,9 @@ manual self-service scheduling decisions.
   - title, description, verification, and branch relationship for holidays.
 - [Self-service portable integration PR summary](PULL_REQUEST_SELF_SERVICE_PORTABLE_INTEGRATION.md)
   - title, description, verification, and branch relationship for portability.
+- [Self-service client-ready PR summary](PULL_REQUEST_SELF_SERVICE_CLIENT_READY.md)
+  - umbrella PR for manual self-service, holidays, portability, and client
+  install readiness.
 - [Manual self-service QA checklist](MANUAL-SELF-SERVICE-QA-CHECKLIST.md) -
   smoke tests and automated checks before merge or demo.
 - [Self-service portability contract](SELF-SERVICE-PORTABILITY-CONTRACT.md) -
