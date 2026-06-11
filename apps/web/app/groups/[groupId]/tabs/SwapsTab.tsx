@@ -17,6 +17,7 @@ import {
 } from "@/lib/api/selfService";
 import { getSelfServiceErrorMessage } from "@/lib/utils/selfServiceErrors";
 import { formatSlotDate, formatTime24h, formatCountdown } from "@/lib/utils/selfServiceFormat";
+import { classifySwapsForPerson } from "@/lib/utils/selfServiceSwaps";
 import type { GroupMemberDto } from "@/lib/api/groups";
 import { LoadingCard, ErrorRetry, MutationButton } from "@/components/groups/selfService";
 
@@ -80,13 +81,10 @@ export default function SwapsTab({ spaceId, groupId, members }: Props) {
 
   const currentPersonId = members.find((m) => m.linkedUserId === userId)?.personId ?? null;
 
-  const incomingSwaps = swaps.filter(
-    (s) => s.targetPersonId === currentPersonId && s.status === "Pending"
+  const { incomingSwaps, outgoingSwaps, completedSwaps } = classifySwapsForPerson(
+    swaps,
+    currentPersonId
   );
-  const outgoingSwaps = swaps.filter(
-    (s) => s.initiatorPersonId === currentPersonId && s.status === "Pending"
-  );
-  const completedSwaps = swaps.filter((s) => s.status !== "Pending");
   const swappableMembers = members.filter((m) => m.personId !== currentPersonId);
 
   async function handleAccept(swapId: string) {
