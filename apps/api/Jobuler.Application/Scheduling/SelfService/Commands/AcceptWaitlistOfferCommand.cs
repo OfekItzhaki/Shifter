@@ -77,11 +77,13 @@ public class AcceptWaitlistOfferCommandHandler : IRequestHandler<AcceptWaitlistO
         // Check if the offer has expired
         if (entry.ExpiresAt.HasValue && entry.ExpiresAt.Value < DateTime.UtcNow)
         {
+            await using var transaction = await _db.Database.BeginTransactionAsync(ct);
             entry.Expire();
             await _db.SaveChangesAsync(ct);
 
             // Cascade to next waiting member
             await _waitlistService.ProcessSlotReleasedAsync(request.ShiftSlotId, ct);
+            await transaction.CommitAsync(ct);
 
             return new AcceptWaitlistOfferResult(
                 Success: false,
@@ -142,10 +144,12 @@ public class AcceptWaitlistOfferCommandHandler : IRequestHandler<AcceptWaitlistO
 
         if (hasActiveShiftRequest)
         {
+            await using var transaction = await _db.Database.BeginTransactionAsync(ct);
             entry.Remove();
             await _db.SaveChangesAsync(ct);
 
             await _waitlistService.ProcessSlotReleasedAsync(request.ShiftSlotId, ct);
+            await transaction.CommitAsync(ct);
 
             return new AcceptWaitlistOfferResult(
                 Success: false,
@@ -168,10 +172,12 @@ public class AcceptWaitlistOfferCommandHandler : IRequestHandler<AcceptWaitlistO
         if (currentShiftCount >= maxShifts)
         {
             // Req 9.5: Remove from waitlist and offer to next member
+            await using var transaction = await _db.Database.BeginTransactionAsync(ct);
             entry.Remove();
             await _db.SaveChangesAsync(ct);
 
             await _waitlistService.ProcessSlotReleasedAsync(request.ShiftSlotId, ct);
+            await transaction.CommitAsync(ct);
 
             _logger.LogInformation(
                 "Person {PersonId} failed Max_Shifts validation on waitlist acceptance for slot {SlotId}. " +

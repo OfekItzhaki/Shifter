@@ -8,6 +8,7 @@ using Jobuler.Domain.Scheduling;
 using Jobuler.Domain.Tasks;
 using Jobuler.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 using Xunit;
@@ -20,6 +21,7 @@ public class WaitlistServiceTests
     {
         var options = new DbContextOptionsBuilder<AppDbContext>()
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning))
             .Options;
 
         return new AppDbContext(options);
@@ -334,6 +336,49 @@ public class WaitlistServiceTests
 
         await waitlistService.Received(1)
             .ProcessSlotReleasedAsync(slot.Id, Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task AcceptWaitlistOffer_CascadeFailure_DoesNotNotifyAcceptance()
+    {
+        using var db = CreateDb();
+        var (spaceId, groupId, cycleId, taskId) = SeedBaseData(db);
+        var offeredPerson = Person.Create(spaceId, "Offered", linkedUserId: Guid.NewGuid());
+        var slot = CreateSlot(spaceId, groupId, taskId, cycleId);
+        var existingRequest = ShiftRequest.Create(spaceId, slot.Id, offeredPerson.Id, groupId, cycleId);
+        var entry = WaitlistEntry.Create(spaceId, slot.Id, offeredPerson.Id, position: 1);
+        entry.Offer(DateTime.UtcNow.AddMinutes(30));
+
+        db.People.Add(offeredPerson);
+        db.ShiftSlots.Add(slot);
+        db.ShiftRequests.Add(existingRequest);
+        db.WaitlistEntries.Add(entry);
+        await db.SaveChangesAsync();
+
+        var waitlistService = Substitute.For<IWaitlistService>();
+        waitlistService
+            .ProcessSlotReleasedAsync(slot.Id, Arg.Any<CancellationToken>())
+            .Returns<Task>(_ => throw new InvalidOperationException("Waitlist cascade failed."));
+        var pushSender = Substitute.For<IPushNotificationSender>();
+        var notificationService = Substitute.For<INotificationService>();
+        var handler = new AcceptWaitlistOfferCommandHandler(
+            db,
+            waitlistService,
+            pushSender,
+            notificationService,
+            NullLogger<AcceptWaitlistOfferCommandHandler>.Instance);
+
+        var act = () => handler.Handle(
+            new AcceptWaitlistOfferCommand(spaceId, offeredPerson.Id, slot.Id),
+            CancellationToken.None);
+
+        await act.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("Waitlist cascade failed.");
+
+        await pushSender.DidNotReceiveWithAnyArgs()
+            .SendPushToUserAsync(default, default, default!, default);
+        await notificationService.DidNotReceiveWithAnyArgs()
+            .NotifySpaceAdminsAsync(default, default!, default!, default!, default!, default, default);
     }
 
     [Fact]
