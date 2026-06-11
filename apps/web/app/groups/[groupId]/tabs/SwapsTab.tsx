@@ -276,6 +276,7 @@ export default function SwapsTab({
         {proposeStep === "idle" && (
           <button
             onClick={startProposeFlow}
+            data-testid="self-service-propose-swap"
             className="rounded-lg bg-sky-600 px-4 py-2 text-xs font-semibold text-white hover:bg-sky-700 transition-colors"
           >
             {t("proposeButton")}
@@ -328,6 +329,8 @@ export default function SwapsTab({
                     <button
                       key={shift.id}
                       onClick={() => handleSelectMyShift(shift)}
+                      data-testid="self-service-swap-my-shift"
+                      data-shift-request-id={shift.id}
                       className="w-full text-right rounded-lg border border-slate-200 p-3 hover:border-sky-300 hover:bg-sky-50 transition-colors"
                     >
                       <p className="text-xs font-medium text-slate-700">
@@ -363,6 +366,8 @@ export default function SwapsTab({
                     <button
                       key={member.personId}
                       onClick={() => handleSelectTargetMember(member)}
+                      data-testid="self-service-swap-target-member"
+                      data-person-id={member.personId}
                       className="w-full text-right rounded-lg border border-slate-200 px-3 py-2 hover:border-sky-300 hover:bg-sky-50 transition-colors text-xs font-medium text-slate-700"
                     >
                       {member.displayName || member.fullName}
@@ -404,6 +409,8 @@ export default function SwapsTab({
                     <button
                       key={shift.id}
                       onClick={() => handlePropose(shift.id)}
+                      data-testid="self-service-swap-target-shift"
+                      data-shift-request-id={shift.id}
                       disabled={proposing}
                       className="w-full text-right rounded-lg border border-slate-200 p-3 hover:border-sky-300 hover:bg-sky-50 transition-colors disabled:opacity-50"
                     >
@@ -553,7 +560,11 @@ function SwapCard({ swap, direction, actionLoading, onAccept, onDecline, onCance
       : swap.targetPersonName;
 
   return (
-    <div className="bg-white border border-slate-200 rounded-xl p-4">
+    <div
+      data-testid="self-service-swap-card"
+      data-swap-request-id={swap.id}
+      className="bg-white border border-slate-200 rounded-xl p-4"
+    >
       {/* Header: status + counterpart */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
@@ -601,6 +612,7 @@ function SwapCard({ swap, direction, actionLoading, onAccept, onDecline, onCance
         <div className="flex items-center gap-2 mt-3">
           <button
             onClick={onAccept}
+            data-testid="self-service-accept-swap"
             disabled={!!actionLoading}
             className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700 transition-colors disabled:opacity-50"
           >
@@ -608,6 +620,7 @@ function SwapCard({ swap, direction, actionLoading, onAccept, onDecline, onCance
           </button>
           <button
             onClick={onDecline}
+            data-testid="self-service-decline-swap"
             disabled={!!actionLoading}
             className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors disabled:opacity-50"
           >
@@ -620,6 +633,7 @@ function SwapCard({ swap, direction, actionLoading, onAccept, onDecline, onCance
         <div className="flex items-center gap-2 mt-3">
           <button
             onClick={onCancel}
+            data-testid="self-service-cancel-swap"
             disabled={!!actionLoading}
             className="rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50"
           >
