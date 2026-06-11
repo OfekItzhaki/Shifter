@@ -116,6 +116,7 @@ export default function AbsenceReportsTab({ spaceId, groupId, onReviewed }: Prop
   const [changeActionLoading, setChangeActionLoading] = useState<Record<string, "approve" | "reject">>({});
   const [leaveActionLoading, setLeaveActionLoading] = useState<Record<string, "approve" | "reject">>({});
   const [actionError, setActionError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [queueFilter, setQueueFilter] = useState<ReviewQueueFilter>("pending");
 
   const fetchReports = useCallback(async () => {
@@ -163,6 +164,7 @@ export default function AbsenceReportsTab({ spaceId, groupId, onReviewed }: Prop
   async function review(reportId: string, action: "approve" | "reject") {
     setActionLoading((prev) => ({ ...prev, [reportId]: action }));
     setActionError(null);
+    setSuccessMessage(null);
 
     try {
       const note = adminNotes[reportId] ?? "";
@@ -173,6 +175,8 @@ export default function AbsenceReportsTab({ spaceId, groupId, onReviewed }: Prop
       }
       await fetchReports();
       await onReviewed?.();
+      setSuccessMessage(t(action === "approve" ? "absenceApproveSuccess" : "absenceRejectSuccess"));
+      setTimeout(() => setSuccessMessage(null), 3000);
     } catch (err) {
       const { message } = getSelfServiceErrorMessage(err);
       setActionError(message);
@@ -188,6 +192,7 @@ export default function AbsenceReportsTab({ spaceId, groupId, onReviewed }: Prop
   async function reviewChange(changeRequestId: string, action: "approve" | "reject") {
     setChangeActionLoading((prev) => ({ ...prev, [changeRequestId]: action }));
     setActionError(null);
+    setSuccessMessage(null);
 
     try {
       const note = adminNotes[changeRequestId] ?? "";
@@ -204,6 +209,8 @@ export default function AbsenceReportsTab({ spaceId, groupId, onReviewed }: Prop
       }
       await fetchReports();
       await onReviewed?.();
+      setSuccessMessage(t(action === "approve" ? "changeApproveSuccess" : "changeRejectSuccess"));
+      setTimeout(() => setSuccessMessage(null), 3000);
     } catch (err) {
       const { message } = getSelfServiceErrorMessage(err);
       setActionError(message);
@@ -219,6 +226,7 @@ export default function AbsenceReportsTab({ spaceId, groupId, onReviewed }: Prop
   async function reviewLeave(requestId: string, action: "approve" | "reject") {
     setLeaveActionLoading((prev) => ({ ...prev, [requestId]: action }));
     setActionError(null);
+    setSuccessMessage(null);
 
     try {
       const note = adminNotes[requestId] ?? "";
@@ -229,6 +237,8 @@ export default function AbsenceReportsTab({ spaceId, groupId, onReviewed }: Prop
       }
       await fetchReports();
       await onReviewed?.();
+      setSuccessMessage(t(action === "approve" ? "leaveApproveSuccess" : "leaveRejectSuccess"));
+      setTimeout(() => setSuccessMessage(null), 3000);
     } catch (err) {
       const { message } = getSelfServiceErrorMessage(err);
       setActionError(message);
@@ -362,6 +372,12 @@ export default function AbsenceReportsTab({ spaceId, groupId, onReviewed }: Prop
       {actionError && (
         <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-xs text-red-700">
           {actionError}
+        </div>
+      )}
+
+      {successMessage && (
+        <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-700">
+          {successMessage}
         </div>
       )}
 

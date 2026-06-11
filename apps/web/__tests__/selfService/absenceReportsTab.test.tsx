@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import AbsenceReportsTab from "../../components/groups/selfService/AbsenceReportsTab";
 
 const mockGetAbsenceReports = vi.fn();
@@ -53,6 +53,12 @@ vi.mock("next-intl", () => ({
       reject: "Reject",
       approving: "Approving...",
       rejecting: "Rejecting...",
+      absenceApproveSuccess: "Absence report approved.",
+      absenceRejectSuccess: "Absence report rejected.",
+      changeApproveSuccess: "Shift-change request approved.",
+      changeRejectSuccess: "Shift-change request rejected.",
+      leaveApproveSuccess: "Time-off request approved.",
+      leaveRejectSuccess: "Time-off request rejected.",
       changeFrom: "From",
       changeTo: "To",
       changeFlexibleTarget: "Flexible replacement",
@@ -81,6 +87,10 @@ vi.mock("../../lib/api/specialLeave", () => ({
 }));
 
 describe("AbsenceReportsTab", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   it("defaults admin review queues to pending and can switch to all or handled requests", async () => {
     mockGetAbsenceReports.mockResolvedValue([
       makeAbsenceReport("absence-pending", "Pending", "Pending absence reason"),
@@ -128,6 +138,46 @@ describe("AbsenceReportsTab", () => {
     expect(screen.getByText("Approved absence reason")).toBeInTheDocument();
     expect(screen.getByText("Rejected change reason")).toBeInTheDocument();
     expect(screen.getByText("Cancelled leave reason")).toBeInTheDocument();
+  });
+
+  it("shows confirmation after approving a shift-change request", async () => {
+    mockGetAbsenceReports.mockResolvedValue([]);
+    mockGetShiftChangeRequests.mockResolvedValue([
+      makeShiftChangeRequest("change-pending", "Pending", "Pending change reason"),
+    ]);
+    mockGetShiftChangeTargetSlots.mockResolvedValue([
+      {
+        id: "target-slot-1",
+        date: "2026-06-14",
+        startTime: "10:00:00",
+        endTime: "18:00:00",
+        taskName: "Gate",
+        capacity: 2,
+        currentFillCount: 0,
+      },
+    ]);
+    mockGetAdminSpecialLeaveRequests.mockResolvedValue([]);
+    mockGetAdminShiftRequests.mockResolvedValue([]);
+    mockApproveShiftChangeRequest.mockResolvedValue(undefined);
+
+    render(<AbsenceReportsTab spaceId="space-1" groupId="group-1" />);
+
+    await screen.findByText("Pending change reason");
+    fireEvent.change(screen.getByLabelText("Target shift"), {
+      target: { value: "target-slot-1" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Approve" }));
+
+    await waitFor(() => {
+      expect(mockApproveShiftChangeRequest).toHaveBeenCalledWith(
+        "space-1",
+        "group-1",
+        "change-pending",
+        "",
+        "target-slot-1"
+      );
+    });
+    expect(await screen.findByText("Shift-change request approved.")).toBeInTheDocument();
   });
 });
 
