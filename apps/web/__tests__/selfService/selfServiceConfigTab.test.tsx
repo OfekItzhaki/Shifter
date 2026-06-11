@@ -5,6 +5,23 @@ import SelfServiceConfigTab from "../../components/groups/selfService/SelfServic
 const mockGetSelfServiceConfig = vi.fn();
 const mockUpdateSelfServiceConfig = vi.fn();
 
+function makeConfig(overrides: Record<string, unknown> = {}) {
+  return {
+    id: "config-1",
+    groupId: "group-1",
+    minShiftsPerCycle: 2,
+    maxShiftsPerCycle: 5,
+    requestWindowOpenOffsetHours: 168,
+    requestWindowCloseOffsetHours: 24,
+    cancellationCutoffHours: 12,
+    maxLateCancellationsPerCycle: 2,
+    lateCancellationWindowHours: 24,
+    waitlistOfferMinutes: 60,
+    cycleDurationDays: 7,
+    ...overrides,
+  };
+}
+
 vi.mock("next-intl", () => ({
   useTranslations: () => (key: string, values?: Record<string, unknown>) => {
     const translations: Record<string, string> = {
@@ -92,20 +109,8 @@ vi.mock("../../lib/api/selfService", () => ({
 describe("SelfServiceConfigTab", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockGetSelfServiceConfig.mockResolvedValue({
-      id: "config-1",
-      groupId: "group-1",
-      minShiftsPerCycle: 2,
-      maxShiftsPerCycle: 5,
-      requestWindowOpenOffsetHours: 168,
-      requestWindowCloseOffsetHours: 24,
-      cancellationCutoffHours: 12,
-      maxLateCancellationsPerCycle: 2,
-      lateCancellationWindowHours: 24,
-      waitlistOfferMinutes: 60,
-      cycleDurationDays: 7,
-    });
-    mockUpdateSelfServiceConfig.mockResolvedValue({});
+    mockGetSelfServiceConfig.mockResolvedValue(makeConfig());
+    mockUpdateSelfServiceConfig.mockResolvedValue(makeConfig());
   });
 
   it("groups policy settings and updates the live summary", async () => {
@@ -147,6 +152,61 @@ describe("SelfServiceConfigTab", () => {
         expect.objectContaining({ maxShiftsPerCycle: 6, cancellationCutoffHours: 36 }),
       );
     });
+  });
+
+  it("uses the saved server config after saving", async () => {
+    mockUpdateSelfServiceConfig.mockResolvedValue(makeConfig({
+      maxShiftsPerCycle: 7,
+      cancellationCutoffHours: 48,
+    }));
+
+    render(<SelfServiceConfigTab spaceId="space-1" groupId="group-1" />);
+
+    expect(await screen.findByText("Self-Service Configuration")).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText("Maximum shifts per cycle"), {
+      target: { value: "6" },
+    });
+    fireEvent.change(screen.getByLabelText("Cancellation cutoff"), {
+      target: { value: "36" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Save Configuration" }));
+
+    expect(await screen.findByText("Configuration saved successfully")).toBeInTheDocument();
+    expect(screen.getByText("2-7 shifts / 7 days")).toBeInTheDocument();
+    expect(screen.getByText("Cancel until 48h, late inside 24h, max 2")).toBeInTheDocument();
+  });
+
+  it("refreshes current config after a stale save failure", async () => {
+    mockGetSelfServiceConfig
+      .mockResolvedValueOnce(makeConfig())
+      .mockResolvedValueOnce(makeConfig({
+        maxShiftsPerCycle: 4,
+        cancellationCutoffHours: 18,
+      }));
+    mockUpdateSelfServiceConfig.mockRejectedValue({
+      response: {
+        status: 409,
+        data: { detail: "Self-service configuration changed. Reload and try again." },
+      },
+    });
+
+    render(<SelfServiceConfigTab spaceId="space-1" groupId="group-1" />);
+
+    expect(await screen.findByText("Self-Service Configuration")).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText("Maximum shifts per cycle"), {
+      target: { value: "6" },
+    });
+    fireEvent.change(screen.getByLabelText("Cancellation cutoff"), {
+      target: { value: "36" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Save Configuration" }));
+
+    expect(await screen.findByText("Self-service configuration changed. Reload and try again.")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(mockGetSelfServiceConfig).toHaveBeenCalledTimes(2);
+    });
+    expect(screen.getByText("2-4 shifts / 7 days")).toBeInTheDocument();
+    expect(screen.getByText("Cancel until 18h, late inside 24h, max 2")).toBeInTheDocument();
   });
 
   it("blocks invalid policy settings before saving", async () => {

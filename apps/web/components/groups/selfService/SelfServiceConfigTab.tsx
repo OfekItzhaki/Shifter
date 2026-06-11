@@ -126,6 +126,20 @@ function getPolicyInsightKeys(values: UpdateSelfServiceConfigPayload): string[] 
   return insights;
 }
 
+function toFormValues(config: SelfServiceConfigDto): UpdateSelfServiceConfigPayload {
+  return {
+    minShiftsPerCycle: config.minShiftsPerCycle,
+    maxShiftsPerCycle: config.maxShiftsPerCycle,
+    requestWindowOpenOffsetHours: config.requestWindowOpenOffsetHours,
+    requestWindowCloseOffsetHours: config.requestWindowCloseOffsetHours,
+    cancellationCutoffHours: config.cancellationCutoffHours,
+    maxLateCancellationsPerCycle: config.maxLateCancellationsPerCycle,
+    lateCancellationWindowHours: config.lateCancellationWindowHours,
+    waitlistOfferMinutes: config.waitlistOfferMinutes,
+    cycleDurationDays: config.cycleDurationDays,
+  };
+}
+
 export default function SelfServiceConfigTab({ spaceId, groupId }: SelfServiceConfigTabProps) {
   const t = useTranslations("selfService.config");
 
@@ -151,32 +165,26 @@ export default function SelfServiceConfigTab({ spaceId, groupId }: SelfServiceCo
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
 
-  const fetchConfig = useCallback(async () => {
+  const fetchConfig = useCallback(async (showLoading = true) => {
     try {
-      setLoading(true);
+      if (showLoading) {
+        setLoading(true);
+      }
       setError(null);
       const config = await getSelfServiceConfig(spaceId, groupId);
-      setFormValues({
-        minShiftsPerCycle: config.minShiftsPerCycle,
-        maxShiftsPerCycle: config.maxShiftsPerCycle,
-        requestWindowOpenOffsetHours: config.requestWindowOpenOffsetHours,
-        requestWindowCloseOffsetHours: config.requestWindowCloseOffsetHours,
-        cancellationCutoffHours: config.cancellationCutoffHours,
-        maxLateCancellationsPerCycle: config.maxLateCancellationsPerCycle,
-        lateCancellationWindowHours: config.lateCancellationWindowHours,
-        waitlistOfferMinutes: config.waitlistOfferMinutes,
-        cycleDurationDays: config.cycleDurationDays,
-      });
+      setFormValues(toFormValues(config));
     } catch (err) {
       const { message } = getSelfServiceErrorMessage(err);
       setError(message);
     } finally {
-      setLoading(false);
+      if (showLoading) {
+        setLoading(false);
+      }
     }
   }, [spaceId, groupId]);
 
   useEffect(() => {
-    void Promise.resolve().then(fetchConfig);
+    void Promise.resolve().then(() => fetchConfig());
   }, [fetchConfig]);
 
   // ── Form handlers ────────────────────────────────────────────────────────
@@ -205,11 +213,13 @@ export default function SelfServiceConfigTab({ spaceId, groupId }: SelfServiceCo
     setValidationError(null);
 
     try {
-      await updateSelfServiceConfig(spaceId, groupId, formValues);
+      const savedConfig = await updateSelfServiceConfig(spaceId, groupId, formValues);
+      setFormValues(toFormValues(savedConfig));
       setSaveSuccess(true);
     } catch (err) {
       const { message } = getSelfServiceErrorMessage(err);
       setSaveError(message);
+      await fetchConfig(false);
     } finally {
       setSaving(false);
     }
@@ -224,7 +234,7 @@ export default function SelfServiceConfigTab({ spaceId, groupId }: SelfServiceCo
   // ── Error state ──────────────────────────────────────────────────────────
 
   if (error) {
-    return <ErrorRetry message={error} onRetry={fetchConfig} />;
+    return <ErrorRetry message={error} onRetry={() => fetchConfig()} />;
   }
 
   const policyInsightKeys = getPolicyInsightKeys(formValues);
