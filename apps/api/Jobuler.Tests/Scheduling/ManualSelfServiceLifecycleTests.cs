@@ -19,6 +19,91 @@ namespace Jobuler.Tests.Scheduling;
 public class ManualSelfServiceLifecycleTests
 {
     [Fact]
+    public async Task DisabledWorkflowPolicies_RejectMemberServiceActions()
+    {
+        using var db = CreateDb();
+        var notifications = Substitute.For<INotificationService>();
+        var pushSender = Substitute.For<IPushNotificationSender>();
+        var audit = Substitute.For<IAuditLogger>();
+        var slotLock = Substitute.For<ISlotLockService>();
+        slotLock
+            .TryAcquireSlotLockAsync(Arg.Any<Guid>(), Arg.Any<TimeSpan>(), Arg.Any<CancellationToken>())
+            .Returns(true);
+
+        var (spaceId, groupId, cycleId, taskId) = SeedSelfServiceCycle(db);
+        var config = await db.SelfServiceConfigs.SingleAsync(c => c.GroupId == groupId);
+        config.SetWorkflowPermissions(
+            allowMemberShiftClaims: false,
+            allowWaitlist: false,
+            allowShiftChangeRequests: false,
+            allowAbsenceReports: false,
+            allowShiftSwaps: false);
+
+        var alice = Person.Create(spaceId, "Alice Member", linkedUserId: Guid.NewGuid());
+        var bob = Person.Create(spaceId, "Bob Member", linkedUserId: Guid.NewGuid());
+        var claimSlot = AddSlot(db, spaceId, groupId, taskId, cycleId);
+        var fullSlot = AddSlot(db, spaceId, groupId, taskId, cycleId);
+        var bobSlot = AddSlot(db, spaceId, groupId, taskId, cycleId);
+
+        var aliceRequest = ShiftRequest.Create(spaceId, fullSlot.Id, alice.Id, groupId, cycleId);
+        aliceRequest.Approve();
+        fullSlot.IncrementFillCount();
+
+        var bobRequest = ShiftRequest.Create(spaceId, bobSlot.Id, bob.Id, groupId, cycleId);
+        bobRequest.Approve();
+        bobSlot.IncrementFillCount();
+
+        db.People.AddRange(alice, bob);
+        db.ShiftRequests.AddRange(aliceRequest, bobRequest);
+        await db.SaveChangesAsync();
+
+        var waitlistService = new WaitlistService(
+            db,
+            pushSender,
+            notifications,
+            TimeProvider.System,
+            NullLogger<WaitlistService>.Instance);
+
+        var shiftRequests = new ShiftRequestService(
+            db,
+            slotLock,
+            TimeProvider.System,
+            NullLogger<ShiftRequestService>.Instance,
+            notifications,
+            pushSender,
+            audit,
+            waitlistService);
+
+        var claimResult = await shiftRequests.ProcessRequestAsync(bob.Id, claimSlot.Id);
+        claimResult.Success.Should().BeFalse();
+        claimResult.RejectionReason.Should().Contain("disabled");
+
+        var waitlistResult = await waitlistService.JoinWaitlistAsync(bob.Id, fullSlot.Id);
+        waitlistResult.Success.Should().BeFalse();
+        waitlistResult.ErrorMessage.Should().Contain("disabled");
+
+        var absenceResult = await shiftRequests.ReportCannotAttendAsync(alice.Id, aliceRequest.Id, "Sick");
+        absenceResult.Success.Should().BeFalse();
+        absenceResult.ErrorMessage.Should().Contain("disabled");
+
+        var swapService = new ShiftSwapService(
+            db,
+            pushSender,
+            audit,
+            TimeProvider.System,
+            NullLogger<ShiftSwapService>.Instance);
+
+        var swapResult = await swapService.ProposeSwapAsync(alice.Id, aliceRequest.Id, bobRequest.Id);
+        swapResult.Success.Should().BeFalse();
+        swapResult.ErrorMessage.Should().Contain("disabled");
+
+        (await db.ShiftRequests.CountAsync()).Should().Be(2);
+        (await db.WaitlistEntries.CountAsync()).Should().Be(0);
+        (await db.ShiftAbsenceReports.CountAsync()).Should().Be(0);
+        (await db.SwapRequests.CountAsync()).Should().Be(0);
+    }
+
+    [Fact]
     public async Task LateAbsenceLimit_DoesNotReleaseShiftOrWaitlist_WhenLimitIsReached()
     {
         using var db = CreateDb();

@@ -45,6 +45,11 @@ export interface SelfServiceConfigDto {
   lateCancellationWindowHours: number;
   waitlistOfferMinutes: number;
   cycleDurationDays: number;
+  allowMemberShiftClaims: boolean;
+  allowWaitlist: boolean;
+  allowShiftChangeRequests: boolean;
+  allowAbsenceReports: boolean;
+  allowShiftSwaps: boolean;
 }
 
 export interface UpdateSelfServiceConfigPayload {
@@ -57,6 +62,11 @@ export interface UpdateSelfServiceConfigPayload {
   lateCancellationWindowHours: number;
   waitlistOfferMinutes: number;
   cycleDurationDays: number;
+  allowMemberShiftClaims: boolean;
+  allowWaitlist: boolean;
+  allowShiftChangeRequests: boolean;
+  allowAbsenceReports: boolean;
+  allowShiftSwaps: boolean;
 }
 
 

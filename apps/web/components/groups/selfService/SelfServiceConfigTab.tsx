@@ -20,8 +20,17 @@ interface SelfServiceConfigTabProps {
 }
 
 /** Field configuration for rendering config inputs */
+type NumericConfigKey = Exclude<
+  keyof UpdateSelfServiceConfigPayload,
+  | "allowMemberShiftClaims"
+  | "allowWaitlist"
+  | "allowShiftChangeRequests"
+  | "allowAbsenceReports"
+  | "allowShiftSwaps"
+>;
+
 interface ConfigField {
-  key: keyof UpdateSelfServiceConfigPayload;
+  key: NumericConfigKey;
   min: number;
   max: number;
   unit: "shifts" | "hours" | "minutes" | "days" | "reports";
@@ -32,6 +41,21 @@ interface ConfigSection {
   key: "shiftLimits" | "requestWindow" | "changesAbsence" | "waitlist";
   fields: ConfigField[];
 }
+
+type WorkflowToggleKey =
+  | "allowMemberShiftClaims"
+  | "allowWaitlist"
+  | "allowShiftChangeRequests"
+  | "allowAbsenceReports"
+  | "allowShiftSwaps";
+
+const WORKFLOW_TOGGLES: WorkflowToggleKey[] = [
+  "allowMemberShiftClaims",
+  "allowWaitlist",
+  "allowShiftChangeRequests",
+  "allowAbsenceReports",
+  "allowShiftSwaps",
+];
 
 const CONFIG_SECTIONS: ConfigSection[] = [
   {
@@ -119,6 +143,10 @@ function getPolicyInsightKeys(values: UpdateSelfServiceConfigPayload): string[] 
     insights.push("insights.shortWaitlistOffer");
   }
 
+  if (WORKFLOW_TOGGLES.some((key) => !values[key])) {
+    insights.push("insights.workflowDisabled");
+  }
+
   if (insights.length === 0) {
     insights.push("insights.balanced");
   }
@@ -137,6 +165,11 @@ function toFormValues(config: SelfServiceConfigDto): UpdateSelfServiceConfigPayl
     lateCancellationWindowHours: config.lateCancellationWindowHours,
     waitlistOfferMinutes: config.waitlistOfferMinutes,
     cycleDurationDays: config.cycleDurationDays,
+    allowMemberShiftClaims: config.allowMemberShiftClaims ?? true,
+    allowWaitlist: config.allowWaitlist ?? true,
+    allowShiftChangeRequests: config.allowShiftChangeRequests ?? true,
+    allowAbsenceReports: config.allowAbsenceReports ?? true,
+    allowShiftSwaps: config.allowShiftSwaps ?? true,
   };
 }
 
@@ -157,6 +190,11 @@ export default function SelfServiceConfigTab({ spaceId, groupId }: SelfServiceCo
     lateCancellationWindowHours: 24,
     waitlistOfferMinutes: 60,
     cycleDurationDays: 7,
+    allowMemberShiftClaims: true,
+    allowWaitlist: true,
+    allowShiftChangeRequests: true,
+    allowAbsenceReports: true,
+    allowShiftSwaps: true,
   });
 
   // Submission state
@@ -194,6 +232,13 @@ export default function SelfServiceConfigTab({ spaceId, groupId }: SelfServiceCo
     if (isNaN(numValue)) return;
 
     setFormValues((prev) => ({ ...prev, [key]: numValue }));
+    setValidationError(null);
+    setSaveError(null);
+    setSaveSuccess(false);
+  }
+
+  function handleToggleChange(key: WorkflowToggleKey) {
+    setFormValues((prev) => ({ ...prev, [key]: !prev[key] }));
     setValidationError(null);
     setSaveError(null);
     setSaveSuccess(false);
@@ -293,6 +338,52 @@ export default function SelfServiceConfigTab({ spaceId, groupId }: SelfServiceCo
         </div>
 
         <div className="mt-6 space-y-4">
+          <section className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+            <div className="mb-4">
+              <h4 className="text-sm font-semibold text-slate-900">
+                {t("sections.workflowAccess.title")}
+              </h4>
+              <p className="mt-1 text-xs leading-5 text-slate-500">
+                {t("sections.workflowAccess.description")}
+              </p>
+            </div>
+
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+              {WORKFLOW_TOGGLES.map((key) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => handleToggleChange(key)}
+                  className="flex min-h-24 items-start justify-between gap-4 rounded-lg border border-slate-200 bg-white p-3 text-start transition hover:border-sky-200 hover:bg-sky-50/60"
+                  aria-pressed={formValues[key]}
+                >
+                  <span>
+                    <span className="block text-sm font-semibold text-slate-800">
+                      {t(`workflow.${key}.title`)}
+                    </span>
+                    <span className="mt-1 block text-xs leading-5 text-slate-500">
+                      {t(`workflow.${key}.description`)}
+                    </span>
+                  </span>
+                  <span
+                    className={`mt-0.5 inline-flex h-6 w-11 shrink-0 items-center rounded-full border px-0.5 transition ${
+                      formValues[key]
+                        ? "border-sky-500 bg-sky-500"
+                        : "border-slate-300 bg-slate-200"
+                    }`}
+                    aria-hidden="true"
+                  >
+                    <span
+                      className={`h-5 w-5 rounded-full bg-white shadow-sm transition ${
+                        formValues[key] ? "translate-x-5" : "translate-x-0"
+                      }`}
+                    />
+                  </span>
+                </button>
+              ))}
+            </div>
+          </section>
+
           {CONFIG_SECTIONS.map((section) => (
             <section key={section.key} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
               <div className="mb-4">

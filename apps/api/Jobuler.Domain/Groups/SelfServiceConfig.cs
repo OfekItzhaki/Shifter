@@ -21,6 +21,11 @@ public class SelfServiceConfig : AuditableEntity, ITenantScoped
     public int LateCancellationWindowHours { get; private set; } = 24;
     public int WaitlistOfferMinutes { get; private set; } = 60;
     public int CycleDurationDays { get; private set; } = 7;
+    public bool AllowMemberShiftClaims { get; private set; } = true;
+    public bool AllowWaitlist { get; private set; } = true;
+    public bool AllowShiftChangeRequests { get; private set; } = true;
+    public bool AllowAbsenceReports { get; private set; } = true;
+    public bool AllowShiftSwaps { get; private set; } = true;
 
     private SelfServiceConfig() { }
 
@@ -113,7 +118,38 @@ public class SelfServiceConfig : AuditableEntity, ITenantScoped
         int maxLateCancellationsPerCycle,
         int lateCancellationWindowHours,
         int waitlistOfferMinutes,
-        int cycleDurationDays)
+        int cycleDurationDays) =>
+        Update(
+            minShiftsPerCycle,
+            maxShiftsPerCycle,
+            requestWindowOpenOffsetHours,
+            requestWindowCloseOffsetHours,
+            cancellationCutoffHours,
+            maxLateCancellationsPerCycle,
+            lateCancellationWindowHours,
+            waitlistOfferMinutes,
+            cycleDurationDays,
+            AllowMemberShiftClaims,
+            AllowWaitlist,
+            AllowShiftChangeRequests,
+            AllowAbsenceReports,
+            AllowShiftSwaps);
+
+    public void Update(
+        int minShiftsPerCycle,
+        int maxShiftsPerCycle,
+        int requestWindowOpenOffsetHours,
+        int requestWindowCloseOffsetHours,
+        int cancellationCutoffHours,
+        int maxLateCancellationsPerCycle,
+        int lateCancellationWindowHours,
+        int waitlistOfferMinutes,
+        int cycleDurationDays,
+        bool allowMemberShiftClaims,
+        bool allowWaitlist,
+        bool allowShiftChangeRequests,
+        bool allowAbsenceReports,
+        bool allowShiftSwaps)
     {
         SetMinMaxShifts(minShiftsPerCycle, maxShiftsPerCycle);
         SetRequestWindowOffsets(requestWindowOpenOffsetHours, requestWindowCloseOffsetHours);
@@ -121,6 +157,12 @@ public class SelfServiceConfig : AuditableEntity, ITenantScoped
         SetLateCancellationLimits(maxLateCancellationsPerCycle, lateCancellationWindowHours);
         SetWaitlistOfferMinutes(waitlistOfferMinutes);
         SetCycleDurationDays(cycleDurationDays);
+        SetWorkflowPermissions(
+            allowMemberShiftClaims,
+            allowWaitlist,
+            allowShiftChangeRequests,
+            allowAbsenceReports,
+            allowShiftSwaps);
         Touch();
     }
 
@@ -193,6 +235,21 @@ public class SelfServiceConfig : AuditableEntity, ITenantScoped
             throw new InvalidOperationException("Cycle duration must be between 1 and 30 days.");
 
         CycleDurationDays = days;
+        Touch();
+    }
+
+    public void SetWorkflowPermissions(
+        bool allowMemberShiftClaims,
+        bool allowWaitlist,
+        bool allowShiftChangeRequests,
+        bool allowAbsenceReports,
+        bool allowShiftSwaps)
+    {
+        AllowMemberShiftClaims = allowMemberShiftClaims;
+        AllowWaitlist = allowWaitlist;
+        AllowShiftChangeRequests = allowShiftChangeRequests;
+        AllowAbsenceReports = allowAbsenceReports;
+        AllowShiftSwaps = allowShiftSwaps;
         Touch();
     }
 }

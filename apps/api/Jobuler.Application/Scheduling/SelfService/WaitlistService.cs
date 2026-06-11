@@ -72,6 +72,18 @@ public class WaitlistService : IWaitlistService
                 ErrorMessage: "The shift slot is no longer open.");
         }
 
+        var config = await _db.SelfServiceConfigs
+            .AsNoTracking()
+            .FirstOrDefaultAsync(c => c.GroupId == slot.GroupId, ct);
+
+        if (config is not null && !config.AllowWaitlist)
+        {
+            return new WaitlistResult(
+                Success: false,
+                Position: null,
+                ErrorMessage: "Waitlists are disabled for this group.");
+        }
+
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
         var shiftStartUtc = slot.Date.ToDateTime(slot.StartTime, DateTimeKind.Utc);
         if (shiftStartUtc <= utcNow)

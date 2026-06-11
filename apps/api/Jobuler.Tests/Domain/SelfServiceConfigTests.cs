@@ -28,6 +28,11 @@ public class SelfServiceConfigTests
         config.CancellationCutoffHours.Should().Be(24);
         config.WaitlistOfferMinutes.Should().Be(60);
         config.CycleDurationDays.Should().Be(7);
+        config.AllowMemberShiftClaims.Should().BeTrue();
+        config.AllowWaitlist.Should().BeTrue();
+        config.AllowShiftChangeRequests.Should().BeTrue();
+        config.AllowAbsenceReports.Should().BeTrue();
+        config.AllowShiftSwaps.Should().BeTrue();
         config.Id.Should().NotBeEmpty();
         config.CreatedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(5));
     }
@@ -241,6 +246,25 @@ public class SelfServiceConfigTests
         config.SetCycleDurationDays(14);
 
         config.CycleDurationDays.Should().Be(14);
+    }
+
+    [Fact]
+    public void SetWorkflowPermissions_WithValidValues_Updates()
+    {
+        var config = SelfServiceConfig.Create(Guid.NewGuid(), Guid.NewGuid());
+
+        config.SetWorkflowPermissions(
+            allowMemberShiftClaims: false,
+            allowWaitlist: false,
+            allowShiftChangeRequests: false,
+            allowAbsenceReports: false,
+            allowShiftSwaps: false);
+
+        config.AllowMemberShiftClaims.Should().BeFalse();
+        config.AllowWaitlist.Should().BeFalse();
+        config.AllowShiftChangeRequests.Should().BeFalse();
+        config.AllowAbsenceReports.Should().BeFalse();
+        config.AllowShiftSwaps.Should().BeFalse();
     }
 
     // ── Update method ────────────────────────────────────────────────────────

@@ -23,6 +23,11 @@ public class SelfServiceConfigConfiguration : IEntityTypeConfiguration<SelfServi
         builder.Property(c => c.LateCancellationWindowHours).HasColumnName("late_cancellation_window_hours").HasDefaultValue(24);
         builder.Property(c => c.WaitlistOfferMinutes).HasColumnName("waitlist_offer_minutes").HasDefaultValue(60);
         builder.Property(c => c.CycleDurationDays).HasColumnName("cycle_duration_days").HasDefaultValue(7);
+        builder.Property(c => c.AllowMemberShiftClaims).HasColumnName("allow_member_shift_claims").HasDefaultValue(true);
+        builder.Property(c => c.AllowWaitlist).HasColumnName("allow_waitlist").HasDefaultValue(true);
+        builder.Property(c => c.AllowShiftChangeRequests).HasColumnName("allow_shift_change_requests").HasDefaultValue(true);
+        builder.Property(c => c.AllowAbsenceReports).HasColumnName("allow_absence_reports").HasDefaultValue(true);
+        builder.Property(c => c.AllowShiftSwaps).HasColumnName("allow_shift_swaps").HasDefaultValue(true);
         builder.Property(c => c.CreatedAt).HasColumnName("created_at");
         builder.Property(c => c.UpdatedAt).HasColumnName("updated_at");
 

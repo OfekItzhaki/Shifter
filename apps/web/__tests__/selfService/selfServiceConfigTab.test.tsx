@@ -68,6 +68,9 @@ vi.mock("next-intl", () => ({
       "insights.requestClosesBeforeCancellation": "Members may still cancel after picking closes.",
       "insights.lateWindowLongerThanCancel": "Some shifts become late immediately after cancellation closes.",
       "insights.shortWaitlistOffer": "Waitlist offers under 30 minutes may expire before members notice them.",
+      "insights.workflowDisabled": "One or more member workflows are disabled.",
+      "sections.workflowAccess.title": "Workflow access",
+      "sections.workflowAccess.description": "Choose which actions members can perform.",
       "sections.shiftLimits.title": "Shift limits",
       "sections.shiftLimits.description": "Control how many shifts members should take.",
       "sections.requestWindow.title": "Request window",
@@ -85,6 +88,16 @@ vi.mock("next-intl", () => ({
       "descriptions.lateCancellationWindowHours": "Absence reports inside this window count as late.",
       "descriptions.maxLateCancellationsPerCycle": "Maximum late absence reports per member.",
       "descriptions.waitlistOfferMinutes": "How long an offered shift is held.",
+      "workflow.allowMemberShiftClaims.title": "Members can claim shifts",
+      "workflow.allowMemberShiftClaims.description": "Members may pick available shifts.",
+      "workflow.allowWaitlist.title": "Members can join waitlists",
+      "workflow.allowWaitlist.description": "Full shifts can collect a queue.",
+      "workflow.allowShiftChangeRequests.title": "Members can request changes",
+      "workflow.allowShiftChangeRequests.description": "Members may ask admins to move a shift.",
+      "workflow.allowAbsenceReports.title": "Members can report absence",
+      "workflow.allowAbsenceReports.description": "Members may say they cannot attend.",
+      "workflow.allowShiftSwaps.title": "Members can propose swaps",
+      "workflow.allowShiftSwaps.description": "Members may trade approved shifts.",
       "validation.minShiftsRange": "Minimum shifts must be between 0 and 100.",
       "validation.maxShiftsRange": "Maximum shifts must be between 1 and 100.",
       "validation.minGreaterThanMax": "Minimum shifts cannot be greater than maximum shifts.",
@@ -126,6 +139,8 @@ describe("SelfServiceConfigTab", () => {
     expect(screen.getByText("Recommended: 1-2 shifts")).toBeInTheDocument();
     expect(screen.getByText("Recommended: 30-60 minutes")).toBeInTheDocument();
     expect(screen.getByText("Policy impact")).toBeInTheDocument();
+    expect(screen.getByText("Workflow access")).toBeInTheDocument();
+    expect(screen.getByText("Members can claim shifts")).toBeInTheDocument();
     expect(screen.getByText("Members may still cancel after picking closes.")).toBeInTheDocument();
     expect(
       screen.getByText("Some shifts become late immediately after cancellation closes."),

@@ -105,6 +105,16 @@ public class ShiftSwapService : IShiftSwapService
                 ErrorMessage: "Both shift requests must belong to the same scheduling cycle.");
         }
 
+        var config = await _db.SelfServiceConfigs
+            .AsNoTracking()
+            .FirstOrDefaultAsync(c => c.GroupId == initiatorRequest.GroupId, ct);
+
+        if (config is not null && !config.AllowShiftSwaps)
+        {
+            return new SwapResult(Success: false, SwapRequestId: null,
+                ErrorMessage: "Shift swaps are disabled for this group.");
+        }
+
         // Req 12.1: Both shifts must start in the future
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
 

@@ -124,6 +124,20 @@ public class ShiftRequestService : IShiftRequestService
                         AlternativeSlots: null);
                 }
 
+                var config = await _db.SelfServiceConfigs
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(c => c.GroupId == slot.GroupId, ct);
+
+                if (config is not null && !config.AllowMemberShiftClaims)
+                {
+                    await transaction.RollbackAsync(ct);
+                    return new ShiftRequestResult(
+                        Success: false,
+                        ShiftRequestId: null,
+                        RejectionReason: "Self-service shift claiming is disabled for this group.",
+                        AlternativeSlots: null);
+                }
+
                 // Req 4.6: Check for duplicate request (Pending or Approved on same slot by same person)
                 var hasDuplicate = await _db.ShiftRequests
                     .AnyAsync(r => r.ShiftSlotId == shiftSlotId
@@ -154,10 +168,6 @@ public class ShiftRequestService : IShiftRequestService
                 }
 
                 // Req 4.5: Check Max_Shifts constraint
-                var config = await _db.SelfServiceConfigs
-                    .AsNoTracking()
-                    .FirstOrDefaultAsync(c => c.GroupId == slot.GroupId, ct);
-
                 var maxShifts = config?.MaxShiftsPerCycle ?? 7;
 
                 var currentShiftCount = await _db.ShiftRequests
@@ -499,6 +509,12 @@ public class ShiftRequestService : IShiftRequestService
                 var config = await _db.SelfServiceConfigs
                     .AsNoTracking()
                     .FirstOrDefaultAsync(c => c.GroupId == slot.GroupId, ct);
+
+                if (config is not null && !config.AllowAbsenceReports)
+                {
+                    await transaction.RollbackAsync(ct);
+                    return new AbsenceReportResult(false, null, false, 0, config.MaxLateCancellationsPerCycle, "Absence reporting is disabled for this group.");
+                }
 
                 var maxLateReports = config?.MaxLateCancellationsPerCycle ?? 2;
                 var lateWindowHours = config?.LateCancellationWindowHours ?? config?.CancellationCutoffHours ?? 24;

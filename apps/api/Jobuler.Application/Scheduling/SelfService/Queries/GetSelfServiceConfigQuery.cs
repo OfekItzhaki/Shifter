@@ -33,6 +33,11 @@ public class GetSelfServiceConfigQueryHandler : IRequestHandler<GetSelfServiceCo
             config.MaxLateCancellationsPerCycle,
             config.LateCancellationWindowHours,
             config.WaitlistOfferMinutes,
-            config.CycleDurationDays);
+            config.CycleDurationDays,
+            config.AllowMemberShiftClaims,
+            config.AllowWaitlist,
+            config.AllowShiftChangeRequests,
+            config.AllowAbsenceReports,
+            config.AllowShiftSwaps);
     }
 }

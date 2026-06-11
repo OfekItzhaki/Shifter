@@ -48,7 +48,12 @@ public class SelfServiceConfigController : ControllerBase
                 MaxLateCancellationsPerCycle: 2,
                 LateCancellationWindowHours: 24,
                 WaitlistOfferMinutes: 60,
-                CycleDurationDays: 7));
+                CycleDurationDays: 7,
+                AllowMemberShiftClaims: true,
+                AllowWaitlist: true,
+                AllowShiftChangeRequests: true,
+                AllowAbsenceReports: true,
+                AllowShiftSwaps: true));
         }
 
         return Ok(new SelfServiceConfigResponse(
@@ -62,7 +67,12 @@ public class SelfServiceConfigController : ControllerBase
             MaxLateCancellationsPerCycle: result.MaxLateCancellationsPerCycle,
             LateCancellationWindowHours: result.LateCancellationWindowHours,
             WaitlistOfferMinutes: result.WaitlistOfferMinutes,
-            CycleDurationDays: result.CycleDurationDays));
+            CycleDurationDays: result.CycleDurationDays,
+            AllowMemberShiftClaims: result.AllowMemberShiftClaims,
+            AllowWaitlist: result.AllowWaitlist,
+            AllowShiftChangeRequests: result.AllowShiftChangeRequests,
+            AllowAbsenceReports: result.AllowAbsenceReports,
+            AllowShiftSwaps: result.AllowShiftSwaps));
     }
 
     /// <summary>Create or update self-service scheduling configuration for a group.</summary>
@@ -85,7 +95,12 @@ public class SelfServiceConfigController : ControllerBase
             req.MaxLateCancellationsPerCycle,
             req.LateCancellationWindowHours,
             req.WaitlistOfferMinutes,
-            req.CycleDurationDays), ct);
+            req.CycleDurationDays,
+            req.AllowMemberShiftClaims,
+            req.AllowWaitlist,
+            req.AllowShiftChangeRequests,
+            req.AllowAbsenceReports,
+            req.AllowShiftSwaps), ct);
 
         return Ok(new SelfServiceConfigResponse(
             Id: result.Id,
@@ -98,7 +113,12 @@ public class SelfServiceConfigController : ControllerBase
             MaxLateCancellationsPerCycle: result.MaxLateCancellationsPerCycle,
             LateCancellationWindowHours: result.LateCancellationWindowHours,
             WaitlistOfferMinutes: result.WaitlistOfferMinutes,
-            CycleDurationDays: result.CycleDurationDays));
+            CycleDurationDays: result.CycleDurationDays,
+            AllowMemberShiftClaims: result.AllowMemberShiftClaims,
+            AllowWaitlist: result.AllowWaitlist,
+            AllowShiftChangeRequests: result.AllowShiftChangeRequests,
+            AllowAbsenceReports: result.AllowAbsenceReports,
+            AllowShiftSwaps: result.AllowShiftSwaps));
     }
 }
 
@@ -113,7 +133,12 @@ public record UpdateSelfServiceConfigRequest(
     int MaxLateCancellationsPerCycle,
     int LateCancellationWindowHours,
     int WaitlistOfferMinutes,
-    int CycleDurationDays);
+    int CycleDurationDays,
+    bool AllowMemberShiftClaims = true,
+    bool AllowWaitlist = true,
+    bool AllowShiftChangeRequests = true,
+    bool AllowAbsenceReports = true,
+    bool AllowShiftSwaps = true);
 
 // --- Response DTOs ---
 
@@ -128,4 +153,9 @@ public record SelfServiceConfigResponse(
     int MaxLateCancellationsPerCycle,
     int LateCancellationWindowHours,
     int WaitlistOfferMinutes,
-    int CycleDurationDays);
+    int CycleDurationDays,
+    bool AllowMemberShiftClaims,
+    bool AllowWaitlist,
+    bool AllowShiftChangeRequests,
+    bool AllowAbsenceReports,
+    bool AllowShiftSwaps);

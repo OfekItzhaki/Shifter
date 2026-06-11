@@ -17,7 +17,12 @@ public record UpdateSelfServiceConfigCommand(
     int MaxLateCancellationsPerCycle,
     int LateCancellationWindowHours,
     int WaitlistOfferMinutes,
-    int CycleDurationDays) : IRequest<SelfServiceConfigDto>;
+    int CycleDurationDays,
+    bool AllowMemberShiftClaims,
+    bool AllowWaitlist,
+    bool AllowShiftChangeRequests,
+    bool AllowAbsenceReports,
+    bool AllowShiftSwaps) : IRequest<SelfServiceConfigDto>;
 
 public record SelfServiceConfigDto(
     Guid Id,
@@ -30,7 +35,12 @@ public record SelfServiceConfigDto(
     int MaxLateCancellationsPerCycle,
     int LateCancellationWindowHours,
     int WaitlistOfferMinutes,
-    int CycleDurationDays);
+    int CycleDurationDays,
+    bool AllowMemberShiftClaims,
+    bool AllowWaitlist,
+    bool AllowShiftChangeRequests,
+    bool AllowAbsenceReports,
+    bool AllowShiftSwaps);
 
 public class UpdateSelfServiceConfigCommandValidator : AbstractValidator<UpdateSelfServiceConfigCommand>
 {
@@ -118,6 +128,13 @@ public class UpdateSelfServiceConfigCommandHandler : IRequestHandler<UpdateSelfS
                 req.WaitlistOfferMinutes,
                 req.CycleDurationDays);
 
+            config.SetWorkflowPermissions(
+                req.AllowMemberShiftClaims,
+                req.AllowWaitlist,
+                req.AllowShiftChangeRequests,
+                req.AllowAbsenceReports,
+                req.AllowShiftSwaps);
+
             _db.SelfServiceConfigs.Add(config);
         }
         else
@@ -134,7 +151,12 @@ public class UpdateSelfServiceConfigCommandHandler : IRequestHandler<UpdateSelfS
                 req.MaxLateCancellationsPerCycle,
                 req.LateCancellationWindowHours,
                 req.WaitlistOfferMinutes,
-                req.CycleDurationDays);
+                req.CycleDurationDays,
+                req.AllowMemberShiftClaims,
+                req.AllowWaitlist,
+                req.AllowShiftChangeRequests,
+                req.AllowAbsenceReports,
+                req.AllowShiftSwaps);
         }
 
         await _db.SaveChangesAsync(ct);
@@ -150,6 +172,11 @@ public class UpdateSelfServiceConfigCommandHandler : IRequestHandler<UpdateSelfS
             config.MaxLateCancellationsPerCycle,
             config.LateCancellationWindowHours,
             config.WaitlistOfferMinutes,
-            config.CycleDurationDays);
+            config.CycleDurationDays,
+            config.AllowMemberShiftClaims,
+            config.AllowWaitlist,
+            config.AllowShiftChangeRequests,
+            config.AllowAbsenceReports,
+            config.AllowShiftSwaps);
     }
 }

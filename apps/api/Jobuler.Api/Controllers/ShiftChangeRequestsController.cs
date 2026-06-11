@@ -68,6 +68,13 @@ public class ShiftChangeRequestsController : ControllerBase
         if (personId is null)
             return Forbid();
 
+        var config = await _db.SelfServiceConfigs
+            .AsNoTracking()
+            .FirstOrDefaultAsync(c => c.SpaceId == spaceId && c.GroupId == groupId, ct);
+
+        if (config is not null && !config.AllowShiftChangeRequests)
+            return Rejected("Shift change requests are disabled for this group.");
+
         var shiftRequest = await _db.ShiftRequests
             .FirstOrDefaultAsync(r => r.Id == req.ShiftRequestId
                                       && r.SpaceId == spaceId

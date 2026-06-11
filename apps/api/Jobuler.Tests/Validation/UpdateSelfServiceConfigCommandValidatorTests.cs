@@ -23,7 +23,12 @@ public class UpdateSelfServiceConfigCommandValidatorTests
         MaxLateCancellationsPerCycle: 2,
         LateCancellationWindowHours: 24,
         WaitlistOfferMinutes: 60,
-        CycleDurationDays: 7);
+        CycleDurationDays: 7,
+        AllowMemberShiftClaims: true,
+        AllowWaitlist: true,
+        AllowShiftChangeRequests: true,
+        AllowAbsenceReports: true,
+        AllowShiftSwaps: true);
 
     [Fact]
     public void Valid_Command_PassesValidation()
