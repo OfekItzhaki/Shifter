@@ -2532,6 +2532,7 @@
         "needsReview": "{count} unresolved item(s)",
         "ready": "Ready for closeout",
         "exportCsv": "ייצוא CSV",
+        "exportPdf": "ייצוא PDF",
         "exporting": "מייצא...",
         "exportError": "לא ניתן לייצא את דוח הסיכום. נסה שוב.",
         "metrics": {

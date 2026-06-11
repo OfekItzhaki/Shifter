@@ -9,4 +9,5 @@ namespace Jobuler.Application.Exports;
 public interface IPdfRenderer
 {
     byte[] Render(SchedulePdfModel model);
+    byte[] Render(SelfServiceCloseoutPdfModel model);
 }

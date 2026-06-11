@@ -1,4 +1,6 @@
 using Jobuler.Application.Common;
+using Jobuler.Application.Exports;
+using Jobuler.Application.Exports.Commands;
 using Jobuler.Application.Scheduling.SelfService;
 using Jobuler.Application.Scheduling.SelfService.Commands;
 using Jobuler.Domain.Groups;
@@ -11,6 +13,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Globalization;
+using System.Security.Cryptography;
 using System.Security.Claims;
 using System.Text;
 
@@ -25,17 +28,20 @@ public class SelfServiceCyclesController : ControllerBase
     private readonly IPermissionService _permissions;
     private readonly ISlotGenerationService _slotGeneration;
     private readonly IMediator _mediator;
+    private readonly IPdfRenderer _pdfRenderer;
 
     public SelfServiceCyclesController(
         AppDbContext db,
         IPermissionService permissions,
         ISlotGenerationService slotGeneration,
-        IMediator mediator)
+        IMediator mediator,
+        IPdfRenderer pdfRenderer)
     {
         _db = db;
         _permissions = permissions;
         _slotGeneration = slotGeneration;
         _mediator = mediator;
+        _pdfRenderer = pdfRenderer;
     }
 
     private Guid CurrentUserId =>
@@ -88,6 +94,26 @@ public class SelfServiceCyclesController : ControllerBase
         var bytes = BuildCloseoutCsv(closeout);
         var fileName = $"self-service-closeout-{cycle.Id:N}-{DateTime.UtcNow:yyyyMMdd}.csv";
         return File(bytes, "text/csv; charset=utf-8", fileName);
+    }
+
+    [HttpGet("closeout.pdf")]
+    public async Task<IActionResult> ExportCloseoutPdf(Guid spaceId, Guid groupId, [FromQuery] Guid? cycleId, CancellationToken ct)
+    {
+        await _permissions.RequirePermissionAsync(CurrentUserId, spaceId, Permissions.ConstraintsManage, ct);
+
+        var cycle = cycleId.HasValue
+            ? await _db.SchedulingCycles
+                .AsNoTracking()
+                .FirstOrDefaultAsync(c => c.Id == cycleId.Value && c.SpaceId == spaceId && c.GroupId == groupId, ct)
+            : await ResolveCurrentCycleAsync(spaceId, groupId, ct);
+
+        if (cycle is null)
+            return NotFound(new { error = "Self-service cycle not found." });
+
+        var closeout = await BuildCloseoutAsync(cycle, ct);
+        var pdf = await BuildCloseoutPdfAsync(spaceId, groupId, cycle, closeout, ct);
+        var fileName = $"self-service-closeout-{cycle.Id:N}-{DateTime.UtcNow:yyyyMMdd}.pdf";
+        return File(pdf, "application/pdf", fileName);
     }
 
     [HttpPost("generate-next")]
@@ -542,12 +568,64 @@ public class SelfServiceCyclesController : ControllerBase
             issueCount);
     }
 
+    private async Task<byte[]> BuildCloseoutPdfAsync(
+        Guid spaceId,
+        Guid groupId,
+        SchedulingCycle cycle,
+        SelfServiceCycleCloseoutResponse closeout,
+        CancellationToken ct)
+    {
+        var spaceName = await _db.Spaces
+            .AsNoTracking()
+            .Where(s => s.Id == spaceId)
+            .Select(s => s.Name)
+            .FirstOrDefaultAsync(ct) ?? "Space";
+
+        var groupName = await _db.Groups
+            .AsNoTracking()
+            .Where(g => g.Id == groupId && g.SpaceId == spaceId)
+            .Select(g => g.Name)
+            .FirstOrDefaultAsync(ct) ?? "Group";
+
+        var metrics = BuildCloseoutRows(closeout)
+            .Select(row => new SelfServiceCloseoutMetricDto(row.Metric, row.Value))
+            .ToList();
+        var fingerprint = ComputeCloseoutFingerprint(closeout);
+
+        return _pdfRenderer.Render(new SelfServiceCloseoutPdfModel(
+            spaceName,
+            groupName,
+            cycle.Id,
+            cycle.StartsAt,
+            cycle.EndsAt,
+            DateTime.UtcNow,
+            fingerprint,
+            metrics));
+    }
+
     private static byte[] BuildCloseoutCsv(SelfServiceCycleCloseoutResponse closeout)
+    {
+        static string Escape(string value) =>
+            value.Contains(',') || value.Contains('"') || value.Contains('\n') || value.Contains('\r')
+                ? $"\"{value.Replace("\"", "\"\"", StringComparison.Ordinal)}\""
+                : value;
+
+        var builder = new StringBuilder();
+        builder.AppendLine("metric,value");
+        foreach (var row in BuildCloseoutRows(closeout))
+            builder.Append(Escape(row.Metric)).Append(',').Append(Escape(row.Value)).AppendLine();
+
+        return Encoding.UTF8.GetPreamble()
+            .Concat(Encoding.UTF8.GetBytes(builder.ToString()))
+            .ToArray();
+    }
+
+    private static IReadOnlyList<(string Metric, string Value)> BuildCloseoutRows(SelfServiceCycleCloseoutResponse closeout)
     {
         static string FormatDate(DateTime? value) =>
             value?.ToString("O", CultureInfo.InvariantCulture) ?? "";
 
-        var rows = new (string Metric, string Value)[]
+        return new (string Metric, string Value)[]
         {
             ("cycle_id", closeout.CycleId?.ToString() ?? ""),
             ("starts_at", FormatDate(closeout.StartsAt)),
@@ -592,20 +670,13 @@ public class SelfServiceCyclesController : ControllerBase
             ("cancelled_special_leave_requests", closeout.CancelledSpecialLeaveRequests.ToString(CultureInfo.InvariantCulture)),
             ("issue_count", closeout.IssueCount.ToString(CultureInfo.InvariantCulture))
         };
+    }
 
-        static string Escape(string value) =>
-            value.Contains(',') || value.Contains('"') || value.Contains('\n') || value.Contains('\r')
-                ? $"\"{value.Replace("\"", "\"\"", StringComparison.Ordinal)}\""
-                : value;
-
-        var builder = new StringBuilder();
-        builder.AppendLine("metric,value");
-        foreach (var row in rows)
-            builder.Append(Escape(row.Metric)).Append(',').Append(Escape(row.Value)).AppendLine();
-
-        return Encoding.UTF8.GetPreamble()
-            .Concat(Encoding.UTF8.GetBytes(builder.ToString()))
-            .ToArray();
+    private static string ComputeCloseoutFingerprint(SelfServiceCycleCloseoutResponse closeout)
+    {
+        var csv = BuildCloseoutCsv(closeout);
+        var hash = SHA256.HashData(csv);
+        return Convert.ToHexString(hash);
     }
 }
 

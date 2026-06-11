@@ -1,6 +1,8 @@
 using FluentAssertions;
 using Jobuler.Api.Controllers;
 using Jobuler.Application.Common;
+using Jobuler.Application.Exports;
+using Jobuler.Application.Exports.Commands;
 using Jobuler.Application.Notifications;
 using Jobuler.Application.Scheduling.SelfService;
 using Jobuler.Application.Scheduling.SelfService.Commands;
@@ -2872,7 +2874,8 @@ public class SelfServiceScopeTests
             db,
             services.Permissions,
             Substitute.For<ISlotGenerationService>(),
-            services.Mediator);
+            services.Mediator,
+            Substitute.For<IPdfRenderer>());
         controller.ControllerContext = CreateControllerContext(userId);
 
         var result = await controller.GetStatus(spaceId, group.Id, CancellationToken.None);
@@ -2999,7 +3002,8 @@ public class SelfServiceScopeTests
             db,
             services.Permissions,
             Substitute.For<ISlotGenerationService>(),
-            services.Mediator);
+            services.Mediator,
+            Substitute.For<IPdfRenderer>());
         controller.ControllerContext = CreateControllerContext(userId);
 
         var result = await controller.GetStatus(spaceId, group.Id, CancellationToken.None);
@@ -3202,7 +3206,8 @@ public class SelfServiceScopeTests
             db,
             services.Permissions,
             Substitute.For<ISlotGenerationService>(),
-            services.Mediator);
+            services.Mediator,
+            Substitute.For<IPdfRenderer>());
         controller.ControllerContext = CreateControllerContext(adminUserId);
 
         var result = await controller.GetCloseout(spaceId, group.Id, cycle.Id, CancellationToken.None);
@@ -3282,7 +3287,8 @@ public class SelfServiceScopeTests
             db,
             services.Permissions,
             Substitute.For<ISlotGenerationService>(),
-            services.Mediator);
+            services.Mediator,
+            Substitute.For<IPdfRenderer>());
         controller.ControllerContext = CreateControllerContext(adminUserId);
 
         var result = await controller.ExportCloseoutCsv(spaceId, group.Id, cycle.Id, CancellationToken.None);
@@ -3297,6 +3303,66 @@ public class SelfServiceScopeTests
         csv.Should().Contain("approved_assignments,1");
         csv.Should().Contain("no_show_attendance_records,1");
         csv.Should().Contain("unconfirmed_attendance_count,0");
+    }
+
+    [Fact]
+    public async Task ExportCloseoutPdf_ReturnsRenderedCloseoutReport()
+    {
+        using var db = CreateDb();
+        var services = CreateControllerServices();
+        var spaceId = Guid.NewGuid();
+        var adminUserId = Guid.NewGuid();
+        var space = Space.Create("Ops Space", adminUserId);
+        typeof(Jobuler.Domain.Common.Entity).GetProperty(nameof(Space.Id))!.SetValue(space, spaceId);
+        var group = Group.Create(spaceId, null, "Self-service group");
+        var person = Person.Create(spaceId, "Alice", linkedUserId: Guid.NewGuid());
+        var cycle = CreateCycle(spaceId, group.Id);
+        var task = CreateTask(spaceId, group.Id, "Guard", adminUserId);
+        var slot = CreateSlot(spaceId, group.Id, task.Id, cycle.Id, daysFromNow: -1);
+        var request = ShiftRequest.Create(spaceId, slot.Id, person.Id, group.Id, cycle.Id);
+        request.Approve(adminUserId);
+        slot.IncrementFillCount();
+
+        db.Spaces.Add(space);
+        db.Groups.Add(group);
+        db.People.Add(person);
+        db.GroupMemberships.Add(GroupMembership.Create(spaceId, group.Id, person.Id));
+        db.SchedulingCycles.Add(cycle);
+        db.GroupTasks.Add(task);
+        db.ShiftSlots.Add(slot);
+        db.ShiftRequests.Add(request);
+        await db.SaveChangesAsync();
+
+        services.Permissions
+            .RequirePermissionAsync(adminUserId, spaceId, Permissions.ConstraintsManage, Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+
+        SelfServiceCloseoutPdfModel? renderedModel = null;
+        var pdfBytes = new byte[] { 0x25, 0x50, 0x44, 0x46 };
+        var pdfRenderer = Substitute.For<IPdfRenderer>();
+        pdfRenderer.Render(Arg.Do<SelfServiceCloseoutPdfModel>(m => renderedModel = m))
+            .Returns(pdfBytes);
+
+        var controller = new SelfServiceCyclesController(
+            db,
+            services.Permissions,
+            Substitute.For<ISlotGenerationService>(),
+            services.Mediator,
+            pdfRenderer);
+        controller.ControllerContext = CreateControllerContext(adminUserId);
+
+        var result = await controller.ExportCloseoutPdf(spaceId, group.Id, cycle.Id, CancellationToken.None);
+
+        var file = result.Should().BeOfType<FileContentResult>().Subject;
+        file.ContentType.Should().Be("application/pdf");
+        file.FileDownloadName.Should().StartWith($"self-service-closeout-{cycle.Id:N}-");
+        file.FileContents.Should().Equal(pdfBytes);
+        renderedModel.Should().NotBeNull();
+        renderedModel!.SpaceName.Should().Be("Ops Space");
+        renderedModel.GroupName.Should().Be("Self-service group");
+        renderedModel.CycleId.Should().Be(cycle.Id);
+        renderedModel.ReportFingerprint.Should().MatchRegex("^[A-F0-9]{64}$");
+        renderedModel.Metrics.Should().Contain(m => m.Label == "approved_assignments" && m.Value == "1");
     }
 
     [Fact]
@@ -3402,7 +3468,8 @@ public class SelfServiceScopeTests
             db,
             services.Permissions,
             slotGeneration,
-            services.Mediator);
+            services.Mediator,
+            Substitute.For<IPdfRenderer>());
         controller.ControllerContext = CreateControllerContext(adminUserId);
 
         var result = await controller.GenerateNext(spaceId, group.Id, CancellationToken.None);
@@ -3448,7 +3515,8 @@ public class SelfServiceScopeTests
             db,
             services.Permissions,
             Substitute.For<ISlotGenerationService>(),
-            services.Mediator);
+            services.Mediator,
+            Substitute.For<IPdfRenderer>());
         controller.ControllerContext = CreateControllerContext(adminUserId);
 
         var result = await controller.CloseWindow(spaceId, group.Id, cycle.Id, CancellationToken.None);
@@ -3487,7 +3555,8 @@ public class SelfServiceScopeTests
             db,
             services.Permissions,
             Substitute.For<ISlotGenerationService>(),
-            services.Mediator);
+            services.Mediator,
+            Substitute.For<IPdfRenderer>());
         controller.ControllerContext = CreateControllerContext(adminUserId);
 
         var result = await controller.CloseWindow(spaceId, group.Id, cycle.Id, CancellationToken.None);
@@ -3548,7 +3617,8 @@ public class SelfServiceScopeTests
             db,
             services.Permissions,
             Substitute.For<ISlotGenerationService>(),
-            services.Mediator);
+            services.Mediator,
+            Substitute.For<IPdfRenderer>());
         controller.ControllerContext = CreateControllerContext(userId);
 
         var result = await controller.GetStatus(spaceId, group.Id, CancellationToken.None);

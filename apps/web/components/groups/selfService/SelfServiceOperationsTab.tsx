@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import {
   downloadSelfServiceCycleCloseoutCsv,
+  downloadSelfServiceCycleCloseoutPdf,
   getAdminWaitlistEntries,
   getSelfServiceConfig,
   getSelfServiceCycleCloseout,
@@ -147,7 +148,7 @@ export default function SelfServiceOperationsTab({
   const [config, setConfig] = useState<SelfServiceConfigDto | null>(null);
   const [waitlistEntries, setWaitlistEntries] = useState<AdminWaitlistEntryDto[]>([]);
   const [statusLoading, setStatusLoading] = useState(true);
-  const [exportingCloseout, setExportingCloseout] = useState(false);
+  const [exportingCloseout, setExportingCloseout] = useState<"csv" | "pdf" | null>(null);
   const [closeoutExportError, setCloseoutExportError] = useState<string | null>(null);
 
   const loadStatus = useCallback(async () => {
@@ -177,16 +178,20 @@ export default function SelfServiceOperationsTab({
     void Promise.resolve().then(loadStatus);
   }, [loadStatus]);
 
-  async function handleExportCloseout() {
-    setExportingCloseout(true);
+  async function handleExportCloseout(format: "csv" | "pdf") {
+    setExportingCloseout(format);
     setCloseoutExportError(null);
 
     try {
-      await downloadSelfServiceCycleCloseoutCsv(spaceId, groupId, closeout?.cycleId ?? null);
+      if (format === "csv") {
+        await downloadSelfServiceCycleCloseoutCsv(spaceId, groupId, closeout?.cycleId ?? null);
+      } else {
+        await downloadSelfServiceCycleCloseoutPdf(spaceId, groupId, closeout?.cycleId ?? null);
+      }
     } catch {
       setCloseoutExportError(t("closeout.exportError"));
     } finally {
-      setExportingCloseout(false);
+      setExportingCloseout(null);
     }
   }
 
@@ -363,11 +368,19 @@ export default function SelfServiceOperationsTab({
           <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
-              onClick={handleExportCloseout}
-              disabled={statusLoading || !closeout || exportingCloseout}
+              onClick={() => handleExportCloseout("csv")}
+              disabled={statusLoading || !closeout || exportingCloseout !== null}
               className="inline-flex rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-sky-700 transition hover:border-sky-200 hover:bg-sky-50 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {exportingCloseout ? t("closeout.exporting") : t("closeout.exportCsv")}
+              {exportingCloseout === "csv" ? t("closeout.exporting") : t("closeout.exportCsv")}
+            </button>
+            <button
+              type="button"
+              onClick={() => handleExportCloseout("pdf")}
+              disabled={statusLoading || !closeout || exportingCloseout !== null}
+              className="inline-flex rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-sky-700 transition hover:border-sky-200 hover:bg-sky-50 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {exportingCloseout === "pdf" ? t("closeout.exporting") : t("closeout.exportPdf")}
             </button>
             <span className={`inline-flex w-fit rounded-full border px-2.5 py-1 text-xs font-medium ${
               statusLoading

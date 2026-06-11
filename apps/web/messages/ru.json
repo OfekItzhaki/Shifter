@@ -2520,6 +2520,7 @@
         "needsReview": "{count} unresolved item(s)",
         "ready": "Ready for closeout",
         "exportCsv": "Экспорт CSV",
+        "exportPdf": "Экспорт PDF",
         "exporting": "Экспорт...",
         "exportError": "Не удалось экспортировать CSV закрытия цикла. Попробуйте еще раз.",
         "metrics": {

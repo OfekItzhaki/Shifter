@@ -67,7 +67,7 @@ present in the product.
 | Fill gaps manually | Not applicable | `Admin overrides` assignment/removal | admin override commands with safety checks |
 | Run cycles | Members see generated slots | Config, templates, cycle controls, operations dashboard | self-service config, templates, cycle generation jobs |
 | Confirm attendance | Not applicable | Attendance mark on approved shift requests | `ShiftAttendanceRecord` and shift request attendance endpoint |
-| Close out cycles | Not applicable | Closeout summary and CSV export in Operations, including no-show and unconfirmed attendance counts | `SelfServiceCyclesController` closeout endpoint |
+| Close out cycles | Not applicable | Closeout summary, CSV export, and PDF report in Operations, including no-show and unconfirmed attendance counts | `SelfServiceCyclesController` closeout endpoint |
 
 The strongest member entry point is `/pick`, especially for PWA/mobile users.
 The strongest manager entry point is the self-service group operations tab.
@@ -255,7 +255,8 @@ large deployments:
 - Organization-level defaults for self-service policy through the admin UI.
   Customer-hosted installs can already set install-level defaults through
   environment configuration.
-- Signed/PDF closeout reports. The current closeout summary and CSV export
-  support archiving, but they do not yet produce a signed PDF report.
+- Formal certificate signing for closeout reports. PDF closeout reports already
+  include a verification fingerprint for archive/tamper checks, but they are not
+  certificate-signed legal documents.
 - Admin UI for provider health checks. The API already exposes detailed
   provider status through `/health/detailed`.
