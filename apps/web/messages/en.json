@@ -2469,7 +2469,23 @@
       "noMembers": "No members available for assignment",
       "alreadyAssigned": "Member is already assigned to this shift",
       "notAssigned": "Member is not assigned to this shift",
-      "memberNotInGroup": "Member does not belong to this group"
+      "memberNotInGroup": "Member does not belong to this group",
+      "attendance": {
+        "label": "Attendance",
+        "unconfirmed": "Unconfirmed",
+        "saving": "Saving...",
+        "futureDisabled": "Attendance can be recorded after the shift starts.",
+        "statuses": {
+          "Present": "Present",
+          "NoShow": "No-show",
+          "Excused": "Excused"
+        },
+        "actions": {
+          "Present": "Present",
+          "NoShow": "No-show",
+          "Excused": "Excused"
+        }
+      }
     },
     "errors": {
       "generic": "An error occurred. Please try again.",

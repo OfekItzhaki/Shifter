@@ -56,14 +56,37 @@ public class ShiftSlotsController : ControllerBase
                 _db.People.AsNoTracking().Where(p => p.SpaceId == spaceId),
                 request => request.PersonId,
                 person => person.Id,
-                (request, person) => new ShiftSlotAssignmentResponse(
+                (request, person) => new
+                {
+                    ShiftRequestId = request.Id,
                     request.ShiftSlotId,
                     request.PersonId,
-                    person.DisplayName ?? person.FullName))
+                    PersonName = person.DisplayName ?? person.FullName
+                })
             .OrderBy(a => a.PersonName)
             .ToListAsync(ct);
 
-        return Ok(assignments);
+        var requestIds = assignments.Select(a => a.ShiftRequestId).ToList();
+        var attendanceRecords = await _db.ShiftAttendanceRecords
+            .AsNoTracking()
+            .Where(r => r.SpaceId == spaceId
+                        && r.GroupId == groupId
+                        && requestIds.Contains(r.ShiftRequestId))
+            .Select(r => new { r.ShiftRequestId, r.Status, r.RecordedAt })
+            .ToListAsync(ct);
+        var attendanceByRequestId = attendanceRecords.ToDictionary(r => r.ShiftRequestId);
+
+        return Ok(assignments.Select(a =>
+        {
+            attendanceByRequestId.TryGetValue(a.ShiftRequestId, out var attendance);
+            return new ShiftSlotAssignmentResponse(
+                a.ShiftRequestId,
+                a.ShiftSlotId,
+                a.PersonId,
+                a.PersonName,
+                attendance?.Status.ToString(),
+                attendance?.RecordedAt);
+        }).ToList());
     }
 
     /// <summary>
@@ -221,9 +244,12 @@ public class ShiftSlotsController : ControllerBase
 }
 
 public record ShiftSlotAssignmentResponse(
+    Guid ShiftRequestId,
     Guid ShiftSlotId,
     Guid PersonId,
-    string PersonName);
+    string PersonName,
+    string? AttendanceStatus,
+    DateTime? AttendanceRecordedAt);
 
 public record AdminShiftSlotsResponse(
     IReadOnlyList<AdminShiftSlotResponse> Slots,

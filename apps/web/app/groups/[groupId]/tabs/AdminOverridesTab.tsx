@@ -7,8 +7,10 @@ import {
   getAdminShiftSlotAssignments,
   adminAssignMember,
   adminRemoveMember,
+  recordShiftAttendance,
   AvailableSlotDto,
   AvailableSlotsResponse,
+  ShiftAttendanceStatus,
 } from "@/lib/api/selfService";
 import { formatSlotDate, formatTime24h, HEBREW_DAY_NAMES } from "@/lib/utils/selfServiceFormat";
 import { getSelfServiceErrorMessage } from "@/lib/utils/selfServiceErrors";
@@ -25,9 +27,14 @@ interface AdminOverridesTabProps {
 
 /** Tracks which members are assigned to each slot */
 interface SlotAssignment {
+  shiftRequestId: string;
   personId: string;
   personName: string;
+  attendanceStatus: ShiftAttendanceStatus | null;
+  attendanceRecordedAt: string | null;
 }
+
+const ATTENDANCE_STATUSES: ShiftAttendanceStatus[] = ["Present", "NoShow", "Excused"];
 
 /**
  * AdminOverridesTab — allows admins to manually assign or remove members from shift slots.
@@ -47,6 +54,7 @@ export default function AdminOverridesTab({
   const [slotsResponse, setSlotsResponse] = useState<AvailableSlotsResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [nowMs, setNowMs] = useState(() => Date.now());
 
   // Per-slot assigned members tracking
   const [slotAssignments, setSlotAssignments] = useState<Record<string, SlotAssignment[]>>({});
@@ -61,6 +69,7 @@ export default function AdminOverridesTab({
   const [removeTarget, setRemoveTarget] = useState<{ slotId: string; personId: string; personName: string } | null>(null);
   const [removing, setRemoving] = useState(false);
   const [removeError, setRemoveError] = useState<string | null>(null);
+  const [recordingAttendanceId, setRecordingAttendanceId] = useState<string | null>(null);
 
   // Action error per slot (inline)
   const [slotActionError, setSlotActionError] = useState<{ slotId: string; message: string } | null>(null);
@@ -74,12 +83,19 @@ export default function AdminOverridesTab({
         getAdminShiftSlots(spaceId, groupId, "current"),
         getAdminShiftSlotAssignments(spaceId, groupId, "current"),
       ]);
+      setNowMs(Date.now());
       setSlotsResponse(data);
       setSlotAssignments(
         assignments.reduce<Record<string, SlotAssignment[]>>((acc, assignment) => {
           acc[assignment.shiftSlotId] = [
             ...(acc[assignment.shiftSlotId] ?? []),
-            { personId: assignment.personId, personName: assignment.personName },
+            {
+              shiftRequestId: assignment.shiftRequestId,
+              personId: assignment.personId,
+              personName: assignment.personName,
+              attendanceStatus: assignment.attendanceStatus,
+              attendanceRecordedAt: assignment.attendanceRecordedAt,
+            },
           ];
           return acc;
         }, {})
@@ -123,6 +139,11 @@ export default function AdminOverridesTab({
 
   function getMemberDisplayName(member: GroupMemberDto): string {
     return member.displayName ?? member.fullName;
+  }
+
+  function hasSlotStarted(slot: AvailableSlotDto): boolean {
+    const startsAt = new Date(`${slot.date}T${slot.startTime}`);
+    return Number.isNaN(startsAt.getTime()) || startsAt.getTime() <= nowMs;
   }
 
   // ── Assign handlers ──────────────────────────────────────────────────────
@@ -191,6 +212,26 @@ export default function AdminOverridesTab({
     }
   }
 
+  async function handleRecordAttendance(
+    slotId: string,
+    shiftRequestId: string,
+    status: ShiftAttendanceStatus
+  ) {
+    setRecordingAttendanceId(`${shiftRequestId}:${status}`);
+    setSlotActionError(null);
+
+    try {
+      await recordShiftAttendance(spaceId, groupId, shiftRequestId, status);
+      await fetchSlots(false);
+    } catch (err) {
+      const { message } = getSelfServiceErrorMessage(err);
+      setSlotActionError({ slotId, message });
+      await fetchSlots(false);
+    } finally {
+      setRecordingAttendanceId(null);
+    }
+  }
+
   // ── Permission denied state ──────────────────────────────────────────────
   if (!hasSchedulePublishPermission) {
     return (
@@ -239,6 +280,7 @@ export default function AdminOverridesTab({
           const availableMembers = getAvailableMembersForSlot(slot.id);
           const isAssignOpen = assignSlotId === slot.id;
           const hasAvailableMembers = availableMembers.length > 0;
+          const slotStarted = hasSlotStarted(slot);
 
           return (
             <div
@@ -283,19 +325,60 @@ export default function AdminOverridesTab({
                   {assignments.map((assignment) => (
                     <div
                       key={assignment.personId}
-                      className="flex items-center justify-between gap-2 bg-slate-50 rounded-lg px-3 py-2"
+                      className="flex flex-col gap-2 bg-slate-50 rounded-lg px-3 py-2 sm:flex-row sm:items-center sm:justify-between"
                     >
-                      <span className="text-xs text-slate-700 font-medium">
-                        {assignment.personName}
-                      </span>
-                      <button
-                        onClick={() => openRemoveConfirm(slot.id, assignment.personId, assignment.personName)}
-                        className="text-xs text-red-600 hover:text-red-700 border border-red-200 bg-red-50 hover:bg-red-100 px-2 py-1 rounded-lg transition-colors"
-                      >
-                        {t("removeButton")}
-                      </button>
+                      <div className="min-w-0">
+                        <span className="text-xs text-slate-700 font-medium">
+                          {assignment.personName}
+                        </span>
+                        <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                          <span className="text-[11px] font-medium text-slate-500">
+                            {t("attendance.label")}:
+                          </span>
+                          {assignment.attendanceStatus ? (
+                            <span className="rounded-full border border-sky-200 bg-sky-50 px-2 py-0.5 text-[11px] font-semibold text-sky-700">
+                              {t(`attendance.statuses.${assignment.attendanceStatus}`)}
+                            </span>
+                          ) : (
+                            <span className="rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[11px] font-medium text-slate-500">
+                              {t("attendance.unconfirmed")}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        {ATTENDANCE_STATUSES.map((status) => {
+                          const isSelected = assignment.attendanceStatus === status;
+                          const isSaving = recordingAttendanceId === `${assignment.shiftRequestId}:${status}`;
+                          return (
+                            <button
+                              key={status}
+                              type="button"
+                              onClick={() => handleRecordAttendance(slot.id, assignment.shiftRequestId, status)}
+                              disabled={!slotStarted || !!recordingAttendanceId}
+                              title={slotStarted ? t(`attendance.actions.${status}`) : t("attendance.futureDisabled")}
+                              className={`rounded-lg border px-2 py-1 text-[11px] font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+                                isSelected
+                                  ? "border-sky-300 bg-sky-600 text-white"
+                                  : "border-slate-200 bg-white text-slate-600 hover:border-sky-200 hover:bg-sky-50"
+                              }`}
+                            >
+                              {isSaving ? t("attendance.saving") : t(`attendance.actions.${status}`)}
+                            </button>
+                          );
+                        })}
+                        <button
+                          onClick={() => openRemoveConfirm(slot.id, assignment.personId, assignment.personName)}
+                          className="text-xs text-red-600 hover:text-red-700 border border-red-200 bg-red-50 hover:bg-red-100 px-2 py-1 rounded-lg transition-colors"
+                        >
+                          {t("removeButton")}
+                        </button>
+                      </div>
                     </div>
                   ))}
+                  {!slotStarted && (
+                    <p className="text-[11px] text-slate-400">{t("attendance.futureDisabled")}</p>
+                  )}
                 </div>
               )}
 

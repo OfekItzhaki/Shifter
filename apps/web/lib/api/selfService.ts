@@ -186,9 +186,12 @@ export interface UnderScheduledCheckResponse {
 }
 
 export interface ShiftSlotAssignmentDto {
+  shiftRequestId: string;
   shiftSlotId: string;
   personId: string;
   personName: string;
+  attendanceStatus: ShiftAttendanceStatus | null;
+  attendanceRecordedAt: string | null;
 }
 
 // ── Shift Request ────────────────────────────────────────────────────────────

@@ -1989,6 +1989,16 @@ public class SelfServiceScopeTests
         var otherGroupSlot = CreateSlot(spaceId, otherGroup.Id, otherTask.Id, otherGroupCycle.Id, daysFromNow: 4);
         var approvedRequest = ShiftRequest.Create(spaceId, slot.Id, assigned.Id, group.Id, cycle.Id);
         approvedRequest.Approve();
+        var attendance = ShiftAttendanceRecord.Create(
+            spaceId,
+            group.Id,
+            cycle.Id,
+            approvedRequest.Id,
+            slot.Id,
+            assigned.Id,
+            ShiftAttendanceStatus.NoShow,
+            adminUserId,
+            "missed");
         var cancelledRequest = ShiftRequest.Create(spaceId, cancelledSlot.Id, cancelled.Id, group.Id, cycle.Id);
         cancelledRequest.Approve();
         cancelledRequest.Cancel("cancelled");
@@ -2005,6 +2015,7 @@ public class SelfServiceScopeTests
         db.GroupTasks.AddRange(task, otherTask);
         db.ShiftSlots.AddRange(slot, cancelledSlot, otherGroupSlot);
         db.ShiftRequests.AddRange(approvedRequest, cancelledRequest, otherGroupRequest);
+        db.ShiftAttendanceRecords.Add(attendance);
         await db.SaveChangesAsync();
 
         services.Permissions
@@ -2023,9 +2034,12 @@ public class SelfServiceScopeTests
         var ok = result.Should().BeOfType<OkObjectResult>().Subject;
         var rows = ok.Value.Should().BeAssignableTo<IReadOnlyList<ShiftSlotAssignmentResponse>>().Subject;
         rows.Should().ContainSingle();
+        rows[0].ShiftRequestId.Should().Be(approvedRequest.Id);
         rows[0].ShiftSlotId.Should().Be(slot.Id);
         rows[0].PersonId.Should().Be(assigned.Id);
         rows[0].PersonName.Should().Be("Assigned Display");
+        rows[0].AttendanceStatus.Should().Be("NoShow");
+        rows[0].AttendanceRecordedAt.Should().Be(attendance.RecordedAt);
     }
 
     [Fact]

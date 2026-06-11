@@ -2479,7 +2479,23 @@
       "noMembers": "אין חברים זמינים לשיבוץ",
       "alreadyAssigned": "החבר כבר משובץ למשמרת זו",
       "notAssigned": "החבר אינו משובץ למשמרת זו",
-      "memberNotInGroup": "החבר אינו שייך לקבוצה זו"
+      "memberNotInGroup": "החבר אינו שייך לקבוצה זו",
+      "attendance": {
+        "label": "נוכחות",
+        "unconfirmed": "לא אושר",
+        "saving": "שומר...",
+        "futureDisabled": "ניתן לרשום נוכחות לאחר תחילת המשמרת.",
+        "statuses": {
+          "Present": "נכח",
+          "NoShow": "לא הגיע",
+          "Excused": "מאושר"
+        },
+        "actions": {
+          "Present": "נכח",
+          "NoShow": "לא הגיע",
+          "Excused": "מאושר"
+        }
+      }
     },
     "errors": {
       "generic": "אירעה שגיאה. נסה שוב.",

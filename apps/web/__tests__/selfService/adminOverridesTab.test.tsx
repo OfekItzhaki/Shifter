@@ -7,6 +7,7 @@ const mockGetAdminShiftSlots = vi.fn();
 const mockGetAdminShiftSlotAssignments = vi.fn();
 const mockAdminAssignMember = vi.fn();
 const mockAdminRemoveMember = vi.fn();
+const mockRecordShiftAttendance = vi.fn();
 
 const translations: Record<string, string> = {
   "selfService.error": "Error loading data",
@@ -20,6 +21,16 @@ const translations: Record<string, string> = {
   "selfService.adminOverrides.confirmNo": "Cancel",
   "selfService.adminOverrides.noMembers": "No available members",
   "selfService.adminOverrides.removeConfirmTitle": "Remove assignment",
+  "selfService.adminOverrides.attendance.label": "Attendance",
+  "selfService.adminOverrides.attendance.unconfirmed": "Unconfirmed",
+  "selfService.adminOverrides.attendance.saving": "Saving...",
+  "selfService.adminOverrides.attendance.futureDisabled": "Attendance can be recorded after the shift starts.",
+  "selfService.adminOverrides.attendance.statuses.Present": "Present",
+  "selfService.adminOverrides.attendance.statuses.NoShow": "No-show",
+  "selfService.adminOverrides.attendance.statuses.Excused": "Excused",
+  "selfService.adminOverrides.attendance.actions.Present": "Present",
+  "selfService.adminOverrides.attendance.actions.NoShow": "No-show",
+  "selfService.adminOverrides.attendance.actions.Excused": "Excused",
 };
 
 vi.mock("next-intl", () => ({
@@ -38,6 +49,7 @@ vi.mock("@/lib/api/selfService", () => ({
   getAdminShiftSlotAssignments: (...args: unknown[]) => mockGetAdminShiftSlotAssignments(...args),
   adminAssignMember: (...args: unknown[]) => mockAdminAssignMember(...args),
   adminRemoveMember: (...args: unknown[]) => mockAdminRemoveMember(...args),
+  recordShiftAttendance: (...args: unknown[]) => mockRecordShiftAttendance(...args),
 }));
 
 const members: GroupMemberDto[] = [
@@ -85,6 +97,25 @@ const members: GroupMemberDto[] = [
   },
 ];
 
+function makeAssignment(overrides: Partial<{
+  shiftRequestId: string;
+  shiftSlotId: string;
+  personId: string;
+  personName: string;
+  attendanceStatus: "Present" | "NoShow" | "Excused" | null;
+  attendanceRecordedAt: string | null;
+}> = {}) {
+  return {
+    shiftRequestId: "request-1",
+    shiftSlotId: "slot-1",
+    personId: "person-1",
+    personName: "Alice",
+    attendanceStatus: null,
+    attendanceRecordedAt: null,
+    ...overrides,
+  };
+}
+
 describe("AdminOverridesTab", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -107,6 +138,17 @@ describe("AdminOverridesTab", () => {
     mockGetAdminShiftSlotAssignments.mockResolvedValue([]);
     mockAdminAssignMember.mockResolvedValue({ shiftRequestId: "request-1" });
     mockAdminRemoveMember.mockResolvedValue(undefined);
+    mockRecordShiftAttendance.mockResolvedValue({
+      id: "attendance-1",
+      shiftRequestId: "request-1",
+      personId: "person-1",
+      shiftSlotId: "slot-1",
+      schedulingCycleId: "cycle-1",
+      status: "NoShow",
+      note: null,
+      recordedByUserId: "admin-1",
+      recordedAt: "2026-06-20T09:10:00Z",
+    });
   });
 
   it("lets admins manually assign an available member to an unfilled slot", async () => {
@@ -146,11 +188,7 @@ describe("AdminOverridesTab", () => {
     mockGetAdminShiftSlotAssignments
       .mockResolvedValueOnce([])
       .mockResolvedValueOnce([
-        {
-          shiftSlotId: "slot-1",
-          personId: "person-1",
-          personName: "Alice",
-        },
+        makeAssignment(),
       ]);
 
     render(
@@ -229,11 +267,7 @@ describe("AdminOverridesTab", () => {
       });
     mockGetAdminShiftSlotAssignments
       .mockResolvedValueOnce([
-        {
-          shiftSlotId: "slot-1",
-          personId: "person-1",
-          personName: "Alice",
-        },
+        makeAssignment(),
       ])
       .mockResolvedValueOnce([]);
 
@@ -278,16 +312,12 @@ describe("AdminOverridesTab", () => {
       ],
     });
     mockGetAdminShiftSlotAssignments.mockResolvedValue([
-      {
-        shiftSlotId: "slot-1",
-        personId: "person-1",
-        personName: "Alice",
-      },
-      {
-        shiftSlotId: "slot-1",
+      makeAssignment(),
+      makeAssignment({
+        shiftRequestId: "request-2",
         personId: "person-2",
         personName: "Ben Backup",
-      },
+      }),
     ]);
 
     render(
@@ -351,11 +381,7 @@ describe("AdminOverridesTab", () => {
     mockGetAdminShiftSlotAssignments
       .mockResolvedValueOnce([])
       .mockResolvedValueOnce([
-        {
-          shiftSlotId: "slot-1",
-          personId: "person-1",
-          personName: "Alice",
-        },
+        makeAssignment(),
       ]);
 
     render(
@@ -375,5 +401,48 @@ describe("AdminOverridesTab", () => {
     expect(await screen.findByText("Alice")).toBeInTheDocument();
     expect(screen.getByText("1/2")).toBeInTheDocument();
     expect(mockGetAdminShiftSlotAssignments).toHaveBeenCalledTimes(2);
+  });
+
+  it("lets admins record attendance for a started approved assignment", async () => {
+    mockGetAdminShiftSlots.mockResolvedValue({
+      requestWindowOpen: false,
+      requestWindowOpensAt: null,
+      requestWindowClosesAt: "2026-06-19T00:00:00Z",
+      slots: [
+        {
+          id: "slot-1",
+          date: "2026-06-01",
+          startTime: "09:00:00",
+          endTime: "17:00:00",
+          taskName: "Desk",
+          capacity: 1,
+          currentFillCount: 1,
+        },
+      ],
+    });
+    mockGetAdminShiftSlotAssignments
+      .mockResolvedValueOnce([makeAssignment()])
+      .mockResolvedValueOnce([
+        makeAssignment({
+          attendanceStatus: "NoShow",
+          attendanceRecordedAt: "2026-06-01T09:05:00Z",
+        }),
+      ]);
+
+    render(
+      <AdminOverridesTab
+        spaceId="space-1"
+        groupId="group-1"
+        members={members}
+        hasSchedulePublishPermission
+      />
+    );
+
+    fireEvent.click(await screen.findByRole("button", { name: "No-show" }));
+
+    await waitFor(() => {
+      expect(mockRecordShiftAttendance).toHaveBeenCalledWith("space-1", "group-1", "request-1", "NoShow");
+    });
+    expect((await screen.findAllByText("No-show")).length).toBeGreaterThan(1);
   });
 });
