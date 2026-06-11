@@ -80,6 +80,7 @@ describe("AbsenceReportsTab", () => {
   it("defaults admin review queues to pending and can switch to all or handled requests", async () => {
     mockGetAbsenceReports.mockResolvedValue([
       makeAbsenceReport("absence-pending", "Pending", "Pending absence reason"),
+      makeAbsenceReport("absence-late", "Pending", "Late absence reason", true),
       makeAbsenceReport("absence-approved", "Approved", "Approved absence reason"),
     ]);
     mockGetShiftChangeRequests.mockResolvedValue([
@@ -95,6 +96,9 @@ describe("AbsenceReportsTab", () => {
     render(<AbsenceReportsTab spaceId="space-1" groupId="group-1" />);
 
     await waitFor(() => expect(screen.getByText("Pending absence reason")).toBeInTheDocument());
+    expect(screen.getByText("Late absence reason")).toBeInTheDocument();
+    expect(screen.getByText("Late absence reason").compareDocumentPosition(screen.getByText("Pending absence reason")))
+      .toBe(Node.DOCUMENT_POSITION_FOLLOWING);
     expect(screen.getByText("Pending change reason")).toBeInTheDocument();
     expect(screen.getByText("Pending leave reason")).toBeInTheDocument();
     expect(screen.queryByText("Approved absence reason")).not.toBeInTheDocument();
@@ -116,7 +120,7 @@ describe("AbsenceReportsTab", () => {
   });
 });
 
-function makeAbsenceReport(id: string, status: "Pending" | "Approved" | "Rejected", reason: string) {
+function makeAbsenceReport(id: string, status: "Pending" | "Approved" | "Rejected", reason: string, isLate = false) {
   return {
     id,
     shiftRequestId: `${id}-request`,
@@ -128,7 +132,7 @@ function makeAbsenceReport(id: string, status: "Pending" | "Approved" | "Rejecte
     endTime: "16:00:00",
     taskName: "Desk",
     reason,
-    isLate: false,
+    isLate,
     status,
     reportedAt: "2026-06-10T08:00:00Z",
     adminNote: null,

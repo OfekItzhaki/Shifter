@@ -52,6 +52,21 @@ function pendingFirst<T extends { status: string }>(items: T[]): T[] {
   });
 }
 
+function sortAbsenceReportsForReview(items: AbsenceReportDto[]): AbsenceReportDto[] {
+  return [...items].sort((a, b) => {
+    if (a.status !== b.status) {
+      if (a.status === "Pending") return -1;
+      if (b.status === "Pending") return 1;
+    }
+
+    if (a.status === "Pending" && b.status === "Pending" && a.isLate !== b.isLate) {
+      return a.isLate ? -1 : 1;
+    }
+
+    return new Date(b.reportedAt).getTime() - new Date(a.reportedAt).getTime();
+  });
+}
+
 function countPending(items: { status: string }[]): number {
   return items.filter((item) => item.status === "Pending").length;
 }
@@ -249,7 +264,7 @@ export default function AbsenceReportsTab({ spaceId, groupId, onReviewed }: Prop
   const visibleReports = filterReviewItems(reports, queueFilter);
   const visibleChangeRequests = filterReviewItems(changeRequests, queueFilter);
   const visibleLeaveRequests = filterReviewItems(leaveRequests, queueFilter);
-  const sortedReports = pendingFirst(visibleReports);
+  const sortedReports = sortAbsenceReportsForReview(visibleReports);
   const sortedChangeRequests = pendingFirst(visibleChangeRequests);
   const sortedLeaveRequests = pendingFirst(visibleLeaveRequests);
   const reportPendingCount = countPending(reports);
