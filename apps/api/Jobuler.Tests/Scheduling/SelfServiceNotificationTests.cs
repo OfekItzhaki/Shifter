@@ -88,6 +88,68 @@ public class SelfServiceNotificationTests
     }
 
     [Fact]
+    public async Task CancelRequestAsync_NotifiesSpaceAdminsAndAuditsCancellation()
+    {
+        using var db = CreateDb();
+        var notifications = Substitute.For<INotificationService>();
+        var audit = CreateAuditLogger();
+        var (spaceId, groupId, cycleId, taskId, _) = SeedBaseData(db);
+
+        var linkedUserId = Guid.NewGuid();
+        var person = Person.Create(spaceId, "Alex Member", linkedUserId: linkedUserId);
+        var slot = AddSlot(db, spaceId, groupId, taskId, cycleId, daysFromNow: 2);
+        slot.IncrementFillCount();
+
+        var request = ShiftRequest.Create(spaceId, slot.Id, person.Id, groupId, cycleId);
+        request.Approve();
+
+        db.People.Add(person);
+        db.ShiftRequests.Add(request);
+        await db.SaveChangesAsync();
+
+        var service = new ShiftRequestService(
+            db,
+            Substitute.For<ISlotLockService>(),
+            TimeProvider.System,
+            NullLogger<ShiftRequestService>.Instance,
+            notifications,
+            Substitute.For<IPushNotificationSender>(),
+            audit);
+
+        var result = await service.CancelRequestAsync(person.Id, request.Id, "Family issue");
+
+        result.Success.Should().BeTrue();
+
+        var updatedRequest = await db.ShiftRequests.SingleAsync(r => r.Id == request.Id);
+        updatedRequest.Status.Should().Be(ShiftRequestStatus.Cancelled);
+
+        await notifications.Received(1).NotifySpaceAdminsAsync(
+            spaceId,
+            "self_service.shift_cancelled",
+            "Shift Cancelled",
+            Arg.Is<string>(body => body.Contains("Alex Member") && body.Contains("Guard")),
+            Arg.Is<string>(metadata => metadata.Contains("\"reason\":\"Family issue\"")),
+            groupId,
+            Arg.Any<CancellationToken>());
+
+        await audit.Received(1).LogAsync(
+            spaceId,
+            linkedUserId,
+            "self_service.cancel_shift",
+            "shift_request",
+            request.Id,
+            Arg.Is<string?>(json => json != null
+                && json.Contains(request.Id.ToString())
+                && json.Contains("\"shift_request_status\":\"approved\"")),
+            Arg.Is<string?>(json => json != null
+                && json.Contains(request.Id.ToString())
+                && json.Contains("\"shift_request_status\":\"cancelled\"")
+                && json.Contains("\"cancellation_reason\":\"Family issue\"")),
+            Arg.Is<string?>(ipAddress => ipAddress == null),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task AcceptSwapAsync_CreatesAcceptedNotifications_ForBothMembers()
     {
         using var db = CreateDb();

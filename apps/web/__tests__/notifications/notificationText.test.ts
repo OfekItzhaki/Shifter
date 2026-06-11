@@ -6,6 +6,7 @@ import { getNotificationText } from "../../lib/notifications/messageText";
 const SELF_SERVICE_NOTIFICATION_EVENTS = [
   "request_approved",
   "request_rejected",
+  "shift_cancelled",
   "absence_reported",
   "absence_approved",
   "absence_rejected",

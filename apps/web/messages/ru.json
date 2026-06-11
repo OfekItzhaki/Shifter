@@ -1221,6 +1221,10 @@
           "title": "Смена отклонена",
           "body": "Ваш запрос на смену отклонён — слот заполнен."
         },
+        "shift_cancelled": {
+          "title": "Shift Cancelled",
+          "body": "A member cancelled an approved shift."
+        },
         "absence_reported": {
           "title": "Absence Reported",
           "body": "A member reported they cannot attend a shift."

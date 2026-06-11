@@ -256,6 +256,12 @@ public class ShiftRequestService : IShiftRequestService
                         ErrorMessage: "Only approved requests may be cancelled.");
                 }
 
+                var actorUserId = await _db.People
+                    .AsNoTracking()
+                    .Where(p => p.Id == personId && p.SpaceId == shiftRequest.SpaceId)
+                    .Select(p => p.LinkedUserId)
+                    .FirstOrDefaultAsync(ct);
+
                 // Load the associated slot to check cancellation window
                 var slot = await _db.ShiftSlots
                     .FirstOrDefaultAsync(s => s.Id == shiftRequest.ShiftSlotId, ct);
@@ -305,7 +311,9 @@ public class ShiftRequestService : IShiftRequestService
                 shiftRequest.Cancel(reason);
 
                 // Req 8.1: Decrement slot's CurrentFillCount
+                var fillCountBeforeCancel = slot.CurrentFillCount;
                 slot.DecrementFillCount();
+                var fillCountAfterCancel = slot.CurrentFillCount;
 
                 await _db.SaveChangesAsync(ct);
 
@@ -342,11 +350,43 @@ public class ShiftRequestService : IShiftRequestService
                     }
                 }
 
+                await _audit.LogAsync(
+                    shiftRequest.SpaceId,
+                    actorUserId,
+                    "self_service.cancel_shift",
+                    "shift_request",
+                    shiftRequest.Id,
+                    beforeJson: JsonSerializer.Serialize(new
+                    {
+                        shift_request_id = shiftRequest.Id,
+                        shift_request_status = "approved",
+                        shift_slot_id = slot.Id,
+                        person_id = personId,
+                        group_id = shiftRequest.GroupId,
+                        scheduling_cycle_id = shiftRequest.SchedulingCycleId,
+                        fill_count = fillCountBeforeCancel
+                    }),
+                    afterJson: JsonSerializer.Serialize(new
+                    {
+                        shift_request_id = shiftRequest.Id,
+                        shift_request_status = "cancelled",
+                        shift_slot_id = slot.Id,
+                        person_id = personId,
+                        group_id = shiftRequest.GroupId,
+                        scheduling_cycle_id = shiftRequest.SchedulingCycleId,
+                        cancellation_reason = shiftRequest.CancellationReason,
+                        fill_count = fillCountAfterCancel,
+                        waitlist_processing_requested = _waitlistService is not null
+                    }),
+                    ct: ct);
+
                 await transaction.CommitAsync(ct);
 
                 _logger.LogInformation(
                     "Shift request {RequestId} cancelled by person {PersonId} for slot {SlotId}. Reason: {Reason}",
                     shiftRequestId, personId, slot.Id, reason);
+
+                await SendShiftCancelledNotificationAsync(personId, slot, shiftRequest.Id, reason, ct);
 
                 return new CancellationResult(
                     Success: true,
@@ -845,6 +885,61 @@ public class ShiftRequestService : IShiftRequestService
             _logger.LogError(ex,
                 "Failed to send absence reported notification for report {ReportId}, person {PersonId}",
                 absenceReportId, personId);
+        }
+    }
+
+    private async Task SendShiftCancelledNotificationAsync(
+        Guid personId,
+        ShiftSlot slot,
+        Guid shiftRequestId,
+        string reason,
+        CancellationToken ct)
+    {
+        try
+        {
+            var personName = await _db.People
+                .AsNoTracking()
+                .Where(p => p.Id == personId && p.SpaceId == slot.SpaceId)
+                .Select(p => p.FullName)
+                .FirstOrDefaultAsync(ct) ?? "A member";
+
+            var taskName = await _db.GroupTasks
+                .AsNoTracking()
+                .Where(t => t.Id == slot.GroupTaskId)
+                .Select(t => t.Name)
+                .FirstOrDefaultAsync(ct) ?? "Shift";
+
+            var title = "Shift Cancelled";
+            var body = $"{personName} cancelled {taskName} on {slot.Date:MMM dd} ({slot.StartTime:HH:mm}-{slot.EndTime:HH:mm}).";
+
+            await _notificationService.NotifySpaceAdminsAsync(
+                slot.SpaceId,
+                "self_service.shift_cancelled",
+                title,
+                body,
+                JsonSerializer.Serialize(new
+                {
+                    shiftRequestId,
+                    shiftSlotId = slot.Id,
+                    groupId = slot.GroupId,
+                    schedulingCycleId = slot.SchedulingCycleId,
+                    personId,
+                    personName,
+                    date = slot.Date,
+                    startTime = slot.StartTime.ToString("HH:mm"),
+                    endTime = slot.EndTime.ToString("HH:mm"),
+                    taskName,
+                    reason
+                }),
+                slot.GroupId,
+                ct);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex,
+                "Failed to send shift cancelled notification for person {PersonId}, slot {SlotId}",
+                personId,
+                slot.Id);
         }
     }
 }

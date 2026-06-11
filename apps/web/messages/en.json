@@ -1221,6 +1221,10 @@
           "title": "Shift Rejected",
           "body": "Your shift request was rejected — the slot is full."
         },
+        "shift_cancelled": {
+          "title": "Shift Cancelled",
+          "body": "A member cancelled an approved shift."
+        },
         "absence_reported": {
           "title": "Absence Reported",
           "body": "A member reported they cannot attend a shift."

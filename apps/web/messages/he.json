@@ -1226,6 +1226,10 @@
           "title": "משמרת נדחתה",
           "body": "בקשת המשמרת נדחתה — המשבצת מלאה."
         },
+        "shift_cancelled": {
+          "title": "Shift Cancelled",
+          "body": "A member cancelled an approved shift."
+        },
         "absence_reported": {
           "title": "Absence Reported",
           "body": "A member reported they cannot attend a shift."
