@@ -73,9 +73,11 @@ export default function ShiftTemplatesTab({ spaceId, groupId, tasks }: ShiftTemp
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
   // ── Fetch templates ──────────────────────────────────────────────────────
-  const fetchTemplates = useCallback(async () => {
+  const fetchTemplates = useCallback(async (showLoading = true) => {
     try {
-      setLoading(true);
+      if (showLoading) {
+        setLoading(true);
+      }
       setError(null);
       const data = await listShiftTemplates(spaceId, groupId);
       setTemplates(data.filter((tpl) => !tpl.isDeleted));
@@ -83,12 +85,14 @@ export default function ShiftTemplatesTab({ spaceId, groupId, tasks }: ShiftTemp
       const { message } = getSelfServiceErrorMessage(err);
       setError(message);
     } finally {
-      setLoading(false);
+      if (showLoading) {
+        setLoading(false);
+      }
     }
   }, [spaceId, groupId]);
 
   useEffect(() => {
-    void Promise.resolve().then(fetchTemplates);
+    void Promise.resolve().then(() => fetchTemplates());
   }, [fetchTemplates]);
 
   // ── Day name helper ──────────────────────────────────────────────────────
@@ -149,6 +153,7 @@ export default function ShiftTemplatesTab({ spaceId, groupId, tasks }: ShiftTemp
     } catch (err) {
       const { message } = getSelfServiceErrorMessage(err);
       setCreateError(message);
+      await fetchTemplates(false);
     } finally {
       setCreating(false);
     }
@@ -213,6 +218,7 @@ export default function ShiftTemplatesTab({ spaceId, groupId, tasks }: ShiftTemp
     } catch (err) {
       const { message } = getSelfServiceErrorMessage(err);
       setEditError(message);
+      await fetchTemplates(false);
     } finally {
       setSaving(false);
     }
@@ -241,6 +247,7 @@ export default function ShiftTemplatesTab({ spaceId, groupId, tasks }: ShiftTemp
     } catch (err) {
       const { message } = getSelfServiceErrorMessage(err);
       setDeleteError(message);
+      await fetchTemplates(false);
     } finally {
       setDeleting(false);
     }
@@ -253,7 +260,7 @@ export default function ShiftTemplatesTab({ spaceId, groupId, tasks }: ShiftTemp
 
   // ── Error state ──────────────────────────────────────────────────────────
   if (error) {
-    return <ErrorRetry message={error} onRetry={fetchTemplates} />;
+    return <ErrorRetry message={error} onRetry={() => fetchTemplates()} />;
   }
 
   // ── Render ───────────────────────────────────────────────────────────────

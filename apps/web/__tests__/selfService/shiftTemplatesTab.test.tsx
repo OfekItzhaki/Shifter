@@ -218,4 +218,28 @@ describe("ShiftTemplatesTab", () => {
     expect(await screen.findByText("Start must be before end")).toBeInTheDocument();
     expect(mockCreateShiftTemplate).not.toHaveBeenCalled();
   });
+
+  it("refreshes templates after a stale delete failure", async () => {
+    mockListShiftTemplates
+      .mockResolvedValueOnce([makeTemplate()])
+      .mockResolvedValueOnce([]);
+    mockDeleteShiftTemplate.mockRejectedValue({
+      response: {
+        status: 404,
+        data: { detail: "Shift template was already deleted." },
+      },
+    });
+
+    render(<ShiftTemplatesTab spaceId="space-1" groupId="group-1" tasks={tasks} />);
+
+    expect((await screen.findAllByText(hasText("Front desk"))).length).toBeGreaterThan(0);
+    fireEvent.click(screen.getByRole("button", { name: "Delete" }));
+    fireEvent.click(screen.getByRole("button", { name: "Delete template" }));
+
+    expect(await screen.findByText("Shift template was already deleted.")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(mockListShiftTemplates).toHaveBeenCalledTimes(2);
+    });
+    expect(await screen.findByText("No templates")).toBeInTheDocument();
+  });
 });
