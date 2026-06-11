@@ -400,6 +400,58 @@ public class SelfServiceNotificationTests
     }
 
     [Fact]
+    public async Task ProcessRequestAsync_RejectsOverlappingApprovedShift()
+    {
+        using var db = CreateDb();
+        var notifications = Substitute.For<INotificationService>();
+        var audit = CreateAuditLogger();
+        var (spaceId, groupId, cycleId, taskId, _) = SeedBaseData(db);
+
+        db.SelfServiceConfigs.Add(SelfServiceConfig.Create(
+            spaceId,
+            groupId,
+            minShiftsPerCycle: 0,
+            maxShiftsPerCycle: 5,
+            requestWindowOpenOffsetHours: 48,
+            requestWindowCloseOffsetHours: 12,
+            cancellationCutoffHours: 24,
+            maxLateCancellationsPerCycle: 2,
+            lateCancellationWindowHours: 24,
+            waitlistOfferMinutes: 60,
+            cycleDurationDays: 7));
+
+        var person = Person.Create(spaceId, "Overlap Member", linkedUserId: Guid.NewGuid());
+        var existingSlot = AddSlot(db, spaceId, groupId, taskId, cycleId, daysFromNow: 2);
+        var targetSlot = AddSlot(db, spaceId, groupId, taskId, cycleId, daysFromNow: 2);
+        var existingRequest = AddApprovedRequest(db, spaceId, groupId, cycleId, person.Id, existingSlot);
+
+        db.People.Add(person);
+        db.GroupMemberships.Add(GroupMembership.Create(spaceId, groupId, person.Id));
+        await db.SaveChangesAsync();
+
+        var lockService = Substitute.For<ISlotLockService>();
+        lockService.TryAcquireSlotLockAsync(targetSlot.Id, Arg.Any<TimeSpan>(), Arg.Any<CancellationToken>())
+            .Returns(true);
+
+        var service = new ShiftRequestService(
+            db,
+            lockService,
+            TimeProvider.System,
+            NullLogger<ShiftRequestService>.Instance,
+            notifications,
+            Substitute.For<IPushNotificationSender>(),
+            audit);
+
+        var result = await service.ProcessRequestAsync(person.Id, targetSlot.Id);
+
+        result.Success.Should().BeFalse();
+        result.RejectionReason.Should().Be("This shift overlaps with an existing approved shift.");
+        (await db.ShiftRequests.CountAsync(r => r.PersonId == person.Id)).Should().Be(1);
+        (await db.ShiftRequests.SingleAsync(r => r.Id == existingRequest.Id)).Status.Should().Be(ShiftRequestStatus.Approved);
+        (await db.ShiftSlots.SingleAsync(s => s.Id == targetSlot.Id)).CurrentFillCount.Should().Be(0);
+    }
+
+    [Fact]
     public async Task AcceptSwapAsync_CreatesAcceptedNotifications_ForBothMembers()
     {
         using var db = CreateDb();
@@ -1269,6 +1321,50 @@ public class SelfServiceNotificationTests
 
         (await db.ShiftRequests.CountAsync()).Should().Be(0);
         (await db.ShiftSlots.SingleAsync(s => s.Id == slot.Id)).CurrentFillCount.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task AdminAssignShiftCommand_RejectsOverlappingApprovedShift()
+    {
+        using var db = CreateDb();
+        var (spaceId, groupId, cycleId, taskId, _) = SeedBaseData(db);
+        var member = Person.Create(spaceId, "Assigned Member", linkedUserId: Guid.NewGuid());
+        var existingSlot = AddSlot(db, spaceId, groupId, taskId, cycleId, daysFromNow: 2);
+        var targetSlot = AddSlot(db, spaceId, groupId, taskId, cycleId, daysFromNow: 2);
+        var existingRequest = AddApprovedRequest(db, spaceId, groupId, cycleId, member.Id, existingSlot);
+
+        db.People.Add(member);
+        db.GroupMemberships.Add(GroupMembership.Create(spaceId, groupId, member.Id));
+        await db.SaveChangesAsync();
+
+        var permissions = Substitute.For<IPermissionService>();
+        permissions
+            .RequirePermissionAsync(Arg.Any<Guid>(), spaceId, Permissions.SchedulePublish, Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+        var audit = CreateAuditLogger();
+        var pushSender = Substitute.For<IPushNotificationSender>();
+
+        var handler = new AdminAssignShiftCommandHandler(
+            db,
+            permissions,
+            audit,
+            pushSender,
+            NullLogger<AdminAssignShiftCommandHandler>.Instance);
+
+        var act = () => handler.Handle(
+            new AdminAssignShiftCommand(spaceId, groupId, targetSlot.Id, member.Id, Guid.NewGuid()),
+            CancellationToken.None);
+
+        await act.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("The member already has an approved shift that overlaps this slot.");
+
+        (await db.ShiftRequests.CountAsync(r => r.PersonId == member.Id)).Should().Be(1);
+        (await db.ShiftRequests.SingleAsync(r => r.Id == existingRequest.Id)).Status.Should().Be(ShiftRequestStatus.Approved);
+        (await db.ShiftSlots.SingleAsync(s => s.Id == targetSlot.Id)).CurrentFillCount.Should().Be(0);
+        await audit.DidNotReceiveWithAnyArgs()
+            .LogAsync(default, default, default!, default, default, default, default, default, default);
+        await pushSender.DidNotReceiveWithAnyArgs()
+            .SendPushToUserAsync(default, default, default!, default);
     }
 
     [Fact]

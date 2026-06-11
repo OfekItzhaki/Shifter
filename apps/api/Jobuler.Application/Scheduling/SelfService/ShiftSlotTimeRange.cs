@@ -1,0 +1,19 @@
+using Jobuler.Domain.Scheduling;
+
+namespace Jobuler.Application.Scheduling.SelfService;
+
+internal static class ShiftSlotTimeRange
+{
+    public static DateTime StartsAtUtc(ShiftSlot slot) =>
+        slot.Date.ToDateTime(slot.StartTime, DateTimeKind.Utc);
+
+    public static DateTime EndsAtUtc(ShiftSlot slot)
+    {
+        var startsAt = StartsAtUtc(slot);
+        var endsAt = slot.Date.ToDateTime(slot.EndTime, DateTimeKind.Utc);
+        return endsAt <= startsAt ? endsAt.AddDays(1) : endsAt;
+    }
+
+    public static bool Overlaps(ShiftSlot left, ShiftSlot right) =>
+        StartsAtUtc(left) < EndsAtUtc(right) && StartsAtUtc(right) < EndsAtUtc(left);
+}

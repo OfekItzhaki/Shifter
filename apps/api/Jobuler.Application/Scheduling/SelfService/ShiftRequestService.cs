@@ -140,6 +140,17 @@ public class ShiftRequestService : IShiftRequestService
                         AlternativeSlots: null);
                 }
 
+                var hasOverlappingApprovedShift = await HasOverlappingApprovedShiftAsync(personId, slot, ct);
+                if (hasOverlappingApprovedShift)
+                {
+                    await transaction.RollbackAsync(ct);
+                    return new ShiftRequestResult(
+                        Success: false,
+                        ShiftRequestId: null,
+                        RejectionReason: "This shift overlaps with an existing approved shift.",
+                        AlternativeSlots: null);
+                }
+
                 // Req 4.5: Check Max_Shifts constraint
                 var config = await _db.SelfServiceConfigs
                     .AsNoTracking()
@@ -615,6 +626,27 @@ public class ShiftRequestService : IShiftRequestService
         request.SpaceId == slot.SpaceId
         && request.GroupId == slot.GroupId
         && request.SchedulingCycleId == slot.SchedulingCycleId;
+
+    private async Task<bool> HasOverlappingApprovedShiftAsync(Guid personId, ShiftSlot targetSlot, CancellationToken ct)
+    {
+        var targetDate = targetSlot.Date;
+        var candidateSlots = await _db.ShiftRequests
+            .AsNoTracking()
+            .Where(r => r.SpaceId == targetSlot.SpaceId
+                        && r.PersonId == personId
+                        && r.Status == ShiftRequestStatus.Approved)
+            .Join(
+                _db.ShiftSlots.AsNoTracking(),
+                request => request.ShiftSlotId,
+                slot => slot.Id,
+                (request, slot) => slot)
+            .Where(slot => slot.Id != targetSlot.Id
+                           && slot.Date >= targetDate.AddDays(-1)
+                           && slot.Date <= targetDate.AddDays(1))
+            .ToListAsync(ct);
+
+        return candidateSlots.Any(slot => ShiftSlotTimeRange.Overlaps(slot, targetSlot));
+    }
 
     /// <summary>
     /// Returns up to 5 alternative available slots for the same day as the target slot.
