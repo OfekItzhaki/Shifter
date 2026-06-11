@@ -191,7 +191,30 @@ public class AcceptWaitlistOfferCommandHandler : IRequestHandler<AcceptWaitlistO
                               "You have been removed from the waitlist.");
         }
 
-        // All validations passed — accept the offer and create a shift request
+        var assignmentConflict = await ShiftAssignmentSafety.FindApprovedAssignmentConflictAsync(_db, request.PersonId, slot, ct);
+        if (assignmentConflict != ShiftAssignmentConflictKind.None)
+        {
+            await using var transaction = await _db.Database.BeginTransactionAsync(ct);
+            entry.Remove();
+            await _db.SaveChangesAsync(ct);
+
+            await _waitlistService.ProcessSlotReleasedAsync(request.ShiftSlotId, ct);
+            await transaction.CommitAsync(ct);
+
+            _logger.LogInformation(
+                "Person {PersonId} failed assignment safety validation on waitlist acceptance for slot {SlotId}. " +
+                "Removed from waitlist and cascading to next member. Conflict: {ConflictKind}.",
+                request.PersonId, request.ShiftSlotId, assignmentConflict);
+
+            return new AcceptWaitlistOfferResult(
+                Success: false,
+                ShiftRequestId: null,
+                ErrorMessage: assignmentConflict == ShiftAssignmentConflictKind.Overlap
+                    ? "This shift overlaps with an existing approved shift."
+                    : "This shift does not leave enough rest time after an existing approved shift.");
+        }
+
+        // All validations passed - accept the offer and create a shift request
         entry.Accept();
 
         var shiftRequest = ShiftRequest.Create(

@@ -251,6 +251,114 @@ public class WaitlistServiceTests
     }
 
     [Fact]
+    public async Task AcceptWaitlistOffer_RejectsWhenOfferWouldOverlapApprovedShift()
+    {
+        using var db = CreateDb();
+        var (spaceId, groupId, cycleId, taskId) = SeedBaseData(db);
+        var offeredPerson = Person.Create(spaceId, "Offered", linkedUserId: Guid.NewGuid());
+        var shiftDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(2));
+        var existingSlot = CreateSlot(spaceId, groupId, taskId, cycleId, shiftDate, new TimeOnly(10, 0), new TimeOnly(14, 0));
+        var offeredSlot = CreateSlot(spaceId, groupId, taskId, cycleId, shiftDate, new TimeOnly(12, 0), new TimeOnly(16, 0));
+        var existingRequest = ShiftRequest.Create(spaceId, existingSlot.Id, offeredPerson.Id, groupId, cycleId);
+        existingRequest.Approve();
+        existingSlot.IncrementFillCount();
+        var entry = WaitlistEntry.Create(spaceId, offeredSlot.Id, offeredPerson.Id, position: 1);
+        entry.Offer(DateTime.UtcNow.AddMinutes(30));
+
+        db.People.Add(offeredPerson);
+        db.ShiftSlots.AddRange(existingSlot, offeredSlot);
+        db.ShiftRequests.Add(existingRequest);
+        db.WaitlistEntries.Add(entry);
+        await db.SaveChangesAsync();
+
+        var waitlistService = Substitute.For<IWaitlistService>();
+        var pushSender = Substitute.For<IPushNotificationSender>();
+        var notificationService = Substitute.For<INotificationService>();
+        var handler = new AcceptWaitlistOfferCommandHandler(
+            db,
+            waitlistService,
+            pushSender,
+            notificationService,
+            NullLogger<AcceptWaitlistOfferCommandHandler>.Instance);
+
+        var result = await handler.Handle(
+            new AcceptWaitlistOfferCommand(spaceId, offeredPerson.Id, offeredSlot.Id),
+            CancellationToken.None);
+
+        result.Success.Should().BeFalse();
+        result.ErrorMessage.Should().Be("This shift overlaps with an existing approved shift.");
+        result.ShiftRequestId.Should().BeNull();
+
+        var updatedEntry = await db.WaitlistEntries.SingleAsync(e => e.Id == entry.Id);
+        updatedEntry.Status.Should().Be(WaitlistEntryStatus.Removed);
+        (await db.ShiftRequests.CountAsync()).Should().Be(1);
+
+        var updatedOfferedSlot = await db.ShiftSlots.SingleAsync(s => s.Id == offeredSlot.Id);
+        updatedOfferedSlot.CurrentFillCount.Should().Be(0);
+
+        await waitlistService.Received(1)
+            .ProcessSlotReleasedAsync(offeredSlot.Id, Arg.Any<CancellationToken>());
+        await pushSender.DidNotReceiveWithAnyArgs()
+            .SendPushToUserAsync(default, default, default!, default);
+        await notificationService.DidNotReceiveWithAnyArgs()
+            .NotifySpaceAdminsAsync(default, default!, default!, default!, default!, default, default);
+    }
+
+    [Fact]
+    public async Task AcceptWaitlistOffer_RejectsWhenOfferWouldViolateRestWindow()
+    {
+        using var db = CreateDb();
+        var (spaceId, groupId, cycleId, taskId) = SeedBaseData(db);
+        var offeredPerson = Person.Create(spaceId, "Offered", linkedUserId: Guid.NewGuid());
+        var shiftDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(2));
+        var existingSlot = CreateSlot(spaceId, groupId, taskId, cycleId, shiftDate, new TimeOnly(8, 0), new TimeOnly(12, 0));
+        var offeredSlot = CreateSlot(spaceId, groupId, taskId, cycleId, shiftDate, new TimeOnly(18, 0), new TimeOnly(22, 0));
+        var existingRequest = ShiftRequest.Create(spaceId, existingSlot.Id, offeredPerson.Id, groupId, cycleId);
+        existingRequest.Approve();
+        existingSlot.IncrementFillCount();
+        var entry = WaitlistEntry.Create(spaceId, offeredSlot.Id, offeredPerson.Id, position: 1);
+        entry.Offer(DateTime.UtcNow.AddMinutes(30));
+
+        db.People.Add(offeredPerson);
+        db.ShiftSlots.AddRange(existingSlot, offeredSlot);
+        db.ShiftRequests.Add(existingRequest);
+        db.WaitlistEntries.Add(entry);
+        await db.SaveChangesAsync();
+
+        var waitlistService = Substitute.For<IWaitlistService>();
+        var pushSender = Substitute.For<IPushNotificationSender>();
+        var notificationService = Substitute.For<INotificationService>();
+        var handler = new AcceptWaitlistOfferCommandHandler(
+            db,
+            waitlistService,
+            pushSender,
+            notificationService,
+            NullLogger<AcceptWaitlistOfferCommandHandler>.Instance);
+
+        var result = await handler.Handle(
+            new AcceptWaitlistOfferCommand(spaceId, offeredPerson.Id, offeredSlot.Id),
+            CancellationToken.None);
+
+        result.Success.Should().BeFalse();
+        result.ErrorMessage.Should().Be("This shift does not leave enough rest time after an existing approved shift.");
+        result.ShiftRequestId.Should().BeNull();
+
+        var updatedEntry = await db.WaitlistEntries.SingleAsync(e => e.Id == entry.Id);
+        updatedEntry.Status.Should().Be(WaitlistEntryStatus.Removed);
+        (await db.ShiftRequests.CountAsync()).Should().Be(1);
+
+        var updatedOfferedSlot = await db.ShiftSlots.SingleAsync(s => s.Id == offeredSlot.Id);
+        updatedOfferedSlot.CurrentFillCount.Should().Be(0);
+
+        await waitlistService.Received(1)
+            .ProcessSlotReleasedAsync(offeredSlot.Id, Arg.Any<CancellationToken>());
+        await pushSender.DidNotReceiveWithAnyArgs()
+            .SendPushToUserAsync(default, default, default!, default);
+        await notificationService.DidNotReceiveWithAnyArgs()
+            .NotifySpaceAdminsAsync(default, default!, default!, default!, default!, default, default);
+    }
+
+    [Fact]
     public async Task AcceptWaitlistOffer_RejectsStaleOffer_WhenSlotNoLongerHasCapacity()
     {
         using var db = CreateDb();
@@ -628,17 +736,21 @@ public class WaitlistServiceTests
         Guid spaceId,
         Guid groupId,
         Guid taskId,
-        Guid cycleId) =>
+        Guid cycleId,
+        DateOnly? date = null,
+        TimeOnly? startTime = null,
+        TimeOnly? endTime = null,
+        int capacity = 1) =>
         ShiftSlot.Create(
             spaceId,
             groupId,
             taskId,
             shiftTemplateId: Guid.NewGuid(),
             schedulingCycleId: cycleId,
-            date: DateOnly.FromDateTime(DateTime.UtcNow.AddDays(2)),
-            startTime: new TimeOnly(8, 0),
-            endTime: new TimeOnly(16, 0),
-            capacity: 1);
+            date: date ?? DateOnly.FromDateTime(DateTime.UtcNow.AddDays(2)),
+            startTime: startTime ?? new TimeOnly(8, 0),
+            endTime: endTime ?? new TimeOnly(16, 0),
+            capacity: capacity);
 
     private sealed class FixedTimeProvider(DateTimeOffset utcNow) : TimeProvider
     {
