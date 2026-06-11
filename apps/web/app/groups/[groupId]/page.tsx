@@ -37,7 +37,7 @@ const ShiftTemplatesTab = lazy(() => import("@/components/groups/selfService/Shi
 const SelfServiceConfigTab = lazy(() => import("@/components/groups/selfService/SelfServiceConfigTab"));
 const AbsenceReportsTab = lazy(() => import("@/components/groups/selfService/AbsenceReportsTab"));
 const AdminOverridesTab = lazy(() => import("./tabs/AdminOverridesTab"));
-import { ActiveTab, ADMIN_ONLY_TABS, AUTO_GENERATED_TABS, SELF_SERVICE_MEMBER_TABS, SELF_SERVICE_ADMIN_TABS, ScheduleAssignment } from "./types";
+import { ActiveTab, ScheduleAssignment, getSelfServiceTabBadges, getVisibleGroupTabs } from "./types";
 import { useSpaceStore } from "@/lib/store/spaceStore";
 import { useAuthStore } from "@/lib/store/authStore";
 import { useAdminSessionStore } from "@/lib/store/adminSessionStore";
@@ -95,8 +95,6 @@ function getTabLabels(t: (key: string) => string, tSelfService: (key: string) =>
     "admin-overrides": tSelfService("tabs.adminOverrides"),
   };
 }
-
-const ALL_TABS: ActiveTab[] = ["schedule", "live-status", "members", "qualifications", "roles", "alerts", "messages", "tasks", "constraints", "stats", "settings"];
 
 // ── Main component ───────────────────────────────────────────────────────────
 export default function GroupDetailPage() {
@@ -1353,28 +1351,14 @@ export default function GroupDetailPage() {
 
   if (!group) return null;
 
-  const isSelfService = group.schedulingMode === "SelfService";
-
-  const visibleTabs = (() => {
-    if (isSelfService) {
-      return isAdmin ? SELF_SERVICE_ADMIN_TABS : SELF_SERVICE_MEMBER_TABS;
-    }
-    // Auto-generated mode: filter based on admin status
-    return ALL_TABS.filter(t => {
-      if (isAdmin) return true;
-      if (ADMIN_ONLY_TABS.includes(t)) return false;
-      if (t === "stats" && !group.allowMembersViewStats) return false;
-      return true;
-    });
-  })();
+  const visibleTabs = getVisibleGroupTabs({
+    schedulingMode: group.schedulingMode,
+    isAdmin,
+    allowMembersViewStats: group.allowMembersViewStats,
+  });
   const avatarColor = getAvatarColor(group.name);
   const avatarLetter = getAvatarLetter(group.name);
-  const tabBadges: Partial<Record<ActiveTab, number>> = isSelfService && isAdmin
-    ? {
-        "self-service-ops": pendingSelfServiceReviewCount,
-        "absence-reports": pendingSelfServiceReviewCount,
-      }
-    : {};
+  const tabBadges = getSelfServiceTabBadges(group.schedulingMode, isAdmin, pendingSelfServiceReviewCount);
 
   return (
     <AppShell>
