@@ -9,6 +9,7 @@ using Jobuler.Application.Auth.Commands;
 using Jobuler.Application.Common;
 using Jobuler.Domain.Identity;
 using Jobuler.Infrastructure.Persistence;
+using Jobuler.Tests;
 using Microsoft.EntityFrameworkCore;
 using NSubstitute;
 using Xunit;
@@ -78,7 +79,7 @@ public class PasswordResetPropertyTests
                 return Task.CompletedTask;
             });
 
-        var handler = new ForgotPasswordCommandHandler(db, notifications, jwt);
+        var handler = new ForgotPasswordCommandHandler(db, notifications, jwt, TestContactLookupProtector.Create());
         await handler.Handle(new ForgotPasswordCommand(email), CancellationToken.None);
         return capturedToken;
     }

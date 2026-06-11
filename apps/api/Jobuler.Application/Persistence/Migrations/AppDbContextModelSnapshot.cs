@@ -134,6 +134,84 @@ namespace Jobuler.Application.Persistence.Migrations
                     b.ToTable("group_subscriptions", (string)null);
                 });
 
+            modelBuilder.Entity("Jobuler.Domain.Billing.OrganizationSubscription", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<bool>("AutoRenew")
+                        .HasColumnType("boolean")
+                        .HasColumnName("auto_renew");
+
+                    b.Property<string>("BillingMode")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("billing_mode");
+
+                    b.Property<DateTime?>("CanceledAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("canceled_at");
+
+                    b.Property<int?>("CoveredMemberLimit")
+                        .HasColumnType("integer")
+                        .HasColumnName("covered_member_limit");
+
+                    b.Property<int?>("CoveredSpaceLimit")
+                        .HasColumnType("integer")
+                        .HasColumnName("covered_space_limit");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateTime?>("CurrentPeriodEnd")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("current_period_end");
+
+                    b.Property<DateTime>("CurrentPeriodStart")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("current_period_start");
+
+                    b.Property<Guid>("OrganizationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("organization_id");
+
+                    b.Property<string>("ProviderCustomerId")
+                        .HasColumnType("text")
+                        .HasColumnName("provider_customer_id");
+
+                    b.Property<string>("ProviderSubscriptionId")
+                        .HasColumnType("text")
+                        .HasColumnName("provider_subscription_id");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("status");
+
+                    b.Property<string>("TierId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("tier_id");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OrganizationId")
+                        .IsUnique()
+                        .HasDatabaseName("uq_organization_subscriptions_organization_id");
+
+                    b.HasIndex("Status")
+                        .HasDatabaseName("idx_organization_subscriptions_status");
+
+                    b.ToTable("organization_subscriptions", (string)null);
+                });
+
             modelBuilder.Entity("Jobuler.Domain.Billing.SpaceSubscription", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1556,6 +1634,99 @@ namespace Jobuler.Application.Persistence.Migrations
                         .HasDatabaseName("uq_push_sub_user_space_endpoint");
 
                     b.ToTable("push_subscriptions", (string)null);
+                });
+
+            modelBuilder.Entity("Jobuler.Domain.Organizations.Organization", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("CountryCode")
+                        .HasMaxLength(2)
+                        .HasColumnType("character varying(2)")
+                        .HasColumnName("country_code");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("DedicatedDeploymentKey")
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)")
+                        .HasColumnName("dedicated_deployment_key");
+
+                    b.Property<string>("DefaultLocale")
+                        .HasMaxLength(12)
+                        .HasColumnType("character varying(12)")
+                        .HasColumnName("default_locale");
+
+                    b.Property<string>("DefaultTimezoneId")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("default_timezone_id");
+
+                    b.Property<DateTime?>("DisabledAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("disabled_at");
+
+                    b.Property<string>("DisplayName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("display_name");
+
+                    b.Property<string>("NormalizedName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("normalized_name");
+
+                    b.Property<Guid>("PrimaryOwnerUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("primary_owner_user_id");
+
+                    b.Property<DateTime?>("PurgeEligibleAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("purge_eligible_at");
+
+                    b.Property<DateTime?>("RelocatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("relocated_at");
+
+                    b.Property<string>("SetupTemplate")
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
+                        .HasColumnName("setup_template");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("status");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NormalizedName")
+                        .HasDatabaseName("idx_organizations_normalized_name");
+
+                    b.HasIndex("PrimaryOwnerUserId")
+                        .HasDatabaseName("idx_organizations_primary_owner_user_id");
+
+                    b.HasIndex("PurgeEligibleAt")
+                        .HasDatabaseName("idx_organizations_purge_eligible_at");
+
+                    b.HasIndex("Status")
+                        .HasDatabaseName("idx_organizations_status");
+
+                    b.HasIndex("CountryCode", "SetupTemplate")
+                        .HasDatabaseName("idx_organizations_country_template");
+
+                    b.ToTable("organizations", (string)null);
                 });
 
             modelBuilder.Entity("Jobuler.Domain.People.AvailabilityWindow", b =>
@@ -3511,6 +3682,10 @@ namespace Jobuler.Application.Persistence.Migrations
                         .HasColumnType("text")
                         .HasColumnName("name");
 
+                    b.Property<Guid>("OrganizationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("organization_id");
+
                     b.Property<Guid>("OwnerUserId")
                         .HasColumnType("uuid")
                         .HasColumnName("owner_user_id");
@@ -3524,6 +3699,9 @@ namespace Jobuler.Application.Persistence.Migrations
                     b.HasIndex("InviteCode")
                         .IsUnique()
                         .HasFilter("invite_code IS NOT NULL");
+
+                    b.HasIndex("OrganizationId")
+                        .HasDatabaseName("idx_spaces_organization_id");
 
                     b.ToTable("spaces", (string)null);
                 });
@@ -4239,6 +4417,15 @@ namespace Jobuler.Application.Persistence.Migrations
                     b.ToTable("task_type_overlap_rules", (string)null);
                 });
 
+            modelBuilder.Entity("Jobuler.Domain.Billing.OrganizationSubscription", b =>
+                {
+                    b.HasOne("Jobuler.Domain.Organizations.Organization", null)
+                        .WithMany()
+                        .HasForeignKey("OrganizationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Jobuler.Domain.Groups.Group", b =>
                 {
                     b.HasOne("Jobuler.Domain.Groups.Group", null)
@@ -4319,6 +4506,15 @@ namespace Jobuler.Application.Persistence.Migrations
                         .WithMany()
                         .HasForeignKey("SupersedesVersionId")
                         .OnDelete(DeleteBehavior.SetNull);
+                });
+
+            modelBuilder.Entity("Jobuler.Domain.Spaces.Space", b =>
+                {
+                    b.HasOne("Jobuler.Domain.Organizations.Organization", null)
+                        .WithMany()
+                        .HasForeignKey("OrganizationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
                 });
 #pragma warning restore 612, 618
         }

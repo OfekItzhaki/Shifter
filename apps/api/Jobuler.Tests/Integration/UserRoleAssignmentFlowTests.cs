@@ -8,6 +8,7 @@ using Jobuler.Application.Spaces.Commands;
 using Jobuler.Application.Spaces.Queries;
 using Jobuler.Domain.People;
 using Jobuler.Infrastructure.Persistence;
+using Jobuler.Tests;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -47,7 +48,7 @@ public class UserRoleAssignmentFlowTests
         var config = Substitute.For<IConfiguration>();
         config["App:FrontendBaseUrl"].Returns("https://test.local");
         var registerHandler = new RegisterCommandHandler(
-            db, emailSender, NullLogger<RegisterCommandHandler>.Instance, config);
+            db, emailSender, TestContactLookupProtector.Create(), NullLogger<RegisterCommandHandler>.Instance, config);
         var adminId = await registerHandler.Handle(
             new RegisterCommand("admin@test.local", "Admin User", "Password1!", "en"),
             default);

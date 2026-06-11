@@ -14,19 +14,30 @@ public class ForgotPasswordCommandHandler : IRequestHandler<ForgotPasswordComman
     private readonly AppDbContext _db;
     private readonly INotificationSender _notifications;
     private readonly IJwtService _jwt;
+    private readonly IContactLookupProtector _contactLookup;
 
     public ForgotPasswordCommandHandler(
-        AppDbContext db, INotificationSender notifications, IJwtService jwt)
+        AppDbContext db, INotificationSender notifications, IJwtService jwt, IContactLookupProtector contactLookup)
     {
         _db = db;
         _notifications = notifications;
         _jwt = jwt;
+        _contactLookup = contactLookup;
     }
 
     public async Task Handle(ForgotPasswordCommand req, CancellationToken ct)
     {
+        var emailLookupHash = _contactLookup.HashEmail(req.Email);
         var user = await _db.Users
-            .FirstOrDefaultAsync(u => u.Email == req.Email.ToLowerInvariant().Trim() && u.IsActive, ct);
+            .FirstOrDefaultAsync(u => u.EmailLookupHash == emailLookupHash && u.IsActive, ct);
+        if (user is null)
+        {
+            var normalizedEmail = _contactLookup.NormalizeEmail(req.Email);
+            var legacyUsers = await _db.Users
+                .Where(u => u.EmailLookupHash == null && u.IsActive)
+                .ToListAsync(ct);
+            user = legacyUsers.FirstOrDefault(u => _contactLookup.NormalizeEmail(u.Email) == normalizedEmail);
+        }
 
         // Always return without error — never reveal whether email exists (prevents user enumeration)
         if (user is null) return;

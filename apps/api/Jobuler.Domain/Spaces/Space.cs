@@ -4,6 +4,7 @@ namespace Jobuler.Domain.Spaces;
 
 public class Space : AuditableEntity
 {
+    public Guid OrganizationId { get; private set; }
     public string Name { get; private set; } = default!;
     public string? Description { get; private set; }
     public Guid OwnerUserId { get; private set; }
@@ -15,12 +16,13 @@ public class Space : AuditableEntity
 
     private Space() { }
 
-    public static Space Create(string name, Guid ownerUserId, string? description = null, string locale = "he")
+    public static Space Create(string name, Guid ownerUserId, string? description = null, string locale = "he", Guid? organizationId = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
 
         return new Space
         {
+            OrganizationId = organizationId ?? Guid.Empty,
             Name = name.Trim(),
             Description = description?.Trim(),
             OwnerUserId = ownerUserId,
@@ -34,6 +36,15 @@ public class Space : AuditableEntity
         Name = name.Trim();
         Description = description?.Trim();
         Locale = locale;
+        Touch();
+    }
+
+    public void MoveToOrganization(Guid organizationId)
+    {
+        if (organizationId == Guid.Empty)
+            throw new ArgumentException("Organization id must be set.", nameof(organizationId));
+
+        OrganizationId = organizationId;
         Touch();
     }
 
