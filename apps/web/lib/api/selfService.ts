@@ -462,6 +462,28 @@ export async function getSelfServiceCycleCloseout(
   return data;
 }
 
+export async function downloadSelfServiceCycleCloseoutCsv(
+  spaceId: string,
+  groupId: string,
+  cycleId?: string | null
+): Promise<void> {
+  const { data, headers } = await apiClient.get(
+    `/spaces/${spaceId}/groups/${groupId}/self-service-cycles/closeout.csv`,
+    {
+      params: cycleId ? { cycleId } : undefined,
+      responseType: "blob",
+    }
+  );
+  const cd = headers["content-disposition"] ?? "";
+  const name = cd.match(/filename="?([^"]+)"?/)?.[1] ?? "self-service-closeout.csv";
+  const url = URL.createObjectURL(new Blob([data], { type: "text/csv;charset=utf-8" }));
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = name;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 export async function generateNextSelfServiceCycle(
   spaceId: string,
   groupId: string

@@ -19,6 +19,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using NSubstitute;
 using System.Security.Claims;
+using System.Text;
 using System.Text.Json;
 using Xunit;
 
@@ -3237,6 +3238,65 @@ public class SelfServiceScopeTests
         response.ExpiredWaitlistEntries.Should().Be(1);
         response.PendingSpecialLeaveRequests.Should().Be(1);
         response.IssueCount.Should().Be(7);
+    }
+
+    [Fact]
+    public async Task ExportCloseoutCsv_ReturnsDownloadableCloseoutMetrics()
+    {
+        using var db = CreateDb();
+        var services = CreateControllerServices();
+        var spaceId = Guid.NewGuid();
+        var group = Group.Create(spaceId, null, "Self-service group");
+        var adminUserId = Guid.NewGuid();
+        var person = Person.Create(spaceId, "Alice", linkedUserId: Guid.NewGuid());
+        var cycle = CreateCycle(spaceId, group.Id);
+        var task = CreateTask(spaceId, group.Id, "Guard", adminUserId);
+        var slot = CreateSlot(spaceId, group.Id, task.Id, cycle.Id, daysFromNow: -1);
+        var request = ShiftRequest.Create(spaceId, slot.Id, person.Id, group.Id, cycle.Id);
+        request.Approve(adminUserId);
+        slot.IncrementFillCount();
+
+        db.Groups.Add(group);
+        db.People.Add(person);
+        db.GroupMemberships.Add(GroupMembership.Create(spaceId, group.Id, person.Id));
+        db.SchedulingCycles.Add(cycle);
+        db.GroupTasks.Add(task);
+        db.ShiftSlots.Add(slot);
+        db.ShiftRequests.Add(request);
+        db.ShiftAttendanceRecords.Add(ShiftAttendanceRecord.Create(
+            spaceId,
+            group.Id,
+            cycle.Id,
+            request.Id,
+            slot.Id,
+            person.Id,
+            ShiftAttendanceStatus.NoShow,
+            adminUserId));
+        await db.SaveChangesAsync();
+
+        services.Permissions
+            .RequirePermissionAsync(adminUserId, spaceId, Permissions.ConstraintsManage, Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+
+        var controller = new SelfServiceCyclesController(
+            db,
+            services.Permissions,
+            Substitute.For<ISlotGenerationService>(),
+            services.Mediator);
+        controller.ControllerContext = CreateControllerContext(adminUserId);
+
+        var result = await controller.ExportCloseoutCsv(spaceId, group.Id, cycle.Id, CancellationToken.None);
+
+        var file = result.Should().BeOfType<FileContentResult>().Subject;
+        file.ContentType.Should().Be("text/csv; charset=utf-8");
+        file.FileDownloadName.Should().StartWith($"self-service-closeout-{cycle.Id:N}-");
+
+        var csv = Encoding.UTF8.GetString(file.FileContents);
+        csv.Should().Contain("metric,value");
+        csv.Should().Contain($"cycle_id,{cycle.Id}");
+        csv.Should().Contain("approved_assignments,1");
+        csv.Should().Contain("no_show_attendance_records,1");
+        csv.Should().Contain("unconfirmed_attendance_count,0");
     }
 
     [Fact]

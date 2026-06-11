@@ -6,6 +6,7 @@ const mockGetSelfServiceCycleStatus = vi.fn();
 const mockGetSelfServiceCycleCloseout = vi.fn();
 const mockGetSelfServiceConfig = vi.fn();
 const mockGetAdminWaitlistEntries = vi.fn();
+const mockDownloadSelfServiceCycleCloseoutCsv = vi.fn();
 const mockCycleControlPanel = vi.fn();
 
 vi.mock("next-intl", () => ({
@@ -20,6 +21,9 @@ vi.mock("next-intl", () => ({
       "closeout.description": "Summarize this cycle.",
       "closeout.needsReview": `${values?.count ?? 0} unresolved item(s)`,
       "closeout.ready": "Ready for closeout",
+      "closeout.exportCsv": "Export CSV",
+      "closeout.exporting": "Exporting...",
+      "closeout.exportError": "Could not export closeout CSV.",
       "closeout.metrics.coverage": "Coverage",
       "closeout.metrics.underfilled": "Under-filled",
       "closeout.metrics.pending": "Unresolved",
@@ -128,6 +132,7 @@ vi.mock("../../lib/api/selfService", () => ({
   getSelfServiceCycleCloseout: (...args: unknown[]) => mockGetSelfServiceCycleCloseout(...args),
   getSelfServiceConfig: (...args: unknown[]) => mockGetSelfServiceConfig(...args),
   getAdminWaitlistEntries: (...args: unknown[]) => mockGetAdminWaitlistEntries(...args),
+  downloadSelfServiceCycleCloseoutCsv: (...args: unknown[]) => mockDownloadSelfServiceCycleCloseoutCsv(...args),
 }));
 
 vi.mock("../../components/groups/selfService/CycleControlPanel", () => ({
@@ -255,6 +260,7 @@ describe("SelfServiceOperationsTab", () => {
         personName: "Ofek",
       },
     ]);
+    mockDownloadSelfServiceCycleCloseoutCsv.mockResolvedValue(undefined);
   });
 
   it("shows action counts and navigates to the selected queue", async () => {
@@ -263,6 +269,7 @@ describe("SelfServiceOperationsTab", () => {
 
     expect(await screen.findByText("15 item(s) need attention")).toBeInTheDocument();
     expect(screen.getByText("Cycle closeout")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Export CSV" })).toBeEnabled();
     expect(screen.getByText("15 unresolved item(s)")).toBeInTheDocument();
     expect(screen.getByText("17/20")).toBeInTheDocument();
     expect(screen.getByText("12 present / 2 no-show / 2 unconfirmed")).toBeInTheDocument();
@@ -305,6 +312,12 @@ describe("SelfServiceOperationsTab", () => {
 
     await waitFor(() => {
       expect(onNavigate).toHaveBeenCalledWith("self-service-config");
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "Export CSV" }));
+
+    await waitFor(() => {
+      expect(mockDownloadSelfServiceCycleCloseoutCsv).toHaveBeenCalledWith("space-1", "group-1", "cycle-1");
     });
 
     fireEvent.click(screen.getByRole("button", { name: /Shift changes/i }));

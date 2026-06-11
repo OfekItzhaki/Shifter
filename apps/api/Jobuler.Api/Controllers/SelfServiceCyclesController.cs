@@ -10,7 +10,9 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Globalization;
 using System.Security.Claims;
+using System.Text;
 
 namespace Jobuler.Api.Controllers;
 
@@ -66,6 +68,26 @@ public class SelfServiceCyclesController : ControllerBase
             return Ok(SelfServiceCycleCloseoutResponse.Empty());
 
         return Ok(await BuildCloseoutAsync(cycle, ct));
+    }
+
+    [HttpGet("closeout.csv")]
+    public async Task<IActionResult> ExportCloseoutCsv(Guid spaceId, Guid groupId, [FromQuery] Guid? cycleId, CancellationToken ct)
+    {
+        await _permissions.RequirePermissionAsync(CurrentUserId, spaceId, Permissions.ConstraintsManage, ct);
+
+        var cycle = cycleId.HasValue
+            ? await _db.SchedulingCycles
+                .AsNoTracking()
+                .FirstOrDefaultAsync(c => c.Id == cycleId.Value && c.SpaceId == spaceId && c.GroupId == groupId, ct)
+            : await ResolveCurrentCycleAsync(spaceId, groupId, ct);
+
+        if (cycle is null)
+            return NotFound(new { error = "Self-service cycle not found." });
+
+        var closeout = await BuildCloseoutAsync(cycle, ct);
+        var bytes = BuildCloseoutCsv(closeout);
+        var fileName = $"self-service-closeout-{cycle.Id:N}-{DateTime.UtcNow:yyyyMMdd}.csv";
+        return File(bytes, "text/csv; charset=utf-8", fileName);
     }
 
     [HttpPost("generate-next")]
@@ -518,6 +540,72 @@ public class SelfServiceCyclesController : ControllerBase
             pendingSpecialLeaveRequests,
             cancelledSpecialLeaveRequests,
             issueCount);
+    }
+
+    private static byte[] BuildCloseoutCsv(SelfServiceCycleCloseoutResponse closeout)
+    {
+        static string FormatDate(DateTime? value) =>
+            value?.ToString("O", CultureInfo.InvariantCulture) ?? "";
+
+        var rows = new (string Metric, string Value)[]
+        {
+            ("cycle_id", closeout.CycleId?.ToString() ?? ""),
+            ("starts_at", FormatDate(closeout.StartsAt)),
+            ("ends_at", FormatDate(closeout.EndsAt)),
+            ("is_closed", closeout.IsClosed.ToString()),
+            ("slot_count", closeout.SlotCount.ToString(CultureInfo.InvariantCulture)),
+            ("total_capacity", closeout.TotalCapacity.ToString(CultureInfo.InvariantCulture)),
+            ("filled_count", closeout.FilledCount.ToString(CultureInfo.InvariantCulture)),
+            ("underfilled_slot_count", closeout.UnderfilledSlotCount.ToString(CultureInfo.InvariantCulture)),
+            ("overfilled_slot_count", closeout.OverfilledSlotCount.ToString(CultureInfo.InvariantCulture)),
+            ("approved_assignments", closeout.ApprovedAssignments.ToString(CultureInfo.InvariantCulture)),
+            ("cancelled_assignments", closeout.CancelledAssignments.ToString(CultureInfo.InvariantCulture)),
+            ("rejected_requests", closeout.RejectedRequests.ToString(CultureInfo.InvariantCulture)),
+            ("pending_requests", closeout.PendingRequests.ToString(CultureInfo.InvariantCulture)),
+            ("admin_override_assignments", closeout.AdminOverrideAssignments.ToString(CultureInfo.InvariantCulture)),
+            ("cannot_attend_cancellations", closeout.CannotAttendCancellations.ToString(CultureInfo.InvariantCulture)),
+            ("late_absence_reports", closeout.LateAbsenceReports.ToString(CultureInfo.InvariantCulture)),
+            ("approved_absence_reports", closeout.ApprovedAbsenceReports.ToString(CultureInfo.InvariantCulture)),
+            ("rejected_absence_reports", closeout.RejectedAbsenceReports.ToString(CultureInfo.InvariantCulture)),
+            ("pending_absence_reports", closeout.PendingAbsenceReports.ToString(CultureInfo.InvariantCulture)),
+            ("present_attendance_records", closeout.PresentAttendanceRecords.ToString(CultureInfo.InvariantCulture)),
+            ("no_show_attendance_records", closeout.NoShowAttendanceRecords.ToString(CultureInfo.InvariantCulture)),
+            ("excused_attendance_records", closeout.ExcusedAttendanceRecords.ToString(CultureInfo.InvariantCulture)),
+            ("unconfirmed_attendance_count", closeout.UnconfirmedAttendanceCount.ToString(CultureInfo.InvariantCulture)),
+            ("approved_change_requests", closeout.ApprovedChangeRequests.ToString(CultureInfo.InvariantCulture)),
+            ("rejected_change_requests", closeout.RejectedChangeRequests.ToString(CultureInfo.InvariantCulture)),
+            ("pending_change_requests", closeout.PendingChangeRequests.ToString(CultureInfo.InvariantCulture)),
+            ("cancelled_change_requests", closeout.CancelledChangeRequests.ToString(CultureInfo.InvariantCulture)),
+            ("accepted_swap_requests", closeout.AcceptedSwapRequests.ToString(CultureInfo.InvariantCulture)),
+            ("declined_swap_requests", closeout.DeclinedSwapRequests.ToString(CultureInfo.InvariantCulture)),
+            ("pending_swap_requests", closeout.PendingSwapRequests.ToString(CultureInfo.InvariantCulture)),
+            ("cancelled_swap_requests", closeout.CancelledSwapRequests.ToString(CultureInfo.InvariantCulture)),
+            ("expired_swap_requests", closeout.ExpiredSwapRequests.ToString(CultureInfo.InvariantCulture)),
+            ("active_waitlist_entries", closeout.ActiveWaitlistEntries.ToString(CultureInfo.InvariantCulture)),
+            ("accepted_waitlist_entries", closeout.AcceptedWaitlistEntries.ToString(CultureInfo.InvariantCulture)),
+            ("declined_waitlist_entries", closeout.DeclinedWaitlistEntries.ToString(CultureInfo.InvariantCulture)),
+            ("expired_waitlist_entries", closeout.ExpiredWaitlistEntries.ToString(CultureInfo.InvariantCulture)),
+            ("removed_waitlist_entries", closeout.RemovedWaitlistEntries.ToString(CultureInfo.InvariantCulture)),
+            ("approved_special_leave_requests", closeout.ApprovedSpecialLeaveRequests.ToString(CultureInfo.InvariantCulture)),
+            ("rejected_special_leave_requests", closeout.RejectedSpecialLeaveRequests.ToString(CultureInfo.InvariantCulture)),
+            ("pending_special_leave_requests", closeout.PendingSpecialLeaveRequests.ToString(CultureInfo.InvariantCulture)),
+            ("cancelled_special_leave_requests", closeout.CancelledSpecialLeaveRequests.ToString(CultureInfo.InvariantCulture)),
+            ("issue_count", closeout.IssueCount.ToString(CultureInfo.InvariantCulture))
+        };
+
+        static string Escape(string value) =>
+            value.Contains(',') || value.Contains('"') || value.Contains('\n') || value.Contains('\r')
+                ? $"\"{value.Replace("\"", "\"\"", StringComparison.Ordinal)}\""
+                : value;
+
+        var builder = new StringBuilder();
+        builder.AppendLine("metric,value");
+        foreach (var row in rows)
+            builder.Append(Escape(row.Metric)).Append(',').Append(Escape(row.Value)).AppendLine();
+
+        return Encoding.UTF8.GetPreamble()
+            .Concat(Encoding.UTF8.GetBytes(builder.ToString()))
+            .ToArray();
     }
 }
 

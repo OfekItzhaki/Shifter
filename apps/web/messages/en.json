@@ -2521,6 +2521,9 @@
         "description": "One summary for coverage, exceptions, and unresolved items in the current self-service cycle.",
         "needsReview": "{count} unresolved item(s)",
         "ready": "Ready for closeout",
+        "exportCsv": "Export CSV",
+        "exporting": "Exporting...",
+        "exportError": "Could not export closeout CSV. Please try again.",
         "metrics": {
           "coverage": "Coverage",
           "underfilled": "Under-filled",

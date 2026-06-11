@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import {
+  downloadSelfServiceCycleCloseoutCsv,
   getAdminWaitlistEntries,
   getSelfServiceConfig,
   getSelfServiceCycleCloseout,
@@ -139,6 +140,8 @@ export default function SelfServiceOperationsTab({
   const [config, setConfig] = useState<SelfServiceConfigDto | null>(null);
   const [waitlistEntries, setWaitlistEntries] = useState<AdminWaitlistEntryDto[]>([]);
   const [statusLoading, setStatusLoading] = useState(true);
+  const [exportingCloseout, setExportingCloseout] = useState(false);
+  const [closeoutExportError, setCloseoutExportError] = useState<string | null>(null);
 
   const loadStatus = useCallback(async () => {
     setStatusLoading(true);
@@ -166,6 +169,19 @@ export default function SelfServiceOperationsTab({
   useEffect(() => {
     void Promise.resolve().then(loadStatus);
   }, [loadStatus]);
+
+  async function handleExportCloseout() {
+    setExportingCloseout(true);
+    setCloseoutExportError(null);
+
+    try {
+      await downloadSelfServiceCycleCloseoutCsv(spaceId, groupId, closeout?.cycleId ?? null);
+    } catch {
+      setCloseoutExportError(t("closeout.exportError"));
+    } finally {
+      setExportingCloseout(false);
+    }
+  }
 
   const pendingReviewCount = getPendingReviewCount(status);
   const activeSignalCount = status
@@ -336,20 +352,36 @@ export default function SelfServiceOperationsTab({
             <h3 className="text-sm font-semibold text-slate-900">{t("closeout.title")}</h3>
             <p className="text-sm text-slate-500">{t("closeout.description")}</p>
           </div>
-          <span className={`inline-flex w-fit rounded-full border px-2.5 py-1 text-xs font-medium ${
-            statusLoading
-              ? "border-slate-200 bg-slate-50 text-slate-500"
-              : closeout && closeout.issueCount > 0
-                ? "border-amber-200 bg-amber-50 text-amber-800"
-                : "border-emerald-200 bg-emerald-50 text-emerald-700"
-          }`}>
-            {statusLoading
-              ? t("statusLoading")
-              : closeout && closeout.issueCount > 0
-                ? t("closeout.needsReview", { count: closeout.issueCount })
-                : t("closeout.ready")}
-          </span>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={handleExportCloseout}
+              disabled={statusLoading || !closeout || exportingCloseout}
+              className="inline-flex rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-sky-700 transition hover:border-sky-200 hover:bg-sky-50 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {exportingCloseout ? t("closeout.exporting") : t("closeout.exportCsv")}
+            </button>
+            <span className={`inline-flex w-fit rounded-full border px-2.5 py-1 text-xs font-medium ${
+              statusLoading
+                ? "border-slate-200 bg-slate-50 text-slate-500"
+                : closeout && closeout.issueCount > 0
+                  ? "border-amber-200 bg-amber-50 text-amber-800"
+                  : "border-emerald-200 bg-emerald-50 text-emerald-700"
+            }`}>
+              {statusLoading
+                ? t("statusLoading")
+                : closeout && closeout.issueCount > 0
+                  ? t("closeout.needsReview", { count: closeout.issueCount })
+                  : t("closeout.ready")}
+            </span>
+          </div>
         </div>
+
+        {closeoutExportError && (
+          <p className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
+            {closeoutExportError}
+          </p>
+        )}
 
         <div className="mt-4 grid gap-3 md:grid-cols-3 xl:grid-cols-6">
           {CLOSEOUT_METRICS.map((metric) => {
