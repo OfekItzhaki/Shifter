@@ -119,7 +119,9 @@ Customer-hosted means:
 
    This verifies the web/API endpoints, seeded users, the self-service demo
    cycle, available member slots, and the holiday/special-day picker label
-   browser flow.
+   browser flow. For API/seed verification without the browser flow, add
+   `-SkipBrowserTest`. The script checks already-running services; it does not
+   start Docker Compose or load seed data.
 
 8. Put HTTPS in front of the web/API ports using the customer's proxy or WAF.
 

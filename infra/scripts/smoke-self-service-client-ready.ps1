@@ -4,6 +4,7 @@ param(
     [string]$AdminEmail = $(if ($env:E2E_ADMIN_EMAIL) { $env:E2E_ADMIN_EMAIL } else { "admin@demo.local" }),
     [string]$MemberEmail = $(if ($env:E2E_MEMBER_EMAIL) { $env:E2E_MEMBER_EMAIL } else { "ofek@demo.local" }),
     [string]$Password = $(if ($env:E2E_DEMO_PASSWORD) { $env:E2E_DEMO_PASSWORD } else { "Demo1234!" }),
+    [int]$TimeoutSeconds = 10,
     [switch]$SkipBrowserTest
 )
 
@@ -36,7 +37,7 @@ function Invoke-Json {
         Uri = $Url
         Method = $Method
         Headers = $headers
-        TimeoutSec = 20
+        TimeoutSec = $TimeoutSeconds
         UseBasicParsing = $true
     }
 
@@ -45,7 +46,13 @@ function Invoke-Json {
         $params.Body = ($Body | ConvertTo-Json -Depth 8)
     }
 
-    $response = Invoke-WebRequest @params
+    try {
+        $response = Invoke-WebRequest @params
+    }
+    catch {
+        throw "HTTP $Method $Url failed. Confirm the API is running, migrations/seed data are loaded, and ApiBaseUrl is correct. $($_.Exception.Message)"
+    }
+
     if ([string]::IsNullOrWhiteSpace($response.Content)) {
         return $null
     }
@@ -54,11 +61,20 @@ function Invoke-Json {
 }
 
 function Assert-HttpOk {
-    param([string]$Url)
+    param(
+        [string]$Url,
+        [string]$ServiceName
+    )
 
-    $response = Invoke-WebRequest -Uri $Url -Method GET -TimeoutSec 20 -UseBasicParsing
+    try {
+        $response = Invoke-WebRequest -Uri $Url -Method GET -TimeoutSec $TimeoutSeconds -UseBasicParsing
+    }
+    catch {
+        throw "$ServiceName check failed for $Url. Start the service or pass the correct URL. $($_.Exception.Message)"
+    }
+
     if ($response.StatusCode -lt 200 -or $response.StatusCode -ge 300) {
-        throw "$Url returned HTTP $($response.StatusCode)"
+        throw "$ServiceName check failed for $Url with HTTP $($response.StatusCode)."
     }
 }
 
@@ -78,7 +94,7 @@ function Login {
 }
 
 Write-Step "Checking API health at $ApiBaseUrl"
-Assert-HttpOk "$ApiBaseUrl/health"
+Assert-HttpOk "$ApiBaseUrl/health" "API health"
 
 Write-Step "Checking seeded demo users"
 $adminToken = Login $AdminEmail
@@ -114,7 +130,7 @@ Write-Host "Seed smoke passed: $($space.name) / $($group.name), cycle $($status.
 
 if (-not $SkipBrowserTest) {
     Write-Step "Checking web app at $WebBaseUrl"
-    Assert-HttpOk $WebBaseUrl
+    Assert-HttpOk $WebBaseUrl "Web app"
 
     Write-Step "Running special-day browser label flow"
     Push-Location $webDir

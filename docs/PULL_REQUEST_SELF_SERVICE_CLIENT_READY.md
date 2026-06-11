@@ -27,6 +27,8 @@ packaging, and self-service export/import readiness.
 - Adds `infra/scripts/smoke-self-service-client-ready.ps1` to preflight web/API
   health, seeded demo users, the self-service demo cycle, available slots, and
   the special-day Playwright picker flow.
+- Supports `-SkipBrowserTest` for API/seed preflight when the web app is not
+  running.
 
 ## Verification
 
@@ -41,6 +43,9 @@ packaging, and self-service export/import readiness.
 - `node_modules\\.bin\\eslint.cmd e2e\\self-service.browser.spec.ts` passed.
 - `node_modules\\.bin\\playwright.cmd test self-service.browser.spec.ts --list`
   discovered 14 browser lifecycle tests, including the special-day label flow.
+- `infra/scripts/smoke-self-service-client-ready.ps1` parser/config checks
+  passed locally; live execution still depends on a responsive seeded API/web
+  stack.
 
 ## Remaining Product Checks
 
