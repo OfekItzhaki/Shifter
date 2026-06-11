@@ -224,8 +224,12 @@ The implementation has focused unit/property coverage for:
 - API lifecycle tests for request limits, notifications, waitlist processing,
   swaps, absence reports, shift changes, and scope isolation
 
-There is also a mobile Playwright smoke test for the self-service admin cycle
-controls and operations tab using the seeded `Self-Service Demo` group.
+There are also browser Playwright checks using the seeded `Self-Service Demo`
+group:
+
+- a mobile smoke test for self-service admin cycle controls and operations
+- a member/admin browser lifecycle test for cannot-attend reporting and admin
+  approval from the review queue
 
 ## Customer-Hosted Use
 
@@ -251,9 +255,10 @@ For customer-hosted deployments, combine this guide with:
 These are not blockers for an MVP rollout, but they are worth improving before
 large deployments:
 
-- A full browser end-to-end test that exercises the complete member/admin cycle:
-  pick shift, fill slot, join waitlist, cancel, report absence, request change,
-  review as admin, and verify final slot state.
+- Broader browser end-to-end coverage for the complete member/admin cycle:
+  pick shift, fill slot, join waitlist, cancel, request change, swaps, and final
+  slot-state verification. The browser suite already covers cannot-attend
+  reporting and admin approval.
 - Organization-level defaults for self-service policy through the admin UI.
   Space owners can configure space-level defaults today; a higher-level
   organization template for multi-space installs is still deferred.

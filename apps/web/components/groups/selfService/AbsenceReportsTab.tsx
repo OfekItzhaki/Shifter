@@ -514,7 +514,11 @@ export default function AbsenceReportsTab({ spaceId, groupId, onReviewed }: Prop
       ) : (
         <div className="space-y-3">
           {sortedReports.map((report) => (
-            <div key={report.id} className="rounded-xl border border-slate-200 bg-white p-4">
+            <div
+              key={report.id}
+              data-testid="self-service-absence-report"
+              className="rounded-xl border border-slate-200 bg-white p-4"
+            >
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
@@ -554,6 +558,7 @@ export default function AbsenceReportsTab({ spaceId, groupId, onReviewed }: Prop
                     <div className="flex gap-2">
                       <MutationButton
                         onClick={() => review(report.id, "approve")}
+                        data-testid="self-service-approve-absence"
                         loading={actionLoading[report.id] === "approve"}
                         disabled={!!actionLoading[report.id]}
                         label={t("approve")}
@@ -562,6 +567,7 @@ export default function AbsenceReportsTab({ spaceId, groupId, onReviewed }: Prop
                       />
                       <MutationButton
                         onClick={() => review(report.id, "reject")}
+                        data-testid="self-service-reject-absence"
                         loading={actionLoading[report.id] === "reject"}
                         disabled={!!actionLoading[report.id]}
                         label={t("reject")}
@@ -647,6 +653,7 @@ export default function AbsenceReportsTab({ spaceId, groupId, onReviewed }: Prop
                     <div className="flex gap-2">
                       <MutationButton
                         onClick={() => reviewChange(request.id, "approve")}
+                        data-testid="self-service-approve-change"
                         loading={changeActionLoading[request.id] === "approve"}
                         disabled={!!changeActionLoading[request.id] || !getAvailableTargetSlotId(request)}
                         label={t("approve")}
@@ -655,6 +662,7 @@ export default function AbsenceReportsTab({ spaceId, groupId, onReviewed }: Prop
                       />
                       <MutationButton
                         onClick={() => reviewChange(request.id, "reject")}
+                        data-testid="self-service-reject-change"
                         loading={changeActionLoading[request.id] === "reject"}
                         disabled={!!changeActionLoading[request.id]}
                         label={t("reject")}

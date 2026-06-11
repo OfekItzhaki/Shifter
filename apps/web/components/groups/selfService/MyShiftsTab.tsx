@@ -992,6 +992,7 @@ export default function MyShiftsTab({ spaceId, groupId, onNavigate }: MyShiftsTa
             </button>
             <MutationButton
               onClick={handleCannotAttendConfirm}
+              data-testid="self-service-confirm-cannot-attend"
               loading={reportingCannotAttend}
               disabled={cannotAttendReason.trim().length === 0 || cannotAttendLimitReached}
               label={t("cannotAttendConfirm")}
@@ -1513,6 +1514,7 @@ function ShiftCard({
           {showCancelButton && (
             <button
               onClick={() => onCancel(request)}
+              data-testid="self-service-cancel-shift"
               className="text-xs text-red-600 hover:text-red-700 border border-red-200 bg-red-50 hover:bg-red-100 px-2.5 py-1 rounded-lg transition-colors"
             >
               {t("cancelButton")}
@@ -1521,6 +1523,7 @@ function ShiftCard({
           {showCannotAttendButton && (
             <button
               onClick={() => onChange(request)}
+              data-testid="self-service-change-shift"
               className="text-xs text-sky-700 hover:text-sky-800 border border-sky-200 bg-sky-50 hover:bg-sky-100 px-2.5 py-1 rounded-lg transition-colors"
             >
               {t("changeButton")}
@@ -1529,6 +1532,7 @@ function ShiftCard({
           {showCannotAttendButton && (
             <button
               onClick={() => onCannotAttend(request)}
+              data-testid="self-service-cannot-attend"
               disabled={cannotAttendWouldBeBlocked}
               title={cannotAttendWouldBeBlocked ? t("cannotAttendLimitReached") : undefined}
               className="text-xs text-amber-700 hover:text-amber-800 border border-amber-200 bg-amber-50 hover:bg-amber-100 px-2.5 py-1 rounded-lg transition-colors disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400"

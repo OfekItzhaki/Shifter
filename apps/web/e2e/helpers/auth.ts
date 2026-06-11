@@ -10,9 +10,17 @@ const API_URL     = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000";
  * Waits for the space to be selected (skips the /spaces page if needed).
  */
 export async function loginAsAdmin(page: Page): Promise<void> {
+  await loginAsUser(page, ADMIN_EMAIL, ADMIN_PASS);
+}
+
+export async function loginAsUser(
+  page: Page,
+  email: string,
+  password: string = ADMIN_PASS
+): Promise<void> {
   await page.goto(`${BASE}/login`);
-  await page.locator('input[type="email"]').fill(ADMIN_EMAIL);
-  await page.locator('input[type="password"]').fill(ADMIN_PASS);
+  await page.locator('input[type="email"]').fill(email);
+  await page.locator('input[type="password"]').fill(password);
   await page.locator('button[type="submit"]').click();
   // Wait until we leave /login
   await page.waitForFunction(() => !window.location.pathname.startsWith("/login"), { timeout: 20000 });

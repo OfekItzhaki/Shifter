@@ -36,6 +36,7 @@ export default function PickerTabs({ activeTab, onTabChange }: PickerTabsProps) 
       {tabs.map((tab) => (
         <button
           key={tab.id}
+          data-testid={`pick-tab-${tab.id}`}
           role="tab"
           aria-selected={activeTab === tab.id}
           aria-controls={`panel-${tab.id}`}
