@@ -314,6 +314,34 @@ public class ShiftSwapService : IShiftSwapService
                         ErrorMessage: "Shift request metadata no longer matches its assigned slot.");
                 }
 
+                var initiatorAssignmentConflict = await ShiftAssignmentSafety.FindApprovedAssignmentConflictAsync(
+                    _db,
+                    swapRequest.InitiatorPersonId,
+                    targetSlot,
+                    ct,
+                    excludeShiftSlotId: initiatorRequest.ShiftSlotId);
+
+                if (initiatorAssignmentConflict != ShiftAssignmentConflictKind.None)
+                {
+                    await transaction.RollbackAsync(ct);
+                    return new SwapResult(Success: false, SwapRequestId: swapRequestId,
+                        ErrorMessage: FormatSwapAssignmentConflict("initiator", initiatorAssignmentConflict));
+                }
+
+                var targetAssignmentConflict = await ShiftAssignmentSafety.FindApprovedAssignmentConflictAsync(
+                    _db,
+                    swapRequest.TargetPersonId,
+                    initiatorSlot,
+                    ct,
+                    excludeShiftSlotId: targetRequest.ShiftSlotId);
+
+                if (targetAssignmentConflict != ShiftAssignmentConflictKind.None)
+                {
+                    await transaction.RollbackAsync(ct);
+                    return new SwapResult(Success: false, SwapRequestId: swapRequestId,
+                        ErrorMessage: FormatSwapAssignmentConflict("target", targetAssignmentConflict));
+                }
+
                 // Req 12.3, 12.4: Run ConflictDetector on hypothetical post-swap state
                 // After swap: initiator gets target's slot, target gets initiator's slot
                 var conflictResult = await DetectSwapConflictsAsync(
@@ -410,6 +438,11 @@ public class ShiftSwapService : IShiftSwapService
         request.SpaceId == slot.SpaceId
         && request.GroupId == slot.GroupId
         && request.SchedulingCycleId == slot.SchedulingCycleId;
+
+    private static string FormatSwapAssignmentConflict(string memberRole, ShiftAssignmentConflictKind conflictKind) =>
+        conflictKind == ShiftAssignmentConflictKind.Overlap
+            ? $"Conflict detected for the {memberRole}: the swapped shift overlaps with an existing approved shift."
+            : $"Conflict detected for the {memberRole}: the swapped shift does not leave enough rest time after an existing approved shift.";
 
     /// <inheritdoc />
     public async Task DeclineSwapAsync(

@@ -884,6 +884,61 @@ public class SelfServiceNotificationTests
     }
 
     [Fact]
+    public async Task AcceptSwapAsync_RejectsWhenSwappedShiftWouldOverlapSameGroupAssignment()
+    {
+        using var db = CreateDb();
+        var (spaceId, groupId, cycleId, guardTaskId, ownerUserId) = SeedBaseData(db);
+        var deskTask = AddTask(db, spaceId, groupId, "Desk", ownerUserId);
+        var audit = CreateAuditLogger();
+        var pushSender = Substitute.For<IPushNotificationSender>();
+
+        var initiator = Person.Create(spaceId, "Initiator", linkedUserId: Guid.NewGuid());
+        var target = Person.Create(spaceId, "Target", linkedUserId: Guid.NewGuid());
+        var shiftDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(3));
+
+        var initiatorSlot = AddSlot(db, spaceId, groupId, guardTaskId, cycleId, shiftDate, new TimeOnly(8, 0), new TimeOnly(16, 0));
+        var targetSlot = AddSlot(db, spaceId, groupId, deskTask.Id, cycleId, shiftDate.AddDays(1), new TimeOnly(8, 0), new TimeOnly(16, 0));
+        var targetExistingSlot = AddSlot(db, spaceId, groupId, deskTask.Id, cycleId, shiftDate, new TimeOnly(12, 0), new TimeOnly(18, 0));
+
+        var initiatorRequest = AddApprovedRequest(db, spaceId, groupId, cycleId, initiator.Id, initiatorSlot);
+        var targetRequest = AddApprovedRequest(db, spaceId, groupId, cycleId, target.Id, targetSlot);
+        AddApprovedRequest(db, spaceId, groupId, cycleId, target.Id, targetExistingSlot);
+
+        var swap = SwapRequest.Create(
+            spaceId,
+            groupId,
+            initiator.Id,
+            target.Id,
+            initiatorRequest.Id,
+            targetRequest.Id);
+
+        db.People.AddRange(initiator, target);
+        db.SwapRequests.Add(swap);
+        await db.SaveChangesAsync();
+
+        var service = new ShiftSwapService(
+            db,
+            pushSender,
+            audit,
+            TimeProvider.System,
+            NullLogger<ShiftSwapService>.Instance);
+
+        var result = await service.AcceptSwapAsync(target.Id, swap.Id);
+
+        result.Success.Should().BeFalse();
+        result.ErrorMessage.Should().Be("Conflict detected for the target: the swapped shift overlaps with an existing approved shift.");
+
+        var updatedSwap = await db.SwapRequests.SingleAsync(s => s.Id == swap.Id);
+        updatedSwap.Status.Should().Be(SwapRequestStatus.Pending);
+        (await db.ShiftRequests.SingleAsync(r => r.Id == initiatorRequest.Id)).ShiftSlotId.Should().Be(initiatorSlot.Id);
+        (await db.ShiftRequests.SingleAsync(r => r.Id == targetRequest.Id)).ShiftSlotId.Should().Be(targetSlot.Id);
+        await audit.DidNotReceiveWithAnyArgs()
+            .LogAsync(default, default, default!, default, default, default, default, default, default);
+        await pushSender.DidNotReceiveWithAnyArgs()
+            .SendPushToUserAsync(default, default, default!, default);
+    }
+
+    [Fact]
     public async Task AcceptSwapAsync_RejectsExistingCrossCycleSwap()
     {
         using var db = CreateDb();
