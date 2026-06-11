@@ -69,6 +69,20 @@ const members: GroupMemberDto[] = [
     roleId: null,
     roleName: null,
   },
+  {
+    personId: "person-3",
+    fullName: "Charlie Cover",
+    displayName: "Charlie",
+    isOwner: false,
+    phoneNumber: null,
+    email: null,
+    invitationStatus: "Accepted",
+    profileImageUrl: null,
+    birthday: null,
+    linkedUserId: "user-3",
+    roleId: null,
+    roleName: null,
+  },
 ];
 
 describe("AdminOverridesTab", () => {
@@ -244,6 +258,57 @@ describe("AdminOverridesTab", () => {
     });
     expect(screen.queryByText("Alice")).not.toBeInTheDocument();
     expect(screen.getByText("0/2")).toBeInTheDocument();
+  });
+
+  it("lets admins assign beyond capacity as a manual override", async () => {
+    mockGetAvailableSlots.mockResolvedValue({
+      requestWindowOpen: false,
+      requestWindowOpensAt: null,
+      requestWindowClosesAt: "2026-06-19T00:00:00Z",
+      slots: [
+        {
+          id: "slot-1",
+          date: "2026-06-20",
+          startTime: "09:00:00",
+          endTime: "17:00:00",
+          taskName: "Desk",
+          capacity: 2,
+          currentFillCount: 2,
+        },
+      ],
+    });
+    mockGetAdminShiftSlotAssignments.mockResolvedValue([
+      {
+        shiftSlotId: "slot-1",
+        personId: "person-1",
+        personName: "Alice",
+      },
+      {
+        shiftSlotId: "slot-1",
+        personId: "person-2",
+        personName: "Ben Backup",
+      },
+    ]);
+
+    render(
+      <AdminOverridesTab
+        spaceId="space-1"
+        groupId="group-1"
+        members={members}
+        hasSchedulePublishPermission
+      />
+    );
+
+    const assignButton = await screen.findByRole("button", { name: "Assign member" });
+    expect(assignButton).toBeEnabled();
+
+    fireEvent.click(assignButton);
+    fireEvent.change(screen.getByRole("combobox"), { target: { value: "person-3" } });
+    fireEvent.click(screen.getByRole("button", { name: "Confirm" }));
+
+    await waitFor(() => {
+      expect(mockAdminAssignMember).toHaveBeenCalledWith("space-1", "group-1", "slot-1", "person-3");
+    });
   });
 
   it("refreshes assignments after an admin assignment fails", async () => {

@@ -158,6 +158,9 @@ describe("CycleControlPanel", () => {
     expect(screen.getByText("3 warning(s)")).toBeInTheDocument();
     expect(screen.getByText("Run the check")).toBeInTheDocument();
 
+    fireEvent.click(screen.getByRole("button", { name: /Coverage 1 slot\(s\) under-filled/i }));
+    expect(onNavigate).toHaveBeenCalledWith("admin-overrides");
+
     fireEvent.click(screen.getByRole("button", { name: "Open Waitlist" }));
     expect(onNavigate).toHaveBeenCalledWith("waitlist");
 
@@ -187,6 +190,8 @@ describe("CycleControlPanel", () => {
     });
     expect(await screen.findByText("1 under-scheduled member(s)")).toBeInTheDocument();
     expect(screen.getByText("Member One: 0/1")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /Under-scheduled members 1 member\(s\) under minimum/i }));
+    expect(onNavigate).toHaveBeenCalledWith("admin-overrides");
     expect(mockGetSelfServiceCycleStatus).toHaveBeenCalledTimes(2);
   });
 

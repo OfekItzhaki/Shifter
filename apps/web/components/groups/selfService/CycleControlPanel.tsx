@@ -17,7 +17,7 @@ import MutationButton from "./MutationButton";
 interface CycleControlPanelProps {
   spaceId: string;
   groupId: string;
-  onNavigate?: (tab: "absence-reports" | "waitlist") => void;
+  onNavigate?: (tab: "absence-reports" | "admin-overrides" | "waitlist") => void;
   onStatusChanged?: () => void | Promise<void>;
 }
 
@@ -141,7 +141,7 @@ export default function CycleControlPanel({ spaceId, groupId, onNavigate, onStat
           value: status.underfilledSlotCount > 0
             ? t("closeChecklist.items.coverage.warning", { count: status.underfilledSlotCount })
             : t("closeChecklist.items.coverage.ok"),
-          onClick: undefined,
+          onClick: status.underfilledSlotCount > 0 && onNavigate ? () => onNavigate("admin-overrides") : undefined,
         },
         {
           key: "reviews",
@@ -170,7 +170,9 @@ export default function CycleControlPanel({ spaceId, groupId, onNavigate, onStat
             : underScheduledCount > 0
               ? t("closeChecklist.items.underScheduled.warning", { count: underScheduledCount })
               : t("closeChecklist.items.underScheduled.ok"),
-          onClick: undefined,
+          onClick: hasUnderScheduledResult && underScheduledCount > 0 && onNavigate
+            ? () => onNavigate("admin-overrides")
+            : undefined,
         },
       ]
     : [];

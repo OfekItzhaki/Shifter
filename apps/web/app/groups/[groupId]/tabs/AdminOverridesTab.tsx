@@ -238,6 +238,7 @@ export default function AdminOverridesTab({
           const assignments = slotAssignments[slot.id] ?? [];
           const availableMembers = getAvailableMembersForSlot(slot.id);
           const isAssignOpen = assignSlotId === slot.id;
+          const hasAvailableMembers = availableMembers.length > 0;
 
           return (
             <div
@@ -266,7 +267,7 @@ export default function AdminOverridesTab({
                 {/* Assign button */}
                 <button
                   onClick={() => openAssignPicker(slot.id)}
-                  disabled={slot.currentFillCount >= slot.capacity}
+                  disabled={!hasAvailableMembers}
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-sky-600 text-white hover:bg-sky-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <svg width={14} height={14} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
