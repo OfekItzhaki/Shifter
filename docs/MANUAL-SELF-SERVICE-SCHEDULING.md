@@ -232,6 +232,9 @@ not depend on hosted AI:
   deployments.
 - Push/email providers are optional and customer-controlled.
 - AI can remain disabled or private; self-service scheduling still works.
+- `/health/detailed` reports provider readiness for email, push, AI, solver,
+  PostgreSQL, and Redis so customer-hosted installs can verify dependencies
+  before rollout.
 
 For customer-hosted deployments, combine this guide with:
 
@@ -250,5 +253,5 @@ large deployments:
   right customer-specific limits instead of the built-in defaults.
 - Signed/PDF closeout reports. The current closeout summary and CSV export
   support archiving, but they do not yet produce a signed PDF report.
-- Provider health checks for email, push, and optional AI in customer-hosted
-  installs.
+- Admin UI for provider health checks. The API already exposes detailed
+  provider status through `/health/detailed`.

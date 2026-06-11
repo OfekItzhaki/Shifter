@@ -379,6 +379,7 @@ builder.Services.AddScoped<Jobuler.Application.Common.HealthChecks.IServiceHealt
 builder.Services.AddScoped<Jobuler.Application.Common.HealthChecks.IServiceHealthCheck, Jobuler.Infrastructure.HealthChecks.ResendHealthCheck>();
 builder.Services.AddScoped<Jobuler.Application.Common.HealthChecks.IServiceHealthCheck, Jobuler.Infrastructure.HealthChecks.SolverHealthCheck>();
 builder.Services.AddScoped<Jobuler.Application.Common.HealthChecks.IServiceHealthCheck, Jobuler.Infrastructure.HealthChecks.AiHealthCheck>();
+builder.Services.AddScoped<Jobuler.Application.Common.HealthChecks.IServiceHealthCheck, Jobuler.Infrastructure.HealthChecks.PushHealthCheck>();
 
 // Health check runner (aggregates all IServiceHealthCheck instances)
 builder.Services.AddScoped<Jobuler.Application.Common.HealthChecks.IHealthCheckRunner, Jobuler.Infrastructure.HealthChecks.HealthCheckRunner>();
