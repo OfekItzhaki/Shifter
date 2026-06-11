@@ -96,6 +96,21 @@ services:
       Storage__S3__PublicBaseUrl: ${STORAGE_S3_PUBLIC_BASE_URL:-}
       Storage__S3__ForcePathStyle: ${STORAGE_S3_FORCE_PATH_STYLE:-false}
       AutoScheduler__Enabled: ${AUTO_SCHEDULER_ENABLED:-false}
+      SelfServiceDefaults__MinShiftsPerCycle: ${SELF_SERVICE_DEFAULT_MIN_SHIFTS_PER_CYCLE:-0}
+      SelfServiceDefaults__MaxShiftsPerCycle: ${SELF_SERVICE_DEFAULT_MAX_SHIFTS_PER_CYCLE:-7}
+      SelfServiceDefaults__RequestWindowOpenOffsetHours: ${SELF_SERVICE_DEFAULT_REQUEST_WINDOW_OPEN_OFFSET_HOURS:-168}
+      SelfServiceDefaults__RequestWindowCloseOffsetHours: ${SELF_SERVICE_DEFAULT_REQUEST_WINDOW_CLOSE_OFFSET_HOURS:-24}
+      SelfServiceDefaults__CancellationCutoffHours: ${SELF_SERVICE_DEFAULT_CANCELLATION_CUTOFF_HOURS:-24}
+      SelfServiceDefaults__MaxAbsencesPerCycle: ${SELF_SERVICE_DEFAULT_MAX_ABSENCES_PER_CYCLE:-3}
+      SelfServiceDefaults__MaxLateCancellationsPerCycle: ${SELF_SERVICE_DEFAULT_MAX_LATE_CANCELLATIONS_PER_CYCLE:-2}
+      SelfServiceDefaults__LateCancellationWindowHours: ${SELF_SERVICE_DEFAULT_LATE_CANCELLATION_WINDOW_HOURS:-24}
+      SelfServiceDefaults__WaitlistOfferMinutes: ${SELF_SERVICE_DEFAULT_WAITLIST_OFFER_MINUTES:-60}
+      SelfServiceDefaults__CycleDurationDays: ${SELF_SERVICE_DEFAULT_CYCLE_DURATION_DAYS:-7}
+      SelfServiceDefaults__AllowMemberShiftClaims: ${SELF_SERVICE_DEFAULT_ALLOW_MEMBER_SHIFT_CLAIMS:-true}
+      SelfServiceDefaults__AllowWaitlist: ${SELF_SERVICE_DEFAULT_ALLOW_WAITLIST:-true}
+      SelfServiceDefaults__AllowShiftChangeRequests: ${SELF_SERVICE_DEFAULT_ALLOW_SHIFT_CHANGE_REQUESTS:-true}
+      SelfServiceDefaults__AllowAbsenceReports: ${SELF_SERVICE_DEFAULT_ALLOW_ABSENCE_REPORTS:-true}
+      SelfServiceDefaults__AllowShiftSwaps: ${SELF_SERVICE_DEFAULT_ALLOW_SHIFT_SWAPS:-true}
       AI__ApiKey: ${AI_API_KEY:-}
       AI__BaseUrl: ${AI_BASE_URL:-}
       AI__Model: ${AI_MODEL:-gpt-4o}

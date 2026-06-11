@@ -159,6 +159,24 @@ For customer-hosted deployments:
 - Do not use LemonSqueezy inside a private enterprise install unless the
   contract explicitly requires self-service billing.
 
+## Manual Self-Service Defaults
+
+Set these before switching customer groups to `SelfService` mode when the
+organization needs policy defaults different from Shifter's built-ins:
+
+```env
+SELF_SERVICE_DEFAULT_MIN_SHIFTS_PER_CYCLE=1
+SELF_SERVICE_DEFAULT_MAX_SHIFTS_PER_CYCLE=5
+SELF_SERVICE_DEFAULT_CANCELLATION_CUTOFF_HOURS=36
+SELF_SERVICE_DEFAULT_MAX_ABSENCES_PER_CYCLE=2
+SELF_SERVICE_DEFAULT_MAX_LATE_CANCELLATIONS_PER_CYCLE=1
+SELF_SERVICE_DEFAULT_ALLOW_SHIFT_SWAPS=false
+```
+
+The values are applied only when the group's self-service policy record is first
+created. Existing group policies remain under admin control and are not
+overwritten by later env changes.
+
 ## Backups
 
 The compose backup script creates PostgreSQL and upload-volume backups:

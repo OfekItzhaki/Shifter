@@ -1,11 +1,13 @@
 using FluentValidation;
 using Jobuler.Application.Common;
+using Jobuler.Application.Scheduling.SelfService;
 using Jobuler.Domain.Groups;
 using Jobuler.Domain.Scheduling;
 using Jobuler.Domain.Spaces;
 using Jobuler.Infrastructure.Persistence;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace Jobuler.Application.Scheduling.Commands;
 
@@ -30,11 +32,21 @@ public class ChangeSchedulingModeCommandHandler : IRequestHandler<ChangeScheduli
 {
     private readonly AppDbContext _db;
     private readonly IPermissionService _permissions;
+    private readonly SelfServiceDefaultPolicyOptions _selfServiceDefaults;
 
     public ChangeSchedulingModeCommandHandler(AppDbContext db, IPermissionService permissions)
+        : this(db, permissions, Options.Create(new SelfServiceDefaultPolicyOptions()))
+    {
+    }
+
+    public ChangeSchedulingModeCommandHandler(
+        AppDbContext db,
+        IPermissionService permissions,
+        IOptions<SelfServiceDefaultPolicyOptions> selfServiceDefaults)
     {
         _db = db;
         _permissions = permissions;
+        _selfServiceDefaults = selfServiceDefaults.Value;
     }
 
     public async Task Handle(ChangeSchedulingModeCommand request, CancellationToken ct)
@@ -76,7 +88,7 @@ public class ChangeSchedulingModeCommandHandler : IRequestHandler<ChangeScheduli
                 c.SpaceId == request.SpaceId, ct);
 
             if (!hasConfig)
-                _db.SelfServiceConfigs.Add(SelfServiceConfig.Create(request.SpaceId, request.GroupId));
+                _db.SelfServiceConfigs.Add(_selfServiceDefaults.ToConfig(request.SpaceId, request.GroupId));
         }
 
         await _db.SaveChangesAsync(ct);

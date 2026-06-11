@@ -1,11 +1,13 @@
 using FluentAssertions;
 using Jobuler.Application.Common;
 using Jobuler.Application.Scheduling.Commands;
+using Jobuler.Application.Scheduling.SelfService;
 using Jobuler.Domain.Groups;
 using Jobuler.Domain.Scheduling;
 using Jobuler.Domain.Spaces;
 using Jobuler.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using NSubstitute;
 using Xunit;
 
@@ -67,6 +69,57 @@ public class ChangeSchedulingModeCommandTests
         config.MaxLateCancellationsPerCycle.Should().Be(2);
         config.AllowMemberShiftClaims.Should().BeTrue();
         config.AllowWaitlist.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task Handle_ChangesToSelfService_CreatesConfigFromConfiguredDefaults()
+    {
+        // Arrange
+        using var db = CreateDb();
+        var spaceId = Guid.NewGuid();
+        var group = Group.Create(spaceId, null, "Test Group");
+        db.Groups.Add(group);
+        await db.SaveChangesAsync();
+
+        var defaults = new SelfServiceDefaultPolicyOptions
+        {
+            MinShiftsPerCycle = 1,
+            MaxShiftsPerCycle = 5,
+            RequestWindowOpenOffsetHours = 240,
+            RequestWindowCloseOffsetHours = 48,
+            CancellationCutoffHours = 36,
+            MaxAbsencesPerCycle = 4,
+            MaxLateCancellationsPerCycle = 1,
+            LateCancellationWindowHours = 18,
+            WaitlistOfferMinutes = 45,
+            CycleDurationDays = 14,
+            AllowMemberShiftClaims = true,
+            AllowWaitlist = false,
+            AllowShiftChangeRequests = true,
+            AllowAbsenceReports = true,
+            AllowShiftSwaps = false
+        };
+
+        var handler = new ChangeSchedulingModeCommandHandler(db, AllowAll(), Options.Create(defaults));
+        var command = new ChangeSchedulingModeCommand(spaceId, group.Id, Guid.NewGuid(), SchedulingMode.SelfService);
+
+        // Act
+        await handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        var config = await db.SelfServiceConfigs.SingleAsync(c => c.GroupId == group.Id);
+        config.MinShiftsPerCycle.Should().Be(1);
+        config.MaxShiftsPerCycle.Should().Be(5);
+        config.RequestWindowOpenOffsetHours.Should().Be(240);
+        config.RequestWindowCloseOffsetHours.Should().Be(48);
+        config.CancellationCutoffHours.Should().Be(36);
+        config.MaxAbsencesPerCycle.Should().Be(4);
+        config.MaxLateCancellationsPerCycle.Should().Be(1);
+        config.LateCancellationWindowHours.Should().Be(18);
+        config.WaitlistOfferMinutes.Should().Be(45);
+        config.CycleDurationDays.Should().Be(14);
+        config.AllowWaitlist.Should().BeFalse();
+        config.AllowShiftSwaps.Should().BeFalse();
     }
 
     [Fact]

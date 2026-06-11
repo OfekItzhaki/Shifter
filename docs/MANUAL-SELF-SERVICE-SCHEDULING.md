@@ -77,6 +77,9 @@ The strongest manager entry point is the self-service group operations tab.
 1. Create or edit a group and set the scheduling mode to `SelfService`.
    Shifter creates a default self-service policy record when the mode is
    enabled, so the group has concrete limits before the first cycle is opened.
+   Customer-hosted deployments can set install-level defaults with
+   `SELF_SERVICE_DEFAULT_*` env vars before groups are switched to
+   `SelfService`.
 2. Add members, roles, qualifications, and tasks as usual.
 3. Open the self-service admin area for the group.
 4. Configure self-service policy:
@@ -249,8 +252,9 @@ large deployments:
 - A full browser end-to-end test that exercises the complete member/admin cycle:
   pick shift, fill slot, join waitlist, cancel, report absence, request change,
   review as admin, and verify final slot state.
-- Organization-level defaults for self-service policy so new groups inherit the
-  right customer-specific limits instead of the built-in defaults.
+- Organization-level defaults for self-service policy through the admin UI.
+  Customer-hosted installs can already set install-level defaults through
+  environment configuration.
 - Signed/PDF closeout reports. The current closeout summary and CSV export
   support archiving, but they do not yet produce a signed PDF report.
 - Admin UI for provider health checks. The API already exposes detailed

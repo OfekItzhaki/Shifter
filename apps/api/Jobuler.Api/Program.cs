@@ -107,6 +107,8 @@ builder.Services.AddScoped<IPushNotificationSender, PushNotificationSender>();
 builder.Services.AddScoped<IPdfRenderer, QuestPdfRenderer>();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<ITimezoneResolver, TimezoneResolver>();
+builder.Services.Configure<Jobuler.Application.Scheduling.SelfService.SelfServiceDefaultPolicyOptions>(
+    builder.Configuration.GetSection("SelfServiceDefaults"));
 
 // ─── VAPID configuration (Web Push) ──────────────────────────────────────────
 builder.Services.Configure<VapidSettings>(options =>
