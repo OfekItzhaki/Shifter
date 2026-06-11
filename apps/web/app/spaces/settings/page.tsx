@@ -17,6 +17,7 @@ import InviteCodeCard from "@/components/spaces/InviteCodeCard";
 import RoleAssignmentCard from "@/components/spaces/RoleAssignmentCard";
 import ManagementTimeoutCard from "@/components/spaces/ManagementTimeoutCard";
 import SelfServiceDefaultsCard from "@/components/spaces/SelfServiceDefaultsCard";
+import SpecialDaysCard from "@/components/spaces/SpecialDaysCard";
 import DangerZoneCard from "@/components/spaces/DangerZoneCard";
 import { isRtl as isRtlLocale } from "@/lib/i18n/locales";
 
@@ -243,10 +244,17 @@ export default function SpaceSettingsPage() {
           )}
 
           {activeTab === "selfService" && (
-            <SelfServiceDefaultsCard
-              spaceId={currentSpaceId!}
-              isOwner={space.isOwner}
-            />
+            <>
+              <SelfServiceDefaultsCard
+                spaceId={currentSpaceId!}
+                isOwner={space.isOwner}
+              />
+
+              <SpecialDaysCard
+                spaceId={currentSpaceId!}
+                isOwner={space.isOwner}
+              />
+            </>
           )}
 
           {/* Members */}

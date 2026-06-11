@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using Jobuler.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -12,9 +13,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Jobuler.Application.Persistence.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260607171342_AddSpaceSpecialDays")]
+    partial class AddSpaceSpecialDays
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -982,36 +985,6 @@ namespace Jobuler.Application.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
-                    b.Property<bool>("AllowAbsenceReports")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(true)
-                        .HasColumnName("allow_absence_reports");
-
-                    b.Property<bool>("AllowMemberShiftClaims")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(true)
-                        .HasColumnName("allow_member_shift_claims");
-
-                    b.Property<bool>("AllowShiftChangeRequests")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(true)
-                        .HasColumnName("allow_shift_change_requests");
-
-                    b.Property<bool>("AllowShiftSwaps")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(true)
-                        .HasColumnName("allow_shift_swaps");
-
-                    b.Property<bool>("AllowWaitlist")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(true)
-                        .HasColumnName("allow_waitlist");
-
                     b.Property<int>("CancellationCutoffHours")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
@@ -1031,24 +1004,6 @@ namespace Jobuler.Application.Persistence.Migrations
                     b.Property<Guid>("GroupId")
                         .HasColumnType("uuid")
                         .HasColumnName("group_id");
-
-                    b.Property<int>("LateCancellationWindowHours")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(24)
-                        .HasColumnName("late_cancellation_window_hours");
-
-                    b.Property<int>("MaxAbsencesPerCycle")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(3)
-                        .HasColumnName("max_absences_per_cycle");
-
-                    b.Property<int>("MaxLateCancellationsPerCycle")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(2)
-                        .HasColumnName("max_late_cancellations_per_cycle");
 
                     b.Property<int>("MaxShiftsPerCycle")
                         .ValueGeneratedOnAdd()
@@ -2736,259 +2691,6 @@ namespace Jobuler.Application.Persistence.Migrations
                     b.ToTable("scheduling_cycles", (string)null);
                 });
 
-            modelBuilder.Entity("Jobuler.Domain.Scheduling.ShiftAbsenceReport", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<string>("AdminNote")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)")
-                        .HasColumnName("admin_note");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at");
-
-                    b.Property<Guid>("GroupId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("group_id");
-
-                    b.Property<bool>("IsLate")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false)
-                        .HasColumnName("is_late");
-
-                    b.Property<Guid>("PersonId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("person_id");
-
-                    b.Property<string>("Reason")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)")
-                        .HasColumnName("reason");
-
-                    b.Property<DateTime>("ReportedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("reported_at");
-
-                    b.Property<DateTime?>("ReviewedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("reviewed_at");
-
-                    b.Property<Guid?>("ReviewedByUserId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("reviewed_by_user_id");
-
-                    b.Property<Guid>("SchedulingCycleId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("scheduling_cycle_id");
-
-                    b.Property<Guid>("ShiftRequestId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("shift_request_id");
-
-                    b.Property<Guid>("ShiftSlotId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("shift_slot_id");
-
-                    b.Property<Guid>("SpaceId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("space_id");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("text")
-                        .HasDefaultValue("Pending")
-                        .HasColumnName("status");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("updated_at");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ShiftRequestId")
-                        .IsUnique()
-                        .HasDatabaseName("idx_shift_absence_reports_shift_request");
-
-                    b.HasIndex("GroupId", "Status", "ReportedAt")
-                        .HasDatabaseName("idx_shift_absence_reports_group_status");
-
-                    b.HasIndex("PersonId", "SchedulingCycleId", "IsLate", "Status")
-                        .HasDatabaseName("idx_shift_absence_reports_person_cycle");
-
-                    b.ToTable("shift_absence_reports", (string)null);
-                });
-
-            modelBuilder.Entity("Jobuler.Domain.Scheduling.ShiftAttendanceRecord", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at");
-
-                    b.Property<Guid>("GroupId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("group_id");
-
-                    b.Property<string>("Note")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)")
-                        .HasColumnName("note");
-
-                    b.Property<Guid>("PersonId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("person_id");
-
-                    b.Property<DateTime>("RecordedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("recorded_at");
-
-                    b.Property<Guid>("RecordedByUserId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("recorded_by_user_id");
-
-                    b.Property<Guid>("SchedulingCycleId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("scheduling_cycle_id");
-
-                    b.Property<Guid>("ShiftRequestId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("shift_request_id");
-
-                    b.Property<Guid>("ShiftSlotId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("shift_slot_id");
-
-                    b.Property<Guid>("SpaceId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("space_id");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("status");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("updated_at");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ShiftRequestId")
-                        .IsUnique()
-                        .HasDatabaseName("idx_shift_attendance_records_shift_request");
-
-                    b.HasIndex("GroupId", "SchedulingCycleId", "Status")
-                        .HasDatabaseName("idx_shift_attendance_records_group_cycle_status");
-
-                    b.HasIndex("PersonId", "SchedulingCycleId", "Status")
-                        .HasDatabaseName("idx_shift_attendance_records_person_cycle_status");
-
-                    b.ToTable("shift_attendance_records", (string)null);
-                });
-
-            modelBuilder.Entity("Jobuler.Domain.Scheduling.ShiftChangeRequest", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<string>("AdminNote")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)")
-                        .HasColumnName("admin_note");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at");
-
-                    b.Property<Guid>("GroupId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("group_id");
-
-                    b.Property<Guid>("OriginalShiftSlotId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("original_shift_slot_id");
-
-                    b.Property<Guid>("PersonId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("person_id");
-
-                    b.Property<string>("Reason")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)")
-                        .HasColumnName("reason");
-
-                    b.Property<DateTime>("RequestedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("requested_at");
-
-                    b.Property<Guid?>("RequestedShiftSlotId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("requested_shift_slot_id");
-
-                    b.Property<DateTime?>("ReviewedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("reviewed_at");
-
-                    b.Property<Guid?>("ReviewedByUserId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("reviewed_by_user_id");
-
-                    b.Property<Guid>("SchedulingCycleId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("scheduling_cycle_id");
-
-                    b.Property<Guid>("ShiftRequestId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("shift_request_id");
-
-                    b.Property<Guid>("SpaceId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("space_id");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("text")
-                        .HasDefaultValue("Pending")
-                        .HasColumnName("status");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("updated_at");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("RequestedShiftSlotId")
-                        .HasDatabaseName("idx_shift_change_requests_requested_slot");
-
-                    b.HasIndex("ShiftRequestId")
-                        .HasDatabaseName("idx_shift_change_requests_shift_request_pending")
-                        .HasFilter("status = 'Pending'");
-
-                    b.HasIndex("GroupId", "Status", "RequestedAt")
-                        .HasDatabaseName("idx_shift_change_requests_group_status");
-
-                    b.HasIndex("PersonId", "SchedulingCycleId", "Status")
-                        .HasDatabaseName("idx_shift_change_requests_person_cycle");
-
-                    b.ToTable("shift_change_requests", (string)null);
-                });
-
             modelBuilder.Entity("Jobuler.Domain.Scheduling.ShiftRequest", b =>
                 {
                     b.Property<Guid>("Id")
@@ -3098,10 +2800,6 @@ namespace Jobuler.Application.Persistence.Migrations
                         .HasColumnType("time without time zone")
                         .HasColumnName("end_time");
 
-                    b.Property<DateTime>("EndsAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("ends_at");
-
                     b.Property<Guid>("GroupId")
                         .HasColumnType("uuid")
                         .HasColumnName("group_id");
@@ -3125,10 +2823,6 @@ namespace Jobuler.Application.Persistence.Migrations
                     b.Property<TimeOnly>("StartTime")
                         .HasColumnType("time without time zone")
                         .HasColumnName("start_time");
-
-                    b.Property<DateTime>("StartsAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("starts_at");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -3741,123 +3435,6 @@ namespace Jobuler.Application.Persistence.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("space_roles", (string)null);
-                });
-
-            modelBuilder.Entity("Jobuler.Domain.Spaces.SpaceSelfServiceDefaults", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<bool>("AllowAbsenceReports")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(true)
-                        .HasColumnName("allow_absence_reports");
-
-                    b.Property<bool>("AllowMemberShiftClaims")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(true)
-                        .HasColumnName("allow_member_shift_claims");
-
-                    b.Property<bool>("AllowShiftChangeRequests")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(true)
-                        .HasColumnName("allow_shift_change_requests");
-
-                    b.Property<bool>("AllowShiftSwaps")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(true)
-                        .HasColumnName("allow_shift_swaps");
-
-                    b.Property<bool>("AllowWaitlist")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(true)
-                        .HasColumnName("allow_waitlist");
-
-                    b.Property<int>("CancellationCutoffHours")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(24)
-                        .HasColumnName("cancellation_cutoff_hours");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at");
-
-                    b.Property<int>("CycleDurationDays")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(7)
-                        .HasColumnName("cycle_duration_days");
-
-                    b.Property<int>("LateCancellationWindowHours")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(24)
-                        .HasColumnName("late_cancellation_window_hours");
-
-                    b.Property<int>("MaxAbsencesPerCycle")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(3)
-                        .HasColumnName("max_absences_per_cycle");
-
-                    b.Property<int>("MaxLateCancellationsPerCycle")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(2)
-                        .HasColumnName("max_late_cancellations_per_cycle");
-
-                    b.Property<int>("MaxShiftsPerCycle")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(7)
-                        .HasColumnName("max_shifts_per_cycle");
-
-                    b.Property<int>("MinShiftsPerCycle")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(0)
-                        .HasColumnName("min_shifts_per_cycle");
-
-                    b.Property<int>("RequestWindowCloseOffsetHours")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(24)
-                        .HasColumnName("request_window_close_offset_hours");
-
-                    b.Property<int>("RequestWindowOpenOffsetHours")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(168)
-                        .HasColumnName("request_window_open_offset_hours");
-
-                    b.Property<Guid>("SpaceId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("space_id");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("updated_at");
-
-                    b.Property<int>("WaitlistOfferMinutes")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(60)
-                        .HasColumnName("waitlist_offer_minutes");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("SpaceId")
-                        .IsUnique();
-
-                    b.ToTable("space_self_service_defaults", (string)null);
                 });
 
             modelBuilder.Entity("Jobuler.Domain.Spaces.SpaceSpecialDay", b =>

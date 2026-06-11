@@ -28,7 +28,8 @@ public record SolverInputDto(
     List<TaskRotationDto>? TaskRotation = null,
     [property: JsonPropertyName("preview_mode")] bool PreviewMode = false,
     [property: JsonPropertyName("cumulative_tracking")] List<CumulativeTrackingDto>? CumulativeTracking = null,
-    [property: JsonPropertyName("parent_schedule")] List<ParentAssignmentDto>? ParentSchedule = null);
+    [property: JsonPropertyName("parent_schedule")] List<ParentAssignmentDto>? ParentSchedule = null,
+    [property: JsonPropertyName("special_days")] List<SpecialDayDto>? SpecialDays = null);
 
 
 public record StabilityWeightsDto(
@@ -117,3 +118,10 @@ public record ParentAssignmentDto(
     [property: JsonPropertyName("person_id")] string PersonId,
     [property: JsonPropertyName("starts_at")] string StartsAt,
     [property: JsonPropertyName("ends_at")] string EndsAt);
+
+public record SpecialDayDto(
+    [property: JsonPropertyName("date")] string Date,
+    [property: JsonPropertyName("name")] string Name,
+    [property: JsonPropertyName("kind")] string Kind,
+    [property: JsonPropertyName("home_leave_weight_multiplier")] double HomeLeaveWeightMultiplier,
+    [property: JsonPropertyName("requires_coverage")] bool RequiresCoverage);

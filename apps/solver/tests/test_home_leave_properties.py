@@ -16,7 +16,7 @@ from hypothesis import strategies as st
 from models.solver_input import (
     SolverInput, PersonEligibility, TaskSlot, StabilityWeights, HomeLeaveConfig,
     PresenceWindow, AvailabilityWindow, HardConstraint, SoftConstraint,
-    BaselineAssignment, FairnessCounters,
+    BaselineAssignment, FairnessCounters, SpecialDay,
 )
 from solver.engine import solve
 
@@ -116,6 +116,69 @@ def make_solver_input(people, slots, config):
         fairness_counters=[],
         locked_slot_ids=[],
         home_leave_config=config,
+    )
+
+
+def test_special_day_preference_places_leave_on_special_day():
+    """A reviewed special day should attract home-leave timing when constraints allow it."""
+    people = [
+        PersonEligibility(
+            person_id="person-1",
+            role_ids=["role-1"],
+            qualification_ids=[],
+            group_ids=["group-1"],
+        )
+    ]
+    slots = [
+        TaskSlot(
+            slot_id="slot-1",
+            task_type_id="tt-guard",
+            task_type_name="Guard",
+            burden_level="neutral",
+            starts_at=HORIZON_START_DT,
+            ends_at=HORIZON_START_DT + timedelta(hours=4),
+            required_headcount=1,
+            priority=5,
+            required_role_ids=[],
+            required_qualification_ids=[],
+            allows_overlap=False,
+        )
+    ]
+    config = HomeLeaveConfig(
+        enabled=True,
+        min_rest_hours=8.0,
+        eligibility_threshold_hours=0.0,
+        leave_capacity=1,
+        leave_duration_hours=24.0,
+        balance_value=100,
+    )
+    solver_input = make_solver_input(people, slots, config).model_copy(update={
+        "horizon_end": date(2026, 5, 5),
+        "special_days": [
+            SpecialDay(
+                date=date(2026, 5, 3),
+                name="Holiday",
+                kind="holiday",
+                home_leave_weight_multiplier=5.0,
+                requires_coverage=True,
+            )
+        ],
+    })
+
+    result = solve(solver_input)
+
+    assert result.feasible
+    assert result.home_leave_assignments
+    holiday_start = datetime(2026, 5, 3, tzinfo=timezone.utc)
+    holiday_end = holiday_start + timedelta(days=1)
+    assert any(
+        _intervals_overlap(
+            _parse_iso(leave.starts_at),
+            _parse_iso(leave.ends_at),
+            holiday_start,
+            holiday_end,
+        )
+        for leave in result.home_leave_assignments
     )
 
 
