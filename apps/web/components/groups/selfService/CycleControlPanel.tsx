@@ -18,6 +18,7 @@ interface CycleControlPanelProps {
   spaceId: string;
   groupId: string;
   onNavigate?: (tab: "absence-reports" | "waitlist") => void;
+  onStatusChanged?: () => void | Promise<void>;
 }
 
 function formatDateTime(value: string | null): string {
@@ -40,7 +41,7 @@ function formatCoverage(status: SelfServiceCycleStatusDto): string {
   return `${Math.round((status.filledCount / status.totalCapacity) * 100)}%`;
 }
 
-export default function CycleControlPanel({ spaceId, groupId, onNavigate }: CycleControlPanelProps) {
+export default function CycleControlPanel({ spaceId, groupId, onNavigate, onStatusChanged }: CycleControlPanelProps) {
   const t = useTranslations("selfService.operations.cycle");
   const [status, setStatus] = useState<SelfServiceCycleStatusDto | null>(null);
   const [loading, setLoading] = useState(true);
@@ -72,6 +73,7 @@ export default function CycleControlPanel({ spaceId, groupId, onNavigate }: Cycl
       const next = await fn();
       if (next) setStatus(next);
       else await load();
+      await onStatusChanged?.();
     } catch (err) {
       setError(getSelfServiceErrorMessage(err).message);
     } finally {
@@ -88,6 +90,7 @@ export default function CycleControlPanel({ spaceId, groupId, onNavigate }: Cycl
       const result = await checkUnderScheduledMembers(spaceId, groupId, status.cycleId);
       setUnderScheduled(result.underScheduledMembers);
       await load();
+      await onStatusChanged?.();
     } catch (err) {
       setError(getSelfServiceErrorMessage(err).message);
     } finally {

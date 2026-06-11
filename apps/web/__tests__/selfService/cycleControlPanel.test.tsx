@@ -141,7 +141,15 @@ describe("CycleControlPanel", () => {
 
   it("runs cycle window actions and surfaces close-readiness checks", async () => {
     const onNavigate = vi.fn();
-    render(<CycleControlPanel spaceId="space-1" groupId="group-1" onNavigate={onNavigate} />);
+    const onStatusChanged = vi.fn();
+    render(
+      <CycleControlPanel
+        spaceId="space-1"
+        groupId="group-1"
+        onNavigate={onNavigate}
+        onStatusChanged={onStatusChanged}
+      />
+    );
 
     expect(await screen.findByText("Window open")).toBeInTheDocument();
     expect(screen.getByText("6/8")).toBeInTheDocument();
@@ -157,16 +165,25 @@ describe("CycleControlPanel", () => {
     await waitFor(() => {
       expect(mockCloseSelfServiceCycleWindow).toHaveBeenCalledWith("space-1", "group-1", "cycle-1");
     });
+    await waitFor(() => {
+      expect(onStatusChanged).toHaveBeenCalledTimes(1);
+    });
     expect(await screen.findByText("Window closed")).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Open window" }));
     await waitFor(() => {
       expect(mockOpenSelfServiceCycleWindow).toHaveBeenCalledWith("space-1", "group-1", "cycle-1", 24);
     });
+    await waitFor(() => {
+      expect(onStatusChanged).toHaveBeenCalledTimes(2);
+    });
 
     fireEvent.click(screen.getByRole("button", { name: "Check minimums" }));
     await waitFor(() => {
       expect(mockCheckUnderScheduledMembers).toHaveBeenCalledWith("space-1", "group-1", "cycle-1");
+    });
+    await waitFor(() => {
+      expect(onStatusChanged).toHaveBeenCalledTimes(3);
     });
     expect(await screen.findByText("1 under-scheduled member(s)")).toBeInTheDocument();
     expect(screen.getByText("Member One: 0/1")).toBeInTheDocument();
@@ -196,13 +213,17 @@ describe("CycleControlPanel", () => {
       underfilledSlots: [],
     }));
 
-    render(<CycleControlPanel spaceId="space-1" groupId="group-1" />);
+    const onStatusChanged = vi.fn();
+    render(<CycleControlPanel spaceId="space-1" groupId="group-1" onStatusChanged={onStatusChanged} />);
 
     expect(await screen.findByText("No active cycle")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Generate first cycle" }));
 
     await waitFor(() => {
       expect(mockGenerateNextSelfServiceCycle).toHaveBeenCalledWith("space-1", "group-1");
+    });
+    await waitFor(() => {
+      expect(onStatusChanged).toHaveBeenCalledTimes(1);
     });
     expect(await screen.findByText("Window open")).toBeInTheDocument();
   });

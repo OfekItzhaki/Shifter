@@ -384,7 +384,12 @@ export default function SelfServiceOperationsTab({
         </div>
       </div>
 
-      <CycleControlPanel spaceId={spaceId} groupId={groupId} onNavigate={onNavigate} />
+      <CycleControlPanel
+        spaceId={spaceId}
+        groupId={groupId}
+        onNavigate={onNavigate}
+        onStatusChanged={loadStatus}
+      />
     </div>
   );
 }

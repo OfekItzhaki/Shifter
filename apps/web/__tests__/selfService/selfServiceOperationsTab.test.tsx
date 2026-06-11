@@ -4,6 +4,7 @@ import SelfServiceOperationsTab from "../../components/groups/selfService/SelfSe
 
 const mockGetSelfServiceCycleStatus = vi.fn();
 const mockGetAdminWaitlistEntries = vi.fn();
+const mockCycleControlPanel = vi.fn();
 
 vi.mock("next-intl", () => ({
   useTranslations: () => (key: string, values?: Record<string, unknown>) => {
@@ -84,7 +85,14 @@ vi.mock("../../lib/api/selfService", () => ({
 }));
 
 vi.mock("../../components/groups/selfService/CycleControlPanel", () => ({
-  default: () => <div data-testid="cycle-control-panel" />,
+  default: (props: { onStatusChanged?: () => void }) => {
+    mockCycleControlPanel(props);
+    return (
+      <button type="button" data-testid="cycle-control-panel" onClick={() => props.onStatusChanged?.()}>
+        Cycle control
+      </button>
+    );
+  },
 }));
 
 describe("SelfServiceOperationsTab", () => {
@@ -162,6 +170,9 @@ describe("SelfServiceOperationsTab", () => {
     expect(screen.getByText("Changes and absence")).toBeInTheDocument();
     expect(screen.getAllByText("Special leave").length).toBeGreaterThan(1);
     expect(screen.getByText("Approved leave creates presence.")).toBeInTheDocument();
+    expect(mockCycleControlPanel).toHaveBeenCalledWith(
+      expect.objectContaining({ onStatusChanged: expect.any(Function) })
+    );
 
     fireEvent.click(screen.getByRole("button", { name: /Review requests/i }));
 
@@ -179,6 +190,12 @@ describe("SelfServiceOperationsTab", () => {
 
     await waitFor(() => {
       expect(onNavigate).toHaveBeenCalledWith("waitlist");
+    });
+
+    fireEvent.click(screen.getByTestId("cycle-control-panel"));
+
+    await waitFor(() => {
+      expect(mockGetSelfServiceCycleStatus).toHaveBeenCalledTimes(2);
     });
   });
 });
