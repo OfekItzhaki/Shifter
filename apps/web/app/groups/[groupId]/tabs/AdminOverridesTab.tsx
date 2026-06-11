@@ -66,8 +66,8 @@ export default function AdminOverridesTab({
   const [slotActionError, setSlotActionError] = useState<{ slotId: string; message: string } | null>(null);
 
   // ── Fetch slots ──────────────────────────────────────────────────────────
-  const fetchSlots = useCallback(async () => {
-    setLoading(true);
+  const fetchSlots = useCallback(async (showLoading = true) => {
+    if (showLoading) setLoading(true);
     setError(null);
     try {
       const [data, assignments] = await Promise.all([
@@ -88,13 +88,13 @@ export default function AdminOverridesTab({
       const { message } = getSelfServiceErrorMessage(err);
       setError(message);
     } finally {
-      setLoading(false);
+      if (showLoading) setLoading(false);
     }
   }, [spaceId, groupId]);
 
   useEffect(() => {
     if (hasSchedulePublishPermission) {
-      void Promise.resolve().then(fetchSlots);
+      void Promise.resolve().then(() => fetchSlots());
     } else {
       void Promise.resolve().then(() => setLoading(false));
     }
@@ -148,36 +148,12 @@ export default function AdminOverridesTab({
 
     try {
       await adminAssignMember(spaceId, groupId, assignSlotId, selectedPersonId);
-
-      // Update local state
-      const member = members.find((m) => m.personId === selectedPersonId);
-      if (member) {
-        setSlotAssignments((prev) => ({
-          ...prev,
-          [assignSlotId]: [
-            ...(prev[assignSlotId] ?? []),
-            { personId: member.personId, personName: getMemberDisplayName(member) },
-          ],
-        }));
-      }
-
-      // Update slot fill count
-      setSlotsResponse((prev) => {
-        if (!prev) return prev;
-        return {
-          ...prev,
-          slots: prev.slots.map((s) =>
-            s.id === assignSlotId
-              ? { ...s, currentFillCount: s.currentFillCount + 1 }
-              : s
-          ),
-        };
-      });
-
       closeAssignPicker();
+      await fetchSlots(false);
     } catch (err) {
       const { message } = getSelfServiceErrorMessage(err);
       setAssignError(message);
+      await fetchSlots(false);
     } finally {
       setAssigning(false);
     }
@@ -204,32 +180,12 @@ export default function AdminOverridesTab({
 
     try {
       await adminRemoveMember(spaceId, groupId, removeTarget.slotId, removeTarget.personId);
-
-      // Update local state
-      setSlotAssignments((prev) => ({
-        ...prev,
-        [removeTarget.slotId]: (prev[removeTarget.slotId] ?? []).filter(
-          (a) => a.personId !== removeTarget.personId
-        ),
-      }));
-
-      // Update slot fill count
-      setSlotsResponse((prev) => {
-        if (!prev) return prev;
-        return {
-          ...prev,
-          slots: prev.slots.map((s) =>
-            s.id === removeTarget.slotId
-              ? { ...s, currentFillCount: Math.max(0, s.currentFillCount - 1) }
-              : s
-          ),
-        };
-      });
-
       closeRemoveConfirm();
+      await fetchSlots(false);
     } catch (err) {
       const { message } = getSelfServiceErrorMessage(err);
       setRemoveError(message);
+      await fetchSlots(false);
     } finally {
       setRemoving(false);
     }

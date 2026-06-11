@@ -96,6 +96,49 @@ describe("AdminOverridesTab", () => {
   });
 
   it("lets admins manually assign an available member to an unfilled slot", async () => {
+    mockGetAvailableSlots
+      .mockResolvedValueOnce({
+        requestWindowOpen: true,
+        requestWindowOpensAt: null,
+        requestWindowClosesAt: "2026-06-19T00:00:00Z",
+        slots: [
+          {
+            id: "slot-1",
+            date: "2026-06-20",
+            startTime: "09:00:00",
+            endTime: "17:00:00",
+            taskName: "Desk",
+            capacity: 2,
+            currentFillCount: 0,
+          },
+        ],
+      })
+      .mockResolvedValueOnce({
+        requestWindowOpen: true,
+        requestWindowOpensAt: null,
+        requestWindowClosesAt: "2026-06-19T00:00:00Z",
+        slots: [
+          {
+            id: "slot-1",
+            date: "2026-06-20",
+            startTime: "09:00:00",
+            endTime: "17:00:00",
+            taskName: "Desk",
+            capacity: 2,
+            currentFillCount: 1,
+          },
+        ],
+      });
+    mockGetAdminShiftSlotAssignments
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([
+        {
+          shiftSlotId: "slot-1",
+          personId: "person-1",
+          personName: "Alice",
+        },
+      ]);
+
     render(
       <AdminOverridesTab
         spaceId="space-1"
@@ -111,6 +154,10 @@ describe("AdminOverridesTab", () => {
 
     await waitFor(() => {
       expect(mockAdminAssignMember).toHaveBeenCalledWith("space-1", "group-1", "slot-1", "person-1");
+    });
+    await waitFor(() => {
+      expect(mockGetAvailableSlots).toHaveBeenCalledTimes(2);
+      expect(mockGetAdminShiftSlotAssignments).toHaveBeenCalledTimes(2);
     });
     expect(await screen.findByText("Alice")).toBeInTheDocument();
     expect(screen.getByText("1/2")).toBeInTheDocument();
@@ -133,13 +180,48 @@ describe("AdminOverridesTab", () => {
         },
       ],
     });
-    mockGetAdminShiftSlotAssignments.mockResolvedValue([
-      {
-        shiftSlotId: "slot-1",
-        personId: "person-1",
-        personName: "Alice",
-      },
-    ]);
+    mockGetAvailableSlots
+      .mockResolvedValueOnce({
+        requestWindowOpen: true,
+        requestWindowOpensAt: null,
+        requestWindowClosesAt: "2026-06-19T00:00:00Z",
+        slots: [
+          {
+            id: "slot-1",
+            date: "2026-06-20",
+            startTime: "09:00:00",
+            endTime: "17:00:00",
+            taskName: "Desk",
+            capacity: 2,
+            currentFillCount: 1,
+          },
+        ],
+      })
+      .mockResolvedValueOnce({
+        requestWindowOpen: true,
+        requestWindowOpensAt: null,
+        requestWindowClosesAt: "2026-06-19T00:00:00Z",
+        slots: [
+          {
+            id: "slot-1",
+            date: "2026-06-20",
+            startTime: "09:00:00",
+            endTime: "17:00:00",
+            taskName: "Desk",
+            capacity: 2,
+            currentFillCount: 0,
+          },
+        ],
+      });
+    mockGetAdminShiftSlotAssignments
+      .mockResolvedValueOnce([
+        {
+          shiftSlotId: "slot-1",
+          personId: "person-1",
+          personName: "Alice",
+        },
+      ])
+      .mockResolvedValueOnce([]);
 
     render(
       <AdminOverridesTab
@@ -156,7 +238,77 @@ describe("AdminOverridesTab", () => {
     await waitFor(() => {
       expect(mockAdminRemoveMember).toHaveBeenCalledWith("space-1", "group-1", "slot-1", "person-1");
     });
+    await waitFor(() => {
+      expect(mockGetAvailableSlots).toHaveBeenCalledTimes(2);
+      expect(mockGetAdminShiftSlotAssignments).toHaveBeenCalledTimes(2);
+    });
     expect(screen.queryByText("Alice")).not.toBeInTheDocument();
     expect(screen.getByText("0/2")).toBeInTheDocument();
+  });
+
+  it("refreshes assignments after an admin assignment fails", async () => {
+    mockAdminAssignMember.mockRejectedValue({
+      response: { data: { detail: "The member is already assigned to this shift slot." } },
+    });
+    mockGetAvailableSlots
+      .mockResolvedValueOnce({
+        requestWindowOpen: true,
+        requestWindowOpensAt: null,
+        requestWindowClosesAt: "2026-06-19T00:00:00Z",
+        slots: [
+          {
+            id: "slot-1",
+            date: "2026-06-20",
+            startTime: "09:00:00",
+            endTime: "17:00:00",
+            taskName: "Desk",
+            capacity: 2,
+            currentFillCount: 0,
+          },
+        ],
+      })
+      .mockResolvedValueOnce({
+        requestWindowOpen: true,
+        requestWindowOpensAt: null,
+        requestWindowClosesAt: "2026-06-19T00:00:00Z",
+        slots: [
+          {
+            id: "slot-1",
+            date: "2026-06-20",
+            startTime: "09:00:00",
+            endTime: "17:00:00",
+            taskName: "Desk",
+            capacity: 2,
+            currentFillCount: 1,
+          },
+        ],
+      });
+    mockGetAdminShiftSlotAssignments
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([
+        {
+          shiftSlotId: "slot-1",
+          personId: "person-1",
+          personName: "Alice",
+        },
+      ]);
+
+    render(
+      <AdminOverridesTab
+        spaceId="space-1"
+        groupId="group-1"
+        members={members}
+        hasSchedulePublishPermission
+      />
+    );
+
+    fireEvent.click(await screen.findByRole("button", { name: "Assign member" }));
+    fireEvent.change(screen.getByRole("combobox"), { target: { value: "person-1" } });
+    fireEvent.click(screen.getByRole("button", { name: "Confirm" }));
+
+    expect(await screen.findByText("The member is already assigned to this shift slot.")).toBeInTheDocument();
+    expect(await screen.findByText("Alice")).toBeInTheDocument();
+    expect(screen.getByText("1/2")).toBeInTheDocument();
+    expect(mockGetAdminShiftSlotAssignments).toHaveBeenCalledTimes(2);
   });
 });
