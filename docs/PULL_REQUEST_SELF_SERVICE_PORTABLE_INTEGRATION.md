@@ -33,6 +33,8 @@ without dropping self-service review workflows.
 - `node_modules\\.bin\\next.cmd build` from `apps/web` passed.
 - `node_modules\\.bin\\eslint.cmd .` from `apps/web` passed with 89 existing
   warnings and 0 errors.
+- `node_modules\\.bin\\playwright.cmd test e2e/self-service.browser.spec.ts --list`
+  from `apps/web` discovered 13 self-service browser lifecycle tests.
 - `git diff --check --cached` passed before commit.
 
 ## Integration Notes
