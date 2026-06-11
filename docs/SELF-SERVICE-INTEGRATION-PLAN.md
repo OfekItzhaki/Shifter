@@ -41,6 +41,19 @@ Recommended sequence:
 4. Add tests proving holiday dates affect self-service cycle generation or
    policy warnings before exposing it as a customer-facing scheduling feature.
 
+Known reconciliation points from the branch diff:
+
+- `SpaceSpecialDaysController` and `SpecialDaysCard` should be kept if the
+  feature is still wanted.
+- `SpecialLeaveRequestsController` is touched by the holiday branch, so special
+  leave submit/approve/reject/cancel browser coverage should be rerun after the
+  merge.
+- The holiday branch adds solver/special-day inputs. Confirm those inputs do not
+  change self-service groups unless self-service holiday behavior is explicitly
+  implemented.
+- Add at least one self-service test for a special day before presenting holiday
+  calendars as part of manual scheduling.
+
 ## Portable Space Isolation
 
 `feat/portable-space-isolation` is related to customer-hosted deployments and
@@ -58,6 +71,22 @@ Recommended sequence:
 3. Verify tenant scoping/RLS for every self-service table before using it for
    customer-hosted installs.
 4. Re-run customer-hosted health checks and export/import tests after merging.
+
+Known reconciliation points from the branch diff:
+
+- The branch deletes `SpecialLeaveRequestsController`,
+  `SpecialLeaveRequestCommands`, `SpecialLeaveRequestQueries`,
+  `SpecialLeaveRequestDto`, and the `SpecialLeaveRequest` domain entity when
+  compared with `main`. That conflicts with the current manual self-service
+  branch, where special leave is a supported workflow and has browser coverage.
+- Organization export/import must include all self-service workflow data:
+  shift requests, absence reports, shift change requests, waitlist entries, swap
+  requests, attendance records, special leave requests, self-service defaults,
+  templates, slots, cycles, and closeout artifacts.
+- Tenant isolation must be verified for every self-service admin and member
+  endpoint, not only for spaces and organizations.
+- Billing changes should preserve the current space-level self-service billing
+  behavior until organization-level billing is explicitly rolled out.
 
 ## Practical Merge Order
 
