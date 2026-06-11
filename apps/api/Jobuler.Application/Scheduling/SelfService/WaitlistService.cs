@@ -64,6 +64,24 @@ public class WaitlistService : IWaitlistService
                 ErrorMessage: "The requested shift slot does not exist.");
         }
 
+        if (slot.Status != ShiftSlotStatus.Open)
+        {
+            return new WaitlistResult(
+                Success: false,
+                Position: null,
+                ErrorMessage: "The shift slot is no longer open.");
+        }
+
+        var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
+        var shiftStartUtc = slot.Date.ToDateTime(slot.StartTime, DateTimeKind.Utc);
+        if (shiftStartUtc <= utcNow)
+        {
+            return new WaitlistResult(
+                Success: false,
+                Position: null,
+                ErrorMessage: "The shift has already started.");
+        }
+
         if (slot.HasAvailableCapacity())
         {
             return new WaitlistResult(
@@ -84,7 +102,6 @@ public class WaitlistService : IWaitlistService
                 ErrorMessage: "The scheduling cycle for this slot could not be found.");
         }
 
-        var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
         if (!cycle.IsRequestWindowOpen(utcNow))
         {
             return new WaitlistResult(

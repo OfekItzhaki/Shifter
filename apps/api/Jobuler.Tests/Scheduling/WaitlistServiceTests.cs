@@ -107,6 +107,61 @@ public class WaitlistServiceTests
     }
 
     [Fact]
+    public async Task JoinWaitlistAsync_RejectsClosedSlot()
+    {
+        using var db = CreateDb();
+        var (spaceId, groupId, cycleId, taskId) = SeedBaseData(db);
+        var person = Person.Create(spaceId, "Member", linkedUserId: Guid.NewGuid());
+        var slot = CreateSlot(spaceId, groupId, taskId, cycleId);
+        slot.IncrementFillCount();
+        slot.Close();
+
+        db.People.Add(person);
+        db.ShiftSlots.Add(slot);
+        await db.SaveChangesAsync();
+
+        var service = CreateService(db);
+
+        var result = await service.JoinWaitlistAsync(person.Id, slot.Id);
+
+        result.Success.Should().BeFalse();
+        result.ErrorMessage.Should().Be("The shift slot is no longer open.");
+        (await db.WaitlistEntries.CountAsync()).Should().Be(0);
+    }
+
+    [Fact]
+    public async Task JoinWaitlistAsync_RejectsStartedSlot()
+    {
+        using var db = CreateDb();
+        var fixedNow = new DateTimeOffset(2026, 6, 11, 12, 0, 0, TimeSpan.Zero);
+        var (spaceId, groupId, cycleId, taskId) = SeedBaseData(db);
+        var person = Person.Create(spaceId, "Member", linkedUserId: Guid.NewGuid());
+        var slot = ShiftSlot.Create(
+            spaceId,
+            groupId,
+            taskId,
+            shiftTemplateId: Guid.NewGuid(),
+            schedulingCycleId: cycleId,
+            date: DateOnly.FromDateTime(fixedNow.UtcDateTime),
+            startTime: new TimeOnly(8, 0),
+            endTime: new TimeOnly(16, 0),
+            capacity: 1);
+        slot.IncrementFillCount();
+
+        db.People.Add(person);
+        db.ShiftSlots.Add(slot);
+        await db.SaveChangesAsync();
+
+        var service = CreateService(db, timeProvider: new FixedTimeProvider(fixedNow));
+
+        var result = await service.JoinWaitlistAsync(person.Id, slot.Id);
+
+        result.Success.Should().BeFalse();
+        result.ErrorMessage.Should().Be("The shift has already started.");
+        (await db.WaitlistEntries.CountAsync()).Should().Be(0);
+    }
+
+    [Fact]
     public async Task JoinWaitlistAsync_AllowsDifferentMemberWhenSlotIsFull()
     {
         using var db = CreateDb();
@@ -238,6 +293,47 @@ public class WaitlistServiceTests
 
         await waitlistService.DidNotReceiveWithAnyArgs()
             .ProcessSlotReleasedAsync(default, default);
+    }
+
+    [Fact]
+    public async Task AcceptWaitlistOffer_RejectsStaleOffer_WhenMemberAlreadyHasActiveRequestForSlot()
+    {
+        using var db = CreateDb();
+        var (spaceId, groupId, cycleId, taskId) = SeedBaseData(db);
+        var offeredPerson = Person.Create(spaceId, "Offered", linkedUserId: Guid.NewGuid());
+        var slot = CreateSlot(spaceId, groupId, taskId, cycleId);
+        var existingRequest = ShiftRequest.Create(spaceId, slot.Id, offeredPerson.Id, groupId, cycleId);
+        var entry = WaitlistEntry.Create(spaceId, slot.Id, offeredPerson.Id, position: 1);
+        entry.Offer(DateTime.UtcNow.AddMinutes(30));
+
+        db.People.Add(offeredPerson);
+        db.ShiftSlots.Add(slot);
+        db.ShiftRequests.Add(existingRequest);
+        db.WaitlistEntries.Add(entry);
+        await db.SaveChangesAsync();
+
+        var waitlistService = Substitute.For<IWaitlistService>();
+        var handler = new AcceptWaitlistOfferCommandHandler(
+            db,
+            waitlistService,
+            Substitute.For<IPushNotificationSender>(),
+            Substitute.For<INotificationService>(),
+            NullLogger<AcceptWaitlistOfferCommandHandler>.Instance);
+
+        var result = await handler.Handle(
+            new AcceptWaitlistOfferCommand(spaceId, offeredPerson.Id, slot.Id),
+            CancellationToken.None);
+
+        result.Success.Should().BeFalse();
+        result.ErrorMessage.Should().Be("You already have an active request for this slot.");
+        result.ShiftRequestId.Should().BeNull();
+
+        var updatedEntry = await db.WaitlistEntries.SingleAsync(e => e.Id == entry.Id);
+        updatedEntry.Status.Should().Be(WaitlistEntryStatus.Removed);
+        (await db.ShiftRequests.CountAsync()).Should().Be(1);
+
+        await waitlistService.Received(1)
+            .ProcessSlotReleasedAsync(slot.Id, Arg.Any<CancellationToken>());
     }
 
     [Fact]

@@ -135,6 +135,24 @@ public class AcceptWaitlistOfferCommandHandler : IRequestHandler<AcceptWaitlistO
                 ErrorMessage: "The shift slot is no longer available.");
         }
 
+        var hasActiveShiftRequest = await _db.ShiftRequests
+            .AnyAsync(r => r.ShiftSlotId == request.ShiftSlotId
+                           && r.PersonId == request.PersonId
+                           && (r.Status == ShiftRequestStatus.Pending || r.Status == ShiftRequestStatus.Approved), ct);
+
+        if (hasActiveShiftRequest)
+        {
+            entry.Remove();
+            await _db.SaveChangesAsync(ct);
+
+            await _waitlistService.ProcessSlotReleasedAsync(request.ShiftSlotId, ct);
+
+            return new AcceptWaitlistOfferResult(
+                Success: false,
+                ShiftRequestId: null,
+                ErrorMessage: "You already have an active request for this slot.");
+        }
+
         // Req 9.5: Validate Max_Shifts constraint before accepting
         var config = await _db.SelfServiceConfigs
             .AsNoTracking()
