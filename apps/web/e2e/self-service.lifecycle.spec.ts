@@ -77,6 +77,8 @@ interface AbsenceReportDto {
 
 interface MyAbsenceReportsResponse {
   reports: AbsenceReportDto[];
+  absenceReportsUsed: number;
+  maxAbsenceReports: number;
   lateReportsUsed: number;
   maxLateReports: number;
 }

@@ -147,6 +147,8 @@ public class ShiftRequestsController : ControllerBase
                 extensions: new Dictionary<string, object?>
                 {
                     ["wasLate"] = result.WasLate,
+                    ["absenceReportsUsed"] = result.AbsenceReportsUsed,
+                    ["maxAbsenceReports"] = result.MaxAbsenceReports,
                     ["lateReportsUsed"] = result.LateReportsUsed,
                     ["maxLateReports"] = result.MaxLateReports
                 });
@@ -155,6 +157,8 @@ public class ShiftRequestsController : ControllerBase
         return Created("", new CannotAttendShiftResponse(
             result.AbsenceReportId!.Value,
             result.WasLate,
+            result.AbsenceReportsUsed,
+            result.MaxAbsenceReports,
             result.LateReportsUsed,
             result.MaxLateReports));
     }
@@ -183,6 +187,8 @@ public class ShiftRequestsController : ControllerBase
 
             return Ok(new MyAbsenceReportsResponse(
                 Array.Empty<AbsenceReportResponse>(),
+                AbsenceReportsUsed: 0,
+                MaxAbsenceReports: configOnly?.MaxAbsencesPerCycle ?? 3,
                 LateReportsUsed: 0,
                 MaxLateReports: configOnly?.MaxLateCancellationsPerCycle ?? 2,
                 SchedulingCycleId: null));
@@ -229,12 +235,23 @@ public class ShiftRequestsController : ControllerBase
                              && r.Status != ShiftAbsenceReportStatus.Rejected,
                 ct);
 
+        var absenceReportsUsed = await _db.ShiftAbsenceReports
+            .AsNoTracking()
+            .CountAsync(r => r.SpaceId == spaceId
+                             && r.GroupId == groupId
+                             && r.PersonId == personId.Value
+                             && r.SchedulingCycleId == resolvedCycleId
+                             && r.Status != ShiftAbsenceReportStatus.Rejected,
+                ct);
+
         var config = await _db.SelfServiceConfigs
             .AsNoTracking()
             .FirstOrDefaultAsync(c => c.SpaceId == spaceId && c.GroupId == groupId, ct);
 
         return Ok(new MyAbsenceReportsResponse(
             reports,
+            absenceReportsUsed,
+            config?.MaxAbsencesPerCycle ?? 3,
             lateReportsUsed,
             config?.MaxLateCancellationsPerCycle ?? 2,
             resolvedCycleId));
@@ -781,6 +798,8 @@ public record AdminShiftRequestResponse(
 public record CannotAttendShiftResponse(
     Guid AbsenceReportId,
     bool WasLate,
+    int AbsenceReportsUsed,
+    int MaxAbsenceReports,
     int LateReportsUsed,
     int MaxLateReports);
 
@@ -803,6 +822,8 @@ public record AbsenceReportResponse(
 
 public record MyAbsenceReportsResponse(
     IReadOnlyList<AbsenceReportResponse> Reports,
+    int AbsenceReportsUsed,
+    int MaxAbsenceReports,
     int LateReportsUsed,
     int MaxLateReports,
     Guid? SchedulingCycleId);

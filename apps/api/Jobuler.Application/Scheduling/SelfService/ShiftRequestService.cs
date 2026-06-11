@@ -448,6 +448,8 @@ public class ShiftRequestService : IShiftRequestService
                 Success: false,
                 AbsenceReportId: null,
                 WasLate: false,
+                AbsenceReportsUsed: 0,
+                MaxAbsenceReports: 0,
                 LateReportsUsed: 0,
                 MaxLateReports: 0,
                 ErrorMessage: "Reason must be between 1 and 500 characters.");
@@ -466,13 +468,13 @@ public class ShiftRequestService : IShiftRequestService
                 if (shiftRequest is null)
                 {
                     await transaction.RollbackAsync(ct);
-                    return new AbsenceReportResult(false, null, false, 0, 0, "Shift request not found.");
+                    return new AbsenceReportResult(false, null, false, 0, 0, 0, 0, "Shift request not found.");
                 }
 
                 if (shiftRequest.Status != ShiftRequestStatus.Approved)
                 {
                     await transaction.RollbackAsync(ct);
-                    return new AbsenceReportResult(false, null, false, 0, 0, "Only approved shifts can be reported as cannot attend.");
+                    return new AbsenceReportResult(false, null, false, 0, 0, 0, 0, "Only approved shifts can be reported as cannot attend.");
                 }
 
                 var existingReport = await _db.ShiftAbsenceReports
@@ -482,7 +484,7 @@ public class ShiftRequestService : IShiftRequestService
                 if (existingReport is not null)
                 {
                     await transaction.RollbackAsync(ct);
-                    return new AbsenceReportResult(false, null, existingReport.IsLate, 0, 0, "This shift already has an absence report.");
+                    return new AbsenceReportResult(false, null, existingReport.IsLate, 0, 0, 0, 0, "This shift already has an absence report.");
                 }
 
                 var slot = await _db.ShiftSlots
@@ -491,13 +493,13 @@ public class ShiftRequestService : IShiftRequestService
                 if (slot is null)
                 {
                     await transaction.RollbackAsync(ct);
-                    return new AbsenceReportResult(false, null, false, 0, 0, "The associated shift slot could not be found.");
+                    return new AbsenceReportResult(false, null, false, 0, 0, 0, 0, "The associated shift slot could not be found.");
                 }
 
                 if (!SlotMatchesRequest(shiftRequest, slot))
                 {
                     await transaction.RollbackAsync(ct);
-                    return new AbsenceReportResult(false, null, false, 0, 0, "Shift request metadata no longer matches its assigned slot.");
+                    return new AbsenceReportResult(false, null, false, 0, 0, 0, 0, "Shift request metadata no longer matches its assigned slot.");
                 }
 
                 var actorUserId = await _db.People
@@ -513,9 +515,10 @@ public class ShiftRequestService : IShiftRequestService
                 if (config is not null && !config.AllowAbsenceReports)
                 {
                     await transaction.RollbackAsync(ct);
-                    return new AbsenceReportResult(false, null, false, 0, config.MaxLateCancellationsPerCycle, "Absence reporting is disabled for this group.");
+                    return new AbsenceReportResult(false, null, false, 0, config.MaxAbsencesPerCycle, 0, config.MaxLateCancellationsPerCycle, "Absence reporting is disabled for this group.");
                 }
 
+                var maxAbsenceReports = config?.MaxAbsencesPerCycle ?? 3;
                 var maxLateReports = config?.MaxLateCancellationsPerCycle ?? 2;
                 var lateWindowHours = config?.LateCancellationWindowHours ?? config?.CancellationCutoffHours ?? 24;
                 var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
@@ -524,16 +527,39 @@ public class ShiftRequestService : IShiftRequestService
                 if (shiftStartUtc <= utcNow)
                 {
                     await transaction.RollbackAsync(ct);
-                    return new AbsenceReportResult(false, null, true, 0, maxLateReports, "This shift has already started.");
+                    return new AbsenceReportResult(false, null, true, 0, maxAbsenceReports, 0, maxLateReports, "This shift has already started.");
                 }
 
                 var wasLate = utcNow >= shiftStartUtc.AddHours(-lateWindowHours);
+                var absenceReportsUsed = await _db.ShiftAbsenceReports
+                    .CountAsync(r => r.SpaceId == shiftRequest.SpaceId
+                                     && r.GroupId == shiftRequest.GroupId
+                                     && r.PersonId == personId
+                                     && r.SchedulingCycleId == shiftRequest.SchedulingCycleId
+                                     && r.Status != ShiftAbsenceReportStatus.Rejected, ct);
+
+                if (absenceReportsUsed >= maxAbsenceReports)
+                {
+                    await transaction.RollbackAsync(ct);
+                    return new AbsenceReportResult(
+                        false,
+                        null,
+                        wasLate,
+                        absenceReportsUsed,
+                        maxAbsenceReports,
+                        0,
+                        maxLateReports,
+                        $"You have reached the absence report limit ({maxAbsenceReports}) for this scheduling cycle.");
+                }
+
                 var lateReportsUsed = 0;
 
                 if (wasLate)
                 {
                     lateReportsUsed = await _db.ShiftAbsenceReports
-                        .CountAsync(r => r.PersonId == personId
+                        .CountAsync(r => r.SpaceId == shiftRequest.SpaceId
+                                         && r.GroupId == shiftRequest.GroupId
+                                         && r.PersonId == personId
                                          && r.SchedulingCycleId == shiftRequest.SchedulingCycleId
                                          && r.IsLate
                                          && r.Status != ShiftAbsenceReportStatus.Rejected, ct);
@@ -545,6 +571,8 @@ public class ShiftRequestService : IShiftRequestService
                             false,
                             null,
                             true,
+                            absenceReportsUsed,
+                            maxAbsenceReports,
                             lateReportsUsed,
                             maxLateReports,
                             $"You have reached the late absence limit ({maxLateReports}) for this scheduling cycle.");
@@ -599,6 +627,8 @@ public class ShiftRequestService : IShiftRequestService
                         group_id = shiftRequest.GroupId,
                         scheduling_cycle_id = shiftRequest.SchedulingCycleId,
                         was_late = wasLate,
+                        absence_reports_used = absenceReportsUsed + 1,
+                        max_absence_reports = maxAbsenceReports,
                         late_reports_used = wasLate ? lateReportsUsed + 1 : lateReportsUsed,
                         max_late_reports = maxLateReports,
                         late_window_hours = lateWindowHours,
@@ -625,6 +655,8 @@ public class ShiftRequestService : IShiftRequestService
                     true,
                     absenceReport.Id,
                     wasLate,
+                    absenceReportsUsed + 1,
+                    maxAbsenceReports,
                     wasLate ? lateReportsUsed + 1 : lateReportsUsed,
                     maxLateReports,
                     null);

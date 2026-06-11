@@ -20,6 +20,7 @@ public class UpdateSelfServiceConfigCommandValidatorTests
         RequestWindowOpenOffsetHours: 168,
         RequestWindowCloseOffsetHours: 24,
         CancellationCutoffHours: 24,
+        MaxAbsencesPerCycle: 3,
         MaxLateCancellationsPerCycle: 2,
         LateCancellationWindowHours: 24,
         WaitlistOfferMinutes: 60,
@@ -169,7 +170,26 @@ public class UpdateSelfServiceConfigCommandValidatorTests
         _validator.TestValidate(cmd2).ShouldNotHaveValidationErrorFor(x => x.CancellationCutoffHours);
     }
 
-    // ── Waitlist offer minutes validation ────────────────────────────────────
+    // ── Absence report limits validation ─────────────────────────────────────
+
+    [Theory]
+    [InlineData(-1)]
+    [InlineData(101)]
+    public void MaxAbsencesPerCycle_OutOfRange_Fails(int max)
+    {
+        var cmd = ValidCommand() with { MaxAbsencesPerCycle = max };
+        var result = _validator.TestValidate(cmd);
+        result.ShouldHaveValidationErrorFor(x => x.MaxAbsencesPerCycle);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(100)]
+    public void MaxAbsencesPerCycle_BoundaryValues_Pass(int max)
+    {
+        var cmd = ValidCommand() with { MaxAbsencesPerCycle = max };
+        _validator.TestValidate(cmd).ShouldNotHaveValidationErrorFor(x => x.MaxAbsencesPerCycle);
+    }
 
     [Theory]
     [InlineData(-1)]
@@ -208,6 +228,8 @@ public class UpdateSelfServiceConfigCommandValidatorTests
         var cmd = ValidCommand() with { LateCancellationWindowHours = hours };
         _validator.TestValidate(cmd).ShouldNotHaveValidationErrorFor(x => x.LateCancellationWindowHours);
     }
+
+    // ── Waitlist offer minutes validation ────────────────────────────────────
 
     [Theory]
     [InlineData(14)]

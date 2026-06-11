@@ -41,6 +41,7 @@ export interface SelfServiceConfigDto {
   requestWindowOpenOffsetHours: number;
   requestWindowCloseOffsetHours: number;
   cancellationCutoffHours: number;
+  maxAbsencesPerCycle: number;
   maxLateCancellationsPerCycle: number;
   lateCancellationWindowHours: number;
   waitlistOfferMinutes: number;
@@ -58,6 +59,7 @@ export interface UpdateSelfServiceConfigPayload {
   requestWindowOpenOffsetHours: number;
   requestWindowCloseOffsetHours: number;
   cancellationCutoffHours: number;
+  maxAbsencesPerCycle: number;
   maxLateCancellationsPerCycle: number;
   lateCancellationWindowHours: number;
   waitlistOfferMinutes: number;
@@ -183,6 +185,8 @@ export interface MyShiftsResponse {
 export interface CannotAttendResponse {
   absenceReportId: string;
   wasLate: boolean;
+  absenceReportsUsed: number;
+  maxAbsenceReports: number;
   lateReportsUsed: number;
   maxLateReports: number;
 }
@@ -207,6 +211,8 @@ export interface AbsenceReportDto {
 
 export interface MyAbsenceReportsResponse {
   reports: AbsenceReportDto[];
+  absenceReportsUsed: number;
+  maxAbsenceReports: number;
   lateReportsUsed: number;
   maxLateReports: number;
   schedulingCycleId: string | null;

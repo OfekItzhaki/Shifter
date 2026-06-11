@@ -45,6 +45,7 @@ public class SelfServiceConfigController : ControllerBase
                 RequestWindowOpenOffsetHours: 168,
                 RequestWindowCloseOffsetHours: 24,
                 CancellationCutoffHours: 24,
+                MaxAbsencesPerCycle: 3,
                 MaxLateCancellationsPerCycle: 2,
                 LateCancellationWindowHours: 24,
                 WaitlistOfferMinutes: 60,
@@ -64,6 +65,7 @@ public class SelfServiceConfigController : ControllerBase
             RequestWindowOpenOffsetHours: result.RequestWindowOpenOffsetHours,
             RequestWindowCloseOffsetHours: result.RequestWindowCloseOffsetHours,
             CancellationCutoffHours: result.CancellationCutoffHours,
+            MaxAbsencesPerCycle: result.MaxAbsencesPerCycle,
             MaxLateCancellationsPerCycle: result.MaxLateCancellationsPerCycle,
             LateCancellationWindowHours: result.LateCancellationWindowHours,
             WaitlistOfferMinutes: result.WaitlistOfferMinutes,
@@ -92,6 +94,7 @@ public class SelfServiceConfigController : ControllerBase
             req.RequestWindowOpenOffsetHours,
             req.RequestWindowCloseOffsetHours,
             req.CancellationCutoffHours,
+            req.MaxAbsencesPerCycle,
             req.MaxLateCancellationsPerCycle,
             req.LateCancellationWindowHours,
             req.WaitlistOfferMinutes,
@@ -110,6 +113,7 @@ public class SelfServiceConfigController : ControllerBase
             RequestWindowOpenOffsetHours: result.RequestWindowOpenOffsetHours,
             RequestWindowCloseOffsetHours: result.RequestWindowCloseOffsetHours,
             CancellationCutoffHours: result.CancellationCutoffHours,
+            MaxAbsencesPerCycle: result.MaxAbsencesPerCycle,
             MaxLateCancellationsPerCycle: result.MaxLateCancellationsPerCycle,
             LateCancellationWindowHours: result.LateCancellationWindowHours,
             WaitlistOfferMinutes: result.WaitlistOfferMinutes,
@@ -138,7 +142,8 @@ public record UpdateSelfServiceConfigRequest(
     bool AllowWaitlist = true,
     bool AllowShiftChangeRequests = true,
     bool AllowAbsenceReports = true,
-    bool AllowShiftSwaps = true);
+    bool AllowShiftSwaps = true,
+    int MaxAbsencesPerCycle = 3);
 
 // --- Response DTOs ---
 
@@ -150,6 +155,7 @@ public record SelfServiceConfigResponse(
     int RequestWindowOpenOffsetHours,
     int RequestWindowCloseOffsetHours,
     int CancellationCutoffHours,
+    int MaxAbsencesPerCycle,
     int MaxLateCancellationsPerCycle,
     int LateCancellationWindowHours,
     int WaitlistOfferMinutes,

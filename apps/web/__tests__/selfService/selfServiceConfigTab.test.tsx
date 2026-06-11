@@ -14,6 +14,7 @@ function makeConfig(overrides: Record<string, unknown> = {}) {
     requestWindowOpenOffsetHours: 168,
     requestWindowCloseOffsetHours: 24,
     cancellationCutoffHours: 12,
+    maxAbsencesPerCycle: 3,
     maxLateCancellationsPerCycle: 2,
     lateCancellationWindowHours: 24,
     waitlistOfferMinutes: 60,
@@ -32,6 +33,7 @@ vi.mock("next-intl", () => ({
       requestWindowOpenOffsetHours: "Request window open",
       requestWindowCloseOffsetHours: "Request window close",
       cancellationCutoffHours: "Cancellation cutoff",
+      maxAbsencesPerCycle: "Absence report limit",
       maxLateCancellationsPerCycle: "Late absence limit",
       lateCancellationWindowHours: "Late absence window",
       waitlistOfferMinutes: "Waitlist offer duration",
@@ -58,6 +60,7 @@ vi.mock("next-intl", () => ({
       "recommendations.requestWindowCloseOffsetHours": `${values?.value} hours`,
       "recommendations.cancellationCutoffHours": `${values?.value} hours`,
       "recommendations.lateCancellationWindowHours": `${values?.value} hours`,
+      "recommendations.maxAbsencesPerCycle": `${values?.value} reports`,
       "recommendations.maxLateCancellationsPerCycle": `${values?.value} reports`,
       "recommendations.waitlistOfferMinutes": `${values?.value} minutes`,
       "insights.title": "Policy impact",
@@ -86,6 +89,7 @@ vi.mock("next-intl", () => ({
       "descriptions.requestWindowCloseOffsetHours": "How many hours before cycle start picking closes.",
       "descriptions.cancellationCutoffHours": "Approved shifts cannot be cancelled inside this cutoff.",
       "descriptions.lateCancellationWindowHours": "Absence reports inside this window count as late.",
+      "descriptions.maxAbsencesPerCycle": "Maximum absence reports per member.",
       "descriptions.maxLateCancellationsPerCycle": "Maximum late absence reports per member.",
       "descriptions.waitlistOfferMinutes": "How long an offered shift is held.",
       "workflow.allowMemberShiftClaims.title": "Members can claim shifts",
@@ -188,7 +192,7 @@ describe("SelfServiceConfigTab", () => {
 
     expect(await screen.findByText("Configuration saved successfully")).toBeInTheDocument();
     expect(screen.getByText("2-7 shifts / 7 days")).toBeInTheDocument();
-    expect(screen.getByText("Cancel until 48h, late inside 24h, max 2")).toBeInTheDocument();
+    expect(screen.getByText("Cancel until 48h, late inside 24h, max 3")).toBeInTheDocument();
   });
 
   it("refreshes current config after a stale save failure", async () => {
@@ -221,7 +225,7 @@ describe("SelfServiceConfigTab", () => {
       expect(mockGetSelfServiceConfig).toHaveBeenCalledTimes(2);
     });
     expect(screen.getByText("2-4 shifts / 7 days")).toBeInTheDocument();
-    expect(screen.getByText("Cancel until 18h, late inside 24h, max 2")).toBeInTheDocument();
+    expect(screen.getByText("Cancel until 18h, late inside 24h, max 3")).toBeInTheDocument();
   });
 
   it("blocks invalid policy settings before saving", async () => {

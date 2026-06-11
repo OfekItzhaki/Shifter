@@ -2058,11 +2058,12 @@
       "cannotAttendReasonPlaceholder": "Reason you cannot attend...",
       "cannotAttendConfirm": "Report Absence",
       "cannotAttendSubmitting": "Reporting...",
-      "cannotAttendSubmitted": "Absence report sent to the admins.",
+      "cannotAttendSubmitted": "Absence report sent to the admins. You have used {used} / {max} absence reports this cycle.",
       "cannotAttendLateSubmitted": "Late absence report sent. You have used {used} / {max} late reports this cycle.",
-      "cannotAttendLatePolicy": "This report is late because the shift starts within {window} hours. Late reports used: {used}/{max}. Remaining: {remaining}.",
-      "cannotAttendNotLatePolicy": "This report is outside the late window. Reports become late within {window} hours of shift start.",
-      "cannotAttendLimitReached": "You have reached the late absence limit for this cycle.",
+      "cannotAttendLatePolicy": "This report is late because the shift starts within {window} hours. Absence reports used: {totalUsed}/{totalMax}. Late reports used: {used}/{max}. Remaining late reports: {remaining}.",
+      "cannotAttendTotalPolicy": "You have used {used} / {max} absence reports this cycle.",
+      "cannotAttendNotLatePolicy": "This report is outside the late window. Absence reports used: {used}/{max}. Reports become late within {window} hours of shift start.",
+      "cannotAttendLimitReached": "You have reached the absence report limit for this cycle.",
       "cancelDismiss": "Go Back",
       "shiftCount": "{current} / {max} shifts this cycle",
       "underScheduled": "⚠ You are below the minimum required shifts ({min})",
@@ -2102,7 +2103,7 @@
       "changeCancel": "Cancel request",
       "changeRequestCancelled": "Change request cancelled",
       "absenceReportsTitle": "Absence reports",
-      "absenceReportsDescription": "Late reports used this cycle: {used} / {max}.",
+      "absenceReportsDescription": "Absence reports used this cycle: {used} / {max}. Late: {lateUsed} / {lateMax}.",
       "absenceReportsEmpty": "No absence reports",
       "absenceLate": "Late",
       "absenceAdminNote": "Admin note",
@@ -2118,6 +2119,8 @@
       "summaryOpenWaitlist": "Open waitlist",
       "summaryLateAbsenceLabel": "Late absences",
       "summaryLateAbsenceValue": "{used}/{max} used | late inside {window}h",
+      "summaryAbsenceLabel": "Absences",
+      "summaryAbsenceValue": "{used}/{max} used",
       "summaryNextShiftLabel": "Next shift",
       "summaryNoNextShift": "No upcoming approved shift",
       "actionGuideTitle": "Which action should I use?",
@@ -2134,7 +2137,7 @@
         },
         "cannotAttend": {
           "title": "Can't make it",
-          "description": "Use this when you will miss an assigned shift. Late reports left: {remaining}/{max} inside {window}h."
+          "description": "Use this when you will miss an assigned shift. Absence reports left: {totalRemaining}/{totalMax}. Late reports left: {remaining}/{max} inside {window}h."
         }
       },
       "activityTitle": "My request history",
@@ -2330,6 +2333,7 @@
       "requestWindowOpenOffsetHours": "Request window open (hours before)",
       "requestWindowCloseOffsetHours": "Request window close (hours before)",
       "cancellationCutoffHours": "Cancellation cutoff (hours before)",
+      "maxAbsencesPerCycle": "Absence report limit per cycle",
       "maxLateCancellationsPerCycle": "Late absence limit per cycle",
       "lateCancellationWindowHours": "Late absence window (hours before)",
       "waitlistOfferMinutes": "Waitlist offer duration (minutes)",
@@ -2348,7 +2352,7 @@
         "requestWindow": "Request window",
         "requestWindowValue": "Opens {open}h before, closes {close}h before",
         "absence": "Changes and absence",
-        "absenceValue": "Cancel until {cutoff}h, late inside {lateWindow}h, max {max}",
+        "absenceValue": "Cancel until {cutoff}h, late inside {lateWindow}h, max {max} absences",
         "waitlist": "Waitlist",
         "waitlistValue": "{minutes}m offer timer"
       },
@@ -2361,6 +2365,7 @@
         "requestWindowCloseOffsetHours": "{value} hours",
         "cancellationCutoffHours": "{value} hours",
         "lateCancellationWindowHours": "{value} hours",
+        "maxAbsencesPerCycle": "{value} reports",
         "maxLateCancellationsPerCycle": "{value} reports",
         "waitlistOfferMinutes": "{value} minutes"
       },
@@ -2370,6 +2375,7 @@
         "noMinimum": "No minimum shift requirement is enforced, so underfilled members will not be flagged by count.",
         "noLateReports": "Members cannot submit late absence reports in this cycle.",
         "strictLateReports": "Only one late absence report is allowed, so admins should expect more manual exceptions.",
+        "strictAbsences": "The total absence limit is very strict; admins should be ready to handle exceptions manually.",
         "requestClosesBeforeCancellation": "The request window closes before the cancellation cutoff, so members may still cancel after picking closes.",
         "lateWindowLongerThanCancel": "The late absence window is longer than the cancellation cutoff, so some shifts become late immediately after cancellation closes.",
         "shortWaitlistOffer": "Waitlist offers under 30 minutes may expire before members notice them.",
@@ -2390,7 +2396,7 @@
         },
         "changesAbsence": {
           "title": "Changes and absence",
-          "description": "Set when cancellations stop, when absence reports are considered late, and how many late reports are allowed."
+          "description": "Set when cancellations stop, when absence reports are considered late, and how many total or late reports are allowed."
         },
         "waitlist": {
           "title": "Waitlist",
@@ -2405,6 +2411,7 @@
         "requestWindowCloseOffsetHours": "How many hours before cycle start the picking window closes.",
         "cancellationCutoffHours": "Approved shifts cannot be cancelled inside this cutoff.",
         "lateCancellationWindowHours": "Absence reports inside this window count as late.",
+        "maxAbsencesPerCycle": "Maximum absence reports allowed per member per cycle.",
         "maxLateCancellationsPerCycle": "Maximum late absence reports allowed per member per cycle.",
         "waitlistOfferMinutes": "How long an offered waitlist shift is held for one member."
       },
@@ -2439,6 +2446,7 @@
         "maxShiftsRange": "Maximum shifts must be between 1 and 100",
         "offsetRange": "Value must be between 1 and 720 hours",
         "openCloseOrder": "Request window open offset must be greater than close offset",
+        "maxAbsenceRange": "Absence report limit must be between 0 and 100",
         "maxLateRange": "Late absence limit must be between 0 and 100",
         "waitlistOfferRange": "Offer duration must be between 15 and 1440 minutes",
         "cycleDurationRange": "Cycle duration must be between 1 and 30 days"

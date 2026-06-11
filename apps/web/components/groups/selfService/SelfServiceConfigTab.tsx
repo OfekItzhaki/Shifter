@@ -78,6 +78,7 @@ const CONFIG_SECTIONS: ConfigSection[] = [
     fields: [
       { key: "cancellationCutoffHours", min: 1, max: 720, unit: "hours", recommended: "24" },
       { key: "lateCancellationWindowHours", min: 1, max: 720, unit: "hours", recommended: "24" },
+      { key: "maxAbsencesPerCycle", min: 0, max: 100, unit: "reports", recommended: "2-3" },
       { key: "maxLateCancellationsPerCycle", min: 0, max: 100, unit: "reports", recommended: "1-2" },
     ],
   },
@@ -108,6 +109,7 @@ function getConfigValidationMessage(
     case "selfService.errors.openOffsetMustBeGreaterThanClose":
       return t("validation.openCloseOrder");
     case "selfService.errors.maxLateCancellationsOutOfRange":
+    case "selfService.errors.maxAbsencesOutOfRange":
       return t("validation.maxLateRange");
     case "selfService.errors.waitlistOfferOutOfRange":
       return t("validation.waitlistOfferRange");
@@ -161,6 +163,7 @@ function toFormValues(config: SelfServiceConfigDto): UpdateSelfServiceConfigPayl
     requestWindowOpenOffsetHours: config.requestWindowOpenOffsetHours,
     requestWindowCloseOffsetHours: config.requestWindowCloseOffsetHours,
     cancellationCutoffHours: config.cancellationCutoffHours,
+    maxAbsencesPerCycle: config.maxAbsencesPerCycle ?? 3,
     maxLateCancellationsPerCycle: config.maxLateCancellationsPerCycle,
     lateCancellationWindowHours: config.lateCancellationWindowHours,
     waitlistOfferMinutes: config.waitlistOfferMinutes,
@@ -186,6 +189,7 @@ export default function SelfServiceConfigTab({ spaceId, groupId }: SelfServiceCo
     requestWindowOpenOffsetHours: 168,
     requestWindowCloseOffsetHours: 24,
     cancellationCutoffHours: 24,
+    maxAbsencesPerCycle: 3,
     maxLateCancellationsPerCycle: 2,
     lateCancellationWindowHours: 24,
     waitlistOfferMinutes: 60,
@@ -315,7 +319,7 @@ export default function SelfServiceConfigTab({ spaceId, groupId }: SelfServiceCo
             value={t("summary.absenceValue", {
               cutoff: formValues.cancellationCutoffHours,
               lateWindow: formValues.lateCancellationWindowHours,
-              max: formValues.maxLateCancellationsPerCycle,
+              max: formValues.maxAbsencesPerCycle,
             })}
           />
           <PolicySummaryCard

@@ -19,6 +19,7 @@ public class SelfServiceConfigConfiguration : IEntityTypeConfiguration<SelfServi
         builder.Property(c => c.RequestWindowOpenOffsetHours).HasColumnName("request_window_open_offset_hours").HasDefaultValue(168);
         builder.Property(c => c.RequestWindowCloseOffsetHours).HasColumnName("request_window_close_offset_hours").HasDefaultValue(24);
         builder.Property(c => c.CancellationCutoffHours).HasColumnName("cancellation_cutoff_hours").HasDefaultValue(24);
+        builder.Property(c => c.MaxAbsencesPerCycle).HasColumnName("max_absences_per_cycle").HasDefaultValue(3);
         builder.Property(c => c.MaxLateCancellationsPerCycle).HasColumnName("max_late_cancellations_per_cycle").HasDefaultValue(2);
         builder.Property(c => c.LateCancellationWindowHours).HasColumnName("late_cancellation_window_hours").HasDefaultValue(24);
         builder.Property(c => c.WaitlistOfferMinutes).HasColumnName("waitlist_offer_minutes").HasDefaultValue(60);
