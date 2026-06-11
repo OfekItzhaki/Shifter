@@ -9,7 +9,7 @@ type BeforeInstallPromptEvent = Event & {
 };
 
 const DISMISSED_KEY = "shifter-pwa-install-dismissed-at";
-const DISMISS_DAYS = 14;
+const DISMISS_DAYS = 30;
 
 function isStandaloneDisplay(): boolean {
   if (typeof window === "undefined") return false;

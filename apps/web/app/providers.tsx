@@ -48,7 +48,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
         {isLoggedIn && <ShifterAssistant />}
         {isLoggedIn && <FeedbackFab variant={isAuthRoute ? "auth" : "app"} />}
         {children}
-        <PwaInstallPrompt />
+        {isLoggedIn && !isAuthRoute && <PwaInstallPrompt />}
         <CookieConsentBanner />
       </ThemeProvider>
     </QueryClientProvider>
