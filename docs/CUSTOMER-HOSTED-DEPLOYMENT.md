@@ -85,6 +85,12 @@ Customer-hosted means:
    bash infra/scripts/validate-customer-env.sh
    ```
 
+   On Windows/PowerShell:
+
+   ```powershell
+   .\infra\scripts\validate-customer-env.ps1
+   ```
+
 6. Start the stack:
 
    ```bash

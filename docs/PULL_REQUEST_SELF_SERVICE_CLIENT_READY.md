@@ -24,6 +24,7 @@ packaging, and self-service export/import readiness.
   and import validation counts.
 - Wires `FIELD_ENCRYPTION_KEY` through customer compose configuration and makes
   it required by the customer-hosted env validator.
+- Adds a Windows/PowerShell customer env validator alongside the Bash validator.
 - Adds `infra/scripts/smoke-self-service-client-ready.ps1` to preflight web/API
   health, seeded demo users, the self-service demo cycle, available slots, and
   the special-day Playwright picker flow.
@@ -46,6 +47,7 @@ packaging, and self-service export/import readiness.
 - `infra/scripts/smoke-self-service-client-ready.ps1` parser/config checks
   passed locally; live execution still depends on a responsive seeded API/web
   stack.
+- `infra/scripts/validate-customer-env.ps1` parser check passed locally.
 
 ## Remaining Product Checks
 

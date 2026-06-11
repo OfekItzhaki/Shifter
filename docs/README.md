@@ -42,6 +42,8 @@ manual self-service scheduling decisions.
 
 - [Customer-hosted deployment](CUSTOMER-HOSTED-DEPLOYMENT.md) - first supported
   package for installs inside a customer's infrastructure.
+  Use `infra/scripts/validate-customer-env.sh` or
+  `infra/scripts/validate-customer-env.ps1` before first start.
 - [AI deployment modes](AI-DEPLOYMENT-MODES.md) - hosted, customer-managed, and
   no-export local AI choices.
 - [VPS to ECS migration](MIGRATION-VPS-TO-ECS.md) - cloud migration notes.
