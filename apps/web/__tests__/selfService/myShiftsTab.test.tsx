@@ -316,6 +316,70 @@ describe("MyShiftsTab", () => {
     expect(mockGetMyShiftRequests).toHaveBeenCalledTimes(2);
   });
 
+  it("refreshes shifts after a stale cancellation failure", async () => {
+    const futureShiftStart = new Date(Date.now() + 96 * 60 * 60 * 1000);
+    const futureShiftEnd = new Date(futureShiftStart.getTime() + 8 * 60 * 60 * 1000);
+    const staleRequest = {
+      id: "request-stale",
+      shiftSlotId: "slot-stale",
+      schedulingCycleId: "cycle-stale",
+      slotDate: formatLocalDate(futureShiftStart),
+      slotStartTime: formatLocalTime(futureShiftStart),
+      slotEndTime: formatLocalTime(futureShiftEnd),
+      taskName: "Kitchen",
+      status: "Approved",
+      isAdminOverride: false,
+      rejectionReason: null,
+      cancellationReason: null,
+      cancelledAt: null,
+      createdAt: "2026-06-10T08:00:00",
+    };
+
+    mockCancelShiftRequest.mockRejectedValue({
+      response: { data: { detail: "Only approved requests may be cancelled." } },
+    });
+    mockGetMyShiftRequests
+      .mockResolvedValueOnce({
+        requests: [staleRequest],
+        currentShiftCount: 1,
+        minShiftsPerCycle: 1,
+        maxShiftsPerCycle: 3,
+        cancellationCutoffHours: 48,
+        maxLateReports: 2,
+        lateCancellationWindowHours: 24,
+      })
+      .mockResolvedValueOnce({
+        requests: [
+          {
+            ...staleRequest,
+            status: "Cancelled",
+            cancellationReason: "Already cancelled",
+            cancelledAt: "2026-06-10T09:00:00",
+          },
+        ],
+        currentShiftCount: 0,
+        minShiftsPerCycle: 1,
+        maxShiftsPerCycle: 3,
+        cancellationCutoffHours: 48,
+        maxLateReports: 2,
+        lateCancellationWindowHours: 24,
+      });
+
+    render(<MyShiftsTab spaceId="space-1" groupId="group-1" />);
+
+    fireEvent.click(await screen.findByRole("button", { name: "Cancel" }));
+    fireEvent.change(screen.getByPlaceholderText("Why are you cancelling?"), {
+      target: { value: "Family appointment" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Cancel shift" }));
+
+    expect(await screen.findByText("Only approved requests may be cancelled.")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(mockGetMyShiftRequests).toHaveBeenCalledTimes(2);
+    });
+    expect(screen.getAllByText("Cancelled").length).toBeGreaterThan(0);
+  });
+
   it("lets members cancel inside the cutoff while the request window is still open", async () => {
     const soonShiftStart = new Date(Date.now() + 2 * 60 * 60 * 1000);
     const soonShiftEnd = new Date(soonShiftStart.getTime() + 8 * 60 * 60 * 1000);

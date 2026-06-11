@@ -199,9 +199,11 @@ export default function MyShiftsTab({ spaceId, groupId, onNavigate }: MyShiftsTa
   const [submittingChange, setSubmittingChange] = useState(false);
   const [changeError, setChangeError] = useState<string | null>(null);
 
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (showLoading = true) => {
     try {
-      setLoading(true);
+      if (showLoading) {
+        setLoading(true);
+      }
       setError(null);
       const [response, leaveRequests, shiftChanges, absenceResponse, waitlistResponse] = await Promise.all([
         getMyShiftRequests(spaceId, groupId),
@@ -221,12 +223,14 @@ export default function MyShiftsTab({ spaceId, groupId, onNavigate }: MyShiftsTa
       const { message } = getSelfServiceErrorMessage(err);
       setError(message);
     } finally {
-      setLoading(false);
+      if (showLoading) {
+        setLoading(false);
+      }
     }
   }, [spaceId, groupId]);
 
   useEffect(() => {
-    void Promise.resolve().then(fetchData);
+    void Promise.resolve().then(() => fetchData());
   }, [fetchData]);
 
   // ── Cancel handlers ──────────────────────────────────────────────────────
@@ -267,6 +271,7 @@ export default function MyShiftsTab({ spaceId, groupId, onNavigate }: MyShiftsTa
     } catch (err) {
       const { message } = getSelfServiceErrorMessage(err);
       setCancelError(message);
+      await fetchData(false);
     } finally {
       setCancelling(false);
     }
@@ -316,6 +321,7 @@ export default function MyShiftsTab({ spaceId, groupId, onNavigate }: MyShiftsTa
     } catch (err) {
       const { message } = getSelfServiceErrorMessage(err);
       setCannotAttendError(message);
+      await fetchData(false);
     } finally {
       setReportingCannotAttend(false);
     }
@@ -383,6 +389,7 @@ export default function MyShiftsTab({ spaceId, groupId, onNavigate }: MyShiftsTa
     } catch (err) {
       const { message } = getSelfServiceErrorMessage(err);
       setChangeError(message);
+      await fetchData(false);
     } finally {
       setSubmittingChange(false);
     }
@@ -428,6 +435,7 @@ export default function MyShiftsTab({ spaceId, groupId, onNavigate }: MyShiftsTa
     } catch (err) {
       const { message } = getSelfServiceErrorMessage(err);
       setLeaveError(message);
+      await fetchData(false);
     } finally {
       setLeaveSaving(false);
     }
@@ -444,6 +452,7 @@ export default function MyShiftsTab({ spaceId, groupId, onNavigate }: MyShiftsTa
     } catch (err) {
       const { message } = getSelfServiceErrorMessage(err);
       setLeaveError(message);
+      await fetchData(false);
     }
   }
 
@@ -458,6 +467,7 @@ export default function MyShiftsTab({ spaceId, groupId, onNavigate }: MyShiftsTa
     } catch (err) {
       const { message } = getSelfServiceErrorMessage(err);
       setLeaveError(message);
+      await fetchData(false);
     }
   }
 
@@ -470,7 +480,7 @@ export default function MyShiftsTab({ spaceId, groupId, onNavigate }: MyShiftsTa
   // ── Error state ──────────────────────────────────────────────────────────
 
   if (error) {
-    return <ErrorRetry message={error} onRetry={fetchData} />;
+    return <ErrorRetry message={error} onRetry={() => fetchData()} />;
   }
 
   if (!data) return null;
