@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import SwapsTab from "../../app/groups/[groupId]/tabs/SwapsTab";
-import type { SwapRequestDto } from "../../lib/api/selfService";
+import type { ShiftRequestDto, SwapRequestDto } from "../../lib/api/selfService";
 import type { GroupMemberDto } from "../../lib/api/groups";
 
 const mockGetMySwaps = vi.fn();
@@ -125,6 +125,66 @@ describe("SwapsTab", () => {
     });
     expect(mockGetMySwaps).toHaveBeenCalledTimes(2);
   });
+
+  it("only offers future approved own shifts when proposing a swap", async () => {
+    mockGetMySwaps.mockResolvedValue([]);
+    mockGetMyShiftRequests.mockResolvedValue({
+      requests: [
+        makeShift({
+          id: "past-approved",
+          slotDate: "2020-01-01",
+          slotStartTime: "08:00:00",
+          taskName: "Past shift",
+          status: "Approved",
+        }),
+        makeShift({
+          id: "future-approved",
+          slotDate: "2099-01-01",
+          slotStartTime: "08:00:00",
+          taskName: "Future shift",
+          status: "Approved",
+        }),
+        makeShift({
+          id: "future-pending",
+          slotDate: "2099-01-02",
+          slotStartTime: "08:00:00",
+          taskName: "Pending shift",
+          status: "Pending",
+        }),
+      ],
+    });
+    mockGetMemberApprovedShifts.mockResolvedValue([
+      makeShift({
+        id: "target-shift",
+        shiftSlotId: "target-slot",
+        slotDate: "2099-01-03",
+        slotStartTime: "10:00:00",
+        taskName: "Target shift",
+        status: "Approved",
+      }),
+    ]);
+
+    render(<SwapsTab spaceId="space-1" groupId="group-1" members={members} />);
+
+    fireEvent.click(await screen.findByRole("button", { name: "Propose swap" }));
+
+    expect(await screen.findByText("Future shift")).toBeInTheDocument();
+    expect(screen.queryByText("Past shift")).not.toBeInTheDocument();
+    expect(screen.queryByText("Pending shift")).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByText("Future shift"));
+    fireEvent.click(await screen.findByRole("button", { name: "Other Member" }));
+    fireEvent.click(await screen.findByText("Target shift"));
+
+    await waitFor(() => {
+      expect(mockProposeSwap).toHaveBeenCalledWith(
+        "space-1",
+        "group-1",
+        "future-approved",
+        "target-shift",
+      );
+    });
+  });
 });
 
 const members: GroupMemberDto[] = [
@@ -177,5 +237,29 @@ function makeSwap(overrides: Partial<SwapRequestDto>): SwapRequestDto {
     expiresAt: "2026-06-12T12:00:00",
     createdAt: "2026-06-11T09:00:00",
     ...overrides,
+  };
+}
+
+function makeShift(overrides: Partial<ShiftRequestDto> = {}): ShiftRequestDto {
+  return {
+    ...baseShift(),
+    ...overrides,
+  };
+}
+
+function baseShift(): ShiftRequestDto {
+  return {
+    id: "shift-1",
+    shiftSlotId: "slot-1",
+    slotDate: "2099-01-01",
+    slotStartTime: "08:00:00",
+    slotEndTime: "16:00:00",
+    taskName: "Desk",
+    status: "Approved" as const,
+    isAdminOverride: false,
+    rejectionReason: null,
+    cancellationReason: null,
+    cancelledAt: null,
+    createdAt: "2026-06-11T09:00:00",
   };
 }

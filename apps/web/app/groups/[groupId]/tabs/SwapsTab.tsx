@@ -29,6 +29,19 @@ interface Props {
 
 type ProposeStep = "idle" | "selectMyShift" | "selectTargetMember" | "selectTargetShift";
 
+function getShiftStartTime(request: ShiftRequestDto): number {
+  return new Date(`${request.slotDate}T${request.slotStartTime}`).getTime();
+}
+
+function isFutureApprovedShift(request: ShiftRequestDto): boolean {
+  const startsAt = getShiftStartTime(request);
+  return request.status === "Approved" && Number.isFinite(startsAt) && startsAt > Date.now();
+}
+
+function sortShiftsByStart(requests: ShiftRequestDto[]): ShiftRequestDto[] {
+  return [...requests].sort((a, b) => getShiftStartTime(a) - getShiftStartTime(b));
+}
+
 /**
  * SwapsTab displays the member's swap requests (incoming and outgoing)
  * and provides a "Propose Swap" flow.
@@ -151,7 +164,7 @@ export default function SwapsTab({ spaceId, groupId, members }: Props) {
     setMyShiftsLoading(true);
     try {
       const data = await getMyShiftRequests(currentSpaceId, groupId);
-      setMyShifts(data.requests.filter((r) => r.status === "Approved"));
+      setMyShifts(sortShiftsByStart(data.requests.filter(isFutureApprovedShift)));
     } catch {
       setProposeError(tCommon("error"));
     } finally {
