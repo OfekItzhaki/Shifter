@@ -2492,6 +2492,82 @@ public class SelfServiceScopeTests
     }
 
     [Fact]
+    public async Task ListMine_CurrentShiftCount_CountsOnlyApprovedAssignments()
+    {
+        using var db = CreateDb();
+        var services = CreateControllerServices();
+        var spaceId = Guid.NewGuid();
+        var group = Group.Create(spaceId, null, "Route Group");
+        var userId = Guid.NewGuid();
+        var person = Person.Create(spaceId, "Member", linkedUserId: userId);
+        var approvedRequestId = Guid.NewGuid();
+        var pendingRequestId = Guid.NewGuid();
+        var approvedSlotId = Guid.NewGuid();
+        var pendingSlotId = Guid.NewGuid();
+        var cycleId = Guid.NewGuid();
+
+        db.People.Add(person);
+        db.Groups.Add(group);
+        db.GroupMemberships.Add(GroupMembership.Create(spaceId, group.Id, person.Id));
+        await db.SaveChangesAsync();
+
+        services.Mediator
+            .Send(Arg.Any<GetMyShiftRequestsQuery>(), Arg.Any<CancellationToken>())
+            .Returns([
+                new ShiftRequestDto(
+                    approvedRequestId,
+                    approvedSlotId,
+                    group.Id,
+                    cycleId,
+                    "Approved",
+                    false,
+                    DateOnly.FromDateTime(DateTime.UtcNow.AddDays(2)),
+                    new TimeOnly(8, 0),
+                    new TimeOnly(16, 0),
+                    "Approved Task",
+                    null,
+                    null,
+                    null,
+                    DateTime.UtcNow),
+                new ShiftRequestDto(
+                    pendingRequestId,
+                    pendingSlotId,
+                    group.Id,
+                    cycleId,
+                    "Pending",
+                    false,
+                    DateOnly.FromDateTime(DateTime.UtcNow.AddDays(3)),
+                    new TimeOnly(8, 0),
+                    new TimeOnly(16, 0),
+                    "Pending Task",
+                    null,
+                    null,
+                    null,
+                    DateTime.UtcNow)
+            ]);
+
+        var controller = new ShiftRequestsController(
+            services.Mediator,
+            services.Permissions,
+            services.ShiftRequestService,
+            services.PushSender,
+            services.Audit,
+            db);
+        controller.ControllerContext = CreateControllerContext(userId);
+
+        var result = await controller.ListMine(
+            spaceId,
+            group.Id,
+            schedulingCycleId: null,
+            CancellationToken.None);
+
+        var ok = result.Should().BeOfType<OkObjectResult>().Subject;
+        var response = ok.Value.Should().BeOfType<MyShiftRequestsResponse>().Subject;
+        response.CurrentShiftCount.Should().Be(1);
+        response.Requests.Should().HaveCount(2);
+    }
+
+    [Fact]
     public async Task GetCycleStatus_IncludesPendingShiftChangeRequests()
     {
         using var db = CreateDb();

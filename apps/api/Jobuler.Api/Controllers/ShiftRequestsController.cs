@@ -531,7 +531,7 @@ public class ShiftRequestsController : ControllerBase
         var result = await _mediator.Send(
             new GetMyShiftRequestsQuery(spaceId, groupId, personId.Value, schedulingCycleId), ct);
 
-        var currentShiftCount = result.Count(r => r.Status is "Approved" or "Pending");
+        var currentShiftCount = result.Count(r => r.Status == "Approved");
         var config = await _db.SelfServiceConfigs
             .AsNoTracking()
             .FirstOrDefaultAsync(c => c.SpaceId == spaceId && c.GroupId == groupId, ct);

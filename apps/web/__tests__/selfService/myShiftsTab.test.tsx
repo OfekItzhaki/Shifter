@@ -444,7 +444,12 @@ describe("MyShiftsTab", () => {
   it("lets members report that they cannot attend a future shift", async () => {
     const shiftStart = new Date(Date.now() + 36 * 60 * 60 * 1000);
     const shiftEnd = new Date(shiftStart.getTime() + 8 * 60 * 60 * 1000);
-    mockReportCannotAttend.mockResolvedValue({ isLate: false, lateReportsRemaining: 2 });
+    mockReportCannotAttend.mockResolvedValue({
+      absenceReportId: "absence-1",
+      wasLate: false,
+      lateReportsUsed: 0,
+      maxLateReports: 2,
+    });
     mockGetMyAbsenceReports.mockResolvedValue({
       reports: [],
       lateReportsUsed: 0,
