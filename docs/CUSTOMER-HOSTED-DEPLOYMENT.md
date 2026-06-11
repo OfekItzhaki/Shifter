@@ -216,7 +216,9 @@ SHIFTER_DIR=/opt/shifter bash /opt/shifter/infra/scripts/backup-compose.sh
 
 Restore requires an explicit confirmation flag and should be run during a
 maintenance window. By default, the restore script creates a `pre_restore_*.dump`
-of the current target database before replacing it.
+of the current target database before replacing it. PostgreSQL restore runs in a
+single transaction with exit-on-error, and stopped app services are restarted if
+the script fails after taking them down.
 
 ```bash
 DRY_RUN=1 \

@@ -47,7 +47,8 @@ packaging, and self-service export package validation readiness.
   runtime environment, including legal/support email, Crisp, PostHog, Sentry,
   VAPID, app version, and the public API URL.
 - Adds `infra/scripts/restore-compose.sh` with `DRY_RUN=1` preflight support,
-  automatic pre-restore safety dumps, and restore runbook docs for
+  automatic pre-restore safety dumps, transactional `pg_restore`, app-service
+  restart on restore-script failure, and restore runbook docs for
   customer-hosted PostgreSQL dumps and optional uploads-volume archives.
 
 ## Verification

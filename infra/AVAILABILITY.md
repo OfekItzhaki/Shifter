@@ -109,7 +109,8 @@ Backups are only useful after restore is tested. Before relying on this setup,
 restore one backup into staging and verify login, scheduling, file uploads, and
 billing-disabled behavior. The restore script creates a `pre_restore_*.dump`
 of the target database before replacing it unless `SKIP_PRE_RESTORE_BACKUP=1`
-is set:
+is set. Database restore runs in one transaction, and app services are restarted
+automatically if the script fails after stopping them:
 
 ```bash
 DRY_RUN=1 \

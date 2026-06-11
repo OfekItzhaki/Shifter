@@ -25,6 +25,16 @@ CONFIRM="${CONFIRM:-}"
 DRY_RUN="${DRY_RUN:-0}"
 SKIP_PRE_RESTORE_BACKUP="${SKIP_PRE_RESTORE_BACKUP:-0}"
 TIMESTAMP="$(date +%Y%m%d_%H%M%S)"
+APP_SERVICES_STOPPED=0
+
+restart_app_services_on_error() {
+  local exit_code=$?
+  if [ "$APP_SERVICES_STOPPED" = "1" ]; then
+    echo "[$(date)] ERROR: restore failed with exit code $exit_code. Restarting app services..." >&2
+    docker compose --project-name "$COMPOSE_PROJECT_NAME" up -d api web solver || true
+  fi
+  exit "$exit_code"
+}
 
 if [ "$DRY_RUN" != "1" ] && [ "$CONFIRM" != "restore" ]; then
   echo "Refusing to restore without CONFIRM=restore." >&2
@@ -99,6 +109,8 @@ docker compose --project-name "$COMPOSE_PROJECT_NAME" up -d postgres
 
 echo "[$(date)] Stopping app services before database restore..."
 docker compose --project-name "$COMPOSE_PROJECT_NAME" stop api web solver || true
+APP_SERVICES_STOPPED=1
+trap restart_app_services_on_error ERR
 
 if [ "$SKIP_PRE_RESTORE_BACKUP" != "1" ]; then
   mkdir -p "$BACKUP_DIR"
@@ -121,7 +133,8 @@ fi
 
 echo "[$(date)] Restoring PostgreSQL database '$POSTGRES_DB' from $DB_BACKUP..."
 docker compose --project-name "$COMPOSE_PROJECT_NAME" exec -T postgres \
-  pg_restore -U "$POSTGRES_USER" -d "$POSTGRES_DB" --clean --if-exists --no-owner < "$DB_BACKUP"
+  pg_restore -U "$POSTGRES_USER" -d "$POSTGRES_DB" --clean --if-exists --no-owner \
+    --single-transaction --exit-on-error < "$DB_BACKUP"
 
 if [ "$RESTORE_UPLOADS" = "1" ]; then
   UPLOADS_VOLUME="${COMPOSE_PROJECT_NAME}_uploads_data"
@@ -139,5 +152,7 @@ fi
 
 echo "[$(date)] Starting app services..."
 docker compose --project-name "$COMPOSE_PROJECT_NAME" up -d api web solver
+APP_SERVICES_STOPPED=0
+trap - ERR
 
 echo "[$(date)] Restore complete. Run smoke checks before handing the system back to users."
