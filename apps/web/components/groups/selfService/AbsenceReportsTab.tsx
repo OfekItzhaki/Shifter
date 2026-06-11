@@ -79,15 +79,6 @@ function filterReviewItems<T extends { status: string }>(items: T[], filter: Rev
   return items;
 }
 
-function uniquePendingCycleIds(changeRequests: ShiftChangeRequestDto[]): string[] {
-  return Array.from(new Set(
-    changeRequests
-      .filter((request) => request.status === "Pending")
-      .map((request) => request.schedulingCycleId)
-      .filter(Boolean)
-  ));
-}
-
 interface ReviewActivityItem {
   id: string;
   kind: "absence" | "change" | "leave" | "shift";
@@ -153,7 +144,7 @@ export default function AbsenceReportsTab({ spaceId, groupId, onReviewed }: Prop
   const [changeRequests, setChangeRequests] = useState<ShiftChangeRequestDto[]>([]);
   const [leaveRequests, setLeaveRequests] = useState<SpecialLeaveRequestDto[]>([]);
   const [cancelledShiftRequests, setCancelledShiftRequests] = useState<AdminShiftRequestDto[]>([]);
-  const [changeSlotOptions, setChangeSlotOptions] = useState<AvailableSlotDto[]>([]);
+  const [changeSlotOptionsByRequestId, setChangeSlotOptionsByRequestId] = useState<Record<string, AvailableSlotDto[]>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [adminNotes, setAdminNotes] = useState<Record<string, string>>({});
@@ -175,21 +166,24 @@ export default function AbsenceReportsTab({ spaceId, groupId, onReviewed }: Prop
         getAdminSpecialLeaveRequests(spaceId, undefined, undefined, undefined, groupId),
         getAdminShiftRequests(spaceId, groupId, "Cancelled", 20),
       ]);
-      const targetCycleIds = uniquePendingCycleIds(changeRows);
-      const targetSlots = targetCycleIds.length === 0
-        ? []
-        : (await Promise.all(
-            targetCycleIds.map((cycleId) => getShiftChangeTargetSlots(spaceId, groupId, cycleId))
-          )).flat();
+      const pendingChangeRows = changeRows.filter((request) => request.status === "Pending");
+      const targetSlotEntries = await Promise.all(
+        pendingChangeRows.map(async (request) => [
+          request.id,
+          await getShiftChangeTargetSlots(spaceId, groupId, request.schedulingCycleId, request.id),
+        ] as const)
+      );
+      const targetSlotsByRequestId = Object.fromEntries(targetSlotEntries);
       setReports(absenceRows);
       setChangeRequests(changeRows);
       setLeaveRequests(leaveRows);
       setCancelledShiftRequests(cancelledRows);
-      setChangeSlotOptions(targetSlots);
+      setChangeSlotOptionsByRequestId(targetSlotsByRequestId);
       setChangeTargetSlots((prev) => {
         const next = { ...prev };
-        const availableTargetIds = new Set(targetSlots.map((slot) => slot.id));
         for (const request of changeRows) {
+          const targetSlots = targetSlotsByRequestId[request.id] ?? [];
+          const availableTargetIds = new Set(targetSlots.map((slot) => slot.id));
           if (next[request.id] && !availableTargetIds.has(next[request.id])) {
             delete next[request.id];
           }
@@ -310,6 +304,7 @@ export default function AbsenceReportsTab({ spaceId, groupId, onReviewed }: Prop
   }
 
   function getAvailableTargetSlotId(request: ShiftChangeRequestDto) {
+    const changeSlotOptions = changeSlotOptionsByRequestId[request.id] ?? [];
     const targetShiftSlotId = changeTargetSlots[request.id] ?? request.requestedShiftSlotId ?? "";
     return changeSlotOptions.some((slot) => slot.id === targetShiftSlotId && slot.id !== request.originalShiftSlotId)
       ? targetShiftSlotId
@@ -620,23 +615,28 @@ export default function AbsenceReportsTab({ spaceId, groupId, onReviewed }: Prop
 
                 {request.status === "Pending" && (
                   <div className="w-full shrink-0 space-y-2 sm:w-64">
-                    <label className="block space-y-1">
-                      <span className="text-xs font-medium text-slate-600">{t("changeTargetShift")}</span>
-                      <select
-                        value={getAvailableTargetSlotId(request)}
-                        onChange={(e) => setChangeTargetSlots((prev) => ({ ...prev, [request.id]: e.target.value }))}
-                        className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-sky-400"
-                      >
-                        <option value="">{t("changeTargetRequired")}</option>
-                        {changeSlotOptions
-                          .filter((slot) => slot.id !== request.originalShiftSlotId)
-                          .map((slot) => (
-                            <option key={slot.id} value={slot.id}>
-                              {formatTargetSlot(slot)}
-                            </option>
-                          ))}
-                      </select>
-                    </label>
+                    {(() => {
+                      const changeSlotOptions = changeSlotOptionsByRequestId[request.id] ?? [];
+                      return (
+                        <label className="block space-y-1">
+                          <span className="text-xs font-medium text-slate-600">{t("changeTargetShift")}</span>
+                          <select
+                            value={getAvailableTargetSlotId(request)}
+                            onChange={(e) => setChangeTargetSlots((prev) => ({ ...prev, [request.id]: e.target.value }))}
+                            className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-sky-400"
+                          >
+                            <option value="">{t("changeTargetRequired")}</option>
+                            {changeSlotOptions
+                              .filter((slot) => slot.id !== request.originalShiftSlotId)
+                              .map((slot) => (
+                                <option key={slot.id} value={slot.id}>
+                                  {formatTargetSlot(slot)}
+                                </option>
+                              ))}
+                          </select>
+                        </label>
+                      );
+                    })()}
                     <input
                       value={adminNotes[request.id] ?? ""}
                       onChange={(e) => setAdminNotes((prev) => ({ ...prev, [request.id]: e.target.value }))}

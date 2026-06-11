@@ -1808,12 +1808,85 @@ public class SelfServiceScopeTests
             spaceId,
             group.Id,
             "current",
+            null,
             CancellationToken.None);
 
         var ok = result.Should().BeOfType<OkObjectResult>().Subject;
         var json = JsonSerializer.Serialize(ok.Value);
         json.Should().Contain(futureSlot.Id.ToString());
         json.Should().NotContain(startedSlot.Id.ToString());
+    }
+
+    [Fact]
+    public async Task ListTargetSlotsForAdmin_FiltersUnsafeSlotsForChangeRequest()
+    {
+        using var db = CreateDb();
+        var services = CreateControllerServices();
+        var spaceId = Guid.NewGuid();
+        var group = Group.Create(spaceId, null, "Route Group");
+        var adminUserId = Guid.NewGuid();
+        var memberUserId = Guid.NewGuid();
+        var ownerUserId = Guid.NewGuid();
+        var person = Person.Create(spaceId, "Member", linkedUserId: memberUserId);
+        var cycle = CreateCycle(spaceId, group.Id);
+        var task = CreateTask(spaceId, group.Id, "Task", ownerUserId);
+        var changeDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(3));
+        var originalSlot = CreateSlot(spaceId, group.Id, task.Id, cycle.Id, daysFromNow: 2);
+        var unsafeSlot = CreateSlot(spaceId, group.Id, task.Id, cycle.Id, changeDate, new TimeOnly(12, 0), new TimeOnly(16, 0));
+        var existingSlot = CreateSlot(spaceId, group.Id, task.Id, cycle.Id, changeDate, new TimeOnly(10, 0), new TimeOnly(14, 0));
+        var safeSlot = CreateSlot(spaceId, group.Id, task.Id, cycle.Id, changeDate.AddDays(1), new TimeOnly(8, 0), new TimeOnly(16, 0));
+        var shiftRequest = ShiftRequest.Create(spaceId, originalSlot.Id, person.Id, group.Id, cycle.Id);
+        shiftRequest.Approve();
+        originalSlot.IncrementFillCount();
+        var existingRequest = ShiftRequest.Create(spaceId, existingSlot.Id, person.Id, group.Id, cycle.Id);
+        existingRequest.Approve();
+        existingSlot.IncrementFillCount();
+        var changeRequest = ShiftChangeRequest.Create(
+            spaceId,
+            group.Id,
+            cycle.Id,
+            shiftRequest.Id,
+            originalSlot.Id,
+            null,
+            person.Id,
+            "Flexible move",
+            DateTime.UtcNow);
+
+        db.People.Add(person);
+        db.Groups.Add(group);
+        db.GroupMemberships.Add(GroupMembership.Create(spaceId, group.Id, person.Id));
+        db.SchedulingCycles.Add(cycle);
+        db.GroupTasks.Add(task);
+        db.ShiftSlots.AddRange(originalSlot, unsafeSlot, existingSlot, safeSlot);
+        db.ShiftRequests.AddRange(shiftRequest, existingRequest);
+        db.ShiftChangeRequests.Add(changeRequest);
+        await db.SaveChangesAsync();
+
+        services.Permissions
+            .RequirePermissionAsync(adminUserId, spaceId, Permissions.ConstraintsManage, Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+
+        var controller = new ShiftChangeRequestsController(
+            services.Permissions,
+            services.NotificationService,
+            services.PushSender,
+            services.Audit,
+            db);
+        controller.ControllerContext = CreateControllerContext(adminUserId);
+
+        var result = await controller.ListTargetSlotsForAdmin(
+            spaceId,
+            group.Id,
+            cycle.Id.ToString(),
+            changeRequest.Id,
+            CancellationToken.None);
+
+        var ok = result.Should().BeOfType<OkObjectResult>().Subject;
+        var json = JsonSerializer.Serialize(ok.Value);
+        json.Should().Contain(safeSlot.Id.ToString());
+        json.Should().NotContain(originalSlot.Id.ToString());
+        json.Should().NotContain(existingSlot.Id.ToString());
+        json.Should().NotContain(unsafeSlot.Id.ToString());
     }
 
     [Fact]

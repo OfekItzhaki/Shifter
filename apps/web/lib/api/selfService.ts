@@ -577,11 +577,12 @@ export async function getShiftChangeRequests(
 export async function getShiftChangeTargetSlots(
   spaceId: string,
   groupId: string,
-  cycleId: string
+  cycleId: string,
+  changeRequestId?: string
 ): Promise<AvailableSlotDto[]> {
   const { data } = await apiClient.get(
     `/spaces/${spaceId}/groups/${groupId}/shift-change-requests/admin/target-slots`,
-    { params: { cycleId } }
+    { params: { cycleId, ...(changeRequestId ? { changeRequestId } : {}) } }
   );
   return (data ?? []).map((slot: AvailableSlotDto & { shiftSlotId?: string }) => ({
     ...slot,

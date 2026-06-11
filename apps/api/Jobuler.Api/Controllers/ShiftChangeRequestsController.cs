@@ -313,6 +313,7 @@ public class ShiftChangeRequestsController : ControllerBase
         Guid spaceId,
         Guid groupId,
         [FromQuery] string cycleId,
+        [FromQuery] Guid? changeRequestId,
         CancellationToken ct)
     {
         await _permissions.RequirePermissionAsync(CurrentUserId, spaceId, Permissions.ConstraintsManage, ct);
@@ -337,7 +338,45 @@ public class ShiftChangeRequestsController : ControllerBase
             return BadRequest(new { error = "Invalid cycleId. Use a scheduling cycle id or 'current'." });
         }
 
-        var slots = (await _db.ShiftSlots
+        ShiftChangeRequest? changeRequest = null;
+        ShiftSlot? originalSlot = null;
+        HashSet<Guid>? activeRequestSlotIds = null;
+
+        if (changeRequestId.HasValue)
+        {
+            changeRequest = await _db.ShiftChangeRequests
+                .AsNoTracking()
+                .FirstOrDefaultAsync(r => r.Id == changeRequestId.Value
+                                          && r.SpaceId == spaceId
+                                          && r.GroupId == groupId
+                                          && r.SchedulingCycleId == resolvedCycleId
+                                          && r.Status == ShiftChangeRequestStatus.Pending,
+                    ct);
+
+            if (changeRequest is null)
+                return NotFound();
+
+            originalSlot = await _db.ShiftSlots
+                .AsNoTracking()
+                .FirstOrDefaultAsync(s => s.Id == changeRequest.OriginalShiftSlotId
+                                          && s.SpaceId == spaceId
+                                          && s.GroupId == groupId,
+                    ct);
+
+            if (originalSlot is null)
+                return NotFound();
+
+            activeRequestSlotIds = (await _db.ShiftRequests
+                    .AsNoTracking()
+                    .Where(r => r.Id != changeRequest.ShiftRequestId
+                                && r.PersonId == changeRequest.PersonId
+                                && (r.Status == ShiftRequestStatus.Pending || r.Status == ShiftRequestStatus.Approved))
+                    .Select(r => r.ShiftSlotId)
+                    .ToListAsync(ct))
+                .ToHashSet();
+        }
+
+        var slotRows = await _db.ShiftSlots
             .AsNoTracking()
             .Where(s => s.SpaceId == spaceId
                         && s.GroupId == groupId
@@ -355,11 +394,39 @@ public class ShiftChangeRequestsController : ControllerBase
                 s.CurrentFillCount,
                 s.SchedulingCycleId
             })
-            .ToListAsync(ct))
-            .Where(s => !HasShiftStarted(s.Date, s.StartTime))
-            .OrderBy(s => s.Date)
-            .ThenBy(s => s.StartTime)
-            .ToList();
+            .ToListAsync(ct);
+
+        var slots = new List<object>();
+        foreach (var row in slotRows
+                     .Where(s => !HasShiftStarted(s.Date, s.StartTime))
+                     .OrderBy(s => s.Date)
+                     .ThenBy(s => s.StartTime))
+        {
+            if (changeRequest is not null)
+            {
+                if (row.id == changeRequest.OriginalShiftSlotId)
+                    continue;
+
+                if (activeRequestSlotIds?.Contains(row.id) == true)
+                    continue;
+
+                var slot = await _db.ShiftSlots
+                    .AsNoTracking()
+                    .FirstAsync(s => s.Id == row.id, ct);
+
+                var assignmentConflict = await ShiftAssignmentSafety.FindApprovedAssignmentConflictAsync(
+                    _db,
+                    changeRequest.PersonId,
+                    slot,
+                    ct,
+                    excludeShiftSlotId: originalSlot!.Id);
+
+                if (assignmentConflict != ShiftAssignmentConflictKind.None)
+                    continue;
+            }
+
+            slots.Add(row);
+        }
 
         return Ok(slots);
     }

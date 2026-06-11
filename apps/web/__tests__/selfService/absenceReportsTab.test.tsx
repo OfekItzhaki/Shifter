@@ -176,7 +176,7 @@ describe("AbsenceReportsTab", () => {
 
     await screen.findByText("Pending change reason");
     await waitFor(() => {
-      expect(mockGetShiftChangeTargetSlots).toHaveBeenCalledWith("space-1", "group-1", "cycle-1");
+      expect(mockGetShiftChangeTargetSlots).toHaveBeenCalledWith("space-1", "group-1", "cycle-1", "change-pending");
     });
     fireEvent.change(screen.getByLabelText("Target shift"), {
       target: { value: "target-slot-1" },
