@@ -77,6 +77,8 @@ Before merging `feat/holiday-calendars` after this branch:
   self-service holiday behavior is added.
 - Add a test for holiday-aware self-service cycle generation or policy warnings
   before calling holidays supported in manual mode.
+- Add a manual smoke path from space special-day setup to a self-service cycle
+  that visibly overlaps the marked day.
 
 Before merging `feat/portable-space-isolation` after this branch:
 

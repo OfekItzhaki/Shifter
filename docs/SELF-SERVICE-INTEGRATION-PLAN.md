@@ -54,6 +54,10 @@ Known reconciliation points from the branch diff:
 - Add at least one self-service test for a special day before presenting holiday
   calendars as part of manual scheduling.
 
+Use the
+[self-service holiday calendar contract](SELF-SERVICE-HOLIDAY-CALENDAR-CONTRACT.md)
+as the merge gate for product behavior, policy, data scope, and tests.
+
 ## Portable Space Isolation
 
 `feat/portable-space-isolation` is related to customer-hosted deployments and

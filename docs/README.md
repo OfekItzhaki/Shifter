@@ -15,6 +15,9 @@ manual self-service scheduling decisions.
   smoke tests and automated checks before merge or demo.
 - [Self-service portability contract](SELF-SERVICE-PORTABILITY-CONTRACT.md) -
   data and tenant-isolation requirements for customer-hosted exports/imports.
+- [Self-service holiday calendar contract](SELF-SERVICE-HOLIDAY-CALENDAR-CONTRACT.md)
+  - required behavior before holiday calendars count as manual scheduling
+  support.
 - [Architecture](ARCHITECTURE.md) - current system architecture and service
   boundaries.
 - [Data model](DATA-MODEL.md) - major entities and persistence structure.
