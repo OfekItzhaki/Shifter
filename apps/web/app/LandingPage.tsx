@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import ShifterLogo from "@/components/shell/ShifterLogo";
@@ -49,6 +49,7 @@ export default function LandingPage({ initialLocale }: { initialLocale: LandingL
   }, [hasAccessToken, router]);
 
   const c = LANDING_CONTENT[lang];
+  const finder = c.finder ?? LANDING_CONTENT.en.finder!;
 
   function switchLang(nextLang: LandingLang) {
     setLang(nextLang);
@@ -183,6 +184,8 @@ export default function LandingPage({ initialLocale }: { initialLocale: LandingL
               </div>
             ))}
           </div>
+
+          <LandingFinder finder={finder} />
         </section>
 
         <section id="features" className="scroll-mt-24 px-4 py-16 sm:px-6 lg:py-20">
@@ -338,6 +341,70 @@ export default function LandingPage({ initialLocale }: { initialLocale: LandingL
           </div>
         </div>
       </footer>
+    </div>
+  );
+}
+
+function LandingFinder({ finder }: { finder: NonNullable<(typeof LANDING_CONTENT)[LandingLang]["finder"]> }) {
+  const [query, setQuery] = useState("");
+  const normalizedQuery = query.trim().toLowerCase();
+  const matches = useMemo(() => {
+    if (!normalizedQuery) return finder.items;
+
+    return finder.items.filter((item) => {
+      const haystack = [
+        item.label,
+        item.desc,
+        ...item.keywords,
+      ].join(" ").toLowerCase();
+      return haystack.includes(normalizedQuery);
+    });
+  }, [finder.items, normalizedQuery]);
+
+  return (
+    <div className="border-t border-slate-200 bg-slate-50 px-4 py-6 sm:px-6">
+      <div className="mx-auto grid max-w-7xl gap-4 lg:grid-cols-[0.35fr_0.65fr] lg:items-start">
+        <div>
+          <h2 className="text-lg font-black text-slate-950">{finder.title}</h2>
+          <div className="mt-3 flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 shadow-sm focus-within:border-sky-400 focus-within:ring-2 focus-within:ring-sky-100">
+            <span aria-hidden="true" className="text-sm font-black text-slate-400">⌕</span>
+            <input
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder={finder.placeholder}
+              className="min-w-0 flex-1 bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-400"
+              type="search"
+            />
+          </div>
+        </div>
+
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+          {matches.length === 0 ? (
+            <p className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600">
+              {finder.empty}
+            </p>
+          ) : (
+            matches.slice(0, 6).map((item) => {
+              const body = (
+                <span className="block h-full rounded-lg border border-slate-200 bg-white p-4 text-start shadow-sm transition hover:border-sky-200 hover:shadow-md">
+                  <span className="block text-sm font-black text-slate-950">{item.label}</span>
+                  <span className="mt-2 block text-xs leading-5 text-slate-600">{item.desc}</span>
+                </span>
+              );
+
+              return item.href.startsWith("/") ? (
+                <Link key={item.label} href={item.href} className="block">
+                  {body}
+                </Link>
+              ) : (
+                <a key={item.label} href={item.href} className="block">
+                  {body}
+                </a>
+              );
+            })
+          )}
+        </div>
+      </div>
     </div>
   );
 }

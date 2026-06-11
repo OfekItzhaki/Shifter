@@ -21,6 +21,12 @@ type LandingContent = {
     secondary: string;
     install: string;
   };
+  finder?: {
+    title: string;
+    placeholder: string;
+    empty: string;
+    items: Array<{ label: string; desc: string; href: string; keywords: string[] }>;
+  };
   proof: Array<{ value: string; label: string }>;
   preview: {
     workspace: string;
@@ -92,6 +98,20 @@ export const LANDING_CONTENT: Record<LandingLang, LandingContent> = {
       primary: "Start free",
       secondary: "Sign in",
       install: "Installable on iPhone and Android as a PWA",
+    },
+    finder: {
+      title: "Find the workflow you care about",
+      placeholder: "Search imports, swaps, accessibility, PWA, support...",
+      empty: "No exact match yet. Try schedule, import, swap, mobile, security, or support.",
+      items: [
+        { label: "Automatic scheduling", desc: "Generate fair drafts from roles, rules, rest, availability, and coverage needs.", href: "#features", keywords: ["schedule", "automatic", "solver", "constraints", "fair", "roster"] },
+        { label: "Imports and scan flow", desc: "Bring spreadsheet data in and prepare messy files for AI-assisted cleanup.", href: "#features", keywords: ["import", "excel", "csv", "scan", "ai", "files"] },
+        { label: "Swaps and absences", desc: "Let members report absence, request changes, and handle swaps with admin visibility.", href: "#features", keywords: ["swap", "absence", "change", "cannot attend", "self service"] },
+        { label: "Installable mobile app", desc: "Use Shifter as a PWA on phones and supported desktop browsers.", href: "#faq", keywords: ["pwa", "install", "iphone", "android", "desktop", "offline"] },
+        { label: "Accessibility", desc: "Read the accessibility statement and supported access practices.", href: "/accessibility", keywords: ["accessibility", "a11y", "contrast", "keyboard", "screen reader"] },
+        { label: "Security and customer hosting", desc: "Review security posture, privacy controls, and deployment options.", href: "/security", keywords: ["security", "privacy", "hosting", "server", "cloudflare", "data"] },
+        { label: "Talk to support", desc: "Ask about rollout, pricing, hosting, or how to model your scheduling rules.", href: "#contact", keywords: ["support", "contact", "demo", "help", "whatsapp", "sales"] },
+      ],
     },
     proof: [
       { value: "90%", label: "less scheduling work" },
