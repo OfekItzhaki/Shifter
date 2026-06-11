@@ -387,6 +387,52 @@ public class SelfServiceScopeTests
     }
 
     [Fact]
+    public async Task SubmitShiftChange_AuditFailure_DoesNotNotifyAdmins()
+    {
+        using var db = CreateDb();
+        var services = CreateControllerServices(audit: CreateFailingAuditLogger());
+        var spaceId = Guid.NewGuid();
+        var group = Group.Create(spaceId, null, "Route Group");
+        var userId = Guid.NewGuid();
+        var ownerUserId = Guid.NewGuid();
+        var person = Person.Create(spaceId, "Member", displayName: "Display Member", linkedUserId: userId);
+        var cycle = CreateCycle(spaceId, group.Id);
+        var task = CreateTask(spaceId, group.Id, "Task", ownerUserId);
+        var originalSlot = CreateSlot(spaceId, group.Id, task.Id, cycle.Id, daysFromNow: 2);
+        var requestedSlot = CreateSlot(spaceId, group.Id, task.Id, cycle.Id, daysFromNow: 3);
+        var shiftRequest = ShiftRequest.Create(spaceId, originalSlot.Id, person.Id, group.Id, cycle.Id);
+        shiftRequest.Approve();
+
+        db.People.Add(person);
+        db.Groups.Add(group);
+        db.GroupMemberships.Add(GroupMembership.Create(spaceId, group.Id, person.Id));
+        db.SchedulingCycles.Add(cycle);
+        db.GroupTasks.Add(task);
+        db.ShiftSlots.AddRange(originalSlot, requestedSlot);
+        db.ShiftRequests.Add(shiftRequest);
+        await db.SaveChangesAsync();
+
+        var controller = new ShiftChangeRequestsController(
+            services.Permissions,
+            services.NotificationService,
+            services.PushSender,
+            services.Audit,
+            db);
+        controller.ControllerContext = CreateControllerContext(userId);
+
+        var result = await controller.Submit(
+            spaceId,
+            group.Id,
+            new SubmitShiftChangeRequest(shiftRequest.Id, requestedSlot.Id, "Need to move"),
+            CancellationToken.None);
+
+        var problem = result.Should().BeAssignableTo<ObjectResult>().Subject;
+        problem.StatusCode.Should().Be(StatusCodes.Status422UnprocessableEntity);
+        await services.NotificationService.DidNotReceiveWithAnyArgs()
+            .NotifySpaceAdminsAsync(default, default!, default!, default!, default!, default, default);
+    }
+
+    [Fact]
     public async Task SubmitThenApproveShiftChange_MovesAssignmentAndNotifiesMember()
     {
         using var db = CreateDb();
@@ -579,6 +625,63 @@ public class SelfServiceScopeTests
                 && json.Contains("\"status\":\"cancelled\"")),
             Arg.Is<string?>(ipAddress => ipAddress == null),
             Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task CancelShiftChange_AuditFailure_DoesNotNotifyAdmins()
+    {
+        using var db = CreateDb();
+        var services = CreateControllerServices(audit: CreateFailingAuditLogger());
+        var spaceId = Guid.NewGuid();
+        var group = Group.Create(spaceId, null, "Route Group");
+        var userId = Guid.NewGuid();
+        var ownerUserId = Guid.NewGuid();
+        var person = Person.Create(spaceId, "Member", displayName: "Display Member", linkedUserId: userId);
+        var cycle = CreateCycle(spaceId, group.Id);
+        var task = CreateTask(spaceId, group.Id, "Task", ownerUserId);
+        var originalSlot = CreateSlot(spaceId, group.Id, task.Id, cycle.Id, daysFromNow: 2);
+        var requestedSlot = CreateSlot(spaceId, group.Id, task.Id, cycle.Id, daysFromNow: 3);
+        var shiftRequest = ShiftRequest.Create(spaceId, originalSlot.Id, person.Id, group.Id, cycle.Id);
+        shiftRequest.Approve();
+        var changeRequest = ShiftChangeRequest.Create(
+            spaceId,
+            group.Id,
+            cycle.Id,
+            shiftRequest.Id,
+            originalSlot.Id,
+            requestedSlot.Id,
+            person.Id,
+            "Need to move",
+            DateTime.UtcNow);
+
+        db.People.Add(person);
+        db.Groups.Add(group);
+        db.GroupMemberships.Add(GroupMembership.Create(spaceId, group.Id, person.Id));
+        db.SchedulingCycles.Add(cycle);
+        db.GroupTasks.Add(task);
+        db.ShiftSlots.AddRange(originalSlot, requestedSlot);
+        db.ShiftRequests.Add(shiftRequest);
+        db.ShiftChangeRequests.Add(changeRequest);
+        await db.SaveChangesAsync();
+
+        var controller = new ShiftChangeRequestsController(
+            services.Permissions,
+            services.NotificationService,
+            services.PushSender,
+            services.Audit,
+            db);
+        controller.ControllerContext = CreateControllerContext(userId);
+
+        var result = await controller.CancelMine(
+            spaceId,
+            group.Id,
+            changeRequest.Id,
+            CancellationToken.None);
+
+        var problem = result.Should().BeAssignableTo<ObjectResult>().Subject;
+        problem.StatusCode.Should().Be(StatusCodes.Status422UnprocessableEntity);
+        await services.NotificationService.DidNotReceiveWithAnyArgs()
+            .NotifySpaceAdminsAsync(default, default!, default!, default!, default!, default, default);
     }
 
     [Fact]

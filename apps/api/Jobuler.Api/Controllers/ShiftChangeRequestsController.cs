@@ -121,37 +121,54 @@ public class ShiftChangeRequestsController : ControllerBase
 
         try
         {
-            var changeRequest = ShiftChangeRequest.Create(
-                spaceId,
-                groupId,
-                shiftRequest.SchedulingCycleId,
-                shiftRequest.Id,
-                shiftRequest.ShiftSlotId,
-                req.RequestedShiftSlotId,
-                personId.Value,
-                req.Reason,
-                DateTime.UtcNow);
+            var strategy = _db.Database.CreateExecutionStrategy();
+            var changeRequest = await strategy.ExecuteAsync(async () =>
+            {
+                await using var transaction = await _db.Database.BeginTransactionAsync(ct);
 
-            _db.ShiftChangeRequests.Add(changeRequest);
-            await _db.SaveChangesAsync(ct);
-            await _audit.LogAsync(
-                spaceId,
-                CurrentUserId,
-                "self_service.submit_shift_change",
-                "shift_change_request",
-                changeRequest.Id,
-                afterJson: JsonSerializer.Serialize(new
+                try
                 {
-                    change_request_id = changeRequest.Id,
-                    shift_request_id = changeRequest.ShiftRequestId,
-                    person_id = changeRequest.PersonId,
-                    group_id = changeRequest.GroupId,
-                    scheduling_cycle_id = changeRequest.SchedulingCycleId,
-                    original_shift_slot_id = changeRequest.OriginalShiftSlotId,
-                    requested_shift_slot_id = changeRequest.RequestedShiftSlotId,
-                    status = changeRequest.Status.ToString().ToLowerInvariant()
-                }),
-                ct: ct);
+                    var changeRequest = ShiftChangeRequest.Create(
+                        spaceId,
+                        groupId,
+                        shiftRequest.SchedulingCycleId,
+                        shiftRequest.Id,
+                        shiftRequest.ShiftSlotId,
+                        req.RequestedShiftSlotId,
+                        personId.Value,
+                        req.Reason,
+                        DateTime.UtcNow);
+
+                    _db.ShiftChangeRequests.Add(changeRequest);
+                    await _db.SaveChangesAsync(ct);
+                    await _audit.LogAsync(
+                        spaceId,
+                        CurrentUserId,
+                        "self_service.submit_shift_change",
+                        "shift_change_request",
+                        changeRequest.Id,
+                        afterJson: JsonSerializer.Serialize(new
+                        {
+                            change_request_id = changeRequest.Id,
+                            shift_request_id = changeRequest.ShiftRequestId,
+                            person_id = changeRequest.PersonId,
+                            group_id = changeRequest.GroupId,
+                            scheduling_cycle_id = changeRequest.SchedulingCycleId,
+                            original_shift_slot_id = changeRequest.OriginalShiftSlotId,
+                            requested_shift_slot_id = changeRequest.RequestedShiftSlotId,
+                            status = changeRequest.Status.ToString().ToLowerInvariant()
+                        }),
+                        ct: ct);
+
+                    await transaction.CommitAsync(ct);
+                    return changeRequest;
+                }
+                catch
+                {
+                    await transaction.RollbackAsync(ct);
+                    throw;
+                }
+            });
             await NotifyAdminsChangeSubmittedAsync(changeRequest, ct);
 
             return Created("", new { id = changeRequest.Id });
@@ -185,33 +202,49 @@ public class ShiftChangeRequestsController : ControllerBase
 
         try
         {
-            changeRequest.Cancel();
-            await _db.SaveChangesAsync(ct);
-            await _audit.LogAsync(
-                spaceId,
-                CurrentUserId,
-                "self_service.cancel_shift_change",
-                "shift_change_request",
-                changeRequest.Id,
-                beforeJson: JsonSerializer.Serialize(new
+            var strategy = _db.Database.CreateExecutionStrategy();
+            await strategy.ExecuteAsync(async () =>
+            {
+                await using var transaction = await _db.Database.BeginTransactionAsync(ct);
+
+                try
                 {
-                    change_request_id = changeRequest.Id,
-                    shift_request_id = changeRequest.ShiftRequestId,
-                    person_id = changeRequest.PersonId,
-                    group_id = changeRequest.GroupId,
-                    scheduling_cycle_id = changeRequest.SchedulingCycleId,
-                    status = "pending"
-                }),
-                afterJson: JsonSerializer.Serialize(new
+                    changeRequest.Cancel();
+                    await _db.SaveChangesAsync(ct);
+                    await _audit.LogAsync(
+                        spaceId,
+                        CurrentUserId,
+                        "self_service.cancel_shift_change",
+                        "shift_change_request",
+                        changeRequest.Id,
+                        beforeJson: JsonSerializer.Serialize(new
+                        {
+                            change_request_id = changeRequest.Id,
+                            shift_request_id = changeRequest.ShiftRequestId,
+                            person_id = changeRequest.PersonId,
+                            group_id = changeRequest.GroupId,
+                            scheduling_cycle_id = changeRequest.SchedulingCycleId,
+                            status = "pending"
+                        }),
+                        afterJson: JsonSerializer.Serialize(new
+                        {
+                            change_request_id = changeRequest.Id,
+                            shift_request_id = changeRequest.ShiftRequestId,
+                            person_id = changeRequest.PersonId,
+                            group_id = changeRequest.GroupId,
+                            scheduling_cycle_id = changeRequest.SchedulingCycleId,
+                            status = changeRequest.Status.ToString().ToLowerInvariant()
+                        }),
+                        ct: ct);
+
+                    await transaction.CommitAsync(ct);
+                }
+                catch
                 {
-                    change_request_id = changeRequest.Id,
-                    shift_request_id = changeRequest.ShiftRequestId,
-                    person_id = changeRequest.PersonId,
-                    group_id = changeRequest.GroupId,
-                    scheduling_cycle_id = changeRequest.SchedulingCycleId,
-                    status = changeRequest.Status.ToString().ToLowerInvariant()
-                }),
-                ct: ct);
+                    await transaction.RollbackAsync(ct);
+                    throw;
+                }
+            });
             await NotifyAdminsChangeCancelledAsync(changeRequest, ct);
             return NoContent();
         }
