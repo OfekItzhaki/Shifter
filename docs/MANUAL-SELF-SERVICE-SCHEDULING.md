@@ -46,6 +46,26 @@ when the organization accepts an admin-operated review queue:
 This is not yet a fully autonomous scheduling product. Admins still need to
 review exceptions, close gaps, and tune policy between cycles.
 
+## Current Implementation Map
+
+Use this section when checking whether a customer-facing workflow is actually
+present in the product.
+
+| Workflow | Member surface | Admin surface | Backend support |
+|---|---|---|---|
+| Pick shifts | `Available slots` tab and `/pick` mobile route | Operations status and admin overrides | `ShiftSlotsController`, `ShiftRequestsController`, `ShiftRequestService`, `SlotAvailabilityEngine` |
+| Waitlist full shifts | `Waitlist` tab, offer accept/decline, leave waitlist | Admin waitlist queue and manual assignment from waitlist | `WaitlistService`, waitlist endpoints, expired-offer job |
+| Cancel owned shifts | `My shifts` cancel action before cutoff | Cancelled request visibility in review history | shift request cancellation flow with cutoff checks |
+| Report cannot attend | `My shifts` cannot-attend action | `Reviews` queue for absence approval/rejection | `ShiftAbsenceReport` flow with late-report counting |
+| Ask to change shift | `My shifts` change request, specific slot or flexible | `Reviews` queue with target slot selection | `ShiftChangeRequestsController` and change request domain model |
+| Swap shifts | `Swaps` tab, propose/accept/decline/cancel | Visible through member/admin group tabs | `ShiftSwapService`, swap expiry job, schedule-safety checks |
+| Planned time off | Special leave form in `My shifts` | `Reviews` queue for special leave | special leave API and review flow |
+| Fill gaps manually | Not applicable | `Admin overrides` assignment/removal | admin override commands with safety checks |
+| Run cycles | Members see generated slots | Config, templates, cycle controls, operations dashboard | self-service config, templates, cycle generation jobs |
+
+The strongest member entry point is `/pick`, especially for PWA/mobile users.
+The strongest manager entry point is the self-service group operations tab.
+
 ## Recommended Setup
 
 1. Create or edit a group and set the scheduling mode to `SelfService`.
@@ -161,6 +181,27 @@ Operationally, admins should treat overrides as an exception path. If overrides
 become frequent, adjust templates, capacity, request windows, or min/max shift
 policy before the next cycle.
 
+## Verification Evidence
+
+The implementation has focused unit/property coverage for:
+
+- self-service tab visibility and admin/member access shape
+- slot browsing, sorting, capacity display, shift picking, and waitlist joins
+- member shift status, cancellation eligibility, absence reporting, shift
+  changes, special leave, and unified activity history
+- waitlist offers, stale-offer handling, admin waitlist assignment, and leaving
+  the waitlist
+- swaps, including propose, accept, decline, cancel, expiry, ownership checks,
+  conflict checks, and stale-state refresh
+- self-service config validation and policy warnings
+- admin overrides, absence/change/special-leave review queues, and cycle
+  operations status
+- API lifecycle tests for request limits, notifications, waitlist processing,
+  swaps, absence reports, shift changes, and scope isolation
+
+There is also a mobile Playwright smoke test for the self-service admin cycle
+controls and operations tab using the seeded `Self-Service Demo` group.
+
 ## Customer-Hosted Use
 
 Manual self-service is a strong fit for customer-hosted installs because it does
@@ -182,14 +223,13 @@ For customer-hosted deployments, combine this guide with:
 These are not blockers for an MVP rollout, but they are worth improving before
 large deployments:
 
-- A more opinionated admin dashboard for urgent late absences, expiring waitlist
-  offers, and underfilled slots.
-- Browser end-to-end tests with a reliable seeded self-service group that
-  exercise the complete member/admin cycle.
+- A full browser end-to-end test that exercises the complete member/admin cycle:
+  pick shift, fill slot, join waitlist, cancel, report absence, request change,
+  review as admin, and verify final slot state.
 - Organization-level defaults for self-service policy so new groups inherit the
   right limits.
-- Better onboarding copy inside the self-service admin tabs.
-- Exportable cycle report for attendance, late reports, overrides, and rejected
-  requests.
+- A cycle closeout report for attendance, late reports, overrides, rejected
+  requests, and no-shows.
+- Manager decision support for which underfilled slots should be handled first.
 - Provider health checks for email, push, and optional AI in customer-hosted
   installs.
