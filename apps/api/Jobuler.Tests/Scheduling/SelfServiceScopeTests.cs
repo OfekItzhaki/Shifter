@@ -3006,6 +3006,202 @@ public class SelfServiceScopeTests
     }
 
     [Fact]
+    public async Task GetCycleCloseout_SummarizesCurrentCycleOperatingMetrics()
+    {
+        using var db = CreateDb();
+        var services = CreateControllerServices();
+        var spaceId = Guid.NewGuid();
+        var group = Group.Create(spaceId, null, "Self-service group");
+        var adminUserId = Guid.NewGuid();
+        var ownerUserId = Guid.NewGuid();
+        var alice = Person.Create(spaceId, "Alice", linkedUserId: Guid.NewGuid());
+        var bob = Person.Create(spaceId, "Bob", linkedUserId: Guid.NewGuid());
+        var charlie = Person.Create(spaceId, "Charlie", linkedUserId: Guid.NewGuid());
+        var cycle = CreateCycle(spaceId, group.Id);
+        var task = CreateTask(spaceId, group.Id, "Guard", ownerUserId);
+        var filledSlot = CreateSlot(spaceId, group.Id, task.Id, cycle.Id, daysFromNow: 2);
+        var underfilledSlot = CreateSlot(spaceId, group.Id, task.Id, cycle.Id, daysFromNow: 3);
+        var overfilledSlot = CreateSlot(spaceId, group.Id, task.Id, cycle.Id, daysFromNow: 4);
+
+        var approvedRequest = ShiftRequest.Create(spaceId, filledSlot.Id, alice.Id, group.Id, cycle.Id);
+        approvedRequest.Approve();
+        filledSlot.IncrementFillCount();
+
+        var pendingRequest = ShiftRequest.Create(spaceId, underfilledSlot.Id, bob.Id, group.Id, cycle.Id);
+
+        var rejectedRequest = ShiftRequest.Create(spaceId, underfilledSlot.Id, charlie.Id, group.Id, cycle.Id);
+        rejectedRequest.Reject("Not eligible", adminUserId);
+
+        var cancelledRequest = ShiftRequest.Create(spaceId, filledSlot.Id, bob.Id, group.Id, cycle.Id);
+        cancelledRequest.Approve();
+        cancelledRequest.Cancel("Cannot attend: sick");
+
+        var adminOverrideRequest = ShiftRequest.Create(
+            spaceId,
+            overfilledSlot.Id,
+            bob.Id,
+            group.Id,
+            cycle.Id,
+            isAdminOverride: true,
+            processedByUserId: adminUserId);
+        adminOverrideRequest.Approve(adminUserId);
+        overfilledSlot.IncrementFillCount();
+
+        var swapTargetRequest = ShiftRequest.Create(spaceId, overfilledSlot.Id, charlie.Id, group.Id, cycle.Id);
+        swapTargetRequest.Approve();
+        overfilledSlot.IncrementFillCount();
+
+        var pendingAbsence = ShiftAbsenceReport.Create(
+            spaceId,
+            group.Id,
+            cycle.Id,
+            approvedRequest.Id,
+            filledSlot.Id,
+            alice.Id,
+            "Traffic",
+            isLate: true,
+            DateTime.UtcNow);
+        var approvedAbsence = ShiftAbsenceReport.Create(
+            spaceId,
+            group.Id,
+            cycle.Id,
+            cancelledRequest.Id,
+            filledSlot.Id,
+            bob.Id,
+            "Medical",
+            isLate: false,
+            DateTime.UtcNow);
+        approvedAbsence.Approve(adminUserId);
+        var rejectedAbsence = ShiftAbsenceReport.Create(
+            spaceId,
+            group.Id,
+            cycle.Id,
+            adminOverrideRequest.Id,
+            overfilledSlot.Id,
+            bob.Id,
+            "Invalid",
+            isLate: true,
+            DateTime.UtcNow);
+        rejectedAbsence.Reject(adminUserId);
+
+        var pendingChange = ShiftChangeRequest.Create(
+            spaceId,
+            group.Id,
+            cycle.Id,
+            approvedRequest.Id,
+            filledSlot.Id,
+            underfilledSlot.Id,
+            alice.Id,
+            "Need later",
+            DateTime.UtcNow);
+        var approvedChange = ShiftChangeRequest.Create(
+            spaceId,
+            group.Id,
+            cycle.Id,
+            adminOverrideRequest.Id,
+            overfilledSlot.Id,
+            filledSlot.Id,
+            bob.Id,
+            "Move me",
+            DateTime.UtcNow);
+        approvedChange.Approve(adminUserId);
+
+        var pendingSwap = SwapRequest.Create(
+            spaceId,
+            group.Id,
+            alice.Id,
+            charlie.Id,
+            approvedRequest.Id,
+            swapTargetRequest.Id);
+        var acceptedSwap = SwapRequest.Create(
+            spaceId,
+            group.Id,
+            bob.Id,
+            charlie.Id,
+            adminOverrideRequest.Id,
+            swapTargetRequest.Id);
+        acceptedSwap.Accept();
+
+        var waitingEntry = WaitlistEntry.Create(spaceId, underfilledSlot.Id, alice.Id, position: 1);
+        var acceptedEntry = WaitlistEntry.Create(spaceId, underfilledSlot.Id, bob.Id, position: 2);
+        acceptedEntry.Accept();
+        var expiredEntry = WaitlistEntry.Create(spaceId, filledSlot.Id, charlie.Id, position: 3);
+        expiredEntry.Expire();
+
+        var pendingLeave = SpecialLeaveRequest.Create(
+            spaceId,
+            alice.Id,
+            cycle.StartsAt.AddHours(2),
+            cycle.StartsAt.AddHours(4),
+            "Appointment",
+            alice.LinkedUserId!.Value);
+
+        db.People.AddRange(alice, bob, charlie);
+        db.Groups.Add(group);
+        db.GroupMemberships.AddRange(
+            GroupMembership.Create(spaceId, group.Id, alice.Id),
+            GroupMembership.Create(spaceId, group.Id, bob.Id),
+            GroupMembership.Create(spaceId, group.Id, charlie.Id));
+        db.SchedulingCycles.Add(cycle);
+        db.GroupTasks.Add(task);
+        db.ShiftSlots.AddRange(filledSlot, underfilledSlot, overfilledSlot);
+        db.ShiftRequests.AddRange(
+            approvedRequest,
+            pendingRequest,
+            rejectedRequest,
+            cancelledRequest,
+            adminOverrideRequest,
+            swapTargetRequest);
+        db.ShiftAbsenceReports.AddRange(pendingAbsence, approvedAbsence, rejectedAbsence);
+        db.ShiftChangeRequests.AddRange(pendingChange, approvedChange);
+        db.SwapRequests.AddRange(pendingSwap, acceptedSwap);
+        db.WaitlistEntries.AddRange(waitingEntry, acceptedEntry, expiredEntry);
+        db.SpecialLeaveRequests.Add(pendingLeave);
+        await db.SaveChangesAsync();
+
+        services.Permissions
+            .RequirePermissionAsync(adminUserId, spaceId, Permissions.ConstraintsManage, Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+
+        var controller = new SelfServiceCyclesController(
+            db,
+            services.Permissions,
+            Substitute.For<ISlotGenerationService>(),
+            services.Mediator);
+        controller.ControllerContext = CreateControllerContext(adminUserId);
+
+        var result = await controller.GetCloseout(spaceId, group.Id, cycle.Id, CancellationToken.None);
+
+        var ok = result.Should().BeOfType<OkObjectResult>().Subject;
+        var response = ok.Value.Should().BeOfType<SelfServiceCycleCloseoutResponse>().Subject;
+        response.CycleId.Should().Be(cycle.Id);
+        response.SlotCount.Should().Be(3);
+        response.TotalCapacity.Should().Be(3);
+        response.FilledCount.Should().Be(3);
+        response.UnderfilledSlotCount.Should().Be(1);
+        response.OverfilledSlotCount.Should().Be(1);
+        response.ApprovedAssignments.Should().Be(3);
+        response.CancelledAssignments.Should().Be(1);
+        response.RejectedRequests.Should().Be(1);
+        response.PendingRequests.Should().Be(1);
+        response.AdminOverrideAssignments.Should().Be(1);
+        response.CannotAttendCancellations.Should().Be(1);
+        response.LateAbsenceReports.Should().Be(2);
+        response.ApprovedAbsenceReports.Should().Be(1);
+        response.RejectedAbsenceReports.Should().Be(1);
+        response.PendingAbsenceReports.Should().Be(1);
+        response.ApprovedChangeRequests.Should().Be(1);
+        response.PendingChangeRequests.Should().Be(1);
+        response.AcceptedSwapRequests.Should().Be(1);
+        response.PendingSwapRequests.Should().Be(1);
+        response.ActiveWaitlistEntries.Should().Be(1);
+        response.AcceptedWaitlistEntries.Should().Be(1);
+        response.ExpiredWaitlistEntries.Should().Be(1);
+        response.PendingSpecialLeaveRequests.Should().Be(1);
+        response.IssueCount.Should().Be(7);
+    }
+
+    [Fact]
     public async Task GenerateNext_CreatesCycleFromConfigAndRunsSlotGeneration()
     {
         using var db = CreateDb();
