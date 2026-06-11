@@ -2480,6 +2480,10 @@
           "underfilled": {
             "title": "Under-filled slots",
             "description": "{count} slot(s) still need coverage."
+          },
+          "pendingSwaps": {
+            "title": "Pending peer swaps",
+            "description": "{count} swap proposal(s) are still waiting for member response."
           }
         }
       },
@@ -2559,6 +2563,11 @@
           "description": "See who is waiting or holding an offer when full shifts open up.",
           "metric": "{count} active waitlist item(s)"
         },
+        "swaps": {
+          "title": "Peer swaps",
+          "description": "Review member-to-member swap proposals that may still change assignments.",
+          "metric": "{count} pending swap proposal(s)"
+        },
         "overrides": {
           "title": "Manual overrides",
           "description": "Assign or remove members when the schedule needs a direct correction.",
@@ -2599,6 +2608,7 @@
           "absenceReview": "Absence review",
           "lateReports": "Late reports",
           "changeReview": "Change review",
+          "pendingSwaps": "Pending swaps",
           "generated": "Generated",
           "leaveReview": "Leave review"
         },
@@ -2638,6 +2648,11 @@
               "label": "Waitlist",
               "ok": "No active waitlist entries or offers.",
               "warning": "{count} active waitlist entry/offer item(s)."
+            },
+            "swaps": {
+              "label": "Peer swaps",
+              "ok": "No pending peer swap proposals.",
+              "warning": "{count} pending swap proposal(s)."
             },
             "underScheduled": {
               "label": "Minimum shifts",

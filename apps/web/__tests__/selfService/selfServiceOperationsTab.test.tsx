@@ -24,6 +24,8 @@ vi.mock("next-intl", () => ({
       "priority.signals.lateReports.description": `${values?.count ?? 0} late report(s) need review.`,
       "priority.signals.expiringWaitlist.title": "Expiring waitlist offers",
       "priority.signals.expiringWaitlist.description": `${values?.count ?? 0} waitlist offer(s) expire in ${values?.minutes ?? 0} minutes.`,
+      "priority.signals.pendingSwaps.title": "Pending peer swaps",
+      "priority.signals.pendingSwaps.description": `${values?.count ?? 0} swap proposal(s) need member response.`,
       "priority.signals.underfilled.title": "Under-filled slots",
       "priority.signals.underfilled.description": `${values?.count ?? 0} slot(s) still need coverage.`,
       "reviews.title": "Review breakdown",
@@ -67,6 +69,9 @@ vi.mock("next-intl", () => ({
       "actions.waitlist.title": "Waitlist queue",
       "actions.waitlist.description": "See active waitlist entries.",
       "actions.waitlist.metric": `${values?.count ?? 0} active waitlist item(s)`,
+      "actions.swaps.title": "Peer swaps",
+      "actions.swaps.description": "Review pending swaps.",
+      "actions.swaps.metric": `${values?.count ?? 0} pending swap proposal(s)`,
       "actions.overrides.title": "Manual overrides",
       "actions.overrides.description": "Fix schedule coverage.",
       "actions.overrides.metric": `${values?.count ?? 0} under-filled slot(s)`,
@@ -115,6 +120,7 @@ describe("SelfServiceOperationsTab", () => {
       pendingAbsenceReportCount: 2,
       latePendingAbsenceReportCount: 1,
       pendingShiftChangeRequestCount: 3,
+      pendingSwapRequestCount: 2,
       pendingSpecialLeaveRequestCount: 1,
       underfilledSlotCount: 3,
       underfilledSlots: [
@@ -152,13 +158,15 @@ describe("SelfServiceOperationsTab", () => {
     const onNavigate = vi.fn();
     render(<SelfServiceOperationsTab spaceId="space-1" groupId="group-1" onNavigate={onNavigate} />);
 
-    expect(await screen.findByText("13 item(s) need attention")).toBeInTheDocument();
+    expect(await screen.findByText("15 item(s) need attention")).toBeInTheDocument();
     expect(screen.getByText("6 pending review item(s)")).toBeInTheDocument();
     expect(screen.getByText("4 active waitlist item(s)")).toBeInTheDocument();
+    expect(screen.getByText("2 pending swap proposal(s)")).toBeInTheDocument();
     expect(screen.getByText("3 under-filled slot(s)")).toBeInTheDocument();
-    expect(screen.getByText("3 urgent signal(s)")).toBeInTheDocument();
+    expect(screen.getByText("4 urgent signal(s)")).toBeInTheDocument();
     expect(screen.getByText("Late absence reports")).toBeInTheDocument();
     expect(screen.getByText("Expiring waitlist offers")).toBeInTheDocument();
+    expect(screen.getByText("Pending peer swaps")).toBeInTheDocument();
     expect(screen.getByText("Under-filled slots")).toBeInTheDocument();
     expect(screen.getByText("Review breakdown")).toBeInTheDocument();
     expect(screen.getByText("2 absence report(s) waiting.")).toBeInTheDocument();
@@ -190,6 +198,12 @@ describe("SelfServiceOperationsTab", () => {
 
     await waitFor(() => {
       expect(onNavigate).toHaveBeenCalledWith("waitlist");
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: /2 pending swap proposal\(s\)/i }));
+
+    await waitFor(() => {
+      expect(onNavigate).toHaveBeenCalledWith("swaps");
     });
 
     fireEvent.click(screen.getByTestId("cycle-control-panel"));

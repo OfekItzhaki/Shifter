@@ -2480,6 +2480,10 @@
           "underfilled": {
             "title": "Under-filled slots",
             "description": "{count} slot(s) still need coverage."
+          },
+          "pendingSwaps": {
+            "title": "Ожидающие обмены",
+            "description": "{count} предложений обмена ждут ответа участника."
           }
         }
       },
@@ -2571,6 +2575,11 @@
           "title": "Waitlist queue",
           "description": "See who is waiting or holding an offer when full shifts open up.",
           "metric": "{count} active waitlist item(s)"
+        },
+        "swaps": {
+          "title": "Обмены между участниками",
+          "description": "Проверьте предложения обмена, которые еще могут изменить назначения.",
+          "metric": "{count} ожидающих предложений обмена"
         }
       },
       "cycle": {
@@ -2599,6 +2608,7 @@
           "absenceReview": "???????? ??????????",
           "lateReports": "??????? ??????",
           "changeReview": "???????? ?????????",
+          "pendingSwaps": "Ожидающие обмены",
           "generated": "???????",
           "leaveReview": "???????? ????????"
         },
@@ -2638,6 +2648,11 @@
               "label": "Waitlist",
               "ok": "No active waitlist entries or offers.",
               "warning": "{count} active waitlist entry/offer item(s)."
+            },
+            "swaps": {
+              "label": "Обмены между участниками",
+              "ok": "Нет ожидающих предложений обмена.",
+              "warning": "{count} ожидающих предложений обмена."
             },
             "underScheduled": {
               "label": "Minimum shifts",

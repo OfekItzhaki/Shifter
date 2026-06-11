@@ -2801,23 +2801,32 @@ public class SelfServiceScopeTests
         var userId = Guid.NewGuid();
         var ownerUserId = Guid.NewGuid();
         var member = Person.Create(spaceId, "Member", linkedUserId: userId);
+        var targetMember = Person.Create(spaceId, "Target Member", linkedUserId: Guid.NewGuid());
         var noisyMember = Person.Create(otherSpaceId, "Noisy Member", linkedUserId: Guid.NewGuid());
+        var noisyTargetMember = Person.Create(otherSpaceId, "Noisy Target", linkedUserId: Guid.NewGuid());
         var cycle = CreateCycle(spaceId, group.Id);
         var task = CreateTask(spaceId, group.Id, "Task", ownerUserId);
         var otherTask = CreateTask(otherSpaceId, otherGroup.Id, "Other Task", ownerUserId);
         var approvedSlot = CreateSlot(spaceId, group.Id, task.Id, cycle.Id, daysFromNow: 2);
         var pendingSlot = CreateSlot(spaceId, group.Id, task.Id, cycle.Id, daysFromNow: 3);
+        var targetSlot = CreateSlot(spaceId, group.Id, task.Id, cycle.Id, daysFromNow: 4);
         var noisySlot = CreateSlot(otherSpaceId, otherGroup.Id, otherTask.Id, cycle.Id, daysFromNow: 4);
         var noisyTargetSlot = CreateSlot(otherSpaceId, otherGroup.Id, otherTask.Id, cycle.Id, daysFromNow: 5);
         approvedSlot.IncrementFillCount();
+        targetSlot.IncrementFillCount();
         noisySlot.IncrementFillCount();
+        noisyTargetSlot.IncrementFillCount();
 
         var approvedRequest = ShiftRequest.Create(spaceId, approvedSlot.Id, member.Id, group.Id, cycle.Id);
         approvedRequest.Approve();
         var pendingRequest = ShiftRequest.Create(spaceId, pendingSlot.Id, member.Id, group.Id, cycle.Id);
+        var targetRequest = ShiftRequest.Create(spaceId, targetSlot.Id, targetMember.Id, group.Id, cycle.Id);
+        targetRequest.Approve();
         var noisyApprovedRequest = ShiftRequest.Create(otherSpaceId, noisySlot.Id, noisyMember.Id, otherGroup.Id, cycle.Id);
         noisyApprovedRequest.Approve();
         var noisyPendingRequest = ShiftRequest.Create(otherSpaceId, noisySlot.Id, noisyMember.Id, otherGroup.Id, cycle.Id);
+        var noisyTargetRequest = ShiftRequest.Create(otherSpaceId, noisyTargetSlot.Id, noisyTargetMember.Id, otherGroup.Id, cycle.Id);
+        noisyTargetRequest.Approve();
 
         var absenceReport = ShiftAbsenceReport.Create(
             spaceId,
@@ -2859,16 +2868,31 @@ public class SelfServiceScopeTests
             noisyMember.Id,
             "Wrong scope",
             DateTime.UtcNow);
+        var swapRequest = SwapRequest.Create(
+            spaceId,
+            group.Id,
+            member.Id,
+            targetMember.Id,
+            approvedRequest.Id,
+            targetRequest.Id);
+        var noisySwapRequest = SwapRequest.Create(
+            otherSpaceId,
+            otherGroup.Id,
+            noisyMember.Id,
+            noisyTargetMember.Id,
+            noisyApprovedRequest.Id,
+            noisyTargetRequest.Id);
 
-        db.People.AddRange(member, noisyMember);
+        db.People.AddRange(member, targetMember, noisyMember, noisyTargetMember);
         db.Groups.AddRange(group, otherGroup);
         db.GroupMemberships.Add(GroupMembership.Create(spaceId, group.Id, member.Id));
         db.SchedulingCycles.Add(cycle);
         db.GroupTasks.AddRange(task, otherTask);
-        db.ShiftSlots.AddRange(approvedSlot, pendingSlot, noisySlot, noisyTargetSlot);
-        db.ShiftRequests.AddRange(approvedRequest, pendingRequest, noisyApprovedRequest, noisyPendingRequest);
+        db.ShiftSlots.AddRange(approvedSlot, pendingSlot, targetSlot, noisySlot, noisyTargetSlot);
+        db.ShiftRequests.AddRange(approvedRequest, pendingRequest, targetRequest, noisyApprovedRequest, noisyPendingRequest, noisyTargetRequest);
         db.ShiftAbsenceReports.AddRange(absenceReport, noisyAbsenceReport);
         db.ShiftChangeRequests.AddRange(changeRequest, noisyChangeRequest);
+        db.SwapRequests.AddRange(swapRequest, noisySwapRequest);
         db.WaitlistEntries.AddRange(
             WaitlistEntry.Create(spaceId, pendingSlot.Id, member.Id, position: 1),
             WaitlistEntry.Create(otherSpaceId, noisySlot.Id, noisyMember.Id, position: 1));
@@ -2889,15 +2913,16 @@ public class SelfServiceScopeTests
 
         var ok = result.Should().BeOfType<OkObjectResult>().Subject;
         var response = ok.Value.Should().BeOfType<SelfServiceCycleStatusResponse>().Subject;
-        response.SlotCount.Should().Be(2);
-        response.TotalCapacity.Should().Be(2);
-        response.FilledCount.Should().Be(1);
-        response.ApprovedCount.Should().Be(1);
+        response.SlotCount.Should().Be(3);
+        response.TotalCapacity.Should().Be(3);
+        response.FilledCount.Should().Be(2);
+        response.ApprovedCount.Should().Be(2);
         response.PendingCount.Should().Be(1);
         response.WaitlistCount.Should().Be(1);
         response.PendingAbsenceReportCount.Should().Be(1);
         response.LatePendingAbsenceReportCount.Should().Be(1);
         response.PendingShiftChangeRequestCount.Should().Be(1);
+        response.PendingSwapRequestCount.Should().Be(1);
         response.UnderfilledSlotCount.Should().Be(1);
         response.UnderfilledSlots.Should().ContainSingle(s => s.ShiftSlotId == pendingSlot.Id);
     }

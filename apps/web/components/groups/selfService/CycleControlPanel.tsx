@@ -17,7 +17,7 @@ import MutationButton from "./MutationButton";
 interface CycleControlPanelProps {
   spaceId: string;
   groupId: string;
-  onNavigate?: (tab: "absence-reports" | "admin-overrides" | "waitlist") => void;
+  onNavigate?: (tab: "absence-reports" | "admin-overrides" | "waitlist" | "swaps") => void;
   onStatusChanged?: () => void | Promise<void>;
 }
 
@@ -162,6 +162,15 @@ export default function CycleControlPanel({ spaceId, groupId, onNavigate, onStat
           onClick: status.waitlistCount > 0 && onNavigate ? () => onNavigate("waitlist") : undefined,
         },
         {
+          key: "swaps",
+          state: status.pendingSwapRequestCount > 0 ? "warning" : "ok",
+          label: t("closeChecklist.items.swaps.label"),
+          value: status.pendingSwapRequestCount > 0
+            ? t("closeChecklist.items.swaps.warning", { count: status.pendingSwapRequestCount })
+            : t("closeChecklist.items.swaps.ok"),
+          onClick: status.pendingSwapRequestCount > 0 && onNavigate ? () => onNavigate("swaps") : undefined,
+        },
+        {
           key: "underScheduled",
           state: !hasUnderScheduledResult ? "unknown" : underScheduledCount > 0 ? "warning" : "ok",
           label: t("closeChecklist.items.underScheduled.label"),
@@ -236,6 +245,13 @@ export default function CycleControlPanel({ spaceId, groupId, onNavigate, onStat
                   tone={status.pendingShiftChangeRequestCount > 0 ? "warning" : "default"}
                   actionLabel={t("openReviewQueue", { queue: t("metrics.changeReview") })}
                   onClick={onNavigate ? () => onNavigate("absence-reports") : undefined}
+                />
+                <Metric
+                  label={t("metrics.pendingSwaps")}
+                  value={`${status.pendingSwapRequestCount}`}
+                  tone={status.pendingSwapRequestCount > 0 ? "warning" : "default"}
+                  actionLabel={t("openReviewQueue", { queue: t("metrics.pendingSwaps") })}
+                  onClick={onNavigate ? () => onNavigate("swaps") : undefined}
                 />
                 <Metric
                   label={t("metrics.leaveReview")}

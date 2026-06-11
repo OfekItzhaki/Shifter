@@ -34,11 +34,12 @@ const translations: Record<string, string> = {
   "metrics.absenceReview": "Absences",
   "metrics.lateReports": "Late reports",
   "metrics.changeReview": "Changes",
+  "metrics.pendingSwaps": "Pending swaps",
   "metrics.leaveReview": "Leave",
   "metrics.generated": "Generated",
   "closeChecklist.title": "Close checklist",
   "closeChecklist.description": "Check before closing.",
-  "closeChecklist.warningCount": "3 warning(s)",
+  "closeChecklist.warningCount": "4 warning(s)",
   "closeChecklist.ready": "Ready to close",
   "closeChecklist.needsCheck": "Needs under-scheduled check",
   "closeChecklist.open": "Open queue",
@@ -51,6 +52,9 @@ const translations: Record<string, string> = {
   "closeChecklist.items.waitlist.label": "Waitlist",
   "closeChecklist.items.waitlist.warning": "2 waitlist item(s)",
   "closeChecklist.items.waitlist.ok": "Waitlist is clear",
+  "closeChecklist.items.swaps.label": "Peer swaps",
+  "closeChecklist.items.swaps.warning": "2 pending swap(s)",
+  "closeChecklist.items.swaps.ok": "No pending swaps",
   "closeChecklist.items.underScheduled.label": "Under-scheduled members",
   "closeChecklist.items.underScheduled.unknown": "Run the check",
   "closeChecklist.items.underScheduled.warning": "1 member(s) under minimum",
@@ -102,6 +106,7 @@ function makeStatus(overrides: Record<string, unknown> = {}) {
     pendingAbsenceReportCount: 1,
     latePendingAbsenceReportCount: 1,
     pendingShiftChangeRequestCount: 1,
+    pendingSwapRequestCount: 2,
     pendingSpecialLeaveRequestCount: 1,
     underfilledSlotCount: 1,
     underfilledSlots: [
@@ -155,7 +160,7 @@ describe("CycleControlPanel", () => {
     expect(screen.getByText("6/8")).toBeInTheDocument();
     expect(screen.getByText("75%")).toBeInTheDocument();
     expect(screen.getByText("Under-filled slots")).toBeInTheDocument();
-    expect(screen.getByText("3 warning(s)")).toBeInTheDocument();
+    expect(screen.getByText("4 warning(s)")).toBeInTheDocument();
     expect(screen.getByText("Run the check")).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: /Coverage 1 slot\(s\) under-filled/i }));
@@ -163,6 +168,9 @@ describe("CycleControlPanel", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Open Waitlist" }));
     expect(onNavigate).toHaveBeenCalledWith("waitlist");
+
+    fireEvent.click(screen.getByRole("button", { name: "Open Pending swaps" }));
+    expect(onNavigate).toHaveBeenCalledWith("swaps");
 
     fireEvent.click(screen.getByRole("button", { name: "Close window" }));
     await waitFor(() => {
@@ -213,6 +221,7 @@ describe("CycleControlPanel", () => {
       pendingAbsenceReportCount: 0,
       latePendingAbsenceReportCount: 0,
       pendingShiftChangeRequestCount: 0,
+      pendingSwapRequestCount: 0,
       pendingSpecialLeaveRequestCount: 0,
       underfilledSlotCount: 0,
       underfilledSlots: [],

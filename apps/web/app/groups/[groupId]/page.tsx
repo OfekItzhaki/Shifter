@@ -207,6 +207,7 @@ export default function GroupDetailPage() {
       setPendingSelfServiceReviewCount(
         status.pendingAbsenceReportCount
           + status.pendingShiftChangeRequestCount
+          + status.pendingSwapRequestCount
           + status.pendingSpecialLeaveRequestCount
       );
     } catch {

@@ -245,6 +245,15 @@ public class SelfServiceCyclesController : ControllerBase
                              && r.SchedulingCycleId == cycle.Id
                              && r.Status == ShiftChangeRequestStatus.Pending, ct);
 
+        var pendingSwapRequestCount = await _db.SwapRequests
+            .AsNoTracking()
+            .CountAsync(s => s.SpaceId == cycle.SpaceId
+                             && s.GroupId == cycle.GroupId
+                             && s.Status == SwapRequestStatus.Pending
+                             && _db.ShiftRequests.Any(r => r.Id == s.InitiatorShiftRequestId
+                                                            && r.SchedulingCycleId == cycle.Id),
+                ct);
+
         var pendingSpecialLeaveRequestCount = await _db.SpecialLeaveRequests
             .AsNoTracking()
             .Where(r => r.SpaceId == cycle.SpaceId
@@ -312,6 +321,7 @@ public class SelfServiceCyclesController : ControllerBase
             pendingAbsenceReports.Count,
             pendingAbsenceReports.Count(r => r.IsLate),
             pendingShiftChangeRequestCount,
+            pendingSwapRequestCount,
             pendingSpecialLeaveRequestCount,
             underfilledSlotCount,
             underfilledSlots);
@@ -347,10 +357,11 @@ public record SelfServiceCycleStatusResponse(
     int PendingAbsenceReportCount,
     int LatePendingAbsenceReportCount,
     int PendingShiftChangeRequestCount,
+    int PendingSwapRequestCount,
     int PendingSpecialLeaveRequestCount,
     int UnderfilledSlotCount,
     IReadOnlyList<UnderfilledSlotResponse> UnderfilledSlots)
 {
     public static SelfServiceCycleStatusResponse Empty() =>
-        new(null, null, null, null, null, false, false, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, []);
+        new(null, null, null, null, null, false, false, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, []);
 }

@@ -15,7 +15,8 @@ type SelfServiceOpsTarget =
   | "admin-overrides"
   | "shift-templates"
   | "self-service-config"
-  | "waitlist";
+  | "waitlist"
+  | "swaps";
 
 interface SelfServiceOperationsTabProps {
   spaceId: string;
@@ -23,9 +24,10 @@ interface SelfServiceOperationsTabProps {
   onNavigate: (tab: SelfServiceOpsTarget) => void;
 }
 
-const ACTIONS: { target: SelfServiceOpsTarget; key: string; metric?: "reviews" | "waitlist" | "coverage" }[] = [
+const ACTIONS: { target: SelfServiceOpsTarget; key: string; metric?: "reviews" | "waitlist" | "swaps" | "coverage" }[] = [
   { target: "absence-reports", key: "reviews", metric: "reviews" },
   { target: "waitlist", key: "waitlist", metric: "waitlist" },
+  { target: "swaps", key: "swaps", metric: "swaps" },
   { target: "admin-overrides", key: "overrides", metric: "coverage" },
   { target: "shift-templates", key: "templates" },
   { target: "self-service-config", key: "policy" },
@@ -69,12 +71,13 @@ function getPendingReviewCount(status: SelfServiceCycleStatusDto | null): number
 
 function getActionCount(
   status: SelfServiceCycleStatusDto | null,
-  metric: "reviews" | "waitlist" | "coverage" | undefined
+  metric: "reviews" | "waitlist" | "swaps" | "coverage" | undefined
 ): number | null {
   if (!status || !metric) return null;
 
   if (metric === "reviews") return getPendingReviewCount(status);
   if (metric === "waitlist") return status.waitlistCount;
+  if (metric === "swaps") return status.pendingSwapRequestCount;
   return status.underfilledSlotCount;
 }
 
@@ -125,7 +128,7 @@ export default function SelfServiceOperationsTab({
 
   const pendingReviewCount = getPendingReviewCount(status);
   const activeSignalCount = status
-    ? pendingReviewCount + status.waitlistCount + status.underfilledSlotCount
+    ? pendingReviewCount + status.waitlistCount + status.pendingSwapRequestCount + status.underfilledSlotCount
     : 0;
   const expiringWaitlistOfferCount = countExpiringWaitlistOffers(waitlistEntries);
   const prioritySignals = status
@@ -140,6 +143,12 @@ export default function SelfServiceOperationsTab({
           key: "expiringWaitlist",
           count: expiringWaitlistOfferCount,
           target: "waitlist" as const,
+          tone: "warning" as const,
+        },
+        {
+          key: "pendingSwaps",
+          count: status.pendingSwapRequestCount,
+          target: "swaps" as const,
           tone: "warning" as const,
         },
         {
