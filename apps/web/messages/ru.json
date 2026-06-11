@@ -2178,7 +2178,11 @@
       "adminDescription": "Members currently waiting or holding an offer for this group.",
       "adminCount": "{count} active",
       "adminAssignButton": "Assign now",
-      "adminAssigning": "Assigning..."
+      "adminAssigning": "Assigning...",
+      "acceptSuccess": "Waitlist offer accepted. The shift was added to your shifts.",
+      "declineSuccess": "Offer declined and passed to the next person.",
+      "leaveSuccess": "You left the waitlist.",
+      "adminAssignSuccess": "Waitlist member assigned to the shift."
     },
     "swaps": {
       "title": "Обмен сменами",

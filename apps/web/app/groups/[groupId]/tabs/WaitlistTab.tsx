@@ -51,6 +51,7 @@ export default function WaitlistTab({ spaceId, groupId, isAdmin = false }: Waitl
   const [leavingId, setLeavingId] = useState<string | null>(null);
   const [adminAssigningId, setAdminAssigningId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   // Leave confirmation dialog
   const [leaveConfirmEntry, setLeaveConfirmEntry] = useState<WaitlistEntryDto | null>(null);
@@ -95,10 +96,13 @@ export default function WaitlistTab({ spaceId, groupId, isAdmin = false }: Waitl
   const handleAccept = async (entry: WaitlistEntryDto) => {
     setAcceptingId(entry.id);
     setActionError(null);
+    setSuccessMessage(null);
     try {
       await acceptWaitlistOffer(spaceId, groupId, entry.shiftSlotId);
       // Refetch to get updated state
       await fetchEntries();
+      setSuccessMessage(t("acceptSuccess"));
+      setTimeout(() => setSuccessMessage(null), 3000);
     } catch (err) {
       const errorResult = getSelfServiceErrorMessage(err);
       setActionError(errorResult.message);
@@ -110,11 +114,14 @@ export default function WaitlistTab({ spaceId, groupId, isAdmin = false }: Waitl
   const handleDecline = async (entry: WaitlistEntryDto) => {
     setDecliningId(entry.id);
     setActionError(null);
+    setSuccessMessage(null);
     try {
       // Decline is handled by leaving the waitlist for the offered slot
       await leaveWaitlist(spaceId, groupId, entry.shiftSlotId);
       // Refetch to get updated state
       await fetchEntries();
+      setSuccessMessage(t("declineSuccess"));
+      setTimeout(() => setSuccessMessage(null), 3000);
     } catch (err) {
       const errorResult = getSelfServiceErrorMessage(err);
       setActionError(errorResult.message);
@@ -127,10 +134,13 @@ export default function WaitlistTab({ spaceId, groupId, isAdmin = false }: Waitl
     if (!leaveConfirmEntry) return;
     setLeavingId(leaveConfirmEntry.id);
     setActionError(null);
+    setSuccessMessage(null);
     try {
       await leaveWaitlist(spaceId, groupId, leaveConfirmEntry.shiftSlotId);
       setLeaveConfirmEntry(null);
       await fetchEntries();
+      setSuccessMessage(t("leaveSuccess"));
+      setTimeout(() => setSuccessMessage(null), 3000);
     } catch (err) {
       const errorResult = getSelfServiceErrorMessage(err);
       setActionError(errorResult.message);
@@ -142,9 +152,12 @@ export default function WaitlistTab({ spaceId, groupId, isAdmin = false }: Waitl
   const handleAdminAssign = async (entry: AdminWaitlistEntryDto) => {
     setAdminAssigningId(entry.id);
     setActionError(null);
+    setSuccessMessage(null);
     try {
       await adminAssignMember(spaceId, groupId, entry.shiftSlotId, entry.personId);
       await fetchEntries();
+      setSuccessMessage(t("adminAssignSuccess"));
+      setTimeout(() => setSuccessMessage(null), 3000);
     } catch (err) {
       const errorResult = getSelfServiceErrorMessage(err);
       setActionError(errorResult.message);
@@ -195,6 +208,12 @@ export default function WaitlistTab({ spaceId, groupId, isAdmin = false }: Waitl
       {actionError && (
         <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700">
           {actionError}
+        </div>
+      )}
+
+      {successMessage && (
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+          {successMessage}
         </div>
       )}
 
