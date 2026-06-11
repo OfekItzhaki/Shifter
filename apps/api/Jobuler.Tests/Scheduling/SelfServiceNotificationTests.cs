@@ -815,6 +815,70 @@ public class SelfServiceNotificationTests
     }
 
     [Fact]
+    public async Task DeclineSwapAsync_AuditFailure_DoesNotNotifyInitiator()
+    {
+        using var db = CreateDb();
+        var (spaceId, groupId, cycleId, guardTaskId, ownerUserId) = SeedBaseData(db);
+        var deskTask = AddTask(db, spaceId, groupId, "Desk", ownerUserId);
+        var audit = Substitute.For<IAuditLogger>();
+        audit
+            .LogAsync(
+                Arg.Any<Guid?>(),
+                Arg.Any<Guid?>(),
+                Arg.Any<string>(),
+                Arg.Any<string?>(),
+                Arg.Any<Guid?>(),
+                Arg.Any<string?>(),
+                Arg.Any<string?>(),
+                Arg.Any<string?>(),
+                Arg.Any<CancellationToken>())
+            .Returns<Task>(_ => throw new InvalidOperationException("Audit failed."));
+        var pushSender = Substitute.For<IPushNotificationSender>();
+
+        var initiatorUserId = Guid.NewGuid();
+        var targetUserId = Guid.NewGuid();
+        var initiator = Person.Create(spaceId, "Initiator", linkedUserId: initiatorUserId);
+        var target = Person.Create(spaceId, "Target", linkedUserId: targetUserId);
+
+        var initiatorSlot = AddSlot(db, spaceId, groupId, guardTaskId, cycleId, daysFromNow: 3);
+        var targetSlot = AddSlot(db, spaceId, groupId, deskTask.Id, cycleId, daysFromNow: 4);
+
+        var initiatorRequest = ShiftRequest.Create(spaceId, initiatorSlot.Id, initiator.Id, groupId, cycleId);
+        initiatorRequest.Approve();
+        var targetRequest = ShiftRequest.Create(spaceId, targetSlot.Id, target.Id, groupId, cycleId);
+        targetRequest.Approve();
+
+        var swap = SwapRequest.Create(
+            spaceId,
+            groupId,
+            initiator.Id,
+            target.Id,
+            initiatorRequest.Id,
+            targetRequest.Id);
+
+        db.People.AddRange(initiator, target);
+        db.ShiftRequests.AddRange(initiatorRequest, targetRequest);
+        db.SwapRequests.Add(swap);
+        await db.SaveChangesAsync();
+
+        var service = new ShiftSwapService(
+            db,
+            pushSender,
+            audit,
+            TimeProvider.System,
+            NullLogger<ShiftSwapService>.Instance);
+
+        var act = () => service.DeclineSwapAsync(target.Id, swap.Id);
+
+        await act.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("Audit failed.");
+
+        await pushSender.DidNotReceiveWithAnyArgs()
+            .SendPushToUserAsync(default, default, default!, default);
+        (await db.Notifications.CountAsync(n => n.EventType == "self_service.swap_declined")).Should().Be(0);
+    }
+
+    [Fact]
     public async Task CancelSwapAsync_NotifiesTargetAndAuditsCancellation()
     {
         using var db = CreateDb();
@@ -883,6 +947,70 @@ public class SelfServiceNotificationTests
                 && json.Contains("\"status\":\"cancelled\"")),
             Arg.Is<string?>(ipAddress => ipAddress == null),
             Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task CancelSwapAsync_AuditFailure_DoesNotNotifyTarget()
+    {
+        using var db = CreateDb();
+        var (spaceId, groupId, cycleId, guardTaskId, ownerUserId) = SeedBaseData(db);
+        var deskTask = AddTask(db, spaceId, groupId, "Desk", ownerUserId);
+        var audit = Substitute.For<IAuditLogger>();
+        audit
+            .LogAsync(
+                Arg.Any<Guid?>(),
+                Arg.Any<Guid?>(),
+                Arg.Any<string>(),
+                Arg.Any<string?>(),
+                Arg.Any<Guid?>(),
+                Arg.Any<string?>(),
+                Arg.Any<string?>(),
+                Arg.Any<string?>(),
+                Arg.Any<CancellationToken>())
+            .Returns<Task>(_ => throw new InvalidOperationException("Audit failed."));
+        var pushSender = Substitute.For<IPushNotificationSender>();
+
+        var initiatorUserId = Guid.NewGuid();
+        var targetUserId = Guid.NewGuid();
+        var initiator = Person.Create(spaceId, "Initiator", linkedUserId: initiatorUserId);
+        var target = Person.Create(spaceId, "Target", linkedUserId: targetUserId);
+
+        var initiatorSlot = AddSlot(db, spaceId, groupId, guardTaskId, cycleId, daysFromNow: 3);
+        var targetSlot = AddSlot(db, spaceId, groupId, deskTask.Id, cycleId, daysFromNow: 4);
+
+        var initiatorRequest = ShiftRequest.Create(spaceId, initiatorSlot.Id, initiator.Id, groupId, cycleId);
+        initiatorRequest.Approve();
+        var targetRequest = ShiftRequest.Create(spaceId, targetSlot.Id, target.Id, groupId, cycleId);
+        targetRequest.Approve();
+
+        var swap = SwapRequest.Create(
+            spaceId,
+            groupId,
+            initiator.Id,
+            target.Id,
+            initiatorRequest.Id,
+            targetRequest.Id);
+
+        db.People.AddRange(initiator, target);
+        db.ShiftRequests.AddRange(initiatorRequest, targetRequest);
+        db.SwapRequests.Add(swap);
+        await db.SaveChangesAsync();
+
+        var service = new ShiftSwapService(
+            db,
+            pushSender,
+            audit,
+            TimeProvider.System,
+            NullLogger<ShiftSwapService>.Instance);
+
+        var act = () => service.CancelSwapAsync(initiator.Id, swap.Id);
+
+        await act.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("Audit failed.");
+
+        await pushSender.DidNotReceiveWithAnyArgs()
+            .SendPushToUserAsync(default, default, default!, default);
+        (await db.Notifications.CountAsync(n => n.EventType == "self_service.swap_cancelled")).Should().Be(0);
     }
 
     [Fact]

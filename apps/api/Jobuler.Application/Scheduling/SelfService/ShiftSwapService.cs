@@ -417,44 +417,63 @@ public class ShiftSwapService : IShiftSwapService
         Guid swapRequestId,
         CancellationToken ct = default)
     {
-        var swapRequest = await _db.SwapRequests
-            .FirstOrDefaultAsync(s => s.Id == swapRequestId, ct);
+        var strategy = _db.Database.CreateExecutionStrategy();
 
-        if (swapRequest is null)
-            throw new KeyNotFoundException("Swap request not found.");
+        var swapRequest = await strategy.ExecuteAsync(async () =>
+        {
+            await using var transaction = await _db.Database.BeginTransactionAsync(ct);
 
-        // Only the target person can decline
-        if (swapRequest.TargetPersonId != targetPersonId)
-            throw new UnauthorizedAccessException("Only the target member can decline this swap request.");
-
-        if (swapRequest.Status != SwapRequestStatus.Pending)
-            throw new InvalidOperationException("Only pending swap requests can be declined.");
-
-        swapRequest.Decline();
-        await _db.SaveChangesAsync(ct);
-        await _audit.LogAsync(
-            swapRequest.SpaceId,
-            await ResolveLinkedUserIdAsync(swapRequest.TargetPersonId, swapRequest.SpaceId, ct),
-            "self_service.decline_swap",
-            "swap_request",
-            swapRequest.Id,
-            beforeJson: JsonSerializer.Serialize(new
+            try
             {
-                swap_request_id = swapRequest.Id,
-                group_id = swapRequest.GroupId,
-                initiator_person_id = swapRequest.InitiatorPersonId,
-                target_person_id = swapRequest.TargetPersonId,
-                status = "pending"
-            }),
-            afterJson: JsonSerializer.Serialize(new
+                var swapRequest = await _db.SwapRequests
+                    .FirstOrDefaultAsync(s => s.Id == swapRequestId, ct);
+
+                if (swapRequest is null)
+                    throw new KeyNotFoundException("Swap request not found.");
+
+                // Only the target person can decline
+                if (swapRequest.TargetPersonId != targetPersonId)
+                    throw new UnauthorizedAccessException("Only the target member can decline this swap request.");
+
+                if (swapRequest.Status != SwapRequestStatus.Pending)
+                    throw new InvalidOperationException("Only pending swap requests can be declined.");
+
+                swapRequest.Decline();
+                await _db.SaveChangesAsync(ct);
+                await _audit.LogAsync(
+                    swapRequest.SpaceId,
+                    await ResolveLinkedUserIdAsync(swapRequest.TargetPersonId, swapRequest.SpaceId, ct),
+                    "self_service.decline_swap",
+                    "swap_request",
+                    swapRequest.Id,
+                    beforeJson: JsonSerializer.Serialize(new
+                    {
+                        swap_request_id = swapRequest.Id,
+                        group_id = swapRequest.GroupId,
+                        initiator_person_id = swapRequest.InitiatorPersonId,
+                        target_person_id = swapRequest.TargetPersonId,
+                        status = "pending"
+                    }),
+                    afterJson: JsonSerializer.Serialize(new
+                    {
+                        swap_request_id = swapRequest.Id,
+                        group_id = swapRequest.GroupId,
+                        initiator_person_id = swapRequest.InitiatorPersonId,
+                        target_person_id = swapRequest.TargetPersonId,
+                        status = swapRequest.Status.ToString().ToLowerInvariant()
+                    }),
+                    ct: ct);
+
+                await transaction.CommitAsync(ct);
+                return swapRequest;
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
             {
-                swap_request_id = swapRequest.Id,
-                group_id = swapRequest.GroupId,
-                initiator_person_id = swapRequest.InitiatorPersonId,
-                target_person_id = swapRequest.TargetPersonId,
-                status = swapRequest.Status.ToString().ToLowerInvariant()
-            }),
-            ct: ct);
+                await transaction.RollbackAsync(ct);
+                _logger.LogError(ex, "Error declining swap request {SwapId}", swapRequestId);
+                throw;
+            }
+        });
 
         _logger.LogInformation(
             "Swap request {SwapId} declined by target {TargetId}",
@@ -470,45 +489,64 @@ public class ShiftSwapService : IShiftSwapService
         Guid swapRequestId,
         CancellationToken ct = default)
     {
-        var swapRequest = await _db.SwapRequests
-            .FirstOrDefaultAsync(s => s.Id == swapRequestId, ct);
+        var strategy = _db.Database.CreateExecutionStrategy();
 
-        if (swapRequest is null)
-            throw new KeyNotFoundException("Swap request not found.");
+        var swapRequest = await strategy.ExecuteAsync(async () =>
+        {
+            await using var transaction = await _db.Database.BeginTransactionAsync(ct);
 
-        // Only the initiator can cancel
-        if (swapRequest.InitiatorPersonId != initiatorPersonId)
-            throw new UnauthorizedAccessException("Only the initiator can cancel this swap request.");
-
-        // Req 12.6: Can only cancel if still Pending
-        if (swapRequest.Status != SwapRequestStatus.Pending)
-            throw new InvalidOperationException("Only pending swap requests can be cancelled.");
-
-        swapRequest.Cancel();
-        await _db.SaveChangesAsync(ct);
-        await _audit.LogAsync(
-            swapRequest.SpaceId,
-            await ResolveLinkedUserIdAsync(swapRequest.InitiatorPersonId, swapRequest.SpaceId, ct),
-            "self_service.cancel_swap",
-            "swap_request",
-            swapRequest.Id,
-            beforeJson: JsonSerializer.Serialize(new
+            try
             {
-                swap_request_id = swapRequest.Id,
-                group_id = swapRequest.GroupId,
-                initiator_person_id = swapRequest.InitiatorPersonId,
-                target_person_id = swapRequest.TargetPersonId,
-                status = "pending"
-            }),
-            afterJson: JsonSerializer.Serialize(new
+                var swapRequest = await _db.SwapRequests
+                    .FirstOrDefaultAsync(s => s.Id == swapRequestId, ct);
+
+                if (swapRequest is null)
+                    throw new KeyNotFoundException("Swap request not found.");
+
+                // Only the initiator can cancel
+                if (swapRequest.InitiatorPersonId != initiatorPersonId)
+                    throw new UnauthorizedAccessException("Only the initiator can cancel this swap request.");
+
+                // Req 12.6: Can only cancel if still Pending
+                if (swapRequest.Status != SwapRequestStatus.Pending)
+                    throw new InvalidOperationException("Only pending swap requests can be cancelled.");
+
+                swapRequest.Cancel();
+                await _db.SaveChangesAsync(ct);
+                await _audit.LogAsync(
+                    swapRequest.SpaceId,
+                    await ResolveLinkedUserIdAsync(swapRequest.InitiatorPersonId, swapRequest.SpaceId, ct),
+                    "self_service.cancel_swap",
+                    "swap_request",
+                    swapRequest.Id,
+                    beforeJson: JsonSerializer.Serialize(new
+                    {
+                        swap_request_id = swapRequest.Id,
+                        group_id = swapRequest.GroupId,
+                        initiator_person_id = swapRequest.InitiatorPersonId,
+                        target_person_id = swapRequest.TargetPersonId,
+                        status = "pending"
+                    }),
+                    afterJson: JsonSerializer.Serialize(new
+                    {
+                        swap_request_id = swapRequest.Id,
+                        group_id = swapRequest.GroupId,
+                        initiator_person_id = swapRequest.InitiatorPersonId,
+                        target_person_id = swapRequest.TargetPersonId,
+                        status = swapRequest.Status.ToString().ToLowerInvariant()
+                    }),
+                    ct: ct);
+
+                await transaction.CommitAsync(ct);
+                return swapRequest;
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
             {
-                swap_request_id = swapRequest.Id,
-                group_id = swapRequest.GroupId,
-                initiator_person_id = swapRequest.InitiatorPersonId,
-                target_person_id = swapRequest.TargetPersonId,
-                status = swapRequest.Status.ToString().ToLowerInvariant()
-            }),
-            ct: ct);
+                await transaction.RollbackAsync(ct);
+                _logger.LogError(ex, "Error cancelling swap request {SwapId}", swapRequestId);
+                throw;
+            }
+        });
 
         _logger.LogInformation(
             "Swap request {SwapId} cancelled by initiator {InitiatorId}",
