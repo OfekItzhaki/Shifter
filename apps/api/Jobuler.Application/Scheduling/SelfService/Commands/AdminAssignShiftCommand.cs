@@ -80,6 +80,13 @@ public class AdminAssignShiftCommandHandler : IRequestHandler<AdminAssignShiftCo
         if (slot.GroupId != request.GroupId)
             throw new InvalidOperationException("The shift slot does not belong to the specified group.");
 
+        if (slot.Status != ShiftSlotStatus.Open)
+            throw new InvalidOperationException("Only open shift slots can receive admin assignments.");
+
+        var shiftStartUtc = slot.Date.ToDateTime(slot.StartTime, DateTimeKind.Utc);
+        if (shiftStartUtc <= DateTime.UtcNow)
+            throw new InvalidOperationException("Cannot assign a member to a shift that has already started.");
+
         // Req 10.8: Validate member belongs to the group
         var isMember = await _db.GroupMemberships
             .AnyAsync(gm => gm.GroupId == request.GroupId

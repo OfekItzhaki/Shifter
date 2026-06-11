@@ -660,6 +660,77 @@ public class SelfServiceNotificationTests
     }
 
     [Fact]
+    public async Task AdminAssignShiftCommand_RejectsStartedSlots()
+    {
+        using var db = CreateDb();
+        var (spaceId, groupId, cycleId, taskId, _) = SeedBaseData(db);
+        var member = Person.Create(spaceId, "Assigned Member", linkedUserId: Guid.NewGuid());
+        var slot = AddSlot(db, spaceId, groupId, taskId, cycleId, daysFromNow: -1);
+
+        db.People.Add(member);
+        db.GroupMemberships.Add(GroupMembership.Create(spaceId, groupId, member.Id));
+        await db.SaveChangesAsync();
+
+        var permissions = Substitute.For<IPermissionService>();
+        permissions
+            .RequirePermissionAsync(Arg.Any<Guid>(), spaceId, Permissions.SchedulePublish, Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+
+        var handler = new AdminAssignShiftCommandHandler(
+            db,
+            permissions,
+            CreateAuditLogger(),
+            Substitute.For<IPushNotificationSender>(),
+            NullLogger<AdminAssignShiftCommandHandler>.Instance);
+
+        var act = () => handler.Handle(
+            new AdminAssignShiftCommand(spaceId, groupId, slot.Id, member.Id, Guid.NewGuid()),
+            CancellationToken.None);
+
+        await act.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("Cannot assign a member to a shift that has already started.");
+
+        (await db.ShiftRequests.CountAsync()).Should().Be(0);
+        (await db.ShiftSlots.SingleAsync(s => s.Id == slot.Id)).CurrentFillCount.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task AdminAssignShiftCommand_RejectsClosedSlots()
+    {
+        using var db = CreateDb();
+        var (spaceId, groupId, cycleId, taskId, _) = SeedBaseData(db);
+        var member = Person.Create(spaceId, "Assigned Member", linkedUserId: Guid.NewGuid());
+        var slot = AddSlot(db, spaceId, groupId, taskId, cycleId, daysFromNow: 2);
+        slot.Close();
+
+        db.People.Add(member);
+        db.GroupMemberships.Add(GroupMembership.Create(spaceId, groupId, member.Id));
+        await db.SaveChangesAsync();
+
+        var permissions = Substitute.For<IPermissionService>();
+        permissions
+            .RequirePermissionAsync(Arg.Any<Guid>(), spaceId, Permissions.SchedulePublish, Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+
+        var handler = new AdminAssignShiftCommandHandler(
+            db,
+            permissions,
+            CreateAuditLogger(),
+            Substitute.For<IPushNotificationSender>(),
+            NullLogger<AdminAssignShiftCommandHandler>.Instance);
+
+        var act = () => handler.Handle(
+            new AdminAssignShiftCommand(spaceId, groupId, slot.Id, member.Id, Guid.NewGuid()),
+            CancellationToken.None);
+
+        await act.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("Only open shift slots can receive admin assignments.");
+
+        (await db.ShiftRequests.CountAsync()).Should().Be(0);
+        (await db.ShiftSlots.SingleAsync(s => s.Id == slot.Id)).CurrentFillCount.Should().Be(0);
+    }
+
+    [Fact]
     public async Task AdminAssignShiftCommand_AcceptsMatchingActiveWaitlistEntry()
     {
         using var db = CreateDb();
