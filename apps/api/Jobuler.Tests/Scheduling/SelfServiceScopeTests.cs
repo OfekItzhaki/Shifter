@@ -1461,6 +1461,95 @@ public class SelfServiceScopeTests
     }
 
     [Fact]
+    public async Task RejectAbsenceReport_AuditsReviewAndNotifiesMember_WhenPendingReportIsRejected()
+    {
+        using var db = CreateDb();
+        var services = CreateControllerServices();
+        var spaceId = Guid.NewGuid();
+        var group = Group.Create(spaceId, null, "Route Group");
+        var userId = Guid.NewGuid();
+        var adminUserId = Guid.NewGuid();
+        var ownerUserId = Guid.NewGuid();
+        var person = Person.Create(spaceId, "Member", linkedUserId: userId);
+        var cycle = CreateCycle(spaceId, group.Id);
+        var task = CreateTask(spaceId, group.Id, "Task", ownerUserId);
+        var slot = CreateSlot(spaceId, group.Id, task.Id, cycle.Id, daysFromNow: 2);
+        var shiftRequest = ShiftRequest.Create(spaceId, slot.Id, person.Id, group.Id, cycle.Id);
+        shiftRequest.Approve();
+        var report = ShiftAbsenceReport.Create(
+            spaceId,
+            group.Id,
+            cycle.Id,
+            shiftRequest.Id,
+            slot.Id,
+            person.Id,
+            "Sick",
+            isLate: true,
+            DateTime.UtcNow);
+
+        db.People.Add(person);
+        db.Groups.Add(group);
+        db.GroupMemberships.Add(GroupMembership.Create(spaceId, group.Id, person.Id));
+        db.SchedulingCycles.Add(cycle);
+        db.GroupTasks.Add(task);
+        db.ShiftSlots.Add(slot);
+        db.ShiftRequests.Add(shiftRequest);
+        db.ShiftAbsenceReports.Add(report);
+        await db.SaveChangesAsync();
+
+        services.Permissions
+            .RequirePermissionAsync(adminUserId, spaceId, Permissions.ConstraintsManage, Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+
+        var controller = new ShiftRequestsController(
+            services.Mediator,
+            services.Permissions,
+            services.ShiftRequestService,
+            services.PushSender,
+            services.Audit,
+            db);
+        controller.ControllerContext = CreateControllerContext(adminUserId);
+
+        var result = await controller.RejectAbsenceReport(
+            spaceId,
+            group.Id,
+            report.Id,
+            new ReviewAbsenceReportRequest("Need documentation"),
+            CancellationToken.None);
+
+        result.Should().BeOfType<NoContentResult>();
+
+        var updatedReport = await db.ShiftAbsenceReports.SingleAsync(r => r.Id == report.Id);
+        updatedReport.Status.Should().Be(ShiftAbsenceReportStatus.Rejected);
+        updatedReport.AdminNote.Should().Be("Need documentation");
+
+        var memberNotification = await db.Notifications
+            .SingleAsync(n => n.EventType == "self_service.absence_rejected");
+        memberNotification.UserId.Should().Be(userId);
+        memberNotification.MetadataJson.Should().Contain(report.Id.ToString());
+        memberNotification.MetadataJson.Should().Contain("\"adminNote\":\"Need documentation\"");
+
+        await services.PushSender.Received(1)
+            .SendPushToUserAsync(userId, spaceId, Arg.Any<PushPayload>(), Arg.Any<CancellationToken>());
+        await services.Audit.Received(1).LogAsync(
+            spaceId,
+            adminUserId,
+            "self_service.reject_absence_report",
+            "shift_absence_report",
+            report.Id,
+            Arg.Is<string?>(json => json != null
+                && json.Contains(report.Id.ToString())
+                && json.Contains("\"status\":\"pending\"")
+                && json.Contains("\"is_late\":true")),
+            Arg.Is<string?>(json => json != null
+                && json.Contains(shiftRequest.Id.ToString())
+                && json.Contains("\"status\":\"rejected\"")
+                && json.Contains("\"admin_note\":\"Need documentation\"")),
+            Arg.Is<string?>(ipAddress => ipAddress == null),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task ApproveAbsenceReport_Returns422_WhenReportIsAlreadyReviewed()
     {
         using var db = CreateDb();
