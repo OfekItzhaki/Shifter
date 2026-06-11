@@ -371,6 +371,47 @@ public class SelfServiceNotificationTests
     }
 
     [Fact]
+    public async Task ProposeSwapAsync_RejectsCrossCycleSwap()
+    {
+        using var db = CreateDb();
+        var (spaceId, groupId, cycleId, guardTaskId, ownerUserId) = SeedBaseData(db);
+        var deskTask = AddTask(db, spaceId, groupId, "Desk", ownerUserId);
+        var otherCycle = AddCycle(db, spaceId, groupId, daysFromNow: 9);
+        var audit = CreateAuditLogger();
+        var pushSender = Substitute.For<IPushNotificationSender>();
+
+        var initiator = Person.Create(spaceId, "Initiator", linkedUserId: Guid.NewGuid());
+        var target = Person.Create(spaceId, "Target", linkedUserId: Guid.NewGuid());
+
+        var initiatorSlot = AddSlot(db, spaceId, groupId, guardTaskId, cycleId, daysFromNow: 3);
+        var targetSlot = AddSlot(db, spaceId, groupId, deskTask.Id, otherCycle.Id, daysFromNow: 10);
+
+        var initiatorRequest = ShiftRequest.Create(spaceId, initiatorSlot.Id, initiator.Id, groupId, cycleId);
+        initiatorRequest.Approve();
+        var targetRequest = ShiftRequest.Create(spaceId, targetSlot.Id, target.Id, groupId, otherCycle.Id);
+        targetRequest.Approve();
+
+        db.People.AddRange(initiator, target);
+        db.ShiftRequests.AddRange(initiatorRequest, targetRequest);
+        await db.SaveChangesAsync();
+
+        var service = new ShiftSwapService(
+            db,
+            pushSender,
+            audit,
+            TimeProvider.System,
+            NullLogger<ShiftSwapService>.Instance);
+
+        var result = await service.ProposeSwapAsync(initiator.Id, initiatorRequest.Id, targetRequest.Id);
+
+        result.Success.Should().BeFalse();
+        result.ErrorMessage.Should().Be("Both shift requests must belong to the same scheduling cycle.");
+        (await db.SwapRequests.CountAsync()).Should().Be(0);
+        await pushSender.DidNotReceiveWithAnyArgs()
+            .SendPushToUserAsync(default, default, default!, default);
+    }
+
+    [Fact]
     public async Task ProposeThenAcceptSwapAsync_SwapsAssignmentsAndNotifiesBothMembers()
     {
         using var db = CreateDb();
@@ -462,6 +503,60 @@ public class SelfServiceNotificationTests
             Arg.Any<string?>(),
             Arg.Any<string?>(),
             Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task AcceptSwapAsync_RejectsExistingCrossCycleSwap()
+    {
+        using var db = CreateDb();
+        var (spaceId, groupId, cycleId, guardTaskId, ownerUserId) = SeedBaseData(db);
+        var deskTask = AddTask(db, spaceId, groupId, "Desk", ownerUserId);
+        var otherCycle = AddCycle(db, spaceId, groupId, daysFromNow: 9);
+        var audit = CreateAuditLogger();
+        var pushSender = Substitute.For<IPushNotificationSender>();
+
+        var initiator = Person.Create(spaceId, "Initiator", linkedUserId: Guid.NewGuid());
+        var target = Person.Create(spaceId, "Target", linkedUserId: Guid.NewGuid());
+
+        var initiatorSlot = AddSlot(db, spaceId, groupId, guardTaskId, cycleId, daysFromNow: 3);
+        var targetSlot = AddSlot(db, spaceId, groupId, deskTask.Id, otherCycle.Id, daysFromNow: 10);
+
+        var initiatorRequest = ShiftRequest.Create(spaceId, initiatorSlot.Id, initiator.Id, groupId, cycleId);
+        initiatorRequest.Approve();
+        var targetRequest = ShiftRequest.Create(spaceId, targetSlot.Id, target.Id, groupId, otherCycle.Id);
+        targetRequest.Approve();
+
+        var swap = SwapRequest.Create(
+            spaceId,
+            groupId,
+            initiator.Id,
+            target.Id,
+            initiatorRequest.Id,
+            targetRequest.Id);
+
+        db.People.AddRange(initiator, target);
+        db.ShiftRequests.AddRange(initiatorRequest, targetRequest);
+        db.SwapRequests.Add(swap);
+        await db.SaveChangesAsync();
+
+        var service = new ShiftSwapService(
+            db,
+            pushSender,
+            audit,
+            TimeProvider.System,
+            NullLogger<ShiftSwapService>.Instance);
+
+        var result = await service.AcceptSwapAsync(target.Id, swap.Id);
+
+        result.Success.Should().BeFalse();
+        result.ErrorMessage.Should().Be("Both shift requests must belong to the same scheduling cycle to complete the swap.");
+
+        var updatedSwap = await db.SwapRequests.SingleAsync(s => s.Id == swap.Id);
+        updatedSwap.Status.Should().Be(SwapRequestStatus.Pending);
+        (await db.ShiftRequests.SingleAsync(r => r.Id == initiatorRequest.Id)).ShiftSlotId.Should().Be(initiatorSlot.Id);
+        (await db.ShiftRequests.SingleAsync(r => r.Id == targetRequest.Id)).ShiftSlotId.Should().Be(targetSlot.Id);
+        await pushSender.DidNotReceiveWithAnyArgs()
+            .SendPushToUserAsync(default, default, default!, default);
     }
 
     [Fact]
@@ -944,6 +1039,25 @@ public class SelfServiceNotificationTests
         db.SaveChanges();
 
         return (spaceId, group.Id, cycle.Id, task.Id, ownerUserId);
+    }
+
+    private static SchedulingCycle AddCycle(
+        AppDbContext db,
+        Guid spaceId,
+        Guid groupId,
+        int daysFromNow)
+    {
+        var utcNow = DateTime.UtcNow;
+        var cycle = SchedulingCycle.Create(
+            spaceId,
+            groupId,
+            startsAt: utcNow.AddDays(daysFromNow),
+            endsAt: utcNow.AddDays(daysFromNow + 7),
+            requestWindowOpensAt: utcNow.AddDays(-1),
+            requestWindowClosesAt: utcNow.AddHours(2));
+
+        db.SchedulingCycles.Add(cycle);
+        return cycle;
     }
 
     private static GroupTask AddTask(

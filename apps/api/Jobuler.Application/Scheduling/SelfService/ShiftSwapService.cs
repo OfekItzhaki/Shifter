@@ -99,6 +99,12 @@ public class ShiftSwapService : IShiftSwapService
                 ErrorMessage: "Both shift requests must belong to the same group.");
         }
 
+        if (initiatorRequest.SchedulingCycleId != targetRequest.SchedulingCycleId)
+        {
+            return new SwapResult(Success: false, SwapRequestId: null,
+                ErrorMessage: "Both shift requests must belong to the same scheduling cycle.");
+        }
+
         // Req 12.1: Both shifts must start in the future
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
 
@@ -270,6 +276,13 @@ public class ShiftSwapService : IShiftSwapService
                     await transaction.RollbackAsync(ct);
                     return new SwapResult(Success: false, SwapRequestId: swapRequestId,
                         ErrorMessage: "Both shift requests must still be in Approved status to complete the swap.");
+                }
+
+                if (initiatorRequest.SchedulingCycleId != targetRequest.SchedulingCycleId)
+                {
+                    await transaction.RollbackAsync(ct);
+                    return new SwapResult(Success: false, SwapRequestId: swapRequestId,
+                        ErrorMessage: "Both shift requests must belong to the same scheduling cycle to complete the swap.");
                 }
 
                 // Load both slots for conflict detection
