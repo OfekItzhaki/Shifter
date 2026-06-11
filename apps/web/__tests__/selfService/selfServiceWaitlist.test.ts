@@ -3,6 +3,7 @@ import type { AdminWaitlistEntryDto, WaitlistEntryDto } from "../../lib/api/self
 import {
   classifyWaitlistEntries,
   isActiveWaitlistStatus,
+  sortWaitlistEntriesForReview,
   summarizeWaitlist,
 } from "../../lib/utils/selfServiceWaitlist";
 
@@ -52,6 +53,32 @@ describe("self-service waitlist utilities", () => {
     expect(isActiveWaitlistStatus("Expired")).toBe(false);
     expect(isActiveWaitlistStatus("Declined")).toBe(false);
     expect(isActiveWaitlistStatus("Removed")).toBe(false);
+  });
+
+  it("sorts review entries by offered urgency, then waiting position", () => {
+    const entries = [
+      makeAdminWaitlistEntry({ id: "waiting-2", status: "Waiting", position: 2 }),
+      makeAdminWaitlistEntry({ id: "expired", status: "Expired", position: 1 }),
+      makeAdminWaitlistEntry({
+        id: "offered-later",
+        status: "Offered",
+        expiresAt: "2026-06-20T10:30:00Z",
+      }),
+      makeAdminWaitlistEntry({
+        id: "offered-sooner",
+        status: "Offered",
+        expiresAt: "2026-06-20T10:05:00Z",
+      }),
+      makeAdminWaitlistEntry({ id: "waiting-1", status: "Waiting", position: 1 }),
+    ];
+
+    expect(sortWaitlistEntriesForReview(entries).map((entry) => entry.id)).toEqual([
+      "offered-sooner",
+      "offered-later",
+      "waiting-1",
+      "waiting-2",
+      "expired",
+    ]);
   });
 });
 

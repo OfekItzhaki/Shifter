@@ -17,6 +17,7 @@ import { getSelfServiceErrorMessage } from "@/lib/utils/selfServiceErrors";
 import {
   classifyWaitlistEntries,
   isActiveWaitlistStatus,
+  sortWaitlistEntriesForReview,
   summarizeWaitlist,
 } from "@/lib/utils/selfServiceWaitlist";
 import { LoadingCard, ErrorRetry, MutationButton } from "@/components/groups/selfService";
@@ -185,6 +186,7 @@ export default function WaitlistTab({ spaceId, groupId, isAdmin = false }: Waitl
 
   // Separate offered entries (highlighted) from others
   const { offeredEntries, otherEntries } = classifyWaitlistEntries(entries);
+  const sortedAdminEntries = sortWaitlistEntriesForReview(adminEntries);
   const summary = summarizeWaitlist(entries, adminEntries);
 
   return (
@@ -210,7 +212,7 @@ export default function WaitlistTab({ spaceId, groupId, isAdmin = false }: Waitl
           </div>
 
           <div className="mt-4 divide-y divide-slate-100">
-            {adminEntries.map((entry) => (
+            {sortedAdminEntries.map((entry) => (
               <div
                 key={entry.id}
                 className="grid gap-3 py-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"
