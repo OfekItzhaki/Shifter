@@ -163,7 +163,7 @@ describe("SwapsTab", () => {
     expect(mockGetMySwaps).toHaveBeenCalledTimes(2);
   });
 
-  it("only offers future approved own shifts when proposing a swap", async () => {
+  it("only offers future approved shifts for both sides when proposing a swap", async () => {
     mockGetMySwaps.mockResolvedValue([]);
     mockGetMyShiftRequests.mockResolvedValue({
       requests: [
@@ -192,6 +192,22 @@ describe("SwapsTab", () => {
     });
     mockGetMemberApprovedShifts.mockResolvedValue([
       makeShift({
+        id: "target-past",
+        shiftSlotId: "target-past-slot",
+        slotDate: "2020-01-03",
+        slotStartTime: "10:00:00",
+        taskName: "Target past shift",
+        status: "Approved",
+      }),
+      makeShift({
+        id: "target-pending",
+        shiftSlotId: "target-pending-slot",
+        slotDate: "2099-01-04",
+        slotStartTime: "10:00:00",
+        taskName: "Target pending shift",
+        status: "Pending",
+      }),
+      makeShift({
         id: "target-shift",
         shiftSlotId: "target-slot",
         slotDate: "2099-01-03",
@@ -211,7 +227,11 @@ describe("SwapsTab", () => {
 
     fireEvent.click(screen.getByText("Future shift"));
     fireEvent.click(await screen.findByRole("button", { name: "Other Member" }));
-    fireEvent.click(await screen.findByText("Target shift"));
+    expect(await screen.findByText("Target shift")).toBeInTheDocument();
+    expect(screen.queryByText("Target past shift")).not.toBeInTheDocument();
+    expect(screen.queryByText("Target pending shift")).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByText("Target shift"));
 
     await waitFor(() => {
       expect(mockProposeSwap).toHaveBeenCalledWith(

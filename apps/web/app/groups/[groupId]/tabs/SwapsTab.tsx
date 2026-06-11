@@ -191,7 +191,7 @@ export default function SwapsTab({ spaceId, groupId, members }: Props) {
     setTargetShiftsLoading(true);
     try {
       const data = await getMemberApprovedShifts(currentSpaceId, groupId, personId);
-      setTargetShifts(data.filter((r) => r.status === "Approved"));
+      setTargetShifts(sortShiftsByStart(data.filter(isFutureApprovedShift)));
     } catch {
       setProposeError(tCommon("error"));
     } finally {
