@@ -101,6 +101,13 @@ public class AdminRemoveShiftCommandHandler : IRequestHandler<AdminRemoveShiftCo
         if (shiftRequest is null)
             throw new InvalidOperationException("No active assignment exists for this member on the specified slot.");
 
+        if (shiftRequest.SpaceId != slot.SpaceId
+            || shiftRequest.GroupId != slot.GroupId
+            || shiftRequest.SchedulingCycleId != slot.SchedulingCycleId)
+        {
+            throw new InvalidOperationException("Shift request metadata no longer matches its assigned slot.");
+        }
+
         // Req 10.4: Cancel the request with reason "admin_removed"
         shiftRequest.Cancel("admin_removed");
 

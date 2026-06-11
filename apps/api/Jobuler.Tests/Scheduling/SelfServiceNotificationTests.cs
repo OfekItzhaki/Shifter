@@ -1095,6 +1095,60 @@ public class SelfServiceNotificationTests
             Arg.Any<CancellationToken>());
     }
 
+    [Fact]
+    public async Task AdminRemoveShiftCommand_RejectsWhenRequestSlotMetadataDoesNotMatch()
+    {
+        using var db = CreateDb();
+        var (spaceId, groupId, cycleId, taskId, _) = SeedBaseData(db);
+        var otherCycle = AddCycle(db, spaceId, groupId, daysFromNow: 9);
+        var member = Person.Create(spaceId, "Removed Member", linkedUserId: Guid.NewGuid());
+        var slot = AddSlot(db, spaceId, groupId, taskId, cycleId, daysFromNow: 2);
+        slot.IncrementFillCount();
+
+        var shiftRequest = ShiftRequest.Create(spaceId, slot.Id, member.Id, groupId, otherCycle.Id);
+        shiftRequest.Approve();
+
+        db.People.Add(member);
+        db.GroupMemberships.Add(GroupMembership.Create(spaceId, groupId, member.Id));
+        db.ShiftRequests.Add(shiftRequest);
+        await db.SaveChangesAsync();
+
+        var permissions = Substitute.For<IPermissionService>();
+        permissions
+            .RequirePermissionAsync(Arg.Any<Guid>(), spaceId, Permissions.SchedulePublish, Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+        var audit = CreateAuditLogger();
+        var waitlistService = Substitute.For<IWaitlistService>();
+        var pushSender = Substitute.For<IPushNotificationSender>();
+
+        var handler = new AdminRemoveShiftCommandHandler(
+            db,
+            permissions,
+            audit,
+            waitlistService,
+            pushSender,
+            NullLogger<AdminRemoveShiftCommandHandler>.Instance);
+
+        var act = () => handler.Handle(
+            new AdminRemoveShiftCommand(spaceId, groupId, slot.Id, member.Id, Guid.NewGuid()),
+            CancellationToken.None);
+
+        await act.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("Shift request metadata no longer matches its assigned slot.");
+
+        var updatedRequest = await db.ShiftRequests.SingleAsync(r => r.Id == shiftRequest.Id);
+        updatedRequest.Status.Should().Be(ShiftRequestStatus.Approved);
+        updatedRequest.CancelledAt.Should().BeNull();
+        (await db.ShiftSlots.SingleAsync(s => s.Id == slot.Id)).CurrentFillCount.Should().Be(1);
+
+        await audit.DidNotReceiveWithAnyArgs()
+            .LogAsync(default, default, default!, default, default, default, default, default, default);
+        await waitlistService.DidNotReceiveWithAnyArgs()
+            .ProcessSlotReleasedAsync(default, default);
+        await pushSender.DidNotReceiveWithAnyArgs()
+            .SendPushToUserAsync(default, default, default!, default);
+    }
+
     private static IAuditLogger CreateAuditLogger()
     {
         var audit = Substitute.For<IAuditLogger>();
