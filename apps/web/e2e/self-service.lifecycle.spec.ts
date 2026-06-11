@@ -20,6 +20,14 @@ interface GroupDto {
   schedulingMode?: string;
 }
 
+interface GroupMemberDto {
+  personId: string;
+  fullName: string;
+  displayName: string | null;
+  linkedUserId: string | null;
+  email: string | null;
+}
+
 interface CycleStatusDto {
   cycleId: string | null;
   requestWindowOpen: boolean;
@@ -88,6 +96,15 @@ interface ShiftChangeRequestDto {
   status: "Pending" | "Approved" | "Rejected" | "Cancelled";
   reason: string;
   adminNote: string | null;
+}
+
+interface SwapRequestDto {
+  id: string;
+  initiatorPersonId: string;
+  targetPersonId: string;
+  initiatorShiftRequestId: string;
+  targetShiftRequestId: string;
+  status: "Pending" | "Accepted" | "Declined" | "Cancelled" | "Expired";
 }
 
 async function login(request: APIRequestContext, identifier: string): Promise<string> {
@@ -186,6 +203,85 @@ async function getOrCreateApprovedMemberShift(
   const created = refreshed.requests.find((row) => row.shiftSlotId === shiftSlotId && row.status === "Approved");
   expect(created, "newly requested open slot should become an approved shift").toBeTruthy();
   return created!;
+}
+
+async function getGroupMemberByEmail(
+  request: APIRequestContext,
+  adminToken: string,
+  spaceId: string,
+  groupId: string,
+  emailOrName: string
+): Promise<GroupMemberDto> {
+  const members = await api<GroupMemberDto[]>(
+    request,
+    adminToken,
+    "GET",
+    `/spaces/${spaceId}/groups/${groupId}/members`
+  );
+  const normalized = emailOrName.toLowerCase();
+  const member = members.find((row) =>
+    row.email?.toLowerCase() === normalized
+    || row.displayName?.toLowerCase().includes(normalized)
+    || row.fullName.toLowerCase().includes(normalized)
+  );
+  expect(member, `seed.sql should link ${emailOrName} as a member of the self-service demo group`).toBeTruthy();
+  return member!;
+}
+
+async function getOrCreateAdminAssignedShift(
+  request: APIRequestContext,
+  adminToken: string,
+  memberToken: string,
+  spaceId: string,
+  groupId: string,
+  cycleId: string,
+  personId: string,
+  excludedSlotIds: string[] = []
+): Promise<ShiftRequestDto> {
+  const mine = await api<MyShiftsResponse>(
+    request,
+    memberToken,
+    "GET",
+    `/spaces/${spaceId}/groups/${groupId}/shift-requests/mine`
+  );
+  const approved = mine.requests.find((row) =>
+    row.status === "Approved" && !excludedSlotIds.includes(row.shiftSlotId)
+  );
+  if (approved) return approved;
+
+  const adminSlots = await api<AvailableSlotsResponse>(
+    request,
+    adminToken,
+    "GET",
+    `/spaces/${spaceId}/groups/${groupId}/shift-slots/admin/slots?cycleId=${cycleId}`
+  );
+  const targetSlot = adminSlots.slots.find((slot) => {
+    const slotId = slot.id ?? slot.shiftSlotId;
+    return slotId && !excludedSlotIds.includes(slotId);
+  });
+  expect(targetSlot, "swap lifecycle test needs an assignable target slot").toBeTruthy();
+
+  const shiftSlotId = targetSlot!.id ?? targetSlot!.shiftSlotId;
+  expect(shiftSlotId).toBeTruthy();
+
+  const created = await api<{ shiftRequestId: string }>(
+    request,
+    adminToken,
+    "POST",
+    `/spaces/${spaceId}/groups/${groupId}/shift-slots/${shiftSlotId}/admin-overrides/assign`,
+    { personId }
+  );
+
+  const refreshed = await api<MyShiftsResponse>(
+    request,
+    memberToken,
+    "GET",
+    `/spaces/${spaceId}/groups/${groupId}/shift-requests/mine`
+  );
+  const assigned = refreshed.requests.find((row) => row.id === created.shiftRequestId);
+  expect(assigned, "admin override should create an approved target-member shift").toBeTruthy();
+  expect(assigned!.status).toBe("Approved");
+  return assigned!;
 }
 
 test.describe("Self-service scheduling lifecycle", () => {
@@ -409,5 +505,122 @@ test.describe("Self-service scheduling lifecycle", () => {
     const reassignedShift = refreshedShifts.requests.find((row) => row.id === ownedShift.id);
     expect(reassignedShift?.status).toBe("Approved");
     expect(reassignedShift?.shiftSlotId).toBe(targetSlotId);
+  });
+
+  test("seeded group supports member-to-member shift swap workflow", async ({ request }) => {
+    const adminToken = await login(request, process.env.E2E_ADMIN_EMAIL ?? "admin@demo.local");
+    const initiatorToken = await login(request, process.env.E2E_MEMBER_EMAIL ?? "ofek@demo.local");
+    const targetToken = await login(request, process.env.E2E_SWAP_TARGET_EMAIL ?? "yael@demo.local");
+    const { spaceId, groupId } = await findDemoSelfServiceGroup(request, adminToken);
+
+    const status = await api<CycleStatusDto>(
+      request,
+      adminToken,
+      "GET",
+      `/spaces/${spaceId}/groups/${groupId}/self-service-cycles/status`
+    );
+    expect(status.cycleId).toBeTruthy();
+
+    const targetMember = await getGroupMemberByEmail(
+      request,
+      adminToken,
+      spaceId,
+      groupId,
+      process.env.E2E_SWAP_TARGET_NAME ?? "yael"
+    );
+
+    const initiatorShift = await getOrCreateApprovedMemberShift(
+      request,
+      initiatorToken,
+      spaceId,
+      groupId,
+      status.cycleId!
+    );
+    const targetShift = await getOrCreateAdminAssignedShift(
+      request,
+      adminToken,
+      targetToken,
+      spaceId,
+      groupId,
+      status.cycleId!,
+      targetMember.personId,
+      [initiatorShift.shiftSlotId]
+    );
+    expect(targetShift.shiftSlotId).not.toBe(initiatorShift.shiftSlotId);
+
+    let swaps = await api<SwapRequestDto[]>(
+      request,
+      initiatorToken,
+      "GET",
+      `/spaces/${spaceId}/groups/${groupId}/shift-swaps/my`
+    );
+    let swap = swaps.find((row) =>
+      row.initiatorShiftRequestId === initiatorShift.id
+      && row.targetShiftRequestId === targetShift.id
+      && row.status === "Pending"
+    );
+
+    if (!swap) {
+      const created = await api<{ swapRequestId: string }>(
+        request,
+        initiatorToken,
+        "POST",
+        `/spaces/${spaceId}/groups/${groupId}/shift-swaps/propose`,
+        {
+          initiatorShiftRequestId: initiatorShift.id,
+          targetShiftRequestId: targetShift.id,
+        }
+      );
+
+      swaps = await api<SwapRequestDto[]>(
+        request,
+        initiatorToken,
+        "GET",
+        `/spaces/${spaceId}/groups/${groupId}/shift-swaps/my`
+      );
+      swap = swaps.find((row) => row.id === created.swapRequestId);
+    }
+
+    expect(swap, "member swap flow should create or expose a pending swap").toBeTruthy();
+    expect(swap!.status).toBe("Pending");
+
+    const incomingForTarget = await api<SwapRequestDto[]>(
+      request,
+      targetToken,
+      "GET",
+      `/spaces/${spaceId}/groups/${groupId}/shift-swaps/my`
+    );
+    expect(incomingForTarget.some((row) => row.id === swap!.id && row.status === "Pending")).toBeTruthy();
+
+    await api<{ swapRequestId: string }>(
+      request,
+      targetToken,
+      "POST",
+      `/spaces/${spaceId}/groups/${groupId}/shift-swaps/${swap!.id}/accept`
+    );
+
+    const initiatorSwaps = await api<SwapRequestDto[]>(
+      request,
+      initiatorToken,
+      "GET",
+      `/spaces/${spaceId}/groups/${groupId}/shift-swaps/my`
+    );
+    expect(initiatorSwaps.find((row) => row.id === swap!.id)?.status).toBe("Accepted");
+
+    const initiatorShifts = await api<MyShiftsResponse>(
+      request,
+      initiatorToken,
+      "GET",
+      `/spaces/${spaceId}/groups/${groupId}/shift-requests/mine`
+    );
+    const targetShifts = await api<MyShiftsResponse>(
+      request,
+      targetToken,
+      "GET",
+      `/spaces/${spaceId}/groups/${groupId}/shift-requests/mine`
+    );
+
+    expect(initiatorShifts.requests.find((row) => row.id === initiatorShift.id)?.shiftSlotId).toBe(targetShift.shiftSlotId);
+    expect(targetShifts.requests.find((row) => row.id === targetShift.id)?.shiftSlotId).toBe(initiatorShift.shiftSlotId);
   });
 });

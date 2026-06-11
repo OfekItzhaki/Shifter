@@ -109,6 +109,8 @@ public class ShiftSlotsController : ControllerBase
                         && s.GroupId == groupId
                         && s.SchedulingCycleId == resolvedCycleId.Value
                         && s.Status == Domain.Scheduling.ShiftSlotStatus.Open)
+            .OrderBy(s => s.Date)
+            .ThenBy(s => s.StartTime)
             .Join(
                 _db.GroupTasks.AsNoTracking(),
                 slot => slot.GroupTaskId,
@@ -122,8 +124,6 @@ public class ShiftSlotsController : ControllerBase
                     slot.CurrentFillCount,
                     slot.Capacity,
                     slot.SchedulingCycleId))
-            .OrderBy(s => s.Date)
-            .ThenBy(s => s.StartTime)
             .ToListAsync(ct);
 
         return Ok(new AdminShiftSlotsResponse(
