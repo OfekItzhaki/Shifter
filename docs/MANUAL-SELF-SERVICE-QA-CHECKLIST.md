@@ -1,0 +1,86 @@
+# Manual Self-Service QA Checklist
+
+Use this checklist before merging or demoing `feat/manual-self-service-hardening`.
+
+## Preconditions
+
+- API, web app, PostgreSQL, Redis, and worker services are running.
+- Seed data includes the `Self-Service Demo` group.
+- Demo users can log in with the configured E2E password.
+- Browser local storage is clear or the tester knows which space/group is active.
+
+## Member Smoke Test
+
+Run these from `/pick` on desktop and mobile widths:
+
+1. Select the `Self-Service Demo` group.
+2. Pick an open shift.
+3. Join a waitlist for a full shift.
+4. Leave a waiting-list entry.
+5. Cancel an owned future shift before the cutoff.
+6. Report cannot attend for an owned shift.
+7. Request a shift change.
+8. Propose a shift swap.
+9. Submit special leave.
+
+Expected result: each action shows a clear success/error state, refreshes the
+visible list, and preserves the member inside the same self-service group.
+
+## Admin Smoke Test
+
+Run these from the self-service group page while elevated for management:
+
+1. Open Operations and confirm pending review counts are visible.
+2. Approve and reject absence reports.
+3. Approve and reject shift-change requests.
+4. Approve and reject special leave.
+5. Assign a member manually to a slot.
+6. Remove a manually assigned member and confirm waitlist processing still works.
+7. Mark attendance as present, no-show, or excused.
+8. Open closeout and confirm coverage, attendance, waitlist, swaps, changes,
+   absence, special leave, and override metrics are present.
+
+Expected result: every admin decision updates the queue and preserves tenant,
+space, and group scope.
+
+## Automated Checks
+
+Frontend:
+
+```bash
+cd apps/web
+npm run build
+npm run lint
+npx playwright test e2e/self-service.browser.spec.ts --list
+```
+
+Backend:
+
+```bash
+cd apps/api
+dotnet test Jobuler.sln --filter "FullyQualifiedName~SelfService|FullyQualifiedName~Waitlist|FullyQualifiedName~SpecialLeave|FullyQualifiedName~ShiftChange|FullyQualifiedName~ShiftSwap"
+```
+
+Full suite before merge:
+
+```bash
+cd apps/api
+dotnet test Jobuler.sln
+```
+
+## Branch Integration Checks
+
+Before merging `feat/holiday-calendars` after this branch:
+
+- Verify special leave browser coverage still passes.
+- Verify special days do not affect self-service groups until explicit
+  self-service holiday behavior is added.
+- Add a test for holiday-aware self-service cycle generation or policy warnings
+  before calling holidays supported in manual mode.
+
+Before merging `feat/portable-space-isolation` after this branch:
+
+- Confirm special leave API/application/domain files are preserved.
+- Confirm organization export/import includes all self-service tables.
+- Confirm tenant/RLS checks cover member and admin self-service endpoints.
+- Confirm billing behavior remains correct for current space-level plans.

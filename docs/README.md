@@ -11,6 +11,8 @@ manual self-service scheduling decisions.
   sequencing for manual self-service, holiday calendars, and portable isolation.
 - [Manual self-service PR summary](PULL_REQUEST_MANUAL_SELF_SERVICE_HARDENING.md)
   - title, description, verification, and branch relationship notes.
+- [Manual self-service QA checklist](MANUAL-SELF-SERVICE-QA-CHECKLIST.md) -
+  smoke tests and automated checks before merge or demo.
 - [Architecture](ARCHITECTURE.md) - current system architecture and service
   boundaries.
 - [Data model](DATA-MODEL.md) - major entities and persistence structure.

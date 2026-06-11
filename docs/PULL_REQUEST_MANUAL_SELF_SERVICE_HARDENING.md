@@ -56,6 +56,9 @@ Recent branch verification included:
 
 Note: frontend lint currently passes with the existing warning backlog.
 
+For manual smoke testing, use the
+[Manual self-service QA checklist](MANUAL-SELF-SERVICE-QA-CHECKLIST.md).
+
 ## Branch Relationship
 
 Keep this PR separate from:
