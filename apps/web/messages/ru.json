@@ -2046,7 +2046,22 @@
       "summaryLateAbsenceLabel": "Поздние отсутствия",
       "summaryLateAbsenceValue": "{used}/{max} использовано | поздно в пределах {window} ч",
       "summaryNextShiftLabel": "Следующая смена",
-      "summaryNoNextShift": "Нет ближайшей утвержденной смены"
+      "summaryNoNextShift": "Нет ближайшей утвержденной смены",
+      "activityTitle": "История моих заявок",
+      "activityDescription": "Последние действия самообслуживания: смены, отгулы, изменения, отсутствия и лист ожидания.",
+      "activityCount": "{count} последних",
+      "activityEmpty": "Пока нет действий самообслуживания.",
+      "activityKindShift": "Смена",
+      "activityKindLeave": "Отгул",
+      "activityKindChange": "Изменение",
+      "activityKindAbsence": "Отсутствие",
+      "activityKindWaitlist": "Лист ожидания",
+      "activityStatusWaiting": "Ожидание",
+      "activityStatusOffered": "Предложено",
+      "activityStatusAccepted": "Принято",
+      "activityStatusExpired": "Истекло",
+      "activityStatusDeclined": "Отклонено",
+      "activityStatusRemoved": "Удалено"
     },
     "waitlist": {
       "title": "Лист ожидания",

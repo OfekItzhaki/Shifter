@@ -30,6 +30,21 @@ vi.mock("next-intl", () => ({
       summaryLateAbsenceLabel: "Late absences",
       summaryLateAbsenceValue: `${values?.used ?? 0}/${values?.max ?? 0} used inside ${values?.window ?? 0}h`,
       summaryNextShiftLabel: "Next shift",
+      activityTitle: "My request history",
+      activityDescription: "Recent self-service activity",
+      activityCount: `${values?.count ?? 0} recent`,
+      activityEmpty: "No self-service activity yet",
+      activityKindShift: "Shift",
+      activityKindLeave: "Time off",
+      activityKindChange: "Change",
+      activityKindAbsence: "Absence",
+      activityKindWaitlist: "Waitlist",
+      activityStatusWaiting: "Waiting",
+      activityStatusOffered: "Offered",
+      activityStatusAccepted: "Accepted",
+      activityStatusExpired: "Expired",
+      activityStatusDeclined: "Declined",
+      activityStatusRemoved: "Removed",
       shiftCount: `${values?.current ?? 0} of ${values?.max ?? 0} shifts`,
       specialLeaveTitle: "Need time off?",
       specialLeaveDescription: "Send a request to admins",
@@ -168,7 +183,9 @@ describe("MyShiftsTab", () => {
 
     render(<MyShiftsTab spaceId="space-1" groupId="group-1" />);
 
-    await screen.findByText("Need to swap school pickup");
+    await waitFor(() => {
+      expect(screen.getAllByText("Need to swap school pickup").length).toBeGreaterThan(0);
+    });
     fireEvent.click(screen.getByRole("button", { name: "Cancel request" }));
 
     await waitFor(() => {
@@ -176,6 +193,76 @@ describe("MyShiftsTab", () => {
     });
     expect(await screen.findByText("Change request cancelled")).toBeInTheDocument();
     expect(mockGetMyShiftChangeRequests).toHaveBeenCalledTimes(2);
+  });
+
+  it("shows a unified recent self-service history", async () => {
+    mockGetMySpecialLeaveRequests.mockResolvedValue([
+      {
+        id: "leave-1",
+        spaceId: "space-1",
+        personId: "person-1",
+        personName: "Member One",
+        startsAt: "2026-06-20T08:00:00",
+        endsAt: "2026-06-21T08:00:00",
+        reason: "Family event",
+        status: "Approved",
+        requestedByUserId: "user-1",
+        processedByUserId: "admin-1",
+        processedAt: "2026-06-11T10:00:00",
+        adminNote: "Approved by manager",
+        presenceWindowId: "window-1",
+        createdAt: "2026-06-10T10:00:00",
+        updatedAt: "2026-06-11T10:00:00",
+      },
+    ]);
+    mockGetMyAbsenceReports.mockResolvedValue({
+      reports: [
+        {
+          id: "absence-1",
+          shiftRequestId: "request-1",
+          personId: "person-1",
+          personName: "Member One",
+          shiftSlotId: "slot-1",
+          date: "2026-06-12",
+          startTime: "09:00:00",
+          endTime: "17:00:00",
+          taskName: "Front desk",
+          reason: "Sick",
+          isLate: true,
+          status: "Pending",
+          reportedAt: "2026-06-11T09:00:00",
+          adminNote: null,
+          reviewedAt: null,
+        },
+      ],
+      lateReportsUsed: 1,
+      maxLateReports: 2,
+      schedulingCycleId: "cycle-1",
+    });
+    mockGetMyWaitlistEntries.mockResolvedValue([
+      {
+        id: "waitlist-1",
+        shiftSlotId: "slot-2",
+        slotDate: "2026-06-13",
+        slotStartTime: "10:00:00",
+        slotEndTime: "18:00:00",
+        taskName: "Kitchen",
+        position: 1,
+        status: "Offered",
+        offeredAt: "2026-06-11T11:00:00",
+        expiresAt: "2026-06-11T12:00:00",
+      },
+    ]);
+
+    render(<MyShiftsTab spaceId="space-1" groupId="group-1" />);
+
+    expect(await screen.findByText("My request history")).toBeInTheDocument();
+    expect(screen.getByText("Time off")).toBeInTheDocument();
+    expect(screen.getByText("Approved by manager")).toBeInTheDocument();
+    expect(screen.getByText("Absence")).toBeInTheDocument();
+    expect(screen.getAllByText("Sick").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Waitlist").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Offered").length).toBeGreaterThan(0);
   });
 });
 

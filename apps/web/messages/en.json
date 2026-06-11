@@ -2046,7 +2046,22 @@
       "summaryLateAbsenceLabel": "Late absences",
       "summaryLateAbsenceValue": "{used}/{max} used | late inside {window}h",
       "summaryNextShiftLabel": "Next shift",
-      "summaryNoNextShift": "No upcoming approved shift"
+      "summaryNoNextShift": "No upcoming approved shift",
+      "activityTitle": "My request history",
+      "activityDescription": "Recent self-service activity across shifts, time off, changes, absences, and waitlist offers.",
+      "activityCount": "{count} recent",
+      "activityEmpty": "No self-service activity yet.",
+      "activityKindShift": "Shift",
+      "activityKindLeave": "Time off",
+      "activityKindChange": "Change",
+      "activityKindAbsence": "Absence",
+      "activityKindWaitlist": "Waitlist",
+      "activityStatusWaiting": "Waiting",
+      "activityStatusOffered": "Offered",
+      "activityStatusAccepted": "Accepted",
+      "activityStatusExpired": "Expired",
+      "activityStatusDeclined": "Declined",
+      "activityStatusRemoved": "Removed"
     },
     "waitlist": {
       "title": "Waitlist",

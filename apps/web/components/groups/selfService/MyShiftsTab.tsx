@@ -55,6 +55,20 @@ const STATUS_ORDER: Record<ShiftRequestDto["status"], number> = {
   Rejected: 3,
 };
 
+type ActivityStatus =
+  | ShiftRequestDto["status"]
+  | SpecialLeaveRequestDto["status"]
+  | WaitlistEntryDto["status"];
+
+interface RequestActivityItem {
+  id: string;
+  title: string;
+  detail: string;
+  status: ActivityStatus;
+  occurredAt: string;
+  note: string | null;
+}
+
 function groupByStatus(requests: ShiftRequestDto[]): {
   approved: ShiftRequestDto[];
   pending: ShiftRequestDto[];
@@ -115,6 +129,26 @@ function isLateAbsenceReport(request: ShiftRequestDto, lateWindowHours: number):
   const shiftStart = new Date(`${request.slotDate}T${request.slotStartTime}`);
   const lateWindowMs = lateWindowHours * 60 * 60 * 1000;
   return shiftStart.getTime() - Date.now() <= lateWindowMs;
+}
+
+function formatActivityDateTime(value: string): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+
+  return date.toLocaleString(undefined, {
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function sortActivityByNewest(items: RequestActivityItem[]): RequestActivityItem[] {
+  return [...items].sort((a, b) => {
+    const bTime = new Date(b.occurredAt).getTime();
+    const aTime = new Date(a.occurredAt).getTime();
+    return (Number.isNaN(bTime) ? 0 : bTime) - (Number.isNaN(aTime) ? 0 : aTime);
+  });
 }
 
 export default function MyShiftsTab({ spaceId, groupId, onNavigate }: MyShiftsTabProps) {
@@ -460,6 +494,50 @@ export default function MyShiftsTab({ spaceId, groupId, onNavigate }: MyShiftsTa
     .sort((a, b) =>
       `${a.slotDate}T${a.slotStartTime}`.localeCompare(`${b.slotDate}T${b.slotStartTime}`)
     )[0] ?? null;
+  const requestActivity = sortActivityByNewest([
+    ...data.requests.map((request) => ({
+      id: `shift-${request.id}`,
+      title: t("activityKindShift"),
+      detail: `${formatSlotDate(request.slotDate)} ${formatTime24h(request.slotStartTime)}-${formatTime24h(request.slotEndTime)} - ${request.taskName}`,
+      status: request.status,
+      occurredAt: request.cancelledAt ?? request.createdAt,
+      note: request.cancellationReason ?? request.rejectionReason,
+    })),
+    ...specialLeaveRequests.map((request) => ({
+      id: `leave-${request.id}`,
+      title: t("activityKindLeave"),
+      detail: `${formatSpecialLeaveDate(request.startsAt)} - ${formatSpecialLeaveDate(request.endsAt)}`,
+      status: request.status,
+      occurredAt: request.processedAt ?? request.updatedAt,
+      note: request.adminNote ?? request.reason,
+    })),
+    ...changeRequests.map((request) => ({
+      id: `change-${request.id}`,
+      title: t("activityKindChange"),
+      detail: request.requestedSlotDate
+        ? `${formatSlotDate(request.originalSlotDate)} -> ${formatSlotDate(request.requestedSlotDate)}`
+        : `${formatSlotDate(request.originalSlotDate)} -> ${t("changeFlexibleTarget")}`,
+      status: request.status,
+      occurredAt: request.reviewedAt ?? request.requestedAt,
+      note: request.adminNote ?? request.reason,
+    })),
+    ...absenceReports.map((report) => ({
+      id: `absence-${report.id}`,
+      title: t("activityKindAbsence"),
+      detail: `${formatSlotDate(report.date)} ${formatTime24h(report.startTime)}-${formatTime24h(report.endTime)} - ${report.taskName}`,
+      status: report.status,
+      occurredAt: report.reviewedAt ?? report.reportedAt,
+      note: report.adminNote ?? report.reason,
+    })),
+    ...waitlistEntries.map((entry) => ({
+      id: `waitlist-${entry.id}`,
+      title: t("activityKindWaitlist"),
+      detail: `${formatSlotDate(entry.slotDate)} ${formatTime24h(entry.slotStartTime)}-${formatTime24h(entry.slotEndTime)} - ${entry.taskName}`,
+      status: entry.status,
+      occurredAt: entry.expiresAt ?? entry.offeredAt ?? entry.slotDate,
+      note: null,
+    })),
+  ]).slice(0, 8);
 
   // ── Render ───────────────────────────────────────────────────────────────
 
@@ -529,6 +607,8 @@ export default function MyShiftsTab({ spaceId, groupId, onNavigate }: MyShiftsTa
           />
         </div>
       </div>
+
+      <RequestActivityTimeline items={requestActivity} />
 
       {/* Shift count indicator */}
       <div className="flex items-center justify-between bg-white border border-slate-200 rounded-xl px-4 py-3">
@@ -972,6 +1052,81 @@ function SummaryCard({
     <div className={`rounded-lg border px-3 py-2 ${toneClass}`}>
       {content}
     </div>
+  );
+}
+
+function RequestActivityTimeline({ items }: { items: RequestActivityItem[] }) {
+  const t = useTranslations("selfService.myShifts");
+
+  return (
+    <div className="rounded-xl border border-slate-200 bg-white p-4">
+      <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h3 className="text-sm font-semibold text-slate-900">{t("activityTitle")}</h3>
+          <p className="text-xs text-slate-500">{t("activityDescription")}</p>
+        </div>
+        <span className="inline-flex w-fit rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-600">
+          {t("activityCount", { count: items.length })}
+        </span>
+      </div>
+
+      {items.length === 0 ? (
+        <p className="mt-4 text-xs text-slate-400">{t("activityEmpty")}</p>
+      ) : (
+        <ol className="mt-4 divide-y divide-slate-100">
+          {items.map((item) => (
+            <li key={item.id} className="grid gap-2 py-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start">
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-xs font-semibold uppercase text-slate-500">
+                    {item.title}
+                  </span>
+                  <ActivityStatusBadge status={item.status} />
+                </div>
+                <p className="mt-1 truncate text-sm font-medium text-slate-900">{item.detail}</p>
+                {item.note && (
+                  <p className="mt-0.5 line-clamp-2 text-xs text-slate-500">{item.note}</p>
+                )}
+              </div>
+              <time className="text-xs text-slate-400" dateTime={item.occurredAt}>
+                {formatActivityDateTime(item.occurredAt)}
+              </time>
+            </li>
+          ))}
+        </ol>
+      )}
+    </div>
+  );
+}
+
+function ActivityStatusBadge({ status }: { status: ActivityStatus }) {
+  const t = useTranslations("selfService.myShifts");
+  const statusClass =
+    status === "Approved" || status === "Accepted"
+      ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+      : status === "Pending" || status === "Waiting" || status === "Offered"
+        ? "border-amber-200 bg-amber-50 text-amber-700"
+        : status === "Rejected" || status === "Declined"
+          ? "border-red-200 bg-red-50 text-red-700"
+          : "border-slate-200 bg-slate-50 text-slate-600";
+
+  const labelMap: Record<ActivityStatus, string> = {
+    Approved: t("approved"),
+    Pending: t("pending"),
+    Rejected: t("rejected"),
+    Cancelled: t("cancelled"),
+    Waiting: t("activityStatusWaiting"),
+    Offered: t("activityStatusOffered"),
+    Accepted: t("activityStatusAccepted"),
+    Expired: t("activityStatusExpired"),
+    Declined: t("activityStatusDeclined"),
+    Removed: t("activityStatusRemoved"),
+  };
+
+  return (
+    <span className={`inline-flex rounded-full border px-2 py-0.5 text-xs font-medium ${statusClass}`}>
+      {labelMap[status]}
+    </span>
   );
 }
 

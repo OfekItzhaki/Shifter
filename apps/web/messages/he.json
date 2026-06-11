@@ -2058,7 +2058,22 @@
       "summaryLateAbsenceLabel": "היעדרויות מאוחרות",
       "summaryLateAbsenceValue": "{used}/{max} נוצלו | מאוחר בתוך {window} שעות",
       "summaryNextShiftLabel": "המשמרת הבאה",
-      "summaryNoNextShift": "אין משמרת מאושרת קרובה"
+      "summaryNoNextShift": "אין משמרת מאושרת קרובה",
+      "activityTitle": "היסטוריית הבקשות שלי",
+      "activityDescription": "פעילות שירות עצמי אחרונה: משמרות, חופשות, החלפות, היעדרויות ורשימת המתנה.",
+      "activityCount": "{count} אחרונות",
+      "activityEmpty": "אין עדיין פעילות שירות עצמי.",
+      "activityKindShift": "משמרת",
+      "activityKindLeave": "חופשה",
+      "activityKindChange": "שינוי",
+      "activityKindAbsence": "היעדרות",
+      "activityKindWaitlist": "רשימת המתנה",
+      "activityStatusWaiting": "ממתין",
+      "activityStatusOffered": "הוצע",
+      "activityStatusAccepted": "התקבל",
+      "activityStatusExpired": "פג תוקף",
+      "activityStatusDeclined": "נדחה",
+      "activityStatusRemoved": "הוסר"
     },
     "waitlist": {
       "title": "רשימת המתנה",
