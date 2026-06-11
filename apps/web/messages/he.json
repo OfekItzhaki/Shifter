@@ -1226,17 +1226,85 @@
           "title": "משמרת נדחתה",
           "body": "בקשת המשמרת נדחתה — המשבצת מלאה."
         },
+        "absence_reported": {
+          "title": "Absence Reported",
+          "body": "A member reported they cannot attend a shift."
+        },
+        "absence_approved": {
+          "title": "Absence Approved",
+          "body": "Your absence report has been approved."
+        },
+        "absence_rejected": {
+          "title": "Absence Rejected",
+          "body": "Your absence report was rejected."
+        },
+        "change_requested": {
+          "title": "Shift Change Requested",
+          "body": "A member requested a shift change."
+        },
+        "change_cancelled": {
+          "title": "Shift Change Cancelled",
+          "body": "A member cancelled a shift-change request."
+        },
+        "change_approved": {
+          "title": "Shift Change Approved",
+          "body": "Your shift-change request has been approved."
+        },
+        "change_rejected": {
+          "title": "Shift Change Rejected",
+          "body": "Your shift-change request was rejected."
+        },
+        "special_leave_requested": {
+          "title": "Time-Off Requested",
+          "body": "A member submitted a time-off request."
+        },
+        "special_leave_cancelled": {
+          "title": "Time-Off Cancelled",
+          "body": "A member cancelled a time-off request."
+        },
+        "special_leave_approved": {
+          "title": "Time-Off Approved",
+          "body": "Your time-off request has been approved."
+        },
+        "special_leave_rejected": {
+          "title": "Time-Off Rejected",
+          "body": "Your time-off request was rejected."
+        },
+        "admin_assigned": {
+          "title": "Shift Assigned",
+          "body": "An admin assigned you to a shift."
+        },
+        "admin_removed": {
+          "title": "Shift Removed",
+          "body": "An admin removed you from a shift."
+        },
         "swap_proposal_received": {
           "title": "הצעת החלפה",
           "body": "מישהו רוצה להחליף איתך משמרת."
+        },
+        "swap_accepted": {
+          "title": "Swap Accepted",
+          "body": "A shift swap was accepted."
         },
         "swap_declined": {
           "title": "החלפה נדחתה",
           "body": "הצעת ההחלפה שלך נדחתה."
         },
+        "swap_cancelled": {
+          "title": "Swap Cancelled",
+          "body": "A shift swap proposal was cancelled."
+        },
+        "swap_expired": {
+          "title": "Swap Expired",
+          "body": "A shift swap proposal expired."
+        },
         "waitlist_offer": {
           "title": "משבצת פנויה",
           "body": "התפנה מקום במשמרת שאתה ממתין לה."
+        },
+        "waitlist_offer_expired": {
+          "title": "Waitlist Offer Expired",
+          "body": "Your waitlist offer expired and moved to the next member."
         },
         "under_scheduled_members": {
           "title": "חברים עם חוסר שיבוצים",
