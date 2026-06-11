@@ -50,7 +50,7 @@ function getActionCount(
 
   if (metric === "reviews") return getPendingReviewCount(status);
   if (metric === "waitlist") return status.waitlistCount;
-  return status.underfilledSlots.length;
+  return status.underfilledSlotCount;
 }
 
 function countExpiringWaitlistOffers(entries: AdminWaitlistEntryDto[]): number {
@@ -100,7 +100,7 @@ export default function SelfServiceOperationsTab({
 
   const pendingReviewCount = getPendingReviewCount(status);
   const activeSignalCount = status
-    ? pendingReviewCount + status.waitlistCount + status.underfilledSlots.length
+    ? pendingReviewCount + status.waitlistCount + status.underfilledSlotCount
     : 0;
   const expiringWaitlistOfferCount = countExpiringWaitlistOffers(waitlistEntries);
   const prioritySignals = status
@@ -119,7 +119,7 @@ export default function SelfServiceOperationsTab({
         },
         {
           key: "underfilled",
-          count: status.underfilledSlots.length,
+          count: status.underfilledSlotCount,
           target: "admin-overrides" as const,
           tone: "warning" as const,
         },

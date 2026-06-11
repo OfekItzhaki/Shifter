@@ -107,10 +107,10 @@ export default function CycleControlPanel({ spaceId, groupId, onNavigate }: Cycl
     ? [
         {
           key: "coverage",
-          state: status.underfilledSlots.length > 0 ? "warning" : "ok",
+          state: status.underfilledSlotCount > 0 ? "warning" : "ok",
           label: t("closeChecklist.items.coverage.label"),
-          value: status.underfilledSlots.length > 0
-            ? t("closeChecklist.items.coverage.warning", { count: status.underfilledSlots.length })
+          value: status.underfilledSlotCount > 0
+            ? t("closeChecklist.items.coverage.warning", { count: status.underfilledSlotCount })
             : t("closeChecklist.items.coverage.ok"),
           onClick: undefined,
         },

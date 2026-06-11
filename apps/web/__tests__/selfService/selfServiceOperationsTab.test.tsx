@@ -83,6 +83,7 @@ describe("SelfServiceOperationsTab", () => {
       latePendingAbsenceReportCount: 1,
       pendingShiftChangeRequestCount: 3,
       pendingSpecialLeaveRequestCount: 1,
+      underfilledSlotCount: 3,
       underfilledSlots: [
         {
           shiftSlotId: "slot-1",
@@ -118,10 +119,10 @@ describe("SelfServiceOperationsTab", () => {
     const onNavigate = vi.fn();
     render(<SelfServiceOperationsTab spaceId="space-1" groupId="group-1" onNavigate={onNavigate} />);
 
-    expect(await screen.findByText("11 item(s) need attention")).toBeInTheDocument();
+    expect(await screen.findByText("13 item(s) need attention")).toBeInTheDocument();
     expect(screen.getByText("6 pending review item(s)")).toBeInTheDocument();
     expect(screen.getByText("4 active waitlist item(s)")).toBeInTheDocument();
-    expect(screen.getByText("1 under-filled slot(s)")).toBeInTheDocument();
+    expect(screen.getByText("3 under-filled slot(s)")).toBeInTheDocument();
     expect(screen.getByText("3 urgent signal(s)")).toBeInTheDocument();
     expect(screen.getByText("Late absence reports")).toBeInTheDocument();
     expect(screen.getByText("Expiring waitlist offers")).toBeInTheDocument();

@@ -256,6 +256,8 @@ public class SelfServiceCyclesController : ControllerBase
             .Select(t => new { t.Id, t.Name })
             .ToDictionaryAsync(t => t.Id, t => t.Name, ct);
 
+        var underfilledSlotCount = slots.Count(s => s.CurrentFillCount < s.Capacity);
+
         var underfilledSlots = slots
             .Where(s => s.CurrentFillCount < s.Capacity)
             .OrderBy(s => s.Date)
@@ -294,6 +296,7 @@ public class SelfServiceCyclesController : ControllerBase
             pendingAbsenceReports.Count(r => r.IsLate),
             pendingShiftChangeRequestCount,
             pendingSpecialLeaveRequestCount,
+            underfilledSlotCount,
             underfilledSlots);
     }
 }
@@ -328,8 +331,9 @@ public record SelfServiceCycleStatusResponse(
     int LatePendingAbsenceReportCount,
     int PendingShiftChangeRequestCount,
     int PendingSpecialLeaveRequestCount,
+    int UnderfilledSlotCount,
     IReadOnlyList<UnderfilledSlotResponse> UnderfilledSlots)
 {
     public static SelfServiceCycleStatusResponse Empty() =>
-        new(null, null, null, null, null, false, false, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, []);
+        new(null, null, null, null, null, false, false, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, []);
 }
