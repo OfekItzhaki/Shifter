@@ -703,8 +703,16 @@ public class OrganizationPortabilityTests
         var ownerId = Guid.NewGuid();
         var organization = Organization.Create("Pizza Hut Israel", ownerId, "IL", "restaurant_hospitality", "he");
         var space = Space.Create("Pizza Hut Haifa", ownerId, locale: "he", organizationId: organization.Id);
+        var specialDay = SpaceSpecialDay.Create(
+            space.Id,
+            new DateOnly(2026, 9, 21),
+            "Yom Kippur",
+            SpaceSpecialDayKind.Holiday,
+            homeLeaveWeightMultiplier: 3m,
+            requiresCoverage: true);
         db.Organizations.Add(organization);
         db.Spaces.Add(space);
+        db.SpaceSpecialDays.Add(specialDay);
         await db.SaveChangesAsync();
 
         var package = await ExportPackageAsync(db, organization.Id);
@@ -716,6 +724,7 @@ public class OrganizationPortabilityTests
         result.IsImportSafe.Should().BeFalse();
         result.Conflicts.Should().Contain(c => c.Contains("Organization id already exists"));
         result.Conflicts.Should().Contain(c => c.Contains("space id"));
+        result.Conflicts.Should().Contain(c => c.Contains("space special day id"));
     }
 
     private static Task<OrganizationExportPackageResult> ExportPackageAsync(AppDbContext db, Guid organizationId)

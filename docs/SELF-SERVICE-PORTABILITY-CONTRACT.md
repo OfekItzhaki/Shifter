@@ -14,6 +14,9 @@ Portable exports must include these self-service records:
 
 - `SpaceSelfServiceDefaults`: space-level defaults for request windows, absence
   limits, waitlist offer timing, and workflow toggles.
+- `SpaceSpecialDay`: holiday, weekend, and custom calendar dates that affect
+  manual self-service labels, warnings, coverage expectations, and closeout
+  context.
 - `SelfServiceConfig`: group-level self-service settings and overrides.
 - `ShiftTemplate`, `ShiftSlot`, `SchedulingCycle`, and `ShiftRequest`: the
   planning structure and member assignments that self-service operates on.

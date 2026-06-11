@@ -180,6 +180,7 @@ public class ValidateOrganizationImportPackageCommandHandler
                 await AddEntityConflictsAsync(_db.People, ExtractIds(people), "person", conflicts, ct);
                 await AddEntityConflictsAsync(_db.ScheduleVersions, ExtractIds(scheduleVersions), "schedule version", conflicts, ct);
                 await AddEntityConflictsAsync(_db.Assignments, ExtractIds(assignments), "assignment", conflicts, ct);
+                await AddEntityConflictsAsync(_db.SpaceSpecialDays, ExtractIds(spaceSpecialDays), "space special day", conflicts, ct);
                 await AddEntityConflictsAsync(_db.SchedulingCycles, ExtractIds(schedulingCycles), "self-service cycle", conflicts, ct);
                 await AddEntityConflictsAsync(_db.ShiftTemplates, ExtractIds(shiftTemplates), "shift template", conflicts, ct);
                 await AddEntityConflictsAsync(_db.ShiftSlots, ExtractIds(shiftSlots), "shift slot", conflicts, ct);
