@@ -11,6 +11,10 @@ manual self-service scheduling decisions.
   sequencing for manual self-service, holiday calendars, and portable isolation.
 - [Manual self-service PR summary](PULL_REQUEST_MANUAL_SELF_SERVICE_HARDENING.md)
   - title, description, verification, and branch relationship notes.
+- [Self-service holiday integration PR summary](PULL_REQUEST_SELF_SERVICE_HOLIDAY_INTEGRATION.md)
+  - title, description, verification, and branch relationship for holidays.
+- [Self-service portable integration PR summary](PULL_REQUEST_SELF_SERVICE_PORTABLE_INTEGRATION.md)
+  - title, description, verification, and branch relationship for portability.
 - [Manual self-service QA checklist](MANUAL-SELF-SERVICE-QA-CHECKLIST.md) -
   smoke tests and automated checks before merge or demo.
 - [Self-service portability contract](SELF-SERVICE-PORTABILITY-CONTRACT.md) -
