@@ -187,7 +187,7 @@ export default function GroupDetailPage() {
   // ── Re-evaluate admin state when adminGroupId changes ───────────────────
   useEffect(() => {
     setIsAdmin(adminGroupId === groupId);
-  }, [adminGroupId, groupId]);
+  }, [adminGroupId, groupId, setIsAdmin]);
 
   // ── Re-authentication dialog state for management mode entry ────────────
   const [showReAuthDialog, setShowReAuthDialog] = useState(false);
@@ -433,7 +433,19 @@ export default function GroupDetailPage() {
       }
     })
     .finally(() => setScheduleLoading(false));
-  }, [currentSpaceId, groupId, activeTab]);
+  }, [
+    activeTab,
+    currentSpaceId,
+    groupId,
+    setDraftVersion,
+    setLastRunSummary,
+    setScheduleData,
+    setScheduleError,
+    setScheduleIsOffline,
+    setScheduleLoading,
+    tErrors,
+    timezoneId,
+  ]);
 
   // ── Load members ─────────────────────────────────────────────────────────
   useEffect(() => {
@@ -446,7 +458,16 @@ export default function GroupDetailPage() {
       .then(setMembers)
       .catch(() => setMembersError(tErrors("errorLoadMembers")))
       .finally(() => setMembersLoading(false));
-  }, [currentSpaceId, groupId, activeTab]);
+  }, [
+    activeTab,
+    currentSpaceId,
+    groupId,
+    members.length,
+    setMembers,
+    setMembersError,
+    setMembersLoading,
+    tErrors,
+  ]);
 
   // ── Load group roles when members tab opens (needed for role dropdown) ───
   useEffect(() => {
@@ -455,8 +476,13 @@ export default function GroupDetailPage() {
     getGroupRoles(currentSpaceId, groupId)
       .then(setGroupRoles)
       .catch(() => {});
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentSpaceId, groupId, activeTab]);
+  }, [
+    activeTab,
+    currentSpaceId,
+    groupId,
+    groupRoles.length,
+    setGroupRoles,
+  ]);
   // ── Load alerts ──────────────────────────────────────────────────────────
   useEffect(() => {
     if (!currentSpaceId || !groupId || activeTab !== "alerts") return;
@@ -466,7 +492,15 @@ export default function GroupDetailPage() {
       .then(setAlerts)
       .catch(() => setAlertsError(tErrors("errorLoadAlerts")))
       .finally(() => setAlertsLoading(false));
-  }, [currentSpaceId, groupId, activeTab]);
+  }, [
+    activeTab,
+    currentSpaceId,
+    groupId,
+    setAlerts,
+    setAlertsError,
+    setAlertsLoading,
+    tErrors,
+  ]);
 
   // ── Load messages ────────────────────────────────────────────────────────
   useEffect(() => {
@@ -483,7 +517,15 @@ export default function GroupDetailPage() {
       })
       .catch(() => setMessagesError(tErrors("errorLoadMessages")))
       .finally(() => setMessagesLoading(false));
-  }, [currentSpaceId, groupId, activeTab]);
+  }, [
+    activeTab,
+    currentSpaceId,
+    groupId,
+    setMessages,
+    setMessagesError,
+    setMessagesLoading,
+    tErrors,
+  ]);
 
   // ── Load tasks ───────────────────────────────────────────────────────────
   useEffect(() => {
@@ -501,7 +543,15 @@ export default function GroupDetailPage() {
       })
       .catch(() => {})
       .finally(() => setGroupTasksLoading(false));
-  }, [currentSpaceId, groupId, activeTab]);
+  }, [
+    activeTab,
+    currentSpaceId,
+    groupId,
+    groupQualifications,
+    setGroupQualifications,
+    setGroupTasks,
+    setGroupTasksLoading,
+  ]);
 
   // ── Load constraints (+ roles + tasks if not yet loaded) ────────────────
   useEffect(() => {
@@ -522,8 +572,16 @@ export default function GroupDetailPage() {
       })
       .catch(() => {})
       .finally(() => setConstraintsLoading(false));
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentSpaceId, groupId, activeTab]);
+  }, [
+    activeTab,
+    currentSpaceId,
+    groupId,
+    groupRoles,
+    setConstraintTaskOptions,
+    setConstraints,
+    setConstraintsLoading,
+    setGroupRoles,
+  ]);
 
   // ── Load settings data ───────────────────────────────────────────────────
   useEffect(() => {
@@ -539,7 +597,15 @@ export default function GroupDetailPage() {
       .then(setGroupRoles)
       .catch(() => {})
       .finally(() => setGroupRolesLoading(false));
-  }, [currentSpaceId, groupId, activeTab]);
+  }, [
+    activeTab,
+    currentSpaceId,
+    groupId,
+    setDeletedGroups,
+    setDeletedGroupsLoading,
+    setGroupRoles,
+    setGroupRolesLoading,
+  ]);
 
   // ── Load qualifications ──────────────────────────────────────────────────
   useEffect(() => {
@@ -555,7 +621,14 @@ export default function GroupDetailPage() {
       })
       .catch(() => {})
       .finally(() => setQualificationsLoading(false));
-  }, [currentSpaceId, groupId, activeTab]);
+  }, [
+    activeTab,
+    currentSpaceId,
+    groupId,
+    setGroupQualifications,
+    setMemberQualifications,
+    setQualificationsLoading,
+  ]);
 
   // ── Load roles tab ───────────────────────────────────────────────────────
   useEffect(() => {
@@ -571,15 +644,22 @@ export default function GroupDetailPage() {
       })
       .catch(() => {})
       .finally(() => setGroupRolesLoading(false));
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentSpaceId, groupId, activeTab]);
+  }, [
+    activeTab,
+    currentSpaceId,
+    groupId,
+    members,
+    setGroupRoles,
+    setGroupRolesLoading,
+    setMembers,
+  ]);
 
   // ── Cleanup polling on unmount ───────────────────────────────────────────
   useEffect(() => {
     return () => {
       if (pollingRef.current) clearInterval(pollingRef.current);
     };
-  }, []);
+  }, [pollingRef]);
 
   // ── Schedule handlers ────────────────────────────────────────────────────
   async function handlePublish() {
