@@ -109,6 +109,32 @@ public class ShiftChangeRequestsController : ControllerBase
 
             if (HasShiftStarted(requestedSlot))
                 return Rejected("Requested shift has already started.");
+
+            if (!requestedSlot.HasAvailableCapacity())
+                return Rejected("Requested shift is already full.");
+
+            var hasDuplicateRequest = await _db.ShiftRequests
+                .AsNoTracking()
+                .AnyAsync(r => r.Id != shiftRequest.Id
+                               && r.ShiftSlotId == requestedSlot.Id
+                               && r.PersonId == personId.Value
+                               && (r.Status == ShiftRequestStatus.Pending || r.Status == ShiftRequestStatus.Approved),
+                    ct);
+
+            if (hasDuplicateRequest)
+                return Rejected("Member already has an active request for the requested shift.");
+
+            var assignmentConflict = await ShiftAssignmentSafety.FindApprovedAssignmentConflictAsync(
+                _db,
+                personId.Value,
+                requestedSlot,
+                ct,
+                excludeShiftSlotId: originalSlot.Id);
+
+            if (assignmentConflict == ShiftAssignmentConflictKind.Overlap)
+                return Rejected("Requested shift overlaps with another approved shift for this member.");
+            if (assignmentConflict == ShiftAssignmentConflictKind.RestViolation)
+                return Rejected("Requested shift does not leave enough rest time for this member.");
         }
 
         var hasPendingChange = await _db.ShiftChangeRequests
