@@ -194,6 +194,53 @@ public class WaitlistServiceTests
     }
 
     [Fact]
+    public async Task AcceptWaitlistOffer_RejectsStaleOffer_WhenSlotNoLongerHasCapacity()
+    {
+        using var db = CreateDb();
+        var (spaceId, groupId, cycleId, taskId) = SeedBaseData(db);
+        var assignedPerson = Person.Create(spaceId, "Assigned", linkedUserId: Guid.NewGuid());
+        var offeredPerson = Person.Create(spaceId, "Offered", linkedUserId: Guid.NewGuid());
+        var slot = CreateSlot(spaceId, groupId, taskId, cycleId);
+        var assignedRequest = ShiftRequest.Create(spaceId, slot.Id, assignedPerson.Id, groupId, cycleId);
+        assignedRequest.Approve();
+        slot.IncrementFillCount();
+        var entry = WaitlistEntry.Create(spaceId, slot.Id, offeredPerson.Id, position: 1);
+        entry.Offer(DateTime.UtcNow.AddMinutes(30));
+
+        db.People.AddRange(assignedPerson, offeredPerson);
+        db.ShiftSlots.Add(slot);
+        db.ShiftRequests.Add(assignedRequest);
+        db.WaitlistEntries.Add(entry);
+        await db.SaveChangesAsync();
+
+        var waitlistService = Substitute.For<IWaitlistService>();
+        var handler = new AcceptWaitlistOfferCommandHandler(
+            db,
+            waitlistService,
+            Substitute.For<IPushNotificationSender>(),
+            Substitute.For<INotificationService>(),
+            NullLogger<AcceptWaitlistOfferCommandHandler>.Instance);
+
+        var result = await handler.Handle(
+            new AcceptWaitlistOfferCommand(spaceId, offeredPerson.Id, slot.Id),
+            CancellationToken.None);
+
+        result.Success.Should().BeFalse();
+        result.ErrorMessage.Should().Be("The shift slot is no longer available.");
+        result.ShiftRequestId.Should().BeNull();
+
+        var updatedEntry = await db.WaitlistEntries.SingleAsync(e => e.Id == entry.Id);
+        updatedEntry.Status.Should().Be(WaitlistEntryStatus.Removed);
+
+        var updatedSlot = await db.ShiftSlots.SingleAsync(s => s.Id == slot.Id);
+        updatedSlot.CurrentFillCount.Should().Be(1);
+        (await db.ShiftRequests.CountAsync()).Should().Be(1);
+
+        await waitlistService.DidNotReceiveWithAnyArgs()
+            .ProcessSlotReleasedAsync(default, default);
+    }
+
+    [Fact]
     public async Task LeaveWaitlistAsync_DeclinesActiveOfferAndOffersNextWaitingMember()
     {
         using var db = CreateDb();
@@ -304,6 +351,38 @@ public class WaitlistServiceTests
         db.People.AddRange(offeredPerson, waitingPerson);
         db.ShiftSlots.Add(slot);
         db.WaitlistEntries.AddRange(offeredEntry, waitingEntry);
+        await db.SaveChangesAsync();
+
+        var pushSender = Substitute.For<IPushNotificationSender>();
+        var service = CreateService(db, pushSender);
+
+        await service.ProcessSlotReleasedAsync(slot.Id);
+
+        var updatedWaitingEntry = await db.WaitlistEntries.SingleAsync(e => e.Id == waitingEntry.Id);
+        updatedWaitingEntry.Status.Should().Be(WaitlistEntryStatus.Waiting);
+        updatedWaitingEntry.OfferedAt.Should().BeNull();
+        updatedWaitingEntry.ExpiresAt.Should().BeNull();
+        await pushSender.DidNotReceiveWithAnyArgs()
+            .SendPushToUserAsync(default, default, default!, default);
+    }
+
+    [Fact]
+    public async Task ProcessSlotReleasedAsync_DoesNotOfferNextMember_WhenSlotIsStillFull()
+    {
+        using var db = CreateDb();
+        var (spaceId, groupId, cycleId, taskId) = SeedBaseData(db);
+        var assignedPerson = Person.Create(spaceId, "Assigned", linkedUserId: Guid.NewGuid());
+        var waitingPerson = Person.Create(spaceId, "Waiting", linkedUserId: Guid.NewGuid());
+        var slot = CreateSlot(spaceId, groupId, taskId, cycleId);
+        var assignedRequest = ShiftRequest.Create(spaceId, slot.Id, assignedPerson.Id, groupId, cycleId);
+        assignedRequest.Approve();
+        slot.IncrementFillCount();
+        var waitingEntry = WaitlistEntry.Create(spaceId, slot.Id, waitingPerson.Id, position: 1);
+
+        db.People.AddRange(assignedPerson, waitingPerson);
+        db.ShiftSlots.Add(slot);
+        db.ShiftRequests.Add(assignedRequest);
+        db.WaitlistEntries.Add(waitingEntry);
         await db.SaveChangesAsync();
 
         var pushSender = Substitute.For<IPushNotificationSender>();

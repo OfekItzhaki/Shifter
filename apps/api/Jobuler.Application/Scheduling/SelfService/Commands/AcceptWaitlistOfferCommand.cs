@@ -101,6 +101,40 @@ public class AcceptWaitlistOfferCommandHandler : IRequestHandler<AcceptWaitlistO
                 ErrorMessage: "The shift slot does not exist.");
         }
 
+        if (slot.Status != ShiftSlotStatus.Open)
+        {
+            entry.Remove();
+            await _db.SaveChangesAsync(ct);
+
+            return new AcceptWaitlistOfferResult(
+                Success: false,
+                ShiftRequestId: null,
+                ErrorMessage: "The shift slot is no longer open.");
+        }
+
+        var shiftStartUtc = slot.Date.ToDateTime(slot.StartTime, DateTimeKind.Utc);
+        if (shiftStartUtc <= DateTime.UtcNow)
+        {
+            entry.Remove();
+            await _db.SaveChangesAsync(ct);
+
+            return new AcceptWaitlistOfferResult(
+                Success: false,
+                ShiftRequestId: null,
+                ErrorMessage: "The shift has already started.");
+        }
+
+        if (!slot.HasAvailableCapacity())
+        {
+            entry.Remove();
+            await _db.SaveChangesAsync(ct);
+
+            return new AcceptWaitlistOfferResult(
+                Success: false,
+                ShiftRequestId: null,
+                ErrorMessage: "The shift slot is no longer available.");
+        }
+
         // Req 9.5: Validate Max_Shifts constraint before accepting
         var config = await _db.SelfServiceConfigs
             .AsNoTracking()

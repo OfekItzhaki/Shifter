@@ -251,6 +251,34 @@ public class WaitlistService : IWaitlistService
     /// </summary>
     private async Task OfferToNextWaitingMemberAsync(Guid shiftSlotId, CancellationToken ct)
     {
+        // Load the slot to get GroupId for config lookup
+        var slot = await _db.ShiftSlots
+            .AsNoTracking()
+            .FirstOrDefaultAsync(s => s.Id == shiftSlotId, ct);
+
+        if (slot is null)
+        {
+            _logger.LogWarning(
+                "Slot {SlotId} not found during waitlist offer cascade.", shiftSlotId);
+            return;
+        }
+
+        if (slot.Status != ShiftSlotStatus.Open || !slot.HasAvailableCapacity())
+        {
+            _logger.LogDebug(
+                "Slot {SlotId} is not eligible for a waitlist offer. Status: {Status}, fill: {Fill}/{Capacity}.",
+                shiftSlotId, slot.Status, slot.CurrentFillCount, slot.Capacity);
+            return;
+        }
+
+        var shiftStartUtc = slot.Date.ToDateTime(slot.StartTime, DateTimeKind.Utc);
+        if (shiftStartUtc <= _timeProvider.GetUtcNow().UtcDateTime)
+        {
+            _logger.LogDebug(
+                "Slot {SlotId} has already started. Skipping waitlist offer cascade.", shiftSlotId);
+            return;
+        }
+
         // Find the next waiting entry by lowest position
         var nextEntry = await _db.WaitlistEntries
             .Where(e => e.ShiftSlotId == shiftSlotId
@@ -263,18 +291,6 @@ public class WaitlistService : IWaitlistService
             _logger.LogDebug(
                 "No waiting members on waitlist for slot {SlotId}. Slot remains open.",
                 shiftSlotId);
-            return;
-        }
-
-        // Load the slot to get GroupId for config lookup
-        var slot = await _db.ShiftSlots
-            .AsNoTracking()
-            .FirstOrDefaultAsync(s => s.Id == shiftSlotId, ct);
-
-        if (slot is null)
-        {
-            _logger.LogWarning(
-                "Slot {SlotId} not found during waitlist offer cascade.", shiftSlotId);
             return;
         }
 
