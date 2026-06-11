@@ -1018,6 +1018,81 @@ public class SelfServiceScopeTests
     }
 
     [Fact]
+    public async Task ListAdminShiftRequests_ReturnsCancelledRequestsForRequestedGroupOnly()
+    {
+        using var db = CreateDb();
+        var services = CreateControllerServices();
+        var spaceId = Guid.NewGuid();
+        var group = Group.Create(spaceId, null, "Route Group");
+        var otherGroup = Group.Create(spaceId, null, "Other Group");
+        var adminUserId = Guid.NewGuid();
+        var ownerUserId = Guid.NewGuid();
+        var cancelledMember = Person.Create(spaceId, "Cancelled Member", displayName: "Cancelled Display", linkedUserId: Guid.NewGuid());
+        var approvedMember = Person.Create(spaceId, "Approved Member", linkedUserId: Guid.NewGuid());
+        var otherGroupMember = Person.Create(spaceId, "Other Group Member", linkedUserId: Guid.NewGuid());
+        var cycle = CreateCycle(spaceId, group.Id);
+        var otherCycle = CreateCycle(spaceId, otherGroup.Id);
+        var task = CreateTask(spaceId, group.Id, "Task", ownerUserId);
+        var otherTask = CreateTask(spaceId, otherGroup.Id, "Other Task", ownerUserId);
+        var cancelledSlot = CreateSlot(spaceId, group.Id, task.Id, cycle.Id, daysFromNow: 2);
+        var approvedSlot = CreateSlot(spaceId, group.Id, task.Id, cycle.Id, daysFromNow: 3);
+        var otherSlot = CreateSlot(spaceId, otherGroup.Id, otherTask.Id, otherCycle.Id, daysFromNow: 4);
+        var cancelledRequest = ShiftRequest.Create(spaceId, cancelledSlot.Id, cancelledMember.Id, group.Id, cycle.Id);
+        cancelledRequest.Approve();
+        cancelledRequest.Cancel("Cannot attend");
+        var approvedRequest = ShiftRequest.Create(spaceId, approvedSlot.Id, approvedMember.Id, group.Id, cycle.Id);
+        approvedRequest.Approve();
+        var otherGroupCancelledRequest = ShiftRequest.Create(spaceId, otherSlot.Id, otherGroupMember.Id, otherGroup.Id, otherCycle.Id);
+        otherGroupCancelledRequest.Approve();
+        otherGroupCancelledRequest.Cancel("Other group cancel");
+
+        db.People.AddRange(cancelledMember, approvedMember, otherGroupMember);
+        db.Groups.AddRange(group, otherGroup);
+        db.GroupMemberships.AddRange(
+            GroupMembership.Create(spaceId, group.Id, cancelledMember.Id),
+            GroupMembership.Create(spaceId, group.Id, approvedMember.Id),
+            GroupMembership.Create(spaceId, otherGroup.Id, otherGroupMember.Id));
+        db.SchedulingCycles.AddRange(cycle, otherCycle);
+        db.GroupTasks.AddRange(task, otherTask);
+        db.ShiftSlots.AddRange(cancelledSlot, approvedSlot, otherSlot);
+        db.ShiftRequests.AddRange(cancelledRequest, approvedRequest, otherGroupCancelledRequest);
+        await db.SaveChangesAsync();
+
+        services.Permissions
+            .RequirePermissionAsync(adminUserId, spaceId, Permissions.ConstraintsManage, Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+
+        var controller = new ShiftRequestsController(
+            services.Mediator,
+            services.Permissions,
+            services.ShiftRequestService,
+            services.PushSender,
+            services.Audit,
+            db);
+        controller.ControllerContext = CreateControllerContext(adminUserId);
+
+        var result = await controller.ListAdmin(
+            spaceId,
+            group.Id,
+            "Cancelled",
+            limit: 20,
+            CancellationToken.None);
+
+        var ok = result.Should().BeOfType<OkObjectResult>().Subject;
+        var rows = ok.Value.Should().BeAssignableTo<IReadOnlyList<AdminShiftRequestResponse>>().Subject;
+        rows.Should().ContainSingle();
+        rows[0].Id.Should().Be(cancelledRequest.Id);
+        rows[0].PersonId.Should().Be(cancelledMember.Id);
+        rows[0].PersonName.Should().Be("Cancelled Display");
+        rows[0].Status.Should().Be("Cancelled");
+        rows[0].CancellationReason.Should().Be("Cannot attend");
+        rows[0].TaskName.Should().Be("Task");
+
+        await services.Permissions.Received(1)
+            .RequirePermissionAsync(adminUserId, spaceId, Permissions.ConstraintsManage, Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task ApproveAbsenceReport_AuditsReview_WhenPendingReportIsApproved()
     {
         using var db = CreateDb();
