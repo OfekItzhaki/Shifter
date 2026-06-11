@@ -372,6 +372,14 @@ public class SelfServiceCyclesController : ControllerBase
             .Select(r => new { r.Status, r.IsLate })
             .ToListAsync(ct);
 
+        var attendanceRecords = await _db.ShiftAttendanceRecords
+            .AsNoTracking()
+            .Where(r => r.SpaceId == cycle.SpaceId
+                        && r.GroupId == cycle.GroupId
+                        && r.SchedulingCycleId == cycle.Id)
+            .Select(r => r.Status)
+            .ToListAsync(ct);
+
         var changeRequests = await _db.ShiftChangeRequests
             .AsNoTracking()
             .Where(r => r.SpaceId == cycle.SpaceId
@@ -432,6 +440,10 @@ public class SelfServiceCyclesController : ControllerBase
         var approvedAbsenceReports = absences.Count(r => r.Status == ShiftAbsenceReportStatus.Approved);
         var rejectedAbsenceReports = absences.Count(r => r.Status == ShiftAbsenceReportStatus.Rejected);
         var pendingAbsenceReports = absences.Count(r => r.Status == ShiftAbsenceReportStatus.Pending);
+        var presentAttendanceRecords = attendanceRecords.Count(s => s == ShiftAttendanceStatus.Present);
+        var noShowAttendanceRecords = attendanceRecords.Count(s => s == ShiftAttendanceStatus.NoShow);
+        var excusedAttendanceRecords = attendanceRecords.Count(s => s == ShiftAttendanceStatus.Excused);
+        var unconfirmedAttendanceCount = Math.Max(0, approvedAssignments - attendanceRecords.Count);
 
         var approvedChangeRequests = changeRequests.Count(s => s == ShiftChangeRequestStatus.Approved);
         var rejectedChangeRequests = changeRequests.Count(s => s == ShiftChangeRequestStatus.Rejected);
@@ -483,6 +495,10 @@ public class SelfServiceCyclesController : ControllerBase
             approvedAbsenceReports,
             rejectedAbsenceReports,
             pendingAbsenceReports,
+            presentAttendanceRecords,
+            noShowAttendanceRecords,
+            excusedAttendanceRecords,
+            unconfirmedAttendanceCount,
             approvedChangeRequests,
             rejectedChangeRequests,
             pendingChangeRequests,
@@ -563,6 +579,10 @@ public record SelfServiceCycleCloseoutResponse(
     int ApprovedAbsenceReports,
     int RejectedAbsenceReports,
     int PendingAbsenceReports,
+    int PresentAttendanceRecords,
+    int NoShowAttendanceRecords,
+    int ExcusedAttendanceRecords,
+    int UnconfirmedAttendanceCount,
     int ApprovedChangeRequests,
     int RejectedChangeRequests,
     int PendingChangeRequests,
@@ -584,5 +604,5 @@ public record SelfServiceCycleCloseoutResponse(
     int IssueCount)
 {
     public static SelfServiceCycleCloseoutResponse Empty() =>
-        new(null, null, null, false, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+        new(null, null, null, false, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 }

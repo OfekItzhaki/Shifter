@@ -532,6 +532,103 @@ public class ShiftRequestsController : ControllerBase
         return Ok(requests);
     }
 
+    [HttpPost("admin/{shiftRequestId:guid}/attendance")]
+    public async Task<IActionResult> RecordAttendance(
+        Guid spaceId,
+        Guid groupId,
+        Guid shiftRequestId,
+        [FromBody] RecordShiftAttendanceRequest req,
+        CancellationToken ct)
+    {
+        await _permissions.RequirePermissionAsync(CurrentUserId, spaceId, Permissions.ConstraintsManage, ct);
+
+        if (!Enum.TryParse<ShiftAttendanceStatus>(req.Status, true, out var attendanceStatus))
+            return BadRequest(new { error = "Invalid attendance status." });
+
+        var shift = await _db.ShiftRequests
+            .FirstOrDefaultAsync(r => r.Id == shiftRequestId
+                                      && r.SpaceId == spaceId
+                                      && r.GroupId == groupId, ct);
+
+        if (shift is null)
+            return NotFound();
+
+        if (shift.Status != ShiftRequestStatus.Approved)
+            return BadRequest(new { error = "Attendance can only be recorded for approved shift assignments." });
+
+        var slot = await _db.ShiftSlots
+            .AsNoTracking()
+            .FirstOrDefaultAsync(s => s.Id == shift.ShiftSlotId
+                                      && s.SpaceId == spaceId
+                                      && s.GroupId == groupId, ct);
+
+        if (slot is null)
+            return NotFound();
+
+        if (slot.StartsAt > DateTime.UtcNow)
+            return BadRequest(new { error = "Attendance cannot be recorded before the shift starts." });
+
+        ShiftAttendanceStatus? previousStatus = null;
+        var record = await _db.ShiftAttendanceRecords
+            .FirstOrDefaultAsync(r => r.ShiftRequestId == shiftRequestId
+                                      && r.SpaceId == spaceId
+                                      && r.GroupId == groupId, ct);
+
+        if (record is null)
+        {
+            record = ShiftAttendanceRecord.Create(
+                spaceId,
+                groupId,
+                shift.SchedulingCycleId,
+                shift.Id,
+                shift.ShiftSlotId,
+                shift.PersonId,
+                attendanceStatus,
+                CurrentUserId,
+                req.Note);
+            _db.ShiftAttendanceRecords.Add(record);
+        }
+        else
+        {
+            previousStatus = record.Status;
+            record.Update(attendanceStatus, CurrentUserId, req.Note);
+        }
+
+        await _db.SaveChangesAsync(ct);
+        await _audit.LogAsync(
+            spaceId,
+            CurrentUserId,
+            "self_service.record_shift_attendance",
+            "shift_attendance_record",
+            record.Id,
+            beforeJson: previousStatus.HasValue
+                ? JsonSerializer.Serialize(new { status = previousStatus.Value.ToString().ToLowerInvariant() })
+                : null,
+            afterJson: JsonSerializer.Serialize(new
+            {
+                attendance_record_id = record.Id,
+                shift_request_id = shift.Id,
+                person_id = shift.PersonId,
+                group_id = shift.GroupId,
+                scheduling_cycle_id = shift.SchedulingCycleId,
+                shift_slot_id = shift.ShiftSlotId,
+                status = record.Status.ToString().ToLowerInvariant(),
+                note = record.Note
+            }),
+            ct: ct);
+
+        return Ok(new ShiftAttendanceResponse(
+            record.Id,
+            record.ShiftRequestId,
+            record.PersonId,
+            record.ShiftSlotId,
+            record.SchedulingCycleId,
+            record.Status.ToString(),
+            record.Note,
+            record.RecordedByUserId,
+            record.RecordedAt));
+    }
+
     /// <summary>
     /// List the current member's shift requests for a group, optionally filtered by scheduling cycle.
     /// </summary>
@@ -745,11 +842,24 @@ public record CancelShiftRequestRequest(string Reason);
 
 public record CannotAttendShiftRequest(string Reason);
 
+public record RecordShiftAttendanceRequest(string Status, string? Note);
+
 public record ReviewAbsenceReportRequest(string? AdminNote);
 
 // --- Response DTOs ---
 
 public record ShiftRequestSuccessResponse(Guid ShiftRequestId);
+
+public record ShiftAttendanceResponse(
+    Guid Id,
+    Guid ShiftRequestId,
+    Guid PersonId,
+    Guid ShiftSlotId,
+    Guid SchedulingCycleId,
+    string Status,
+    string? Note,
+    Guid RecordedByUserId,
+    DateTime RecordedAt);
 
 public record MyShiftRequestsResponse(
     IReadOnlyList<ShiftRequestResponse> Requests,

@@ -3157,6 +3157,26 @@ public class SelfServiceScopeTests
         db.SwapRequests.AddRange(pendingSwap, acceptedSwap);
         db.WaitlistEntries.AddRange(waitingEntry, acceptedEntry, expiredEntry);
         db.SpecialLeaveRequests.Add(pendingLeave);
+        db.ShiftAttendanceRecords.AddRange(
+            ShiftAttendanceRecord.Create(
+                spaceId,
+                group.Id,
+                cycle.Id,
+                approvedRequest.Id,
+                approvedRequest.ShiftSlotId,
+                approvedRequest.PersonId,
+                ShiftAttendanceStatus.Present,
+                adminUserId),
+            ShiftAttendanceRecord.Create(
+                spaceId,
+                group.Id,
+                cycle.Id,
+                adminOverrideRequest.Id,
+                adminOverrideRequest.ShiftSlotId,
+                adminOverrideRequest.PersonId,
+                ShiftAttendanceStatus.NoShow,
+                adminUserId,
+                "Did not arrive"));
         await db.SaveChangesAsync();
 
         services.Permissions
@@ -3190,6 +3210,10 @@ public class SelfServiceScopeTests
         response.ApprovedAbsenceReports.Should().Be(1);
         response.RejectedAbsenceReports.Should().Be(1);
         response.PendingAbsenceReports.Should().Be(1);
+        response.PresentAttendanceRecords.Should().Be(1);
+        response.NoShowAttendanceRecords.Should().Be(1);
+        response.ExcusedAttendanceRecords.Should().Be(0);
+        response.UnconfirmedAttendanceCount.Should().Be(1);
         response.ApprovedChangeRequests.Should().Be(1);
         response.PendingChangeRequests.Should().Be(1);
         response.AcceptedSwapRequests.Should().Be(1);
@@ -3199,6 +3223,74 @@ public class SelfServiceScopeTests
         response.ExpiredWaitlistEntries.Should().Be(1);
         response.PendingSpecialLeaveRequests.Should().Be(1);
         response.IssueCount.Should().Be(7);
+    }
+
+    [Fact]
+    public async Task RecordAttendance_CreatesOrUpdatesAttendanceForApprovedPastShift()
+    {
+        using var db = CreateDb();
+        var services = CreateControllerServices();
+        var spaceId = Guid.NewGuid();
+        var group = Group.Create(spaceId, null, "Self-service group");
+        var adminUserId = Guid.NewGuid();
+        var person = Person.Create(spaceId, "Member", linkedUserId: Guid.NewGuid());
+        var cycle = CreateCycle(spaceId, group.Id);
+        var task = CreateTask(spaceId, group.Id, "Guard", adminUserId);
+        var slot = CreateSlot(spaceId, group.Id, task.Id, cycle.Id, daysFromNow: -1);
+        var shiftRequest = ShiftRequest.Create(spaceId, slot.Id, person.Id, group.Id, cycle.Id);
+        shiftRequest.Approve(adminUserId);
+        slot.IncrementFillCount();
+
+        db.Groups.Add(group);
+        db.People.Add(person);
+        db.GroupMemberships.Add(GroupMembership.Create(spaceId, group.Id, person.Id));
+        db.SchedulingCycles.Add(cycle);
+        db.GroupTasks.Add(task);
+        db.ShiftSlots.Add(slot);
+        db.ShiftRequests.Add(shiftRequest);
+        await db.SaveChangesAsync();
+
+        services.Permissions
+            .RequirePermissionAsync(adminUserId, spaceId, Permissions.ConstraintsManage, Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+
+        var controller = new ShiftRequestsController(
+            services.Mediator,
+            services.Permissions,
+            services.ShiftRequestService,
+            services.PushSender,
+            services.Audit,
+            db);
+        controller.ControllerContext = CreateControllerContext(adminUserId);
+
+        var createResult = await controller.RecordAttendance(
+            spaceId,
+            group.Id,
+            shiftRequest.Id,
+            new RecordShiftAttendanceRequest("NoShow", "Did not arrive"),
+            CancellationToken.None);
+
+        var createOk = createResult.Should().BeOfType<OkObjectResult>().Subject;
+        var created = createOk.Value.Should().BeOfType<ShiftAttendanceResponse>().Subject;
+        created.Status.Should().Be("NoShow");
+        created.Note.Should().Be("Did not arrive");
+
+        var updateResult = await controller.RecordAttendance(
+            spaceId,
+            group.Id,
+            shiftRequest.Id,
+            new RecordShiftAttendanceRequest("Excused", "Commander approved"),
+            CancellationToken.None);
+
+        var updateOk = updateResult.Should().BeOfType<OkObjectResult>().Subject;
+        var updated = updateOk.Value.Should().BeOfType<ShiftAttendanceResponse>().Subject;
+        updated.Id.Should().Be(created.Id);
+        updated.Status.Should().Be("Excused");
+        updated.Note.Should().Be("Commander approved");
+
+        var records = await db.ShiftAttendanceRecords.ToListAsync();
+        records.Should().ContainSingle();
+        records[0].Status.Should().Be(ShiftAttendanceStatus.Excused);
     }
 
     [Fact]

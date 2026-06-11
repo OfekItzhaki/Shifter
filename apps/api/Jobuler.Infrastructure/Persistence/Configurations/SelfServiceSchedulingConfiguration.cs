@@ -191,6 +191,39 @@ public class ShiftAbsenceReportConfiguration : IEntityTypeConfiguration<ShiftAbs
     }
 }
 
+public class ShiftAttendanceRecordConfiguration : IEntityTypeConfiguration<ShiftAttendanceRecord>
+{
+    public void Configure(EntityTypeBuilder<ShiftAttendanceRecord> builder)
+    {
+        builder.ToTable("shift_attendance_records");
+        builder.HasKey(r => r.Id);
+        builder.Property(r => r.Id).HasColumnName("id");
+        builder.Property(r => r.SpaceId).HasColumnName("space_id");
+        builder.Property(r => r.GroupId).HasColumnName("group_id");
+        builder.Property(r => r.SchedulingCycleId).HasColumnName("scheduling_cycle_id");
+        builder.Property(r => r.ShiftRequestId).HasColumnName("shift_request_id");
+        builder.Property(r => r.ShiftSlotId).HasColumnName("shift_slot_id");
+        builder.Property(r => r.PersonId).HasColumnName("person_id");
+        builder.Property(r => r.Status).HasColumnName("status")
+            .HasConversion(v => v.ToString(), v => Enum.Parse<ShiftAttendanceStatus>(v, true));
+        builder.Property(r => r.Note).HasColumnName("note").HasMaxLength(500);
+        builder.Property(r => r.RecordedByUserId).HasColumnName("recorded_by_user_id");
+        builder.Property(r => r.RecordedAt).HasColumnName("recorded_at");
+        builder.Property(r => r.CreatedAt).HasColumnName("created_at");
+        builder.Property(r => r.UpdatedAt).HasColumnName("updated_at");
+
+        builder.HasIndex(r => r.ShiftRequestId)
+            .IsUnique()
+            .HasDatabaseName("idx_shift_attendance_records_shift_request");
+
+        builder.HasIndex(r => new { r.GroupId, r.SchedulingCycleId, r.Status })
+            .HasDatabaseName("idx_shift_attendance_records_group_cycle_status");
+
+        builder.HasIndex(r => new { r.PersonId, r.SchedulingCycleId, r.Status })
+            .HasDatabaseName("idx_shift_attendance_records_person_cycle_status");
+    }
+}
+
 public class ShiftChangeRequestConfiguration : IEntityTypeConfiguration<ShiftChangeRequest>
 {
     public void Configure(EntityTypeBuilder<ShiftChangeRequest> builder)

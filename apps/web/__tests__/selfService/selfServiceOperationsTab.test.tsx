@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import SelfServiceOperationsTab from "../../components/groups/selfService/SelfServiceOperationsTab";
 
 const mockGetSelfServiceCycleStatus = vi.fn();
+const mockGetSelfServiceCycleCloseout = vi.fn();
 const mockGetSelfServiceConfig = vi.fn();
 const mockGetAdminWaitlistEntries = vi.fn();
 const mockCycleControlPanel = vi.fn();
@@ -15,6 +16,26 @@ vi.mock("next-intl", () => ({
       statusLoading: "Checking queues...",
       activeSignals: `${values?.count ?? 0} item(s) need attention`,
       allClear: "No urgent items",
+      "closeout.title": "Cycle closeout",
+      "closeout.description": "Summarize this cycle.",
+      "closeout.needsReview": `${values?.count ?? 0} unresolved item(s)`,
+      "closeout.ready": "Ready for closeout",
+      "closeout.metrics.coverage": "Coverage",
+      "closeout.metrics.underfilled": "Under-filled",
+      "closeout.metrics.pending": "Unresolved",
+      "closeout.metrics.overrides": "Overrides",
+      "closeout.metrics.lateAbsences": "Late absences",
+      "closeout.metrics.noShows": "No-shows",
+      "closeout.details.assignments": "Assignments",
+      "closeout.details.assignmentsValue": `${values?.approved ?? 0} approved / ${values?.cancelled ?? 0} cancelled / ${values?.rejected ?? 0} rejected`,
+      "closeout.details.absences": "Absences",
+      "closeout.details.absencesValue": `${values?.approved ?? 0} approved / ${values?.rejected ?? 0} rejected / ${values?.pending ?? 0} pending`,
+      "closeout.details.attendance": "Attendance",
+      "closeout.details.attendanceValue": `${values?.present ?? 0} present / ${values?.noshow ?? 0} no-show / ${values?.unconfirmed ?? 0} unconfirmed`,
+      "closeout.details.changes": "Changes",
+      "closeout.details.changesValue": `${values?.approved ?? 0} approved / ${values?.rejected ?? 0} rejected / ${values?.pending ?? 0} pending`,
+      "closeout.details.waitlist": "Waitlist",
+      "closeout.details.waitlistValue": `${values?.active ?? 0} active / ${values?.accepted ?? 0} accepted / ${values?.expired ?? 0} expired`,
       "policy.title": "Active member policy",
       "policy.description": "Current rules for members.",
       "policy.edit": "Edit policy",
@@ -104,6 +125,7 @@ vi.mock("next-intl", () => ({
 
 vi.mock("../../lib/api/selfService", () => ({
   getSelfServiceCycleStatus: (...args: unknown[]) => mockGetSelfServiceCycleStatus(...args),
+  getSelfServiceCycleCloseout: (...args: unknown[]) => mockGetSelfServiceCycleCloseout(...args),
   getSelfServiceConfig: (...args: unknown[]) => mockGetSelfServiceConfig(...args),
   getAdminWaitlistEntries: (...args: unknown[]) => mockGetAdminWaitlistEntries(...args),
 }));
@@ -155,6 +177,50 @@ describe("SelfServiceOperationsTab", () => {
         },
       ],
     });
+    mockGetSelfServiceCycleCloseout.mockResolvedValue({
+      cycleId: "cycle-1",
+      startsAt: "2026-06-20T00:00:00",
+      endsAt: "2026-06-27T00:00:00",
+      isClosed: false,
+      slotCount: 10,
+      totalCapacity: 20,
+      filledCount: 17,
+      underfilledSlotCount: 3,
+      overfilledSlotCount: 0,
+      approvedAssignments: 17,
+      cancelledAssignments: 2,
+      rejectedRequests: 1,
+      pendingRequests: 2,
+      adminOverrideAssignments: 1,
+      cannotAttendCancellations: 2,
+      lateAbsenceReports: 1,
+      approvedAbsenceReports: 1,
+      rejectedAbsenceReports: 0,
+      pendingAbsenceReports: 2,
+      presentAttendanceRecords: 12,
+      noShowAttendanceRecords: 2,
+      excusedAttendanceRecords: 1,
+      unconfirmedAttendanceCount: 2,
+      approvedChangeRequests: 1,
+      rejectedChangeRequests: 0,
+      pendingChangeRequests: 3,
+      cancelledChangeRequests: 0,
+      acceptedSwapRequests: 1,
+      declinedSwapRequests: 0,
+      pendingSwapRequests: 2,
+      cancelledSwapRequests: 0,
+      expiredSwapRequests: 0,
+      activeWaitlistEntries: 4,
+      acceptedWaitlistEntries: 1,
+      declinedWaitlistEntries: 0,
+      expiredWaitlistEntries: 1,
+      removedWaitlistEntries: 0,
+      approvedSpecialLeaveRequests: 0,
+      rejectedSpecialLeaveRequests: 0,
+      pendingSpecialLeaveRequests: 1,
+      cancelledSpecialLeaveRequests: 0,
+      issueCount: 15,
+    });
     mockGetSelfServiceConfig.mockResolvedValue({
       id: "config-1",
       groupId: "group-1",
@@ -196,6 +262,10 @@ describe("SelfServiceOperationsTab", () => {
     render(<SelfServiceOperationsTab spaceId="space-1" groupId="group-1" onNavigate={onNavigate} />);
 
     expect(await screen.findByText("15 item(s) need attention")).toBeInTheDocument();
+    expect(screen.getByText("Cycle closeout")).toBeInTheDocument();
+    expect(screen.getByText("15 unresolved item(s)")).toBeInTheDocument();
+    expect(screen.getByText("17/20")).toBeInTheDocument();
+    expect(screen.getByText("12 present / 2 no-show / 2 unconfirmed")).toBeInTheDocument();
     expect(screen.getByText("6 pending review item(s)")).toBeInTheDocument();
     expect(screen.getByText("4 active waitlist item(s)")).toBeInTheDocument();
     expect(screen.getByText("2 pending swap proposal(s)")).toBeInTheDocument();
@@ -214,7 +284,7 @@ describe("SelfServiceOperationsTab", () => {
     expect(screen.getByText("1-5 per cycle")).toBeInTheDocument();
     expect(screen.getByText("2 inside 24h")).toBeInTheDocument();
     expect(screen.getByText("Cancel 12h / offer 45m")).toBeInTheDocument();
-    expect(screen.getByText("Changes")).toBeInTheDocument();
+    expect(screen.getAllByText("Changes").length).toBeGreaterThan(0);
     expect(screen.getByText("Off")).toBeInTheDocument();
     expect(screen.getByText("Set policy and templates.")).toBeInTheDocument();
     expect(screen.getByText("Pick shifts and waitlist")).toBeInTheDocument();
@@ -259,6 +329,7 @@ describe("SelfServiceOperationsTab", () => {
 
     await waitFor(() => {
       expect(mockGetSelfServiceCycleStatus).toHaveBeenCalledTimes(2);
+      expect(mockGetSelfServiceCycleCloseout).toHaveBeenCalledTimes(2);
       expect(mockGetSelfServiceConfig).toHaveBeenCalledTimes(2);
     });
   });

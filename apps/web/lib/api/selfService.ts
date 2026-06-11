@@ -137,6 +137,10 @@ export interface SelfServiceCycleCloseoutDto {
   approvedAbsenceReports: number;
   rejectedAbsenceReports: number;
   pendingAbsenceReports: number;
+  presentAttendanceRecords: number;
+  noShowAttendanceRecords: number;
+  excusedAttendanceRecords: number;
+  unconfirmedAttendanceCount: number;
   approvedChangeRequests: number;
   rejectedChangeRequests: number;
   pendingChangeRequests: number;
@@ -230,6 +234,20 @@ export interface CannotAttendResponse {
   maxAbsenceReports: number;
   lateReportsUsed: number;
   maxLateReports: number;
+}
+
+export type ShiftAttendanceStatus = "Present" | "NoShow" | "Excused";
+
+export interface ShiftAttendanceDto {
+  id: string;
+  shiftRequestId: string;
+  personId: string;
+  shiftSlotId: string;
+  schedulingCycleId: string;
+  status: ShiftAttendanceStatus;
+  note: string | null;
+  recordedByUserId: string;
+  recordedAt: string;
 }
 
 export interface AbsenceReportDto {
@@ -546,6 +564,20 @@ export async function getAdminShiftRequests(
   const { data } = await apiClient.get(
     `/spaces/${spaceId}/groups/${groupId}/shift-requests/admin`,
     { params: { ...(status ? { status } : {}), ...(limit ? { limit } : {}) } }
+  );
+  return data;
+}
+
+export async function recordShiftAttendance(
+  spaceId: string,
+  groupId: string,
+  shiftRequestId: string,
+  status: ShiftAttendanceStatus,
+  note?: string
+): Promise<ShiftAttendanceDto> {
+  const { data } = await apiClient.post(
+    `/spaces/${spaceId}/groups/${groupId}/shift-requests/admin/${shiftRequestId}/attendance`,
+    { status, note }
   );
   return data;
 }

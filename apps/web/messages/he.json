@@ -2521,13 +2521,15 @@
           "pending": "Unresolved",
           "overrides": "Overrides",
           "lateAbsences": "Late absences",
-          "swaps": "Accepted swaps"
+          "noShows": "No-shows"
         },
         "details": {
           "assignments": "Assignments",
           "assignmentsValue": "{approved} approved / {cancelled} cancelled / {rejected} rejected",
           "absences": "Absences",
           "absencesValue": "{approved} approved / {rejected} rejected / {pending} pending",
+          "attendance": "Attendance",
+          "attendanceValue": "{present} present / {noshow} no-show / {unconfirmed} unconfirmed",
           "changes": "Changes",
           "changesValue": "{approved} approved / {rejected} rejected / {pending} pending",
           "waitlist": "Waitlist",

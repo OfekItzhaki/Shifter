@@ -45,7 +45,7 @@ const CLOSEOUT_METRICS = [
   { key: "pending", valueKey: "issueCount", totalKey: undefined },
   { key: "overrides", valueKey: "adminOverrideAssignments", totalKey: undefined },
   { key: "lateAbsences", valueKey: "lateAbsenceReports", totalKey: undefined },
-  { key: "swaps", valueKey: "acceptedSwapRequests", totalKey: undefined },
+  { key: "noShows", valueKey: "noShowAttendanceRecords", totalKey: undefined },
 ] satisfies readonly {
   key: string;
   valueKey: keyof SelfServiceCycleCloseoutDto;
@@ -385,6 +385,16 @@ export default function SelfServiceOperationsTab({
                 approved: closeout.approvedAbsenceReports,
                 rejected: closeout.rejectedAbsenceReports,
                 pending: closeout.pendingAbsenceReports,
+              })}
+          />
+          <CloseoutDetail
+            label={t("closeout.details.attendance")}
+            value={statusLoading || !closeout
+              ? "-"
+              : t("closeout.details.attendanceValue", {
+                present: closeout.presentAttendanceRecords,
+                noshow: closeout.noShowAttendanceRecords,
+                unconfirmed: closeout.unconfirmedAttendanceCount,
               })}
           />
           <CloseoutDetail
