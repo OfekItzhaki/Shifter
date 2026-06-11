@@ -14,7 +14,8 @@ public record GetAvailableSlotsQuery(
     Guid SpaceId,
     Guid GroupId,
     Guid SchedulingCycleId,
-    Guid UserId) : IRequest<SlotAvailabilityResult>;
+    Guid UserId,
+    bool IncludeFullSlots = false) : IRequest<SlotAvailabilityResult>;
 
 public class GetAvailableSlotsQueryHandler : IRequestHandler<GetAvailableSlotsQuery, SlotAvailabilityResult>
 {
@@ -42,7 +43,12 @@ public class GetAvailableSlotsQueryHandler : IRequestHandler<GetAvailableSlotsQu
         if (person is null)
             return new SlotAvailabilityResult([], false, null);
 
-        return await _availabilityEngine.GetAvailableSlotsAsync(person.Id, req.GroupId, req.SchedulingCycleId, ct);
+        return await _availabilityEngine.GetAvailableSlotsAsync(
+            person.Id,
+            req.GroupId,
+            req.SchedulingCycleId,
+            ct,
+            includeFullSlots: req.IncludeFullSlots);
     }
 }
 

@@ -155,6 +155,31 @@ public class SlotAvailabilityEngineTests
     }
 
     [Fact]
+    public async Task GetAvailableSlotsAsync_IncludesFullSlots_WhenRequestedForWaitlistBrowse()
+    {
+        using var db = CreateDb();
+        var (spaceId, groupId, cycleId, taskId) = SeedBaseData(db);
+
+        var date = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(8));
+        var fullSlot = AddSlot(db, spaceId, groupId, taskId, cycleId, date,
+            new TimeOnly(8, 0), new TimeOnly(16, 0), capacity: 2, fillCount: 2);
+        var availableSlot = AddSlot(db, spaceId, groupId, taskId, cycleId, date,
+            new TimeOnly(16, 0), new TimeOnly(22, 0), capacity: 3, fillCount: 1);
+
+        var engine = new SlotAvailabilityEngine(db);
+        var result = await engine.GetAvailableSlotsAsync(
+            Guid.NewGuid(),
+            groupId,
+            cycleId,
+            includeFullSlots: true);
+
+        result.Slots.Select(s => s.ShiftSlotId).Should()
+            .Contain(fullSlot.Id)
+            .And.Contain(availableSlot.Id);
+        result.Slots.Single(s => s.ShiftSlotId == fullSlot.Id).CurrentFillCount.Should().Be(2);
+    }
+
+    [Fact]
     public async Task GetAvailableSlotsAsync_ExcludesStartedSlots()
     {
         using var db = CreateDb();

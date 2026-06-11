@@ -6,8 +6,8 @@ using Microsoft.EntityFrameworkCore;
 namespace Jobuler.Application.Scheduling.SelfService;
 
 /// <summary>
-/// Queries available shift slots for a member within a scheduling cycle.
-/// Filters out full slots, slots already claimed by the member, and slots
+/// Queries safe shift slots for a member within a scheduling cycle.
+/// Filters out full slots unless requested, slots already claimed by the member, and slots
 /// that overlap or violate rest windows against the member's approved shifts.
 /// Results are sorted by date ascending, then start time ascending.
 /// </summary>
@@ -22,7 +22,11 @@ public class SlotAvailabilityEngine : ISlotAvailabilityEngine
 
     /// <inheritdoc />
     public async Task<SlotAvailabilityResult> GetAvailableSlotsAsync(
-        Guid personId, Guid groupId, Guid schedulingCycleId, CancellationToken ct = default)
+        Guid personId,
+        Guid groupId,
+        Guid schedulingCycleId,
+        CancellationToken ct = default,
+        bool includeFullSlots = false)
     {
         // Load the scheduling cycle
         var cycle = await _db.SchedulingCycles
@@ -37,13 +41,20 @@ public class SlotAvailabilityEngine : ISlotAvailabilityEngine
         var isReadOnly = !cycle.IsRequestWindowOpen(utcNow);
         string? message = isReadOnly ? "Requests are not currently accepted." : null;
 
-        // Load all open slots for this cycle with remaining capacity
-        var slotsWithTasks = await _db.ShiftSlots
+        // Load all open slots for this cycle. Member-facing browse can include full slots
+        // as waitlist candidates, while admin target-slot callers keep only open capacity.
+        var slotQuery = _db.ShiftSlots
             .AsNoTracking()
             .Where(s => s.SchedulingCycleId == schedulingCycleId
                         && s.GroupId == groupId
-                        && s.Status == ShiftSlotStatus.Open
-                        && s.CurrentFillCount < s.Capacity)
+                        && s.Status == ShiftSlotStatus.Open);
+
+        if (!includeFullSlots)
+        {
+            slotQuery = slotQuery.Where(s => s.CurrentFillCount < s.Capacity);
+        }
+
+        var slotsWithTasks = await slotQuery
             .Join(
                 _db.GroupTasks.AsNoTracking(),
                 slot => slot.GroupTaskId,

@@ -68,7 +68,8 @@ public class ShiftSlotsController : ControllerBase
 
     /// <summary>
     /// Get available shift slots for the current member in a scheduling cycle.
-    /// Returns slots with remaining capacity, excluding already-claimed and overlapping slots.
+    /// Returns safe slots for picking, plus safe full slots that can be joined through the waitlist.
+    /// Excludes already-claimed and overlapping slots.
     /// Includes a read-only flag when the request window is closed.
     /// </summary>
     [HttpGet("available")]
@@ -93,7 +94,13 @@ public class ShiftSlotsController : ControllerBase
         }
 
         var result = await _mediator.Send(
-            new GetAvailableSlotsQuery(spaceId, groupId, resolvedCycleId, CurrentUserId), ct);
+            new GetAvailableSlotsQuery(
+                spaceId,
+                groupId,
+                resolvedCycleId,
+                CurrentUserId,
+                IncludeFullSlots: true),
+            ct);
 
         var cycle = await _db.SchedulingCycles
             .AsNoTracking()
