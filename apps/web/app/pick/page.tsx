@@ -13,6 +13,7 @@ import {
   clearLastGroup,
   resolveLastGroup,
 } from "@/lib/utils/pickLastGroup";
+import { mapMyShiftsNavigationToPickerTab } from "@/lib/utils/pickTabBridge";
 import PickerHeader from "@/components/pick/PickerHeader";
 import GroupSelector from "@/components/pick/GroupSelector";
 import PickerTabs, { type PickerTab } from "@/components/pick/PickerTabs";
@@ -130,6 +131,10 @@ export default function PickPage() {
     setActiveTab(tab);
   }, []);
 
+  const handleMyShiftsNavigate = useCallback((target: "available-slots" | "waitlist") => {
+    setActiveTab(mapMyShiftsNavigationToPickerTab(target));
+  }, []);
+
   const loadMembers = useCallback(async () => {
     if (!currentSpaceId || !selectedGroupId) return;
 
@@ -220,6 +225,7 @@ export default function PickPage() {
                     key={`my-shifts-${refreshKey}`}
                     spaceId={currentSpaceId}
                     groupId={selectedGroupId}
+                    onNavigate={handleMyShiftsNavigate}
                   />
                 )}
                 {activeTab === "waitlist" && (

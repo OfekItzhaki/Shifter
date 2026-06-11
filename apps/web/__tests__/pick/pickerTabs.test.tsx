@@ -17,6 +17,7 @@ import PickerTabs from "../../components/pick/PickerTabs";
 vi.mock("next-intl", () => ({
   useTranslations: () => (key: string) => {
     const translations: Record<string, string> = {
+      "tabs.status": "Status",
       "tabs.slots": "Available",
       "tabs.myShifts": "My Shifts",
       "tabs.waitlist": "Waitlist",
@@ -36,6 +37,7 @@ describe("PickerTabs (Task 7.1)", () => {
   it("renders tab buttons with correct labels", () => {
     render(<PickerTabs {...defaultProps} />);
 
+    expect(screen.getByText("Status")).toBeInTheDocument();
     expect(screen.getByText("Available")).toBeInTheDocument();
     expect(screen.getByText("My Shifts")).toBeInTheDocument();
     expect(screen.getByText("Waitlist")).toBeInTheDocument();
@@ -47,57 +49,72 @@ describe("PickerTabs (Task 7.1)", () => {
 
     expect(screen.getByRole("tablist")).toBeInTheDocument();
     const tabs = screen.getAllByRole("tab");
-    expect(tabs).toHaveLength(4);
+    expect(tabs).toHaveLength(5);
   });
 
   it("marks the active tab with aria-selected=true", () => {
     render(<PickerTabs {...defaultProps} activeTab="slots" />);
 
-    const tabs = screen.getAllByRole("tab");
-    expect(tabs[0]).toHaveAttribute("aria-selected", "true");
-    expect(tabs[1]).toHaveAttribute("aria-selected", "false");
-    expect(tabs[2]).toHaveAttribute("aria-selected", "false");
-    expect(tabs[3]).toHaveAttribute("aria-selected", "false");
+    expect(screen.getByRole("tab", { name: "Status" })).toHaveAttribute("aria-selected", "false");
+    expect(screen.getByRole("tab", { name: "Available" })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("tab", { name: "My Shifts" })).toHaveAttribute("aria-selected", "false");
+    expect(screen.getByRole("tab", { name: "Waitlist" })).toHaveAttribute("aria-selected", "false");
+    expect(screen.getByRole("tab", { name: "Swaps" })).toHaveAttribute("aria-selected", "false");
+  });
+
+  it("marks status tab as active when activeTab is status", () => {
+    render(<PickerTabs {...defaultProps} activeTab="status" />);
+
+    expect(screen.getByRole("tab", { name: "Status" })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("tab", { name: "Available" })).toHaveAttribute("aria-selected", "false");
   });
 
   it("marks my-shifts tab as active when activeTab is my-shifts", () => {
     render(<PickerTabs {...defaultProps} activeTab="my-shifts" />);
 
-    const tabs = screen.getAllByRole("tab");
-    expect(tabs[0]).toHaveAttribute("aria-selected", "false");
-    expect(tabs[1]).toHaveAttribute("aria-selected", "true");
-    expect(tabs[2]).toHaveAttribute("aria-selected", "false");
-    expect(tabs[3]).toHaveAttribute("aria-selected", "false");
+    expect(screen.getByRole("tab", { name: "Available" })).toHaveAttribute("aria-selected", "false");
+    expect(screen.getByRole("tab", { name: "My Shifts" })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("tab", { name: "Waitlist" })).toHaveAttribute("aria-selected", "false");
+    expect(screen.getByRole("tab", { name: "Swaps" })).toHaveAttribute("aria-selected", "false");
   });
 
   it("marks waitlist tab as active when activeTab is waitlist", () => {
     render(<PickerTabs {...defaultProps} activeTab="waitlist" />);
 
-    const tabs = screen.getAllByRole("tab");
-    expect(tabs[0]).toHaveAttribute("aria-selected", "false");
-    expect(tabs[1]).toHaveAttribute("aria-selected", "false");
-    expect(tabs[2]).toHaveAttribute("aria-selected", "true");
-    expect(tabs[3]).toHaveAttribute("aria-selected", "false");
+    expect(screen.getByRole("tab", { name: "Available" })).toHaveAttribute("aria-selected", "false");
+    expect(screen.getByRole("tab", { name: "My Shifts" })).toHaveAttribute("aria-selected", "false");
+    expect(screen.getByRole("tab", { name: "Waitlist" })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("tab", { name: "Swaps" })).toHaveAttribute("aria-selected", "false");
   });
 
   it("marks swaps tab as active when activeTab is swaps", () => {
     render(<PickerTabs {...defaultProps} activeTab="swaps" />);
 
-    const tabs = screen.getAllByRole("tab");
-    expect(tabs[0]).toHaveAttribute("aria-selected", "false");
-    expect(tabs[1]).toHaveAttribute("aria-selected", "false");
-    expect(tabs[2]).toHaveAttribute("aria-selected", "false");
-    expect(tabs[3]).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("tab", { name: "Available" })).toHaveAttribute("aria-selected", "false");
+    expect(screen.getByRole("tab", { name: "My Shifts" })).toHaveAttribute("aria-selected", "false");
+    expect(screen.getByRole("tab", { name: "Waitlist" })).toHaveAttribute("aria-selected", "false");
+    expect(screen.getByRole("tab", { name: "Swaps" })).toHaveAttribute("aria-selected", "true");
   });
 
   it("highlights active tab with distinct styling", () => {
     render(<PickerTabs {...defaultProps} activeTab="slots" />);
 
-    const tabs = screen.getAllByRole("tab");
-    expect(tabs[0].className).toContain("bg-white");
-    expect(tabs[0].className).toContain("text-slate-900");
-    expect(tabs[1].className).toContain("text-slate-500");
-    expect(tabs[1].className).not.toContain("bg-white");
+    const activeTab = screen.getByRole("tab", { name: "Available" });
+    const inactiveTab = screen.getByRole("tab", { name: "My Shifts" });
+    expect(activeTab.className).toContain("bg-white");
+    expect(activeTab.className).toContain("text-slate-900");
+    expect(inactiveTab.className).toContain("text-slate-500");
+    expect(inactiveTab.className).not.toContain("bg-white");
+  });
+
+  it("calls onTabChange with 'status' when status tab is clicked", () => {
+    const onTabChange = vi.fn();
+    render(<PickerTabs activeTab="slots" onTabChange={onTabChange} />);
+
+    fireEvent.click(screen.getByText("Status"));
+
+    expect(onTabChange).toHaveBeenCalledTimes(1);
+    expect(onTabChange).toHaveBeenCalledWith("status");
   });
 
   it("calls onTabChange with 'slots' when slots tab is clicked", () => {

@@ -40,7 +40,7 @@ export default function PickerTabs({ activeTab, onTabChange }: PickerTabsProps) 
           aria-selected={activeTab === tab.id}
           aria-controls={`panel-${tab.id}`}
           onClick={() => onTabChange(tab.id)}
-          className={`min-h-[44px] min-w-fit flex-1 px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all ${
+          className={`min-h-[44px] min-w-[44px] flex-1 px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all ${
             activeTab === tab.id
               ? "bg-white text-slate-900 shadow-sm"
               : "text-slate-500 hover:text-slate-700"
