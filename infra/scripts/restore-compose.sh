@@ -5,6 +5,9 @@
 #   CONFIRM=restore DB_BACKUP=/opt/shifter/backups/postgres_shifter_20260612_030000.dump \
 #     SHIFTER_DIR=/opt/shifter /opt/shifter/infra/scripts/restore-compose.sh
 #
+#   DRY_RUN=1 DB_BACKUP=/opt/shifter/backups/postgres_shifter_20260612_030000.dump \
+#     SHIFTER_DIR=/opt/shifter /opt/shifter/infra/scripts/restore-compose.sh
+#
 #   CONFIRM=restore DB_BACKUP=/opt/shifter/backups/postgres_shifter_20260612_030000.dump \
 #     UPLOADS_BACKUP=/opt/shifter/backups/uploads_shifter_20260612_030000.tar.gz \
 #     RESTORE_UPLOADS=1 /opt/shifter/infra/scripts/restore-compose.sh
@@ -18,10 +21,12 @@ DB_BACKUP="${DB_BACKUP:-${1:-}}"
 UPLOADS_BACKUP="${UPLOADS_BACKUP:-${2:-}}"
 RESTORE_UPLOADS="${RESTORE_UPLOADS:-0}"
 CONFIRM="${CONFIRM:-}"
+DRY_RUN="${DRY_RUN:-0}"
 
-if [ "$CONFIRM" != "restore" ]; then
+if [ "$DRY_RUN" != "1" ] && [ "$CONFIRM" != "restore" ]; then
   echo "Refusing to restore without CONFIRM=restore." >&2
   echo "This operation replaces the target PostgreSQL database and, when RESTORE_UPLOADS=1, the uploads volume." >&2
+  echo "Use DRY_RUN=1 to validate inputs without changing the deployment." >&2
   exit 1
 fi
 
@@ -60,6 +65,25 @@ if [ -z "$POSTGRES_DB" ] || [ -z "$POSTGRES_USER" ]; then
 fi
 
 cd "$COMPOSE_DIR"
+
+if [ "$DRY_RUN" = "1" ]; then
+  echo "[$(date)] Restore dry run passed."
+  echo "  Compose project: $COMPOSE_PROJECT_NAME"
+  echo "  Compose dir:     $COMPOSE_DIR"
+  echo "  Env file:        $ENV_FILE"
+  echo "  Database:        $POSTGRES_DB"
+  echo "  Database user:   $POSTGRES_USER"
+  echo "  DB backup:       $DB_BACKUP"
+  if [ "$RESTORE_UPLOADS" = "1" ]; then
+    echo "  Uploads backup:  $UPLOADS_BACKUP"
+    echo "  Uploads volume:  ${COMPOSE_PROJECT_NAME}_uploads_data"
+  else
+    echo "  Uploads restore: skipped"
+  fi
+  docker compose --project-name "$COMPOSE_PROJECT_NAME" config --quiet
+  echo "[$(date)] Compose config is valid. No containers, database, or volumes were changed."
+  exit 0
+fi
 
 echo "[$(date)] Ensuring PostgreSQL is running for project '$COMPOSE_PROJECT_NAME'..."
 docker compose --project-name "$COMPOSE_PROJECT_NAME" up -d postgres

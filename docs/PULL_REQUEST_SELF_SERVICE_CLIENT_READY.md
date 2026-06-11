@@ -45,8 +45,9 @@ packaging, and self-service export package validation readiness.
 - Wires public frontend deployment variables through the web Docker build and
   runtime environment, including legal/support email, Crisp, PostHog, Sentry,
   VAPID, app version, and the public API URL.
-- Adds `infra/scripts/restore-compose.sh` and restore runbook docs for
-  customer-hosted PostgreSQL dumps and optional uploads-volume archives.
+- Adds `infra/scripts/restore-compose.sh` with `DRY_RUN=1` preflight support and
+  restore runbook docs for customer-hosted PostgreSQL dumps and optional
+  uploads-volume archives.
 
 ## Verification
 

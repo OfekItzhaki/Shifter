@@ -110,6 +110,16 @@ restore one backup into staging and verify login, scheduling, file uploads, and
 billing-disabled behavior:
 
 ```bash
+DRY_RUN=1 \
+DB_BACKUP=/opt/shifter/backups/postgres_shifter-production_20260612_030000.dump \
+UPLOADS_BACKUP=/opt/shifter/backups/uploads_shifter-production_20260612_030000.tar.gz \
+RESTORE_UPLOADS=1 \
+SHIFTER_DIR=/opt/shifter-staging \
+COMPOSE_PROJECT_NAME=shifter-staging \
+/opt/shifter-staging/infra/scripts/restore-compose.sh
+```
+
+```bash
 CONFIRM=restore \
 DB_BACKUP=/opt/shifter/backups/postgres_shifter-production_20260612_030000.dump \
 UPLOADS_BACKUP=/opt/shifter/backups/uploads_shifter-production_20260612_030000.tar.gz \

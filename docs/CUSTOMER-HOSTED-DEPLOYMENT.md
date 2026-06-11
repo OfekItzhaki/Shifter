@@ -218,6 +218,13 @@ Restore requires an explicit confirmation flag and should be run during a
 maintenance window:
 
 ```bash
+DRY_RUN=1 \
+DB_BACKUP=/opt/shifter/backups/postgres_shifter_20260612_030000.dump \
+SHIFTER_DIR=/opt/shifter \
+bash /opt/shifter/infra/scripts/restore-compose.sh
+```
+
+```bash
 CONFIRM=restore \
 DB_BACKUP=/opt/shifter/backups/postgres_shifter_20260612_030000.dump \
 SHIFTER_DIR=/opt/shifter \
@@ -239,6 +246,8 @@ Recommended production policy:
 
 - Run backups at least daily.
 - Copy backups to customer-owned off-host storage.
+- Run `DRY_RUN=1` before any restore to validate the env file, backup paths,
+  Compose project, and upload-volume plan without changing data.
 - Test restore before go-live and once per quarter.
 - Keep database dumps and uploaded files under the same retention policy.
 - If using an external S3-compatible bucket instead of local uploads, back up
