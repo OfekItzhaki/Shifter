@@ -88,6 +88,47 @@ public class SelfServiceNotificationTests
     }
 
     [Fact]
+    public async Task ReportCannotAttendAsync_AuditFailure_DoesNotProcessWaitlistOrNotifyAdmins()
+    {
+        using var db = CreateDb();
+        var notifications = Substitute.For<INotificationService>();
+        var waitlistService = Substitute.For<IWaitlistService>();
+        var audit = CreateFailingAuditLogger();
+        var (spaceId, groupId, cycleId, taskId, _) = SeedBaseData(db);
+
+        var person = Person.Create(spaceId, "Alex Member", linkedUserId: Guid.NewGuid());
+        var slot = AddSlot(db, spaceId, groupId, taskId, cycleId, daysFromNow: 2);
+        slot.IncrementFillCount();
+
+        var request = ShiftRequest.Create(spaceId, slot.Id, person.Id, groupId, cycleId);
+        request.Approve();
+
+        db.People.Add(person);
+        db.ShiftRequests.Add(request);
+        await db.SaveChangesAsync();
+
+        var service = new ShiftRequestService(
+            db,
+            Substitute.For<ISlotLockService>(),
+            TimeProvider.System,
+            NullLogger<ShiftRequestService>.Instance,
+            notifications,
+            Substitute.For<IPushNotificationSender>(),
+            audit,
+            waitlistService);
+
+        var act = () => service.ReportCannotAttendAsync(person.Id, request.Id, "Sick");
+
+        await act.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("Audit failed.");
+
+        await waitlistService.DidNotReceiveWithAnyArgs()
+            .ProcessSlotReleasedAsync(default, default);
+        await notifications.DidNotReceiveWithAnyArgs()
+            .NotifySpaceAdminsAsync(default, default!, default!, default!, default!, default, default);
+    }
+
+    [Fact]
     public async Task ReportCannotAttendAsync_RejectsWhenRequestSlotMetadataDoesNotMatch()
     {
         using var db = CreateDb();
@@ -267,6 +308,47 @@ public class SelfServiceNotificationTests
                 && json.Contains("\"cancellation_reason\":\"Family issue\"")),
             Arg.Is<string?>(ipAddress => ipAddress == null),
             Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task CancelRequestAsync_AuditFailure_DoesNotProcessWaitlistOrNotifyAdmins()
+    {
+        using var db = CreateDb();
+        var notifications = Substitute.For<INotificationService>();
+        var waitlistService = Substitute.For<IWaitlistService>();
+        var audit = CreateFailingAuditLogger();
+        var (spaceId, groupId, cycleId, taskId, _) = SeedBaseData(db);
+
+        var person = Person.Create(spaceId, "Alex Member", linkedUserId: Guid.NewGuid());
+        var slot = AddSlot(db, spaceId, groupId, taskId, cycleId, daysFromNow: 2);
+        slot.IncrementFillCount();
+
+        var request = ShiftRequest.Create(spaceId, slot.Id, person.Id, groupId, cycleId);
+        request.Approve();
+
+        db.People.Add(person);
+        db.ShiftRequests.Add(request);
+        await db.SaveChangesAsync();
+
+        var service = new ShiftRequestService(
+            db,
+            Substitute.For<ISlotLockService>(),
+            TimeProvider.System,
+            NullLogger<ShiftRequestService>.Instance,
+            notifications,
+            Substitute.For<IPushNotificationSender>(),
+            audit,
+            waitlistService);
+
+        var act = () => service.CancelRequestAsync(person.Id, request.Id, "Family issue");
+
+        await act.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("Audit failed.");
+
+        await waitlistService.DidNotReceiveWithAnyArgs()
+            .ProcessSlotReleasedAsync(default, default);
+        await notifications.DidNotReceiveWithAnyArgs()
+            .NotifySpaceAdminsAsync(default, default!, default!, default!, default!, default, default);
     }
 
     [Fact]
@@ -1481,6 +1563,23 @@ public class SelfServiceNotificationTests
                 Arg.Any<string?>(),
                 Arg.Any<CancellationToken>())
             .Returns(Task.CompletedTask);
+        return audit;
+    }
+
+    private static IAuditLogger CreateFailingAuditLogger()
+    {
+        var audit = Substitute.For<IAuditLogger>();
+        audit.LogAsync(
+                Arg.Any<Guid?>(),
+                Arg.Any<Guid?>(),
+                Arg.Any<string>(),
+                Arg.Any<string?>(),
+                Arg.Any<Guid?>(),
+                Arg.Any<string?>(),
+                Arg.Any<string?>(),
+                Arg.Any<string?>(),
+                Arg.Any<CancellationToken>())
+            .Returns<Task>(_ => throw new InvalidOperationException("Audit failed."));
         return audit;
     }
 

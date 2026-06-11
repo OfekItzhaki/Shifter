@@ -325,18 +325,6 @@ public class ShiftRequestService : IShiftRequestService
 
                 await _db.SaveChangesAsync(ct);
 
-                // Req 8.3: Trigger waitlist processing if slot now has capacity
-                if (_waitlistService is not null)
-                {
-                    await _waitlistService.ProcessSlotReleasedAsync(slot.Id, ct);
-                }
-                else
-                {
-                    _logger.LogDebug(
-                        "Waitlist service not available. Skipping waitlist processing for slot {SlotId} after cancellation.",
-                        slot.Id);
-                }
-
                 // Req 8.4: Check if member is now under-scheduled
                 var minShifts = config?.MinShiftsPerCycle ?? 0;
                 if (minShifts > 0)
@@ -387,6 +375,19 @@ public class ShiftRequestService : IShiftRequestService
                         waitlist_processing_requested = _waitlistService is not null
                     }),
                     ct: ct);
+
+                // Req 8.3: Trigger waitlist processing if slot now has capacity.
+                // Keep this after audit so an audit failure cannot cascade a rolled-back release.
+                if (_waitlistService is not null)
+                {
+                    await _waitlistService.ProcessSlotReleasedAsync(slot.Id, ct);
+                }
+                else
+                {
+                    _logger.LogDebug(
+                        "Waitlist service not available. Skipping waitlist processing for slot {SlotId} after cancellation.",
+                        slot.Id);
+                }
 
                 await transaction.CommitAsync(ct);
 
@@ -543,11 +544,6 @@ public class ShiftRequestService : IShiftRequestService
 
                 await _db.SaveChangesAsync(ct);
 
-                if (_waitlistService is not null)
-                {
-                    await _waitlistService.ProcessSlotReleasedAsync(slot.Id, ct);
-                }
-
                 await _audit.LogAsync(
                     shiftRequest.SpaceId,
                     actorUserId,
@@ -581,6 +577,12 @@ public class ShiftRequestService : IShiftRequestService
                         waitlist_processing_requested = _waitlistService is not null
                     }),
                     ct: ct);
+
+                // Keep waitlist cascade after audit so audit failure cannot offer a rolled-back seat.
+                if (_waitlistService is not null)
+                {
+                    await _waitlistService.ProcessSlotReleasedAsync(slot.Id, ct);
+                }
 
                 await transaction.CommitAsync(ct);
 
