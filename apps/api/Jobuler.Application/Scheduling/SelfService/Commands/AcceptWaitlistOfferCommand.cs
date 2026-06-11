@@ -41,17 +41,20 @@ public class AcceptWaitlistOfferCommandHandler : IRequestHandler<AcceptWaitlistO
     private readonly AppDbContext _db;
     private readonly IWaitlistService _waitlistService;
     private readonly IPushNotificationSender _pushSender;
+    private readonly INotificationService _notificationService;
     private readonly ILogger<AcceptWaitlistOfferCommandHandler> _logger;
 
     public AcceptWaitlistOfferCommandHandler(
         AppDbContext db,
         IWaitlistService waitlistService,
         IPushNotificationSender pushSender,
+        INotificationService notificationService,
         ILogger<AcceptWaitlistOfferCommandHandler> logger)
     {
         _db = db;
         _waitlistService = waitlistService;
         _pushSender = pushSender;
+        _notificationService = notificationService;
         _logger = logger;
     }
 
@@ -152,6 +155,7 @@ public class AcceptWaitlistOfferCommandHandler : IRequestHandler<AcceptWaitlistO
 
         // Req 13.1: Send notification for approved request (via waitlist acceptance)
         await SendWaitlistAcceptedNotificationAsync(request.PersonId, slot, shiftRequest.Id, ct);
+        await NotifyAdminsWaitlistAcceptedAsync(request.PersonId, slot, shiftRequest.Id, ct);
 
         return new AcceptWaitlistOfferResult(
             Success: true,
@@ -231,6 +235,52 @@ public class AcceptWaitlistOfferCommandHandler : IRequestHandler<AcceptWaitlistO
         {
             _logger.LogError(ex,
                 "Failed to send waitlist accepted notification for person {PersonId}, slot {SlotId}",
+                personId, slot.Id);
+        }
+    }
+
+    private async Task NotifyAdminsWaitlistAcceptedAsync(
+        Guid personId, ShiftSlot slot, Guid shiftRequestId, CancellationToken ct)
+    {
+        try
+        {
+            var personName = await _db.People
+                .AsNoTracking()
+                .Where(p => p.Id == personId && p.SpaceId == slot.SpaceId)
+                .Select(p => p.DisplayName ?? p.FullName)
+                .FirstOrDefaultAsync(ct) ?? "Member";
+
+            var taskName = await _db.GroupTasks
+                .AsNoTracking()
+                .Where(t => t.Id == slot.GroupTaskId)
+                .Select(t => t.Name)
+                .FirstOrDefaultAsync(ct) ?? "Shift";
+
+            await _notificationService.NotifySpaceAdminsAsync(
+                slot.SpaceId,
+                "self_service.waitlist_accepted",
+                "Waitlist Offer Accepted",
+                $"{personName} accepted a waitlist offer for {taskName} on {slot.Date:MMM dd} ({slot.StartTime:HH:mm}-{slot.EndTime:HH:mm}).",
+                JsonSerializer.Serialize(new
+                {
+                    shiftRequestId,
+                    shiftSlotId = slot.Id,
+                    personId,
+                    personName,
+                    groupId = slot.GroupId,
+                    schedulingCycleId = slot.SchedulingCycleId,
+                    date = slot.Date,
+                    startTime = slot.StartTime.ToString("HH:mm"),
+                    endTime = slot.EndTime.ToString("HH:mm"),
+                    taskName
+                }),
+                groupId: slot.GroupId,
+                ct);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex,
+                "Failed to notify admins about waitlist acceptance for person {PersonId}, slot {SlotId}",
                 personId, slot.Id);
         }
     }

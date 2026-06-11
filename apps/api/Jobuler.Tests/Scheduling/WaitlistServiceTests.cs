@@ -151,10 +151,12 @@ public class WaitlistServiceTests
 
         var waitlistService = Substitute.For<IWaitlistService>();
         var pushSender = Substitute.For<IPushNotificationSender>();
+        var notificationService = Substitute.For<INotificationService>();
         var handler = new AcceptWaitlistOfferCommandHandler(
             db,
             waitlistService,
             pushSender,
+            notificationService,
             NullLogger<AcceptWaitlistOfferCommandHandler>.Instance);
 
         var result = await handler.Handle(
@@ -181,6 +183,14 @@ public class WaitlistServiceTests
             .ProcessSlotReleasedAsync(default, default);
         await pushSender.Received(1)
             .SendPushToUserAsync(offeredPerson.LinkedUserId!.Value, spaceId, Arg.Any<PushPayload>(), Arg.Any<CancellationToken>());
+        await notificationService.Received(1).NotifySpaceAdminsAsync(
+            spaceId,
+            "self_service.waitlist_accepted",
+            "Waitlist Offer Accepted",
+            Arg.Is<string>(body => body.Contains("Offered") && body.Contains("Guard")),
+            Arg.Is<string>(metadata => metadata.Contains(result.ShiftRequestId!.Value.ToString()) && metadata.Contains(slot.Id.ToString())),
+            groupId,
+            Arg.Any<CancellationToken>());
     }
 
     [Fact]
