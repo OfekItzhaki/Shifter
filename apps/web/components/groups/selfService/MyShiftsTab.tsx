@@ -364,6 +364,7 @@ export default function MyShiftsTab({ spaceId, groupId, onNavigate }: MyShiftsTa
 
     setSubmittingChange(true);
     setChangeError(null);
+    setLeaveSuccess(null);
 
     try {
       await submitShiftChangeRequest(
@@ -374,6 +375,7 @@ export default function MyShiftsTab({ spaceId, groupId, onNavigate }: MyShiftsTa
         changeRequestedSlotId || null
       );
       closeChangeDialog();
+      setLeaveSuccess(t("changeRequestSubmitted"));
       await fetchData();
     } catch (err) {
       const { message } = getSelfServiceErrorMessage(err);

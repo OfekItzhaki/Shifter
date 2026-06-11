@@ -2105,6 +2105,7 @@
       "changeReasonPlaceholder": "למה צריך לשנות את המשמרת?",
       "changeConfirm": "שלח בקשת שינוי",
       "changeSubmitting": "שולח...",
+      "changeRequestSubmitted": "בקשת שינוי המשמרת נשלחה למנהלים.",
       "changeRequestsTitle": "בקשות שינוי משמרת",
       "changeRequestsDescription": "מעקב אחרי בקשות להעברת משמרות ששובצת אליהן.",
       "changeRequestsEmpty": "אין בקשות שינוי",

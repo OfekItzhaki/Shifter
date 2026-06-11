@@ -69,6 +69,15 @@ vi.mock("next-intl", () => ({
       changeFlexibleTarget: "Flexible replacement",
       changeCancel: "Cancel request",
       changeRequestCancelled: "Change request cancelled",
+      changeDialogTitle: "Request Shift Change",
+      changeDialogMessage: "Ask admins to move this shift.",
+      changePreferredShift: "Preferred shift",
+      changeSlotsLoading: "Loading shifts...",
+      changeNoPreferredShift: "No preferred shift",
+      changeReasonPlaceholder: "Why do you need to change this shift?",
+      changeConfirm: "Send Change Request",
+      changeSubmitting: "Sending...",
+      changeRequestSubmitted: "Shift-change request sent to the admins.",
       absenceReportsTitle: "Absence reports",
       absenceReportsDescription: `${values?.used ?? 0}/${values?.max ?? 0} late reports used`,
       absenceReportsEmpty: "No absence reports",
@@ -77,6 +86,7 @@ vi.mock("next-intl", () => ({
       cancelled: "Cancelled",
       rejected: "Rejected",
       cancelButton: "Cancel",
+      cancelDismiss: "Go Back",
       changeButton: "Request change",
       cannotAttendButton: "Can't make it",
       cannotAttendLimitReached: "You have reached the late absence limit for this cycle.",
@@ -204,6 +214,29 @@ describe("MyShiftsTab", () => {
     });
     expect(await screen.findByText("Change request cancelled")).toBeInTheDocument();
     expect(mockGetMyShiftChangeRequests).toHaveBeenCalledTimes(2);
+  });
+
+  it("shows confirmation after submitting a shift-change request", async () => {
+    mockSubmitShiftChangeRequest.mockResolvedValue(undefined);
+
+    render(<MyShiftsTab spaceId="space-1" groupId="group-1" />);
+
+    fireEvent.click(await screen.findByRole("button", { name: "Request change" }));
+    fireEvent.change(screen.getByPlaceholderText("Why do you need to change this shift?"), {
+      target: { value: "Need a different shift time" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Send Change Request" }));
+
+    await waitFor(() => {
+      expect(mockSubmitShiftChangeRequest).toHaveBeenCalledWith(
+        "space-1",
+        "group-1",
+        "request-1",
+        "Need a different shift time",
+        null,
+      );
+    });
+    expect(await screen.findByText("Shift-change request sent to the admins.")).toBeInTheDocument();
   });
 
   it("shows a unified recent self-service history", async () => {

@@ -2093,6 +2093,7 @@
       "changeReasonPlaceholder": "Why do you need to change this shift?",
       "changeConfirm": "Send Change Request",
       "changeSubmitting": "Sending...",
+      "changeRequestSubmitted": "Запрос на изменение смены отправлен администраторам.",
       "changeRequestsTitle": "Shift change requests",
       "changeRequestsDescription": "Track requests to move assigned shifts.",
       "changeRequestsEmpty": "No change requests",
