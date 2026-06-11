@@ -51,6 +51,23 @@ public class SelfServiceCyclesController : ControllerBase
         return Ok(await BuildStatusAsync(cycle, ct));
     }
 
+    [HttpGet("closeout")]
+    public async Task<IActionResult> GetCloseout(Guid spaceId, Guid groupId, [FromQuery] Guid? cycleId, CancellationToken ct)
+    {
+        await _permissions.RequirePermissionAsync(CurrentUserId, spaceId, Permissions.ConstraintsManage, ct);
+
+        var cycle = cycleId.HasValue
+            ? await _db.SchedulingCycles
+                .AsNoTracking()
+                .FirstOrDefaultAsync(c => c.Id == cycleId.Value && c.SpaceId == spaceId && c.GroupId == groupId, ct)
+            : await ResolveCurrentCycleAsync(spaceId, groupId, ct);
+
+        if (cycle is null)
+            return Ok(SelfServiceCycleCloseoutResponse.Empty());
+
+        return Ok(await BuildCloseoutAsync(cycle, ct));
+    }
+
     [HttpPost("generate-next")]
     public async Task<IActionResult> GenerateNext(Guid spaceId, Guid groupId, CancellationToken ct)
     {
@@ -326,6 +343,166 @@ public class SelfServiceCyclesController : ControllerBase
             underfilledSlotCount,
             underfilledSlots);
     }
+
+    private async Task<SelfServiceCycleCloseoutResponse> BuildCloseoutAsync(SchedulingCycle cycle, CancellationToken ct)
+    {
+        var slots = await _db.ShiftSlots
+            .AsNoTracking()
+            .Where(s => s.SpaceId == cycle.SpaceId
+                        && s.GroupId == cycle.GroupId
+                        && s.SchedulingCycleId == cycle.Id)
+            .Select(s => new { s.Id, s.Capacity, s.CurrentFillCount })
+            .ToListAsync(ct);
+
+        var cycleSlotIds = slots.Select(s => s.Id).ToList();
+
+        var shiftRequests = await _db.ShiftRequests
+            .AsNoTracking()
+            .Where(r => r.SpaceId == cycle.SpaceId
+                        && r.GroupId == cycle.GroupId
+                        && r.SchedulingCycleId == cycle.Id)
+            .Select(r => new { r.Status, r.IsAdminOverride, r.CancellationReason })
+            .ToListAsync(ct);
+
+        var absences = await _db.ShiftAbsenceReports
+            .AsNoTracking()
+            .Where(r => r.SpaceId == cycle.SpaceId
+                        && r.GroupId == cycle.GroupId
+                        && r.SchedulingCycleId == cycle.Id)
+            .Select(r => new { r.Status, r.IsLate })
+            .ToListAsync(ct);
+
+        var changeRequests = await _db.ShiftChangeRequests
+            .AsNoTracking()
+            .Where(r => r.SpaceId == cycle.SpaceId
+                        && r.GroupId == cycle.GroupId
+                        && r.SchedulingCycleId == cycle.Id)
+            .Select(r => r.Status)
+            .ToListAsync(ct);
+
+        var waitlistEntries = await _db.WaitlistEntries
+            .AsNoTracking()
+            .Where(w => w.SpaceId == cycle.SpaceId && cycleSlotIds.Contains(w.ShiftSlotId))
+            .Select(w => w.Status)
+            .ToListAsync(ct);
+
+        var swapRequests = await _db.SwapRequests
+            .AsNoTracking()
+            .Where(s => s.SpaceId == cycle.SpaceId
+                        && s.GroupId == cycle.GroupId
+                        && _db.ShiftRequests.Any(r => r.Id == s.InitiatorShiftRequestId
+                                                       && r.SchedulingCycleId == cycle.Id))
+            .Select(s => s.Status)
+            .ToListAsync(ct);
+
+        var specialLeaveRequests = await _db.SpecialLeaveRequests
+            .AsNoTracking()
+            .Where(r => r.SpaceId == cycle.SpaceId
+                        && r.StartsAt < cycle.EndsAt
+                        && r.EndsAt > cycle.StartsAt)
+            .Join(
+                _db.GroupMemberships
+                    .AsNoTracking()
+                    .Where(m => m.SpaceId == cycle.SpaceId && m.GroupId == cycle.GroupId),
+                request => request.PersonId,
+                membership => membership.PersonId,
+                (request, _) => new { request.Id, request.Status })
+            .Distinct()
+            .Select(r => r.Status)
+            .ToListAsync(ct);
+
+        var slotCount = slots.Count;
+        var totalCapacity = slots.Sum(s => s.Capacity);
+        var filledCount = slots.Sum(s => s.CurrentFillCount);
+        var underfilledSlotCount = slots.Count(s => s.CurrentFillCount < s.Capacity);
+        var overfilledSlotCount = slots.Count(s => s.CurrentFillCount > s.Capacity);
+
+        var approvedAssignments = shiftRequests.Count(r => r.Status == ShiftRequestStatus.Approved);
+        var cancelledAssignments = shiftRequests.Count(r => r.Status == ShiftRequestStatus.Cancelled);
+        var rejectedRequests = shiftRequests.Count(r => r.Status == ShiftRequestStatus.Rejected);
+        var pendingRequests = shiftRequests.Count(r => r.Status == ShiftRequestStatus.Pending);
+        var adminOverrideAssignments = shiftRequests.Count(r => r.IsAdminOverride);
+
+        var cannotAttendCancellations = shiftRequests.Count(r =>
+            r.Status == ShiftRequestStatus.Cancelled
+            && r.CancellationReason != null
+            && r.CancellationReason.Contains("Cannot attend", StringComparison.OrdinalIgnoreCase));
+
+        var lateAbsenceReports = absences.Count(r => r.IsLate);
+        var approvedAbsenceReports = absences.Count(r => r.Status == ShiftAbsenceReportStatus.Approved);
+        var rejectedAbsenceReports = absences.Count(r => r.Status == ShiftAbsenceReportStatus.Rejected);
+        var pendingAbsenceReports = absences.Count(r => r.Status == ShiftAbsenceReportStatus.Pending);
+
+        var approvedChangeRequests = changeRequests.Count(s => s == ShiftChangeRequestStatus.Approved);
+        var rejectedChangeRequests = changeRequests.Count(s => s == ShiftChangeRequestStatus.Rejected);
+        var pendingChangeRequests = changeRequests.Count(s => s == ShiftChangeRequestStatus.Pending);
+        var cancelledChangeRequests = changeRequests.Count(s => s == ShiftChangeRequestStatus.Cancelled);
+
+        var acceptedSwapRequests = swapRequests.Count(s => s == SwapRequestStatus.Accepted);
+        var declinedSwapRequests = swapRequests.Count(s => s == SwapRequestStatus.Declined);
+        var pendingSwapRequests = swapRequests.Count(s => s == SwapRequestStatus.Pending);
+        var cancelledSwapRequests = swapRequests.Count(s => s == SwapRequestStatus.Cancelled);
+        var expiredSwapRequests = swapRequests.Count(s => s == SwapRequestStatus.Expired);
+
+        var activeWaitlistEntries = waitlistEntries.Count(s => s == WaitlistEntryStatus.Waiting || s == WaitlistEntryStatus.Offered);
+        var acceptedWaitlistEntries = waitlistEntries.Count(s => s == WaitlistEntryStatus.Accepted);
+        var declinedWaitlistEntries = waitlistEntries.Count(s => s == WaitlistEntryStatus.Declined);
+        var expiredWaitlistEntries = waitlistEntries.Count(s => s == WaitlistEntryStatus.Expired);
+        var removedWaitlistEntries = waitlistEntries.Count(s => s == WaitlistEntryStatus.Removed);
+
+        var approvedSpecialLeaveRequests = specialLeaveRequests.Count(s => s == SpecialLeaveRequestStatus.Approved);
+        var rejectedSpecialLeaveRequests = specialLeaveRequests.Count(s => s == SpecialLeaveRequestStatus.Rejected);
+        var pendingSpecialLeaveRequests = specialLeaveRequests.Count(s => s == SpecialLeaveRequestStatus.Pending);
+        var cancelledSpecialLeaveRequests = specialLeaveRequests.Count(s => s == SpecialLeaveRequestStatus.Cancelled);
+
+        var issueCount = underfilledSlotCount
+            + pendingRequests
+            + pendingAbsenceReports
+            + pendingChangeRequests
+            + pendingSwapRequests
+            + pendingSpecialLeaveRequests
+            + activeWaitlistEntries;
+
+        return new SelfServiceCycleCloseoutResponse(
+            cycle.Id,
+            cycle.StartsAt,
+            cycle.EndsAt,
+            cycle.EndsAt <= DateTime.UtcNow,
+            slotCount,
+            totalCapacity,
+            filledCount,
+            underfilledSlotCount,
+            overfilledSlotCount,
+            approvedAssignments,
+            cancelledAssignments,
+            rejectedRequests,
+            pendingRequests,
+            adminOverrideAssignments,
+            cannotAttendCancellations,
+            lateAbsenceReports,
+            approvedAbsenceReports,
+            rejectedAbsenceReports,
+            pendingAbsenceReports,
+            approvedChangeRequests,
+            rejectedChangeRequests,
+            pendingChangeRequests,
+            cancelledChangeRequests,
+            acceptedSwapRequests,
+            declinedSwapRequests,
+            pendingSwapRequests,
+            cancelledSwapRequests,
+            expiredSwapRequests,
+            activeWaitlistEntries,
+            acceptedWaitlistEntries,
+            declinedWaitlistEntries,
+            expiredWaitlistEntries,
+            removedWaitlistEntries,
+            approvedSpecialLeaveRequests,
+            rejectedSpecialLeaveRequests,
+            pendingSpecialLeaveRequests,
+            cancelledSpecialLeaveRequests,
+            issueCount);
+    }
 }
 
 public record OpenCycleWindowRequest(int? Hours);
@@ -364,4 +541,48 @@ public record SelfServiceCycleStatusResponse(
 {
     public static SelfServiceCycleStatusResponse Empty() =>
         new(null, null, null, null, null, false, false, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, []);
+}
+
+public record SelfServiceCycleCloseoutResponse(
+    Guid? CycleId,
+    DateTime? StartsAt,
+    DateTime? EndsAt,
+    bool IsClosed,
+    int SlotCount,
+    int TotalCapacity,
+    int FilledCount,
+    int UnderfilledSlotCount,
+    int OverfilledSlotCount,
+    int ApprovedAssignments,
+    int CancelledAssignments,
+    int RejectedRequests,
+    int PendingRequests,
+    int AdminOverrideAssignments,
+    int CannotAttendCancellations,
+    int LateAbsenceReports,
+    int ApprovedAbsenceReports,
+    int RejectedAbsenceReports,
+    int PendingAbsenceReports,
+    int ApprovedChangeRequests,
+    int RejectedChangeRequests,
+    int PendingChangeRequests,
+    int CancelledChangeRequests,
+    int AcceptedSwapRequests,
+    int DeclinedSwapRequests,
+    int PendingSwapRequests,
+    int CancelledSwapRequests,
+    int ExpiredSwapRequests,
+    int ActiveWaitlistEntries,
+    int AcceptedWaitlistEntries,
+    int DeclinedWaitlistEntries,
+    int ExpiredWaitlistEntries,
+    int RemovedWaitlistEntries,
+    int ApprovedSpecialLeaveRequests,
+    int RejectedSpecialLeaveRequests,
+    int PendingSpecialLeaveRequests,
+    int CancelledSpecialLeaveRequests,
+    int IssueCount)
+{
+    public static SelfServiceCycleCloseoutResponse Empty() =>
+        new(null, null, null, false, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 }

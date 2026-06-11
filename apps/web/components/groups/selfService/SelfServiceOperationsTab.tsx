@@ -5,8 +5,10 @@ import { useTranslations } from "next-intl";
 import {
   getAdminWaitlistEntries,
   getSelfServiceConfig,
+  getSelfServiceCycleCloseout,
   getSelfServiceCycleStatus,
   AdminWaitlistEntryDto,
+  SelfServiceCycleCloseoutDto,
   SelfServiceConfigDto,
   SelfServiceCycleStatusDto,
 } from "@/lib/api/selfService";
@@ -37,6 +39,18 @@ const ACTIONS: { target: SelfServiceOpsTarget; key: string; metric?: "reviews" |
 
 const GUIDE_STEPS = ["prepare", "open", "review", "improve"] as const;
 const WORKFLOW_ITEMS = ["picking", "changes", "leave"] as const;
+const CLOSEOUT_METRICS = [
+  { key: "coverage", valueKey: "filledCount", totalKey: "totalCapacity" },
+  { key: "underfilled", valueKey: "underfilledSlotCount", totalKey: undefined },
+  { key: "pending", valueKey: "issueCount", totalKey: undefined },
+  { key: "overrides", valueKey: "adminOverrideAssignments", totalKey: undefined },
+  { key: "lateAbsences", valueKey: "lateAbsenceReports", totalKey: undefined },
+  { key: "swaps", valueKey: "acceptedSwapRequests", totalKey: undefined },
+] satisfies readonly {
+  key: string;
+  valueKey: keyof SelfServiceCycleCloseoutDto;
+  totalKey?: keyof SelfServiceCycleCloseoutDto;
+}[];
 const POLICY_WORKFLOWS = [
   { key: "claims", configKey: "allowMemberShiftClaims" },
   { key: "waitlist", configKey: "allowWaitlist" },
@@ -121,6 +135,7 @@ export default function SelfServiceOperationsTab({
 }: SelfServiceOperationsTabProps) {
   const t = useTranslations("selfService.operations");
   const [status, setStatus] = useState<SelfServiceCycleStatusDto | null>(null);
+  const [closeout, setCloseout] = useState<SelfServiceCycleCloseoutDto | null>(null);
   const [config, setConfig] = useState<SelfServiceConfigDto | null>(null);
   const [waitlistEntries, setWaitlistEntries] = useState<AdminWaitlistEntryDto[]>([]);
   const [statusLoading, setStatusLoading] = useState(true);
@@ -128,16 +143,19 @@ export default function SelfServiceOperationsTab({
   const loadStatus = useCallback(async () => {
     setStatusLoading(true);
     try {
-      const [nextStatus, nextConfig, nextWaitlistEntries] = await Promise.all([
+      const [nextStatus, nextCloseout, nextConfig, nextWaitlistEntries] = await Promise.all([
         getSelfServiceCycleStatus(spaceId, groupId),
+        getSelfServiceCycleCloseout(spaceId, groupId),
         getSelfServiceConfig(spaceId, groupId),
         getAdminWaitlistEntries(spaceId, groupId),
       ]);
       setStatus(nextStatus);
+      setCloseout(nextCloseout);
       setConfig(nextConfig);
       setWaitlistEntries(nextWaitlistEntries);
     } catch {
       setStatus(null);
+      setCloseout(null);
       setConfig(null);
       setWaitlistEntries([]);
     } finally {
@@ -309,6 +327,86 @@ export default function SelfServiceOperationsTab({
               }) : t("policy.loading")
             } />
           </div>
+        </div>
+      </div>
+
+      <div className="rounded-xl border border-slate-200 bg-white p-6">
+        <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h3 className="text-sm font-semibold text-slate-900">{t("closeout.title")}</h3>
+            <p className="text-sm text-slate-500">{t("closeout.description")}</p>
+          </div>
+          <span className={`inline-flex w-fit rounded-full border px-2.5 py-1 text-xs font-medium ${
+            statusLoading
+              ? "border-slate-200 bg-slate-50 text-slate-500"
+              : closeout && closeout.issueCount > 0
+                ? "border-amber-200 bg-amber-50 text-amber-800"
+                : "border-emerald-200 bg-emerald-50 text-emerald-700"
+          }`}>
+            {statusLoading
+              ? t("statusLoading")
+              : closeout && closeout.issueCount > 0
+                ? t("closeout.needsReview", { count: closeout.issueCount })
+                : t("closeout.ready")}
+          </span>
+        </div>
+
+        <div className="mt-4 grid gap-3 md:grid-cols-3 xl:grid-cols-6">
+          {CLOSEOUT_METRICS.map((metric) => {
+            const value = closeout ? Number(closeout[metric.valueKey]) : 0;
+            const total = closeout && metric.totalKey ? Number(closeout[metric.totalKey]) : null;
+            return (
+              <div key={metric.key} className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+                <p className="text-xs font-medium text-slate-500">{t(`closeout.metrics.${metric.key}`)}</p>
+                <p className="mt-1 text-lg font-semibold text-slate-900">
+                  {statusLoading ? "-" : total !== null ? `${value}/${total}` : value}
+                </p>
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="mt-4 grid gap-3 lg:grid-cols-4">
+          <CloseoutDetail
+            label={t("closeout.details.assignments")}
+            value={statusLoading || !closeout
+              ? "-"
+              : t("closeout.details.assignmentsValue", {
+                approved: closeout.approvedAssignments,
+                cancelled: closeout.cancelledAssignments,
+                rejected: closeout.rejectedRequests,
+              })}
+          />
+          <CloseoutDetail
+            label={t("closeout.details.absences")}
+            value={statusLoading || !closeout
+              ? "-"
+              : t("closeout.details.absencesValue", {
+                approved: closeout.approvedAbsenceReports,
+                rejected: closeout.rejectedAbsenceReports,
+                pending: closeout.pendingAbsenceReports,
+              })}
+          />
+          <CloseoutDetail
+            label={t("closeout.details.changes")}
+            value={statusLoading || !closeout
+              ? "-"
+              : t("closeout.details.changesValue", {
+                approved: closeout.approvedChangeRequests,
+                rejected: closeout.rejectedChangeRequests,
+                pending: closeout.pendingChangeRequests,
+              })}
+          />
+          <CloseoutDetail
+            label={t("closeout.details.waitlist")}
+            value={statusLoading || !closeout
+              ? "-"
+              : t("closeout.details.waitlistValue", {
+                active: closeout.activeWaitlistEntries,
+                accepted: closeout.acceptedWaitlistEntries,
+                expired: closeout.expiredWaitlistEntries,
+              })}
+          />
         </div>
       </div>
 
@@ -495,6 +593,15 @@ function PolicyMetric({ label, value }: { label: string; value: string }) {
     <div className="rounded-lg border border-slate-200 bg-white px-3 py-2">
       <p className="text-xs font-medium text-slate-500">{label}</p>
       <p className="mt-1 text-sm font-semibold text-slate-900">{value}</p>
+    </div>
+  );
+}
+
+function CloseoutDetail({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-lg border border-slate-200 bg-white px-3 py-2">
+      <p className="text-xs font-medium text-slate-500">{label}</p>
+      <p className="mt-1 text-xs font-semibold leading-5 text-slate-900">{value}</p>
     </div>
   );
 }

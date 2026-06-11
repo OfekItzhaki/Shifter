@@ -2500,6 +2500,30 @@
       "statusLoading": "Checking queues...",
       "activeSignals": "{count} item(s) need attention",
       "allClear": "No urgent items",
+      "closeout": {
+        "title": "Cycle closeout",
+        "description": "One summary for coverage, exceptions, and unresolved items in the current self-service cycle.",
+        "needsReview": "{count} unresolved item(s)",
+        "ready": "Ready for closeout",
+        "metrics": {
+          "coverage": "Coverage",
+          "underfilled": "Under-filled",
+          "pending": "Unresolved",
+          "overrides": "Overrides",
+          "lateAbsences": "Late absences",
+          "swaps": "Accepted swaps"
+        },
+        "details": {
+          "assignments": "Assignments",
+          "assignmentsValue": "{approved} approved / {cancelled} cancelled / {rejected} rejected",
+          "absences": "Absences",
+          "absencesValue": "{approved} approved / {rejected} rejected / {pending} pending",
+          "changes": "Changes",
+          "changesValue": "{approved} approved / {rejected} rejected / {pending} pending",
+          "waitlist": "Waitlist",
+          "waitlistValue": "{active} active / {accepted} accepted / {expired} expired"
+        }
+      },
       "policy": {
         "title": "Active member policy",
         "description": "Current rules for what members can do during this manual cycle.",

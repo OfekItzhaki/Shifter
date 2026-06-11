@@ -117,6 +117,47 @@ export interface SelfServiceCycleStatusDto {
   underfilledSlots: UnderfilledSlotDto[];
 }
 
+export interface SelfServiceCycleCloseoutDto {
+  cycleId: string | null;
+  startsAt: string | null;
+  endsAt: string | null;
+  isClosed: boolean;
+  slotCount: number;
+  totalCapacity: number;
+  filledCount: number;
+  underfilledSlotCount: number;
+  overfilledSlotCount: number;
+  approvedAssignments: number;
+  cancelledAssignments: number;
+  rejectedRequests: number;
+  pendingRequests: number;
+  adminOverrideAssignments: number;
+  cannotAttendCancellations: number;
+  lateAbsenceReports: number;
+  approvedAbsenceReports: number;
+  rejectedAbsenceReports: number;
+  pendingAbsenceReports: number;
+  approvedChangeRequests: number;
+  rejectedChangeRequests: number;
+  pendingChangeRequests: number;
+  cancelledChangeRequests: number;
+  acceptedSwapRequests: number;
+  declinedSwapRequests: number;
+  pendingSwapRequests: number;
+  cancelledSwapRequests: number;
+  expiredSwapRequests: number;
+  activeWaitlistEntries: number;
+  acceptedWaitlistEntries: number;
+  declinedWaitlistEntries: number;
+  expiredWaitlistEntries: number;
+  removedWaitlistEntries: number;
+  approvedSpecialLeaveRequests: number;
+  rejectedSpecialLeaveRequests: number;
+  pendingSpecialLeaveRequests: number;
+  cancelledSpecialLeaveRequests: number;
+  issueCount: number;
+}
+
 export interface UnderfilledSlotDto {
   shiftSlotId: string;
   date: string;
@@ -384,6 +425,18 @@ export async function getSelfServiceCycleStatus(
 ): Promise<SelfServiceCycleStatusDto> {
   const { data } = await apiClient.get(
     `/spaces/${spaceId}/groups/${groupId}/self-service-cycles/status`
+  );
+  return data;
+}
+
+export async function getSelfServiceCycleCloseout(
+  spaceId: string,
+  groupId: string,
+  cycleId?: string | null
+): Promise<SelfServiceCycleCloseoutDto> {
+  const { data } = await apiClient.get(
+    `/spaces/${spaceId}/groups/${groupId}/self-service-cycles/closeout`,
+    { params: cycleId ? { cycleId } : undefined }
   );
   return data;
 }

@@ -2510,6 +2510,30 @@
       "statusLoading": "בודק תורים...",
       "activeSignals": "{count} פריטים דורשים טיפול",
       "allClear": "אין פריטים דחופים",
+      "closeout": {
+        "title": "Cycle closeout",
+        "description": "One summary for coverage, exceptions, and unresolved items in the current self-service cycle.",
+        "needsReview": "{count} unresolved item(s)",
+        "ready": "Ready for closeout",
+        "metrics": {
+          "coverage": "Coverage",
+          "underfilled": "Under-filled",
+          "pending": "Unresolved",
+          "overrides": "Overrides",
+          "lateAbsences": "Late absences",
+          "swaps": "Accepted swaps"
+        },
+        "details": {
+          "assignments": "Assignments",
+          "assignmentsValue": "{approved} approved / {cancelled} cancelled / {rejected} rejected",
+          "absences": "Absences",
+          "absencesValue": "{approved} approved / {rejected} rejected / {pending} pending",
+          "changes": "Changes",
+          "changesValue": "{approved} approved / {rejected} rejected / {pending} pending",
+          "waitlist": "Waitlist",
+          "waitlistValue": "{active} active / {accepted} accepted / {expired} expired"
+        }
+      },
       "policy": {
         "title": "מדיניות חברים פעילה",
         "description": "הכללים הנוכחיים למה שחברים יכולים לעשות בסבב הידני.",
