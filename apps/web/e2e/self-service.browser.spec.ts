@@ -131,6 +131,20 @@ async function api<T>(
   return await response.json() as T;
 }
 
+async function apiNoContent(
+  request: APIRequestContext,
+  token: string,
+  method: "DELETE",
+  path: string
+): Promise<void> {
+  const response = await request.fetch(`${API_URL}${path}`, {
+    method,
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  expect(response.ok(), `${method} ${path} failed with ${response.status()}: ${await response.text()}`).toBeTruthy();
+}
+
 async function findDemoSelfServiceGroup(
   request: APIRequestContext,
   adminToken: string
@@ -445,6 +459,65 @@ async function findOpenTargetSlot(
   });
   expect(targetSlot, "browser shift-change approval test needs another open target slot").toBeTruthy();
   return targetSlot!;
+}
+
+async function ensureWaitingWaitlistEntry(
+  request: APIRequestContext,
+  memberToken: string,
+  spaceId: string,
+  groupId: string,
+  cycleId: string
+): Promise<WaitlistEntryDto> {
+  const existing = await api<WaitlistEntryDto[]>(
+    request,
+    memberToken,
+    "GET",
+    `/spaces/${spaceId}/groups/${groupId}/waitlist/mine`
+  );
+  const waiting = existing.find((entry) => entry.status === "Waiting");
+  if (waiting) return waiting;
+
+  for (const entry of existing.filter((row) => row.status === "Offered")) {
+    await apiNoContent(
+      request,
+      memberToken,
+      "DELETE",
+      `/spaces/${spaceId}/groups/${groupId}/waitlist/${entry.shiftSlotId}`
+    );
+  }
+
+  const available = await api<AvailableSlotsResponse>(
+    request,
+    memberToken,
+    "GET",
+    `/spaces/${spaceId}/groups/${groupId}/shift-slots/available?cycleId=${cycleId}`
+  );
+  const fullSlot = available.slots.find((slot) => {
+    const slotId = slot.id ?? slot.shiftSlotId;
+    return slotId && slot.currentFillCount >= slot.capacity;
+  });
+  test.skip(!fullSlot, "waitlist leave browser test needs a full shift slot in the seeded cycle");
+
+  const shiftSlotId = fullSlot!.id ?? fullSlot!.shiftSlotId;
+  await api<{ position: number; shiftSlotId: string }>(
+    request,
+    memberToken,
+    "POST",
+    `/spaces/${spaceId}/groups/${groupId}/waitlist`,
+    { shiftSlotId }
+  );
+
+  const refreshed = await api<WaitlistEntryDto[]>(
+    request,
+    memberToken,
+    "GET",
+    `/spaces/${spaceId}/groups/${groupId}/waitlist/mine`
+  );
+  const created = refreshed.find((entry) =>
+    entry.shiftSlotId === shiftSlotId && entry.status === "Waiting"
+  );
+  expect(created, "waitlist leave browser test needs a waiting entry").toBeTruthy();
+  return created!;
 }
 
 async function enterElevatedGroup(page: Page, groupId: string): Promise<void> {
@@ -1214,6 +1287,59 @@ test.describe("Self-service browser lifecycle", () => {
         .or(page.getByTestId("self-service-offered-waitlist-entry"))
         .first()
     ).toBeVisible({ timeout: 15000 });
+  });
+
+  test("member leaves a waiting-list entry through the UI", async ({ page, request }) => {
+    const adminEmail = process.env.E2E_ADMIN_EMAIL ?? "admin@demo.local";
+    const memberEmail = process.env.E2E_WAITLIST_LEAVE_MEMBER_EMAIL ?? "viewer@demo.local";
+    const adminToken = await login(request, adminEmail);
+    const memberToken = await login(request, memberEmail);
+    const { spaceId, groupId } = await findDemoSelfServiceGroup(request, adminToken);
+    const status = await api<CycleStatusDto>(
+      request,
+      adminToken,
+      "GET",
+      `/spaces/${spaceId}/groups/${groupId}/self-service-cycles/status`
+    );
+    expect(status.cycleId).toBeTruthy();
+
+    const waitingEntry = await ensureWaitingWaitlistEntry(
+      request,
+      memberToken,
+      spaceId,
+      groupId,
+      status.cycleId!
+    );
+
+    await loginAsUser(page, memberEmail, DEMO_PASSWORD);
+    await page.evaluate((targetGroupId) => {
+      localStorage.setItem("shifter-pick-last-group", targetGroupId);
+    }, groupId);
+    await page.goto(`${BASE}/pick`);
+    await page.getByTestId("pick-tab-waitlist").click();
+
+    const entryCard = page.locator(
+      `[data-testid="self-service-waitlist-entry"][data-waitlist-entry-id="${waitingEntry.id}"]`
+    );
+    await expect(entryCard).toBeVisible({ timeout: 15000 });
+    await entryCard.getByTestId("self-service-leave-waitlist").click();
+    await Promise.all([
+      page.waitForResponse((response) =>
+        response.url().includes(`/waitlist/${waitingEntry.shiftSlotId}`)
+        && response.request().method() === "DELETE"
+      ),
+      page.getByTestId("self-service-confirm-leave-waitlist").click(),
+    ]);
+
+    const entriesAfter = await api<WaitlistEntryDto[]>(
+      request,
+      memberToken,
+      "GET",
+      `/spaces/${spaceId}/groups/${groupId}/waitlist/mine`
+    );
+    expect(entriesAfter.some((entry) =>
+      entry.id === waitingEntry.id && (entry.status === "Waiting" || entry.status === "Offered")
+    )).toBeFalsy();
   });
 
   test("member reports cannot attend and admin approves it through the UI", async ({ page, request }) => {

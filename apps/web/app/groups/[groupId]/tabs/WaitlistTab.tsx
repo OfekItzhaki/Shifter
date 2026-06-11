@@ -300,6 +300,8 @@ export default function WaitlistTab({ spaceId, groupId, isAdmin = false }: Waitl
             <div
               key={entry.id}
               data-testid="self-service-offered-waitlist-entry"
+              data-waitlist-entry-id={entry.id}
+              data-shift-slot-id={entry.shiftSlotId}
               className="bg-sky-50 border-2 border-sky-300 rounded-2xl p-4 space-y-3"
             >
               {/* Header with status badge */}
@@ -338,6 +340,7 @@ export default function WaitlistTab({ spaceId, groupId, isAdmin = false }: Waitl
               <div className="flex gap-2">
                 <button
                   onClick={() => handleAccept(entry)}
+                  data-testid="self-service-accept-waitlist-offer"
                   disabled={acceptingId === entry.id}
                   className="bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-medium px-4 py-2 rounded-xl disabled:opacity-50 transition-colors"
                 >
@@ -345,6 +348,7 @@ export default function WaitlistTab({ spaceId, groupId, isAdmin = false }: Waitl
                 </button>
                 <button
                   onClick={() => handleDecline(entry)}
+                  data-testid="self-service-decline-waitlist-offer"
                   disabled={decliningId === entry.id}
                   className="text-sm text-red-600 border border-red-200 bg-red-50 hover:bg-red-100 px-4 py-2 rounded-xl disabled:opacity-50 transition-colors"
                 >
@@ -363,6 +367,8 @@ export default function WaitlistTab({ spaceId, groupId, isAdmin = false }: Waitl
             <div
               key={entry.id}
               data-testid="self-service-waitlist-entry"
+              data-waitlist-entry-id={entry.id}
+              data-shift-slot-id={entry.shiftSlotId}
               className="bg-white border border-slate-200 rounded-2xl p-4 space-y-2"
             >
               {/* Header with status badge */}
@@ -382,6 +388,7 @@ export default function WaitlistTab({ spaceId, groupId, isAdmin = false }: Waitl
                 {entry.status === "Waiting" && (
                   <button
                     onClick={() => setLeaveConfirmEntry(entry)}
+                    data-testid="self-service-leave-waitlist"
                     disabled={leavingId === entry.id}
                     className="text-xs text-red-500 hover:text-red-700 border border-red-100 px-2.5 py-1 rounded-lg hover:bg-red-50 transition-colors disabled:opacity-50"
                   >
@@ -417,6 +424,7 @@ export default function WaitlistTab({ spaceId, groupId, isAdmin = false }: Waitl
           <div className="flex gap-2">
             <button
               onClick={handleLeaveConfirm}
+              data-testid="self-service-confirm-leave-waitlist"
               disabled={!!leavingId}
               className="bg-red-500 hover:bg-red-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl disabled:opacity-50 transition-colors"
             >
@@ -424,6 +432,7 @@ export default function WaitlistTab({ spaceId, groupId, isAdmin = false }: Waitl
             </button>
             <button
               onClick={() => setLeaveConfirmEntry(null)}
+              data-testid="self-service-cancel-leave-waitlist"
               className="text-sm text-slate-500 border border-slate-200 px-4 py-2.5 rounded-xl hover:bg-slate-50 transition-colors"
             >
               {t("leaveConfirmNo")}
