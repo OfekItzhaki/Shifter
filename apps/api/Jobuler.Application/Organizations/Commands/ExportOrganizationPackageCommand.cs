@@ -30,7 +30,20 @@ public record OrganizationPackageDataDto(
     List<object> Constraints,
     List<object> ScheduleRuns,
     List<object> ScheduleVersions,
-    List<object> Assignments);
+    List<object> Assignments,
+    List<object> SpaceSelfServiceDefaults,
+    List<object> SpaceSpecialDays,
+    List<object> SelfServiceConfigs,
+    List<object> SchedulingCycles,
+    List<object> ShiftTemplates,
+    List<object> ShiftSlots,
+    List<object> ShiftRequests,
+    List<object> ShiftAttendanceRecords,
+    List<object> ShiftAbsenceReports,
+    List<object> ShiftChangeRequests,
+    List<object> WaitlistEntries,
+    List<object> SwapRequests,
+    List<object> SpecialLeaveRequests);
 
 public class ExportOrganizationPackageCommandHandler
     : IRequestHandler<ExportOrganizationPackageCommand, OrganizationExportPackageResult>
@@ -310,6 +323,71 @@ public class ExportOrganizationPackageCommandHandler
                     a.ChangeReasonSummary,
                     a.CreatedAt
                 })
+                .Cast<object>()
+                .ToListAsync(ct),
+            SpaceSelfServiceDefaults: await _db.SpaceSelfServiceDefaults.AsNoTracking()
+                .Where(d => spaceIds.Contains(d.SpaceId))
+                .OrderBy(d => d.SpaceId)
+                .Cast<object>()
+                .ToListAsync(ct),
+            SpaceSpecialDays: await _db.SpaceSpecialDays.AsNoTracking()
+                .Where(d => spaceIds.Contains(d.SpaceId))
+                .OrderBy(d => d.SpaceId).ThenBy(d => d.Date)
+                .Cast<object>()
+                .ToListAsync(ct),
+            SelfServiceConfigs: await _db.SelfServiceConfigs.AsNoTracking()
+                .Where(c => spaceIds.Contains(c.SpaceId))
+                .OrderBy(c => c.SpaceId).ThenBy(c => c.GroupId)
+                .Cast<object>()
+                .ToListAsync(ct),
+            SchedulingCycles: await _db.SchedulingCycles.AsNoTracking()
+                .Where(c => spaceIds.Contains(c.SpaceId))
+                .OrderBy(c => c.SpaceId).ThenBy(c => c.StartsAt)
+                .Cast<object>()
+                .ToListAsync(ct),
+            ShiftTemplates: await _db.ShiftTemplates.AsNoTracking()
+                .Where(t => spaceIds.Contains(t.SpaceId))
+                .OrderBy(t => t.SpaceId).ThenBy(t => t.GroupId)
+                .Cast<object>()
+                .ToListAsync(ct),
+            ShiftSlots: await _db.ShiftSlots.AsNoTracking()
+                .Where(s => spaceIds.Contains(s.SpaceId))
+                .OrderBy(s => s.SpaceId).ThenBy(s => s.StartsAt)
+                .Cast<object>()
+                .ToListAsync(ct),
+            ShiftRequests: await _db.ShiftRequests.AsNoTracking()
+                .Where(r => spaceIds.Contains(r.SpaceId))
+                .OrderBy(r => r.SpaceId).ThenBy(r => r.GroupId)
+                .Cast<object>()
+                .ToListAsync(ct),
+            ShiftAttendanceRecords: await _db.ShiftAttendanceRecords.AsNoTracking()
+                .Where(r => spaceIds.Contains(r.SpaceId))
+                .OrderBy(r => r.SpaceId)
+                .Cast<object>()
+                .ToListAsync(ct),
+            ShiftAbsenceReports: await _db.ShiftAbsenceReports.AsNoTracking()
+                .Where(r => spaceIds.Contains(r.SpaceId))
+                .OrderBy(r => r.SpaceId)
+                .Cast<object>()
+                .ToListAsync(ct),
+            ShiftChangeRequests: await _db.ShiftChangeRequests.AsNoTracking()
+                .Where(r => spaceIds.Contains(r.SpaceId))
+                .OrderBy(r => r.SpaceId)
+                .Cast<object>()
+                .ToListAsync(ct),
+            WaitlistEntries: await _db.WaitlistEntries.AsNoTracking()
+                .Where(e => spaceIds.Contains(e.SpaceId))
+                .OrderBy(e => e.SpaceId)
+                .Cast<object>()
+                .ToListAsync(ct),
+            SwapRequests: await _db.SwapRequests.AsNoTracking()
+                .Where(r => spaceIds.Contains(r.SpaceId))
+                .OrderBy(r => r.SpaceId)
+                .Cast<object>()
+                .ToListAsync(ct),
+            SpecialLeaveRequests: await _db.SpecialLeaveRequests.AsNoTracking()
+                .Where(r => spaceIds.Contains(r.SpaceId))
+                .OrderBy(r => r.SpaceId).ThenBy(r => r.StartsAt)
                 .Cast<object>()
                 .ToListAsync(ct));
 

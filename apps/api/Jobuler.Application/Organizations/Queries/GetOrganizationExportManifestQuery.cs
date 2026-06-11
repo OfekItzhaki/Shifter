@@ -30,6 +30,19 @@ public record OrganizationExportCountsDto(
     int ScheduleRuns,
     int ScheduleVersions,
     int Assignments,
+    int SpaceSelfServiceDefaults,
+    int SpaceSpecialDays,
+    int SelfServiceConfigs,
+    int SchedulingCycles,
+    int ShiftTemplates,
+    int ShiftSlots,
+    int ShiftRequests,
+    int ShiftAttendanceRecords,
+    int ShiftAbsenceReports,
+    int ShiftChangeRequests,
+    int WaitlistEntries,
+    int SwapRequests,
+    int SpecialLeaveRequests,
     int Notifications,
     int AuditLogs);
 
@@ -124,6 +137,32 @@ public class GetOrganizationExportManifestQueryHandler
                 .CountAsync(r => spaceIds.Contains(r.SpaceId), ct),
             ScheduleVersions: scheduleVersionCountBySpace.Values.Sum(),
             Assignments: assignmentCountBySpace.Values.Sum(),
+            SpaceSelfServiceDefaults: await _db.SpaceSelfServiceDefaults.AsNoTracking()
+                .CountAsync(d => spaceIds.Contains(d.SpaceId), ct),
+            SpaceSpecialDays: await _db.SpaceSpecialDays.AsNoTracking()
+                .CountAsync(d => spaceIds.Contains(d.SpaceId), ct),
+            SelfServiceConfigs: await _db.SelfServiceConfigs.AsNoTracking()
+                .CountAsync(c => spaceIds.Contains(c.SpaceId), ct),
+            SchedulingCycles: await _db.SchedulingCycles.AsNoTracking()
+                .CountAsync(c => spaceIds.Contains(c.SpaceId), ct),
+            ShiftTemplates: await _db.ShiftTemplates.AsNoTracking()
+                .CountAsync(t => spaceIds.Contains(t.SpaceId), ct),
+            ShiftSlots: await _db.ShiftSlots.AsNoTracking()
+                .CountAsync(s => spaceIds.Contains(s.SpaceId), ct),
+            ShiftRequests: await _db.ShiftRequests.AsNoTracking()
+                .CountAsync(r => spaceIds.Contains(r.SpaceId), ct),
+            ShiftAttendanceRecords: await _db.ShiftAttendanceRecords.AsNoTracking()
+                .CountAsync(r => spaceIds.Contains(r.SpaceId), ct),
+            ShiftAbsenceReports: await _db.ShiftAbsenceReports.AsNoTracking()
+                .CountAsync(r => spaceIds.Contains(r.SpaceId), ct),
+            ShiftChangeRequests: await _db.ShiftChangeRequests.AsNoTracking()
+                .CountAsync(r => spaceIds.Contains(r.SpaceId), ct),
+            WaitlistEntries: await _db.WaitlistEntries.AsNoTracking()
+                .CountAsync(e => spaceIds.Contains(e.SpaceId), ct),
+            SwapRequests: await _db.SwapRequests.AsNoTracking()
+                .CountAsync(r => spaceIds.Contains(r.SpaceId), ct),
+            SpecialLeaveRequests: await _db.SpecialLeaveRequests.AsNoTracking()
+                .CountAsync(r => spaceIds.Contains(r.SpaceId), ct),
             Notifications: await _db.Notifications.AsNoTracking()
                 .CountAsync(n => spaceIds.Contains(n.SpaceId), ct),
             AuditLogs: await _db.AuditLogs.AsNoTracking()

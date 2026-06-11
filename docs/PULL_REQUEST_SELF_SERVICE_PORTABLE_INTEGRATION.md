@@ -18,6 +18,8 @@ without dropping self-service review workflows.
 - Adds organization export/import validation and manifest queries.
 - Adds contact lookup protection and field encryption for user contact fields.
 - Adds organization portability tests and contact field protection tests.
+- Includes manual self-service workflow records in organization export manifests,
+  packages, and import validation counts.
 - Preserves special leave controller, commands, queries, DTOs, EF/domain entity,
   and self-service workflow data.
 - Keeps current landing/login/auth UI where portable conflicted with the newer
@@ -28,6 +30,10 @@ without dropping self-service review workflows.
 ## Verification
 
 - `dotnet build Jobuler.sln` passed.
+- `dotnet test apps\\api\\Jobuler.Tests\\Jobuler.Tests.csproj --filter "FullyQualifiedName~OrganizationPortabilityTests"`
+  passed: 17 passed, 0 failed.
+- `dotnet test apps\\api\\Jobuler.Tests\\Jobuler.Tests.csproj --filter "FullyQualifiedName~OrganizationPortability|FullyQualifiedName~SelfService|FullyQualifiedName~SpecialLeave|FullyQualifiedName~SpaceSpecialDay"`
+  passed: 204 passed, 0 failed.
 - Focused API tests passed: 223 passed, 0 failed.
 - Full API suite passed: 1,947 passed, 12 skipped, 0 failed.
 - `node_modules\\.bin\\next.cmd build` from `apps/web` passed.

@@ -80,6 +80,8 @@ PR summary:
 Known verification:
 
 - API build passed.
+- Organization portability tests passed: 17 passed, 0 failed.
+- Focused portability/self-service/special-day tests passed: 204 passed, 0 failed.
 - Focused API tests passed: 223 passed, 0 failed.
 - Full API suite passed: 1,947 passed, 12 skipped, 0 failed.
 - Web build passed.
@@ -94,10 +96,13 @@ Preserved self-service files:
 - `SpecialLeaveDtos`
 - `SpecialLeaveRequest`
 
+Validated integration:
+
+- Organization export manifests, packages, and import validation counts now
+  include manual self-service workflow records listed in the portability contract.
+
 Remaining manual/product check:
 
-- Verify organization export/import includes all manual self-service workflow
-  records listed in the portability contract.
 - Smoke-test customer-hosted setup with real secrets, especially
   `FIELD_ENCRYPTION_KEY`.
 - Smoke-test member/admin self-service flows after migrations run on a real

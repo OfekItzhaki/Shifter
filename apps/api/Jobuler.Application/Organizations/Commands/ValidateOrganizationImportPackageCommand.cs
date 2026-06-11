@@ -30,7 +30,20 @@ public record OrganizationImportValidationCounts(
     int Constraints,
     int ScheduleRuns,
     int ScheduleVersions,
-    int Assignments);
+    int Assignments,
+    int SpaceSelfServiceDefaults,
+    int SpaceSpecialDays,
+    int SelfServiceConfigs,
+    int SchedulingCycles,
+    int ShiftTemplates,
+    int ShiftSlots,
+    int ShiftRequests,
+    int ShiftAttendanceRecords,
+    int ShiftAbsenceReports,
+    int ShiftChangeRequests,
+    int WaitlistEntries,
+    int SwapRequests,
+    int SpecialLeaveRequests);
 
 public class ValidateOrganizationImportPackageCommandHandler
     : IRequestHandler<ValidateOrganizationImportPackageCommand, OrganizationImportValidationResult>
@@ -49,7 +62,7 @@ public class ValidateOrganizationImportPackageCommandHandler
         Guid? organizationId = null;
         string? organizationName = null;
         var schemaVersion = 0;
-        var counts = new OrganizationImportValidationCounts(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+        var counts = new OrganizationImportValidationCounts(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 
         JsonDocument document;
         try
@@ -106,6 +119,19 @@ public class ValidateOrganizationImportPackageCommandHandler
                 var scheduleRuns = GetArray(data, "scheduleRuns");
                 var scheduleVersions = GetArray(data, "scheduleVersions");
                 var assignments = GetArray(data, "assignments");
+                var spaceSelfServiceDefaults = GetArray(data, "spaceSelfServiceDefaults");
+                var spaceSpecialDays = GetArray(data, "spaceSpecialDays");
+                var selfServiceConfigs = GetArray(data, "selfServiceConfigs");
+                var schedulingCycles = GetArray(data, "schedulingCycles");
+                var shiftTemplates = GetArray(data, "shiftTemplates");
+                var shiftSlots = GetArray(data, "shiftSlots");
+                var shiftRequests = GetArray(data, "shiftRequests");
+                var shiftAttendanceRecords = GetArray(data, "shiftAttendanceRecords");
+                var shiftAbsenceReports = GetArray(data, "shiftAbsenceReports");
+                var shiftChangeRequests = GetArray(data, "shiftChangeRequests");
+                var waitlistEntries = GetArray(data, "waitlistEntries");
+                var swapRequests = GetArray(data, "swapRequests");
+                var specialLeaveRequests = GetArray(data, "specialLeaveRequests");
 
                 counts = new OrganizationImportValidationCounts(
                     spaces.Count,
@@ -119,7 +145,20 @@ public class ValidateOrganizationImportPackageCommandHandler
                     constraints.Count,
                     scheduleRuns.Count,
                     scheduleVersions.Count,
-                    assignments.Count);
+                    assignments.Count,
+                    spaceSelfServiceDefaults.Count,
+                    spaceSpecialDays.Count,
+                    selfServiceConfigs.Count,
+                    schedulingCycles.Count,
+                    shiftTemplates.Count,
+                    shiftSlots.Count,
+                    shiftRequests.Count,
+                    shiftAttendanceRecords.Count,
+                    shiftAbsenceReports.Count,
+                    shiftChangeRequests.Count,
+                    waitlistEntries.Count,
+                    swapRequests.Count,
+                    specialLeaveRequests.Count);
 
                 ValidateManifestCounts(manifest, counts, errors);
 
@@ -141,6 +180,16 @@ public class ValidateOrganizationImportPackageCommandHandler
                 await AddEntityConflictsAsync(_db.People, ExtractIds(people), "person", conflicts, ct);
                 await AddEntityConflictsAsync(_db.ScheduleVersions, ExtractIds(scheduleVersions), "schedule version", conflicts, ct);
                 await AddEntityConflictsAsync(_db.Assignments, ExtractIds(assignments), "assignment", conflicts, ct);
+                await AddEntityConflictsAsync(_db.SchedulingCycles, ExtractIds(schedulingCycles), "self-service cycle", conflicts, ct);
+                await AddEntityConflictsAsync(_db.ShiftTemplates, ExtractIds(shiftTemplates), "shift template", conflicts, ct);
+                await AddEntityConflictsAsync(_db.ShiftSlots, ExtractIds(shiftSlots), "shift slot", conflicts, ct);
+                await AddEntityConflictsAsync(_db.ShiftRequests, ExtractIds(shiftRequests), "shift request", conflicts, ct);
+                await AddEntityConflictsAsync(_db.ShiftAttendanceRecords, ExtractIds(shiftAttendanceRecords), "shift attendance record", conflicts, ct);
+                await AddEntityConflictsAsync(_db.ShiftAbsenceReports, ExtractIds(shiftAbsenceReports), "shift absence report", conflicts, ct);
+                await AddEntityConflictsAsync(_db.ShiftChangeRequests, ExtractIds(shiftChangeRequests), "shift change request", conflicts, ct);
+                await AddEntityConflictsAsync(_db.WaitlistEntries, ExtractIds(waitlistEntries), "waitlist entry", conflicts, ct);
+                await AddEntityConflictsAsync(_db.SwapRequests, ExtractIds(swapRequests), "swap request", conflicts, ct);
+                await AddEntityConflictsAsync(_db.SpecialLeaveRequests, ExtractIds(specialLeaveRequests), "special leave request", conflicts, ct);
 
                 var userIds = ExtractIds(GetArray(data, "users"));
                 var existingUserCount = await _db.Users.CountAsync(u => userIds.Contains(u.Id), ct);
@@ -204,6 +253,19 @@ public class ValidateOrganizationImportPackageCommandHandler
         Compare("scheduleRuns", actual.ScheduleRuns);
         Compare("scheduleVersions", actual.ScheduleVersions);
         Compare("assignments", actual.Assignments);
+        Compare("spaceSelfServiceDefaults", actual.SpaceSelfServiceDefaults);
+        Compare("spaceSpecialDays", actual.SpaceSpecialDays);
+        Compare("selfServiceConfigs", actual.SelfServiceConfigs);
+        Compare("schedulingCycles", actual.SchedulingCycles);
+        Compare("shiftTemplates", actual.ShiftTemplates);
+        Compare("shiftSlots", actual.ShiftSlots);
+        Compare("shiftRequests", actual.ShiftRequests);
+        Compare("shiftAttendanceRecords", actual.ShiftAttendanceRecords);
+        Compare("shiftAbsenceReports", actual.ShiftAbsenceReports);
+        Compare("shiftChangeRequests", actual.ShiftChangeRequests);
+        Compare("waitlistEntries", actual.WaitlistEntries);
+        Compare("swapRequests", actual.SwapRequests);
+        Compare("specialLeaveRequests", actual.SpecialLeaveRequests);
 
         void Compare(string propertyName, int actualValue)
         {

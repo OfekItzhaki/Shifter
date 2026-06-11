@@ -7,9 +7,13 @@ using Jobuler.Application.Organizations.Commands;
 using Jobuler.Application.Organizations.Queries;
 using Jobuler.Application.Spaces.Queries;
 using Jobuler.Domain.Billing;
+using Jobuler.Domain.Groups;
 using Jobuler.Domain.Logs;
 using Jobuler.Domain.Organizations;
+using Jobuler.Domain.People;
+using Jobuler.Domain.Scheduling;
 using Jobuler.Domain.Spaces;
+using Jobuler.Domain.Tasks;
 using Jobuler.Infrastructure.Persistence;
 using Jobuler.Tests;
 using Microsoft.EntityFrameworkCore;
@@ -485,15 +489,144 @@ public class OrganizationPortabilityTests
         var space = Space.Create("Pizza Hut Haifa", ownerId, locale: "he", organizationId: organization.Id);
         var outsideOrganization = Organization.Create("Other Org", ownerId, "IL", "general", "he");
         var outsideSpace = Space.Create("Other Space", ownerId, locale: "he", organizationId: outsideOrganization.Id);
+        var group = Group.Create(space.Id, null, "Kitchen");
+        var outsideGroup = Group.Create(outsideSpace.Id, null, "Outside");
+        var person = Person.Create(space.Id, "Worker 1");
+        var targetPerson = Person.Create(space.Id, "Worker 2");
+        var outsidePerson = Person.Create(outsideSpace.Id, "Outside Worker");
+        var cycleStart = new DateTime(2026, 6, 15, 0, 0, 0, DateTimeKind.Utc);
+        var groupTask = GroupTask.Create(
+            space.Id,
+            group.Id,
+            "Kitchen shift",
+            cycleStart,
+            cycleStart.AddDays(7),
+            shiftDurationMinutes: 240,
+            requiredHeadcount: 1,
+            TaskBurdenLevel.Normal,
+            allowsDoubleShift: false,
+            allowsOverlap: false,
+            ownerId);
+        var defaults = SpaceSelfServiceDefaults.Create(
+            space.Id,
+            minShiftsPerCycle: 1,
+            maxShiftsPerCycle: 4,
+            requestWindowOpenOffsetHours: 168,
+            requestWindowCloseOffsetHours: 24,
+            cancellationCutoffHours: 24,
+            maxAbsencesPerCycle: 2,
+            maxLateCancellationsPerCycle: 1,
+            lateCancellationWindowHours: 24,
+            waitlistOfferMinutes: 60,
+            cycleDurationDays: 7,
+            allowMemberShiftClaims: true,
+            allowWaitlist: true,
+            allowShiftChangeRequests: true,
+            allowAbsenceReports: true,
+            allowShiftSwaps: true);
+        var specialDay = SpaceSpecialDay.Create(
+            space.Id,
+            DateOnly.FromDateTime(cycleStart),
+            "Holiday",
+            SpaceSpecialDayKind.Holiday,
+            homeLeaveWeightMultiplier: 1.5m,
+            requiresCoverage: true);
+        var config = SelfServiceConfig.Create(space.Id, group.Id);
+        var outsideConfig = SelfServiceConfig.Create(outsideSpace.Id, outsideGroup.Id);
+        var cycle = SchedulingCycle.Create(
+            space.Id,
+            group.Id,
+            cycleStart,
+            cycleStart.AddDays(7),
+            cycleStart.AddDays(-7),
+            cycleStart.AddDays(-1));
+        var template = ShiftTemplate.Create(
+            space.Id,
+            group.Id,
+            groupTask.Id,
+            DayOfWeek.Monday,
+            new TimeOnly(8, 0),
+            new TimeOnly(12, 0),
+            requiredHeadcount: 1,
+            createdByUserId: ownerId);
+        var slot = ShiftSlot.Create(
+            space.Id,
+            group.Id,
+            groupTask.Id,
+            template.Id,
+            cycle.Id,
+            DateOnly.FromDateTime(cycleStart),
+            new TimeOnly(8, 0),
+            new TimeOnly(12, 0),
+            capacity: 1);
+        var shiftRequest = ShiftRequest.Create(space.Id, slot.Id, person.Id, group.Id, cycle.Id);
+        shiftRequest.Approve(ownerId);
+        var targetShiftRequest = ShiftRequest.Create(space.Id, slot.Id, targetPerson.Id, group.Id, cycle.Id);
+        targetShiftRequest.Approve(ownerId);
+        var attendance = ShiftAttendanceRecord.Create(
+            space.Id,
+            group.Id,
+            cycle.Id,
+            shiftRequest.Id,
+            slot.Id,
+            person.Id,
+            ShiftAttendanceStatus.Present,
+            ownerId,
+            "Arrived");
+        var absence = ShiftAbsenceReport.Create(
+            space.Id,
+            group.Id,
+            cycle.Id,
+            shiftRequest.Id,
+            slot.Id,
+            person.Id,
+            "Sick",
+            isLate: false,
+            reportedAt: cycleStart.AddDays(-2));
+        var change = ShiftChangeRequest.Create(
+            space.Id,
+            group.Id,
+            cycle.Id,
+            shiftRequest.Id,
+            slot.Id,
+            requestedShiftSlotId: null,
+            person.Id,
+            "Need a different slot",
+            cycleStart.AddDays(-3));
+        var waitlist = WaitlistEntry.Create(space.Id, slot.Id, person.Id, position: 1);
+        var swap = SwapRequest.Create(
+            space.Id,
+            group.Id,
+            person.Id,
+            targetPerson.Id,
+            shiftRequest.Id,
+            targetShiftRequest.Id);
+        var specialLeave = SpecialLeaveRequest.Create(
+            space.Id,
+            person.Id,
+            cycleStart.AddDays(1),
+            cycleStart.AddDays(2),
+            "Family event",
+            ownerId);
 
         db.Organizations.AddRange(organization, outsideOrganization);
         db.Spaces.AddRange(space, outsideSpace);
-        db.Groups.AddRange(
-            Jobuler.Domain.Groups.Group.Create(space.Id, null, "Kitchen"),
-            Jobuler.Domain.Groups.Group.Create(outsideSpace.Id, null, "Outside"));
-        db.People.AddRange(
-            Jobuler.Domain.People.Person.Create(space.Id, "Worker 1"),
-            Jobuler.Domain.People.Person.Create(outsideSpace.Id, "Outside Worker"));
+        db.Groups.AddRange(group, outsideGroup);
+        db.People.AddRange(person, targetPerson, outsidePerson);
+        db.GroupTasks.Add(groupTask);
+        db.SpaceSelfServiceDefaults.Add(defaults);
+        db.SpaceSpecialDays.Add(specialDay);
+        db.SelfServiceConfigs.AddRange(config, outsideConfig);
+        db.SchedulingCycles.Add(cycle);
+        db.ShiftTemplates.Add(template);
+        db.ShiftSlots.Add(slot);
+        db.ShiftRequests.AddRange(shiftRequest, targetShiftRequest);
+        db.ShiftAttendanceRecords.Add(attendance);
+        db.ShiftAbsenceReports.Add(absence);
+        db.ShiftChangeRequests.Add(change);
+        db.WaitlistEntries.Add(waitlist);
+        db.SwapRequests.Add(swap);
+        db.SpecialLeaveRequests.Add(specialLeave);
         await db.SaveChangesAsync();
 
         var mediator = Substitute.For<MediatR.IMediator>();
@@ -518,6 +651,22 @@ public class OrganizationPortabilityTests
         var groups = root.GetProperty("data").GetProperty("groups").EnumerateArray().ToList();
         groups.Should().ContainSingle();
         groups[0].GetProperty("spaceId").GetGuid().Should().Be(space.Id);
+
+        var data = root.GetProperty("data");
+        data.GetProperty("spaceSelfServiceDefaults").EnumerateArray().Should().ContainSingle();
+        data.GetProperty("spaceSpecialDays").EnumerateArray().Should().ContainSingle();
+        data.GetProperty("selfServiceConfigs").EnumerateArray().Should().ContainSingle();
+        data.GetProperty("selfServiceConfigs").EnumerateArray().Single().GetProperty("spaceId").GetGuid().Should().Be(space.Id);
+        data.GetProperty("schedulingCycles").EnumerateArray().Should().ContainSingle();
+        data.GetProperty("shiftTemplates").EnumerateArray().Should().ContainSingle();
+        data.GetProperty("shiftSlots").EnumerateArray().Should().ContainSingle();
+        data.GetProperty("shiftRequests").EnumerateArray().Should().HaveCount(2);
+        data.GetProperty("shiftAttendanceRecords").EnumerateArray().Should().ContainSingle();
+        data.GetProperty("shiftAbsenceReports").EnumerateArray().Should().ContainSingle();
+        data.GetProperty("shiftChangeRequests").EnumerateArray().Should().ContainSingle();
+        data.GetProperty("waitlistEntries").EnumerateArray().Should().ContainSingle();
+        data.GetProperty("swapRequests").EnumerateArray().Should().ContainSingle();
+        data.GetProperty("specialLeaveRequests").EnumerateArray().Should().ContainSingle();
     }
 
     [Fact]
