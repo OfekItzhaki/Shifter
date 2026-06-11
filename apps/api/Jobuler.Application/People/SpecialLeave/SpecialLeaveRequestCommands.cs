@@ -48,38 +48,56 @@ public class SubmitSpecialLeaveRequestCommandHandler
         if (person is null)
             throw new UnauthorizedAccessException("Current user is not linked to this person in the space.");
 
-        var overlapsExistingRequest = await _db.SpecialLeaveRequests.AsNoTracking()
-            .AnyAsync(r => r.SpaceId == req.SpaceId
-                && r.PersonId == req.PersonId
-                && (r.Status == SpecialLeaveRequestStatus.Pending || r.Status == SpecialLeaveRequestStatus.Approved)
-                && r.StartsAt < req.EndsAt
-                && r.EndsAt > req.StartsAt, ct);
+        var strategy = _db.Database.CreateExecutionStrategy();
 
-        if (overlapsExistingRequest)
-            throw new InvalidOperationException("An active special leave request already overlaps this time.");
+        var requestId = await strategy.ExecuteAsync(async () =>
+        {
+            await using var transaction = await _db.Database.BeginTransactionAsync(ct);
 
-        var request = SpecialLeaveRequest.Create(
-            req.SpaceId, req.PersonId, req.StartsAt, req.EndsAt, req.Reason, req.RequestedByUserId);
-
-        _db.SpecialLeaveRequests.Add(request);
-        await _db.SaveChangesAsync(ct);
-
-        await _audit.LogAsync(
-            req.SpaceId,
-            req.RequestedByUserId,
-            "self_service.submit_special_leave",
-            "special_leave_request",
-            request.Id,
-            afterJson: JsonSerializer.Serialize(new
+            try
             {
-                request_id = request.Id,
-                person_id = req.PersonId,
-                starts_at = request.StartsAt,
-                ends_at = request.EndsAt,
-                reason = request.Reason,
-                status = request.Status.ToString().ToLowerInvariant()
-            }),
-            ct: ct);
+                var overlapsExistingRequest = await _db.SpecialLeaveRequests.AsNoTracking()
+                    .AnyAsync(r => r.SpaceId == req.SpaceId
+                        && r.PersonId == req.PersonId
+                        && (r.Status == SpecialLeaveRequestStatus.Pending || r.Status == SpecialLeaveRequestStatus.Approved)
+                        && r.StartsAt < req.EndsAt
+                        && r.EndsAt > req.StartsAt, ct);
+
+                if (overlapsExistingRequest)
+                    throw new InvalidOperationException("An active special leave request already overlaps this time.");
+
+                var request = SpecialLeaveRequest.Create(
+                    req.SpaceId, req.PersonId, req.StartsAt, req.EndsAt, req.Reason, req.RequestedByUserId);
+
+                _db.SpecialLeaveRequests.Add(request);
+                await _db.SaveChangesAsync(ct);
+
+                await _audit.LogAsync(
+                    req.SpaceId,
+                    req.RequestedByUserId,
+                    "self_service.submit_special_leave",
+                    "special_leave_request",
+                    request.Id,
+                    afterJson: JsonSerializer.Serialize(new
+                    {
+                        request_id = request.Id,
+                        person_id = req.PersonId,
+                        starts_at = request.StartsAt,
+                        ends_at = request.EndsAt,
+                        reason = request.Reason,
+                        status = request.Status.ToString().ToLowerInvariant()
+                    }),
+                    ct: ct);
+
+                await transaction.CommitAsync(ct);
+                return request.Id;
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                await transaction.RollbackAsync(ct);
+                throw;
+            }
+        });
 
         await _notifications.NotifySpaceAdminsAsync(
             req.SpaceId,
@@ -88,7 +106,7 @@ public class SubmitSpecialLeaveRequestCommandHandler
             $"{person.Name} requested time off from {req.StartsAt:MMM dd HH:mm} to {req.EndsAt:MMM dd HH:mm}.",
             JsonSerializer.Serialize(new
             {
-                requestId = request.Id,
+                requestId,
                 personId = req.PersonId,
                 personName = person.Name,
                 startsAt = req.StartsAt,
@@ -98,7 +116,7 @@ public class SubmitSpecialLeaveRequestCommandHandler
             groupId: null,
             ct);
 
-        return request.Id;
+        return requestId;
     }
 }
 
@@ -131,45 +149,63 @@ public class ApproveSpecialLeaveRequestCommandHandler
 
     public async Task<Guid> Handle(ApproveSpecialLeaveRequestCommand req, CancellationToken ct)
     {
-        var request = await _db.SpecialLeaveRequests
-            .FirstOrDefaultAsync(r => r.Id == req.RequestId && r.SpaceId == req.SpaceId, ct)
-            ?? throw new KeyNotFoundException("Special leave request not found.");
+        var strategy = _db.Database.CreateExecutionStrategy();
 
-        var presence = PresenceWindow.CreateManual(
-            req.SpaceId,
-            request.PersonId,
-            PresenceState.AtHome,
-            request.StartsAt,
-            request.EndsAt,
-            BuildPresenceNote(request, req.AdminNote),
-            req.ReasonId);
+        var (presenceWindowId, request) = await strategy.ExecuteAsync(async () =>
+        {
+            await using var transaction = await _db.Database.BeginTransactionAsync(ct);
 
-        request.Approve(req.ProcessedByUserId, presence.Id, req.AdminNote);
-        _db.PresenceWindows.Add(presence);
-        await _db.SaveChangesAsync(ct);
-
-        await _cumulativeTracker.RecomputeForPersonAsync(req.SpaceId, request.PersonId, ct);
-        await _cache.RemoveByPatternAsync($"status:{req.SpaceId}:*", ct);
-
-        await _audit.LogAsync(
-            req.SpaceId,
-            req.ProcessedByUserId,
-            "approve_special_leave_request",
-            "special_leave_request",
-            request.Id,
-            afterJson: JsonSerializer.Serialize(new
+            try
             {
-                request_id = request.Id,
-                person_id = request.PersonId,
-                starts_at = request.StartsAt,
-                ends_at = request.EndsAt,
-                presence_window_id = presence.Id
-            }),
-            ct: ct);
+                var request = await _db.SpecialLeaveRequests
+                    .FirstOrDefaultAsync(r => r.Id == req.RequestId && r.SpaceId == req.SpaceId, ct)
+                    ?? throw new KeyNotFoundException("Special leave request not found.");
 
+                var presence = PresenceWindow.CreateManual(
+                    req.SpaceId,
+                    request.PersonId,
+                    PresenceState.AtHome,
+                    request.StartsAt,
+                    request.EndsAt,
+                    BuildPresenceNote(request, req.AdminNote),
+                    req.ReasonId);
+
+                request.Approve(req.ProcessedByUserId, presence.Id, req.AdminNote);
+                _db.PresenceWindows.Add(presence);
+                await _db.SaveChangesAsync(ct);
+
+                await _cumulativeTracker.RecomputeForPersonAsync(req.SpaceId, request.PersonId, ct);
+
+                await _audit.LogAsync(
+                    req.SpaceId,
+                    req.ProcessedByUserId,
+                    "approve_special_leave_request",
+                    "special_leave_request",
+                    request.Id,
+                    afterJson: JsonSerializer.Serialize(new
+                    {
+                        request_id = request.Id,
+                        person_id = request.PersonId,
+                        starts_at = request.StartsAt,
+                        ends_at = request.EndsAt,
+                        presence_window_id = presence.Id
+                    }),
+                    ct: ct);
+
+                await transaction.CommitAsync(ct);
+                return (presence.Id, request);
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                await transaction.RollbackAsync(ct);
+                throw;
+            }
+        });
+
+        await _cache.RemoveByPatternAsync($"status:{req.SpaceId}:*", ct);
         await SpecialLeaveNotifications.AddMemberReviewNotificationAsync(_db, request, approved: true, ct);
 
-        return presence.Id;
+        return presenceWindowId;
     }
 
     private static string BuildPresenceNote(SpecialLeaveRequest request, string? adminNote)
@@ -201,26 +237,44 @@ public class RejectSpecialLeaveRequestCommandHandler
 
     public async Task Handle(RejectSpecialLeaveRequestCommand req, CancellationToken ct)
     {
-        var request = await _db.SpecialLeaveRequests
-            .FirstOrDefaultAsync(r => r.Id == req.RequestId && r.SpaceId == req.SpaceId, ct)
-            ?? throw new KeyNotFoundException("Special leave request not found.");
+        var strategy = _db.Database.CreateExecutionStrategy();
 
-        request.Reject(req.ProcessedByUserId, req.AdminNote);
-        await _db.SaveChangesAsync(ct);
+        var request = await strategy.ExecuteAsync(async () =>
+        {
+            await using var transaction = await _db.Database.BeginTransactionAsync(ct);
 
-        await _audit.LogAsync(
-            req.SpaceId,
-            req.ProcessedByUserId,
-            "reject_special_leave_request",
-            "special_leave_request",
-            request.Id,
-            afterJson: JsonSerializer.Serialize(new
+            try
             {
-                request_id = request.Id,
-                person_id = request.PersonId,
-                admin_note = req.AdminNote
-            }),
-            ct: ct);
+                var request = await _db.SpecialLeaveRequests
+                    .FirstOrDefaultAsync(r => r.Id == req.RequestId && r.SpaceId == req.SpaceId, ct)
+                    ?? throw new KeyNotFoundException("Special leave request not found.");
+
+                request.Reject(req.ProcessedByUserId, req.AdminNote);
+                await _db.SaveChangesAsync(ct);
+
+                await _audit.LogAsync(
+                    req.SpaceId,
+                    req.ProcessedByUserId,
+                    "reject_special_leave_request",
+                    "special_leave_request",
+                    request.Id,
+                    afterJson: JsonSerializer.Serialize(new
+                    {
+                        request_id = request.Id,
+                        person_id = request.PersonId,
+                        admin_note = req.AdminNote
+                    }),
+                    ct: ct);
+
+                await transaction.CommitAsync(ct);
+                return request;
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                await transaction.RollbackAsync(ct);
+                throw;
+            }
+        });
 
         await SpecialLeaveNotifications.AddMemberReviewNotificationAsync(_db, request, approved: false, ct);
     }
@@ -293,47 +347,65 @@ public class CancelSpecialLeaveRequestCommandHandler
 
     public async Task Handle(CancelSpecialLeaveRequestCommand req, CancellationToken ct)
     {
-        var request = await _db.SpecialLeaveRequests
-            .FirstOrDefaultAsync(r => r.Id == req.RequestId
-                && r.SpaceId == req.SpaceId
-                && r.PersonId == req.PersonId, ct)
-            ?? throw new KeyNotFoundException("Special leave request not found.");
+        var strategy = _db.Database.CreateExecutionStrategy();
 
-        var person = await _db.People
-            .AsNoTracking()
-            .Where(p => p.Id == request.PersonId && p.SpaceId == request.SpaceId)
-            .Select(p => new { Name = p.DisplayName ?? p.FullName, p.LinkedUserId })
-            .FirstOrDefaultAsync(ct);
+        var (request, person) = await strategy.ExecuteAsync(async () =>
+        {
+            await using var transaction = await _db.Database.BeginTransactionAsync(ct);
 
-        var previousStatus = request.Status.ToString().ToLowerInvariant();
-        request.Cancel();
-        await _db.SaveChangesAsync(ct);
-
-        await _audit.LogAsync(
-            req.SpaceId,
-            person?.LinkedUserId,
-            "self_service.cancel_special_leave",
-            "special_leave_request",
-            request.Id,
-            beforeJson: JsonSerializer.Serialize(new
+            try
             {
-                request_id = request.Id,
-                person_id = request.PersonId,
-                starts_at = request.StartsAt,
-                ends_at = request.EndsAt,
-                reason = request.Reason,
-                status = previousStatus
-            }),
-            afterJson: JsonSerializer.Serialize(new
+                var request = await _db.SpecialLeaveRequests
+                    .FirstOrDefaultAsync(r => r.Id == req.RequestId
+                        && r.SpaceId == req.SpaceId
+                        && r.PersonId == req.PersonId, ct)
+                    ?? throw new KeyNotFoundException("Special leave request not found.");
+
+                var person = await _db.People
+                    .AsNoTracking()
+                    .Where(p => p.Id == request.PersonId && p.SpaceId == request.SpaceId)
+                    .Select(p => new { Name = p.DisplayName ?? p.FullName, p.LinkedUserId })
+                    .FirstOrDefaultAsync(ct);
+
+                var previousStatus = request.Status.ToString().ToLowerInvariant();
+                request.Cancel();
+                await _db.SaveChangesAsync(ct);
+
+                await _audit.LogAsync(
+                    req.SpaceId,
+                    person?.LinkedUserId,
+                    "self_service.cancel_special_leave",
+                    "special_leave_request",
+                    request.Id,
+                    beforeJson: JsonSerializer.Serialize(new
+                    {
+                        request_id = request.Id,
+                        person_id = request.PersonId,
+                        starts_at = request.StartsAt,
+                        ends_at = request.EndsAt,
+                        reason = request.Reason,
+                        status = previousStatus
+                    }),
+                    afterJson: JsonSerializer.Serialize(new
+                    {
+                        request_id = request.Id,
+                        person_id = request.PersonId,
+                        starts_at = request.StartsAt,
+                        ends_at = request.EndsAt,
+                        reason = request.Reason,
+                        status = request.Status.ToString().ToLowerInvariant()
+                    }),
+                    ct: ct);
+
+                await transaction.CommitAsync(ct);
+                return (request, person);
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
             {
-                request_id = request.Id,
-                person_id = request.PersonId,
-                starts_at = request.StartsAt,
-                ends_at = request.EndsAt,
-                reason = request.Reason,
-                status = request.Status.ToString().ToLowerInvariant()
-            }),
-            ct: ct);
+                await transaction.RollbackAsync(ct);
+                throw;
+            }
+        });
 
         await _notifications.NotifySpaceAdminsAsync(
             req.SpaceId,
