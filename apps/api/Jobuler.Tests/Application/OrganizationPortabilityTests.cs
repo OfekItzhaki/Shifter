@@ -1,5 +1,6 @@
 using FluentAssertions;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using Jobuler.Application.Auth.Commands;
 using Jobuler.Application.Billing.Queries;
 using Jobuler.Application.Common;
@@ -771,6 +772,35 @@ public class OrganizationPortabilityTests
         result.Conflicts.Should().Contain(c => c.Contains("space special day id"));
         result.Conflicts.Should().Contain(c => c.Contains("notification id"));
         result.Conflicts.Should().Contain(c => c.Contains("audit log id"));
+    }
+
+    [Fact]
+    public async Task ValidateImportPackage_RejectsRowsOutsideExportedSpaces()
+    {
+        var sourceDb = CreateDb();
+        var ownerId = Guid.NewGuid();
+        var organization = Organization.Create("Pizza Hut Israel", ownerId, "IL", "restaurant_hospitality", "he");
+        var space = Space.Create("Pizza Hut Haifa", ownerId, locale: "he", organizationId: organization.Id);
+        sourceDb.Organizations.Add(organization);
+        sourceDb.Spaces.Add(space);
+        sourceDb.Groups.Add(Group.Create(space.Id, null, "Kitchen"));
+        await sourceDb.SaveChangesAsync();
+
+        var package = await ExportPackageAsync(sourceDb, organization.Id);
+        var packageJson = JsonNode.Parse(System.Text.Encoding.UTF8.GetString(package.Content))!;
+        var groups = packageJson["data"]!["groups"]!.AsArray();
+        groups.Add(new JsonObject
+        {
+            ["id"] = Guid.NewGuid().ToString(),
+            ["spaceId"] = Guid.NewGuid().ToString(),
+            ["name"] = "Leaked group"
+        });
+
+        var result = await new ValidateOrganizationImportPackageCommandHandler(CreateDb())
+            .Handle(new ValidateOrganizationImportPackageCommand(packageJson.ToJsonString()), CancellationToken.None);
+
+        result.IsImportSafe.Should().BeFalse();
+        result.Errors.Should().Contain(error => error.Contains("groups contains 1 row(s) outside the exported spaces"));
     }
 
     private static Task<OrganizationExportPackageResult> ExportPackageAsync(AppDbContext db, Guid organizationId)

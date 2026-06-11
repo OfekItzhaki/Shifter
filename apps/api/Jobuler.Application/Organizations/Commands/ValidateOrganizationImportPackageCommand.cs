@@ -174,6 +174,34 @@ public class ValidateOrganizationImportPackageCommandHandler
                 if (organizationId.HasValue && organizationObjectId.HasValue && organizationObjectId != organizationId)
                     errors.Add("Manifest organizationId does not match data.organization.id.");
 
+                var exportedSpaceIds = ExtractIds(spaces).ToHashSet();
+                ValidateRowsAreScopedToExportedSpaces("groups", groups, exportedSpaceIds, errors);
+                ValidateRowsAreScopedToExportedSpaces("people", people, exportedSpaceIds, errors);
+                ValidateRowsAreScopedToExportedSpaces("spaceMemberships", spaceMemberships, exportedSpaceIds, errors);
+                ValidateRowsAreScopedToExportedSpaces("groupMemberships", groupMemberships, exportedSpaceIds, errors);
+                ValidateRowsAreScopedToExportedSpaces("groupTasks", groupTasks, exportedSpaceIds, errors);
+                ValidateRowsAreScopedToExportedSpaces("taskTypes", taskTypes, exportedSpaceIds, errors);
+                ValidateRowsAreScopedToExportedSpaces("taskSlots", taskSlots, exportedSpaceIds, errors);
+                ValidateRowsAreScopedToExportedSpaces("constraints", constraints, exportedSpaceIds, errors);
+                ValidateRowsAreScopedToExportedSpaces("scheduleRuns", scheduleRuns, exportedSpaceIds, errors);
+                ValidateRowsAreScopedToExportedSpaces("scheduleVersions", scheduleVersions, exportedSpaceIds, errors);
+                ValidateRowsAreScopedToExportedSpaces("assignments", assignments, exportedSpaceIds, errors);
+                ValidateRowsAreScopedToExportedSpaces("spaceSelfServiceDefaults", spaceSelfServiceDefaults, exportedSpaceIds, errors);
+                ValidateRowsAreScopedToExportedSpaces("spaceSpecialDays", spaceSpecialDays, exportedSpaceIds, errors);
+                ValidateRowsAreScopedToExportedSpaces("selfServiceConfigs", selfServiceConfigs, exportedSpaceIds, errors);
+                ValidateRowsAreScopedToExportedSpaces("schedulingCycles", schedulingCycles, exportedSpaceIds, errors);
+                ValidateRowsAreScopedToExportedSpaces("shiftTemplates", shiftTemplates, exportedSpaceIds, errors);
+                ValidateRowsAreScopedToExportedSpaces("shiftSlots", shiftSlots, exportedSpaceIds, errors);
+                ValidateRowsAreScopedToExportedSpaces("shiftRequests", shiftRequests, exportedSpaceIds, errors);
+                ValidateRowsAreScopedToExportedSpaces("shiftAttendanceRecords", shiftAttendanceRecords, exportedSpaceIds, errors);
+                ValidateRowsAreScopedToExportedSpaces("shiftAbsenceReports", shiftAbsenceReports, exportedSpaceIds, errors);
+                ValidateRowsAreScopedToExportedSpaces("shiftChangeRequests", shiftChangeRequests, exportedSpaceIds, errors);
+                ValidateRowsAreScopedToExportedSpaces("waitlistEntries", waitlistEntries, exportedSpaceIds, errors);
+                ValidateRowsAreScopedToExportedSpaces("swapRequests", swapRequests, exportedSpaceIds, errors);
+                ValidateRowsAreScopedToExportedSpaces("specialLeaveRequests", specialLeaveRequests, exportedSpaceIds, errors);
+                ValidateRowsAreScopedToExportedSpaces("notifications", notifications, exportedSpaceIds, errors);
+                ValidateRowsAreScopedToExportedSpaces("auditLogs", auditLogs, exportedSpaceIds, errors, allowMissingSpaceId: true);
+
                 await AddConflictAsync(
                     organizationId.HasValue
                         ? await _db.Organizations.AnyAsync(o => o.Id == organizationId.Value, ct)
@@ -300,6 +328,37 @@ public class ValidateOrganizationImportPackageCommandHandler
             .Select(id => id!.Value)
             .Distinct()
             .ToList();
+
+    private static void ValidateRowsAreScopedToExportedSpaces(
+        string collectionName,
+        IEnumerable<JsonElement> rows,
+        IReadOnlySet<Guid> exportedSpaceIds,
+        List<string> errors,
+        bool allowMissingSpaceId = false)
+    {
+        var leakedCount = 0;
+        var missingCount = 0;
+
+        foreach (var row in rows)
+        {
+            var spaceId = TryGetGuid(row, "spaceId");
+            if (!spaceId.HasValue)
+            {
+                if (!allowMissingSpaceId)
+                    missingCount++;
+                continue;
+            }
+
+            if (!exportedSpaceIds.Contains(spaceId.Value))
+                leakedCount++;
+        }
+
+        if (missingCount > 0)
+            errors.Add($"{collectionName} contains {missingCount} row(s) without a valid spaceId.");
+
+        if (leakedCount > 0)
+            errors.Add($"{collectionName} contains {leakedCount} row(s) outside the exported spaces.");
+    }
 
     private static bool TryGetObject(JsonElement parent, string propertyName, out JsonElement value)
     {
