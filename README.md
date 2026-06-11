@@ -124,6 +124,7 @@ the Docker Compose customer-hosted package:
 
 - [Customer-hosted deployment guide](docs/CUSTOMER-HOSTED-DEPLOYMENT.md)
 - [AI deployment modes](docs/AI-DEPLOYMENT-MODES.md)
+- [Manual self-service scheduling guide](docs/MANUAL-SELF-SERVICE-SCHEDULING.md)
 - `infra/compose/.env.customer.example`
 - `infra/scripts/validate-customer-env.sh`
 

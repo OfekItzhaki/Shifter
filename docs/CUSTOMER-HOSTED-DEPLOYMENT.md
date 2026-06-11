@@ -139,6 +139,8 @@ AI_MODEL=customer-approved-model
 
 If no AI variables are set, Shifter starts with AI disabled. The scheduling
 solver still works because it is deterministic OR-Tools logic, not hosted AI.
+Manual self-service scheduling also works without hosted AI; see
+[Manual self-service scheduling](MANUAL-SELF-SERVICE-SCHEDULING.md).
 
 ## Email, Messaging, And Billing
 
