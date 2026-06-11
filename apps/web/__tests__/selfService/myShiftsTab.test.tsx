@@ -78,9 +78,30 @@ vi.mock("next-intl", () => ({
       changeConfirm: "Send Change Request",
       changeSubmitting: "Sending...",
       changeRequestSubmitted: "Shift-change request sent to the admins.",
+      cancelDialogTitle: "Cancel shift",
+      cancelDialogMessage: "Tell admins why you are cancelling.",
+      cancelReasonPlaceholder: "Why are you cancelling?",
+      cancelConfirm: "Cancel shift",
+      cancelling: "Cancelling...",
+      cannotAttendDialogTitle: "Can't make it",
+      cannotAttendDialogMessage: "Tell admins why you cannot attend.",
+      cannotAttendReasonPlaceholder: "Why can't you make it?",
+      cannotAttendConfirm: "Report absence",
+      cannotAttendSubmitting: "Reporting...",
+      cannotAttendLatePolicy: `${values?.remaining ?? 0}/${values?.max ?? 0} late reports remaining.`,
+      cannotAttendNotLatePolicy: `This is outside the ${values?.window ?? 0}h late window.`,
+      cannotAttendSubmitted: "Absence report sent to the admins.",
+      cannotAttendLateSubmitted: `${values?.remaining ?? 0} late reports remaining.`,
       absenceReportsTitle: "Absence reports",
       absenceReportsDescription: `${values?.used ?? 0}/${values?.max ?? 0} late reports used`,
       absenceReportsEmpty: "No absence reports",
+      specialLeaveSubmitted: "Time-off request sent to the admins.",
+      specialLeaveCancelled: "Time-off request cancelled.",
+      specialLeaveCancel: "Cancel time off",
+      specialLeaveDateRequired: "Choose dates",
+      specialLeaveInvalidRange: "End must be after start",
+      specialLeaveReasonRequired: "Reason is required",
+      specialLeaveReasonTooLong: "Reason is too long",
       approved: "Approved",
       pending: "Pending",
       cancelled: "Cancelled",
@@ -237,6 +258,184 @@ describe("MyShiftsTab", () => {
       );
     });
     expect(await screen.findByText("Shift-change request sent to the admins.")).toBeInTheDocument();
+  });
+
+  it("lets members cancel an approved shift before the cutoff", async () => {
+    const futureShiftStart = new Date(Date.now() + 96 * 60 * 60 * 1000);
+    const futureShiftEnd = new Date(futureShiftStart.getTime() + 8 * 60 * 60 * 1000);
+    mockCancelShiftRequest.mockResolvedValue(undefined);
+    mockGetMyShiftRequests.mockResolvedValue({
+      requests: [
+        {
+          id: "request-2",
+          shiftSlotId: "slot-2",
+          slotDate: formatLocalDate(futureShiftStart),
+          slotStartTime: formatLocalTime(futureShiftStart),
+          slotEndTime: formatLocalTime(futureShiftEnd),
+          taskName: "Kitchen",
+          status: "Approved",
+          isAdminOverride: false,
+          rejectionReason: null,
+          cancellationReason: null,
+          cancelledAt: null,
+          createdAt: "2026-06-10T08:00:00",
+        },
+      ],
+      currentShiftCount: 1,
+      minShiftsPerCycle: 1,
+      maxShiftsPerCycle: 3,
+      cancellationCutoffHours: 48,
+      maxLateReports: 2,
+      lateCancellationWindowHours: 24,
+    });
+
+    render(<MyShiftsTab spaceId="space-1" groupId="group-1" />);
+
+    fireEvent.click(await screen.findByRole("button", { name: "Cancel" }));
+    fireEvent.change(screen.getByPlaceholderText("Why are you cancelling?"), {
+      target: { value: "Family appointment" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Cancel shift" }));
+
+    await waitFor(() => {
+      expect(mockCancelShiftRequest).toHaveBeenCalledWith(
+        "space-1",
+        "group-1",
+        "request-2",
+        "Family appointment",
+      );
+    });
+    await waitFor(() => {
+      expect(screen.queryByText("Tell admins why you are cancelling.")).not.toBeInTheDocument();
+    });
+    expect(mockGetMyShiftRequests).toHaveBeenCalledTimes(2);
+  });
+
+  it("lets members report that they cannot attend a future shift", async () => {
+    const shiftStart = new Date(Date.now() + 36 * 60 * 60 * 1000);
+    const shiftEnd = new Date(shiftStart.getTime() + 8 * 60 * 60 * 1000);
+    mockReportCannotAttend.mockResolvedValue({ isLate: false, lateReportsRemaining: 2 });
+    mockGetMyAbsenceReports.mockResolvedValue({
+      reports: [],
+      lateReportsUsed: 0,
+      maxLateReports: 2,
+      schedulingCycleId: "cycle-1",
+    });
+    mockGetMyShiftRequests.mockResolvedValue({
+      requests: [
+        {
+          id: "request-3",
+          shiftSlotId: "slot-3",
+          slotDate: formatLocalDate(shiftStart),
+          slotStartTime: formatLocalTime(shiftStart),
+          slotEndTime: formatLocalTime(shiftEnd),
+          taskName: "Front desk",
+          status: "Approved",
+          isAdminOverride: false,
+          rejectionReason: null,
+          cancellationReason: null,
+          cancelledAt: null,
+          createdAt: "2026-06-10T08:00:00",
+        },
+      ],
+      currentShiftCount: 1,
+      minShiftsPerCycle: 1,
+      maxShiftsPerCycle: 3,
+      cancellationCutoffHours: 48,
+      maxLateReports: 2,
+      lateCancellationWindowHours: 24,
+    });
+
+    render(<MyShiftsTab spaceId="space-1" groupId="group-1" />);
+
+    fireEvent.click(await screen.findByRole("button", { name: "Can't make it" }));
+    fireEvent.change(screen.getByPlaceholderText("Why can't you make it?"), {
+      target: { value: "Medical appointment" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Report absence" }));
+
+    await waitFor(() => {
+      expect(mockReportCannotAttend).toHaveBeenCalledWith(
+        "space-1",
+        "group-1",
+        "request-3",
+        "Medical appointment",
+      );
+    });
+    expect(await screen.findByText("Absence report sent to the admins.")).toBeInTheDocument();
+  });
+
+  it("lets members submit and cancel time-off requests", async () => {
+    mockSubmitSpecialLeaveRequest.mockResolvedValue({ id: "leave-new" });
+    mockCancelSpecialLeaveRequest.mockResolvedValue(undefined);
+    mockGetMySpecialLeaveRequests
+      .mockResolvedValueOnce([
+        {
+          id: "leave-1",
+          spaceId: "space-1",
+          personId: "person-1",
+          personName: "Member One",
+          startsAt: "2026-06-20T08:00:00",
+          endsAt: "2026-06-21T08:00:00",
+          reason: "Family event",
+          status: "Pending",
+          requestedByUserId: "user-1",
+          processedByUserId: null,
+          processedAt: null,
+          adminNote: null,
+          presenceWindowId: null,
+          createdAt: "2026-06-10T10:00:00",
+          updatedAt: "2026-06-10T10:00:00",
+        },
+      ])
+      .mockResolvedValueOnce([
+        {
+          id: "leave-1",
+          spaceId: "space-1",
+          personId: "person-1",
+          personName: "Member One",
+          startsAt: "2026-06-20T08:00:00",
+          endsAt: "2026-06-21T08:00:00",
+          reason: "Family event",
+          status: "Pending",
+          requestedByUserId: "user-1",
+          processedByUserId: null,
+          processedAt: null,
+          adminNote: null,
+          presenceWindowId: null,
+          createdAt: "2026-06-10T10:00:00",
+          updatedAt: "2026-06-10T10:00:00",
+        },
+      ]);
+
+    render(<MyShiftsTab spaceId="space-1" groupId="group-1" />);
+
+    fireEvent.change(await screen.findByLabelText("From"), {
+      target: { value: "2026-06-25T09:00" },
+    });
+    fireEvent.change(screen.getByLabelText("Until"), {
+      target: { value: "2026-06-26T09:00" },
+    });
+    fireEvent.change(screen.getByPlaceholderText("Reason..."), {
+      target: { value: "Vacation" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Send request" }));
+
+    await waitFor(() => {
+      expect(mockSubmitSpecialLeaveRequest).toHaveBeenCalledWith("space-1", {
+        startsAt: "2026-06-25T06:00:00.000Z",
+        endsAt: "2026-06-26T06:00:00.000Z",
+        reason: "Vacation",
+      });
+    });
+    expect(await screen.findByText("Time-off request sent to the admins.")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Cancel time off" }));
+
+    await waitFor(() => {
+      expect(mockCancelSpecialLeaveRequest).toHaveBeenCalledWith("space-1", "leave-1");
+    });
+    expect(await screen.findByText("Time-off request cancelled.")).toBeInTheDocument();
   });
 
   it("shows a unified recent self-service history", async () => {
