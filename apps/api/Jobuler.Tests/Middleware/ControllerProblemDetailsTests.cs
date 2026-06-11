@@ -4,6 +4,7 @@ using Jobuler.Api.Middleware;
 using Jobuler.Application.Common;
 using Jobuler.Application.Notifications;
 using Jobuler.Application.Scheduling.SelfService;
+using Jobuler.Application.Scheduling.SelfService.Commands;
 using Jobuler.Application.Scheduling.SelfService.Models;
 using Jobuler.Domain.Scheduling;
 using Jobuler.Domain.Tasks;
@@ -323,5 +324,49 @@ public class ControllerProblemDetailsTests
         var problemDetails = objectResult.Value.Should().BeOfType<ProblemDetails>().Subject;
         problemDetails.Instance.Should().Be("/spaces/00000000-0000-0000-0000-000000000001/groups/00000000-0000-0000-0000-000000000002/waitlist");
         problemDetails.Extensions["traceId"].Should().Be("custom-trace-123");
+    }
+
+    [Fact]
+    public async Task AcceptOffer_WhenMaxShiftsReached_ReturnsSpecificProblemType()
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+        var spaceId = Guid.Parse("00000000-0000-0000-0000-000000000001");
+        var groupId = Guid.Parse("00000000-0000-0000-0000-000000000002");
+        var db = CreateDb();
+        await SeedPersonAsync(db, spaceId, groupId, userId);
+        var shiftSlotId = await SeedShiftSlotAsync(db, spaceId, groupId);
+
+        var httpContext = CreateHttpContext(userId);
+        httpContext.Request.Path = "/spaces/00000000-0000-0000-0000-000000000001/groups/00000000-0000-0000-0000-000000000002/waitlist/accept";
+        var controller = CreateWaitlistController(db, httpContext);
+
+        const string errorMessage = "You have reached the maximum number of shifts (7) for this scheduling cycle. You have been removed from the waitlist.";
+        _mediator
+            .Send(Arg.Any<AcceptWaitlistOfferCommand>(), Arg.Any<CancellationToken>())
+            .Returns(new AcceptWaitlistOfferResult(
+                Success: false,
+                ShiftRequestId: null,
+                ErrorMessage: errorMessage));
+
+        _permissions
+            .RequirePermissionAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+
+        // Act
+        var result = await controller.AcceptOffer(
+            spaceId,
+            groupId,
+            new AcceptWaitlistOfferRequest(shiftSlotId),
+            CancellationToken.None);
+
+        // Assert
+        var objectResult = result.Should().BeOfType<ObjectResult>().Subject;
+        objectResult.StatusCode.Should().Be(422);
+
+        var problemDetails = objectResult.Value.Should().BeOfType<ProblemDetails>().Subject;
+        problemDetails.Detail.Should().Be(errorMessage);
+        problemDetails.Type.Should().Be("https://docs.jobuler.com/errors/max-shifts-reached");
+        problemDetails.Extensions.Should().ContainKey("traceId");
     }
 }

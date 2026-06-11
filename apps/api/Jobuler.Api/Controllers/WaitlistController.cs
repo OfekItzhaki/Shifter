@@ -105,7 +105,7 @@ public class WaitlistController : ControllerBase
                 statusCode: 422,
                 title: "Unprocessable Entity",
                 detail: result.ErrorMessage!,
-                typeSlug: "waitlist-rejected");
+                typeSlug: GetAcceptOfferErrorSlug(result.ErrorMessage));
         }
 
         return Ok(new AcceptWaitlistOfferResponse(ShiftRequestId: result.ShiftRequestId!.Value));
@@ -200,6 +200,11 @@ public class WaitlistController : ControllerBase
         _db.ShiftSlots
             .AsNoTracking()
             .AnyAsync(s => s.Id == shiftSlotId && s.SpaceId == spaceId && s.GroupId == groupId, ct);
+
+    private static string GetAcceptOfferErrorSlug(string? errorMessage) =>
+        errorMessage?.Contains("maximum number of shifts", StringComparison.OrdinalIgnoreCase) == true
+            ? "max-shifts-reached"
+            : "waitlist-rejected";
 }
 
 // --- Request DTOs ---
