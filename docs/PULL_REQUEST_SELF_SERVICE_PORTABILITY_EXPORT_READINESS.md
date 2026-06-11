@@ -22,6 +22,8 @@ slice inside manual self-service scheduling.
 - Shows special-day badges on member slot cards.
 - Adds special-day counts to admin cycle status and labels underfilled slots
   that fall on marked special days.
+- Adds a Playwright browser lifecycle flow that creates a special day for a
+  real seeded self-service slot and verifies the member picker shows it.
 - Keeps this as visible awareness only; holiday-specific workflow restrictions
   remain a later policy feature.
 
@@ -41,11 +43,14 @@ slice inside manual self-service scheduling.
   warnings and 0 errors.
 - `node_modules\\.bin\\vitest.cmd run __tests__\\selfService\\slotBrowserTab.test.tsx __tests__\\selfService\\cycleControlPanel.test.tsx`
   passed: 7 passed, 0 failed.
+- `node_modules\\.bin\\eslint.cmd e2e\\self-service.browser.spec.ts` passed.
+- `node_modules\\.bin\\playwright.cmd test self-service.browser.spec.ts --list`
+  discovered 14 browser lifecycle tests, including the new special-day label
+  flow.
 
 ## Remaining Product Checks
 
-- Add a full browser lifecycle test that creates/uses special days through the
-  UI before claiming complete holiday policy support.
+- Run the special-day browser lifecycle flow against a live seeded web/API stack.
 - Smoke-test customer-hosted setup with real secrets and a real database,
   especially `FIELD_ENCRYPTION_KEY`.
 

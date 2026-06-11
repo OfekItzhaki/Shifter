@@ -21,6 +21,8 @@ payload changes forward for scheduling.
 - Adds `SpecialDaysCard` to space settings under the `Self-service` tab.
 - Adds self-service slot labels and cycle warning counts for marked special
   days, without enforcing automatic holiday restrictions yet.
+- Adds a browser lifecycle flow in the top integration branch for member picker
+  special-day labels.
 - Adds `spaceSpecialDays` web API helpers and EN/HE/RU locale strings.
 - Integrates holiday/special-day weighting into solver payloads and solver
   home-leave behavior.
@@ -35,6 +37,8 @@ payload changes forward for scheduling.
   71 passed, 0 failed.
 - Holiday-aware self-service component tests passed in the top integration
   branch: 7 passed, 0 failed.
+- Self-service browser test discovery in the top integration branch found 14
+  lifecycle tests, including the special-day label flow.
 - `node_modules\\.bin\\next.cmd build` from `apps/web` passed.
 - Frontend lint passes on the current branch stack with 89 existing warnings
   and 0 errors.

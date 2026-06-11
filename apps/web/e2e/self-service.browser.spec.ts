@@ -31,13 +31,18 @@ interface GroupMemberDto {
 
 interface CycleStatusDto {
   cycleId: string | null;
+  specialDayCount?: number;
 }
 
 interface AvailableSlotDto {
   id?: string;
   shiftSlotId?: string;
+  date?: string;
   capacity: number;
   currentFillCount: number;
+  isSpecialDay?: boolean;
+  specialDayName?: string | null;
+  specialDayKind?: string | null;
 }
 
 interface AvailableSlotsResponse {
@@ -102,6 +107,13 @@ interface SpecialLeaveRequestDto {
   reason: string;
   status: "Pending" | "Approved" | "Rejected" | "Cancelled";
   presenceWindowId: string | null;
+}
+
+interface SpaceSpecialDayDto {
+  id: string;
+  date: string;
+  name: string;
+  kind: "Holiday" | "Weekend" | "Custom";
 }
 
 async function login(request: APIRequestContext, identifier: string): Promise<string> {
@@ -461,6 +473,75 @@ async function findOpenTargetSlot(
   return targetSlot!;
 }
 
+async function ensureSpecialDayForAvailableSlot(
+  request: APIRequestContext,
+  adminToken: string,
+  memberToken: string,
+  spaceId: string,
+  groupId: string,
+  cycleId: string
+): Promise<{ slot: AvailableSlotDto; specialDayName: string }> {
+  const slotsBefore = await api<AvailableSlotsResponse>(
+    request,
+    memberToken,
+    "GET",
+    `/spaces/${spaceId}/groups/${groupId}/shift-slots/available?cycleId=${cycleId}`
+  );
+  const targetSlot = slotsBefore.slots.find((slot) =>
+    (slot.id ?? slot.shiftSlotId) && slot.date && slot.currentFillCount < slot.capacity
+  ) ?? slotsBefore.slots.find((slot) => (slot.id ?? slot.shiftSlotId) && slot.date);
+
+  expect(targetSlot, "holiday browser test needs a dated self-service slot").toBeTruthy();
+
+  const slotDate = targetSlot!.date!;
+  const specialDayName = `E2E Special Day ${slotDate}`;
+  const existing = await api<SpaceSpecialDayDto[]>(
+    request,
+    adminToken,
+    "GET",
+    `/spaces/${spaceId}/special-days?from=${slotDate}&to=${slotDate}`
+  );
+
+  for (const day of existing.filter((row) => row.name === specialDayName)) {
+    await apiNoContent(request, adminToken, "DELETE", `/spaces/${spaceId}/special-days/${day.id}`);
+  }
+
+  await api<{ id: string }>(
+    request,
+    adminToken,
+    "POST",
+    `/spaces/${spaceId}/special-days`,
+    {
+      date: slotDate,
+      name: specialDayName,
+      kind: "Holiday",
+      homeLeaveWeightMultiplier: 1.5,
+      requiresCoverage: true,
+    }
+  );
+
+  const labeledSlots = await api<AvailableSlotsResponse>(
+    request,
+    memberToken,
+    "GET",
+    `/spaces/${spaceId}/groups/${groupId}/shift-slots/available?cycleId=${cycleId}`
+  );
+  const slotId = targetSlot!.id ?? targetSlot!.shiftSlotId;
+  const labeledSlot = labeledSlots.slots.find((slot) => (slot.id ?? slot.shiftSlotId) === slotId);
+  expect(labeledSlot?.isSpecialDay).toBeTruthy();
+  expect(labeledSlot?.specialDayName).toBe(specialDayName);
+
+  const status = await api<CycleStatusDto>(
+    request,
+    adminToken,
+    "GET",
+    `/spaces/${spaceId}/groups/${groupId}/self-service-cycles/status`
+  );
+  expect(status.specialDayCount ?? 0).toBeGreaterThan(0);
+
+  return { slot: labeledSlot!, specialDayName };
+}
+
 async function ensureWaitingWaitlistEntry(
   request: APIRequestContext,
   memberToken: string,
@@ -631,6 +712,39 @@ async function submitSpecialLeaveThroughUi(
 }
 
 test.describe("Self-service browser lifecycle", () => {
+  test("member sees special-day labels on available shifts", async ({ page, request }) => {
+    const adminEmail = process.env.E2E_ADMIN_EMAIL ?? "admin@demo.local";
+    const memberEmail = process.env.E2E_MEMBER_EMAIL ?? "ofek@demo.local";
+    const adminToken = await login(request, adminEmail);
+    const memberToken = await login(request, memberEmail);
+    const { spaceId, groupId } = await findDemoSelfServiceGroup(request, adminToken);
+    const status = await api<CycleStatusDto>(
+      request,
+      adminToken,
+      "GET",
+      `/spaces/${spaceId}/groups/${groupId}/self-service-cycles/status`
+    );
+    expect(status.cycleId).toBeTruthy();
+
+    const { specialDayName } = await ensureSpecialDayForAvailableSlot(
+      request,
+      adminToken,
+      memberToken,
+      spaceId,
+      groupId,
+      status.cycleId!
+    );
+
+    await loginAsUser(page, memberEmail, DEMO_PASSWORD);
+    await page.evaluate((targetGroupId) => {
+      localStorage.setItem("shifter-pick-last-group", targetGroupId);
+    }, groupId);
+    await page.goto(`${BASE}/pick`);
+    await page.getByTestId("pick-tab-slots").click();
+
+    await expect(page.getByText(specialDayName)).toBeVisible({ timeout: 15000 });
+  });
+
   test("member proposes and target accepts a shift swap through the UI", async ({ page, request }) => {
     const adminEmail = process.env.E2E_ADMIN_EMAIL ?? "admin@demo.local";
     const initiatorEmail = process.env.E2E_SWAP_INITIATOR_EMAIL ?? "ofek@demo.local";

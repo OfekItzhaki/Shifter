@@ -60,6 +60,8 @@ Known verification:
   71 passed, 0 failed.
 - Holiday-aware self-service component tests passed in the top integration
   branch: 7 passed, 0 failed.
+- Self-service browser test discovery in the top integration branch found 14
+  lifecycle tests, including the special-day label flow.
 - Web build passed.
 - Frontend lint passes on the current stack with existing warnings and 0 errors.
 
@@ -68,11 +70,13 @@ Validated integration:
 - Confirm special days appear under the space `Self-service` settings tab.
 - Confirm the first customer-facing version only labels/warns for holidays until
   explicit self-service holiday policies are implemented.
+- A holiday-aware browser lifecycle test has been added for member picker
+  special-day labels.
 
 Remaining manual/product check:
 
-- Add a full holiday-aware self-service browser flow before claiming full
-  customer-facing holiday policy support.
+- Run the holiday-aware self-service browser flow against a live seeded web/API
+  stack.
 
 ### `feat/self-service-portable-integration`
 
@@ -141,6 +145,8 @@ Known verification:
 - Web build passed.
 - Frontend lint passed with 89 existing warnings and 0 errors.
 - Holiday-aware self-service component tests passed: 7 passed, 0 failed.
+- Self-service browser test discovery found 14 lifecycle tests, including the
+  special-day label flow.
 
 Validated integration:
 
@@ -149,11 +155,13 @@ Validated integration:
 - Member-facing self-service slots show marked special days.
 - Admin cycle status exposes special-day counts and labels underfilled slots on
   marked special days.
+- A browser lifecycle flow now creates a special day for a real seeded slot and
+  verifies the member picker renders the label.
 
 Remaining manual/product check:
 
-- Add a full holiday-aware self-service browser flow before claiming full
-  customer-facing holiday policy support.
+- Run the holiday-aware browser lifecycle flow against a live seeded web/API
+  stack.
 - Smoke-test customer-hosted setup with real secrets, especially
   `FIELD_ENCRYPTION_KEY`.
 - Smoke-test member/admin self-service flows after migrations run on a real
