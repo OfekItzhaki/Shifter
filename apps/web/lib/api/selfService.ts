@@ -205,6 +205,7 @@ export interface ShiftChangeRequestDto {
   shiftRequestId: string;
   personId: string;
   personName: string;
+  schedulingCycleId: string;
   originalShiftSlotId: string;
   originalSlotDate: string;
   originalSlotStartTime: string;

@@ -79,6 +79,15 @@ function filterReviewItems<T extends { status: string }>(items: T[], filter: Rev
   return items;
 }
 
+function uniquePendingCycleIds(changeRequests: ShiftChangeRequestDto[]): string[] {
+  return Array.from(new Set(
+    changeRequests
+      .filter((request) => request.status === "Pending")
+      .map((request) => request.schedulingCycleId)
+      .filter(Boolean)
+  ));
+}
+
 interface ReviewActivityItem {
   id: string;
   kind: "absence" | "change" | "leave" | "shift";
@@ -123,13 +132,18 @@ export default function AbsenceReportsTab({ spaceId, groupId, onReviewed }: Prop
     try {
       setLoading(true);
       setError(null);
-      const [absenceRows, changeRows, targetSlots, leaveRows, cancelledRows] = await Promise.all([
+      const [absenceRows, changeRows, leaveRows, cancelledRows] = await Promise.all([
         getAbsenceReports(spaceId, groupId),
         getShiftChangeRequests(spaceId, groupId),
-        getShiftChangeTargetSlots(spaceId, groupId, "current"),
         getAdminSpecialLeaveRequests(spaceId, undefined, undefined, undefined, groupId),
         getAdminShiftRequests(spaceId, groupId, "Cancelled", 20),
       ]);
+      const targetCycleIds = uniquePendingCycleIds(changeRows);
+      const targetSlots = targetCycleIds.length === 0
+        ? []
+        : (await Promise.all(
+            targetCycleIds.map((cycleId) => getShiftChangeTargetSlots(spaceId, groupId, cycleId))
+          )).flat();
       setReports(absenceRows);
       setChangeRequests(changeRows);
       setLeaveRequests(leaveRows);

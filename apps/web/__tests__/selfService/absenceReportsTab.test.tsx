@@ -163,6 +163,9 @@ describe("AbsenceReportsTab", () => {
     render(<AbsenceReportsTab spaceId="space-1" groupId="group-1" />);
 
     await screen.findByText("Pending change reason");
+    await waitFor(() => {
+      expect(mockGetShiftChangeTargetSlots).toHaveBeenCalledWith("space-1", "group-1", "cycle-1");
+    });
     fireEvent.change(screen.getByLabelText("Target shift"), {
       target: { value: "target-slot-1" },
     });
@@ -207,6 +210,7 @@ function makeShiftChangeRequest(id: string, status: "Pending" | "Rejected", reas
     shiftRequestId: `${id}-request`,
     personId: "person-2",
     personName: "Member Two",
+    schedulingCycleId: "cycle-1",
     originalShiftSlotId: `${id}-original`,
     originalSlotDate: "2026-06-13",
     originalSlotStartTime: "08:00:00",
