@@ -452,6 +452,60 @@ public class SelfServiceNotificationTests
     }
 
     [Fact]
+    public async Task ProcessRequestAsync_RejectsShiftInsideMinimumRestWindow()
+    {
+        using var db = CreateDb();
+        var notifications = Substitute.For<INotificationService>();
+        var audit = CreateAuditLogger();
+        var (spaceId, groupId, cycleId, taskId, _) = SeedBaseData(db);
+
+        var group = await db.Groups.SingleAsync(g => g.Id == groupId);
+        group.SetMinRestBetweenShifts(8);
+        db.SelfServiceConfigs.Add(SelfServiceConfig.Create(
+            spaceId,
+            groupId,
+            minShiftsPerCycle: 0,
+            maxShiftsPerCycle: 5,
+            requestWindowOpenOffsetHours: 48,
+            requestWindowCloseOffsetHours: 12,
+            cancellationCutoffHours: 24,
+            maxLateCancellationsPerCycle: 2,
+            lateCancellationWindowHours: 24,
+            waitlistOfferMinutes: 60,
+            cycleDurationDays: 7));
+
+        var person = Person.Create(spaceId, "Rest Member", linkedUserId: Guid.NewGuid());
+        var date = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(2));
+        var existingSlot = AddSlot(db, spaceId, groupId, taskId, cycleId, date, new TimeOnly(8, 0), new TimeOnly(12, 0));
+        var targetSlot = AddSlot(db, spaceId, groupId, taskId, cycleId, date, new TimeOnly(18, 0), new TimeOnly(22, 0));
+        AddApprovedRequest(db, spaceId, groupId, cycleId, person.Id, existingSlot);
+
+        db.People.Add(person);
+        db.GroupMemberships.Add(GroupMembership.Create(spaceId, groupId, person.Id));
+        await db.SaveChangesAsync();
+
+        var lockService = Substitute.For<ISlotLockService>();
+        lockService.TryAcquireSlotLockAsync(targetSlot.Id, Arg.Any<TimeSpan>(), Arg.Any<CancellationToken>())
+            .Returns(true);
+
+        var service = new ShiftRequestService(
+            db,
+            lockService,
+            TimeProvider.System,
+            NullLogger<ShiftRequestService>.Instance,
+            notifications,
+            Substitute.For<IPushNotificationSender>(),
+            audit);
+
+        var result = await service.ProcessRequestAsync(person.Id, targetSlot.Id);
+
+        result.Success.Should().BeFalse();
+        result.RejectionReason.Should().Be("This shift does not leave enough rest time after an existing approved shift.");
+        (await db.ShiftRequests.CountAsync(r => r.PersonId == person.Id)).Should().Be(1);
+        (await db.ShiftSlots.SingleAsync(s => s.Id == targetSlot.Id)).CurrentFillCount.Should().Be(0);
+    }
+
+    [Fact]
     public async Task AcceptSwapAsync_CreatesAcceptedNotifications_ForBothMembers()
     {
         using var db = CreateDb();
@@ -1368,6 +1422,53 @@ public class SelfServiceNotificationTests
     }
 
     [Fact]
+    public async Task AdminAssignShiftCommand_RejectsShiftInsideMinimumRestWindow()
+    {
+        using var db = CreateDb();
+        var (spaceId, groupId, cycleId, taskId, _) = SeedBaseData(db);
+
+        var group = await db.Groups.SingleAsync(g => g.Id == groupId);
+        group.SetMinRestBetweenShifts(8);
+        var member = Person.Create(spaceId, "Assigned Member", linkedUserId: Guid.NewGuid());
+        var date = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(2));
+        var existingSlot = AddSlot(db, spaceId, groupId, taskId, cycleId, date, new TimeOnly(8, 0), new TimeOnly(12, 0));
+        var targetSlot = AddSlot(db, spaceId, groupId, taskId, cycleId, date, new TimeOnly(18, 0), new TimeOnly(22, 0));
+        AddApprovedRequest(db, spaceId, groupId, cycleId, member.Id, existingSlot);
+
+        db.People.Add(member);
+        db.GroupMemberships.Add(GroupMembership.Create(spaceId, groupId, member.Id));
+        await db.SaveChangesAsync();
+
+        var permissions = Substitute.For<IPermissionService>();
+        permissions
+            .RequirePermissionAsync(Arg.Any<Guid>(), spaceId, Permissions.SchedulePublish, Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+        var audit = CreateAuditLogger();
+        var pushSender = Substitute.For<IPushNotificationSender>();
+
+        var handler = new AdminAssignShiftCommandHandler(
+            db,
+            permissions,
+            audit,
+            pushSender,
+            NullLogger<AdminAssignShiftCommandHandler>.Instance);
+
+        var act = () => handler.Handle(
+            new AdminAssignShiftCommand(spaceId, groupId, targetSlot.Id, member.Id, Guid.NewGuid()),
+            CancellationToken.None);
+
+        await act.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("The member does not have enough rest time before or after this slot.");
+
+        (await db.ShiftRequests.CountAsync(r => r.PersonId == member.Id)).Should().Be(1);
+        (await db.ShiftSlots.SingleAsync(s => s.Id == targetSlot.Id)).CurrentFillCount.Should().Be(0);
+        await audit.DidNotReceiveWithAnyArgs()
+            .LogAsync(default, default, default!, default, default, default, default, default, default);
+        await pushSender.DidNotReceiveWithAnyArgs()
+            .SendPushToUserAsync(default, default, default!, default);
+    }
+
+    [Fact]
     public async Task AdminAssignShiftCommand_AcceptsMatchingActiveWaitlistEntry()
     {
         using var db = CreateDb();
@@ -1833,6 +1934,31 @@ public class SelfServiceNotificationTests
             date: DateOnly.FromDateTime(DateTime.UtcNow.AddDays(daysFromNow)),
             startTime: new TimeOnly(8, 0),
             endTime: new TimeOnly(16, 0),
+            capacity: 1);
+
+        db.ShiftSlots.Add(slot);
+        return slot;
+    }
+
+    private static ShiftSlot AddSlot(
+        AppDbContext db,
+        Guid spaceId,
+        Guid groupId,
+        Guid taskId,
+        Guid cycleId,
+        DateOnly date,
+        TimeOnly startTime,
+        TimeOnly endTime)
+    {
+        var slot = ShiftSlot.Create(
+            spaceId,
+            groupId,
+            taskId,
+            shiftTemplateId: Guid.NewGuid(),
+            schedulingCycleId: cycleId,
+            date: date,
+            startTime: startTime,
+            endTime: endTime,
             capacity: 1);
 
         db.ShiftSlots.Add(slot);

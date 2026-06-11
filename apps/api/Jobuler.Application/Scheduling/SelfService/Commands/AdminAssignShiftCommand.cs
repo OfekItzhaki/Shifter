@@ -114,9 +114,11 @@ public class AdminAssignShiftCommandHandler : IRequestHandler<AdminAssignShiftCo
                 if (hasDuplicate)
                     throw new InvalidOperationException("The member is already assigned to this shift slot.");
 
-                var hasOverlappingApprovedShift = await HasOverlappingApprovedShiftAsync(request.PersonId, slot, ct);
-                if (hasOverlappingApprovedShift)
+                var assignmentConflict = await ShiftAssignmentSafety.FindApprovedAssignmentConflictAsync(_db, request.PersonId, slot, ct);
+                if (assignmentConflict == ShiftAssignmentConflictKind.Overlap)
                     throw new InvalidOperationException("The member already has an approved shift that overlaps this slot.");
+                if (assignmentConflict == ShiftAssignmentConflictKind.RestViolation)
+                    throw new InvalidOperationException("The member does not have enough rest time before or after this slot.");
 
                 var waitlistEntry = await _db.WaitlistEntries
                     .FirstOrDefaultAsync(e => e.SpaceId == request.SpaceId
@@ -185,27 +187,6 @@ public class AdminAssignShiftCommandHandler : IRequestHandler<AdminAssignShiftCo
                 throw;
             }
         });
-    }
-
-    private async Task<bool> HasOverlappingApprovedShiftAsync(Guid personId, ShiftSlot targetSlot, CancellationToken ct)
-    {
-        var targetDate = targetSlot.Date;
-        var candidateSlots = await _db.ShiftRequests
-            .AsNoTracking()
-            .Where(r => r.SpaceId == targetSlot.SpaceId
-                        && r.PersonId == personId
-                        && r.Status == ShiftRequestStatus.Approved)
-            .Join(
-                _db.ShiftSlots.AsNoTracking(),
-                request => request.ShiftSlotId,
-                slot => slot.Id,
-                (request, slot) => slot)
-            .Where(slot => slot.Id != targetSlot.Id
-                           && slot.Date >= targetDate.AddDays(-1)
-                           && slot.Date <= targetDate.AddDays(1))
-            .ToListAsync(ct);
-
-        return candidateSlots.Any(slot => ShiftSlotTimeRange.Overlaps(slot, targetSlot));
     }
 
     private async Task SendAdminAssignedNotificationAsync(
