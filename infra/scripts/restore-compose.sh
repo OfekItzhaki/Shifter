@@ -96,6 +96,11 @@ if [ "$DRY_RUN" = "1" ]; then
   if [ "$RESTORE_UPLOADS" = "1" ]; then
     echo "  Uploads backup:  $UPLOADS_BACKUP"
     echo "  Uploads volume:  ${COMPOSE_PROJECT_NAME}_uploads_data"
+    if [ "$SKIP_PRE_RESTORE_BACKUP" = "1" ]; then
+      echo "  Uploads safety:  skipped by SKIP_PRE_RESTORE_BACKUP=1"
+    else
+      echo "  Uploads safety:  $BACKUP_DIR/pre_restore_uploads_${COMPOSE_PROJECT_NAME}_${TIMESTAMP}.tar.gz"
+    fi
   else
     echo "  Uploads restore: skipped"
   fi
@@ -143,6 +148,24 @@ if [ "$RESTORE_UPLOADS" = "1" ]; then
   if [ -z "$UPLOADS_MOUNT" ] || [ ! -d "$UPLOADS_MOUNT" ]; then
     echo "Uploads volume not found: $UPLOADS_VOLUME" >&2
     exit 1
+  fi
+
+  if [ "$SKIP_PRE_RESTORE_BACKUP" != "1" ]; then
+    mkdir -p "$BACKUP_DIR"
+    PRE_RESTORE_UPLOADS_BACKUP="$BACKUP_DIR/pre_restore_uploads_${COMPOSE_PROJECT_NAME}_${TIMESTAMP}.tar.gz"
+
+    echo "[$(date)] Creating pre-restore uploads safety backup: $PRE_RESTORE_UPLOADS_BACKUP"
+    tar -czf "$PRE_RESTORE_UPLOADS_BACKUP" -C "$UPLOADS_MOUNT" .
+
+    if [ ! -s "$PRE_RESTORE_UPLOADS_BACKUP" ]; then
+      echo "[$(date)] ERROR: pre-restore uploads safety backup is empty" >&2
+      rm -f "$PRE_RESTORE_UPLOADS_BACKUP"
+      exit 1
+    fi
+
+    echo "[$(date)] Pre-restore uploads safety backup complete: $PRE_RESTORE_UPLOADS_BACKUP ($(du -h "$PRE_RESTORE_UPLOADS_BACKUP" | cut -f1))"
+  else
+    echo "[$(date)] Skipping pre-restore uploads safety backup because SKIP_PRE_RESTORE_BACKUP=1."
   fi
 
   echo "[$(date)] Replacing uploads volume '$UPLOADS_VOLUME' from $UPLOADS_BACKUP..."

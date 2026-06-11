@@ -216,9 +216,11 @@ SHIFTER_DIR=/opt/shifter bash /opt/shifter/infra/scripts/backup-compose.sh
 
 Restore requires an explicit confirmation flag and should be run during a
 maintenance window. By default, the restore script creates a `pre_restore_*.dump`
-of the current target database before replacing it. PostgreSQL restore runs in a
-single transaction with exit-on-error, and stopped app services are restarted if
-the script fails after taking them down.
+of the current target database before replacing it. If `RESTORE_UPLOADS=1`, it
+also creates a `pre_restore_uploads_*.tar.gz` archive before replacing the
+uploads volume. PostgreSQL restore runs in a single transaction with
+exit-on-error, and stopped app services are restarted if the script fails after
+taking them down.
 
 ```bash
 DRY_RUN=1 \
@@ -251,9 +253,9 @@ Recommended production policy:
 - Copy backups to customer-owned off-host storage.
 - Run `DRY_RUN=1` before any restore to validate the env file, backup paths,
   Compose project, and upload-volume plan without changing data.
-- Keep the default pre-restore safety dump enabled. Only use
+- Keep the default pre-restore safety dumps enabled. Only use
   `SKIP_PRE_RESTORE_BACKUP=1` when the target database is already disposable or
-  too damaged to dump.
+  too damaged to dump, and the current uploads volume is safe to discard.
 - Test restore before go-live and once per quarter.
 - Keep database dumps and uploaded files under the same retention policy.
 - If using an external S3-compatible bucket instead of local uploads, back up
