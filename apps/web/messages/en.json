@@ -2210,6 +2210,7 @@
       "noApprovedShifts": "No approved shifts available to swap",
       "noTargetMembers": "No other members are available for swaps",
       "noTargetShifts": "No available shifts to swap for this member",
+      "proposeSuccess": "Swap proposal sent.",
       "history": "History",
       "close": "Close",
       "noSwaps": "No swaps",

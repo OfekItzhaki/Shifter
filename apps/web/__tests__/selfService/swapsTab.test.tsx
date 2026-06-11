@@ -40,6 +40,7 @@ const translations: Record<string, string> = {
   noApprovedShifts: "No approved shifts",
   noTargetMembers: "No target members",
   noTargetShifts: "No target shifts",
+  proposeSuccess: "Swap proposal sent.",
   proposing: "Proposing...",
   loading: "Loading",
   error: "Something went wrong",
@@ -241,6 +242,24 @@ describe("SwapsTab", () => {
         "target-shift",
       );
     });
+    expect(await screen.findByText("Swap proposal sent.")).toBeInTheDocument();
+  });
+
+  it("renders swap time ranges without treating them as invalid single times", async () => {
+    mockGetMySwaps.mockResolvedValue([
+      makeSwap({
+        id: "incoming-swap",
+        initiatorPersonId: "person-other",
+        targetPersonId: "person-current",
+        initiatorSlotTime: "08:00-16:00",
+        targetSlotTime: "10:30-18:30",
+      }),
+    ]);
+
+    render(<SwapsTab spaceId="space-1" groupId="group-1" members={members} />);
+
+    expect(await screen.findByText("08:00-16:00 | Front desk")).toBeInTheDocument();
+    expect(screen.getByText("10:30-18:30 | Kitchen")).toBeInTheDocument();
   });
 });
 

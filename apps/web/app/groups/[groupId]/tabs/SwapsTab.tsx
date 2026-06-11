@@ -42,6 +42,13 @@ function sortShiftsByStart(requests: ShiftRequestDto[]): ShiftRequestDto[] {
   return [...requests].sort((a, b) => getShiftStartTime(a) - getShiftStartTime(b));
 }
 
+function formatSlotTimeRange(value: string): string {
+  const [start, end] = value.split("-");
+  if (!start || !end) return formatTime24h(value);
+
+  return `${formatTime24h(start)}-${formatTime24h(end)}`;
+}
+
 /**
  * SwapsTab displays the member's swap requests (incoming and outgoing)
  * and provides a "Propose Swap" flow.
@@ -62,6 +69,7 @@ export default function SwapsTab({ spaceId, groupId, members }: Props) {
   // Action loading states
   const [actionLoading, setActionLoading] = useState<Record<string, string>>({});
   const [actionError, setActionError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   // Propose swap flow
   const [proposeStep, setProposeStep] = useState<ProposeStep>("idle");
@@ -104,6 +112,7 @@ export default function SwapsTab({ spaceId, groupId, members }: Props) {
     if (!currentSpaceId) return;
     setActionLoading((prev) => ({ ...prev, [swapId]: "accepting" }));
     setActionError(null);
+    setSuccessMessage(null);
     try {
       await acceptSwap(currentSpaceId, groupId, swapId);
       await fetchSwaps();
@@ -124,6 +133,7 @@ export default function SwapsTab({ spaceId, groupId, members }: Props) {
     if (!currentSpaceId) return;
     setActionLoading((prev) => ({ ...prev, [swapId]: "declining" }));
     setActionError(null);
+    setSuccessMessage(null);
     try {
       await declineSwap(currentSpaceId, groupId, swapId);
       await fetchSwaps();
@@ -144,6 +154,7 @@ export default function SwapsTab({ spaceId, groupId, members }: Props) {
     if (!currentSpaceId) return;
     setActionLoading((prev) => ({ ...prev, [swapId]: "cancelling" }));
     setActionError(null);
+    setSuccessMessage(null);
     try {
       await cancelSwap(currentSpaceId, groupId, swapId);
       await fetchSwaps();
@@ -203,6 +214,7 @@ export default function SwapsTab({ spaceId, groupId, members }: Props) {
     if (!currentSpaceId || !selectedMyShift) return;
     setProposing(true);
     setProposeError(null);
+    setSuccessMessage(null);
     try {
       await proposeSwap(
         currentSpaceId,
@@ -211,6 +223,7 @@ export default function SwapsTab({ spaceId, groupId, members }: Props) {
         targetShiftRequestId
       );
       resetProposeFlow();
+      setSuccessMessage(t("proposeSuccess"));
       await fetchSwaps();
     } catch (err) {
       const { message } = getSelfServiceErrorMessage(err);
@@ -227,28 +240,6 @@ export default function SwapsTab({ spaceId, groupId, members }: Props) {
     setSelectedTargetMember(null);
     setTargetShifts([]);
     setProposeError(null);
-  }
-
-  function getStatusBadge(status: SwapRequestDto["status"]) {
-    const styles: Record<SwapRequestDto["status"], string> = {
-      Pending: "bg-amber-50 text-amber-700 border-amber-200",
-      Accepted: "bg-emerald-50 text-emerald-700 border-emerald-200",
-      Declined: "bg-red-50 text-red-700 border-red-200",
-      Cancelled: "bg-slate-100 text-slate-600 border-slate-200",
-      Expired: "bg-slate-100 text-slate-500 border-slate-200",
-    };
-    const labels: Record<SwapRequestDto["status"], string> = {
-      Pending: t("statusPending"),
-      Accepted: t("statusAccepted"),
-      Declined: t("statusDeclined"),
-      Cancelled: t("statusCancelled"),
-      Expired: t("statusExpired"),
-    };
-    return (
-      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${styles[status]}`}>
-        {labels[status]}
-      </span>
-    );
   }
 
   if (loading) {
@@ -278,6 +269,12 @@ export default function SwapsTab({ spaceId, groupId, members }: Props) {
       {actionError && (
         <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-xs text-red-700">
           {actionError}
+        </div>
+      )}
+
+      {successMessage && (
+        <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-700">
+          {successMessage}
         </div>
       )}
 
@@ -528,7 +525,7 @@ function SwapCard({ swap, direction, actionLoading, onAccept, onDecline, onCance
             {formatSlotDate(swap.initiatorSlotDate)}
           </p>
           <p className="text-xs text-slate-600">
-            {formatTime24h(swap.initiatorSlotTime)} | {swap.initiatorTaskName}
+            {formatSlotTimeRange(swap.initiatorSlotTime)} | {swap.initiatorTaskName}
           </p>
         </div>
 
@@ -541,7 +538,7 @@ function SwapCard({ swap, direction, actionLoading, onAccept, onDecline, onCance
             {formatSlotDate(swap.targetSlotDate)}
           </p>
           <p className="text-xs text-slate-600">
-            {formatTime24h(swap.targetSlotTime)} | {swap.targetTaskName}
+            {formatSlotTimeRange(swap.targetSlotTime)} | {swap.targetTaskName}
           </p>
         </div>
       </div>
