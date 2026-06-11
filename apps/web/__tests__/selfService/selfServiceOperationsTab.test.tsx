@@ -25,6 +25,16 @@ vi.mock("next-intl", () => ({
       "priority.signals.expiringWaitlist.description": `${values?.count ?? 0} waitlist offer(s) expire in ${values?.minutes ?? 0} minutes.`,
       "priority.signals.underfilled.title": "Under-filled slots",
       "priority.signals.underfilled.description": `${values?.count ?? 0} slot(s) still need coverage.`,
+      "reviews.title": "Review breakdown",
+      "reviews.description": "See which member requests need decisions.",
+      "reviews.count": `${values?.count ?? 0} pending decision(s)`,
+      "reviews.clear": "No pending decisions",
+      "reviews.items.absences.title": "Absence reports",
+      "reviews.items.absences.description": `${values?.count ?? 0} absence report(s) waiting.`,
+      "reviews.items.changes.title": "Shift changes",
+      "reviews.items.changes.description": `${values?.count ?? 0} shift-change request(s) waiting.`,
+      "reviews.items.leave.title": "Special leave",
+      "reviews.items.leave.description": `${values?.count ?? 0} time-off request(s) waiting.`,
       "guide.title": "How to run the cycle",
       "guide.description": "Use this rhythm for manual self-service scheduling.",
       "guide.steps.prepare.title": "Prepare",
@@ -127,10 +137,20 @@ describe("SelfServiceOperationsTab", () => {
     expect(screen.getByText("Late absence reports")).toBeInTheDocument();
     expect(screen.getByText("Expiring waitlist offers")).toBeInTheDocument();
     expect(screen.getByText("Under-filled slots")).toBeInTheDocument();
+    expect(screen.getByText("Review breakdown")).toBeInTheDocument();
+    expect(screen.getByText("2 absence report(s) waiting.")).toBeInTheDocument();
+    expect(screen.getByText("3 shift-change request(s) waiting.")).toBeInTheDocument();
+    expect(screen.getByText("1 time-off request(s) waiting.")).toBeInTheDocument();
     expect(screen.getByText("How to run the cycle")).toBeInTheDocument();
     expect(screen.getByText("Set policy and templates.")).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: /Review requests/i }));
+
+    await waitFor(() => {
+      expect(onNavigate).toHaveBeenCalledWith("absence-reports");
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: /Shift changes/i }));
 
     await waitFor(() => {
       expect(onNavigate).toHaveBeenCalledWith("absence-reports");

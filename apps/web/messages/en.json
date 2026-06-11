@@ -2450,6 +2450,26 @@
           }
         }
       },
+      "reviews": {
+        "title": "Review breakdown",
+        "description": "See which member requests need admin decisions before the cycle can settle.",
+        "count": "{count} pending decision(s)",
+        "clear": "No pending decisions",
+        "items": {
+          "absences": {
+            "title": "Absence reports",
+            "description": "{count} absence report(s) waiting."
+          },
+          "changes": {
+            "title": "Shift changes",
+            "description": "{count} shift-change request(s) waiting."
+          },
+          "leave": {
+            "title": "Special leave",
+            "description": "{count} time-off request(s) waiting."
+          }
+        }
+      },
       "guide": {
         "title": "How to run the cycle",
         "description": "A simple rhythm for manual self-service scheduling: prepare the rules, open the window, review exceptions, then tune the next cycle.",

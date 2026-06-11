@@ -2462,6 +2462,26 @@
           }
         }
       },
+      "reviews": {
+        "title": "Review breakdown",
+        "description": "See which member requests need admin decisions before the cycle can settle.",
+        "count": "{count} pending decision(s)",
+        "clear": "No pending decisions",
+        "items": {
+          "absences": {
+            "title": "Absence reports",
+            "description": "{count} absence report(s) waiting."
+          },
+          "changes": {
+            "title": "Shift changes",
+            "description": "{count} shift-change request(s) waiting."
+          },
+          "leave": {
+            "title": "Special leave",
+            "description": "{count} time-off request(s) waiting."
+          }
+        }
+      },
       "guide": {
         "title": "איך מריצים סבב",
         "description": "קצב עבודה פשוט לשירות עצמי: מכינים את החוקים, פותחים חלון בחירה, מטפלים בחריגות ומשפרים את הסבב הבא.",

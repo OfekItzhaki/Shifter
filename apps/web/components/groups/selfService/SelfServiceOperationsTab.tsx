@@ -33,6 +33,30 @@ const ACTIONS: { target: SelfServiceOpsTarget; key: string; metric?: "reviews" |
 
 const GUIDE_STEPS = ["prepare", "open", "review", "improve"] as const;
 const WAITLIST_EXPIRY_WARNING_MINUTES = 30;
+const REVIEW_BREAKDOWN = [
+  {
+    key: "absences",
+    countKey: "pendingAbsenceReportCount",
+    target: "absence-reports",
+  },
+  {
+    key: "changes",
+    countKey: "pendingShiftChangeRequestCount",
+    target: "absence-reports",
+  },
+  {
+    key: "leave",
+    countKey: "pendingSpecialLeaveRequestCount",
+    target: "absence-reports",
+  },
+] as const satisfies readonly {
+  key: string;
+  countKey: keyof Pick<
+    SelfServiceCycleStatusDto,
+    "pendingAbsenceReportCount" | "pendingShiftChangeRequestCount" | "pendingSpecialLeaveRequestCount"
+  >;
+  target: SelfServiceOpsTarget;
+}[];
 
 function getPendingReviewCount(status: SelfServiceCycleStatusDto | null): number {
   if (!status) return 0;
@@ -185,6 +209,64 @@ export default function SelfServiceOperationsTab({
                     {t(`actions.${action.key}.metric`, { count: statusLoading ? 0 : count })}
                   </span>
                 )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="rounded-xl border border-slate-200 bg-white p-6">
+        <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h3 className="text-sm font-semibold text-slate-900">{t("reviews.title")}</h3>
+            <p className="text-sm text-slate-500">{t("reviews.description")}</p>
+          </div>
+          <span className={`inline-flex w-fit rounded-full border px-2.5 py-1 text-xs font-medium ${
+            statusLoading
+              ? "border-slate-200 bg-slate-50 text-slate-500"
+              : pendingReviewCount > 0
+                ? "border-amber-200 bg-amber-50 text-amber-800"
+                : "border-emerald-200 bg-emerald-50 text-emerald-700"
+          }`}>
+            {statusLoading
+              ? t("statusLoading")
+              : pendingReviewCount > 0
+                ? t("reviews.count", { count: pendingReviewCount })
+                : t("reviews.clear")}
+          </span>
+        </div>
+
+        <div className="mt-4 grid gap-3 md:grid-cols-3">
+          {REVIEW_BREAKDOWN.map((item) => {
+            const count = statusLoading || !status ? 0 : status[item.countKey];
+            const hasPending = count > 0;
+
+            return (
+              <button
+                key={item.key}
+                type="button"
+                onClick={() => onNavigate(item.target)}
+                className={`rounded-lg border px-4 py-3 text-left transition-colors focus:outline-none focus:ring-2 focus:ring-sky-400 ${
+                  hasPending
+                    ? "border-amber-200 bg-amber-50 hover:border-amber-300 hover:bg-amber-100"
+                    : "border-slate-200 bg-slate-50 hover:border-sky-200 hover:bg-sky-50"
+                }`}
+              >
+                <span className="flex items-start justify-between gap-3">
+                  <span className="text-sm font-semibold text-slate-900">
+                    {t(`reviews.items.${item.key}.title`)}
+                  </span>
+                  <span className={`shrink-0 rounded-full border bg-white px-2 py-0.5 text-xs font-medium ${
+                    hasPending
+                      ? "border-amber-300 text-amber-800"
+                      : "border-slate-200 text-slate-500"
+                  }`}>
+                    {statusLoading ? "-" : count}
+                  </span>
+                </span>
+                <span className="mt-1 block text-xs leading-5 text-slate-600">
+                  {t(`reviews.items.${item.key}.description`, { count })}
+                </span>
               </button>
             );
           })}
