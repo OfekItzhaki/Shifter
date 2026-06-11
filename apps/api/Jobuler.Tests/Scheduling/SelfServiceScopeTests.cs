@@ -495,6 +495,90 @@ public class SelfServiceScopeTests
     }
 
     [Fact]
+    public async Task CancelShiftChange_CancelsPendingRequestAndNotifiesAdmins()
+    {
+        using var db = CreateDb();
+        var services = CreateControllerServices();
+        var spaceId = Guid.NewGuid();
+        var group = Group.Create(spaceId, null, "Route Group");
+        var userId = Guid.NewGuid();
+        var ownerUserId = Guid.NewGuid();
+        var person = Person.Create(spaceId, "Member", displayName: "Display Member", linkedUserId: userId);
+        var cycle = CreateCycle(spaceId, group.Id);
+        var task = CreateTask(spaceId, group.Id, "Task", ownerUserId);
+        var originalSlot = CreateSlot(spaceId, group.Id, task.Id, cycle.Id, daysFromNow: 2);
+        var requestedSlot = CreateSlot(spaceId, group.Id, task.Id, cycle.Id, daysFromNow: 3);
+        var shiftRequest = ShiftRequest.Create(spaceId, originalSlot.Id, person.Id, group.Id, cycle.Id);
+        shiftRequest.Approve();
+        var changeRequest = ShiftChangeRequest.Create(
+            spaceId,
+            group.Id,
+            cycle.Id,
+            shiftRequest.Id,
+            originalSlot.Id,
+            requestedSlot.Id,
+            person.Id,
+            "Need to move",
+            DateTime.UtcNow);
+
+        db.People.Add(person);
+        db.Groups.Add(group);
+        db.GroupMemberships.Add(GroupMembership.Create(spaceId, group.Id, person.Id));
+        db.SchedulingCycles.Add(cycle);
+        db.GroupTasks.Add(task);
+        db.ShiftSlots.AddRange(originalSlot, requestedSlot);
+        db.ShiftRequests.Add(shiftRequest);
+        db.ShiftChangeRequests.Add(changeRequest);
+        await db.SaveChangesAsync();
+
+        var controller = new ShiftChangeRequestsController(
+            services.Permissions,
+            services.NotificationService,
+            services.PushSender,
+            services.Audit,
+            db);
+        controller.ControllerContext = CreateControllerContext(userId);
+
+        var result = await controller.CancelMine(
+            spaceId,
+            group.Id,
+            changeRequest.Id,
+            CancellationToken.None);
+
+        result.Should().BeOfType<NoContentResult>();
+
+        var updatedChange = await db.ShiftChangeRequests.SingleAsync(r => r.Id == changeRequest.Id);
+        updatedChange.Status.Should().Be(ShiftChangeRequestStatus.Cancelled);
+
+        await services.NotificationService.Received(1).NotifySpaceAdminsAsync(
+            spaceId,
+            "self_service.change_cancelled",
+            "Shift Change Cancelled",
+            Arg.Is<string>(body => body.Contains("Display Member") && body.Contains("Task")),
+            Arg.Is<string>(metadata => metadata.Contains(changeRequest.Id.ToString())
+                && metadata.Contains(shiftRequest.Id.ToString())
+                && metadata.Contains(originalSlot.Id.ToString())
+                && metadata.Contains(requestedSlot.Id.ToString())),
+            group.Id,
+            Arg.Any<CancellationToken>());
+
+        await services.Audit.Received(1).LogAsync(
+            spaceId,
+            userId,
+            "self_service.cancel_shift_change",
+            "shift_change_request",
+            changeRequest.Id,
+            Arg.Is<string?>(json => json != null
+                && json.Contains(changeRequest.Id.ToString())
+                && json.Contains("\"status\":\"pending\"")),
+            Arg.Is<string?>(json => json != null
+                && json.Contains(changeRequest.Id.ToString())
+                && json.Contains("\"status\":\"cancelled\"")),
+            Arg.Is<string?>(ipAddress => ipAddress == null),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task SubmitShiftChange_Returns422_WhenOriginalShiftAlreadyStarted()
     {
         using var db = CreateDb();
