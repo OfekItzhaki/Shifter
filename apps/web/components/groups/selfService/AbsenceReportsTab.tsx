@@ -128,9 +128,9 @@ export default function AbsenceReportsTab({ spaceId, groupId, onReviewed }: Prop
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [queueFilter, setQueueFilter] = useState<ReviewQueueFilter>("pending");
 
-  const fetchReports = useCallback(async () => {
+  const fetchReports = useCallback(async (showLoading = true) => {
     try {
-      setLoading(true);
+      if (showLoading) setLoading(true);
       setError(null);
       const [absenceRows, changeRows, leaveRows, cancelledRows] = await Promise.all([
         getAbsenceReports(spaceId, groupId),
@@ -167,12 +167,12 @@ export default function AbsenceReportsTab({ spaceId, groupId, onReviewed }: Prop
       setError(message);
       setCancelledShiftRequests([]);
     } finally {
-      setLoading(false);
+      if (showLoading) setLoading(false);
     }
   }, [spaceId, groupId]);
 
   useEffect(() => {
-    void Promise.resolve().then(fetchReports);
+    void Promise.resolve().then(() => fetchReports());
   }, [fetchReports]);
 
   async function review(reportId: string, action: "approve" | "reject") {
@@ -194,6 +194,7 @@ export default function AbsenceReportsTab({ spaceId, groupId, onReviewed }: Prop
     } catch (err) {
       const { message } = getSelfServiceErrorMessage(err);
       setActionError(message);
+      await fetchReports(false);
     } finally {
       setActionLoading((prev) => {
         const next = { ...prev };
@@ -228,6 +229,7 @@ export default function AbsenceReportsTab({ spaceId, groupId, onReviewed }: Prop
     } catch (err) {
       const { message } = getSelfServiceErrorMessage(err);
       setActionError(message);
+      await fetchReports(false);
     } finally {
       setChangeActionLoading((prev) => {
         const next = { ...prev };
@@ -256,6 +258,7 @@ export default function AbsenceReportsTab({ spaceId, groupId, onReviewed }: Prop
     } catch (err) {
       const { message } = getSelfServiceErrorMessage(err);
       setActionError(message);
+      await fetchReports(false);
     } finally {
       setLeaveActionLoading((prev) => {
         const next = { ...prev };
@@ -355,7 +358,7 @@ export default function AbsenceReportsTab({ spaceId, groupId, onReviewed }: Prop
         <h2 className="text-sm font-semibold text-slate-700">{t("title")}</h2>
         <button
           type="button"
-          onClick={fetchReports}
+          onClick={() => void fetchReports()}
           className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-50"
         >
           {t("refresh")}

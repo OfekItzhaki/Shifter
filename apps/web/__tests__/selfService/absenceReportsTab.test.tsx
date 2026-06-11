@@ -182,6 +182,48 @@ describe("AbsenceReportsTab", () => {
     });
     expect(await screen.findByText("Shift-change request approved.")).toBeInTheDocument();
   });
+
+  it("refreshes the review queue after a stale shift-change approval fails", async () => {
+    mockGetAbsenceReports.mockResolvedValue([]);
+    mockGetShiftChangeRequests
+      .mockResolvedValueOnce([
+        makeShiftChangeRequest("change-pending", "Pending", "Pending change reason"),
+      ])
+      .mockResolvedValueOnce([
+        makeShiftChangeRequest("change-pending", "Rejected", "Pending change reason"),
+      ]);
+    mockGetShiftChangeTargetSlots.mockResolvedValue([
+      {
+        id: "target-slot-1",
+        date: "2026-06-14",
+        startTime: "10:00:00",
+        endTime: "18:00:00",
+        taskName: "Gate",
+        capacity: 2,
+        currentFillCount: 0,
+      },
+    ]);
+    mockGetAdminSpecialLeaveRequests.mockResolvedValue([]);
+    mockGetAdminShiftRequests.mockResolvedValue([]);
+    mockApproveShiftChangeRequest.mockRejectedValue({
+      response: { data: { detail: "Only pending change requests can be approved." } },
+    });
+
+    render(<AbsenceReportsTab spaceId="space-1" groupId="group-1" />);
+
+    await screen.findByText("Pending change reason");
+    fireEvent.change(screen.getByLabelText("Target shift"), {
+      target: { value: "target-slot-1" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Approve" }));
+
+    expect(await screen.findByText("Only pending change requests can be approved.")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(mockGetShiftChangeRequests).toHaveBeenCalledTimes(2);
+    });
+    expect(screen.queryByRole("button", { name: "Approve" })).not.toBeInTheDocument();
+    expect(screen.getByText("No pending shift change requests")).toBeInTheDocument();
+  });
 });
 
 function makeAbsenceReport(id: string, status: "Pending" | "Approved" | "Rejected", reason: string, isLate = false) {
