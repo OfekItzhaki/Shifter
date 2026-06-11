@@ -2129,7 +2129,8 @@
         },
         "change": {
           "title": "Request change",
-          "description": "Use this when you can still work, but need a different slot or admin-selected replacement."
+          "description": "Use this when you can still work, but need a different slot or admin-selected replacement.",
+          "swapAction": "Open peer swaps"
         },
         "cannotAttend": {
           "title": "Can't make it",

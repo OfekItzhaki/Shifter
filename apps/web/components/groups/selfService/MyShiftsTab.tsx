@@ -36,7 +36,7 @@ import MutationButton from "./MutationButton";
 interface MyShiftsTabProps {
   spaceId: string;
   groupId: string;
-  onNavigate?: (tab: "available-slots" | "waitlist") => void;
+  onNavigate?: (tab: "available-slots" | "waitlist" | "swaps") => void;
 }
 
 /** Status badge color configuration */
@@ -638,6 +638,8 @@ export default function MyShiftsTab({ spaceId, groupId, onNavigate }: MyShiftsTa
             title={t("actionGuide.change.title")}
             description={t("actionGuide.change.description")}
             tone="default"
+            actionLabel={onNavigate ? t("actionGuide.change.swapAction") : undefined}
+            onAction={onNavigate ? () => onNavigate("swaps") : undefined}
           />
           <ActionGuideCard
             title={t("actionGuide.cannotAttend.title")}
@@ -1102,10 +1104,14 @@ function ActionGuideCard({
   title,
   description,
   tone,
+  actionLabel,
+  onAction,
 }: {
   title: string;
   description: string;
   tone: "default" | "warning" | "danger";
+  actionLabel?: string;
+  onAction?: () => void;
 }) {
   const toneClass =
     tone === "danger"
@@ -1118,6 +1124,15 @@ function ActionGuideCard({
     <div className={`rounded-lg border px-3 py-3 ${toneClass}`}>
       <p className="text-sm font-semibold text-slate-900">{title}</p>
       <p className="mt-1 text-xs leading-5 text-slate-600">{description}</p>
+      {actionLabel && onAction && (
+        <button
+          type="button"
+          onClick={onAction}
+          className="mt-3 rounded-lg border border-sky-200 bg-white px-3 py-1.5 text-xs font-medium text-sky-700 transition-colors hover:bg-sky-50 focus:outline-none focus:ring-2 focus:ring-sky-400"
+        >
+          {actionLabel}
+        </button>
+      )}
     </div>
   );
 }

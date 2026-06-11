@@ -36,6 +36,7 @@ vi.mock("next-intl", () => ({
       "actionGuide.cancel.description": `Use before the ${values?.cutoff ?? 0}h cutoff.`,
       "actionGuide.change.title": "Request change",
       "actionGuide.change.description": "Ask admins to move you to another shift.",
+      "actionGuide.change.swapAction": "Open peer swaps",
       "actionGuide.cannotAttend.title": "Can't make it",
       "actionGuide.cannotAttend.description": `${values?.remaining ?? 0}/${values?.max ?? 0} late reports left inside ${values?.window ?? 0}h.`,
       activityTitle: "My request history",
@@ -196,6 +197,16 @@ describe("MyShiftsTab", () => {
     expect(screen.getByText("0/2 late reports left inside 24h.")).toBeInTheDocument();
 
     await waitFor(() => expect(mockReportCannotAttend).not.toHaveBeenCalled());
+  });
+
+  it("links members from change guidance to peer swaps", async () => {
+    const onNavigate = vi.fn();
+
+    render(<MyShiftsTab spaceId="space-1" groupId="group-1" onNavigate={onNavigate} />);
+
+    fireEvent.click(await screen.findByRole("button", { name: "Open peer swaps" }));
+
+    expect(onNavigate).toHaveBeenCalledWith("swaps");
   });
 
   it("lets members cancel a pending shift-change request", async () => {

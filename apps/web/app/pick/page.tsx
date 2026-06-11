@@ -131,7 +131,7 @@ export default function PickPage() {
     setActiveTab(tab);
   }, []);
 
-  const handleMyShiftsNavigate = useCallback((target: "available-slots" | "waitlist") => {
+  const handleMyShiftsNavigate = useCallback((target: "available-slots" | "waitlist" | "swaps") => {
     setActiveTab(mapMyShiftsNavigationToPickerTab(target));
   }, []);
 
