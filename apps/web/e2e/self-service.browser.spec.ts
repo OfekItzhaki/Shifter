@@ -64,6 +64,7 @@ interface AbsenceReportDto {
 interface ShiftChangeRequestDto {
   id: string;
   shiftRequestId: string;
+  requestedShiftSlotId: string | null;
   reason: string;
   status: "Pending" | "Approved" | "Rejected" | "Cancelled";
 }
@@ -225,6 +226,28 @@ async function ensureChangeableApprovedShift(
   return ensureApprovedShift(request, adminToken, memberToken, spaceId, groupId, cycleId, personId);
 }
 
+async function findOpenTargetSlot(
+  request: APIRequestContext,
+  memberToken: string,
+  spaceId: string,
+  groupId: string,
+  cycleId: string,
+  currentShiftSlotId: string
+): Promise<AvailableSlotDto> {
+  const available = await api<AvailableSlotsResponse>(
+    request,
+    memberToken,
+    "GET",
+    `/spaces/${spaceId}/groups/${groupId}/shift-slots/available?cycleId=${cycleId}`
+  );
+  const targetSlot = available.slots.find((slot) => {
+    const slotId = slot.id ?? slot.shiftSlotId;
+    return slotId && slotId !== currentShiftSlotId && slot.currentFillCount < slot.capacity;
+  });
+  expect(targetSlot, "browser shift-change approval test needs another open target slot").toBeTruthy();
+  return targetSlot!;
+}
+
 async function enterElevatedGroup(page: Page, groupId: string): Promise<void> {
   await page.evaluate((targetGroupId) => {
     const authRaw = localStorage.getItem("jobuler-auth");
@@ -247,7 +270,7 @@ async function enterElevatedGroup(page: Page, groupId: string): Promise<void> {
 }
 
 test.describe("Self-service browser lifecycle", () => {
-  test("member submits a shift-change request and admin sees it in the review queue", async ({ page, request }) => {
+  test("member submits and admin approves a shift-change request through the UI", async ({ page, request }) => {
     const adminEmail = process.env.E2E_ADMIN_EMAIL ?? "admin@demo.local";
     const memberEmail = process.env.E2E_CHANGE_MEMBER_EMAIL ?? "ofek@demo.local";
     const adminToken = await login(request, adminEmail);
@@ -262,7 +285,7 @@ test.describe("Self-service browser lifecycle", () => {
     expect(status.cycleId).toBeTruthy();
 
     const member = await getGroupMemberByEmail(request, adminToken, spaceId, groupId, memberEmail);
-    await ensureChangeableApprovedShift(
+    const ownedShift = await ensureChangeableApprovedShift(
       request,
       adminToken,
       memberToken,
@@ -271,6 +294,16 @@ test.describe("Self-service browser lifecycle", () => {
       status.cycleId!,
       member.personId
     );
+    const targetSlot = await findOpenTargetSlot(
+      request,
+      memberToken,
+      spaceId,
+      groupId,
+      status.cycleId!,
+      ownedShift.shiftSlotId
+    );
+    const targetSlotId = targetSlot.id ?? targetSlot.shiftSlotId;
+    expect(targetSlotId).toBeTruthy();
 
     const reason = `Browser E2E shift change ${Date.now()}`;
 
@@ -282,6 +315,7 @@ test.describe("Self-service browser lifecycle", () => {
     await page.getByTestId("pick-tab-my-shifts").click();
     await expect(page.getByTestId("self-service-change-shift").first()).toBeVisible({ timeout: 15000 });
     await page.getByTestId("self-service-change-shift").first().click();
+    await page.getByTestId("self-service-change-target-slot").selectOption(targetSlotId!);
     await page.locator("textarea").fill(reason);
     await Promise.all([
       page.waitForResponse((response) =>
@@ -298,15 +332,43 @@ test.describe("Self-service browser lifecycle", () => {
     );
     const createdChange = changes.find((row) => row.reason === reason);
     expect(createdChange?.status).toBe("Pending");
+    expect(createdChange?.requestedShiftSlotId).toBe(targetSlotId);
 
     await loginAsUser(page, adminEmail, DEMO_PASSWORD);
     await enterElevatedGroup(page, groupId);
     await page.goto(`${BASE}/groups/${groupId}`);
     await page.getByTestId("group-tab-absence-reports").click();
 
-    await expect(
-      page.getByTestId("self-service-change-request").filter({ hasText: reason })
-    ).toBeVisible({ timeout: 15000 });
+    const changeCard = page
+      .getByTestId("self-service-change-request")
+      .filter({ hasText: reason });
+    await expect(changeCard).toBeVisible({ timeout: 15000 });
+    await changeCard.getByTestId("self-service-change-approval-target").selectOption(targetSlotId!);
+    await Promise.all([
+      page.waitForResponse((response) =>
+        response.url().includes(`/shift-change-requests/admin/${createdChange!.id}/approve`)
+        && response.request().method() === "POST"
+      ),
+      changeCard.getByTestId("self-service-approve-change").click(),
+    ]);
+
+    const reviewedChanges = await api<ShiftChangeRequestDto[]>(
+      request,
+      memberToken,
+      "GET",
+      `/spaces/${spaceId}/groups/${groupId}/shift-change-requests/mine`
+    );
+    expect(reviewedChanges.find((row) => row.id === createdChange!.id)?.status).toBe("Approved");
+
+    const refreshedShifts = await api<MyShiftsResponse>(
+      request,
+      memberToken,
+      "GET",
+      `/spaces/${spaceId}/groups/${groupId}/shift-requests/mine`
+    );
+    const reassignedShift = refreshedShifts.requests.find((row) => row.id === ownedShift.id);
+    expect(reassignedShift?.status).toBe("Approved");
+    expect(reassignedShift?.shiftSlotId).toBe(targetSlotId);
   });
 
   test("member can pick an open shift and join a full-slot waitlist through the UI", async ({ page, request }) => {

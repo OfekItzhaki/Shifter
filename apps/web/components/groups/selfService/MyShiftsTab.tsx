@@ -1016,6 +1016,7 @@ export default function MyShiftsTab({ spaceId, groupId, onNavigate }: MyShiftsTa
             <select
               value={changeRequestedSlotId}
               onChange={(e) => setChangeRequestedSlotId(e.target.value)}
+              data-testid="self-service-change-target-slot"
               className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400 focus:border-transparent"
               disabled={changeSlotsLoading}
             >
