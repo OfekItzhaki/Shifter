@@ -127,6 +127,45 @@ public class NotificationTests
         count.Should().Be(0);
     }
 
+    [Fact]
+    public async Task NotifySpaceAdminsOnce_DeduplicatesByEventAndHash()
+    {
+        var db = CreateDb();
+        var spaceId = Guid.NewGuid();
+        var ownerId = Guid.NewGuid();
+        var space = Space.Create("Test Space", ownerId);
+        typeof(Jobuler.Domain.Common.Entity).GetProperty("Id")!.SetValue(space, spaceId);
+        db.Spaces.Add(space);
+        await db.SaveChangesAsync();
+
+        var pushSender = Substitute.For<IPushNotificationSender>();
+        var service = new NotificationService(db, pushSender, NullLogger<NotificationService>.Instance);
+
+        await service.NotifySpaceAdminsOnceAsync(
+            spaceId,
+            "self_service.under_scheduled_members",
+            "Under-Scheduled Members Detected",
+            "One member is below minimum.",
+            "{}",
+            "same-cycle-hash");
+        await service.NotifySpaceAdminsOnceAsync(
+            spaceId,
+            "self_service.under_scheduled_members",
+            "Under-Scheduled Members Detected",
+            "One member is below minimum.",
+            "{}",
+            "same-cycle-hash");
+
+        var notifications = await db.Notifications
+            .Where(n => n.SpaceId == spaceId && n.EventType == "self_service.under_scheduled_members")
+            .ToListAsync();
+
+        notifications.Should().ContainSingle();
+        notifications[0].DeduplicationHash.Should().Be("same-cycle-hash");
+        await pushSender.Received(1)
+            .SendPushToUsersAsync(Arg.Any<IEnumerable<Guid>>(), spaceId, Arg.Any<PushPayload>(), Arg.Any<CancellationToken>());
+    }
+
     // ── GetNotificationsQuery ─────────────────────────────────────────────────
 
     [Fact]

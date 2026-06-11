@@ -6,6 +6,8 @@ using Jobuler.Infrastructure.Persistence;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
 
 namespace Jobuler.Application.Scheduling.SelfService.Commands;
@@ -179,12 +181,17 @@ public class CheckUnderScheduledMembersCommandHandler
             })
         });
 
-        await _notificationService.NotifySpaceAdminsAsync(
+        await _notificationService.NotifySpaceAdminsOnceAsync(
             request.SpaceId,
             eventType: "self_service.under_scheduled_members",
             title: "Under-Scheduled Members Detected",
             body: $"{underScheduledMembers.Count} member(s) have fewer shifts than the minimum ({minShifts}): {memberSummary}",
             metadataJson: adminMetadata,
+            deduplicationHash: ComputeDeduplicationHash(
+                "self_service.under_scheduled_members",
+                request.SpaceId,
+                request.GroupId,
+                request.SchedulingCycleId),
             groupId: request.GroupId,
             ct: ct);
 
@@ -193,13 +200,36 @@ public class CheckUnderScheduledMembersCommandHandler
             .Where(p => p.LinkedUserId.HasValue)
             .ToList();
 
-        foreach (var person in memberUserIds)
+        var memberDedupByUserId = memberUserIds.ToDictionary(
+            person => person.LinkedUserId!.Value,
+            person => ComputeDeduplicationHash(
+                "self_service.under_scheduled_warning",
+                request.SpaceId,
+                request.GroupId,
+                request.SchedulingCycleId,
+                person.Id,
+                person.LinkedUserId!.Value));
+        var memberDedupHashes = memberDedupByUserId.Values.ToList();
+
+        var sentMemberUserIds = await _db.Notifications
+            .AsNoTracking()
+            .Where(n => n.SpaceId == request.SpaceId
+                        && n.EventType == "self_service.under_scheduled_warning"
+                        && n.DeduplicationHash != null
+                        && memberDedupHashes.Contains(n.DeduplicationHash))
+            .Select(n => n.UserId)
+            .ToListAsync(ct);
+
+        var sentMemberUserIdSet = sentMemberUserIds.ToHashSet();
+
+        foreach (var person in memberUserIds.Where(p => !sentMemberUserIdSet.Contains(p.LinkedUserId!.Value)))
         {
             var shortfall = minShifts - approvedCountMap.GetValueOrDefault(person.Id, 0);
+            var userId = person.LinkedUserId!.Value;
 
-            var memberNotification = Notification.Create(
+            var memberNotification = Notification.CreateWithDedup(
                 spaceId: request.SpaceId,
-                userId: person.LinkedUserId!.Value,
+                userId: userId,
                 eventType: "self_service.under_scheduled_warning",
                 title: "Under-Scheduled Warning",
                 body: $"You have {approvedCountMap.GetValueOrDefault(person.Id, 0)} approved shift(s) for this cycle, " +
@@ -211,7 +241,8 @@ public class CheckUnderScheduledMembersCommandHandler
                     approvedCount = approvedCountMap.GetValueOrDefault(person.Id, 0),
                     minRequired = minShifts,
                     shortfall
-                }));
+                }),
+                deduplicationHash: memberDedupByUserId[userId]);
 
             _db.Notifications.Add(memberNotification);
         }
@@ -222,6 +253,7 @@ public class CheckUnderScheduledMembersCommandHandler
         try
         {
             var userIdsForPush = memberUserIds
+                .Where(p => !sentMemberUserIdSet.Contains(p.LinkedUserId!.Value))
                 .Select(p => p.LinkedUserId!.Value)
                 .ToList();
 
@@ -247,5 +279,11 @@ public class CheckUnderScheduledMembersCommandHandler
         return new CheckUnderScheduledMembersResult(
             Success: true,
             UnderScheduledMembers: underScheduledMembers);
+    }
+
+    private static string ComputeDeduplicationHash(string eventType, params Guid[] ids)
+    {
+        var input = $"{eventType}:{string.Join(":", ids.Select(id => id.ToString("N")))}";
+        return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(input))).ToLowerInvariant();
     }
 }

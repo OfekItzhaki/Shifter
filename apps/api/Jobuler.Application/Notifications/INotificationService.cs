@@ -10,4 +10,12 @@ public interface INotificationService
     Task NotifySpaceAdminsAsync(
         Guid spaceId, string eventType, string title, string body,
         string? metadataJson = null, Guid? groupId = null, CancellationToken ct = default);
+
+    /// <summary>
+    /// Creates the admin notification only when no notification with the same
+    /// event type and deduplication hash already exists in the space.
+    /// </summary>
+    Task NotifySpaceAdminsOnceAsync(
+        Guid spaceId, string eventType, string title, string body,
+        string? metadataJson, string deduplicationHash, Guid? groupId = null, CancellationToken ct = default);
 }

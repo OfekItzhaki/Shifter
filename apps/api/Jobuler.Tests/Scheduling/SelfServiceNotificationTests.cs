@@ -8,6 +8,7 @@ using Jobuler.Domain.People;
 using Jobuler.Domain.Scheduling;
 using Jobuler.Domain.Spaces;
 using Jobuler.Domain.Tasks;
+using Jobuler.Infrastructure.Notifications;
 using Jobuler.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
@@ -1547,6 +1548,74 @@ public class SelfServiceNotificationTests
             .LogAsync(default, default, default!, default, default, default, default, default, default);
         await pushSender.DidNotReceiveWithAnyArgs()
             .SendPushToUserAsync(default, default, default!, default);
+    }
+
+    [Fact]
+    public async Task CheckUnderScheduledMembers_DeduplicatesRepeatedCycleWarnings()
+    {
+        using var db = CreateDb();
+        var (spaceId, groupId, cycleId, _, ownerUserId) = SeedBaseData(db);
+        var space = Space.Create("Operations Space", ownerUserId);
+        typeof(Jobuler.Domain.Common.Entity).GetProperty("Id")!.SetValue(space, spaceId);
+        db.Spaces.Add(space);
+
+        db.SelfServiceConfigs.Add(SelfServiceConfig.Create(
+            spaceId,
+            groupId,
+            minShiftsPerCycle: 1,
+            maxShiftsPerCycle: 5,
+            requestWindowOpenOffsetHours: 48,
+            requestWindowCloseOffsetHours: 12,
+            cancellationCutoffHours: 24,
+            maxLateCancellationsPerCycle: 2,
+            lateCancellationWindowHours: 24,
+            waitlistOfferMinutes: 60,
+            cycleDurationDays: 7));
+
+        var memberUserId = Guid.NewGuid();
+        var member = Person.Create(spaceId, "Under Scheduled", linkedUserId: memberUserId);
+        db.People.Add(member);
+        db.GroupMemberships.Add(GroupMembership.Create(spaceId, groupId, member.Id));
+        await db.SaveChangesAsync();
+
+        var adminPushSender = Substitute.For<IPushNotificationSender>();
+        var memberPushSender = Substitute.For<IPushNotificationSender>();
+        var notificationService = new NotificationService(
+            db,
+            adminPushSender,
+            NullLogger<NotificationService>.Instance);
+        var handler = new CheckUnderScheduledMembersCommandHandler(
+            db,
+            notificationService,
+            memberPushSender,
+            NullLogger<CheckUnderScheduledMembersCommandHandler>.Instance);
+
+        var command = new CheckUnderScheduledMembersCommand(spaceId, groupId, cycleId);
+
+        var first = await handler.Handle(command, CancellationToken.None);
+        var second = await handler.Handle(command, CancellationToken.None);
+
+        first.UnderScheduledMembers.Should().ContainSingle(m => m.PersonId == member.Id);
+        second.UnderScheduledMembers.Should().ContainSingle(m => m.PersonId == member.Id);
+
+        var adminNotifications = await db.Notifications
+            .Where(n => n.EventType == "self_service.under_scheduled_members")
+            .ToListAsync();
+        var memberNotifications = await db.Notifications
+            .Where(n => n.EventType == "self_service.under_scheduled_warning")
+            .ToListAsync();
+
+        adminNotifications.Should().ContainSingle();
+        memberNotifications.Should().ContainSingle();
+        adminNotifications[0].DeduplicationHash.Should().NotBeNullOrWhiteSpace();
+        memberNotifications[0].DeduplicationHash.Should().NotBeNullOrWhiteSpace();
+        await adminPushSender.Received(1)
+            .SendPushToUsersAsync(Arg.Any<IEnumerable<Guid>>(), spaceId, Arg.Any<PushPayload>(), Arg.Any<CancellationToken>());
+        await memberPushSender.Received(1)
+            .SendPushToUsersAsync(Arg.Is<IEnumerable<Guid>>(ids => ids.SequenceEqual(new[] { memberUserId })),
+                spaceId,
+                Arg.Any<PushPayload>(),
+                Arg.Any<CancellationToken>());
     }
 
     private static IAuditLogger CreateAuditLogger()
