@@ -740,6 +740,19 @@ export async function getMySwaps(
   return data;
 }
 
+export async function getAdminSwaps(
+  spaceId: string,
+  groupId: string,
+  status?: SwapRequestDto["status"],
+  limit?: number
+): Promise<SwapRequestDto[]> {
+  const { data } = await apiClient.get(
+    `/spaces/${spaceId}/groups/${groupId}/shift-swaps/admin`,
+    { params: { ...(status ? { status } : {}), ...(limit ? { limit } : {}) } }
+  );
+  return data;
+}
+
 // ── Admin Overrides ──────────────────────────────────────────────────────────
 
 export async function adminAssignMember(

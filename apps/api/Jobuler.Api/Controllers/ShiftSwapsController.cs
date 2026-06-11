@@ -1,5 +1,7 @@
+using Jobuler.Application.Common;
 using Jobuler.Application.Scheduling.SelfService;
 using Jobuler.Domain.Scheduling;
+using Jobuler.Domain.Spaces;
 using Jobuler.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -19,11 +21,13 @@ namespace Jobuler.Api.Controllers;
 public class ShiftSwapsController : ControllerBase
 {
     private readonly IShiftSwapService _swapService;
+    private readonly IPermissionService _permissions;
     private readonly AppDbContext _db;
 
-    public ShiftSwapsController(IShiftSwapService swapService, AppDbContext db)
+    public ShiftSwapsController(IShiftSwapService swapService, IPermissionService permissions, AppDbContext db)
     {
         _swapService = swapService;
+        _permissions = permissions;
         _db = db;
     }
 
@@ -173,6 +177,53 @@ public class ShiftSwapsController : ControllerBase
             .OrderByDescending(s => s.CreatedAt)
             .ToListAsync(ct);
 
+        return Ok(await BuildSwapResponsesAsync(swaps, ct));
+    }
+
+    /// <summary>
+    /// List swap requests across the group for admin review/operations dashboards.
+    /// This is read-only: member accept/decline/cancel rules still own the actual swap decision.
+    /// </summary>
+    [HttpGet("admin")]
+    public async Task<IActionResult> GetAdminSwaps(
+        Guid spaceId,
+        Guid groupId,
+        [FromQuery] string? status,
+        [FromQuery] int limit = 50,
+        CancellationToken ct = default)
+    {
+        await _permissions.RequirePermissionAsync(CurrentUserId, spaceId, Permissions.ConstraintsManage, ct);
+
+        SwapRequestStatus? parsedStatus = null;
+        if (!string.IsNullOrWhiteSpace(status))
+        {
+            if (!Enum.TryParse<SwapRequestStatus>(status, true, out var nextStatus))
+                return BadRequest(new { error = "Invalid swap request status." });
+
+            parsedStatus = nextStatus;
+        }
+
+        limit = Math.Clamp(limit, 1, 100);
+
+        var query = _db.SwapRequests
+            .AsNoTracking()
+            .Where(s => s.SpaceId == spaceId && s.GroupId == groupId);
+
+        if (parsedStatus.HasValue)
+            query = query.Where(s => s.Status == parsedStatus.Value);
+
+        var swaps = await query
+            .OrderByDescending(s => s.CreatedAt)
+            .Take(limit)
+            .ToListAsync(ct);
+
+        return Ok(await BuildSwapResponsesAsync(swaps, ct));
+    }
+
+    private async Task<IReadOnlyList<SwapRequestDto>> BuildSwapResponsesAsync(
+        IReadOnlyList<SwapRequest> swaps,
+        CancellationToken ct)
+    {
         var requestIds = swaps
             .SelectMany(s => new[] { s.InitiatorShiftRequestId, s.TargetShiftRequestId })
             .Distinct()
@@ -202,7 +253,7 @@ public class ShiftSwapsController : ControllerBase
             .Where(p => personIds.Contains(p.Id))
             .ToDictionaryAsync(p => p.Id, p => p.DisplayName ?? p.FullName, ct);
 
-        return Ok(swaps.Select(s =>
+        return swaps.Select(s =>
         {
             shiftDetails.TryGetValue(s.InitiatorShiftRequestId, out var initiatorShift);
             shiftDetails.TryGetValue(s.TargetShiftRequestId, out var targetShift);
@@ -226,7 +277,7 @@ public class ShiftSwapsController : ControllerBase
                 s.Status.ToString(),
                 s.ExpiresAt,
                 s.CreatedAt);
-        }));
+        }).ToList();
     }
 
     /// <summary>List approved future shifts owned by a group member for the propose-swap flow.</summary>

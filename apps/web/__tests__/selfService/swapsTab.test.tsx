@@ -9,6 +9,7 @@ const mockAcceptSwap = vi.fn();
 const mockDeclineSwap = vi.fn();
 const mockCancelSwap = vi.fn();
 const mockProposeSwap = vi.fn();
+const mockGetAdminSwaps = vi.fn();
 const mockGetMyShiftRequests = vi.fn();
 const mockGetMemberApprovedShifts = vi.fn();
 
@@ -41,11 +42,21 @@ const translations: Record<string, string> = {
   noTargetMembers: "No target members",
   noTargetShifts: "No target shifts",
   proposeSuccess: "Swap proposal sent.",
+  adminOverview: "Group swap overview",
+  adminPendingCount: "{count} pending",
+  adminNoPending: "No pending peer swaps",
+  adminSwapPair: "{initiator} to {target}",
   proposing: "Proposing...",
   loading: "Loading",
   error: "Something went wrong",
 };
-const t = (key: string) => translations[key] ?? key;
+const t = (key: string, values?: Record<string, string>) => {
+  let message = translations[key] ?? key;
+  for (const [name, value] of Object.entries(values ?? {})) {
+    message = message.replace(`{${name}}`, value);
+  }
+  return message;
+};
 
 vi.mock("next-intl", () => ({
   useTranslations: () => t,
@@ -68,6 +79,7 @@ vi.mock("@/lib/api/selfService", () => ({
   declineSwap: (...args: unknown[]) => mockDeclineSwap(...args),
   cancelSwap: (...args: unknown[]) => mockCancelSwap(...args),
   proposeSwap: (...args: unknown[]) => mockProposeSwap(...args),
+  getAdminSwaps: (...args: unknown[]) => mockGetAdminSwaps(...args),
   getMyShiftRequests: (...args: unknown[]) => mockGetMyShiftRequests(...args),
   getMemberApprovedShifts: (...args: unknown[]) => mockGetMemberApprovedShifts(...args),
 }));
@@ -95,6 +107,7 @@ describe("SwapsTab", () => {
     mockDeclineSwap.mockResolvedValue(undefined);
     mockCancelSwap.mockResolvedValue(undefined);
     mockProposeSwap.mockResolvedValue({ swapRequestId: "new-swap" });
+    mockGetAdminSwaps.mockResolvedValue([]);
     mockGetMyShiftRequests.mockResolvedValue({ requests: [] });
     mockGetMemberApprovedShifts.mockResolvedValue([]);
   });
@@ -260,6 +273,28 @@ describe("SwapsTab", () => {
 
     expect(await screen.findByText("08:00-16:00 | Front desk")).toBeInTheDocument();
     expect(screen.getByText("10:30-18:30 | Kitchen")).toBeInTheDocument();
+  });
+
+  it("shows admins a group-level pending swap overview", async () => {
+    mockGetMySwaps.mockResolvedValue([]);
+    mockGetAdminSwaps.mockResolvedValue([
+      makeSwap({
+        id: "admin-swap",
+        initiatorPersonName: "Alice",
+        targetPersonName: "Bob",
+        initiatorSlotTime: "08:00-16:00",
+        targetSlotTime: "16:00-23:00",
+      }),
+    ]);
+
+    render(<SwapsTab spaceId="space-1" groupId="group-1" members={members} isAdmin />);
+
+    expect(await screen.findByText("Group swap overview")).toBeInTheDocument();
+    expect(screen.getByText("1 pending")).toBeInTheDocument();
+    expect(screen.getByText("Alice to Bob")).toBeInTheDocument();
+    expect(screen.getByText("08:00-16:00 | Front desk")).toBeInTheDocument();
+    expect(screen.getByText("16:00-23:00 | Kitchen")).toBeInTheDocument();
+    expect(mockGetAdminSwaps).toHaveBeenCalledWith("space-1", "group-1", "Pending", 50);
   });
 });
 

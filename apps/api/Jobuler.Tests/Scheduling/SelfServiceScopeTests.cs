@@ -254,7 +254,7 @@ public class SelfServiceScopeTests
         db.SwapRequests.Add(swap);
         await db.SaveChangesAsync();
 
-        var controller = new ShiftSwapsController(services.SwapService, db);
+        var controller = new ShiftSwapsController(services.SwapService, services.Permissions, db);
         controller.ControllerContext = CreateControllerContext(userId);
 
         var result = await controller.AcceptSwap(
@@ -266,6 +266,84 @@ public class SelfServiceScopeTests
         result.Should().BeOfType<NotFoundResult>();
         await services.SwapService.DidNotReceiveWithAnyArgs()
             .AcceptSwapAsync(default, default, default);
+    }
+
+    [Fact]
+    public async Task GetAdminSwaps_ReturnsPendingSwapsForRouteGroupOnly()
+    {
+        using var db = CreateDb();
+        var services = CreateControllerServices();
+        var spaceId = Guid.NewGuid();
+        var routeGroup = Group.Create(spaceId, null, "Route Group");
+        var otherGroup = Group.Create(spaceId, null, "Other Group");
+        var adminUserId = Guid.NewGuid();
+        var ownerUserId = Guid.NewGuid();
+        var initiator = Person.Create(spaceId, "Alice", linkedUserId: Guid.NewGuid());
+        var target = Person.Create(spaceId, "Bob", linkedUserId: Guid.NewGuid());
+        var noisyInitiator = Person.Create(spaceId, "Noisy Alice", linkedUserId: Guid.NewGuid());
+        var noisyTarget = Person.Create(spaceId, "Noisy Bob", linkedUserId: Guid.NewGuid());
+        var routeCycle = CreateCycle(spaceId, routeGroup.Id);
+        var otherCycle = CreateCycle(spaceId, otherGroup.Id);
+        var routeTask = CreateTask(spaceId, routeGroup.Id, "Route Task", ownerUserId);
+        var otherTask = CreateTask(spaceId, otherGroup.Id, "Other Task", ownerUserId);
+        var offeredSlot = CreateSlot(spaceId, routeGroup.Id, routeTask.Id, routeCycle.Id, daysFromNow: 2);
+        var requestedSlot = CreateSlot(spaceId, routeGroup.Id, routeTask.Id, routeCycle.Id, daysFromNow: 3);
+        var noisyOfferedSlot = CreateSlot(spaceId, otherGroup.Id, otherTask.Id, otherCycle.Id, daysFromNow: 4);
+        var noisyRequestedSlot = CreateSlot(spaceId, otherGroup.Id, otherTask.Id, otherCycle.Id, daysFromNow: 5);
+        var offeredRequest = ShiftRequest.Create(spaceId, offeredSlot.Id, initiator.Id, routeGroup.Id, routeCycle.Id);
+        offeredRequest.Approve();
+        var requestedRequest = ShiftRequest.Create(spaceId, requestedSlot.Id, target.Id, routeGroup.Id, routeCycle.Id);
+        requestedRequest.Approve();
+        var noisyOfferedRequest = ShiftRequest.Create(spaceId, noisyOfferedSlot.Id, noisyInitiator.Id, otherGroup.Id, otherCycle.Id);
+        noisyOfferedRequest.Approve();
+        var noisyRequestedRequest = ShiftRequest.Create(spaceId, noisyRequestedSlot.Id, noisyTarget.Id, otherGroup.Id, otherCycle.Id);
+        noisyRequestedRequest.Approve();
+        var routeSwap = SwapRequest.Create(
+            spaceId,
+            routeGroup.Id,
+            initiator.Id,
+            target.Id,
+            offeredRequest.Id,
+            requestedRequest.Id);
+        var noisySwap = SwapRequest.Create(
+            spaceId,
+            otherGroup.Id,
+            noisyInitiator.Id,
+            noisyTarget.Id,
+            noisyOfferedRequest.Id,
+            noisyRequestedRequest.Id);
+
+        db.People.AddRange(initiator, target, noisyInitiator, noisyTarget);
+        db.Groups.AddRange(routeGroup, otherGroup);
+        db.SchedulingCycles.AddRange(routeCycle, otherCycle);
+        db.GroupTasks.AddRange(routeTask, otherTask);
+        db.ShiftSlots.AddRange(offeredSlot, requestedSlot, noisyOfferedSlot, noisyRequestedSlot);
+        db.ShiftRequests.AddRange(offeredRequest, requestedRequest, noisyOfferedRequest, noisyRequestedRequest);
+        db.SwapRequests.AddRange(routeSwap, noisySwap);
+        await db.SaveChangesAsync();
+
+        services.Permissions
+            .RequirePermissionAsync(adminUserId, spaceId, Permissions.ConstraintsManage, Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+
+        var controller = new ShiftSwapsController(services.SwapService, services.Permissions, db);
+        controller.ControllerContext = CreateControllerContext(adminUserId);
+
+        var result = await controller.GetAdminSwaps(
+            spaceId,
+            routeGroup.Id,
+            status: "Pending",
+            limit: 50,
+            CancellationToken.None);
+
+        var ok = result.Should().BeOfType<OkObjectResult>().Subject;
+        var response = ok.Value.Should().BeAssignableTo<IEnumerable<SwapRequestDto>>().Subject.ToList();
+        response.Should().ContainSingle();
+        response[0].Id.Should().Be(routeSwap.Id);
+        response[0].InitiatorPersonName.Should().Be("Alice");
+        response[0].TargetPersonName.Should().Be("Bob");
+        response[0].InitiatorTaskName.Should().Be("Route Task");
+        response[0].TargetTaskName.Should().Be("Route Task");
     }
 
     [Fact]

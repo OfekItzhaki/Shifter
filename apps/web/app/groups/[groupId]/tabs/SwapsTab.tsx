@@ -10,6 +10,7 @@ import {
   acceptSwap,
   declineSwap,
   cancelSwap,
+  getAdminSwaps,
   getMyShiftRequests,
   getMemberApprovedShifts,
   SwapRequestDto,
@@ -25,6 +26,7 @@ interface Props {
   spaceId: string;
   groupId: string;
   members: GroupMemberDto[];
+  isAdmin?: boolean;
 }
 
 type ProposeStep = "idle" | "selectMyShift" | "selectTargetMember" | "selectTargetShift";
@@ -55,7 +57,7 @@ function formatSlotTimeRange(value: string): string {
  *
  * Validates: Requirements 8.1, 8.2, 8.3, 8.4, 8.5, 8.6, 8.7, 8.8, 8.9, 8.10
  */
-export default function SwapsTab({ spaceId, groupId, members }: Props) {
+export default function SwapsTab({ spaceId, groupId, members, isAdmin = false }: Props) {
   const t = useTranslations("selfService.swaps");
   const tCommon = useTranslations("selfService");
   const { userId } = useAuthStore();
@@ -63,6 +65,7 @@ export default function SwapsTab({ spaceId, groupId, members }: Props) {
   const currentSpaceId = spaceId || storedSpaceId;
 
   const [swaps, setSwaps] = useState<SwapRequestDto[]>([]);
+  const [adminSwaps, setAdminSwaps] = useState<SwapRequestDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -87,14 +90,18 @@ export default function SwapsTab({ spaceId, groupId, members }: Props) {
     if (showLoading) setLoading(true);
     setError(null);
     try {
-      const data = await getMySwaps(currentSpaceId, groupId);
-      setSwaps(data);
+      const [myData, adminData] = await Promise.all([
+        getMySwaps(currentSpaceId, groupId),
+        isAdmin ? getAdminSwaps(currentSpaceId, groupId, "Pending", 50) : Promise.resolve([]),
+      ]);
+      setSwaps(myData);
+      setAdminSwaps(adminData);
     } catch {
       setError(tCommon("error"));
     } finally {
       if (showLoading) setLoading(false);
     }
-  }, [currentSpaceId, groupId, tCommon]);
+  }, [currentSpaceId, groupId, isAdmin, tCommon]);
 
   useEffect(() => {
     void Promise.resolve().then(() => fetchSwaps());
@@ -412,6 +419,35 @@ export default function SwapsTab({ spaceId, groupId, members }: Props) {
         </div>
       )}
 
+      {isAdmin && (
+        <div>
+          <div className="mb-2 flex items-center justify-between gap-3">
+            <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+              {t("adminOverview")}
+            </h3>
+            <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-xs font-medium text-slate-600">
+              {t("adminPendingCount", { count: String(adminSwaps.length) })}
+            </span>
+          </div>
+          {adminSwaps.length === 0 ? (
+            <div className="rounded-xl border border-slate-200 bg-white px-4 py-6 text-center">
+              <p className="text-sm text-slate-400">{t("adminNoPending")}</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {adminSwaps.map((swap) => (
+                <SwapCard
+                  key={`admin-${swap.id}`}
+                  swap={swap}
+                  direction="admin"
+                  t={t}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Incoming swaps */}
       {incomingSwaps.length > 0 && (
         <div>
@@ -487,7 +523,7 @@ export default function SwapsTab({ spaceId, groupId, members }: Props) {
 
 interface SwapCardProps {
   swap: SwapRequestDto;
-  direction: "incoming" | "outgoing" | "history";
+  direction: "incoming" | "outgoing" | "history" | "admin";
   actionLoading?: string;
   onAccept?: () => void;
   onDecline?: () => void;
@@ -496,8 +532,14 @@ interface SwapCardProps {
 }
 
 function SwapCard({ swap, direction, actionLoading, onAccept, onDecline, onCancel, t }: SwapCardProps) {
-  const counterpartName =
-    direction === "incoming" ? swap.initiatorPersonName : swap.targetPersonName;
+  const counterpartName = direction === "admin"
+    ? t("adminSwapPair", {
+        initiator: swap.initiatorPersonName,
+        target: swap.targetPersonName,
+      })
+    : direction === "incoming"
+      ? swap.initiatorPersonName
+      : swap.targetPersonName;
 
   return (
     <div className="bg-white border border-slate-200 rounded-xl p-4">
