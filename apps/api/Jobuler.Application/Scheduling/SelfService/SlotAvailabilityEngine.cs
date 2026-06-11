@@ -8,7 +8,7 @@ namespace Jobuler.Application.Scheduling.SelfService;
 /// <summary>
 /// Queries available shift slots for a member within a scheduling cycle.
 /// Filters out full slots, slots already claimed by the member, and slots
-/// that overlap in time with the member's existing approved shifts (exclusive endpoints).
+/// that overlap or violate rest windows against the member's approved shifts.
 /// Results are sorted by date ascending, then start time ascending.
 /// </summary>
 public class SlotAvailabilityEngine : ISlotAvailabilityEngine
@@ -65,20 +65,7 @@ public class SlotAvailabilityEngine : ISlotAvailabilityEngine
 
         var memberRequestedSlotIdSet = memberRequestedSlotIds.ToHashSet();
 
-        // Load the member's approved shifts (date + time windows) for overlap detection
-        var memberApprovedShifts = await _db.ShiftRequests
-            .AsNoTracking()
-            .Where(r => r.PersonId == personId
-                        && r.SchedulingCycleId == schedulingCycleId
-                        && r.Status == ShiftRequestStatus.Approved)
-            .Join(
-                _db.ShiftSlots.AsNoTracking(),
-                request => request.ShiftSlotId,
-                slot => slot.Id,
-                (request, slot) => new { slot.Date, slot.StartTime, slot.EndTime })
-            .ToListAsync(ct);
-
-        // Filter slots: exclude already requested and time-overlapping slots
+        // Filter slots: exclude already requested and schedule-safety conflicts.
         var availableSlots = new List<AvailableSlotDto>();
 
         foreach (var item in slotsWithTasks)
@@ -92,14 +79,14 @@ public class SlotAvailabilityEngine : ISlotAvailabilityEngine
             if (memberRequestedSlotIdSet.Contains(slot.Id))
                 continue;
 
-            // Requirement 7.4: Exclude slots that overlap with member's approved shifts
-            // Overlap with exclusive endpoints: slotA overlaps slotB if slotA.Start < slotB.End AND slotA.End > slotB.Start
-            var hasOverlap = memberApprovedShifts.Any(approved =>
-                approved.Date == slot.Date
-                && approved.StartTime < slot.EndTime
-                && approved.EndTime > slot.StartTime);
+            // Requirement 7.4: Exclude slots that overlap or violate rest windows.
+            var assignmentConflict = await ShiftAssignmentSafety.FindApprovedAssignmentConflictAsync(
+                _db,
+                personId,
+                slot,
+                ct);
 
-            if (hasOverlap)
+            if (assignmentConflict != ShiftAssignmentConflictKind.None)
                 continue;
 
             availableSlots.Add(new AvailableSlotDto(

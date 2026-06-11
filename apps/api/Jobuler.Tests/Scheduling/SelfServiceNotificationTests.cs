@@ -506,6 +506,65 @@ public class SelfServiceNotificationTests
     }
 
     [Fact]
+    public async Task ProcessRequestAsync_FullSlotAlternatives_ExcludeRestViolations()
+    {
+        using var db = CreateDb();
+        var notifications = Substitute.For<INotificationService>();
+        var audit = CreateAuditLogger();
+        var (spaceId, groupId, cycleId, taskId, _) = SeedBaseData(db);
+
+        var group = await db.Groups.SingleAsync(g => g.Id == groupId);
+        group.SetMinRestBetweenShifts(8);
+        db.SelfServiceConfigs.Add(SelfServiceConfig.Create(
+            spaceId,
+            groupId,
+            minShiftsPerCycle: 0,
+            maxShiftsPerCycle: 5,
+            requestWindowOpenOffsetHours: 48,
+            requestWindowCloseOffsetHours: 12,
+            cancellationCutoffHours: 24,
+            maxLateCancellationsPerCycle: 2,
+            lateCancellationWindowHours: 24,
+            waitlistOfferMinutes: 60,
+            cycleDurationDays: 7));
+
+        var person = Person.Create(spaceId, "Alternative Member", linkedUserId: Guid.NewGuid());
+        var date = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(2));
+        var approvedSlot = AddSlot(db, spaceId, groupId, taskId, cycleId, date, new TimeOnly(8, 0), new TimeOnly(12, 0));
+        var fullSlot = AddSlot(db, spaceId, groupId, taskId, cycleId, date, new TimeOnly(22, 0), new TimeOnly(23, 0));
+        var restViolationAlternative = AddSlot(db, spaceId, groupId, taskId, cycleId, date, new TimeOnly(18, 0), new TimeOnly(22, 0));
+        var safeAlternative = AddSlot(db, spaceId, groupId, taskId, cycleId, date, new TimeOnly(23, 0), new TimeOnly(23, 30));
+        AddApprovedRequest(db, spaceId, groupId, cycleId, person.Id, approvedSlot);
+        fullSlot.IncrementFillCount();
+
+        db.People.Add(person);
+        db.GroupMemberships.Add(GroupMembership.Create(spaceId, groupId, person.Id));
+        await db.SaveChangesAsync();
+
+        var lockService = Substitute.For<ISlotLockService>();
+        lockService.TryAcquireSlotLockAsync(fullSlot.Id, Arg.Any<TimeSpan>(), Arg.Any<CancellationToken>())
+            .Returns(true);
+
+        var service = new ShiftRequestService(
+            db,
+            lockService,
+            TimeProvider.System,
+            NullLogger<ShiftRequestService>.Instance,
+            notifications,
+            Substitute.For<IPushNotificationSender>(),
+            audit);
+
+        var result = await service.ProcessRequestAsync(person.Id, fullSlot.Id);
+
+        result.Success.Should().BeFalse();
+        result.RejectionReason.Should().Be("The slot is at full capacity.");
+        result.AlternativeSlots.Should().NotBeNull();
+        result.AlternativeSlots!.Select(slot => slot.ShiftSlotId).Should()
+            .Contain(safeAlternative.Id)
+            .And.NotContain(restViolationAlternative.Id);
+    }
+
+    [Fact]
     public async Task AcceptSwapAsync_CreatesAcceptedNotifications_ForBothMembers()
     {
         using var db = CreateDb();

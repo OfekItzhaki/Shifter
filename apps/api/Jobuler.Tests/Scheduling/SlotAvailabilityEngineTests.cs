@@ -180,6 +180,8 @@ public class SlotAvailabilityEngineTests
     {
         using var db = CreateDb();
         var (spaceId, groupId, cycleId, taskId) = SeedBaseData(db);
+        var group = await db.Groups.SingleAsync(g => g.Id == groupId);
+        group.SetMinRestBetweenShifts(0);
         var personId = Guid.NewGuid();
 
         var date = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(8));
@@ -214,6 +216,8 @@ public class SlotAvailabilityEngineTests
     {
         using var db = CreateDb();
         var (spaceId, groupId, cycleId, taskId) = SeedBaseData(db);
+        var group = await db.Groups.SingleAsync(g => g.Id == groupId);
+        group.SetMinRestBetweenShifts(0);
         var personId = Guid.NewGuid();
 
         var date = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(8));
@@ -249,6 +253,38 @@ public class SlotAvailabilityEngineTests
             .Contain(adjacentSlot.Id)
             .And.Contain(differentDaySlot.Id)
             .And.NotContain(overlappingSlot.Id);
+    }
+
+    [Fact]
+    public async Task GetAvailableSlotsAsync_ExcludesSlotsInsideMinimumRestWindow()
+    {
+        using var db = CreateDb();
+        var (spaceId, groupId, cycleId, taskId) = SeedBaseData(db);
+        var group = await db.Groups.SingleAsync(g => g.Id == groupId);
+        group.SetMinRestBetweenShifts(8);
+        var personId = Guid.NewGuid();
+
+        var date = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(8));
+
+        var approvedSlot = AddSlot(db, spaceId, groupId, taskId, cycleId, date,
+            new TimeOnly(8, 0), new TimeOnly(12, 0));
+        var approvedReq = ShiftRequest.Create(spaceId, approvedSlot.Id, personId, groupId, cycleId);
+        approvedReq.Approve();
+        db.ShiftRequests.Add(approvedReq);
+
+        var restViolationSlot = AddSlot(db, spaceId, groupId, taskId, cycleId, date,
+            new TimeOnly(18, 0), new TimeOnly(22, 0));
+        var safeSlot = AddSlot(db, spaceId, groupId, taskId, cycleId, date.AddDays(1),
+            new TimeOnly(8, 0), new TimeOnly(12, 0));
+
+        await db.SaveChangesAsync();
+
+        var engine = new SlotAvailabilityEngine(db);
+        var result = await engine.GetAvailableSlotsAsync(personId, groupId, cycleId);
+
+        result.Slots.Select(s => s.ShiftSlotId).Should()
+            .Contain(safeSlot.Id)
+            .And.NotContain(restViolationSlot.Id);
     }
 
     [Fact]

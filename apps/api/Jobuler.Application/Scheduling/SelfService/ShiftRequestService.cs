@@ -631,7 +631,8 @@ public class ShiftRequestService : IShiftRequestService
 
     /// <summary>
     /// Returns up to 5 alternative available slots for the same day as the target slot.
-    /// Excludes slots the member already has a request for and slots that overlap with their approved shifts.
+    /// Excludes slots the member already has a request for and slots that overlap
+    /// or violate rest windows against their approved shifts.
     /// </summary>
     private async Task<IReadOnlyList<AvailableSlotDto>> GetAlternativeSlotsAsync(
         Guid personId, ShiftSlot targetSlot, CancellationToken ct)
@@ -666,20 +667,6 @@ public class ShiftRequestService : IShiftRequestService
 
         var memberRequestedSlotIdSet = memberRequestedSlotIds.ToHashSet();
 
-        // Load the member's approved shifts for overlap detection on the same day
-        var memberApprovedShifts = await _db.ShiftRequests
-            .AsNoTracking()
-            .Where(r => r.PersonId == personId
-                        && r.SchedulingCycleId == targetSlot.SchedulingCycleId
-                        && r.Status == ShiftRequestStatus.Approved)
-            .Join(
-                _db.ShiftSlots.AsNoTracking(),
-                request => request.ShiftSlotId,
-                slot => slot.Id,
-                (request, slot) => new { slot.Date, slot.StartTime, slot.EndTime })
-            .Where(s => s.Date == targetSlot.Date)
-            .ToListAsync(ct);
-
         var alternatives = new List<AvailableSlotDto>();
 
         foreach (var item in sameDaySlots)
@@ -690,11 +677,13 @@ public class ShiftRequestService : IShiftRequestService
             if (memberRequestedSlotIdSet.Contains(slot.Id))
                 continue;
 
-            // Exclude slots that overlap with member's approved shifts (exclusive endpoints)
-            var hasOverlap = memberApprovedShifts.Any(approved =>
-                approved.StartTime < slot.EndTime && approved.EndTime > slot.StartTime);
+            var assignmentConflict = await ShiftAssignmentSafety.FindApprovedAssignmentConflictAsync(
+                _db,
+                personId,
+                slot,
+                ct);
 
-            if (hasOverlap)
+            if (assignmentConflict != ShiftAssignmentConflictKind.None)
                 continue;
 
             alternatives.Add(new AvailableSlotDto(
