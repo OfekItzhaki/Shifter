@@ -30,6 +30,14 @@ vi.mock("next-intl", () => ({
       summaryLateAbsenceLabel: "Late absences",
       summaryLateAbsenceValue: `${values?.used ?? 0}/${values?.max ?? 0} used inside ${values?.window ?? 0}h`,
       summaryNextShiftLabel: "Next shift",
+      actionGuideTitle: "Which action should I use?",
+      actionGuideDescription: "Pick the right option for your shift situation.",
+      "actionGuide.cancel.title": "Cancel",
+      "actionGuide.cancel.description": `Use before the ${values?.cutoff ?? 0}h cutoff.`,
+      "actionGuide.change.title": "Request change",
+      "actionGuide.change.description": "Ask admins to move you to another shift.",
+      "actionGuide.cannotAttend.title": "Can't make it",
+      "actionGuide.cannotAttend.description": `${values?.remaining ?? 0}/${values?.max ?? 0} late reports left inside ${values?.window ?? 0}h.`,
       activityTitle: "My request history",
       activityDescription: "Recent self-service activity",
       activityCount: `${values?.count ?? 0} recent`,
@@ -151,6 +159,9 @@ describe("MyShiftsTab", () => {
       "You have reached the late absence limit for this cycle.",
     );
     expect(screen.getByText("2/2 used inside 24h")).toBeInTheDocument();
+    expect(screen.getByText("Which action should I use?")).toBeInTheDocument();
+    expect(screen.getByText("Use before the 48h cutoff.")).toBeInTheDocument();
+    expect(screen.getByText("0/2 late reports left inside 24h.")).toBeInTheDocument();
 
     await waitFor(() => expect(mockReportCannotAttend).not.toHaveBeenCalled());
   });

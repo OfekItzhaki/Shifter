@@ -2047,6 +2047,22 @@
       "summaryLateAbsenceValue": "{used}/{max} used | late inside {window}h",
       "summaryNextShiftLabel": "Next shift",
       "summaryNoNextShift": "No upcoming approved shift",
+      "actionGuideTitle": "Which action should I use?",
+      "actionGuideDescription": "Choose the right option so admins get the correct signal and your cycle limits stay accurate.",
+      "actionGuide": {
+        "cancel": {
+          "title": "Cancel",
+          "description": "Use this before the {cutoff}h cutoff when you can release a shift normally."
+        },
+        "change": {
+          "title": "Request change",
+          "description": "Use this when you can still work, but need a different slot or admin-selected replacement."
+        },
+        "cannotAttend": {
+          "title": "Can't make it",
+          "description": "Use this when you will miss an assigned shift. Late reports left: {remaining}/{max} inside {window}h."
+        }
+      },
       "activityTitle": "My request history",
       "activityDescription": "Recent self-service activity across shifts, time off, changes, absences, and waitlist offers.",
       "activityCount": "{count} recent",

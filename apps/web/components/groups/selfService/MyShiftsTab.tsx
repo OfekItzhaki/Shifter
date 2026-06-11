@@ -608,6 +608,34 @@ export default function MyShiftsTab({ spaceId, groupId, onNavigate }: MyShiftsTa
         </div>
       </div>
 
+      <div className="rounded-xl border border-slate-200 bg-white p-4">
+        <div className="flex flex-col gap-1">
+          <h3 className="text-sm font-semibold text-slate-900">{t("actionGuideTitle")}</h3>
+          <p className="text-xs text-slate-500">{t("actionGuideDescription")}</p>
+        </div>
+        <div className="mt-4 grid gap-3 md:grid-cols-3">
+          <ActionGuideCard
+            title={t("actionGuide.cancel.title")}
+            description={t("actionGuide.cancel.description", { cutoff: cancellationCutoffHours })}
+            tone="default"
+          />
+          <ActionGuideCard
+            title={t("actionGuide.change.title")}
+            description={t("actionGuide.change.description")}
+            tone="default"
+          />
+          <ActionGuideCard
+            title={t("actionGuide.cannotAttend.title")}
+            description={t("actionGuide.cannotAttend.description", {
+              remaining: lateReportsRemaining,
+              max: maxLateReports,
+              window: lateCancellationWindowHours,
+            })}
+            tone={lateReportsRemaining <= 0 ? "danger" : lateReportsRemaining === 1 ? "warning" : "default"}
+          />
+        </div>
+      </div>
+
       <RequestActivityTimeline items={requestActivity} />
 
       {/* Shift count indicator */}
@@ -1051,6 +1079,30 @@ function SummaryCard({
   return (
     <div className={`rounded-lg border px-3 py-2 ${toneClass}`}>
       {content}
+    </div>
+  );
+}
+
+function ActionGuideCard({
+  title,
+  description,
+  tone,
+}: {
+  title: string;
+  description: string;
+  tone: "default" | "warning" | "danger";
+}) {
+  const toneClass =
+    tone === "danger"
+      ? "border-red-200 bg-red-50"
+      : tone === "warning"
+        ? "border-amber-200 bg-amber-50"
+        : "border-slate-200 bg-slate-50";
+
+  return (
+    <div className={`rounded-lg border px-3 py-3 ${toneClass}`}>
+      <p className="text-sm font-semibold text-slate-900">{title}</p>
+      <p className="mt-1 text-xs leading-5 text-slate-600">{description}</p>
     </div>
   );
 }

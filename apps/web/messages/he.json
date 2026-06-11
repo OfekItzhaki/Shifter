@@ -2059,6 +2059,22 @@
       "summaryLateAbsenceValue": "{used}/{max} נוצלו | מאוחר בתוך {window} שעות",
       "summaryNextShiftLabel": "המשמרת הבאה",
       "summaryNoNextShift": "אין משמרת מאושרת קרובה",
+      "actionGuideTitle": "באיזו פעולה להשתמש?",
+      "actionGuideDescription": "בחר את הפעולה הנכונה כדי שהמנהלים יקבלו את הסימון הנכון והמכסה שלך תישאר מדויקת.",
+      "actionGuide": {
+        "cancel": {
+          "title": "ביטול",
+          "description": "השתמש בזה לפני חלון הביטול של {cutoff} שעות כשאפשר לשחרר משמרת רגילה."
+        },
+        "change": {
+          "title": "בקשת שינוי",
+          "description": "השתמש בזה כשאתה עדיין יכול לעבוד, אבל צריך משבצת אחרת או החלפה שהמנהל יבחר."
+        },
+        "cannotAttend": {
+          "title": "לא אגיע",
+          "description": "השתמש בזה כשלא תגיע למשמרת שכבר שובצת אליה. דיווחים מאוחרים שנותרו: {remaining}/{max} בתוך {window} שעות."
+        }
+      },
       "activityTitle": "היסטוריית הבקשות שלי",
       "activityDescription": "פעילות שירות עצמי אחרונה: משמרות, חופשות, החלפות, היעדרויות ורשימת המתנה.",
       "activityCount": "{count} אחרונות",
