@@ -211,6 +211,9 @@ Known verification:
 - Adds a deploy compose harness with fake Git, Docker, and Curl shims to verify
   deploy orchestration, pre-deploy backup, custom env/project propagation, and
   web/API health checks without touching real services.
+- Adds a deploy rollback harness with fake Git, Docker, and Curl shims to
+  verify failed deploy health checks roll back to the previous git revision and
+  re-check web/API health.
 - Adds package reference validation for exported users, owner/member links, core
   scheduling rows, and self-service workflow relationships.
 - Adds a conservative organization package import executor for safe packages,
@@ -246,6 +249,8 @@ Known verification:
   `infra/scripts/test-backup-compose.ps1`.
 - Deploy compose harness passed:
   `infra/scripts/test-deploy-compose.ps1`.
+- Deploy compose rollback harness passed:
+  `infra/scripts/test-deploy-compose-rollback.ps1`.
 - Backup, deploy, and restore compose script syntax checks passed after custom
   `ENV_FILE` propagation.
 - Resend sender and health check coverage passed:

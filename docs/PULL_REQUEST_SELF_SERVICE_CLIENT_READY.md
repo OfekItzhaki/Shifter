@@ -98,6 +98,9 @@ packaging, and self-service export package validation readiness.
   Curl shims, proving `deploy-compose.sh` fetches/pulls the target ref, runs a
   pre-deploy database backup, starts Compose with the configured env/project,
   and checks web/API health without touching real services.
+- `infra/scripts/test-deploy-compose-rollback.ps1` passed with fake Git,
+  Docker, and Curl shims, proving a failed deploy health check rolls back to
+  the previous git revision, restarts Compose, and verifies rollback health.
 - `infra/scripts/backup-compose.sh`, `infra/scripts/deploy-compose.sh`, and
   `infra/scripts/restore-compose.sh` syntax checks passed after wiring custom
   `ENV_FILE` through their Compose calls.
