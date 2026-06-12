@@ -168,8 +168,8 @@ packaging, and self-service export package validation readiness.
   live API, and a rebuilt production web server. This covered customer-hosted
   restore script syntax, seeded demo users, the self-service demo cycle,
   member/admin workflow read models, available slots, admin assignment reads,
-  cycle closeout metrics including special-day impact fields, web reachability,
-  and the Playwright special-day picker browser flow.
+  seeded special-day closeout impact counts, web reachability, and the
+  Playwright special-day picker browser flow.
 - `infra/scripts/smoke-self-service-client-ready.ps1 -EnvFile infra/compose/.env.customer.example -ResolveOnly`
   passed, proving the live smoke can derive customer target URLs from the same
   env file used by Compose.

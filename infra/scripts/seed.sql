@@ -537,6 +537,25 @@ ON CONFLICT (id) DO UPDATE SET
   status = 'Open',
   updated_at = NOW();
 
+INSERT INTO space_special_days (id, space_id, date, name, kind, home_leave_weight_multiplier, requires_coverage, is_auto_generated, created_at, updated_at) VALUES
+  ('f1a2b3c4-d5e6-4f7a-8b9c-0d1e2f3a4b5c',
+   'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9',
+   (NOW() + INTERVAL '2 days')::date,
+   'Self-Service Demo Special Day',
+   0,
+   1.50,
+   TRUE,
+   FALSE,
+   NOW(),
+   NOW())
+ON CONFLICT (id) DO UPDATE SET
+  date = EXCLUDED.date,
+  kind = EXCLUDED.kind,
+  home_leave_weight_multiplier = EXCLUDED.home_leave_weight_multiplier,
+  requires_coverage = TRUE,
+  is_auto_generated = FALSE,
+  updated_at = NOW();
+
 INSERT INTO shift_requests (id, space_id, shift_slot_id, person_id, group_id, scheduling_cycle_id, status, is_admin_override, processed_by_user_id, created_at, updated_at) VALUES
   ('d9e0f1a2-b3c4-4d5e-8f6a-9b0c1d2e3f4a',
    'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9',

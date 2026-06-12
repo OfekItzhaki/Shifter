@@ -305,8 +305,8 @@ Known verification:
   `infra/scripts/smoke-self-service-client-ready.ps1 -ApiBaseUrl http://localhost:5015 -WebBaseUrl http://localhost:3015`.
   This covered restore script syntax, seeded demo users, the self-service demo
   cycle, member/admin workflow read models, available slots, admin assignment
-  reads, cycle closeout metrics including special-day impact fields, web
-  reachability, and the Playwright special-day picker browser flow.
+  reads, seeded special-day closeout impact counts, web reachability, and the
+  Playwright special-day picker browser flow.
 - Live smoke env-file resolution passed:
   `infra/scripts/smoke-self-service-client-ready.ps1 -EnvFile infra/compose/.env.customer.example -ResolveOnly`.
 - Targeted organization-defaults and portability tests passed:

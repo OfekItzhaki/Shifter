@@ -194,6 +194,21 @@ function Assert-Property {
     }
 }
 
+function Assert-NumberAtLeast {
+    param(
+        [object]$Object,
+        [string]$PropertyName,
+        [int]$Minimum,
+        [string]$Context
+    )
+
+    Assert-Property $Object $PropertyName $Context
+    $value = $Object.PSObject.Properties[$PropertyName].Value
+    if ($null -eq $value -or [int]$value -lt $Minimum) {
+        throw "$Context response expected '$PropertyName' to be at least $Minimum, got '$value'."
+    }
+}
+
 function Assert-ArrayResponse {
     param(
         [object]$Value,
@@ -359,6 +374,8 @@ foreach ($property in @(
     )) {
     Assert-Property $closeout $property "Self-service closeout"
 }
+Assert-NumberAtLeast $closeout "specialDaySlotCount" 1 "Self-service closeout"
+Assert-NumberAtLeast $closeout "underfilledSpecialDaySlotCount" 1 "Self-service closeout"
 
 Write-Host "Seed smoke passed: $($space.name) / $($group.name), cycle $($status.cycleId), available slots $(@($slots.slots).Count), member shifts $(@($myShifts.requests).Count), absence reports $(@($myAbsences.reports).Count), waitlist entries $(@($myWaitlist).Count)." -ForegroundColor Green
 

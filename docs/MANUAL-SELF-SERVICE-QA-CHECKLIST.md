@@ -6,7 +6,7 @@ especially the umbrella `feat/self-service-client-ready` branch.
 ## Preconditions
 
 - API, web app, PostgreSQL, Redis, and worker services are running.
-- Seed data includes the `Self-Service Demo` group.
+- Seed data includes the `Self-Service Demo` group and its demo special day.
 - Demo users can log in with the configured E2E password.
 - Browser local storage is clear or the tester knows which space/group is active.
 
@@ -39,7 +39,7 @@ Run these from the self-service group page while elevated for management:
 6. Remove a manually assigned member and confirm waitlist processing still works.
 7. Mark attendance as present, no-show, or excused.
 8. Open closeout and confirm coverage, attendance, waitlist, swaps, changes,
-   absence, special leave, and override metrics are present.
+   absence, special leave, special-day impact, and override metrics are present.
 
 Expected result: every admin decision updates the queue and preserves tenant,
 space, and group scope.
@@ -87,6 +87,8 @@ Before merging holiday-calendar changes after this branch:
   special days.
 - Verify the self-service operations panel still shows special-day cycle counts
   and marks underfilled special-day slots.
+- Verify closeout and exports include special-day slot, no-coverage special-day,
+  and underfilled special-day counts.
 - Run the smoke path from space special-day setup to a self-service cycle that
   visibly overlaps the marked day.
 - Treat holiday-specific policy behavior, such as altered capacity or forced
