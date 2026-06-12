@@ -10,8 +10,8 @@ managers see in self-service scheduling.
 
 ## Required Data
 
-Portable exports and dry-run import validation must include these self-service
-records:
+Portable exports, dry-run validation, and package import must include these
+self-service records:
 
 - `SpaceSelfServiceDefaults`: space-level defaults for request windows, absence
   limits, waitlist offer timing, and workflow toggles.
@@ -51,14 +51,16 @@ boundary.
 
 ## Import Rules
 
-When an executable package import is added, imports must rebuild a usable
-self-service state, not only seed configuration.
+Package imports must rebuild a usable self-service state, not only seed
+configuration.
 
 - Import defaults before group config.
 - Import templates, cycles, slots, and shift requests before review queues.
 - Import waitlists, changes, swaps, attendance, and special leave after their
   referenced slots, requests, people, groups, and spaces exist.
-- Re-map identifiers consistently across related rows.
+- Preserve package identifiers consistently across related rows. A later merge
+  mode may re-map identifiers, but the conservative import path must reject
+  conflicting target IDs instead of guessing.
 - Do not trigger member notifications while importing historical state.
 - Do not run waitlist expiry or swap expiry jobs until the import transaction is
   complete.
@@ -83,13 +85,13 @@ Before merging portable isolation after manual self-service:
 
 1. Confirm `SpecialLeaveRequestsController`, special leave commands, queries,
    DTOs, domain entity, EF configuration, and migrations are still present.
-2. Confirm export and dry-run import validation tests include every record type
-   listed above.
+2. Confirm export, dry-run import validation, and package import tests include
+   every record type listed above.
 3. Confirm tenant isolation tests cover both member and admin self-service
    endpoints.
 4. Confirm closeout metrics survive export and dry-run import validation with
    matching counts.
-5. Before selling tenant-by-tenant package migration, add and test the actual
-   import executor. Whole-deployment customer restores use the compose
-   backup/restore scripts instead.
+5. Before selling tenant-by-tenant package migration, smoke-test the package
+   import executor against a real PostgreSQL target. Whole-deployment customer
+   restores use the compose backup/restore scripts instead.
 6. Run the manual self-service QA checklist after the merge.

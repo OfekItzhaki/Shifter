@@ -238,6 +238,27 @@ public class PlatformController : ControllerBase
     }
 
     /// <summary>
+    /// POST /platform/organizations/import
+    /// Imports a previously validated organization export package into this deployment.
+    /// Platform admin only.
+    /// </summary>
+    [HttpPost("organizations/import")]
+    public async Task<IActionResult> ImportOrganization(
+        [FromBody] ImportOrganizationRequest request,
+        CancellationToken ct)
+    {
+        if (!await IsPlatformAdminAsync(ct))
+            return Forbid();
+
+        var result = await _mediator.Send(
+            new ImportOrganizationPackageCommand(
+                request.Package.GetRawText(),
+                request.ConfirmImport),
+            ct);
+        return Ok(result);
+    }
+
+    /// <summary>
     /// PATCH /platform/organizations/{organizationId}
     /// Updates operator-controlled organization identity/signals.
     /// Platform admin only.
@@ -409,6 +430,8 @@ public record UpdateOrganizationRequest(
     string? SetupTemplate,
     string? DefaultLocale,
     string? DefaultTimezoneId);
+
+public record ImportOrganizationRequest(JsonElement Package, bool ConfirmImport);
 
 public record MarkOrganizationRelocatedRequest(
     string DedicatedDeploymentKey,

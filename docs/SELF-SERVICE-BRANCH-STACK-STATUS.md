@@ -201,6 +201,8 @@ Known verification:
   docs for PostgreSQL dumps and optional uploads-volume archives.
 - Adds package reference validation for exported users, owner/member links, core
   scheduling rows, and self-service workflow relationships.
+- Adds a conservative organization package import executor for safe packages,
+  with explicit confirmation and transactional writes.
 - Strengthens special-leave query isolation coverage across space boundaries.
 
 Remaining manual/product check:
@@ -209,9 +211,9 @@ Remaining manual/product check:
   web/API stack.
 - Smoke-test customer-hosted setup with real customer secrets and a real
   database.
-- Build the actual organization package import executor before promising
-  tenant-by-tenant package migration; this branch currently packages full
-  deployment restore plus organization export/dry-run validation.
+- Smoke-test organization package import against a real PostgreSQL target before
+  promising tenant-by-tenant migration; full deployment moves should still use
+  the compose backup/restore flow.
 
 ## PR Opening Notes
 

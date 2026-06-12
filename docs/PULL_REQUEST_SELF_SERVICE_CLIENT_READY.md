@@ -25,8 +25,10 @@ packaging, and self-service export package validation readiness.
   and import validation counts, including scoped notifications and audit logs
   tied to those workflows.
 - Validates package references for exported users, owner/member links, core
-  scheduling rows, and self-service workflow relationships before a future
-  package import executor.
+  scheduling rows, and self-service workflow relationships before importing.
+- Adds a conservative organization package import executor for already-safe
+  packages, with explicit confirmation, target conflict checks, transactional
+  writes, and imported user shells that avoid exporting password hashes.
 - Wires `FIELD_ENCRYPTION_KEY` through customer compose configuration and makes
   it required by the customer-hosted env validator.
 - Adds a Windows/PowerShell customer env validator alongside the Bash validator.
@@ -76,7 +78,7 @@ packaging, and self-service export package validation readiness.
 - `dotnet test apps\\api\\Jobuler.Tests\\Jobuler.Tests.csproj --filter FullyQualifiedName~SpaceSpecialDayCommandTests`
   passed: 4 passed, 0 failed.
 - `dotnet test apps\\api\\Jobuler.Tests\\Jobuler.Tests.csproj --filter FullyQualifiedName~OrganizationPortabilityTests`
-  passed: 20 passed, 0 failed.
+  passed: 23 passed, 0 failed.
 - `node_modules\\.bin\\eslint.cmd components\\spaces\\SpecialDaysCard.tsx lib\\api\\spaceSpecialDays.ts`
   passed.
 - `node_modules\\.bin\\eslint.cmd components\\shell\\ShifterAssistant.tsx`
@@ -91,9 +93,9 @@ packaging, and self-service export package validation readiness.
 - Run `infra/scripts/smoke-self-service-client-ready.ps1` against a live seeded
   stack before demo/merge.
 - Run a customer-hosted smoke with real customer secrets and a real database.
-- Build and verify an actual organization package import executor before
-  promising tenant-by-tenant package migration. This branch supports full
-  deployment restore plus organization package export/dry-run validation.
+- Smoke-test organization package import against a real PostgreSQL target before
+  promising tenant-by-tenant migration in production. Full customer-hosted
+  deployment moves should still use the compose backup/restore path.
 
 PR URL:
 

@@ -938,6 +938,101 @@ public class OrganizationPortabilityTests
             error.Contains("shiftRequests contains 1 row(s) whose groupId is not in exported groups"));
     }
 
+    [Fact]
+    public async Task ImportOrganizationPackage_InsertsValidatedPackageIntoEmptyTarget()
+    {
+        var sourceDb = CreateDb();
+        var ownerId = Guid.NewGuid();
+        var owner = CreateUser(ownerId);
+        var organization = Organization.Create("Pizza Hut Israel", ownerId, "IL", "restaurant_hospitality", "he");
+        var space = Space.Create("Pizza Hut Haifa", ownerId, locale: "he", organizationId: organization.Id);
+        var group = Group.Create(space.Id, null, "Kitchen", createdByUserId: ownerId);
+        var person = Person.Create(space.Id, "Worker 1", linkedUserId: ownerId);
+
+        sourceDb.Users.Add(owner);
+        sourceDb.Organizations.Add(organization);
+        sourceDb.Spaces.Add(space);
+        sourceDb.SpaceMemberships.Add(SpaceMembership.Create(space.Id, ownerId));
+        sourceDb.Groups.Add(group);
+        sourceDb.People.Add(person);
+        sourceDb.GroupMemberships.Add(GroupMembership.Create(space.Id, group.Id, person.Id));
+        await sourceDb.SaveChangesAsync();
+
+        var package = await ExportPackageAsync(sourceDb, organization.Id);
+        var packageJson = System.Text.Encoding.UTF8.GetString(package.Content);
+        var targetDb = CreateDb();
+
+        var result = await new ImportOrganizationPackageCommandHandler(targetDb)
+            .Handle(new ImportOrganizationPackageCommand(packageJson, ConfirmImport: true), CancellationToken.None);
+
+        result.OrganizationId.Should().Be(organization.Id);
+        result.Counts.Spaces.Should().Be(1);
+        result.Counts.Groups.Should().Be(1);
+        result.Counts.People.Should().Be(1);
+
+        (await targetDb.Organizations.FindAsync(organization.Id)).Should().NotBeNull();
+        (await targetDb.Spaces.FindAsync(space.Id)).Should().NotBeNull();
+        (await targetDb.Groups.FindAsync(group.Id)).Should().NotBeNull();
+        (await targetDb.People.FindAsync(person.Id)).Should().NotBeNull();
+
+        var importedUser = await targetDb.Users.FindAsync(ownerId);
+        importedUser.Should().NotBeNull();
+        importedUser!.PasswordHash.Should().NotBeNullOrWhiteSpace();
+        importedUser.PasswordHash.Should().NotBe(owner.PasswordHash);
+    }
+
+    [Fact]
+    public async Task ImportOrganizationPackage_RequiresExplicitConfirmation()
+    {
+        var sourceDb = CreateDb();
+        var ownerId = Guid.NewGuid();
+        var owner = CreateUser(ownerId);
+        var organization = Organization.Create("Pizza Hut Israel", ownerId, "IL", "restaurant_hospitality", "he");
+        var space = Space.Create("Pizza Hut Haifa", ownerId, locale: "he", organizationId: organization.Id);
+        sourceDb.Users.Add(owner);
+        sourceDb.Organizations.Add(organization);
+        sourceDb.Spaces.Add(space);
+        await sourceDb.SaveChangesAsync();
+
+        var package = await ExportPackageAsync(sourceDb, organization.Id);
+        var packageJson = System.Text.Encoding.UTF8.GetString(package.Content);
+        var targetDb = CreateDb();
+
+        var act = () => new ImportOrganizationPackageCommandHandler(targetDb)
+            .Handle(new ImportOrganizationPackageCommand(packageJson, ConfirmImport: false), CancellationToken.None);
+
+        await act.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("*confirmImport*");
+        (await targetDb.Organizations.AnyAsync()).Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task ImportOrganizationPackage_BlocksUnsafePackageWithoutWriting()
+    {
+        var sourceDb = CreateDb();
+        var ownerId = Guid.NewGuid();
+        var owner = CreateUser(ownerId);
+        var organization = Organization.Create("Pizza Hut Israel", ownerId, "IL", "restaurant_hospitality", "he");
+        var space = Space.Create("Pizza Hut Haifa", ownerId, locale: "he", organizationId: organization.Id);
+        sourceDb.Users.Add(owner);
+        sourceDb.Organizations.Add(organization);
+        sourceDb.Spaces.Add(space);
+        await sourceDb.SaveChangesAsync();
+
+        var package = await ExportPackageAsync(sourceDb, organization.Id);
+        var packageJson = JsonNode.Parse(System.Text.Encoding.UTF8.GetString(package.Content))!;
+        packageJson["data"]!["spaces"]!.AsArray()[0]!["ownerUserId"] = Guid.NewGuid().ToString();
+        var targetDb = CreateDb();
+
+        var act = () => new ImportOrganizationPackageCommandHandler(targetDb)
+            .Handle(new ImportOrganizationPackageCommand(packageJson.ToJsonString(), ConfirmImport: true), CancellationToken.None);
+
+        await act.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("*not safe to import*");
+        (await targetDb.Organizations.AnyAsync()).Should().BeFalse();
+        (await targetDb.Spaces.AnyAsync()).Should().BeFalse();
+    }
+
     private static Task<OrganizationExportPackageResult> ExportPackageAsync(AppDbContext db, Guid organizationId)
     {
         var mediator = Substitute.For<MediatR.IMediator>();
