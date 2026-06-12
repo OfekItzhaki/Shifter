@@ -95,6 +95,8 @@ sha256sum -c shifter-customer-hosted-<version>.zip.sha256
 - Browser smoke result:
 - Mobile/PWA smoke result:
 - Latest package preflight CI run:
+- Closeout CSV/PDF export smoke result:
+- Closeout PDF verification fingerprint checked:
 
 ## Backup And Restore
 
@@ -118,6 +120,9 @@ sha256sum -c shifter-customer-hosted-<version>.zip.sha256
 - HTTPS enforced:
 - Admin endpoints protected:
 - Customer data export policy approved:
+- Closeout report signing policy: fingerprint-only accepted / certificate signing required
+- Closeout signing certificate owner, if required:
+- Closeout signing certificate rotation/renewal owner, if required:
 - AI provider approved for this customer:
 - Database access restricted:
 - Object storage access restricted:
