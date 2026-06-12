@@ -43,8 +43,8 @@ packaging, and self-service export package validation readiness.
   wrapper for real env validation, package preflight, seeded demo data setup,
   and live self-service smoke checks.
 - Adds a top-level `/ready` API readiness probe for orchestrators and deploy
-  scripts, and switches Compose/deploy health checks to readiness instead of
-  the broader `/health` endpoint.
+  scripts, and switches Compose/deploy/ECS health checks to readiness instead
+  of the broader `/health` endpoint.
 - Adds `infra/scripts/smoke-self-service-client-ready.ps1` to preflight web/API
   health, seeded demo users, the self-service demo cycle, member/admin
   self-service workflow read models, available slots, admin assignment reads,

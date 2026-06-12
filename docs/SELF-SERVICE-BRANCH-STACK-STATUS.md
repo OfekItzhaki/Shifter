@@ -236,7 +236,7 @@ Known verification:
   wrapper for the real customer env preflight, seed setup, and live smoke
   sequence.
 - Adds `/ready` as the API readiness endpoint for Compose, deployment scripts,
-  and future orchestrators.
+  ECS, and future orchestrators.
 - Adds package reference validation for exported users, owner/member links, core
   scheduling rows, and self-service workflow relationships.
 - Adds a conservative organization package import executor for safe packages,
