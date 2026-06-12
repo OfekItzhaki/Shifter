@@ -340,6 +340,8 @@ packaging, and self-service export package validation readiness.
   script against staging URLs. Push-triggered staging deploys remain disabled
   until `ENABLE_STAGING_DEPLOY=true` and staging host/URL secrets and variables
   are configured.
+- Manual CI run `27441388300` passed on `develop` for commit `cb786b2` on
+  June 12, 2026 after adding the gated staging deploy workflow.
 - `infra/scripts/smoke-self-service-client-ready.ps1 -ApiBaseUrl http://localhost:5015 -WebBaseUrl http://localhost:3015`
   passed locally on June 12, 2026 against an isolated temporary PostgreSQL 16
   database, isolated Redis, a fresh API on port `5015`, and the current-branch
