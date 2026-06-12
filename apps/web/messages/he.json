@@ -1567,6 +1567,9 @@
       "summary": "{healthy}/{total} תקינים, {unhealthy} לא תקינים, {skipped} דולגו",
       "updated": "עודכן {time}",
       "responseTime": "תגובה {time}",
+      "core": "ליבה",
+      "optional": "אופציונלי",
+      "optionalSkipped": "לא מוגדר בסביבה הזו.",
       "status": {
         "healthy": "תקין",
         "degraded": "חלקי",

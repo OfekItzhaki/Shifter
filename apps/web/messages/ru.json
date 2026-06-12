@@ -1555,6 +1555,9 @@
       "summary": "{healthy}/{total} исправны, {unhealthy} неисправны, {skipped} пропущены",
       "updated": "Обновлено {time}",
       "responseTime": "Ответ {time}",
+      "core": "Основной",
+      "optional": "Необязательный",
+      "optionalSkipped": "Не настроен для этой среды.",
       "status": {
         "healthy": "Исправен",
         "degraded": "Частично",

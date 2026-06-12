@@ -16,6 +16,9 @@ vi.mock("next-intl", () => ({
       summary: `${values?.healthy ?? 0}/${values?.total ?? 0} healthy, ${values?.unhealthy ?? 0} unhealthy, ${values?.skipped ?? 0} skipped`,
       updated: `Updated ${values?.time ?? ""}`,
       responseTime: `Response ${values?.time ?? ""}`,
+      core: "Core",
+      optional: "Optional",
+      optionalSkipped: "Not configured for this environment.",
       "status.healthy": "Healthy",
       "status.degraded": "Degraded",
       "status.unhealthy": "Unhealthy",
@@ -65,10 +68,16 @@ describe("ProviderHealthPanel", () => {
     expect(await screen.findByText("Provider Health")).toBeInTheDocument();
     expect(screen.getByText("Degraded")).toBeInTheDocument();
     expect(screen.getByText("1/3 healthy, 1 unhealthy, 1 skipped")).toBeInTheDocument();
-    expect(screen.getByText("postgres")).toBeInTheDocument();
-    expect(screen.getByText("resend")).toBeInTheDocument();
+    expect(screen.getByText("PostgreSQL")).toBeInTheDocument();
+    expect(screen.getByText("Primary application database")).toBeInTheDocument();
+    expect(screen.getByText("Resend")).toBeInTheDocument();
+    expect(screen.getByText("Email delivery")).toBeInTheDocument();
     expect(screen.getByText("HTTP 401 Unauthorized")).toBeInTheDocument();
-    expect(screen.getByText("ai")).toBeInTheDocument();
+    expect(screen.getByText("AI")).toBeInTheDocument();
+    expect(screen.getByText("Schedule import, scan, and assistant features")).toBeInTheDocument();
+    expect(screen.getByText("Not configured for this environment.")).toBeInTheDocument();
+    expect(screen.getAllByText("Optional").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Core").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Skipped").length).toBeGreaterThan(0);
 
     fireEvent.click(screen.getByRole("button", { name: "Refresh" }));

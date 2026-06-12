@@ -1555,6 +1555,9 @@
       "summary": "{healthy}/{total} healthy, {unhealthy} unhealthy, {skipped} skipped",
       "updated": "Updated {time}",
       "responseTime": "Response {time}",
+      "core": "Core",
+      "optional": "Optional",
+      "optionalSkipped": "Not configured for this environment.",
       "status": {
         "healthy": "Healthy",
         "degraded": "Degraded",
