@@ -72,7 +72,7 @@ try {
 
     Write-Step "Applying SQL migrations"
     Invoke-Docker -Arguments @("exec", $containerName, "mkdir", "-p", "/migrations")
-    foreach ($migration in Get-ChildItem -LiteralPath $migrationsDir -Filter "*.sql" | Sort-Object Name) {
+    foreach ($migration in Get-ChildItem -LiteralPath $migrationsDir -Filter "*.sql" | Where-Object { $_.Name -ne "999_seed.sql" } | Sort-Object Name) {
         Write-Host "Applying $($migration.Name)"
         Invoke-Docker -Arguments @("cp", $migration.FullName, "${containerName}:/migrations/$($migration.Name)")
         Invoke-Docker -Arguments @(

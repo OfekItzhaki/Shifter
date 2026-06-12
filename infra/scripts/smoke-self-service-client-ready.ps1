@@ -141,7 +141,7 @@ function Invoke-Json {
         return $null
     }
 
-    return $response.Content | ConvertFrom-Json -NoEnumerate
+    return $response.Content | ConvertFrom-Json
 }
 
 function Invoke-Text {
@@ -196,7 +196,7 @@ function Assert-AuthenticatedDownload {
     if ([string]::IsNullOrWhiteSpace($contentType)) {
         $contentType = [string]$response.ContentType
     }
-    if ([string]::IsNullOrWhiteSpace($contentType) -or -not $contentType.Contains($ExpectedContentType, [StringComparison]::OrdinalIgnoreCase)) {
+    if ([string]::IsNullOrWhiteSpace($contentType) -or $contentType.IndexOf($ExpectedContentType, [StringComparison]::OrdinalIgnoreCase) -lt 0) {
         throw "$Context expected content type containing '$ExpectedContentType', got '$contentType'."
     }
 
@@ -313,7 +313,7 @@ function Assert-TextContains {
         throw "$Context returned empty text."
     }
 
-    if (-not $Text.Contains($Expected, [StringComparison]::Ordinal)) {
+    if ($Text.IndexOf($Expected, [StringComparison]::Ordinal) -lt 0) {
         throw "$Context expected text containing '$Expected'."
     }
 }

@@ -266,6 +266,12 @@ packaging, and self-service export package validation readiness.
   passed again after adding the handoff notes template to the package, proving
   the customer archive still assembles, extracts, validates Compose, verifies
   checksum output, and runs the PostgreSQL organization import smoke.
+- `infra/scripts/smoke-organization-import-postgres.ps1` passed locally on
+  June 12, 2026 after making the smoke skip ignored local `999_seed.sql`
+  copies, so it verifies tracked migrations deterministically.
+- `infra/scripts/test-customer-hosted-package.ps1 -EnvFile infra/compose/.env.customer.example`
+  passed locally on June 12, 2026 after the deterministic import-smoke update
+  and Windows PowerShell smoke-script compatibility fix.
 - `.github/workflows/customer-hosted-preflight.yml` now runs
   `infra/scripts/test-customer-hosted-package.ps1 -EnvFile infra/compose/.env.customer.example`
   on relevant PRs, pushes to this branch, and manual dispatch, so the
@@ -291,7 +297,7 @@ packaging, and self-service export package validation readiness.
   service worker against local mock endpoints.
 - Customer-hosted preflight CI run `27432361955` passed for commit `fb21872`
   on June 12, 2026 after adding the hosted VPS smoke harness.
-- Pull request `#36` is open, mergeable into `main`, and its
+- Pull request `#36` is open, retargeted to `develop`, and its
   pull-request-triggered Customer-hosted preflight run `27434174339` passed on
   June 12, 2026.
 - Manual Customer-hosted preflight run `27434384725` passed for latest PR head
