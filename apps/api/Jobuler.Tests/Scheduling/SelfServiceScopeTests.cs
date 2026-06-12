@@ -400,6 +400,63 @@ public class SelfServiceScopeTests
     }
 
     [Fact]
+    public async Task SubmitShiftChange_Returns422_WhenShiftChangeRequestsAreDisabled()
+    {
+        using var db = CreateDb();
+        var services = CreateControllerServices();
+        var spaceId = Guid.NewGuid();
+        var group = Group.Create(spaceId, null, "Route Group");
+        var userId = Guid.NewGuid();
+        var ownerUserId = Guid.NewGuid();
+        var person = Person.Create(spaceId, "Member", linkedUserId: userId);
+        var cycle = CreateCycle(spaceId, group.Id);
+        var originalTask = CreateTask(spaceId, group.Id, "Original Task", ownerUserId);
+        var requestedTask = CreateTask(spaceId, group.Id, "Requested Task", ownerUserId);
+        var originalSlot = CreateSlot(spaceId, group.Id, originalTask.Id, cycle.Id, daysFromNow: 2);
+        var requestedSlot = CreateSlot(spaceId, group.Id, requestedTask.Id, cycle.Id, daysFromNow: 3);
+        var shiftRequest = ShiftRequest.Create(spaceId, originalSlot.Id, person.Id, group.Id, cycle.Id);
+        shiftRequest.Approve();
+        originalSlot.IncrementFillCount();
+        var config = SelfServiceConfig.Create(spaceId, group.Id);
+        config.SetWorkflowPermissions(
+            allowMemberShiftClaims: true,
+            allowWaitlist: true,
+            allowShiftChangeRequests: false,
+            allowAbsenceReports: true,
+            allowShiftSwaps: true);
+
+        db.People.Add(person);
+        db.Groups.Add(group);
+        db.GroupMemberships.Add(GroupMembership.Create(spaceId, group.Id, person.Id));
+        db.SchedulingCycles.Add(cycle);
+        db.GroupTasks.AddRange(originalTask, requestedTask);
+        db.ShiftSlots.AddRange(originalSlot, requestedSlot);
+        db.ShiftRequests.Add(shiftRequest);
+        db.SelfServiceConfigs.Add(config);
+        await db.SaveChangesAsync();
+
+        var controller = new ShiftChangeRequestsController(
+            services.Permissions,
+            services.NotificationService,
+            services.PushSender,
+            services.Audit,
+            db);
+        controller.ControllerContext = CreateControllerContext(userId);
+
+        var result = await controller.Submit(
+            spaceId,
+            group.Id,
+            new SubmitShiftChangeRequest(shiftRequest.Id, requestedSlot.Id, "Need another shift"),
+            CancellationToken.None);
+
+        result.Should().BeAssignableTo<ObjectResult>()
+            .Which.StatusCode.Should().Be(StatusCodes.Status422UnprocessableEntity);
+        (await db.ShiftChangeRequests.CountAsync()).Should().Be(0);
+        await services.NotificationService.DidNotReceiveWithAnyArgs()
+            .NotifySpaceAdminsAsync(default, default!, default!, default!, default, default, default);
+    }
+
+    [Fact]
     public async Task SubmitShiftChange_NotifiesAdmins_WhenRequestIsCreated()
     {
         using var db = CreateDb();

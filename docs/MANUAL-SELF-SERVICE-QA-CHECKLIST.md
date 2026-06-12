@@ -1,6 +1,7 @@
 # Manual Self-Service QA Checklist
 
-Use this checklist before merging or demoing `feat/manual-self-service-hardening`.
+Use this checklist before merging or demoing the manual self-service stack,
+especially the umbrella `feat/self-service-client-ready` branch.
 
 ## Preconditions
 
@@ -68,9 +69,18 @@ cd apps/api
 dotnet test Jobuler.sln
 ```
 
+Client-ready package preflight:
+
+```powershell
+.\infra\scripts\test-customer-hosted-package.ps1
+```
+
+This checks the customer-hosted env validator, backup, restore dry-run, deploy
+happy path, deploy rollback, Compose script syntax, and customer Compose config.
+
 ## Branch Integration Checks
 
-Before merging `feat/holiday-calendars` after this branch:
+Before merging holiday-calendar changes after this branch:
 
 - Verify special leave browser coverage still passes.
 - Verify special days do not affect self-service groups until explicit
@@ -80,7 +90,7 @@ Before merging `feat/holiday-calendars` after this branch:
 - Add a manual smoke path from space special-day setup to a self-service cycle
   that visibly overlaps the marked day.
 
-Before merging `feat/portable-space-isolation` after this branch:
+Before merging portable-space-isolation changes after this branch:
 
 - Confirm special leave API/application/domain files are preserved.
 - Confirm organization export, dry-run import validation, and package import

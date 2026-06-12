@@ -216,6 +216,8 @@ The implementation has focused unit/property coverage for:
 - swaps, including propose, accept, decline, cancel, expiry, ownership checks,
   conflict checks, and stale-state refresh
 - self-service config validation and policy warnings
+- workflow toggles that disable member shift claims, waitlists, absence
+  reports, shift-change requests, and swaps
 - admin overrides, absence/change/special-leave review queues, and cycle
   operations status
 - cycle closeout metrics, including coverage totals, unresolved items,

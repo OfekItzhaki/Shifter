@@ -255,6 +255,10 @@ Known verification:
   `infra/scripts/test-deploy-compose-rollback.ps1`.
 - Customer-hosted package preflight passed:
   `infra/scripts/test-customer-hosted-package.ps1`.
+- Self-service scope and lifecycle tests passed:
+  `dotnet test apps\\api\\Jobuler.Tests\\Jobuler.Tests.csproj --filter "FullyQualifiedName~SelfServiceScopeTests|FullyQualifiedName~ManualSelfServiceLifecycleTests"`.
+  This includes disabled workflow policy coverage for shift-change request
+  submission.
 - Backup, deploy, and restore compose script syntax checks passed after custom
   `ENV_FILE` propagation.
 - Resend sender and health check coverage passed:
