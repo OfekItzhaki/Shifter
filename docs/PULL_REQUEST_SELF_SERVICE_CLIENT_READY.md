@@ -272,6 +272,14 @@ packaging, and self-service export package validation readiness.
 - `infra/scripts/test-customer-hosted-package.ps1 -EnvFile infra/compose/.env.customer.example`
   passed locally on June 12, 2026 after the deterministic import-smoke update
   and Windows PowerShell smoke-script compatibility fix.
+- Customer-hosted preflight CI runs `27437749280` (push) and `27437751010`
+  (PR to `develop`) passed for commit `3972561` on June 12, 2026.
+- `infra/scripts/smoke-self-service-client-ready.ps1 -ApiBaseUrl http://localhost:5015 -WebBaseUrl http://localhost:3015`
+  passed locally on June 12, 2026 against an isolated temporary PostgreSQL 16
+  database, isolated Redis, a fresh API on port `5015`, and the current-branch
+  web app on port `3015`. This included API health, seeded demo logins,
+  self-service workflow read models, web reachability, and the Playwright
+  special-day label browser flow.
 - `.github/workflows/customer-hosted-preflight.yml` now runs
   `infra/scripts/test-customer-hosted-package.ps1 -EnvFile infra/compose/.env.customer.example`
   on relevant PRs, pushes to this branch, and manual dispatch, so the
