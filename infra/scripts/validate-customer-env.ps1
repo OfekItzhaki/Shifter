@@ -88,6 +88,39 @@ function Warn-If-Empty {
     }
 }
 
+function Has-Value {
+    param([string]$Key)
+    return -not [string]::IsNullOrWhiteSpace((Get-EnvValue $Key))
+}
+
+function Require-Complete-Group {
+    param(
+        [string]$Name,
+        [string[]]$Keys
+    )
+
+    $hasAny = $false
+    foreach ($key in $Keys) {
+        if (Has-Value $key) {
+            $hasAny = $true
+            break
+        }
+    }
+
+    if (-not $hasAny) {
+        return
+    }
+
+    foreach ($key in $Keys) {
+        if (-not (Has-Value $key)) {
+            Add-Error "$Name is partially configured. $key is required when any $Name setting is set."
+        }
+        else {
+            Require-Value $key
+        }
+    }
+}
+
 $mode = Get-EnvValue "SHIFTER_DEPLOYMENT_MODE"
 if ($mode -ne "customer-hosted") {
     Add-Error "SHIFTER_DEPLOYMENT_MODE must be customer-hosted for this validator."
@@ -180,6 +213,27 @@ else {
 }
 
 Warn-If-Empty "RESEND_API_KEY" "Email delivery will be logged only; password reset and invitations may not reach users."
+if (Has-Value "RESEND_API_KEY") {
+    Require-Value "RESEND_FROM_EMAIL"
+    Require-Value "RESEND_FROM_NAME"
+}
+Require-Complete-Group "Twilio" @("TWILIO_ACCOUNT_SID", "TWILIO_AUTH_TOKEN", "TWILIO_WHATSAPP_FROM")
+Require-Complete-Group "Web Push VAPID" @("VAPID_PUBLIC_KEY", "VAPID_PRIVATE_KEY", "VAPID_SUBJECT", "NEXT_PUBLIC_VAPID_PUBLIC_KEY")
+$vapidPublicKey = Get-EnvValue "VAPID_PUBLIC_KEY"
+$nextPublicVapidPublicKey = Get-EnvValue "NEXT_PUBLIC_VAPID_PUBLIC_KEY"
+if ((Has-Value "VAPID_PUBLIC_KEY") -and
+    (Has-Value "NEXT_PUBLIC_VAPID_PUBLIC_KEY") -and
+    $vapidPublicKey -ne $nextPublicVapidPublicKey) {
+    Add-Error "NEXT_PUBLIC_VAPID_PUBLIC_KEY must match VAPID_PUBLIC_KEY."
+}
+Require-Complete-Group "Pushover health alerts" @("PUSHOVER_USER_KEY", "PUSHOVER_APP_TOKEN")
+Require-Complete-Group "LemonSqueezy" @(
+    "LEMONSQUEEZY_API_KEY",
+    "LEMONSQUEEZY_WEBHOOK_SECRET",
+    "LEMONSQUEEZY_STORE_ID",
+    "LEMONSQUEEZY_DEFAULT_VARIANT_ID",
+    "LEMONSQUEEZY_TEST_VARIANT_ID"
+)
 Warn-If-Set "NEXT_PUBLIC_POSTHOG_KEY" "Analytics may send usage data outside the customer environment."
 Warn-If-Set "NEXT_PUBLIC_SENTRY_DSN" "Frontend errors may be sent outside the customer environment."
 Warn-If-Set "NEXT_PUBLIC_CRISP_WEBSITE_ID" "Chat widget data may be sent outside the customer environment."

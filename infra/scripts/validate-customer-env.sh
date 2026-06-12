@@ -67,6 +67,39 @@ warn_if_empty() {
   fi
 }
 
+has_value() {
+  local key="$1"
+  [ -n "$(env_value "$key")" ]
+}
+
+require_complete_group() {
+  local name="$1"
+  shift
+  local keys=("$@")
+  local has_any=0
+  local key
+
+  for key in "${keys[@]}"; do
+    if has_value "$key"; then
+      has_any=1
+      break
+    fi
+  done
+
+  if [ "$has_any" -eq 0 ]; then
+    return
+  fi
+
+  for key in "${keys[@]}"; do
+    if ! has_value "$key"; then
+      echo "ERROR: $name is partially configured. $key is required when any $name setting is set." >&2
+      errors=$((errors + 1))
+    else
+      require_value "$key"
+    fi
+  done
+}
+
 mode="$(env_value SHIFTER_DEPLOYMENT_MODE)"
 if [ "$mode" != "customer-hosted" ]; then
   echo "ERROR: SHIFTER_DEPLOYMENT_MODE must be customer-hosted for this validator." >&2
@@ -169,6 +202,25 @@ else
 fi
 
 warn_if_empty RESEND_API_KEY "Email delivery will be logged only; password reset and invitations may not reach users."
+if has_value RESEND_API_KEY; then
+  require_value RESEND_FROM_EMAIL
+  require_value RESEND_FROM_NAME
+fi
+require_complete_group "Twilio" TWILIO_ACCOUNT_SID TWILIO_AUTH_TOKEN TWILIO_WHATSAPP_FROM
+require_complete_group "Web Push VAPID" VAPID_PUBLIC_KEY VAPID_PRIVATE_KEY VAPID_SUBJECT NEXT_PUBLIC_VAPID_PUBLIC_KEY
+vapid_public_key="$(env_value VAPID_PUBLIC_KEY)"
+next_public_vapid_public_key="$(env_value NEXT_PUBLIC_VAPID_PUBLIC_KEY)"
+if has_value VAPID_PUBLIC_KEY && has_value NEXT_PUBLIC_VAPID_PUBLIC_KEY && [ "$vapid_public_key" != "$next_public_vapid_public_key" ]; then
+  echo "ERROR: NEXT_PUBLIC_VAPID_PUBLIC_KEY must match VAPID_PUBLIC_KEY." >&2
+  errors=$((errors + 1))
+fi
+require_complete_group "Pushover health alerts" PUSHOVER_USER_KEY PUSHOVER_APP_TOKEN
+require_complete_group "LemonSqueezy" \
+  LEMONSQUEEZY_API_KEY \
+  LEMONSQUEEZY_WEBHOOK_SECRET \
+  LEMONSQUEEZY_STORE_ID \
+  LEMONSQUEEZY_DEFAULT_VARIANT_ID \
+  LEMONSQUEEZY_TEST_VARIANT_ID
 warn_if_set NEXT_PUBLIC_POSTHOG_KEY "Analytics may send usage data outside the customer environment."
 warn_if_set NEXT_PUBLIC_SENTRY_DSN "Frontend errors may be sent outside the customer environment."
 warn_if_set NEXT_PUBLIC_CRISP_WEBSITE_ID "Chat widget data may be sent outside the customer environment."

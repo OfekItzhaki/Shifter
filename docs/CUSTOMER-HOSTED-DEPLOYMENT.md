@@ -310,6 +310,11 @@ each upgrade.
   those processors. Empty Sentry DSN disables Sentry even in production builds,
   empty PostHog key disables PostHog tracking calls, and empty Crisp website ID
   prevents the chat widget from loading.
+- Configure provider credentials as complete groups: Resend requires API key
+  plus sender email/name, Twilio requires SID/token/from number, Web Push
+  requires all VAPID keys plus matching public frontend key, Pushover requires
+  both alert keys, and LemonSqueezy requires all billing/webhook identifiers.
+  The customer env validator fails partial groups.
 - Put WAF/rate limits in front of auth, billing, import, solver, and admin
   endpoints.
 - Keep OS and Docker patched.

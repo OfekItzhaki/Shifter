@@ -39,10 +39,25 @@ function New-BaseEnv {
         AI_BASE_URL = ""
         AI_MODEL = ""
         RESEND_API_KEY = ""
+        RESEND_FROM_EMAIL = ""
+        RESEND_FROM_NAME = ""
+        TWILIO_ACCOUNT_SID = ""
+        TWILIO_AUTH_TOKEN = ""
+        TWILIO_WHATSAPP_FROM = ""
+        VAPID_PUBLIC_KEY = ""
+        VAPID_PRIVATE_KEY = ""
+        VAPID_SUBJECT = ""
+        NEXT_PUBLIC_VAPID_PUBLIC_KEY = ""
+        PUSHOVER_USER_KEY = ""
+        PUSHOVER_APP_TOKEN = ""
         NEXT_PUBLIC_POSTHOG_KEY = ""
         NEXT_PUBLIC_SENTRY_DSN = ""
         NEXT_PUBLIC_CRISP_WEBSITE_ID = ""
         LEMONSQUEEZY_API_KEY = ""
+        LEMONSQUEEZY_WEBHOOK_SECRET = ""
+        LEMONSQUEEZY_STORE_ID = ""
+        LEMONSQUEEZY_DEFAULT_VARIANT_ID = ""
+        LEMONSQUEEZY_TEST_VARIANT_ID = ""
     }
 }
 
@@ -176,11 +191,66 @@ try {
     $shortFieldKey["FIELD_ENCRYPTION_KEY"] = "too-short"
     Test-Case -Name "reject-short-field-key" -Values $shortFieldKey -ExpectedExit 1
 
+    $partialResend = New-BaseEnv
+    $partialResend["RESEND_API_KEY"] = "re_customer_key"
+    Test-Case `
+        -Name "reject-partial-resend" `
+        -Values $partialResend `
+        -ExpectedExit 1 `
+        -ExpectedOutputPatterns @("RESEND_FROM_EMAIL is required", "RESEND_FROM_NAME is required")
+
+    $partialTwilio = New-BaseEnv
+    $partialTwilio["TWILIO_ACCOUNT_SID"] = "twilio-account"
+    Test-Case `
+        -Name "reject-partial-twilio" `
+        -Values $partialTwilio `
+        -ExpectedExit 1 `
+        -ExpectedOutputPatterns @("Twilio is partially configured")
+
+    $partialVapid = New-BaseEnv
+    $partialVapid["VAPID_PUBLIC_KEY"] = "public-key"
+    Test-Case `
+        -Name "reject-partial-vapid" `
+        -Values $partialVapid `
+        -ExpectedExit 1 `
+        -ExpectedOutputPatterns @("Web Push VAPID is partially configured")
+
+    $mismatchedVapid = New-BaseEnv
+    $mismatchedVapid["VAPID_PUBLIC_KEY"] = "public-key"
+    $mismatchedVapid["VAPID_PRIVATE_KEY"] = "private-key"
+    $mismatchedVapid["VAPID_SUBJECT"] = "mailto:support@acme.test"
+    $mismatchedVapid["NEXT_PUBLIC_VAPID_PUBLIC_KEY"] = "different-public-key"
+    Test-Case `
+        -Name "reject-mismatched-public-vapid" `
+        -Values $mismatchedVapid `
+        -ExpectedExit 1 `
+        -ExpectedOutputPatterns @("NEXT_PUBLIC_VAPID_PUBLIC_KEY must match VAPID_PUBLIC_KEY")
+
+    $partialPushover = New-BaseEnv
+    $partialPushover["PUSHOVER_USER_KEY"] = "pushover-user"
+    Test-Case `
+        -Name "reject-partial-pushover" `
+        -Values $partialPushover `
+        -ExpectedExit 1 `
+        -ExpectedOutputPatterns @("Pushover health alerts is partially configured")
+
+    $partialLemonSqueezy = New-BaseEnv
+    $partialLemonSqueezy["LEMONSQUEEZY_API_KEY"] = "ls_customer_key"
+    Test-Case `
+        -Name "reject-partial-lemonsqueezy" `
+        -Values $partialLemonSqueezy `
+        -ExpectedExit 1 `
+        -ExpectedOutputPatterns @("LemonSqueezy is partially configured")
+
     $externalProcessors = New-BaseEnv
     $externalProcessors["NEXT_PUBLIC_POSTHOG_KEY"] = "phc_customer_approved"
     $externalProcessors["NEXT_PUBLIC_SENTRY_DSN"] = "https://public@sentry.example/1"
     $externalProcessors["NEXT_PUBLIC_CRISP_WEBSITE_ID"] = "customer-crisp-id"
     $externalProcessors["LEMONSQUEEZY_API_KEY"] = "ls_customer_approved"
+    $externalProcessors["LEMONSQUEEZY_WEBHOOK_SECRET"] = "ls_webhook_secret"
+    $externalProcessors["LEMONSQUEEZY_STORE_ID"] = "12345"
+    $externalProcessors["LEMONSQUEEZY_DEFAULT_VARIANT_ID"] = "67890"
+    $externalProcessors["LEMONSQUEEZY_TEST_VARIANT_ID"] = "67891"
     Test-Case `
         -Name "warn-external-processors" `
         -Values $externalProcessors `

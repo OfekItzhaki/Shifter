@@ -97,6 +97,8 @@ packaging, and self-service export package validation readiness.
   validator when available. It also asserts customer-hosted warning output when
   optional external processors such as PostHog, Sentry, Crisp, or LemonSqueezy
   are configured.
+- Customer env validators now fail partial optional provider groups for Resend,
+  Twilio, Web Push VAPID, Pushover, and LemonSqueezy before deployment.
 - `infra/scripts/test-restore-compose-dry-run.ps1` passed, proving
   `restore-compose.sh` honors a custom `ENV_FILE` during dry-run Compose
   validation.

@@ -198,6 +198,8 @@ Known verification:
   validator and Git Bash validator when available. It also asserts warning
   output when optional external processors are configured for customer-hosted
   installs.
+- Customer env validators fail partial optional provider groups for Resend,
+  Twilio, Web Push VAPID, Pushover, and LemonSqueezy before deployment.
 - Adds `infra/scripts/smoke-self-service-client-ready.ps1` for live seeded stack
   preflight plus the holiday/special-day picker browser flow.
 - The smoke script also checks `infra/scripts/restore-compose.sh` syntax when
