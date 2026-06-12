@@ -492,8 +492,8 @@ license:
   target PostgreSQL before moving production data. For whole-install moves, use
   the Compose backup/restore flow instead.
 - Record the exact package zip checksum, license expiration, env file owner,
-  backup location, domain names, and support escalation contact in the customer
-  handoff notes.
+  backup location, domain names, and support escalation contact in
+  [Customer-Hosted Handoff Notes](CUSTOMER-HOSTED-HANDOFF-NOTES.md).
 
 ## Security Baseline
 

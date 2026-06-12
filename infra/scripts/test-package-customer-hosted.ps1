@@ -100,6 +100,7 @@ try {
             "infra/scripts/smoke-organization-import-postgres.ps1",
             "infra/scripts/test-package-customer-hosted.ps1",
             "docs/AI-DEPLOYMENT-MODES.md",
+            "docs/CUSTOMER-HOSTED-HANDOFF-NOTES.md",
             "apps/web/package.json"
         )) {
         $expectedPath = Join-PackagePath -Root $extractedPackageRoot -RelativePath $relativePath

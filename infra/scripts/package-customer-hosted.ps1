@@ -133,6 +133,7 @@ $script:ExactIncludes = @(
     "docs/AI-DEPLOYMENT-MODES.md",
     "docs/CLOUDFLARE-EDGE-SECURITY.md",
     "docs/CUSTOMER-HOSTED-DEPLOYMENT.md",
+    "docs/CUSTOMER-HOSTED-HANDOFF-NOTES.md",
     "docs/MANUAL-SELF-SERVICE-QA-CHECKLIST.md",
     "docs/MANUAL-SELF-SERVICE-SCHEDULING.md",
     "docs/SELF-SERVICE-HOLIDAY-CALENDAR-CONTRACT.md",
@@ -183,6 +184,7 @@ $requiredPaths = @(
     "infra/scripts/smoke-self-service-client-ready.ps1",
     "infra/scripts/generate-signed-license.ps1",
     "docs/CUSTOMER-HOSTED-DEPLOYMENT.md",
+    "docs/CUSTOMER-HOSTED-HANDOFF-NOTES.md",
     "docs/AI-DEPLOYMENT-MODES.md",
     "docs/MANUAL-SELF-SERVICE-SCHEDULING.md"
 )
