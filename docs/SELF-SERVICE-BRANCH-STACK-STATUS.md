@@ -304,6 +304,9 @@ Known verification:
 - PWA manifest shortcut tests passed for install metadata plus
   `/schedule/my-missions`, `/pick`, and `/profile` with existing icon assets:
   `node_modules\\.bin\\vitest.cmd run __tests__\\pwa\\manifest.test.ts`.
+- Landing PWA copy regression tests passed, confirming phone and desktop install
+  support copy does not drift back to phone-only wording:
+  `node_modules\\.bin\\vitest.cmd run __tests__\\landing\\landingContent.test.ts`.
 - Focused PWA prompt ESLint and `node_modules\\.bin\\next.cmd build` passed.
 - Sentry config tests and focused ESLint passed:
   `node_modules\\.bin\\vitest.cmd run __tests__\\monitoring\\sentryConfig.test.ts`
