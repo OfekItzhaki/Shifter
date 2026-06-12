@@ -1,6 +1,8 @@
 param(
     [string]$ShifterDir = $(Resolve-Path (Join-Path $PSScriptRoot "..\..")),
     [string]$BashPath = "",
+    [string]$EnvFile = "",
+    [switch]$ValidateEnvFile,
     [switch]$SkipDockerComposeConfig,
     [switch]$SkipPostgresImportSmoke
 )
@@ -54,10 +56,19 @@ function To-BashPath {
 $root = (Resolve-Path $ShifterDir).Path
 $bash = Find-Bash $BashPath
 $composeFile = Join-Path $root "infra\compose\docker-compose.yml"
-$customerEnv = Join-Path $root "infra\compose\.env.customer.example"
+if ([string]::IsNullOrWhiteSpace($EnvFile)) {
+    $EnvFile = Join-Path $root "infra\compose\.env.customer.example"
+}
+$composeEnv = (Resolve-Path $EnvFile).Path
 
 Invoke-Step "PowerShell customer env validator harness" {
     & (Join-Path $PSScriptRoot "test-customer-env-validator.ps1") -ShifterDir $root -BashPath $bash
+}
+
+if ($ValidateEnvFile) {
+    Invoke-Step "Customer env file validation" {
+        & (Join-Path $PSScriptRoot "validate-customer-env.ps1") -ShifterDir $root -EnvFile $composeEnv
+    }
 }
 
 Invoke-Step "Restore dry-run harness" {
@@ -102,7 +113,7 @@ if (-not $SkipDockerComposeConfig) {
             throw "Docker was not found. Re-run with -SkipDockerComposeConfig to skip this optional local check."
         }
 
-        & docker compose --env-file $customerEnv -f $composeFile config --quiet
+        & docker compose --env-file $composeEnv -f $composeFile config --quiet
         if ($LASTEXITCODE -ne 0) {
             throw "docker compose config failed with exit code $LASTEXITCODE."
         }

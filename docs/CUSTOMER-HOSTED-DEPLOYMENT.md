@@ -93,7 +93,7 @@ Customer-hosted means:
    ```
 
    Before a customer install or demo, run the package preflight from the repo
-   root:
+   root against the checked-in customer template:
 
    ```powershell
    .\infra\scripts\test-customer-hosted-package.ps1
@@ -101,10 +101,21 @@ Customer-hosted means:
 
    This runs the customer env validator harness, restore dry-run harness,
    backup harness, deploy happy-path harness, deploy rollback harness, Compose
-   script syntax checks, and `docker compose config` against the customer env
-   template. If Docker is not available on the workstation running the preflight,
-   add `-SkipDockerComposeConfig` and run the Compose config check on the target
-   host.
+   script syntax checks, `docker compose config`, and a temporary PostgreSQL
+   organization import smoke against the customer env template.
+
+   Before installing with real customer secrets, run the same preflight against
+   the actual env file and require the env validator to pass:
+
+   ```powershell
+   .\infra\scripts\test-customer-hosted-package.ps1 `
+     -EnvFile .\infra\compose\.env `
+     -ValidateEnvFile
+   ```
+
+   If Docker is not available on the workstation running the preflight, add
+   `-SkipDockerComposeConfig -SkipPostgresImportSmoke` and run those Docker-based
+   checks on the target host.
 
 6. Start the stack:
 

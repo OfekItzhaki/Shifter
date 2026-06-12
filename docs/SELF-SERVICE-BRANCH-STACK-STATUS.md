@@ -221,6 +221,9 @@ Known verification:
   re-check web/API health.
 - Adds a customer-hosted package preflight that runs the env, restore, backup,
   deploy, rollback, script syntax, and Compose config checks as one command.
+- The customer-hosted package preflight can now target a real customer env file
+  with `-EnvFile ... -ValidateEnvFile`, so placeholder-free customer secrets and
+  domains are checked before install.
 - Adds package reference validation for exported users, owner/member links, core
   scheduling rows, and self-service workflow relationships.
 - Adds a conservative organization package import executor for safe packages,
@@ -291,6 +294,9 @@ Known verification:
   `infra/scripts/test-deploy-compose-rollback.ps1`.
 - Customer-hosted package preflight passed:
   `infra/scripts/test-customer-hosted-package.ps1`.
+- Explicit-env customer-hosted package preflight passed against the checked-in
+  customer template path:
+  `infra/scripts/test-customer-hosted-package.ps1 -EnvFile infra/compose/.env.customer.example`.
 - PostgreSQL organization import smoke passed:
   `infra\\scripts\\smoke-organization-import-postgres.ps1`, which starts a
   temporary PostgreSQL 16 container, applies all SQL migrations, and imports a

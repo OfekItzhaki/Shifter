@@ -33,6 +33,9 @@ packaging, and self-service export package validation readiness.
 - Wires `FIELD_ENCRYPTION_KEY` through customer compose configuration and makes
   it required by the customer-hosted env validator.
 - Adds a Windows/PowerShell customer env validator alongside the Bash validator.
+- Lets `infra/scripts/test-customer-hosted-package.ps1` run against a real
+  customer env file with `-EnvFile ... -ValidateEnvFile`, while retaining the
+  template/package preflight path.
 - Adds `infra/scripts/smoke-self-service-client-ready.ps1` to preflight web/API
   health, seeded demo users, the self-service demo cycle, member/admin
   self-service workflow read models, available slots, admin assignment reads,
@@ -137,6 +140,9 @@ packaging, and self-service export package validation readiness.
   env validator, restore dry-run, backup, deploy happy-path, deploy rollback,
   Compose script syntax, customer Docker Compose config checks, and the
   PostgreSQL organization import smoke as one preflight command.
+- `infra/scripts/test-customer-hosted-package.ps1 -EnvFile infra/compose/.env.customer.example`
+  passed, proving the preflight can target an explicit env file path without
+  requiring real customer secrets in CI/local package checks.
 - `infra/scripts/backup-compose.sh`, `infra/scripts/deploy-compose.sh`, and
   `infra/scripts/restore-compose.sh` syntax checks passed after wiring custom
   `ENV_FILE` through their Compose calls.
