@@ -294,6 +294,8 @@ packaging, and self-service export package validation readiness.
 - Pull request `#36` is open, mergeable into `main`, and its
   pull-request-triggered Customer-hosted preflight run `27434174339` passed on
   June 12, 2026.
+- Manual Customer-hosted preflight run `27434384725` passed for latest PR head
+  commit `49a6f93` on June 12, 2026 after recording the actual PR URL.
 - Before merge, use the workflow history above to confirm the latest
   package-relevant run for `feat/self-service-client-ready` is green.
 - `infra/scripts/backup-compose.sh`, `infra/scripts/deploy-compose.sh`,
