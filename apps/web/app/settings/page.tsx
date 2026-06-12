@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback, useMemo, useId } from "react";
 import { useTranslations, useLocale } from "next-intl";
+import { useRouter } from "next/navigation";
 import AppShell from "@/components/shell/AppShell";
 import NotificationPreferences from "@/components/NotificationPreferences";
 import PushNotificationSettings from "@/components/PushNotificationSettings";
@@ -407,6 +408,8 @@ function TimeFormatSection() {
 
 function PasswordSection() {
   const t = useTranslations("userSettings.password");
+  const router = useRouter();
+  const logout = useAuthStore((s) => s.logout);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -435,6 +438,8 @@ function PasswordSection() {
       setNewPassword("");
       setConfirmPassword("");
       setSaved(true);
+      await logout();
+      router.replace("/login?passwordChanged=1");
     } catch {
       setError(t("error"));
     } finally {

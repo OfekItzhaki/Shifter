@@ -53,6 +53,7 @@ function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const justRegistered = searchParams.get("registered") === "1";
+  const passwordChanged = searchParams.get("passwordChanged") === "1";
   const redirectTo = searchParams.get("redirect") ?? "/home";
 
   const [email, setEmail] = useState("");
@@ -245,6 +246,15 @@ function LoginForm() {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               <p style={{ fontSize: "0.875rem", color: "#15803d", margin: 0 }}>{t("passwordResetSuccess")}</p>
+            </div>
+          )}
+
+          {passwordChanged && (
+            <div style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 10, padding: "0.625rem 0.875rem", display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "1rem" }}>
+              <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="#16a34a" strokeWidth={2} style={{ flexShrink: 0 }}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <p style={{ fontSize: "0.875rem", color: "#15803d", margin: 0 }}>{t("passwordChangedSuccess")}</p>
             </div>
           )}
 

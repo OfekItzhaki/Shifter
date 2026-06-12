@@ -177,6 +177,7 @@ public class AuthController : ControllerBase
         [FromBody] ChangePasswordRequest req, CancellationToken ct)
     {
         await _mediator.Send(new ChangePasswordCommand(CurrentUserId, req.CurrentPassword, req.NewPassword), ct);
+        AuthCookieHelper.ClearRefreshTokenCookie(HttpContext, _environment);
         return NoContent();
     }
 

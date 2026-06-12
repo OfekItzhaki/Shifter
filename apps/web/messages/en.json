@@ -54,6 +54,7 @@
     "optional": "optional",
     "accountCreated": "Account created successfully! Sign in to continue.",
     "passwordResetSuccess": "Password reset successfully! Sign in with your new password.",
+    "passwordChangedSuccess": "Password changed successfully. Sign in again with your new password.",
     "signingIn": "Signing in...",
     "noAccount": "Don't have an account?",
     "emailOrPhone": "Email or Phone Number",
@@ -732,7 +733,7 @@
       "confirm": "Confirm new password",
       "save": "Change password",
       "saving": "Changing...",
-      "saved": "Password changed. Please sign in again on other devices.",
+      "saved": "Password changed. Sign in again with your new password.",
       "mismatch": "The new passwords do not match.",
       "tooShort": "Password must be at least 8 characters.",
       "error": "Could not change password. Check your current password and try again."
