@@ -167,6 +167,55 @@ function Invoke-Text {
     return [string]$response.Content
 }
 
+function Assert-AuthenticatedDownload {
+    param(
+        [string]$Url,
+        [string]$Token,
+        [string]$ExpectedContentType,
+        [int]$MinimumBytes,
+        [string]$Context
+    )
+
+    $headers = @{}
+    if ($Token) {
+        $headers.Authorization = "Bearer $Token"
+    }
+
+    try {
+        $response = Invoke-WebRequest -Uri $Url -Method GET -Headers $headers -TimeoutSec $TimeoutSeconds -UseBasicParsing
+    }
+    catch {
+        throw "$Context download failed for $Url. $($_.Exception.Message)"
+    }
+
+    if ($response.StatusCode -lt 200 -or $response.StatusCode -ge 300) {
+        throw "$Context download failed for $Url with HTTP $($response.StatusCode)."
+    }
+
+    $contentType = [string]$response.Headers["Content-Type"]
+    if ([string]::IsNullOrWhiteSpace($contentType)) {
+        $contentType = [string]$response.ContentType
+    }
+    if ([string]::IsNullOrWhiteSpace($contentType) -or -not $contentType.Contains($ExpectedContentType, [StringComparison]::OrdinalIgnoreCase)) {
+        throw "$Context expected content type containing '$ExpectedContentType', got '$contentType'."
+    }
+
+    $byteCount = 0
+    if ($response.RawContentStream -and $response.RawContentStream.CanSeek) {
+        $byteCount = [int]$response.RawContentStream.Length
+    }
+    elseif ($response.Content -is [byte[]]) {
+        $byteCount = $response.Content.Length
+    }
+    elseif ($null -ne $response.Content) {
+        $byteCount = [Text.Encoding]::UTF8.GetByteCount([string]$response.Content)
+    }
+
+    if ($byteCount -lt $MinimumBytes) {
+        throw "$Context expected at least $MinimumBytes bytes, got $byteCount."
+    }
+}
+
 function Assert-HttpOk {
     param(
         [string]$Url,
@@ -444,6 +493,13 @@ foreach ($expected in @(
     )) {
     Assert-TextContains $closeoutCsv $expected "Self-service closeout CSV"
 }
+
+Assert-AuthenticatedDownload `
+    -Url "$ApiBaseUrl/spaces/$($space.id)/groups/$($group.id)/self-service-cycles/closeout.pdf?cycleId=$($status.cycleId)" `
+    -Token $adminToken `
+    -ExpectedContentType "application/pdf" `
+    -MinimumBytes 100 `
+    -Context "Self-service closeout PDF"
 
 Write-Host "Seed smoke passed: $($space.name) / $($group.name), cycle $($status.cycleId), available slots $(@($slots.slots).Count), member shifts $(@($myShifts.requests).Count), absence reports $(@($myAbsences.reports).Count), waitlist entries $(@($myWaitlist).Count)." -ForegroundColor Green
 

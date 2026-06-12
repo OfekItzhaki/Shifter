@@ -310,8 +310,8 @@ Known verification:
   This covered restore script syntax, seeded demo users, the self-service demo
   cycle, member/admin workflow read models, available-slot/member/closeout
   workflow policy flags, admin assignment reads, seeded special-day closeout
-  impact counts, closeout CSV archive policy/special-day rows, web reachability,
-  and the
+  impact counts, closeout CSV archive policy/special-day rows, closeout PDF
+  download checks, web reachability, and the
   Playwright special-day picker browser flow.
 - Live smoke env-file resolution passed:
   `infra/scripts/smoke-self-service-client-ready.ps1 -EnvFile infra/compose/.env.customer.example -ResolveOnly`.
