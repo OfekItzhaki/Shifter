@@ -270,6 +270,8 @@ Known verification:
 - Extends the same policy to special leave: no-coverage special-day overlaps are
   rejected, and coverage-required special-day overlaps are highlighted in admin
   notifications.
+- Adds special-day impact to cycle closeout and exports: total special-day
+  slots, no-coverage special-day slots, and underfilled special-day slots.
 - Ends sessions after password changes and redirects users back to login with a
   success notice.
 - Supports PWA install prompts on mobile and desktop when the browser reports
@@ -375,6 +377,15 @@ Known verification:
   `dotnet test apps\\api\\Jobuler.Tests\\Jobuler.Tests.csproj --filter FullyQualifiedName~SpecialLeaveRequestCommandTests`.
   This includes rejecting no-coverage special-day overlap and highlighting
   coverage-required special-day overlap to admins.
+- Focused special-day closeout/export tests passed:
+  `dotnet test apps\\api\\Jobuler.Tests\\Jobuler.Tests.csproj --filter "FullyQualifiedName~SelfServiceScopeTests.GetCycleCloseout|FullyQualifiedName~SelfServiceScopeTests.ExportCloseout"`.
+  This includes closeout, CSV, and PDF special-day impact metrics.
+- Focused operations closeout UI test and lint passed:
+  `node_modules\\.bin\\vitest.cmd run __tests__\\selfService\\selfServiceOperationsTab.test.tsx`
+  and
+  `node_modules\\.bin\\eslint.cmd components\\groups\\selfService\\SelfServiceOperationsTab.tsx lib\\api\\selfService.ts __tests__\\selfService\\selfServiceOperationsTab.test.tsx`.
+- Customer-hosted package assembly preflight passed:
+  `infra\\scripts\\test-package-customer-hosted.ps1`.
 - Backup, deploy, restore, and seed compose script syntax checks passed after
   custom `ENV_FILE` propagation.
 - Resend sender and health check coverage passed:

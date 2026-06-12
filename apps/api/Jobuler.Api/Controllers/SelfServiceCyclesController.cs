@@ -423,10 +423,26 @@ public class SelfServiceCyclesController : ControllerBase
             .Where(s => s.SpaceId == cycle.SpaceId
                         && s.GroupId == cycle.GroupId
                         && s.SchedulingCycleId == cycle.Id)
-            .Select(s => new { s.Id, s.Capacity, s.CurrentFillCount })
+            .Select(s => new { s.Id, s.Date, s.Capacity, s.CurrentFillCount })
             .ToListAsync(ct);
 
         var cycleSlotIds = slots.Select(s => s.Id).ToList();
+        var cycleStartDate = DateOnly.FromDateTime(cycle.StartsAt);
+        var cycleEndDate = DateOnly.FromDateTime(cycle.EndsAt);
+
+        var specialDayPolicies = await _db.SpaceSpecialDays
+            .AsNoTracking()
+            .Where(d => d.SpaceId == cycle.SpaceId
+                        && d.Date >= cycleStartDate
+                        && d.Date < cycleEndDate)
+            .Select(d => new { d.Date, d.RequiresCoverage })
+            .ToListAsync(ct);
+
+        var specialDayPolicyByDate = specialDayPolicies
+            .GroupBy(d => d.Date)
+            .ToDictionary(
+                g => g.Key,
+                g => g.All(d => d.RequiresCoverage));
 
         var shiftRequests = await _db.ShiftRequests
             .AsNoTracking()
@@ -496,6 +512,11 @@ public class SelfServiceCyclesController : ControllerBase
         var filledCount = slots.Sum(s => s.CurrentFillCount);
         var underfilledSlotCount = slots.Count(s => s.CurrentFillCount < s.Capacity);
         var overfilledSlotCount = slots.Count(s => s.CurrentFillCount > s.Capacity);
+        var specialDaySlotCount = slots.Count(s => specialDayPolicyByDate.ContainsKey(s.Date));
+        var noCoverageSpecialDaySlotCount = slots.Count(s =>
+            specialDayPolicyByDate.TryGetValue(s.Date, out var requiresCoverage) && !requiresCoverage);
+        var underfilledSpecialDaySlotCount = slots.Count(s =>
+            s.CurrentFillCount < s.Capacity && specialDayPolicyByDate.ContainsKey(s.Date));
 
         var approvedAssignments = shiftRequests.Count(r => r.Status == ShiftRequestStatus.Approved);
         var cancelledAssignments = shiftRequests.Count(r => r.Status == ShiftRequestStatus.Cancelled);
@@ -557,6 +578,9 @@ public class SelfServiceCyclesController : ControllerBase
             filledCount,
             underfilledSlotCount,
             overfilledSlotCount,
+            specialDaySlotCount,
+            noCoverageSpecialDaySlotCount,
+            underfilledSpecialDaySlotCount,
             approvedAssignments,
             cancelledAssignments,
             rejectedRequests,
@@ -660,6 +684,9 @@ public class SelfServiceCyclesController : ControllerBase
             ("filled_count", closeout.FilledCount.ToString(CultureInfo.InvariantCulture)),
             ("underfilled_slot_count", closeout.UnderfilledSlotCount.ToString(CultureInfo.InvariantCulture)),
             ("overfilled_slot_count", closeout.OverfilledSlotCount.ToString(CultureInfo.InvariantCulture)),
+            ("special_day_slot_count", closeout.SpecialDaySlotCount.ToString(CultureInfo.InvariantCulture)),
+            ("no_coverage_special_day_slot_count", closeout.NoCoverageSpecialDaySlotCount.ToString(CultureInfo.InvariantCulture)),
+            ("underfilled_special_day_slot_count", closeout.UnderfilledSpecialDaySlotCount.ToString(CultureInfo.InvariantCulture)),
             ("approved_assignments", closeout.ApprovedAssignments.ToString(CultureInfo.InvariantCulture)),
             ("cancelled_assignments", closeout.CancelledAssignments.ToString(CultureInfo.InvariantCulture)),
             ("rejected_requests", closeout.RejectedRequests.ToString(CultureInfo.InvariantCulture)),
@@ -756,6 +783,9 @@ public record SelfServiceCycleCloseoutResponse(
     int FilledCount,
     int UnderfilledSlotCount,
     int OverfilledSlotCount,
+    int SpecialDaySlotCount,
+    int NoCoverageSpecialDaySlotCount,
+    int UnderfilledSpecialDaySlotCount,
     int ApprovedAssignments,
     int CancelledAssignments,
     int RejectedRequests,
@@ -791,5 +821,5 @@ public record SelfServiceCycleCloseoutResponse(
     int IssueCount)
 {
     public static SelfServiceCycleCloseoutResponse Empty() =>
-        new(null, null, null, false, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+        new(null, null, null, false, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 }

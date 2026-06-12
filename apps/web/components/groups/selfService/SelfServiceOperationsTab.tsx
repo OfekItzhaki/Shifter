@@ -470,6 +470,16 @@ export default function SelfServiceOperationsTab({
                 expired: closeout.expiredWaitlistEntries,
               })}
           />
+          <CloseoutDetail
+            label={t("closeout.details.specialDays")}
+            value={statusLoading || !closeout
+              ? "-"
+              : t("closeout.details.specialDaysValue", {
+                total: closeout.specialDaySlotCount,
+                noCoverage: closeout.noCoverageSpecialDaySlotCount,
+                underfilled: closeout.underfilledSpecialDaySlotCount,
+              })}
+          />
         </div>
       </div>
 

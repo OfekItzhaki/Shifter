@@ -40,7 +40,9 @@ or accept stale waitlist offers for them; admin override tools remain available
 for explicit exceptions. Special leave requests overlapping no-coverage special
 days are rejected, while requests overlapping coverage-required special days are
 allowed and highlighted to admins. Other holiday-specific staffing policies
-remain future scope. Silent behavior changes would be worse than no integration.
+remain future scope. Cycle closeout and exports include special-day slot counts,
+no-coverage special-day slot counts, and underfilled special-day slot counts.
+Silent behavior changes would be worse than no integration.
 
 ## Data Rules
 
@@ -69,7 +71,7 @@ tests for at least:
    coverage-required special-day context to admins.
 5. Tenant/space isolation prevents a special day from leaking into another
    space's self-service schedule.
-6. Closeout or operations status shows special-day impact when the group has
+6. Closeout and exports show special-day impact when the group has
    holiday-aware behavior enabled.
 
 ## Merge Gate

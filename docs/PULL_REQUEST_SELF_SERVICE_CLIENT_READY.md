@@ -119,6 +119,8 @@ packaging, and self-service export package validation readiness.
 - Extends the special-day policy to special leave requests: requests overlapping
   no-coverage special days are rejected, while coverage-required special-day
   overlaps are allowed and highlighted to admins.
+- Adds special-day impact to cycle closeout and exports: total special-day
+  slots, no-coverage special-day slots, and underfilled special-day slots.
 - Ends the current session after password changes and shows a login success
   notice, preventing stale authenticated sessions after credential rotation.
 - Supports PWA install prompts on mobile and desktop when the browser reports
@@ -146,10 +148,17 @@ packaging, and self-service export package validation readiness.
 - `dotnet test apps\\api\\Jobuler.Tests\\Jobuler.Tests.csproj --filter FullyQualifiedName~SpecialLeaveRequestCommandTests`
   passed: 18 passed, 0 failed, including special leave overlap handling for
   no-coverage and coverage-required special days.
+- `dotnet test apps\\api\\Jobuler.Tests\\Jobuler.Tests.csproj --filter "FullyQualifiedName~SelfServiceScopeTests.GetCycleCloseout|FullyQualifiedName~SelfServiceScopeTests.ExportCloseout"`
+  passed: 3 passed, 0 failed, including closeout, CSV, and PDF special-day
+  impact metrics.
 - `node_modules\\.bin\\vitest.cmd run __tests__\\selfService\\slotBrowserTab.test.tsx`
   passed: 5 passed, 0 failed, including the no-coverage special-day picker
   state.
+- `node_modules\\.bin\\vitest.cmd run __tests__\\selfService\\selfServiceOperationsTab.test.tsx`
+  passed: 1 passed, 0 failed, including the closeout special-day impact row.
 - `node_modules\\.bin\\eslint.cmd app\\groups\\[groupId]\\tabs\\SlotBrowserTab.tsx lib\\api\\selfService.ts __tests__\\selfService\\slotBrowserTab.test.tsx`
+  passed.
+- `node_modules\\.bin\\eslint.cmd components\\groups\\selfService\\SelfServiceOperationsTab.tsx lib\\api\\selfService.ts __tests__\\selfService\\selfServiceOperationsTab.test.tsx`
   passed.
 - `node_modules\\.bin\\eslint.cmd e2e\\self-service.browser.spec.ts` passed.
 - `node_modules\\.bin\\playwright.cmd test self-service.browser.spec.ts --list`

@@ -3290,6 +3290,19 @@ public class SelfServiceScopeTests
         db.SchedulingCycles.Add(cycle);
         db.GroupTasks.Add(task);
         db.ShiftSlots.AddRange(filledSlot, underfilledSlot, overfilledSlot);
+        db.SpaceSpecialDays.AddRange(
+            SpaceSpecialDay.Create(
+                spaceId,
+                underfilledSlot.Date,
+                "Coverage Day",
+                SpaceSpecialDayKind.Holiday,
+                requiresCoverage: true),
+            SpaceSpecialDay.Create(
+                spaceId,
+                overfilledSlot.Date,
+                "Closed Day",
+                SpaceSpecialDayKind.Custom,
+                requiresCoverage: false));
         db.ShiftRequests.AddRange(
             approvedRequest,
             pendingRequest,
@@ -3346,6 +3359,9 @@ public class SelfServiceScopeTests
         response.FilledCount.Should().Be(3);
         response.UnderfilledSlotCount.Should().Be(1);
         response.OverfilledSlotCount.Should().Be(1);
+        response.SpecialDaySlotCount.Should().Be(2);
+        response.NoCoverageSpecialDaySlotCount.Should().Be(1);
+        response.UnderfilledSpecialDaySlotCount.Should().Be(1);
         response.ApprovedAssignments.Should().Be(3);
         response.CancelledAssignments.Should().Be(1);
         response.RejectedRequests.Should().Be(1);
@@ -3382,7 +3398,7 @@ public class SelfServiceScopeTests
         var person = Person.Create(spaceId, "Alice", linkedUserId: Guid.NewGuid());
         var cycle = CreateCycle(spaceId, group.Id);
         var task = CreateTask(spaceId, group.Id, "Guard", adminUserId);
-        var slot = CreateSlot(spaceId, group.Id, task.Id, cycle.Id, daysFromNow: -1);
+        var slot = CreateSlot(spaceId, group.Id, task.Id, cycle.Id, daysFromNow: 2);
         var request = ShiftRequest.Create(spaceId, slot.Id, person.Id, group.Id, cycle.Id);
         request.Approve(adminUserId);
         slot.IncrementFillCount();
@@ -3393,6 +3409,12 @@ public class SelfServiceScopeTests
         db.SchedulingCycles.Add(cycle);
         db.GroupTasks.Add(task);
         db.ShiftSlots.Add(slot);
+        db.SpaceSpecialDays.Add(SpaceSpecialDay.Create(
+            spaceId,
+            slot.Date,
+            "Closed Day",
+            SpaceSpecialDayKind.Custom,
+            requiresCoverage: false));
         db.ShiftRequests.Add(request);
         db.ShiftAttendanceRecords.Add(ShiftAttendanceRecord.Create(
             spaceId,
@@ -3427,6 +3449,9 @@ public class SelfServiceScopeTests
         csv.Should().Contain("metric,value");
         csv.Should().Contain($"cycle_id,{cycle.Id}");
         csv.Should().Contain("approved_assignments,1");
+        csv.Should().Contain("special_day_slot_count,1");
+        csv.Should().Contain("no_coverage_special_day_slot_count,1");
+        csv.Should().Contain("underfilled_special_day_slot_count,0");
         csv.Should().Contain("no_show_attendance_records,1");
         csv.Should().Contain("unconfirmed_attendance_count,0");
     }
@@ -3444,7 +3469,7 @@ public class SelfServiceScopeTests
         var person = Person.Create(spaceId, "Alice", linkedUserId: Guid.NewGuid());
         var cycle = CreateCycle(spaceId, group.Id);
         var task = CreateTask(spaceId, group.Id, "Guard", adminUserId);
-        var slot = CreateSlot(spaceId, group.Id, task.Id, cycle.Id, daysFromNow: -1);
+        var slot = CreateSlot(spaceId, group.Id, task.Id, cycle.Id, daysFromNow: 2);
         var request = ShiftRequest.Create(spaceId, slot.Id, person.Id, group.Id, cycle.Id);
         request.Approve(adminUserId);
         slot.IncrementFillCount();
@@ -3456,6 +3481,12 @@ public class SelfServiceScopeTests
         db.SchedulingCycles.Add(cycle);
         db.GroupTasks.Add(task);
         db.ShiftSlots.Add(slot);
+        db.SpaceSpecialDays.Add(SpaceSpecialDay.Create(
+            spaceId,
+            slot.Date,
+            "Holiday Coverage",
+            SpaceSpecialDayKind.Holiday,
+            requiresCoverage: true));
         db.ShiftRequests.Add(request);
         await db.SaveChangesAsync();
 
@@ -3489,6 +3520,7 @@ public class SelfServiceScopeTests
         renderedModel.CycleId.Should().Be(cycle.Id);
         renderedModel.ReportFingerprint.Should().MatchRegex("^[A-F0-9]{64}$");
         renderedModel.Metrics.Should().Contain(m => m.Label == "approved_assignments" && m.Value == "1");
+        renderedModel.Metrics.Should().Contain(m => m.Label == "special_day_slot_count" && m.Value == "1");
     }
 
     [Fact]

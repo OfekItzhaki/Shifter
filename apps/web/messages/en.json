@@ -2649,7 +2649,9 @@
           "changes": "Changes",
           "changesValue": "{approved} approved / {rejected} rejected / {pending} pending",
           "waitlist": "Waitlist",
-          "waitlistValue": "{active} active / {accepted} accepted / {expired} expired"
+          "waitlistValue": "{active} active / {accepted} accepted / {expired} expired",
+          "specialDays": "Special days",
+          "specialDaysValue": "{total} slot(s) / {noCoverage} no-coverage / {underfilled} under-filled"
         }
       },
       "policy": {

@@ -132,6 +132,9 @@ export interface SelfServiceCycleCloseoutDto {
   filledCount: number;
   underfilledSlotCount: number;
   overfilledSlotCount: number;
+  specialDaySlotCount: number;
+  noCoverageSpecialDaySlotCount: number;
+  underfilledSpecialDaySlotCount: number;
   approvedAssignments: number;
   cancelledAssignments: number;
   rejectedRequests: number;
