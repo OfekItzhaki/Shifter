@@ -109,6 +109,9 @@ packaging, and self-service export package validation readiness.
   customers. Spaces now resolve first-time self-service group policy from space
   defaults, then organization defaults, then install env defaults, and
   organization templates are included in export/import package validation.
+- Adds a Platform organization self-service defaults panel so platform admins
+  can edit multi-space customer policy templates without calling the API
+  directly.
 - Clarifies the holiday/manual self-service boundary: special-day labels,
   cycle counts, and underfilled-slot warnings are covered now; holiday-specific
   staffing policy changes remain future scope.
@@ -321,6 +324,10 @@ packaging, and self-service export package validation readiness.
   passed.
 - `node_modules\\.bin\\eslint.cmd lib\\analytics\\posthog.ts lib\\analytics\\posthogConfig.ts __tests__\\monitoring\\posthogConfig.test.ts`
   passed.
+- `node_modules\\.bin\\tsc.cmd --noEmit --pretty false` from `apps/web`
+  passed after tightening PostHog key narrowing.
+- `node_modules\\.bin\\eslint.cmd components\\platform\\OrganizationSelfServiceDefaultsPanel.tsx app\\platform\\page.tsx lib\\api\\platform.ts lib\\analytics\\posthog.ts`
+  passed after adding the Platform organization self-service defaults panel.
 - `node_modules\\.bin\\eslint.cmd app\\layout.tsx lib\\support\\crispConfig.ts __tests__\\monitoring\\crispConfig.test.ts`
   passed.
 - `node_modules\\.bin\\vitest.cmd run __tests__\\support\\contact.test.ts`

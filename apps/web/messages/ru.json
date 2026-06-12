@@ -1545,6 +1545,16 @@
     "saved": "Сохранено",
     "settingsSaveError": "Не удалось сохранить настройки.",
     "loading": "Загрузка...",
+    "organizationDefaults": {
+      "title": "Organization self-service defaults",
+      "description": "Set the policy template new self-service groups inherit before space-level overrides are created.",
+      "searchLabel": "Find organization",
+      "searchPlaceholder": "Search by organization, space, owner, or email",
+      "search": "Search",
+      "organizationLabel": "Organization",
+      "empty": "No organizations found.",
+      "loadOrganizationsError": "Could not load organizations."
+    },
     "health": {
       "title": "Состояние провайдеров",
       "description": "Готовность инфраструктуры и дополнительных провайдеров для облачных и клиентских установок.",

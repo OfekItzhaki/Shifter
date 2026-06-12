@@ -14,10 +14,11 @@ const POSTHOG_HOST = process.env.NEXT_PUBLIC_POSTHOG_HOST || "https://us.i.posth
  */
 export function initPostHog() {
   if (typeof window === "undefined") return;
-  if (!isPostHogEnabled(POSTHOG_KEY, process.env.NODE_ENV)) return;
+  const key = POSTHOG_KEY?.trim();
+  if (!key || !isPostHogEnabled(key, process.env.NODE_ENV)) return;
   if (getAnalyticsConsent() !== "accepted") return;
 
-  posthog.init(POSTHOG_KEY, {
+  posthog.init(key, {
     api_host: POSTHOG_HOST,
     capture_pageview: true,
     capture_pageleave: true,

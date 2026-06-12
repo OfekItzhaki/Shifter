@@ -260,6 +260,9 @@ Known verification:
   customers. First-time self-service group policy resolves from space defaults,
   then organization defaults, then install env defaults, and organization
   templates are included in export/import package validation.
+- Adds a Platform organization self-service defaults panel so platform admins
+  can edit multi-space customer policy templates without calling the API
+  directly.
 - Clarifies the holiday/manual self-service boundary: special-day labels,
   cycle counts, and underfilled-slot warnings are covered now; holiday-specific
   staffing policy changes remain future scope.

@@ -1,4 +1,8 @@
 import { apiClient } from "./client";
+import type {
+  SpaceSelfServiceDefaultsDto,
+  UpdateSpaceSelfServiceDefaultsPayload,
+} from "./spaces";
 
 export interface SolverStats {
   totalRunsLast24h: number;
@@ -26,6 +30,56 @@ export interface PlatformStats {
 
 export async function getPlatformStats(): Promise<PlatformStats> {
   const { data } = await apiClient.get<PlatformStats>("/platform/stats");
+  return data;
+}
+
+export interface OrganizationCandidateDto {
+  id: string;
+  displayName: string;
+  normalizedName: string;
+  primaryOwnerUserId: string;
+  primaryOwnerEmail: string | null;
+  primaryOwnerDisplayName: string | null;
+  countryCode: string | null;
+  setupTemplate: string | null;
+  defaultLocale: string | null;
+  status: string;
+  disabledAt: string | null;
+  purgeEligibleAt: string | null;
+  dedicatedDeploymentKey: string | null;
+  spaceCount: number;
+  groupCount: number;
+  memberCount: number;
+  createdAt: string;
+}
+
+export async function searchPlatformOrganizations(search?: string): Promise<OrganizationCandidateDto[]> {
+  const { data } = await apiClient.get<OrganizationCandidateDto[]>("/platform/organizations", {
+    params: {
+      search: search?.trim() || undefined,
+      limit: 25,
+    },
+  });
+  return data;
+}
+
+export async function getOrganizationSelfServiceDefaults(
+  organizationId: string
+): Promise<SpaceSelfServiceDefaultsDto> {
+  const { data } = await apiClient.get<SpaceSelfServiceDefaultsDto>(
+    `/platform/organizations/${organizationId}/self-service-defaults`
+  );
+  return data;
+}
+
+export async function updateOrganizationSelfServiceDefaults(
+  organizationId: string,
+  payload: UpdateSpaceSelfServiceDefaultsPayload
+): Promise<SpaceSelfServiceDefaultsDto> {
+  const { data } = await apiClient.put<SpaceSelfServiceDefaultsDto>(
+    `/platform/organizations/${organizationId}/self-service-defaults`,
+    payload
+  );
   return data;
 }
 

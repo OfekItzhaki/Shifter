@@ -85,9 +85,9 @@ The strongest manager entry point is the self-service group operations tab.
    enabled, so the group has concrete limits before the first cycle is opened.
    Space owners can set the default template from `Space Settings` ->
    `Self-Service`. Platform admins can also set an organization-level template
-   through the platform organization self-service defaults API for multi-space
-   customers. Customer-hosted deployments can also set install-level defaults with
-   `SELF_SERVICE_DEFAULT_*` env vars before groups are switched to
+   from the Platform organization self-service defaults panel for multi-space
+   customers. Customer-hosted deployments can also set install-level defaults
+   with `SELF_SERVICE_DEFAULT_*` env vars before groups are switched to
    `SelfService`.
 2. Add members, roles, qualifications, and tasks as usual.
 3. Open the self-service admin area for the group.
@@ -305,9 +305,6 @@ large deployments:
   shift-change rejection, member-to-member swap acceptance, member-to-member
   swap decline, and initiator swap cancellation, special leave approval, special
   leave cancellation, and special leave rejection.
-- Organization-level defaults now exist in the backend and platform API, and
-  spaces inherit them before falling back to install defaults. A polished admin
-  UI for editing those organization templates is still deferred.
 - Formal certificate signing for closeout reports. PDF closeout reports already
   include a verification fingerprint for archive/tamper checks, but they are not
   certificate-signed legal documents.
