@@ -185,7 +185,7 @@ packaging, and self-service export package validation readiness.
   restore script syntax, seeded demo users, the self-service demo cycle,
   member/admin workflow read models, available-slot/member/closeout workflow
   policy flags, admin assignment reads, seeded special-day closeout impact counts,
-  web reachability, and the
+  closeout CSV archive policy/special-day rows, web reachability, and the
   Playwright special-day picker browser flow.
 - `infra/scripts/smoke-self-service-client-ready.ps1 -EnvFile infra/compose/.env.customer.example -ResolveOnly`
   passed, proving the live smoke can derive customer target URLs from the same

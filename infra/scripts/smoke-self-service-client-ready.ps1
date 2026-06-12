@@ -144,6 +144,29 @@ function Invoke-Json {
     return $response.Content | ConvertFrom-Json -NoEnumerate
 }
 
+function Invoke-Text {
+    param(
+        [ValidateSet("GET")]
+        [string]$Method,
+        [string]$Url,
+        [string]$Token = $null
+    )
+
+    $headers = @{}
+    if ($Token) {
+        $headers.Authorization = "Bearer $Token"
+    }
+
+    try {
+        $response = Invoke-WebRequest -Uri $Url -Method $Method -Headers $headers -TimeoutSec $TimeoutSeconds -UseBasicParsing
+    }
+    catch {
+        throw "HTTP $Method $Url failed. Confirm the API is running, migrations/seed data are loaded, and ApiBaseUrl is correct. $($_.Exception.Message)"
+    }
+
+    return [string]$response.Content
+}
+
 function Assert-HttpOk {
     param(
         [string]$Url,
@@ -228,6 +251,22 @@ function Assert-ArrayResponse {
     }
 
     throw "$Context should return an array response."
+}
+
+function Assert-TextContains {
+    param(
+        [string]$Text,
+        [string]$Expected,
+        [string]$Context
+    )
+
+    if ([string]::IsNullOrWhiteSpace($Text)) {
+        throw "$Context returned empty text."
+    }
+
+    if (-not $Text.Contains($Expected, [StringComparison]::Ordinal)) {
+        throw "$Context expected text containing '$Expected'."
+    }
 }
 
 function Test-BashScriptSyntax {
@@ -390,6 +429,21 @@ foreach ($property in @(
 }
 Assert-NumberAtLeast $closeout "specialDaySlotCount" 1 "Self-service closeout"
 Assert-NumberAtLeast $closeout "underfilledSpecialDaySlotCount" 1 "Self-service closeout"
+
+$closeoutCsv = Invoke-Text -Method GET -Url "$ApiBaseUrl/spaces/$($space.id)/groups/$($group.id)/self-service-cycles/closeout.csv?cycleId=$($status.cycleId)" -Token $adminToken
+foreach ($expected in @(
+        "metric,value",
+        "allow_member_shift_claims,",
+        "allow_waitlist,",
+        "allow_shift_change_requests,",
+        "allow_absence_reports,",
+        "allow_shift_swaps,",
+        "special_day_slot_count,",
+        "no_coverage_special_day_slot_count,",
+        "underfilled_special_day_slot_count,"
+    )) {
+    Assert-TextContains $closeoutCsv $expected "Self-service closeout CSV"
+}
 
 Write-Host "Seed smoke passed: $($space.name) / $($group.name), cycle $($status.cycleId), available slots $(@($slots.slots).Count), member shifts $(@($myShifts.requests).Count), absence reports $(@($myAbsences.reports).Count), waitlist entries $(@($myWaitlist).Count)." -ForegroundColor Green
 
