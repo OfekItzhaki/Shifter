@@ -316,6 +316,11 @@ packaging, and self-service export package validation readiness.
   adding the missing `next/navigation` router mock for the settings page test.
 - `npm run lint` from `apps/web` completed with 0 errors and 89 existing
   warnings on June 12, 2026.
+- Customer-hosted preflight CI run `27440419425` passed on `develop` for commit
+  `c31afc3` on June 12, 2026 after the solver/settings verification hardening.
+- Manual CI run `27440541674` passed on `develop` for commit `c31afc3` on
+  June 12, 2026, covering API build/tests, frontend typecheck/lint/build,
+  solver lint/tests, and solver health.
 - `infra/scripts/smoke-self-service-client-ready.ps1 -ApiBaseUrl http://localhost:5015 -WebBaseUrl http://localhost:3015`
   passed locally on June 12, 2026 against an isolated temporary PostgreSQL 16
   database, isolated Redis, a fresh API on port `5015`, and the current-branch
