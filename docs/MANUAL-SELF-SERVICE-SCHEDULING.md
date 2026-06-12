@@ -263,7 +263,7 @@ group:
 - a member browser lifecycle test for cancelling an approved shift with final
   request status and slot fill-count verification
 - an admin browser lifecycle test for rejecting a shift-change request while
-  preserving the member's original assignment
+  preserving the member's original assignment and original slot fill count
 - an admin browser lifecycle test for rejecting a cannot-attend report and
   reinstating the member's released shift with slot fill-count verification
 - a member/admin browser lifecycle test for special leave submission and admin
@@ -305,7 +305,8 @@ large deployments:
   cannot-attend reporting, absence approval, absence rejection with shift
   reinstatement and slot fill-count verification, shift cancellation with slot
   fill-count verification,
-  shift-change approval with reassignment, shift-change rejection,
+  shift-change approval with reassignment, shift-change rejection with original
+  slot fill-count verification,
   member-to-member swap acceptance, member-to-member swap decline, and initiator
   swap cancellation, special leave approval, special leave cancellation, special
   leave rejection, and no-coverage special-day claim blocking.

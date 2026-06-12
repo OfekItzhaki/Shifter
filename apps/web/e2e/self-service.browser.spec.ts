@@ -1364,6 +1364,14 @@ test.describe("Self-service browser lifecycle", () => {
     );
     const originalSlotId = ownedShift.shiftSlotId;
     const reason = `Browser E2E reject shift change ${Date.now()}`;
+    const originalSlotBeforeChange = await getAdminSlot(
+      request,
+      adminToken,
+      spaceId,
+      groupId,
+      status.cycleId!,
+      originalSlotId
+    );
 
     await loginAsUser(page, memberEmail, DEMO_PASSWORD);
     await page.evaluate((targetGroupId) => {
@@ -1424,6 +1432,16 @@ test.describe("Self-service browser lifecycle", () => {
     const unchangedShift = refreshedShifts.requests.find((row) => row.id === ownedShift.id);
     expect(unchangedShift?.status).toBe("Approved");
     expect(unchangedShift?.shiftSlotId).toBe(originalSlotId);
+
+    const originalSlotAfterRejection = await getAdminSlot(
+      request,
+      adminToken,
+      spaceId,
+      groupId,
+      status.cycleId!,
+      originalSlotId
+    );
+    expect(originalSlotAfterRejection.currentFillCount).toBe(originalSlotBeforeChange.currentFillCount);
   });
 
   test("member can pick an open shift and join a full-slot waitlist through the UI", async ({ page, request }) => {
