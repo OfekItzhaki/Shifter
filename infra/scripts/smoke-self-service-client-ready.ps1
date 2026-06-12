@@ -101,24 +101,33 @@ function Test-BashScriptSyntax {
         throw "Missing restore script: $ScriptPath"
     }
 
-    $bashCommand = Get-Command bash -ErrorAction SilentlyContinue
-    $bashPath = if ($bashCommand) { $bashCommand.Source } else { "" }
-    if ([string]::IsNullOrWhiteSpace($bashPath)) {
-        $gitBash = "C:\Program Files\Git\bin\bash.exe"
-        if (Test-Path -LiteralPath $gitBash) {
-            $bashPath = $gitBash
-        }
+    $bashCandidates = @()
+    $gitBash = "C:\Program Files\Git\bin\bash.exe"
+    if (Test-Path -LiteralPath $gitBash) {
+        $bashCandidates += $gitBash
     }
 
-    if ([string]::IsNullOrWhiteSpace($bashPath)) {
+    $bashCommand = Get-Command bash -ErrorAction SilentlyContinue
+    if ($bashCommand -and $bashCandidates -notcontains $bashCommand.Source) {
+        $bashCandidates += $bashCommand.Source
+    }
+
+    if ($bashCandidates.Count -eq 0) {
         Write-Warning "Bash was not found; skipping restore-compose.sh syntax check."
         return
     }
 
-    & $bashPath -n $ScriptPath
-    if ($LASTEXITCODE -ne 0) {
-        throw "restore-compose.sh syntax check failed with exit code $LASTEXITCODE."
+    $failures = @()
+    foreach ($bashPath in $bashCandidates) {
+        & $bashPath -n $ScriptPath
+        if ($LASTEXITCODE -eq 0) {
+            return
+        }
+
+        $failures += "$bashPath exited with $LASTEXITCODE"
     }
+
+    throw "restore-compose.sh syntax check failed with all Bash candidates: $($failures -join '; ')."
 }
 
 Write-Step "Checking customer-hosted restore script syntax"
