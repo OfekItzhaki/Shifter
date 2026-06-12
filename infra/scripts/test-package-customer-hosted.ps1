@@ -45,6 +45,18 @@ function Join-PackagePath {
     return $resolved
 }
 
+function Assert-TextContains {
+    param(
+        [string]$Text,
+        [string]$Expected,
+        [string]$Context
+    )
+
+    if ($Text.IndexOf($Expected, [StringComparison]::Ordinal) -lt 0) {
+        throw "$Context is missing expected text '$Expected'."
+    }
+}
+
 $root = (Resolve-Path $ShifterDir).Path
 $bash = Find-Bash $BashPath
 $packageScript = Join-Path $PSScriptRoot "package-customer-hosted.ps1"
@@ -132,9 +144,30 @@ try {
             throw "Docker was not found. Re-run with -SkipDockerComposeConfig to skip extracted package compose validation."
         }
 
-        & docker compose --env-file $packagedEnvFile -f $packagedComposeFile config --quiet
+        $composeOutput = & docker compose --env-file $packagedEnvFile -f $packagedComposeFile config 2>&1
         if ($LASTEXITCODE -ne 0) {
-            throw "Extracted package docker compose config failed with exit code $LASTEXITCODE."
+            throw "Extracted package docker compose config failed with exit code $LASTEXITCODE. Output:`n$($composeOutput | Out-String)"
+        }
+
+        $composeText = $composeOutput | Out-String
+        foreach ($expected in @(
+                "SelfServiceDefaults__MinShiftsPerCycle",
+                "SelfServiceDefaults__MaxShiftsPerCycle",
+                "SelfServiceDefaults__RequestWindowOpenOffsetHours",
+                "SelfServiceDefaults__RequestWindowCloseOffsetHours",
+                "SelfServiceDefaults__CancellationCutoffHours",
+                "SelfServiceDefaults__MaxAbsencesPerCycle",
+                "SelfServiceDefaults__MaxLateCancellationsPerCycle",
+                "SelfServiceDefaults__LateCancellationWindowHours",
+                "SelfServiceDefaults__WaitlistOfferMinutes",
+                "SelfServiceDefaults__CycleDurationDays",
+                "SelfServiceDefaults__AllowMemberShiftClaims",
+                "SelfServiceDefaults__AllowWaitlist",
+                "SelfServiceDefaults__AllowShiftChangeRequests",
+                "SelfServiceDefaults__AllowAbsenceReports",
+                "SelfServiceDefaults__AllowShiftSwaps"
+            )) {
+            Assert-TextContains $composeText $expected "Extracted package docker compose config"
         }
     }
 
