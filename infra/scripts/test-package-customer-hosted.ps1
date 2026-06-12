@@ -65,12 +65,19 @@ try {
 
     $packageRoot = Join-Path $tempDir $packageName
     $archivePath = Join-Path $tempDir "$packageName.zip"
+    $shaPath = "$archivePath.sha256"
     $manifestPath = Join-Path $packageRoot "CUSTOMER-HOSTED-MANIFEST.txt"
 
-    foreach ($expectedPath in @($packageRoot, $archivePath, $manifestPath)) {
+    foreach ($expectedPath in @($packageRoot, $archivePath, $shaPath, $manifestPath)) {
         if (-not (Test-Path -LiteralPath $expectedPath)) {
             throw "Expected package artifact was not created: $expectedPath"
         }
+    }
+
+    $expectedHashLine = Get-Content -LiteralPath $shaPath -Raw
+    $actualHash = (Get-FileHash -LiteralPath $archivePath -Algorithm SHA256).Hash.ToLowerInvariant()
+    if ($expectedHashLine.Trim() -ne "$actualHash  $packageName.zip") {
+        throw "Package SHA-256 sidecar did not match archive hash. Sidecar: $expectedHashLine Actual: $actualHash"
     }
 
     Expand-Archive -LiteralPath $archivePath -DestinationPath $extractDir

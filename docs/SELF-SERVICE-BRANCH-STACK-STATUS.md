@@ -328,6 +328,10 @@ Known verification:
   `infra/scripts/test-deploy-compose-rollback.ps1`.
 - Customer-hosted package preflight passed:
   `infra/scripts/test-customer-hosted-package.ps1`.
+- Customer-hosted package assembly now creates a zip plus `.sha256` checksum,
+  extracts the archive in the test harness, validates the extracted Compose
+  config, blocks obvious private env/license/key material, and dry-runs the
+  packaged install verifier from the extracted directory.
 - Explicit-env customer-hosted package preflight passed against the checked-in
   customer template path:
   `infra/scripts/test-customer-hosted-package.ps1 -EnvFile infra/compose/.env.customer.example`.

@@ -169,6 +169,11 @@ packaging, and self-service export package validation readiness.
   env validator, restore dry-run, seed dry-run, backup, deploy happy-path,
   deploy rollback, Compose script syntax, customer Docker Compose config
   checks, and the PostgreSQL organization import smoke as one preflight command.
+- `infra/scripts/test-package-customer-hosted.ps1` passed, proving the
+  customer handoff package creates a zip plus `.sha256` checksum, extracts
+  cleanly with dotfiles such as `.env.customer.example`, validates the
+  extracted Compose config, blocks obvious private material, and dry-runs the
+  packaged install verifier from the extracted directory.
 - `infra/scripts/test-seed-compose-dry-run.ps1` passed, proving the compose seed
   loader resolves the env file, Compose project, database, user, and seed file
   without loading demo data.

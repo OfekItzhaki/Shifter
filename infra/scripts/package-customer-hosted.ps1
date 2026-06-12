@@ -265,7 +265,11 @@ if (-not $NoArchive) {
     }
 
     New-PackageArchive -PackageRoot $stagingRoot -PackageName $PackageName -ArchivePath $archivePath
+    $archiveHash = (Get-FileHash -LiteralPath $archivePath -Algorithm SHA256).Hash.ToLowerInvariant()
+    $shaPath = "$archivePath.sha256"
+    Set-Content -LiteralPath $shaPath -Encoding ASCII -Value "$archiveHash  $PackageName.zip"
     Write-Host "Archive: $archivePath"
+    Write-Host "SHA-256: $shaPath"
 }
 
 Write-Host "Package directory: $stagingRoot"
