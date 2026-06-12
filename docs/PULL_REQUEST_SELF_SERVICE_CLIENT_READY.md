@@ -283,6 +283,8 @@ packaging, and self-service export package validation readiness.
 - Customer-hosted preflight CI run `27431644839` passed for commit `031e0bb`
   on June 12, 2026: `Package Preflight` completed successfully after the
   action-major upgrades.
+- A temporary detached worktree merge check of `origin/main` into
+  `feat/self-service-client-ready` completed cleanly with no conflicts.
 - Before merge, use the workflow history above to confirm the latest
   package-relevant run for `feat/self-service-client-ready` is green.
 - `infra/scripts/backup-compose.sh`, `infra/scripts/deploy-compose.sh`,
