@@ -114,6 +114,19 @@ Customer-hosted means:
    `Customer-Hosted Preflight` GitHub Actions workflow for relevant changes, so
    package drift should fail before merge.
 
+   To assemble a customer handoff package from tracked source, docs, Compose
+   assets, migrations, and install scripts, run:
+
+   ```powershell
+   .\infra\scripts\package-customer-hosted.ps1
+   ```
+
+   The package script writes a staging directory and zip under
+   `artifacts/customer-hosted/packages`, adds `CUSTOMER-HOSTED-MANIFEST.txt`,
+   and refuses obvious private env/license/key material. Use `-DryRun` to print
+   the selected files without creating the archive. License private keys must
+   stay outside the package.
+
    Before installing with real customer secrets, run the same preflight against
    the actual env file and require the env validator to pass:
 

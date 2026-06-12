@@ -91,6 +91,10 @@ Invoke-Step "Customer-hosted install wrapper dry-run harness" {
     & (Join-Path $PSScriptRoot "test-verify-customer-hosted-install-dry-run.ps1") -ShifterDir $root -BashPath $bash
 }
 
+Invoke-Step "Customer-hosted package assembly harness" {
+    & (Join-Path $PSScriptRoot "test-package-customer-hosted.ps1") -ShifterDir $root
+}
+
 Invoke-Step "Backup compose harness" {
     & (Join-Path $PSScriptRoot "test-backup-compose.ps1") -ShifterDir $root -BashPath $bash
 }
@@ -109,7 +113,9 @@ Invoke-Step "PowerShell script syntax" {
             "test-verify-customer-hosted-install-dry-run.ps1",
             "test-bundle-compose-images.ps1",
             "generate-signed-license.ps1",
-            "test-generate-signed-license.ps1"
+            "test-generate-signed-license.ps1",
+            "package-customer-hosted.ps1",
+            "test-package-customer-hosted.ps1"
         )) {
         $parseErrors = $null
         $tokens = $null
