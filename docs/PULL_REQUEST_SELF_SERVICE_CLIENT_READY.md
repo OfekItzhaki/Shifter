@@ -61,6 +61,10 @@ packaging, and self-service export package validation readiness.
 - Adds `infra/scripts/bundle-compose-images.sh` for restricted-network
   customer installs, building Shifter images, pulling bundled infrastructure
   images, and saving a Docker image tarball with manifest and checksum.
+- Adds `infra/scripts/package-customer-hosted.ps1` for customer handoff
+  archives, including a manifest, `.sha256` checksum sidecar, dotfile-safe zip
+  creation, private material exclusion checks, extracted-package Compose
+  validation, and dry-run verification from the extracted archive.
 - Lets the live self-service smoke read `APP_FRONTEND_BASE_URL`,
   `NEXT_PUBLIC_API_URL`/`APP_API_BASE_URL`, and optional seeded demo credentials
   from the customer env file with `-EnvFile`, plus `-ResolveOnly` for dry config
@@ -196,6 +200,8 @@ packaging, and self-service export package validation readiness.
   customer-hosted package checks cannot quietly drift.
 - Customer-hosted preflight CI passed on this branch; see the workflow history:
   https://github.com/OfekItzhaki/Shifter/actions/workflows/customer-hosted-preflight.yml
+- Latest customer-hosted package preflight CI passed for this branch:
+  https://github.com/OfekItzhaki/Shifter/actions/runs/27407668733
 - `infra/scripts/backup-compose.sh`, `infra/scripts/deploy-compose.sh`,
   `infra/scripts/restore-compose.sh`, and `infra/scripts/seed-compose.sh`
   syntax checks passed after wiring custom `ENV_FILE` through their Compose
