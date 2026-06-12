@@ -229,6 +229,9 @@ Known verification:
   success notice.
 - Restricts the custom PWA install prompt to mobile/touch install surfaces, with
   desktop install left to the browser UI.
+- Keeps Sentry disabled unless `NEXT_PUBLIC_SENTRY_DSN` is explicitly
+  configured, so customer-hosted installs can leave error tracking off by
+  default.
 - Enforces `AI_NO_EXPORT_REQUIRED=true` in both customer env validation and API
   startup, rejecting public hosted AI endpoints for no-export installs.
 - Live client-ready smoke passed against a fresh SQL install from all
@@ -268,6 +271,10 @@ Known verification:
 - PWA prompt regression tests passed:
   `node_modules\\.bin\\vitest.cmd run __tests__\\shell\\pwaInstallPrompt.test.tsx`.
 - Focused PWA prompt ESLint and `node_modules\\.bin\\next.cmd build` passed.
+- Sentry config tests and focused ESLint passed:
+  `node_modules\\.bin\\vitest.cmd run __tests__\\monitoring\\sentryConfig.test.ts`
+  and
+  `node_modules\\.bin\\eslint.cmd sentry.client.config.ts sentry.server.config.ts lib\\monitoring\\sentryConfig.ts __tests__\\monitoring\\sentryConfig.test.ts`.
 
 Remaining manual/product check:
 

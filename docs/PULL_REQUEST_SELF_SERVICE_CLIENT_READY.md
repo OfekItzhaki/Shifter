@@ -50,6 +50,9 @@ packaging, and self-service export package validation readiness.
 - Wires public frontend deployment variables through the web Docker build and
   runtime environment, including legal/support email, Crisp, PostHog, Sentry,
   VAPID, app version, and the public API URL.
+- Keeps Sentry disabled unless `NEXT_PUBLIC_SENTRY_DSN` is explicitly
+  configured, matching customer-hosted installs where error tracking is not
+  approved.
 - Adds `infra/scripts/restore-compose.sh` with `DRY_RUN=1` preflight support,
   automatic database/uploads pre-restore safety dumps, transactional
   `pg_restore`, app-service restart on restore-script failure, and restore
@@ -143,6 +146,10 @@ packaging, and self-service export package validation readiness.
   passed.
 - `node_modules\\.bin\\next.cmd build` from `apps/web` passed after the PWA
   prompt update.
+- `node_modules\\.bin\\vitest.cmd run __tests__\\monitoring\\sentryConfig.test.ts`
+  passed: 2 passed, 0 failed.
+- `node_modules\\.bin\\eslint.cmd sentry.client.config.ts sentry.server.config.ts lib\\monitoring\\sentryConfig.ts __tests__\\monitoring\\sentryConfig.test.ts`
+  passed.
 
 ## Remaining Product Checks
 

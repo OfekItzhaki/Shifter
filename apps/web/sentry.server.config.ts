@@ -1,18 +1,21 @@
 import * as Sentry from "@sentry/nextjs";
+import { isSentryEnabled } from "@/lib/monitoring/sentryConfig";
+
+const sentryDsn = process.env.NEXT_PUBLIC_SENTRY_DSN;
 
 Sentry.init({
-  dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
+  dsn: sentryDsn,
 
-  // Only enable in production
-  enabled: process.env.NODE_ENV === "production",
+  // Only enable when explicitly configured in production.
+  enabled: isSentryEnabled(sentryDsn, process.env.NODE_ENV),
 
-  // Performance monitoring
+  // Performance monitoring.
   tracesSampleRate: 0.1,
 
-  // Don't send PII
+  // Do not send PII.
   sendDefaultPii: false,
 
-  // Environment tag
+  // Environment tag.
   environment: process.env.NODE_ENV,
   release: process.env.NEXT_PUBLIC_APP_VERSION,
 });

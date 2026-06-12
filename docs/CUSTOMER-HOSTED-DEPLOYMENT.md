@@ -305,6 +305,9 @@ each upgrade.
   of the customer database; changing it without a migration plan prevents
   protected contact fields from decrypting.
 - Disable analytics/chat/error tracking unless approved.
+- Leave `NEXT_PUBLIC_SENTRY_DSN`, `NEXT_PUBLIC_POSTHOG_KEY`, and
+  `NEXT_PUBLIC_CRISP_WEBSITE_ID` empty unless the customer explicitly approves
+  those processors. Empty Sentry DSN disables Sentry even in production builds.
 - Put WAF/rate limits in front of auth, billing, import, solver, and admin
   endpoints.
 - Keep OS and Docker patched.
