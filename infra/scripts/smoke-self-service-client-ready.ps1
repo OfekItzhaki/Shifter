@@ -301,6 +301,12 @@ $slots = Invoke-Json -Method GET -Url "$ApiBaseUrl/spaces/$($space.id)/groups/$(
 if (-not $slots.slots -or @($slots.slots).Count -eq 0) {
     throw "Self-Service Demo has no available member slots for $MemberEmail."
 }
+foreach ($property in @(
+        "allowMemberShiftClaims",
+        "allowWaitlist"
+    )) {
+    Assert-Property $slots $property "Available slots"
+}
 
 Write-Step "Checking self-service workflow read models"
 $config = Invoke-Json -Method GET -Url "$ApiBaseUrl/spaces/$($space.id)/groups/$($group.id)/self-service-config" -Token $adminToken
@@ -325,7 +331,10 @@ foreach ($property in @(
         "minShiftsPerCycle",
         "maxShiftsPerCycle",
         "maxLateReports",
-        "lateCancellationWindowHours"
+        "lateCancellationWindowHours",
+        "allowShiftChangeRequests",
+        "allowAbsenceReports",
+        "allowShiftSwaps"
     )) {
     Assert-Property $myShifts $property "Member shift list"
 }
@@ -367,6 +376,11 @@ foreach ($property in @(
         "pendingAbsenceReports",
         "pendingChangeRequests",
         "activeWaitlistEntries",
+        "allowMemberShiftClaims",
+        "allowWaitlist",
+        "allowShiftChangeRequests",
+        "allowAbsenceReports",
+        "allowShiftSwaps",
         "specialDaySlotCount",
         "noCoverageSpecialDaySlotCount",
         "underfilledSpecialDaySlotCount",
