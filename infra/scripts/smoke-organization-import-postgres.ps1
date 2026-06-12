@@ -43,7 +43,7 @@ function Invoke-Docker {
 
 function Wait-ForPostgres {
     for ($i = 1; $i -le 45; $i++) {
-        & docker exec $containerName pg_isready -U $dbUser -d $dbName *> $null
+        & docker exec $containerName pg_isready -h 127.0.0.1 -U $dbUser -d $dbName *> $null
         if ($LASTEXITCODE -eq 0) {
             return
         }
@@ -80,6 +80,7 @@ try {
             "-e", "PGPASSWORD=$dbPassword",
             $containerName,
             "psql",
+            "-h", "127.0.0.1",
             "-U", $dbUser,
             "-d", $dbName,
             "-v", "ON_ERROR_STOP=1",
