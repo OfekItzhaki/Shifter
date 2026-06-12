@@ -386,6 +386,10 @@ packaging, and self-service export package validation readiness.
 - `infra/scripts/test-check-github-release-controls.ps1` passed locally on
   June 13, 2026, proving the release-control audit accepts a protected `main`
   with PR/status-check gates and rejects the current weaker shape.
+- `infra/scripts/test-check-release-readiness.ps1` passed locally on
+  June 13, 2026 after folding the GitHub release-control checks into the main
+  release readiness audit, so a single `develop` to `main` gate now fails on
+  missing staging setup or weak production branch controls.
 - `infra/scripts/check-github-release-controls.ps1` currently fails against
   GitHub because `main` blocks deletion/force-push but does not require pull
   requests or status checks yet; `develop` also lacks active no-delete/no-force
@@ -394,8 +398,10 @@ packaging, and self-service export package validation readiness.
   as intended until GitHub staging setup is completed: the `staging`
   environment and `STAGING_WEB_BASE_URL`, `STAGING_API_BASE_URL`,
   `STAGING_PATH`, and `STAGING_COMPOSE_PROJECT_NAME` repository variables are
-  missing. It confirms the latest successful CI run `27441388300` on `cb786b2`
-  and customer-hosted preflight run `27440419425` on `c31afc3`.
+  missing, and the embedded release-control check also fails until `main`
+  requires pull requests and status checks. It confirms the latest successful
+  CI run `27441388300` on `cb786b2` and customer-hosted preflight run
+  `27444623907` on `53b79fe`.
 - `infra/scripts/test-customer-hosted-package.ps1 -EnvFile infra/compose/.env.customer.example`
   passed locally on June 12, 2026 after adding the release readiness audit
   harness to the customer-hosted package preflight.

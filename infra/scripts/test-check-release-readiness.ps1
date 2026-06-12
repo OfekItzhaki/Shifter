@@ -45,6 +45,31 @@ if ($joined -like "api repos/*/environments*") {
     exit 0
 }
 
+if ($joined -like "api repos/*/rulesets/1*") {
+    if ($mode -eq "ready") {
+        '{"id":1,"name":"Main","enforcement":"active","conditions":{"ref_name":{"include":["~DEFAULT_BRANCH"]}},"rules":[{"type":"deletion"},{"type":"non_fast_forward"},{"type":"pull_request"},{"type":"required_status_checks"}]}'
+    }
+    else {
+        '{"id":1,"name":"Main","enforcement":"active","conditions":{"ref_name":{"include":["~DEFAULT_BRANCH"]}},"rules":[{"type":"deletion"},{"type":"non_fast_forward"}]}'
+    }
+    exit 0
+}
+
+if ($joined -like "api repos/*/rulesets/2*") {
+    if ($mode -eq "ready") {
+        '{"id":2,"name":"Develop","enforcement":"active","conditions":{"ref_name":{"include":["refs/heads/develop"]}},"rules":[{"type":"deletion"},{"type":"non_fast_forward"}]}'
+    }
+    else {
+        '{"id":2,"name":"Develop","enforcement":"disabled","conditions":{"ref_name":{"include":["refs/heads/develop"]}},"rules":[{"type":"deletion"},{"type":"non_fast_forward"}]}'
+    }
+    exit 0
+}
+
+if ($joined -like "api repos/*/rulesets*") {
+    '[{"id":1},{"id":2}]'
+    exit 0
+}
+
 if ($joined -like "run list*") {
     '[{"databaseId":101,"workflowName":"CI","status":"completed","conclusion":"success","headSha":"abcdef1234567890","createdAt":"2026-06-12T00:00:00Z","url":"https://example.invalid/ci","event":"workflow_dispatch"},{"databaseId":102,"workflowName":"Customer-Hosted Preflight","status":"completed","conclusion":"success","headSha":"abcdef1234567890","createdAt":"2026-06-12T00:00:00Z","url":"https://example.invalid/preflight","event":"push"}]'
     exit 0
@@ -70,6 +95,9 @@ exit 1
             "[PASS] GitHub staging environment exists.",
             "[PASS] Repository variable STAGING_WEB_BASE_URL is configured.",
             "[PASS] Dedicated STAGING_* SSH secrets are configured.",
+            "[PASS] main requires pull requests.",
+            "[PASS] main requires status checks.",
+            "[PASS] develop blocks deletion and force pushes.",
             "Summary: 0 failed"
         )) {
         if ($readyText -notmatch [regex]::Escape($pattern)) {
@@ -87,6 +115,9 @@ exit 1
             "[FAIL] GitHub staging environment is missing.",
             "[FAIL] Repository variable STAGING_WEB_BASE_URL is missing.",
             "[WARN] Using VPS_* SSH secrets as staging fallback",
+            "[FAIL] main must require pull requests before production merges.",
+            "[FAIL] main must require status checks before production merges.",
+            "[WARN] develop does not have active no-delete/no-force-push rules.",
             "Summary:"
         )) {
         if ($missingText -notmatch [regex]::Escape($pattern)) {

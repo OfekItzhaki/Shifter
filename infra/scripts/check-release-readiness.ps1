@@ -4,6 +4,7 @@ param(
     [string]$GhPath = "gh",
     [switch]$SkipGitCheck,
     [switch]$SkipGitHubCheck,
+    [switch]$SkipReleaseControlCheck,
     [switch]$SkipHostedSmoke,
     [string]$WebBaseUrl = "",
     [string]$ApiBaseUrl = ""
@@ -80,6 +81,64 @@ function Test-Name {
     }
 
     return $false
+}
+
+function Test-Rule {
+    param(
+        [object[]]$Rules,
+        [string]$Type
+    )
+
+    foreach ($rule in $Rules) {
+        if ([string]$rule.type -eq $Type) {
+            return $true
+        }
+    }
+
+    return $false
+}
+
+function Test-RulesetMatchesBranch {
+    param(
+        [object]$Ruleset,
+        [string]$Branch,
+        [switch]$DefaultBranch
+    )
+
+    $includes = ConvertTo-ObjectList $Ruleset.conditions.ref_name.include
+    foreach ($include in $includes) {
+        $pattern = [string]$include
+        if ($pattern -eq "refs/heads/$Branch" -or $pattern -eq $Branch) {
+            return $true
+        }
+
+        if ($DefaultBranch -and $pattern -eq "~DEFAULT_BRANCH") {
+            return $true
+        }
+    }
+
+    return $false
+}
+
+function Get-MatchingRules {
+    param(
+        [object[]]$Rulesets,
+        [string]$Branch,
+        [switch]$DefaultBranch
+    )
+
+    $rules = @()
+    foreach ($ruleset in $Rulesets) {
+        if ([string]$ruleset.enforcement -ne "active") {
+            continue
+        }
+
+        if (Test-RulesetMatchesBranch $ruleset $Branch -DefaultBranch:$DefaultBranch) {
+            $rules += ConvertTo-ObjectList $ruleset.rules
+        }
+    }
+
+    return $rules
 }
 
 Write-Host "Shifter release readiness audit" -ForegroundColor Cyan
@@ -182,6 +241,45 @@ if (-not $SkipGitHubCheck) {
         }
         else {
             Write-Check FAIL "No successful customer-hosted preflight run found on $Branch."
+        }
+
+        if (-not $SkipReleaseControlCheck) {
+            $rulesetSummaries = ConvertTo-ObjectList (Invoke-GhJson @("api", "repos/$Repo/rulesets"))
+            $rulesets = @()
+            foreach ($summary in $rulesetSummaries) {
+                $rulesets += Invoke-GhJson @("api", "repos/$Repo/rulesets/$($summary.id)")
+            }
+
+            $mainRules = Get-MatchingRules $rulesets "main" -DefaultBranch
+            $developRules = Get-MatchingRules $rulesets $Branch
+
+            if ((Test-Rule $mainRules "deletion") -and (Test-Rule $mainRules "non_fast_forward")) {
+                Write-Check PASS "main blocks deletion and force pushes."
+            }
+            else {
+                Write-Check FAIL "main must block deletion and force pushes."
+            }
+
+            if (Test-Rule $mainRules "pull_request") {
+                Write-Check PASS "main requires pull requests."
+            }
+            else {
+                Write-Check FAIL "main must require pull requests before production merges."
+            }
+
+            if (Test-Rule $mainRules "required_status_checks") {
+                Write-Check PASS "main requires status checks."
+            }
+            else {
+                Write-Check FAIL "main must require status checks before production merges."
+            }
+
+            if ((Test-Rule $developRules "deletion") -and (Test-Rule $developRules "non_fast_forward")) {
+                Write-Check PASS "$Branch blocks deletion and force pushes."
+            }
+            else {
+                Write-Check WARN "$Branch does not have active no-delete/no-force-push rules."
+            }
         }
     }
     catch {

@@ -7,14 +7,17 @@ Use this checklist before opening or merging a `develop` to `main` PR.
 - `develop` is clean and pushed.
 - Customer-hosted preflight is green for the latest code-changing commit.
 - Broad CI is green for the latest code-changing commit.
-- GitHub release controls pass:
+- GitHub release controls pass. The release readiness audit below now checks
+  these controls directly; this standalone command is useful when you only want
+  to inspect branch protection:
 
   ```powershell
   .\infra\scripts\check-github-release-controls.ps1
   ```
 
 - Staging is deployed from `develop`.
-- Release readiness audit has no failures:
+- Release readiness audit has no failures, including staging setup, latest CI
+  evidence, customer-hosted preflight evidence, and GitHub release controls:
 
   ```powershell
   .\infra\scripts\check-release-readiness.ps1 -SkipHostedSmoke
@@ -72,7 +75,9 @@ As of June 13, 2026:
 - The production-hosted API `/health` is healthy, but `/ready` returns 404,
   which means the hosted API has not yet been deployed to the readiness-probe
   build.
-- The release readiness audit script is in place and its harness passes.
+- The release readiness audit script is in place and its harness passes. It now
+  includes the GitHub release-control audit so the `develop` to `main` gate
+  fails if `main` does not require PRs/status checks.
 - The GitHub staging setup helper is in place and dry-run/apply behavior is
   covered by a local harness.
 - The staging manual smoke evidence template is in place, but no real staging
