@@ -160,6 +160,10 @@ packaging, and self-service export package validation readiness.
 - `dotnet test apps\\api\\Jobuler.Tests\\Jobuler.Tests.csproj --filter "FullyQualifiedName~SelfServiceScopeTests.GetCycleCloseout|FullyQualifiedName~SelfServiceScopeTests.ExportCloseout"`
   passed: 3 passed, 0 failed, including closeout, CSV, and PDF special-day
   impact metrics.
+- `dotnet test apps\\api\\Jobuler.Tests\\Jobuler.Tests.csproj --filter FullyQualifiedName~SelfServiceScopeTests.ExportCloseout`
+  passed: 2 passed, 0 failed, including proof that the closeout PDF
+  verification fingerprint matches the SHA-256 of the exported closeout CSV
+  bytes.
 - `node_modules\\.bin\\vitest.cmd run __tests__\\selfService\\slotBrowserTab.test.tsx`
   passed: 6 passed, 0 failed, including no-coverage special-day and disabled
   pick/waitlist policy states.
@@ -181,7 +185,8 @@ packaging, and self-service export package validation readiness.
   passed.
 - `node_modules\\.bin\\eslint.cmd e2e\\self-service.browser.spec.ts` passed.
 - `node_modules\\.bin\\playwright.cmd test self-service.browser.spec.ts --list`
-  discovered 14 browser lifecycle tests, including the special-day label flow.
+  discovered 15 browser lifecycle tests, including the special-day label flow
+  and cancellation final-state coverage that verifies slot fill count decreases.
 - `infra/scripts/smoke-self-service-client-ready.ps1 -ApiBaseUrl http://localhost:5015 -WebBaseUrl http://localhost:3015`
   passed against a fresh SQL install from all migrations plus `seed.sql`, a
   live API, and a rebuilt production web server. This covered customer-hosted
@@ -260,7 +265,7 @@ packaging, and self-service export package validation readiness.
 - Customer-hosted preflight CI passed on this branch; see the workflow history:
   https://github.com/OfekItzhaki/Shifter/actions/workflows/customer-hosted-preflight.yml
 - Latest customer-hosted package preflight CI passed for this branch:
-  https://github.com/OfekItzhaki/Shifter/actions/runs/27414488092
+  https://github.com/OfekItzhaki/Shifter/actions/runs/27419493181
 - `infra/scripts/backup-compose.sh`, `infra/scripts/deploy-compose.sh`,
   `infra/scripts/restore-compose.sh`, and `infra/scripts/seed-compose.sh`
   syntax checks passed after wiring custom `ENV_FILE` through their Compose
@@ -271,6 +276,12 @@ packaging, and self-service export package validation readiness.
   passed: 6 passed, 0 failed.
 - `dotnet test apps\\api\\Jobuler.Tests\\Jobuler.Tests.csproj --filter "FullyQualifiedName~AiConfigurationGuardTests|FullyQualifiedName~AiAssistantSupportTests|FullyQualifiedName~AiHealthCheckTests"`
   passed: 30 passed, 0 failed.
+- `dotnet test apps\\api\\Jobuler.Tests\\Jobuler.Tests.csproj --filter "FullyQualifiedName~HealthEndpointIntegrationTests|FullyQualifiedName~AiHealthCheckTests"`
+  passed: 21 passed, 0 failed, including detailed health provider metadata
+  preservation for customer-hosted AI deployment mode reporting.
+- `dotnet test apps\\api\\Jobuler.Tests\\Jobuler.Tests.csproj --filter "FullyQualifiedName~SelfServiceDefaultPolicyOptionsTests|FullyQualifiedName~ChangeSchedulingModeCommandTests"`
+  passed: 29 passed, 0 failed, including startup-validation coverage for
+  install-level self-service defaults.
 - `dotnet test apps\\api\\Jobuler.Tests\\Jobuler.Tests.csproj --filter FullyQualifiedName~DeploymentEntitlementGuardTests`
   passed: 11 passed, 0 failed.
 - `dotnet test apps\\api\\Jobuler.Tests\\Jobuler.Tests.csproj --filter "FullyQualifiedName~ResendHealthCheckTests|FullyQualifiedName~ResendEmailSenderTests"`
