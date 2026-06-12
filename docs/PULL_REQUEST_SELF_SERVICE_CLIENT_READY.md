@@ -321,6 +321,16 @@ packaging, and self-service export package validation readiness.
 - Manual CI run `27440541674` passed on `develop` for commit `c31afc3` on
   June 12, 2026, covering API build/tests, frontend typecheck/lint/build,
   solver lint/tests, and solver health.
+- A read-only hosted smoke against `https://shifter.ofeklabs.com` and
+  `https://api.shifter.ofeklabs.com` on June 12, 2026 found the hosted web
+  landing page and API `/health` healthy, but API `/ready` returned 404. The
+  current hosted API has not yet been deployed to the `develop` readiness-probe
+  build, so real hosted/user smoke remains gated on staging or production
+  deployment of the intended ref.
+- The `Deploy to VPS` workflow now fails fast when manually dispatched from a
+  non-`main` ref and verifies the VPS checkout matches the GitHub deploy SHA,
+  preventing a mixed deployment where the web image and API checkout come from
+  different branches.
 - `infra/scripts/smoke-self-service-client-ready.ps1 -ApiBaseUrl http://localhost:5015 -WebBaseUrl http://localhost:3015`
   passed locally on June 12, 2026 against an isolated temporary PostgreSQL 16
   database, isolated Redis, a fresh API on port `5015`, and the current-branch

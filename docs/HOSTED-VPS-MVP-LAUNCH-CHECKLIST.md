@@ -22,6 +22,9 @@ private customer AI, or a customer-owned database.
 - Run database migrations against the production database.
 - Confirm the production domain uses HTTPS.
 - Confirm `/ready` and `/health` return healthy results.
+  - If `/health` is healthy but `/ready` returns 404, the hosted API is running
+    an older build that predates the deploy readiness probe. Deploy the intended
+    ref before continuing the pilot smoke.
 - Run the hosted VPS read-only smoke check:
 
   ```powershell
@@ -39,7 +42,10 @@ private customer AI, or a customer-owned database.
 
 - The GitHub `Deploy to VPS` workflow also runs this hosted smoke check after
   a successful VPS deployment, and uses the API `/ready` endpoint for the
-  rollback gate before declaring the deployed Compose stack ready.
+  rollback gate before declaring the deployed Compose stack ready. This workflow
+  is production-only and must run from `main`; deploy `develop` to staging with
+  `infra/scripts/deploy-compose.sh` before opening the final `develop` to
+  `main` PR.
 - Confirm login, registration/invite, password reset, and change-password flows.
 - Confirm Resend is configured for production email if email flows are enabled.
 - Confirm AI mode:

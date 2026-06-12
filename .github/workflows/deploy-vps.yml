@@ -10,6 +10,12 @@ jobs:
     name: Verify Build
     runs-on: ubuntu-latest
     steps:
+      - name: Assert production ref
+        if: github.ref_name != 'main'
+        run: |
+          echo "::error title=Production deploy must run from main::Deploy to VPS is production-only. Deploy develop to staging first, then merge develop to main before running this workflow."
+          exit 1
+
       - uses: actions/checkout@v6
         with:
           fetch-depth: 2
@@ -117,8 +123,11 @@ jobs:
             set -e
             cd /opt/shifter
 
-            echo "=== Pulling latest code ==="
-            git pull origin main
+            echo "=== Pulling production code ==="
+            git fetch origin main
+            git checkout main
+            git pull --ff-only origin main
+            test "$(git rev-parse HEAD)" = "${{ github.sha }}"
 
             echo "=== Loading pre-built web image ==="
             docker load < /tmp/shifter-web.tar.gz
