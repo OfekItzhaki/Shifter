@@ -265,7 +265,7 @@ group:
 - an admin browser lifecycle test for rejecting a shift-change request while
   preserving the member's original assignment
 - an admin browser lifecycle test for rejecting a cannot-attend report and
-  reinstating the member's released shift
+  reinstating the member's released shift with slot fill-count verification
 - a member/admin browser lifecycle test for special leave submission and admin
   approval
 - a member browser lifecycle test for special leave cancellation
@@ -303,7 +303,8 @@ large deployments:
   remaining rejection paths and richer final slot-state verification. The
   browser suite already covers picking, waitlist entry, waitlist leaving,
   cannot-attend reporting, absence approval, absence rejection with shift
-  reinstatement, shift cancellation with slot fill-count verification,
+  reinstatement and slot fill-count verification, shift cancellation with slot
+  fill-count verification,
   shift-change approval with reassignment, shift-change rejection,
   member-to-member swap acceptance, member-to-member swap decline, and initiator
   swap cancellation, special leave approval, special leave cancellation, special

@@ -1687,6 +1687,14 @@ test.describe("Self-service browser lifecycle", () => {
       member.personId
     );
     const reason = `Browser E2E reject cannot attend ${Date.now()}`;
+    const slotBeforeReport = await getAdminSlot(
+      request,
+      adminToken,
+      spaceId,
+      groupId,
+      status.cycleId!,
+      ownedShift.shiftSlotId
+    );
 
     await loginAsUser(page, memberEmail, DEMO_PASSWORD);
     await page.evaluate((targetGroupId) => {
@@ -1749,6 +1757,16 @@ test.describe("Self-service browser lifecycle", () => {
     expect(restoredShift?.status).toBe("Approved");
     expect(restoredShift?.shiftSlotId).toBe(ownedShift.shiftSlotId);
     expect(restoredShift?.cancellationReason).toBeNull();
+
+    const slotAfterRejection = await getAdminSlot(
+      request,
+      adminToken,
+      spaceId,
+      groupId,
+      status.cycleId!,
+      ownedShift.shiftSlotId
+    );
+    expect(slotAfterRejection.currentFillCount).toBe(slotBeforeReport.currentFillCount);
   });
 
   test("member requests special leave and admin approves it through the UI", async ({ page, request }) => {
