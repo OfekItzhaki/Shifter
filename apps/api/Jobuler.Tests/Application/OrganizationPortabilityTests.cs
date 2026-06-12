@@ -16,6 +16,7 @@ using Jobuler.Domain.People;
 using Jobuler.Domain.Scheduling;
 using Jobuler.Domain.Spaces;
 using Jobuler.Domain.Tasks;
+using Jobuler.Infrastructure.Persistence.Configurations;
 using Jobuler.Infrastructure.Persistence;
 using Jobuler.Tests;
 using Microsoft.EntityFrameworkCore;
@@ -28,10 +29,22 @@ namespace Jobuler.Tests.Application;
 
 public class OrganizationPortabilityTests
 {
+    private const string PostgresImportSmokeConnectionEnv = "SHIFTER_POSTGRES_IMPORT_SMOKE_CONNECTION";
+
     private static AppDbContext CreateDb()
     {
         var options = new DbContextOptionsBuilder<AppDbContext>()
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .Options;
+        return new AppDbContext(options);
+    }
+
+    private static AppDbContext CreatePostgresDb(string connectionString)
+    {
+        AppDbContext.ConfigurationAssembly = typeof(OrganizationConfiguration).Assembly;
+
+        var options = new DbContextOptionsBuilder<AppDbContext>()
+            .UseNpgsql(connectionString)
             .Options;
         return new AppDbContext(options);
     }
@@ -1083,6 +1096,106 @@ public class OrganizationPortabilityTests
             .WithMessage("*not safe to import*");
         (await targetDb.Organizations.AnyAsync()).Should().BeFalse();
         (await targetDb.Spaces.AnyAsync()).Should().BeFalse();
+    }
+
+    [SkippableFact]
+    public async Task PostgresImportOrganizationPackage_InsertsValidatedPackageIntoMigratedTarget()
+    {
+        var connectionString = Environment.GetEnvironmentVariable(PostgresImportSmokeConnectionEnv);
+        Skip.If(string.IsNullOrWhiteSpace(connectionString),
+            $"{PostgresImportSmokeConnectionEnv} is not set. Run infra/scripts/smoke-organization-import-postgres.ps1 to execute this Postgres smoke.");
+
+        var sourceDb = CreateDb();
+        var ownerId = Guid.NewGuid();
+        var owner = CreateUser(ownerId, $"owner-{Guid.NewGuid():N}@example.com");
+        var organization = Organization.Create("Postgres Import Smoke", ownerId, "IL", "restaurant_hospitality", "he");
+        var space = Space.Create("Postgres Smoke Space", ownerId, locale: "he", organizationId: organization.Id);
+        var group = Group.Create(space.Id, null, "Kitchen", createdByUserId: ownerId);
+        var person = Person.Create(space.Id, "Worker 1", linkedUserId: ownerId);
+        var groupTask = GroupTask.Create(
+            space.Id,
+            group.Id,
+            "Kitchen shift",
+            DateTime.UtcNow.Date,
+            DateTime.UtcNow.Date.AddDays(7),
+            shiftDurationMinutes: 240,
+            requiredHeadcount: 1,
+            TaskBurdenLevel.Normal,
+            allowsDoubleShift: false,
+            allowsOverlap: false,
+            ownerId);
+        var cycleStart = new DateTime(2026, 6, 15, 0, 0, 0, DateTimeKind.Utc);
+        var cycle = SchedulingCycle.Create(
+            space.Id,
+            group.Id,
+            cycleStart,
+            cycleStart.AddDays(7),
+            cycleStart.AddDays(-7),
+            cycleStart.AddDays(-1));
+        var template = ShiftTemplate.Create(
+            space.Id,
+            group.Id,
+            groupTask.Id,
+            DayOfWeek.Monday,
+            new TimeOnly(8, 0),
+            new TimeOnly(12, 0),
+            requiredHeadcount: 1,
+            createdByUserId: ownerId);
+        var slot = ShiftSlot.Create(
+            space.Id,
+            group.Id,
+            groupTask.Id,
+            template.Id,
+            cycle.Id,
+            DateOnly.FromDateTime(cycleStart),
+            new TimeOnly(8, 0),
+            new TimeOnly(12, 0),
+            capacity: 1);
+        var request = ShiftRequest.Create(space.Id, slot.Id, person.Id, group.Id, cycle.Id);
+
+        sourceDb.Users.Add(owner);
+        sourceDb.Organizations.Add(organization);
+        sourceDb.Spaces.Add(space);
+        sourceDb.SpaceMemberships.Add(SpaceMembership.Create(space.Id, ownerId));
+        sourceDb.Groups.Add(group);
+        sourceDb.People.Add(person);
+        sourceDb.GroupMemberships.Add(GroupMembership.Create(space.Id, group.Id, person.Id));
+        sourceDb.GroupTasks.Add(groupTask);
+        sourceDb.SchedulingCycles.Add(cycle);
+        sourceDb.ShiftTemplates.Add(template);
+        sourceDb.ShiftSlots.Add(slot);
+        sourceDb.ShiftRequests.Add(request);
+        await sourceDb.SaveChangesAsync();
+
+        var package = await ExportPackageAsync(sourceDb, organization.Id);
+        var packageJson = System.Text.Encoding.UTF8.GetString(package.Content);
+        await using var targetDb = CreatePostgresDb(connectionString!);
+
+        await targetDb.Database.OpenConnectionAsync();
+        try
+        {
+            (await targetDb.Database.ExecuteSqlRawAsync("SELECT 1")).Should().Be(-1);
+
+            var validation = await new ValidateOrganizationImportPackageCommandHandler(targetDb)
+                .Handle(new ValidateOrganizationImportPackageCommand(packageJson), CancellationToken.None);
+            validation.IsImportSafe.Should().BeTrue(validation.Errors.Concat(validation.Conflicts).ToString());
+
+            var result = await new ImportOrganizationPackageCommandHandler(targetDb)
+                .Handle(new ImportOrganizationPackageCommand(packageJson, ConfirmImport: true), CancellationToken.None);
+
+            result.OrganizationId.Should().Be(organization.Id);
+            result.Counts.ShiftRequests.Should().Be(1);
+
+            (await targetDb.Organizations.FindAsync(organization.Id)).Should().NotBeNull();
+            (await targetDb.Spaces.FindAsync(space.Id)).Should().NotBeNull();
+            (await targetDb.Groups.FindAsync(group.Id)).Should().NotBeNull();
+            (await targetDb.People.FindAsync(person.Id)).Should().NotBeNull();
+            (await targetDb.ShiftRequests.FindAsync(request.Id)).Should().NotBeNull();
+        }
+        finally
+        {
+            await targetDb.Database.CloseConnectionAsync();
+        }
     }
 
     private static Task<OrganizationExportPackageResult> ExportPackageAsync(AppDbContext db, Guid organizationId)

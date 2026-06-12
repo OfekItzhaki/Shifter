@@ -61,28 +61,43 @@ public class ImportOrganizationPackageCommandHandler
         try
         {
             await AddUsersAsync(data, ct);
+            await _db.SaveChangesAsync(ct);
 
             AddOne<Organization>(data, "organization");
+            await _db.SaveChangesAsync(ct);
+
             AddRange<Space>(data, "spaces");
+            await _db.SaveChangesAsync(ct);
+
             AddRange<SpaceMembership>(data, "spaceMemberships");
             AddRange<Group>(data, "groups");
             AddRange<Person>(data, "people");
-            AddRange<GroupMembership>(data, "groupMemberships");
-            AddRange<GroupTask>(data, "groupTasks");
             AddRange<TaskType>(data, "taskTypes");
-            AddRange<TaskSlot>(data, "taskSlots");
-            AddRange<ConstraintRule>(data, "constraints");
             AddRange<ScheduleRun>(data, "scheduleRuns");
-            AddRange<ScheduleVersion>(data, "scheduleVersions");
-            AddRange<Assignment>(data, "assignments");
             AddRange<OrganizationSelfServiceDefaults>(data, "organizationSelfServiceDefaults");
             AddRange<SpaceSelfServiceDefaults>(data, "spaceSelfServiceDefaults");
             AddRange<SpaceSpecialDay>(data, "spaceSpecialDays");
+            await _db.SaveChangesAsync(ct);
+
+            AddRange<GroupMembership>(data, "groupMemberships");
+            AddRange<GroupTask>(data, "groupTasks");
+            AddRange<TaskSlot>(data, "taskSlots");
+            AddRange<ConstraintRule>(data, "constraints");
             AddRange<SelfServiceConfig>(data, "selfServiceConfigs");
             AddRange<SchedulingCycle>(data, "schedulingCycles");
-            AddRange<ShiftTemplate>(data, "shiftTemplates");
+            AddRange<ScheduleVersion>(data, "scheduleVersions");
+            await _db.SaveChangesAsync(ct);
+
+            AddRange<Assignment>(data, "assignments");
+            AddShiftTemplates(data);
+            await _db.SaveChangesAsync(ct);
+
             AddRange<ShiftSlot>(data, "shiftSlots");
+            await _db.SaveChangesAsync(ct);
+
             AddRange<ShiftRequest>(data, "shiftRequests");
+            await _db.SaveChangesAsync(ct);
+
             AddRange<ShiftAttendanceRecord>(data, "shiftAttendanceRecords");
             AddRange<ShiftAbsenceReport>(data, "shiftAbsenceReports");
             AddRange<ShiftChangeRequest>(data, "shiftChangeRequests");
@@ -91,7 +106,6 @@ public class ImportOrganizationPackageCommandHandler
             AddRange<SpecialLeaveRequest>(data, "specialLeaveRequests");
             AddRange<Notification>(data, "notifications");
             AddRange<AuditLog>(data, "auditLogs");
-
             await _db.SaveChangesAsync(ct);
 
             if (transaction is not null)
@@ -148,6 +162,39 @@ public class ImportOrganizationPackageCommandHandler
 
         if (rows.Count > 0)
             _db.Set<TEntity>().AddRange(rows);
+    }
+
+    private void AddShiftTemplates(JsonElement data)
+    {
+        foreach (var element in GetArray(data, "shiftTemplates"))
+        {
+            var template = Materialize<ShiftTemplate>(element);
+            var dayOfWeek = GetRequiredInt(element, "dayOfWeek");
+            var startTime = GetRequiredTime(element, "startTime");
+            var endTime = GetRequiredTime(element, "endTime");
+            var isDeleted = GetOptionalBoolean(element, "isDeleted") ?? false;
+            var entry = _db.Entry(template);
+
+            SetShadowPropertyIfMapped(entry, "LegacyName", $"{(DayOfWeek)dayOfWeek} {startTime:HH\\:mm}-{endTime:HH\\:mm}");
+            SetShadowPropertyIfMapped(entry, "LegacyStartsAtTime", startTime);
+            SetShadowPropertyIfMapped(entry, "LegacyEndsAtTime", endTime);
+            SetShadowPropertyIfMapped(entry, "LegacyDaysOfWeek", $"[{dayOfWeek}]");
+            SetShadowPropertyIfMapped(entry, "LegacyMaxHeadcount", null);
+            SetShadowPropertyIfMapped(entry, "LegacyRequiredQualificationIds", "[]");
+            SetShadowPropertyIfMapped(entry, "LegacyRequiredRoleIds", "[]");
+            SetShadowPropertyIfMapped(entry, "LegacyIsActive", !isDeleted);
+
+            _db.ShiftTemplates.Add(template);
+        }
+    }
+
+    private static void SetShadowPropertyIfMapped(
+        Microsoft.EntityFrameworkCore.ChangeTracking.EntityEntry entry,
+        string propertyName,
+        object? value)
+    {
+        if (entry.Metadata.FindProperty(propertyName) is not null)
+            entry.Property(propertyName).CurrentValue = value;
     }
 
     private static TEntity Materialize<TEntity>(JsonElement element)
@@ -241,5 +288,41 @@ public class ImportOrganizationPackageCommandHandler
             throw new InvalidOperationException($"Package row is missing required '{propertyName}'.");
 
         return value.GetGuid();
+    }
+
+    private static int GetRequiredInt(JsonElement row, string propertyName)
+    {
+        if (!row.TryGetProperty(propertyName, out var value))
+            throw new InvalidOperationException($"Package row is missing required '{propertyName}'.");
+
+        return value.ValueKind switch
+        {
+            JsonValueKind.Number => value.GetInt32(),
+            JsonValueKind.String when int.TryParse(value.GetString(), out var number) => number,
+            JsonValueKind.String when Enum.TryParse<DayOfWeek>(value.GetString(), true, out var day) => (int)day,
+            _ => throw new InvalidOperationException($"Package row has invalid '{propertyName}'.")
+        };
+    }
+
+    private static TimeOnly GetRequiredTime(JsonElement row, string propertyName)
+    {
+        if (!row.TryGetProperty(propertyName, out var value) || value.ValueKind != JsonValueKind.String)
+            throw new InvalidOperationException($"Package row is missing required '{propertyName}'.");
+
+        return TimeOnly.Parse(value.GetString()!);
+    }
+
+    private static bool? GetOptionalBoolean(JsonElement row, string propertyName)
+    {
+        if (!row.TryGetProperty(propertyName, out var value) || value.ValueKind == JsonValueKind.Null)
+            return null;
+
+        return value.ValueKind switch
+        {
+            JsonValueKind.True => true,
+            JsonValueKind.False => false,
+            JsonValueKind.String when bool.TryParse(value.GetString(), out var parsed) => parsed,
+            _ => throw new InvalidOperationException($"Package row has invalid '{propertyName}'.")
+        };
     }
 }

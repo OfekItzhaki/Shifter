@@ -28,7 +28,8 @@ packaging, and self-service export package validation readiness.
   scheduling rows, and self-service workflow relationships before importing.
 - Adds a conservative organization package import executor for already-safe
   packages, with explicit confirmation, target conflict checks, transactional
-  writes, and imported user shells that avoid exporting password hashes.
+  dependency-ordered writes, migrated PostgreSQL compatibility fields, and
+  imported user shells that avoid exporting password hashes.
 - Wires `FIELD_ENCRYPTION_KEY` through customer compose configuration and makes
   it required by the customer-hosted env validator.
 - Adds a Windows/PowerShell customer env validator alongside the Bash validator.
@@ -134,8 +135,8 @@ packaging, and self-service export package validation readiness.
   the previous git revision, restarts Compose, and verifies rollback health.
 - `infra/scripts/test-customer-hosted-package.ps1` passed, running the customer
   env validator, restore dry-run, backup, deploy happy-path, deploy rollback,
-  Compose script syntax, and customer Docker Compose config checks as one
-  preflight command.
+  Compose script syntax, customer Docker Compose config checks, and the
+  PostgreSQL organization import smoke as one preflight command.
 - `infra/scripts/backup-compose.sh`, `infra/scripts/deploy-compose.sh`, and
   `infra/scripts/restore-compose.sh` syntax checks passed after wiring custom
   `ENV_FILE` through their Compose calls.
@@ -154,6 +155,9 @@ packaging, and self-service export package validation readiness.
 - `dotnet test apps\\api\\Jobuler.Tests\\Jobuler.Tests.csproj --filter FullyQualifiedName~OrganizationPortabilityTests`
   passed: 23 passed, 0 failed, including export/import executor coverage for
   the full manual self-service graph.
+- `infra\\scripts\\smoke-organization-import-postgres.ps1` passed, applying all
+  SQL migrations to a temporary PostgreSQL 16 container and importing a
+  validated organization package into that migrated target.
 - `dotnet test apps\\api\\Jobuler.Tests\\Jobuler.Tests.csproj --filter FullyQualifiedName~PlatformControllerImportTests`
   passed: 2 passed, 0 failed.
 - `node_modules\\.bin\\eslint.cmd components\\spaces\\SpecialDaysCard.tsx lib\\api\\spaceSpecialDays.ts`
@@ -203,8 +207,8 @@ packaging, and self-service export package validation readiness.
 ## Remaining Product Checks
 
 - Run a customer-hosted smoke with real customer secrets and a real database.
-- Smoke-test organization package import against a real PostgreSQL target before
-  promising tenant-by-tenant migration in production. Full customer-hosted
+- Before a production tenant-by-tenant migration, rerun the organization import
+  smoke against that customer's target PostgreSQL. Full customer-hosted
   deployment moves should still use the compose backup/restore path.
 
 PR URL:

@@ -224,7 +224,8 @@ Known verification:
 - Adds package reference validation for exported users, owner/member links, core
   scheduling rows, and self-service workflow relationships.
 - Adds a conservative organization package import executor for safe packages,
-  with explicit confirmation and transactional writes.
+  with explicit confirmation, dependency-ordered transactional writes, and
+  migrated PostgreSQL compatibility fields for legacy self-service columns.
 - Strengthens special-leave query isolation coverage across space boundaries.
 - Adds organization-level self-service default templates for multi-space
   customers. First-time self-service group policy resolves from space defaults,
@@ -290,6 +291,10 @@ Known verification:
   `infra/scripts/test-deploy-compose-rollback.ps1`.
 - Customer-hosted package preflight passed:
   `infra/scripts/test-customer-hosted-package.ps1`.
+- PostgreSQL organization import smoke passed:
+  `infra\\scripts\\smoke-organization-import-postgres.ps1`, which starts a
+  temporary PostgreSQL 16 container, applies all SQL migrations, and imports a
+  validated organization package into the migrated target.
 - Self-service scope and lifecycle tests passed:
   `dotnet test apps\\api\\Jobuler.Tests\\Jobuler.Tests.csproj --filter "FullyQualifiedName~SelfServiceScopeTests|FullyQualifiedName~ManualSelfServiceLifecycleTests"`.
   This includes disabled workflow policy coverage for shift-change request
@@ -334,9 +339,9 @@ Remaining manual/product check:
 
 - Smoke-test customer-hosted setup with real customer secrets and a real
   database.
-- Smoke-test organization package import against a real PostgreSQL target before
-  promising tenant-by-tenant migration; full deployment moves should still use
-  the compose backup/restore flow.
+- Before a production tenant-by-tenant migration, rerun the organization import
+  smoke against that customer's target PostgreSQL; full deployment moves should
+  still use the compose backup/restore flow.
 
 ## PR Opening Notes
 

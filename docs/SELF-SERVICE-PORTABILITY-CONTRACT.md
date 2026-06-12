@@ -91,7 +91,9 @@ Before merging portable isolation after manual self-service:
    endpoints.
 4. Confirm closeout metrics survive export and dry-run import validation with
    matching counts.
-5. Before selling tenant-by-tenant package migration, smoke-test the package
-   import executor against a real PostgreSQL target. Whole-deployment customer
-   restores use the compose backup/restore scripts instead.
+5. Before selling tenant-by-tenant package migration, run
+   `infra/scripts/smoke-organization-import-postgres.ps1`; before a production
+   migration, rerun the same import smoke against the customer's target
+   PostgreSQL. Whole-deployment customer restores use the compose backup/restore
+   scripts instead.
 6. Run the manual self-service QA checklist after the merge.

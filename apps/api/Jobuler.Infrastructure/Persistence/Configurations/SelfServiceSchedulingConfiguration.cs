@@ -71,6 +71,14 @@ public class ShiftTemplateConfiguration : IEntityTypeConfiguration<ShiftTemplate
         builder.Property(t => t.DayOfWeek).HasColumnName("day_of_week");
         builder.Property(t => t.StartTime).HasColumnName("start_time");
         builder.Property(t => t.EndTime).HasColumnName("end_time");
+        builder.Property<string>("LegacyName").HasColumnName("name");
+        builder.Property<TimeOnly>("LegacyStartsAtTime").HasColumnName("starts_at_time");
+        builder.Property<TimeOnly>("LegacyEndsAtTime").HasColumnName("ends_at_time");
+        builder.Property<string>("LegacyDaysOfWeek").HasColumnName("days_of_week");
+        builder.Property<int?>("LegacyMaxHeadcount").HasColumnName("max_headcount");
+        builder.Property<string>("LegacyRequiredQualificationIds").HasColumnName("required_qualification_ids");
+        builder.Property<string>("LegacyRequiredRoleIds").HasColumnName("required_role_ids");
+        builder.Property<bool>("LegacyIsActive").HasColumnName("is_active");
         builder.Property(t => t.RequiredHeadcount).HasColumnName("required_headcount");
         builder.Property(t => t.IsDeleted).HasColumnName("is_deleted").HasDefaultValue(false);
         builder.Property(t => t.CreatedByUserId).HasColumnName("created_by_user_id");

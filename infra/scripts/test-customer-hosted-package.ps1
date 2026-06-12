@@ -1,7 +1,8 @@
 param(
     [string]$ShifterDir = $(Resolve-Path (Join-Path $PSScriptRoot "..\..")),
     [string]$BashPath = "",
-    [switch]$SkipDockerComposeConfig
+    [switch]$SkipDockerComposeConfig,
+    [switch]$SkipPostgresImportSmoke
 )
 
 $ErrorActionPreference = "Stop"
@@ -105,6 +106,17 @@ if (-not $SkipDockerComposeConfig) {
         if ($LASTEXITCODE -ne 0) {
             throw "docker compose config failed with exit code $LASTEXITCODE."
         }
+    }
+}
+
+if (-not $SkipPostgresImportSmoke) {
+    Invoke-Step "PostgreSQL organization package import smoke" {
+        $docker = Get-Command docker -ErrorAction SilentlyContinue
+        if (-not $docker) {
+            throw "Docker was not found. Re-run with -SkipPostgresImportSmoke to skip the temporary PostgreSQL import smoke."
+        }
+
+        & (Join-Path $PSScriptRoot "smoke-organization-import-postgres.ps1")
     }
 }
 
