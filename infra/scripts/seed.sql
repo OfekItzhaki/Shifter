@@ -45,9 +45,33 @@ INSERT INTO users (id, email, display_name, password_hash, preferred_locale) VAL
   ('d4e5f6a7-b8c9-4d0e-1f2a-b3c4d5e6f7a8', 'viewer@demo.local',  'Viewer',  '$2a$12$WqeSlsFmXzSru4YK23qfeuMYIUd/4ZkHLLwx0NAehm.Vbmq1MYEEa', 'he')
 ON CONFLICT (id) DO UPDATE SET password_hash = EXCLUDED.password_hash;
 
+-- Demo Organization
+INSERT INTO organizations (
+  id,
+  display_name,
+  normalized_name,
+  primary_owner_user_id,
+  country_code,
+  setup_template,
+  default_locale,
+  default_timezone_id,
+  status
+) VALUES (
+  'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9',
+  'Unit Alpha Demo',
+  'UNIT ALPHA DEMO',
+  'a1b2c3d4-e5f6-4a7b-8c9d-e0f1a2b3c4d5',
+  'IL',
+  'military_style',
+  'he',
+  'Asia/Jerusalem',
+  'Active'
+)
+ON CONFLICT (id) DO NOTHING;
+
 -- Demo Space
-INSERT INTO spaces (id, name, description, owner_user_id, locale) VALUES
-  ('e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'Unit Alpha', 'Demo space for local development', 'a1b2c3d4-e5f6-4a7b-8c9d-e0f1a2b3c4d5', 'he')
+INSERT INTO spaces (id, organization_id, name, description, owner_user_id, locale) VALUES
+  ('e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'Unit Alpha', 'Demo space for local development', 'a1b2c3d4-e5f6-4a7b-8c9d-e0f1a2b3c4d5', 'he')
 ON CONFLICT DO NOTHING;
 
 -- Memberships
