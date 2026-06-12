@@ -394,6 +394,9 @@ packaging, and self-service export package validation readiness.
   pull requests into `develop` or `main`, so the production ruleset can require
   `API Build & Test`, `Solver Lint & Test`, and `Frontend Build` checks on the
   final release PR.
+- `Customer-Hosted Preflight` now also runs without path filters on pushes to
+  `develop` and PRs into `develop` or `main`, so the required `Package
+  Preflight` check is always created for protected release PRs.
 - `infra/scripts/setup-github-release-controls.ps1` and its harness were added
   so the expected GitHub rulesets can be dry-run first, then applied
   repeatably. The helper updates or creates the `Main` ruleset with
