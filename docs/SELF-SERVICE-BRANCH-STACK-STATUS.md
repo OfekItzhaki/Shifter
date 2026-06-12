@@ -318,7 +318,7 @@ Known verification:
   `.github/workflows/customer-hosted-preflight.yml` on relevant PRs, pushes to
   `feat/self-service-client-ready`, and manual dispatch.
 - The branch preflight workflow passed:
-  https://github.com/OfekItzhaki/Shifter/actions/runs/27398168101
+  https://github.com/OfekItzhaki/Shifter/actions/runs/27398282391
 - PostgreSQL organization import smoke passed:
   `infra\\scripts\\smoke-organization-import-postgres.ps1`, which starts a
   temporary PostgreSQL 16 container, applies all SQL migrations, and imports a
