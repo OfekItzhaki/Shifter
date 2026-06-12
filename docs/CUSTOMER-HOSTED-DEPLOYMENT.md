@@ -144,6 +144,29 @@ Customer-hosted means:
    docker compose --project-name shifter up -d --build
    ```
 
+   For restricted-network installs, build and save the full image set on a
+   connected build machine first:
+
+   ```bash
+   ENV_FILE=/opt/shifter/infra/compose/.env \
+     SHIFTER_DIR=/opt/shifter \
+     /opt/shifter/infra/scripts/bundle-compose-images.sh
+   ```
+
+   This creates `artifacts/customer-hosted/shifter-<project>-images.tar`, a
+   manifest, and a SHA-256 checksum. Transfer those files to the target host,
+   verify the checksum, then load the images before starting Compose:
+
+   ```bash
+   sha256sum -c shifter-shifter-images.tar.sha256
+   docker load -i shifter-shifter-images.tar
+   cd /opt/shifter/infra/compose
+   docker compose --project-name shifter up -d
+   ```
+
+   To validate image names without building or saving images, run with
+   `DRY_RUN=1`.
+
 7. Check health:
 
    ```bash
@@ -395,6 +418,5 @@ These are good next iterations, but not required for the first sellable
 customer-hosted package:
 
 - Helm chart for Kubernetes customers.
-- Offline image bundle for air-gapped sites.
 - Signed offline license files or activation portal for larger on-prem
   contracts.

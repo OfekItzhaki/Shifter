@@ -65,6 +65,7 @@ services:
 
   # ─── API (ASP.NET Core) ─────────────────────────────────────
   api:
+    image: shifter-api:${COMPOSE_PROJECT_NAME:-local}
     build:
       context: ../../apps/api
       dockerfile: ../../infra/docker/api.Dockerfile
@@ -153,6 +154,7 @@ services:
 
   # ─── Solver (Python + OR-Tools) ─────────────────────────────
   solver:
+    image: shifter-solver:${COMPOSE_PROJECT_NAME:-local}
     build:
       context: ../../apps/solver
       dockerfile: ../../infra/docker/solver.Dockerfile

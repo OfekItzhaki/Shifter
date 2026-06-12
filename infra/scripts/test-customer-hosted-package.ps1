@@ -79,6 +79,10 @@ Invoke-Step "Seed compose dry-run harness" {
     & (Join-Path $PSScriptRoot "test-seed-compose-dry-run.ps1") -ShifterDir $root -BashPath $bash
 }
 
+Invoke-Step "Offline image bundle harness" {
+    & (Join-Path $PSScriptRoot "test-bundle-compose-images.ps1") -ShifterDir $root -BashPath $bash
+}
+
 Invoke-Step "Customer-hosted install wrapper dry-run harness" {
     & (Join-Path $PSScriptRoot "test-verify-customer-hosted-install-dry-run.ps1") -ShifterDir $root -BashPath $bash
 }
@@ -98,7 +102,8 @@ Invoke-Step "Deploy compose rollback harness" {
 Invoke-Step "PowerShell script syntax" {
     foreach ($scriptName in @(
             "verify-customer-hosted-install.ps1",
-            "test-verify-customer-hosted-install-dry-run.ps1"
+            "test-verify-customer-hosted-install-dry-run.ps1",
+            "test-bundle-compose-images.ps1"
         )) {
         $parseErrors = $null
         $tokens = $null
@@ -124,6 +129,8 @@ Invoke-Step "Compose script syntax" {
         "bash -n infra/scripts/restore-compose.sh",
         "&&",
         "bash -n infra/scripts/seed-compose.sh",
+        "&&",
+        "bash -n infra/scripts/bundle-compose-images.sh",
         "&&",
         "bash -n infra/scripts/validate-customer-env.sh"
     ) -join " "

@@ -53,6 +53,9 @@ packaging, and self-service export package validation readiness.
 - Adds `infra/scripts/seed-compose.sh` so customer-hosted demo smoke data can be
   loaded through Docker Compose without requiring `psql` on the host, including
   a dry-run mode for validating the resolved target.
+- Adds `infra/scripts/bundle-compose-images.sh` for restricted-network
+  customer installs, building Shifter images, pulling bundled infrastructure
+  images, and saving a Docker image tarball with manifest and checksum.
 - Lets the live self-service smoke read `APP_FRONTEND_BASE_URL`,
   `NEXT_PUBLIC_API_URL`/`APP_API_BASE_URL`, and optional seeded demo credentials
   from the customer env file with `-EnvFile`, plus `-ResolveOnly` for dry config
@@ -163,6 +166,9 @@ packaging, and self-service export package validation readiness.
 - `infra/scripts/test-seed-compose-dry-run.ps1` passed, proving the compose seed
   loader resolves the env file, Compose project, database, user, and seed file
   without loading demo data.
+- `infra/scripts/test-bundle-compose-images.ps1` passed with a fake Docker
+  shim, proving the image bundle script builds app services, pulls bundled
+  infrastructure services, writes a manifest, and saves the resolved image set.
 - `infra/scripts/verify-customer-hosted-install.ps1 -EnvFile infra/compose/.env.customer.example -SkipPackagePreflight -SeedDryRun -ResolveOnly`
   passed, proving the target-host wrapper can dry-run seeded data and live smoke
   configuration from one command.

@@ -208,6 +208,9 @@ Known verification:
 - Adds `infra/scripts/seed-compose.sh` to load the seeded demo dataset into a
   running customer/local Compose PostgreSQL service before live smoke tests,
   with a dry-run harness for target resolution.
+- Adds `infra/scripts/bundle-compose-images.sh` for restricted-network customer
+  installs, producing a Docker image tarball plus manifest and checksum from
+  the customer Compose file.
 - The live self-service smoke can now read target URLs and optional seeded demo
   credentials from the customer env file with `-EnvFile`, and supports
   `-ResolveOnly` for dry configuration checks before live services are ready.
@@ -303,6 +306,8 @@ Known verification:
   `infra/scripts/test-restore-compose-dry-run.ps1`.
 - Seed compose dry-run harness passed:
   `infra/scripts/test-seed-compose-dry-run.ps1`.
+- Offline image bundle harness passed:
+  `infra/scripts/test-bundle-compose-images.ps1`.
 - Customer-hosted install wrapper dry-run passed:
   `infra/scripts/verify-customer-hosted-install.ps1 -EnvFile infra/compose/.env.customer.example -SkipPackagePreflight -SeedDryRun -ResolveOnly`.
 - Customer-hosted install wrapper harness passed:
