@@ -162,7 +162,21 @@ if (-not $SkipPostgresImportSmoke) {
             throw "Docker was not found. Re-run with -SkipPostgresImportSmoke to skip the temporary PostgreSQL import smoke."
         }
 
-        & (Join-Path $PSScriptRoot "smoke-organization-import-postgres.ps1")
+        $smokeOutput = @()
+        $smokeExitCode = 0
+        try {
+            $smokeOutput = & (Join-Path $PSScriptRoot "smoke-organization-import-postgres.ps1") 2>&1
+            $smokeExitCode = if ($null -eq $LASTEXITCODE) { 0 } else { $LASTEXITCODE }
+        }
+        catch {
+            $smokeOutput += $_ | Out-String
+            $smokeExitCode = 1
+        }
+
+        $smokeOutput | ForEach-Object { Write-Host $_ }
+        if ($smokeExitCode -ne 0) {
+            throw "PostgreSQL organization package import smoke failed with exit code $smokeExitCode. Output:`n$($smokeOutput | Out-String)"
+        }
     }
 }
 
