@@ -70,18 +70,22 @@ try {
     Write-Step "Waiting for PostgreSQL"
     Wait-ForPostgres
 
-    Write-Step "Copying SQL migrations"
-    Invoke-Docker -Arguments @("cp", "$migrationsDir/.", "${containerName}:/migrations")
-
     Write-Step "Applying SQL migrations"
-    Invoke-Docker -Arguments @(
-        "exec",
-        "-e", "PGPASSWORD=$dbPassword",
-        $containerName,
-        "sh",
-        "-c",
-        "for file in `$(ls /migrations/*.sql | sort); do echo Applying `$(basename `$file); psql -U '$dbUser' -d '$dbName' -v ON_ERROR_STOP=1 -f `$file >/dev/null; done"
-    )
+    Invoke-Docker -Arguments @("exec", $containerName, "mkdir", "-p", "/migrations")
+    foreach ($migration in Get-ChildItem -LiteralPath $migrationsDir -Filter "*.sql" | Sort-Object Name) {
+        Write-Host "Applying $($migration.Name)"
+        Invoke-Docker -Arguments @("cp", $migration.FullName, "${containerName}:/migrations/$($migration.Name)")
+        Invoke-Docker -Arguments @(
+            "exec",
+            "-e", "PGPASSWORD=$dbPassword",
+            $containerName,
+            "psql",
+            "-U", $dbUser,
+            "-d", $dbName,
+            "-v", "ON_ERROR_STOP=1",
+            "-f", "/migrations/$($migration.Name)"
+        )
+    }
 
     Write-Step "Running PostgreSQL organization import smoke"
     $previousConnection = $env:SHIFTER_POSTGRES_IMPORT_SMOKE_CONNECTION
