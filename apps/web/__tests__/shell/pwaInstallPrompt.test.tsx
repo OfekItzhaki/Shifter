@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import PwaInstallPrompt from "@/components/shell/PwaInstallPrompt";
 
@@ -7,7 +7,7 @@ let coarsePointer = false;
 vi.mock("next-intl", () => ({
   useTranslations: () => (key: string) => ({
     title: "Install Shifter",
-    description: "Install Shifter on this phone for faster access and offline schedule viewing.",
+    description: "Install Shifter on this device for faster access and offline schedule viewing.",
     iosDescription: "On iPhone, tap Share, then Add to Home Screen to install Shifter.",
     install: "Install",
     notNow: "Not now",
@@ -48,14 +48,12 @@ describe("PwaInstallPrompt", () => {
     vi.restoreAllMocks();
   });
 
-  it("does not show the custom install prompt on desktop browsers", async () => {
+  it("shows the custom install prompt on desktop browsers when install is available", async () => {
     render(<PwaInstallPrompt />);
 
     window.dispatchEvent(createInstallEvent());
 
-    await waitFor(() => {
-      expect(screen.queryByText("Install Shifter")).not.toBeInTheDocument();
-    });
+    expect(await screen.findByText("Install Shifter")).toBeInTheDocument();
   });
 
   it("shows the custom install prompt on mobile install surfaces", async () => {
