@@ -37,4 +37,24 @@ jobs:
 
       - name: Run customer-hosted package preflight
         shell: pwsh
-        run: ./infra/scripts/test-customer-hosted-package.ps1 -EnvFile ./infra/compose/.env.customer.example
+        run: |
+          $ErrorActionPreference = "Continue"
+          $output = @()
+          $exitCode = 0
+
+          try {
+            $output = & ./infra/scripts/test-customer-hosted-package.ps1 -EnvFile ./infra/compose/.env.customer.example 2>&1
+            $exitCode = if ($null -eq $LASTEXITCODE) { 0 } else { $LASTEXITCODE }
+          } catch {
+            $output += $_ | Out-String
+            $exitCode = 1
+          }
+
+          $output | ForEach-Object { Write-Host $_ }
+
+          if ($exitCode -ne 0) {
+            $tail = ($output | Select-Object -Last 120 | Out-String).Trim()
+            $escaped = $tail.Replace("%", "%25").Replace("`r", "").Replace("`n", "%0A")
+            Write-Host "::error title=Customer-hosted preflight failed::$escaped"
+            exit $exitCode
+          }

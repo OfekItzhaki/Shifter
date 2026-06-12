@@ -368,7 +368,7 @@ public class HealthEndpointIntegrationTests
         var httpGetAttrs = method!.GetCustomAttributes(
             typeof(HttpGetAttribute), true).Cast<HttpGetAttribute>();
 
-        httpGetAttrs.Select(attr => attr.Template).Should().Contain(new[] { "ready", "/ready" });
+        httpGetAttrs.Select(attr => attr.Template).Should().Contain(new[] { "ready", "~/ready" });
     }
 
     // Validates: Requirement 7.1 — /health response includes version and timestamp

@@ -52,7 +52,7 @@ public class HealthController : ControllerBase
 
     /// <summary>Readiness probe for orchestrators and deploy scripts.</summary>
     [HttpGet("ready")]
-    [HttpGet("/ready")]
+    [HttpGet("~/ready")]
     [AllowAnonymous]
     public async Task<IActionResult> Ready(CancellationToken ct)
     {
