@@ -107,6 +107,9 @@ packaging, and self-service export package validation readiness.
 - Adds `infra/scripts/check-staging-smoke-evidence.ps1` so a completed staging
   sign-off can be checked for required metadata, no pending rows, explicit
   `develop` to `main` acceptance, and obvious secret-like values before use.
+- Adds an `EXPECTED_REVISION` guard to `infra/scripts/deploy-compose.sh` and
+  wires the staging workflow to pass the GitHub run SHA, preventing staging
+  deploys from silently running a different commit than the workflow intended.
 - Requires `NEXT_PUBLIC_LEGAL_EMAIL` in customer env validation so private
   installs do not silently route support/contact UI to the SaaS fallback.
 - Wires public frontend deployment variables through the web Docker build and
@@ -368,6 +371,9 @@ packaging, and self-service export package validation readiness.
 - `infra/scripts/test-check-staging-smoke-evidence.ps1` passed locally on
   June 13, 2026, proving completed staging evidence passes and the blank
   template is rejected.
+- `infra/scripts/test-deploy-compose-expected-revision.ps1` passed locally on
+  June 13, 2026, proving deploys stop before Docker/Compose when the checked
+  out revision does not match `EXPECTED_REVISION`.
 - `infra/scripts/check-release-readiness.ps1 -SkipHostedSmoke` currently fails
   as intended until GitHub staging setup is completed: the `staging`
   environment and `STAGING_WEB_BASE_URL`, `STAGING_API_BASE_URL`,

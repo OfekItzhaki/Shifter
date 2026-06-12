@@ -12,6 +12,7 @@ COMPOSE_DIR="${COMPOSE_DIR:-$SHIFTER_DIR/infra/compose}"
 ENV_FILE="${ENV_FILE:-$COMPOSE_DIR/.env}"
 GIT_REMOTE="${GIT_REMOTE:-origin}"
 GIT_REF="${GIT_REF:-main}"
+EXPECTED_REVISION="${EXPECTED_REVISION:-}"
 HEALTH_TIMEOUT_SECONDS="${HEALTH_TIMEOUT_SECONDS:-180}"
 RUN_BACKUP="${RUN_BACKUP:-true}"
 
@@ -90,6 +91,11 @@ else
 fi
 git pull --ff-only "$GIT_REMOTE" "$GIT_REF"
 NEW_REVISION="$(git rev-parse HEAD)"
+
+if [ -n "$EXPECTED_REVISION" ] && [ "$NEW_REVISION" != "$EXPECTED_REVISION" ]; then
+  echo "Expected revision $EXPECTED_REVISION, but $GIT_REF resolved to $NEW_REVISION" >&2
+  exit 1
+fi
 
 if [ "$RUN_BACKUP" = "true" ]; then
   cd "$COMPOSE_DIR"

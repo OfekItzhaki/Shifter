@@ -215,6 +215,7 @@ exit 1
         "ENV_FILE='$(To-BashPath $envFile)'",
         "BACKUP_DIR='$(To-BashPath $backupDir)'",
         "GIT_REF=main",
+        "EXPECTED_REVISION=new-revision",
         "HEALTH_TIMEOUT_SECONDS=1",
         "bash '$(To-BashPath $deployScript)'"
     ) -join " "

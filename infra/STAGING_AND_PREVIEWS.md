@@ -105,6 +105,7 @@ docker run --rm caddy:2-alpine caddy hash-password --plaintext 'choose-a-strong-
 
 ```bash
 GIT_REF=develop \
+EXPECTED_REVISION=<git-sha-from-ci-or-release> \
 SHIFTER_DIR=/opt/shifter-staging \
 COMPOSE_PROJECT_NAME=shifter-staging \
 /opt/shifter-staging/infra/scripts/deploy-compose.sh

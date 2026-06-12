@@ -57,10 +57,11 @@ COMPOSE_PROJECT_NAME=shifter-production \
 The script:
 
 1. fetches and fast-forwards the selected branch
-2. creates a backup
-3. rebuilds and restarts the Compose stack
-4. checks the frontend and API health endpoint
-5. rolls back to the previous git revision if the new version fails health verification
+2. verifies `EXPECTED_REVISION` when supplied
+3. creates a backup
+4. rebuilds and restarts the Compose stack
+5. checks the frontend and API health endpoint
+6. rolls back to the previous git revision if the new version fails health verification
 
 ## Staging Deploy
 
@@ -68,6 +69,7 @@ Run this on the staging VPS:
 
 ```bash
 GIT_REF=develop \
+EXPECTED_REVISION=<git-sha-from-ci-or-release> \
 SHIFTER_DIR=/opt/shifter-staging \
 COMPOSE_PROJECT_NAME=shifter-staging \
 /opt/shifter-staging/infra/scripts/deploy-compose.sh

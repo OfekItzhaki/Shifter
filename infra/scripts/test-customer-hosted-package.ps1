@@ -127,6 +127,10 @@ Invoke-Step "Deploy compose happy-path harness" {
     & (Join-Path $PSScriptRoot "test-deploy-compose.ps1") -ShifterDir $root -BashPath $bash
 }
 
+Invoke-Step "Deploy compose expected revision harness" {
+    & (Join-Path $PSScriptRoot "test-deploy-compose-expected-revision.ps1") -BashPath $bash
+}
+
 Invoke-Step "Deploy compose rollback harness" {
     & (Join-Path $PSScriptRoot "test-deploy-compose-rollback.ps1") -BashPath $bash
 }
@@ -147,7 +151,8 @@ Invoke-Step "PowerShell script syntax" {
             "generate-signed-license.ps1",
             "test-generate-signed-license.ps1",
             "package-customer-hosted.ps1",
-            "test-package-customer-hosted.ps1"
+            "test-package-customer-hosted.ps1",
+            "test-deploy-compose-expected-revision.ps1"
         )) {
         $parseErrors = $null
         $tokens = $null

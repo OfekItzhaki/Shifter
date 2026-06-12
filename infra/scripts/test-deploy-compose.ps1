@@ -194,6 +194,7 @@ exit 0
         "ENV_FILE='$(To-BashPath $envFile)'",
         "BACKUP_DIR='$(To-BashPath $backupDir)'",
         "GIT_REF=main",
+        "EXPECTED_REVISION=fake-revision",
         "HEALTH_TIMEOUT_SECONDS=5",
         "bash '$(To-BashPath $deployScript)'"
     ) -join " "
