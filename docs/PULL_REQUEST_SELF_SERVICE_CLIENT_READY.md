@@ -49,6 +49,9 @@ packaging, and self-service export package validation readiness.
 - Routes native assistant contact payloads to the configured
   `NEXT_PUBLIC_LEGAL_EMAIL`, so customer-hosted installs can point support
   requests at the customer's own help address.
+- Adds a Cloudflare edge security baseline covering DNS/TLS, WAF/rate-limit
+  rules for auth, billing, imports, solver triggers, uploads, and admin paths,
+  plus PWA/API caching guidance.
 - Requires `NEXT_PUBLIC_LEGAL_EMAIL` in customer env validation so private
   installs do not silently route support/contact UI to the SaaS fallback.
 - Wires public frontend deployment variables through the web Docker build and

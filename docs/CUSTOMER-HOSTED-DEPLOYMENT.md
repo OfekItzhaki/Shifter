@@ -145,6 +145,8 @@ Customer-hosted means:
    start Docker Compose or load seed data.
 
 8. Put HTTPS in front of the web/API ports using the customer's proxy or WAF.
+   For Cloudflare, start from the
+   [Cloudflare edge security baseline](CLOUDFLARE-EDGE-SECURITY.md).
 
 ## AI Choices
 
@@ -315,8 +317,10 @@ each upgrade.
   requires all VAPID keys plus matching public frontend key, Pushover requires
   both alert keys, and LemonSqueezy requires all billing/webhook identifiers.
   The customer env validator fails partial groups.
-- Put WAF/rate limits in front of auth, billing, import, solver, and admin
-  endpoints.
+- Put WAF/rate limits in front of auth, billing, import, solver, uploads, and
+  admin endpoints. See
+  [Cloudflare edge security baseline](CLOUDFLARE-EDGE-SECURITY.md) for the
+  first rule set.
 - Keep OS and Docker patched.
 - Store env files in customer secrets management where possible.
 

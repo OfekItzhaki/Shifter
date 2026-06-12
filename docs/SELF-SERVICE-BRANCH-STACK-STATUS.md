@@ -251,6 +251,8 @@ Known verification:
 - Provider health checks treat unconfigured LemonSqueezy billing as skipped,
   report partial billing configuration with exact missing keys, and expose
   core/optional provider readiness in the platform UI.
+- Adds a Cloudflare edge security baseline for DNS/TLS, first WAF/rate-limit
+  rules, API/PWA caching, and customer-hosted WAF decisions.
 - Live client-ready smoke passed against a fresh SQL install from all
   migrations plus `seed.sql`, a live API, and a rebuilt production web server:
   `infra/scripts/smoke-self-service-client-ready.ps1 -ApiBaseUrl http://localhost:5015 -WebBaseUrl http://localhost:3015`.
