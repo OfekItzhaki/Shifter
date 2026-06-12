@@ -35,6 +35,10 @@ try {
             "infra\compose\.env.customer.example",
             "infra\scripts\validate-customer-env.ps1",
             "infra\scripts\verify-customer-hosted-install.ps1",
+            "infra\scripts\test-customer-hosted-package.ps1",
+            "infra\scripts\smoke-self-service-client-ready.ps1",
+            "infra\scripts\smoke-organization-import-postgres.ps1",
+            "infra\scripts\test-package-customer-hosted.ps1",
             "docs\AI-DEPLOYMENT-MODES.md",
             "apps\web\package.json"
         )) {
