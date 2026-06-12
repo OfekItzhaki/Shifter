@@ -249,7 +249,8 @@ group:
   `.\infra\scripts\smoke-self-service-client-ready.ps1`
 - a mobile smoke test for self-service admin cycle controls and operations
 - a member browser lifecycle test for picking an open shift and joining/viewing
-  a full-slot waitlist
+  a full-slot waitlist, including pick capacity increase and waitlist capacity
+  stability checks
 - a member browser lifecycle test for leaving a waiting-list entry
 - a member/admin browser lifecycle test for cannot-attend reporting and admin
   approval from the review queue
@@ -303,7 +304,8 @@ large deployments:
 
 - Broader browser end-to-end coverage for the complete member/admin cycle:
   remaining rejection paths and richer final slot-state verification. The
-  browser suite already covers picking, waitlist entry, waitlist leaving,
+  browser suite already covers picking with slot fill-count increase, waitlist
+  entry without slot fill-count drift, waitlist leaving,
   cannot-attend reporting, absence approval, absence rejection with shift
   reinstatement and slot fill-count verification, shift cancellation with slot
   fill-count verification, shift-change approval with source/target slot

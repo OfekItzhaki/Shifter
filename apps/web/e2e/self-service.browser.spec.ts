@@ -1621,6 +1621,14 @@ test.describe("Self-service browser lifecycle", () => {
 
     if (openSlot) {
       const openSlotId = openSlot.id ?? openSlot.shiftSlotId;
+      const openSlotBeforePick = await getAdminSlot(
+        request,
+        adminToken,
+        spaceId,
+        groupId,
+        status.cycleId!,
+        openSlotId!
+      );
       await page.getByTestId("pick-tab-slots").click();
       await expect(page.getByTestId("self-service-open-slot").first()).toBeVisible({ timeout: 15000 });
       await Promise.all([
@@ -1639,6 +1647,16 @@ test.describe("Self-service browser lifecycle", () => {
       expect(shifts.requests.some((row) =>
         row.shiftSlotId === openSlotId && row.status === "Approved"
       )).toBeTruthy();
+
+      const openSlotAfterPick = await getAdminSlot(
+        request,
+        adminToken,
+        spaceId,
+        groupId,
+        status.cycleId!,
+        openSlotId!
+      );
+      expect(openSlotAfterPick.currentFillCount).toBe(openSlotBeforePick.currentFillCount + 1);
     }
 
     const alreadyWaitlisted = fullSlot
@@ -1649,6 +1667,15 @@ test.describe("Self-service browser lifecycle", () => {
       : existingWaitlist.some((entry) => entry.status === "Waiting" || entry.status === "Offered");
 
     if (fullSlot && !alreadyWaitlisted) {
+      const fullSlotId = fullSlot.id ?? fullSlot.shiftSlotId;
+      const fullSlotBeforeWaitlist = await getAdminSlot(
+        request,
+        adminToken,
+        spaceId,
+        groupId,
+        status.cycleId!,
+        fullSlotId!
+      );
       await page.getByTestId("pick-tab-slots").click();
       await expect(page.getByTestId("self-service-full-slot").first()).toBeVisible({ timeout: 15000 });
       await Promise.all([
@@ -1657,6 +1684,16 @@ test.describe("Self-service browser lifecycle", () => {
         ),
         page.getByTestId("self-service-join-waitlist").first().click(),
       ]);
+
+      const fullSlotAfterWaitlist = await getAdminSlot(
+        request,
+        adminToken,
+        spaceId,
+        groupId,
+        status.cycleId!,
+        fullSlotId!
+      );
+      expect(fullSlotAfterWaitlist.currentFillCount).toBe(fullSlotBeforeWaitlist.currentFillCount);
     }
 
     const waitlistAfter = await api<WaitlistEntryDto[]>(
