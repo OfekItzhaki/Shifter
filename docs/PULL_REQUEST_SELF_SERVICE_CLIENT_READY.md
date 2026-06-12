@@ -234,7 +234,9 @@ packaging, and self-service export package validation readiness.
 
 ## Remaining Product Checks
 
-- Run a customer-hosted smoke with real customer secrets and a real database.
+- On the target host, run the customer-hosted install verifier against the real
+  customer env file after secrets/domains are set and the stack is running:
+  `infra/scripts/verify-customer-hosted-install.ps1 -EnvFile infra/compose/.env`.
 - Before a production tenant-by-tenant migration, rerun the organization import
   smoke against that customer's target PostgreSQL. Full customer-hosted
   deployment moves should still use the compose backup/restore path.
