@@ -1,0 +1,106 @@
+param(
+    [string]$Repo = "OfekItzhaki/Shifter",
+    [string]$EnvironmentName = "staging",
+    [string]$GhPath = "gh",
+    [string]$WebBaseUrl = "",
+    [string]$ApiBaseUrl = "",
+    [string]$StagingPath = "/opt/shifter-staging",
+    [string]$ComposeProjectName = "shifter-staging",
+    [switch]$EnablePushDeploy,
+    [switch]$Apply
+)
+
+$ErrorActionPreference = "Stop"
+
+function Assert-AbsoluteUrl {
+    param(
+        [string]$Name,
+        [string]$Value
+    )
+
+    $uri = $null
+    if (-not [System.Uri]::TryCreate($Value, [System.UriKind]::Absolute, [ref]$uri)) {
+        throw "$Name must be an absolute URL."
+    }
+
+    if ($uri.Scheme -notin @("http", "https")) {
+        throw "$Name must use http or https."
+    }
+}
+
+function Invoke-Gh {
+    param([string[]]$Arguments)
+
+    if (-not $Apply) {
+        Write-Host "DRY-RUN gh $($Arguments -join ' ')" -ForegroundColor DarkGray
+        return
+    }
+
+    $output = & $GhPath @Arguments 2>&1
+    if ($LASTEXITCODE -ne 0) {
+        throw "gh $($Arguments -join ' ') failed with exit $LASTEXITCODE. Output:`n$($output | Out-String)"
+    }
+}
+
+if ([string]::IsNullOrWhiteSpace($Repo)) {
+    throw "Repo is required."
+}
+
+if ([string]::IsNullOrWhiteSpace($EnvironmentName)) {
+    throw "EnvironmentName is required."
+}
+
+if ([string]::IsNullOrWhiteSpace($WebBaseUrl)) {
+    throw "WebBaseUrl is required."
+}
+
+if ([string]::IsNullOrWhiteSpace($ApiBaseUrl)) {
+    throw "ApiBaseUrl is required."
+}
+
+if ([string]::IsNullOrWhiteSpace($StagingPath)) {
+    throw "StagingPath is required."
+}
+
+if ([string]::IsNullOrWhiteSpace($ComposeProjectName)) {
+    throw "ComposeProjectName is required."
+}
+
+Assert-AbsoluteUrl "WebBaseUrl" $WebBaseUrl
+Assert-AbsoluteUrl "ApiBaseUrl" $ApiBaseUrl
+
+$pushDeployValue = if ($EnablePushDeploy) { "true" } else { "false" }
+
+Write-Host "Shifter GitHub staging setup" -ForegroundColor Cyan
+Write-Host "Repo: $Repo"
+Write-Host "Environment: $EnvironmentName"
+Write-Host "Apply: $Apply"
+
+Invoke-Gh @("api", "-X", "PUT", "repos/$Repo/environments/$EnvironmentName")
+
+$variables = [ordered]@{
+    "ENABLE_STAGING_DEPLOY" = $pushDeployValue
+    "STAGING_PATH" = $StagingPath
+    "STAGING_COMPOSE_PROJECT_NAME" = $ComposeProjectName
+    "STAGING_WEB_BASE_URL" = $WebBaseUrl
+    "STAGING_API_BASE_URL" = $ApiBaseUrl
+}
+
+foreach ($entry in $variables.GetEnumerator()) {
+    Invoke-Gh @("variable", "set", $entry.Key, "--repo", $Repo, "--body", $entry.Value)
+}
+
+Write-Host ""
+if ($Apply) {
+    Write-Host "GitHub staging environment and variables configured." -ForegroundColor Green
+}
+else {
+    Write-Host "Dry run only. Re-run with -Apply to write GitHub configuration." -ForegroundColor Yellow
+}
+
+Write-Host ""
+Write-Host "Secrets still need to be set manually or with gh secret set:" -ForegroundColor Cyan
+Write-Host "  gh secret set STAGING_HOST --repo $Repo"
+Write-Host "  gh secret set STAGING_USER --repo $Repo"
+Write-Host "  gh secret set STAGING_SSH_KEY --repo $Repo"
+Write-Host "  gh secret set STAGING_PORT --repo $Repo   # optional"

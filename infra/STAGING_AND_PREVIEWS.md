@@ -155,6 +155,38 @@ Recommended staging variables:
 - `STAGING_WEB_BASE_URL=https://staging.example.com`
 - `STAGING_API_BASE_URL=https://staging-api.example.com`
 
+To create the GitHub `staging` environment and repository variables safely,
+dry-run the setup first:
+
+```powershell
+.\infra\scripts\setup-github-staging.ps1 `
+  -WebBaseUrl https://staging.example.com `
+  -ApiBaseUrl https://staging-api.example.com
+```
+
+Then apply it once the URLs, path, and Compose project are correct:
+
+```powershell
+.\infra\scripts\setup-github-staging.ps1 `
+  -WebBaseUrl https://staging.example.com `
+  -ApiBaseUrl https://staging-api.example.com `
+  -StagingPath /opt/shifter-staging `
+  -ComposeProjectName shifter-staging `
+  -Apply
+```
+
+Keep push-triggered deploys disabled until staging has been manually deployed
+and smoke-tested. Add `-EnablePushDeploy` only after that is true.
+
+Set dedicated staging SSH secrets separately:
+
+```powershell
+gh secret set STAGING_HOST --repo OfekItzhaki/Shifter
+gh secret set STAGING_USER --repo OfekItzhaki/Shifter
+gh secret set STAGING_SSH_KEY --repo OfekItzhaki/Shifter
+gh secret set STAGING_PORT --repo OfekItzhaki/Shifter
+```
+
 Current GitHub setup status as of June 12, 2026:
 
 - no repository variables are configured yet

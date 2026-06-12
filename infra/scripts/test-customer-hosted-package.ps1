@@ -99,6 +99,10 @@ Invoke-Step "Release readiness audit harness" {
     & (Join-Path $PSScriptRoot "test-check-release-readiness.ps1") -ShifterDir $root
 }
 
+Invoke-Step "GitHub staging setup harness" {
+    & (Join-Path $PSScriptRoot "test-setup-github-staging.ps1") -ShifterDir $root
+}
+
 Invoke-Step "Customer-hosted package assembly harness" {
     $packageArgs = @{
         ShifterDir = $root
@@ -131,6 +135,8 @@ Invoke-Step "PowerShell script syntax" {
             "test-smoke-hosted-vps.ps1",
             "check-release-readiness.ps1",
             "test-check-release-readiness.ps1",
+            "setup-github-staging.ps1",
+            "test-setup-github-staging.ps1",
             "test-bundle-compose-images.ps1",
             "generate-signed-license.ps1",
             "test-generate-signed-license.ps1",

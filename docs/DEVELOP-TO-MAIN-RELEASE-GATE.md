@@ -14,6 +14,17 @@ Use this checklist before opening or merging a `develop` to `main` PR.
   .\infra\scripts\check-release-readiness.ps1 -SkipHostedSmoke
   ```
 
+- GitHub staging setup was applied with the intended staging URLs/path:
+
+  ```powershell
+  .\infra\scripts\setup-github-staging.ps1 `
+    -WebBaseUrl <staging-web-url> `
+    -ApiBaseUrl <staging-api-url> `
+    -StagingPath /opt/shifter-staging `
+    -ComposeProjectName shifter-staging `
+    -Apply
+  ```
+
 - Staging hosted smoke passes:
 
   ```powershell
@@ -48,6 +59,8 @@ As of June 12, 2026:
   which means the hosted API has not yet been deployed to the readiness-probe
   build.
 - The release readiness audit script is in place and its harness passes.
+- The GitHub staging setup helper is in place and dry-run/apply behavior is
+  covered by a local harness.
 - The real release readiness audit currently fails because the GitHub
   `staging` environment and staging URL/path repository variables are not
   configured yet. This is the expected blocker before a `develop` to `main` PR.

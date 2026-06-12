@@ -98,6 +98,9 @@ packaging, and self-service export package validation readiness.
 - Adds `infra/scripts/check-release-readiness.ps1` so the `develop` to `main`
   gate can audit local cleanliness, GitHub staging configuration, green CI,
   green customer-hosted preflight, and optional hosted smoke evidence.
+- Adds `infra/scripts/setup-github-staging.ps1` as a dry-run-first helper for
+  creating the GitHub `staging` environment and staging repository variables
+  without storing real SSH secrets in the repository.
 - Requires `NEXT_PUBLIC_LEGAL_EMAIL` in customer env validation so private
   installs do not silently route support/contact UI to the SaaS fallback.
 - Wires public frontend deployment variables through the web Docker build and
@@ -348,6 +351,10 @@ packaging, and self-service export package validation readiness.
 - `infra/scripts/test-check-release-readiness.ps1` passed locally on
   June 12, 2026, proving the release readiness audit handles both a fully
   configured staging setup and the current missing-staging setup.
+- `infra/scripts/test-setup-github-staging.ps1` passed locally on
+  June 12, 2026, proving the GitHub staging setup helper dry-runs without
+  calling `gh`, writes the expected environment and variables in apply mode,
+  and fails clearly when required staging URLs are missing.
 - `infra/scripts/check-release-readiness.ps1 -SkipHostedSmoke` currently fails
   as intended until GitHub staging setup is completed: the `staging`
   environment and `STAGING_WEB_BASE_URL`, `STAGING_API_BASE_URL`,
