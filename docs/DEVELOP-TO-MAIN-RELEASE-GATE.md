@@ -39,6 +39,10 @@ Use this checklist before opening or merging a `develop` to `main` PR.
 - GitHub staging setup was applied with the intended staging URLs/path:
 
   ```powershell
+  # Safe partial setup before staging URLs exist.
+  .\infra\scripts\setup-github-staging.ps1 -BootstrapOnly -Apply
+
+  # Full setup once staging URLs are allocated.
   .\infra\scripts\setup-github-staging.ps1 `
     -WebBaseUrl <staging-web-url> `
     -ApiBaseUrl <staging-api-url> `
@@ -98,19 +102,23 @@ As of June 13, 2026:
   includes the GitHub release-control audit so the `develop` to `main` gate
   fails if `main` does not require PRs/status checks.
 - The GitHub staging setup helper is in place and dry-run/apply behavior is
-  covered by a local harness.
+  covered by a local harness. It also supports `-BootstrapOnly` to create the
+  `staging` environment and safe non-URL defaults before staging DNS/URLs are
+  ready.
 - The staging manual smoke evidence template is in place, but no real staging
   user-flow sign-off has been recorded yet.
 - The GitHub release-control audit is in place and currently passes: `main`
   blocks deletion/force-push, requires pull requests, and requires the expected
   status checks; `develop` blocks deletion/force-push. The setup helper is in
   place and dry-run/apply behavior is covered by a local harness.
-- The real release readiness audit currently fails because the GitHub
-  `staging` environment and staging URL/path repository variables are not
-  configured yet. This is the expected blocker before a `develop` to `main` PR.
+- The GitHub `staging` environment is created, and staging path/project
+  variables are configured with push deploy disabled. The real release
+  readiness audit currently fails because `STAGING_WEB_BASE_URL` and
+  `STAGING_API_BASE_URL` are not configured yet. This is the expected blocker
+  before a staging deploy and `develop` to `main` PR.
 - The `Deploy Staging` workflow exists, but staging variables and the GitHub
-  `staging` environment are not configured yet. It can use existing `VPS_*`
-  secrets as a fallback, but dedicated `STAGING_*` secrets are preferred.
+  URLs are not configured yet. It can use existing `VPS_*` secrets as a
+  fallback, but dedicated `STAGING_*` secrets are preferred.
 
 Do not open the final `develop` to `main` PR until the staging deploy and manual
 smoke evidence above are complete.

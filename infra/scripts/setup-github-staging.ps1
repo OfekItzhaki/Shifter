@@ -7,6 +7,7 @@ param(
     [string]$StagingPath = "/opt/shifter-staging",
     [string]$ComposeProjectName = "shifter-staging",
     [switch]$EnablePushDeploy,
+    [switch]$BootstrapOnly,
     [switch]$Apply
 )
 
@@ -50,11 +51,15 @@ if ([string]::IsNullOrWhiteSpace($EnvironmentName)) {
     throw "EnvironmentName is required."
 }
 
-if ([string]::IsNullOrWhiteSpace($WebBaseUrl)) {
+if ($BootstrapOnly -and $EnablePushDeploy) {
+    throw "BootstrapOnly cannot be used with EnablePushDeploy."
+}
+
+if (-not $BootstrapOnly -and [string]::IsNullOrWhiteSpace($WebBaseUrl)) {
     throw "WebBaseUrl is required."
 }
 
-if ([string]::IsNullOrWhiteSpace($ApiBaseUrl)) {
+if (-not $BootstrapOnly -and [string]::IsNullOrWhiteSpace($ApiBaseUrl)) {
     throw "ApiBaseUrl is required."
 }
 
@@ -66,14 +71,17 @@ if ([string]::IsNullOrWhiteSpace($ComposeProjectName)) {
     throw "ComposeProjectName is required."
 }
 
-Assert-AbsoluteUrl "WebBaseUrl" $WebBaseUrl
-Assert-AbsoluteUrl "ApiBaseUrl" $ApiBaseUrl
+if (-not $BootstrapOnly) {
+    Assert-AbsoluteUrl "WebBaseUrl" $WebBaseUrl
+    Assert-AbsoluteUrl "ApiBaseUrl" $ApiBaseUrl
+}
 
 $pushDeployValue = if ($EnablePushDeploy) { "true" } else { "false" }
 
 Write-Host "Shifter GitHub staging setup" -ForegroundColor Cyan
 Write-Host "Repo: $Repo"
 Write-Host "Environment: $EnvironmentName"
+Write-Host "Bootstrap only: $BootstrapOnly"
 Write-Host "Apply: $Apply"
 
 Invoke-Gh @("api", "-X", "PUT", "repos/$Repo/environments/$EnvironmentName")
@@ -82,8 +90,11 @@ $variables = [ordered]@{
     "ENABLE_STAGING_DEPLOY" = $pushDeployValue
     "STAGING_PATH" = $StagingPath
     "STAGING_COMPOSE_PROJECT_NAME" = $ComposeProjectName
-    "STAGING_WEB_BASE_URL" = $WebBaseUrl
-    "STAGING_API_BASE_URL" = $ApiBaseUrl
+}
+
+if (-not $BootstrapOnly) {
+    $variables["STAGING_WEB_BASE_URL"] = $WebBaseUrl
+    $variables["STAGING_API_BASE_URL"] = $ApiBaseUrl
 }
 
 foreach ($entry in $variables.GetEnumerator()) {
@@ -92,10 +103,21 @@ foreach ($entry in $variables.GetEnumerator()) {
 
 Write-Host ""
 if ($Apply) {
-    Write-Host "GitHub staging environment and variables configured." -ForegroundColor Green
+    if ($BootstrapOnly) {
+        Write-Host "GitHub staging environment and bootstrap variables configured." -ForegroundColor Green
+    }
+    else {
+        Write-Host "GitHub staging environment and variables configured." -ForegroundColor Green
+    }
 }
 else {
     Write-Host "Dry run only. Re-run with -Apply to write GitHub configuration." -ForegroundColor Yellow
+}
+
+if ($BootstrapOnly) {
+    Write-Host ""
+    Write-Host "Bootstrap mode intentionally skipped STAGING_WEB_BASE_URL and STAGING_API_BASE_URL." -ForegroundColor Yellow
+    Write-Host "Run this script again without -BootstrapOnly when staging URLs are ready."
 }
 
 Write-Host ""

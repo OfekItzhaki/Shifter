@@ -390,6 +390,14 @@ packaging, and self-service export package validation readiness.
   June 13, 2026 after folding the GitHub release-control checks into the main
   release readiness audit, so a single `develop` to `main` gate now fails on
   missing staging setup or weak production branch controls.
+- `infra/scripts/setup-github-staging.ps1` now supports `-BootstrapOnly`, which
+  creates the GitHub `staging` environment plus safe path/project/deploy-disabled
+  defaults without inventing staging URLs.
+- `infra/scripts/setup-github-staging.ps1 -BootstrapOnly -Apply` was run
+  against GitHub on June 13, 2026. The live release readiness audit now passes
+  the `staging` environment, `STAGING_PATH`, `STAGING_COMPOSE_PROJECT_NAME`, and
+  `ENABLE_STAGING_DEPLOY=false` checks; it still fails until
+  `STAGING_WEB_BASE_URL` and `STAGING_API_BASE_URL` are configured.
 - The broad `CI` workflow now runs automatically for pushes to `develop` and
   pull requests into `develop` or `main`, so the production ruleset can require
   `API Build & Test`, `Solver Lint & Test`, and `Frontend Build` checks on the
@@ -408,12 +416,10 @@ packaging, and self-service export package validation readiness.
   requires pull requests, and requires the expected status checks; `develop`
   blocks deletion/force-push.
 - `infra/scripts/check-release-readiness.ps1 -SkipHostedSmoke` currently fails
-  as intended until GitHub staging setup is completed: the `staging`
-  environment and `STAGING_WEB_BASE_URL`, `STAGING_API_BASE_URL`,
-  `STAGING_PATH`, and `STAGING_COMPOSE_PROJECT_NAME` repository variables are
-  missing. It confirms the latest successful CI run `27445368410` on `5d10408`,
-  customer-hosted preflight run `27445163461` on `a6209ed`, and passing live
-  GitHub release controls.
+  as intended until GitHub staging URL setup is completed:
+  `STAGING_WEB_BASE_URL` and `STAGING_API_BASE_URL` are missing. It confirms the
+  latest successful CI run `27449458650` on `031542c`, customer-hosted preflight
+  run `27449458662` on `031542c`, and passing live GitHub release controls.
 - `infra/scripts/test-customer-hosted-package.ps1 -EnvFile infra/compose/.env.customer.example`
   passed locally on June 12, 2026 after adding the release readiness audit
   harness to the customer-hosted package preflight.

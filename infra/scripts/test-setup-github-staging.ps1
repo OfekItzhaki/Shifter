@@ -40,6 +40,38 @@ exit 0
         throw "Dry-run output did not explain apply mode. Output:`n$dryText"
     }
 
+    $bootstrapOutput = & $powerShellExe @baseCommand -File $script `
+        -GhPath $fakeGh `
+        -StagingPath "/srv/shifter-staging" `
+        -ComposeProjectName "shifter-stage" `
+        -BootstrapOnly `
+        -Apply 2>&1
+    if ($LASTEXITCODE -ne 0) {
+        throw "Expected bootstrap setup to pass. Output:`n$($bootstrapOutput | Out-String)"
+    }
+
+    $bootstrapCalls = Get-Content -LiteralPath $callLog -Raw
+    foreach ($pattern in @(
+            "api -X PUT repos/OfekItzhaki/Shifter/environments/staging",
+            "variable set ENABLE_STAGING_DEPLOY --repo OfekItzhaki/Shifter --body false",
+            "variable set STAGING_PATH --repo OfekItzhaki/Shifter --body /srv/shifter-staging",
+            "variable set STAGING_COMPOSE_PROJECT_NAME --repo OfekItzhaki/Shifter --body shifter-stage"
+        )) {
+        if ($bootstrapCalls -notmatch [regex]::Escape($pattern)) {
+            throw "Bootstrap mode did not call '$pattern'. Calls:`n$bootstrapCalls"
+        }
+    }
+    foreach ($forbiddenPattern in @(
+            "variable set STAGING_WEB_BASE_URL",
+            "variable set STAGING_API_BASE_URL"
+        )) {
+        if ($bootstrapCalls -match [regex]::Escape($forbiddenPattern)) {
+            throw "Bootstrap mode should not set '$forbiddenPattern'. Calls:`n$bootstrapCalls"
+        }
+    }
+
+    Clear-Content -LiteralPath $callLog
+
     $applyOutput = & $powerShellExe @baseCommand -File $script `
         -GhPath $fakeGh `
         -WebBaseUrl "https://staging.example.com" `
@@ -84,6 +116,27 @@ exit 0
     }
     if (($missingOutput | Out-String) -notmatch [regex]::Escape("ApiBaseUrl is required.")) {
         throw "Missing ApiBaseUrl failure was not clear. Output:`n$($missingOutput | Out-String)"
+    }
+
+    $previousErrorActionPreference = $ErrorActionPreference
+    $ErrorActionPreference = "Continue"
+    try {
+        $bootstrapDeployOutput = & $powerShellExe @baseCommand -File $script `
+            -GhPath $fakeGh `
+            -BootstrapOnly `
+            -EnablePushDeploy `
+            -Apply 2>&1
+        $bootstrapDeployExitCode = $LASTEXITCODE
+    }
+    finally {
+        $ErrorActionPreference = $previousErrorActionPreference
+    }
+
+    if ($bootstrapDeployExitCode -eq 0) {
+        throw "Expected BootstrapOnly with EnablePushDeploy to fail. Output:`n$($bootstrapDeployOutput | Out-String)"
+    }
+    if (($bootstrapDeployOutput | Out-String) -notmatch [regex]::Escape("BootstrapOnly cannot be used with EnablePushDeploy.")) {
+        throw "BootstrapOnly EnablePushDeploy failure was not clear. Output:`n$($bootstrapDeployOutput | Out-String)"
     }
 }
 finally {
