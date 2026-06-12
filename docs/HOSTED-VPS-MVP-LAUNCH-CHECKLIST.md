@@ -22,6 +22,21 @@ private customer AI, or a customer-owned database.
 - Run database migrations against the production database.
 - Confirm the production domain uses HTTPS.
 - Confirm `/ready` and `/health` return healthy results.
+- Run the hosted VPS read-only smoke check:
+
+  ```powershell
+  .\infra\scripts\smoke-hosted-vps.ps1 `
+    -WebBaseUrl https://your-production-domain.example `
+    -ApiBaseUrl https://your-api-domain.example
+  ```
+
+  If the production env file contains `APP_FRONTEND_BASE_URL` and
+  `APP_API_BASE_URL`, resolve from it instead:
+
+  ```powershell
+  .\infra\scripts\smoke-hosted-vps.ps1 -EnvFile .\infra\compose\.env
+  ```
+
 - Confirm login, registration/invite, password reset, and change-password flows.
 - Confirm Resend is configured for production email if email flows are enabled.
 - Confirm AI mode:
