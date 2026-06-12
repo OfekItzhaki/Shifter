@@ -29,6 +29,21 @@ function Find-Bash {
     throw "Git Bash was not found. Install Git for Windows or pass -BashPath."
 }
 
+function Join-PackagePath {
+    param(
+        [string]$Root,
+        [string]$RelativePath
+    )
+
+    $parts = $RelativePath -split '[\\/]+' | Where-Object { -not [string]::IsNullOrWhiteSpace($_) }
+    $resolved = $Root
+    foreach ($part in $parts) {
+        $resolved = Join-Path $resolved $part
+    }
+
+    return $resolved
+}
+
 $root = (Resolve-Path $ShifterDir).Path
 $bash = Find-Bash $BashPath
 $packageScript = Join-Path $PSScriptRoot "package-customer-hosted.ps1"
@@ -68,18 +83,18 @@ try {
     }
 
     foreach ($relativePath in @(
-            "infra\compose\docker-compose.yml",
-            "infra\compose\.env.customer.example",
-            "infra\scripts\validate-customer-env.ps1",
-            "infra\scripts\verify-customer-hosted-install.ps1",
-            "infra\scripts\test-customer-hosted-package.ps1",
-            "infra\scripts\smoke-self-service-client-ready.ps1",
-            "infra\scripts\smoke-organization-import-postgres.ps1",
-            "infra\scripts\test-package-customer-hosted.ps1",
-            "docs\AI-DEPLOYMENT-MODES.md",
-            "apps\web\package.json"
+            "infra/compose/docker-compose.yml",
+            "infra/compose/.env.customer.example",
+            "infra/scripts/validate-customer-env.ps1",
+            "infra/scripts/verify-customer-hosted-install.ps1",
+            "infra/scripts/test-customer-hosted-package.ps1",
+            "infra/scripts/smoke-self-service-client-ready.ps1",
+            "infra/scripts/smoke-organization-import-postgres.ps1",
+            "infra/scripts/test-package-customer-hosted.ps1",
+            "docs/AI-DEPLOYMENT-MODES.md",
+            "apps/web/package.json"
         )) {
-        $expectedPath = Join-Path $extractedPackageRoot $relativePath
+        $expectedPath = Join-PackagePath -Root $extractedPackageRoot -RelativePath $relativePath
         if (-not (Test-Path -LiteralPath $expectedPath)) {
             throw "Package is missing expected file: $relativePath"
         }
@@ -90,7 +105,7 @@ try {
             "private.*\.(pem|key|json)$",
             "secret.*\.(pem|key|json)$",
             "node_modules",
-            "\\\.git(\\|$)"
+            "[\\/]\.git([\\/]|$)"
         )) {
         $blocked = Get-ChildItem -LiteralPath $extractedPackageRoot -Recurse -Force |
             Where-Object { $_.FullName -match $blockedPattern -and $_.Name -ne ".env.customer.example" }
@@ -99,8 +114,8 @@ try {
         }
     }
 
-    $packagedVerifier = Join-Path $extractedPackageRoot "infra\scripts\verify-customer-hosted-install.ps1"
-    $packagedEnvFile = Join-Path $extractedPackageRoot "infra\compose\.env.customer.example"
+    $packagedVerifier = Join-PackagePath -Root $extractedPackageRoot -RelativePath "infra/scripts/verify-customer-hosted-install.ps1"
+    $packagedEnvFile = Join-PackagePath -Root $extractedPackageRoot -RelativePath "infra/compose/.env.customer.example"
     $verifierOutput = & $packagedVerifier `
         -ShifterDir $extractedPackageRoot `
         -EnvFile $packagedEnvFile `
