@@ -58,7 +58,7 @@ function Invoke-Json {
         return $null
     }
 
-    return $response.Content | ConvertFrom-Json
+    return $response.Content | ConvertFrom-Json -NoEnumerate
 }
 
 function Assert-HttpOk {
@@ -92,6 +92,44 @@ function Login {
     }
 
     return $result.accessToken
+}
+
+function Assert-Property {
+    param(
+        [object]$Object,
+        [string]$PropertyName,
+        [string]$Context
+    )
+
+    if ($null -eq $Object) {
+        throw "$Context did not return a response."
+    }
+
+    $property = $Object.PSObject.Properties[$PropertyName]
+    if ($null -eq $property) {
+        throw "$Context response is missing '$PropertyName'."
+    }
+}
+
+function Assert-ArrayResponse {
+    param(
+        [object]$Value,
+        [string]$Context
+    )
+
+    if ($null -eq $Value) {
+        throw "$Context did not return a response."
+    }
+
+    if ($Value -is [array]) {
+        return
+    }
+
+    if ($Value -is [System.Collections.IEnumerable] -and $Value -isnot [string]) {
+        return
+    }
+
+    throw "$Context should return an array response."
 }
 
 function Test-BashScriptSyntax {
@@ -166,7 +204,77 @@ if (-not $slots.slots -or @($slots.slots).Count -eq 0) {
     throw "Self-Service Demo has no available member slots for $MemberEmail."
 }
 
-Write-Host "Seed smoke passed: $($space.name) / $($group.name), cycle $($status.cycleId), available slots $(@($slots.slots).Count)." -ForegroundColor Green
+Write-Step "Checking self-service workflow read models"
+$config = Invoke-Json -Method GET -Url "$ApiBaseUrl/spaces/$($space.id)/groups/$($group.id)/self-service-config" -Token $adminToken
+foreach ($property in @(
+        "minShiftsPerCycle",
+        "maxShiftsPerCycle",
+        "maxAbsencesPerCycle",
+        "maxLateCancellationsPerCycle",
+        "allowMemberShiftClaims",
+        "allowWaitlist",
+        "allowShiftChangeRequests",
+        "allowAbsenceReports",
+        "allowShiftSwaps"
+    )) {
+    Assert-Property $config $property "Self-service config"
+}
+
+$myShifts = Invoke-Json -Method GET -Url "$ApiBaseUrl/spaces/$($space.id)/groups/$($group.id)/shift-requests/mine?schedulingCycleId=$($status.cycleId)" -Token $memberToken
+foreach ($property in @(
+        "requests",
+        "currentShiftCount",
+        "minShiftsPerCycle",
+        "maxShiftsPerCycle",
+        "maxLateReports",
+        "lateCancellationWindowHours"
+    )) {
+    Assert-Property $myShifts $property "Member shift list"
+}
+Assert-ArrayResponse $myShifts.requests "Member shift list requests"
+
+$myAbsences = Invoke-Json -Method GET -Url "$ApiBaseUrl/spaces/$($space.id)/groups/$($group.id)/shift-requests/absence-reports/mine?cycleId=$($status.cycleId)" -Token $memberToken
+foreach ($property in @(
+        "reports",
+        "absenceReportsUsed",
+        "maxAbsenceReports",
+        "lateReportsUsed",
+        "maxLateReports",
+        "schedulingCycleId"
+    )) {
+    Assert-Property $myAbsences $property "Member absence report list"
+}
+Assert-ArrayResponse $myAbsences.reports "Member absence report list reports"
+
+$myChanges = Invoke-Json -Method GET -Url "$ApiBaseUrl/spaces/$($space.id)/groups/$($group.id)/shift-change-requests/mine" -Token $memberToken
+Assert-ArrayResponse $myChanges "Member shift-change list"
+
+$myWaitlist = Invoke-Json -Method GET -Url "$ApiBaseUrl/spaces/$($space.id)/groups/$($group.id)/waitlist/mine" -Token $memberToken
+Assert-ArrayResponse $myWaitlist "Member waitlist"
+
+$adminAbsences = Invoke-Json -Method GET -Url "$ApiBaseUrl/spaces/$($space.id)/groups/$($group.id)/shift-requests/absence-reports?status=Pending" -Token $adminToken
+Assert-ArrayResponse $adminAbsences "Admin pending absence report review list"
+
+$adminChanges = Invoke-Json -Method GET -Url "$ApiBaseUrl/spaces/$($space.id)/groups/$($group.id)/shift-change-requests/admin?status=Pending" -Token $adminToken
+Assert-ArrayResponse $adminChanges "Admin pending shift-change review list"
+
+$adminAssignments = Invoke-Json -Method GET -Url "$ApiBaseUrl/spaces/$($space.id)/groups/$($group.id)/shift-slots/admin/assignments?cycleId=$($status.cycleId)" -Token $adminToken
+Assert-ArrayResponse $adminAssignments "Admin shift assignment list"
+
+$closeout = Invoke-Json -Method GET -Url "$ApiBaseUrl/spaces/$($space.id)/groups/$($group.id)/self-service-cycles/closeout?cycleId=$($status.cycleId)" -Token $adminToken
+foreach ($property in @(
+        "cycleId",
+        "slotCount",
+        "approvedAssignments",
+        "pendingAbsenceReports",
+        "pendingChangeRequests",
+        "activeWaitlistEntries",
+        "issueCount"
+    )) {
+    Assert-Property $closeout $property "Self-service closeout"
+}
+
+Write-Host "Seed smoke passed: $($space.name) / $($group.name), cycle $($status.cycleId), available slots $(@($slots.slots).Count), member shifts $(@($myShifts.requests).Count), absence reports $(@($myAbsences.reports).Count), waitlist entries $(@($myWaitlist).Count)." -ForegroundColor Green
 
 if (-not $SkipBrowserTest) {
     Write-Step "Checking web app at $WebBaseUrl"
