@@ -21,6 +21,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using NSubstitute;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using Xunit;
@@ -3575,6 +3576,10 @@ public class SelfServiceScopeTests
         renderedModel.GroupName.Should().Be("Self-service group");
         renderedModel.CycleId.Should().Be(cycle.Id);
         renderedModel.ReportFingerprint.Should().MatchRegex("^[A-F0-9]{64}$");
+        var csvResult = await controller.ExportCloseoutCsv(spaceId, group.Id, cycle.Id, CancellationToken.None);
+        var csvFile = csvResult.Should().BeOfType<FileContentResult>().Subject;
+        var expectedFingerprint = Convert.ToHexString(SHA256.HashData(csvFile.FileContents));
+        renderedModel.ReportFingerprint.Should().Be(expectedFingerprint);
         renderedModel.Metrics.Should().Contain(m => m.Label == "allow_member_shift_claims" && m.Value == "False");
         renderedModel.Metrics.Should().Contain(m => m.Label == "allow_waitlist" && m.Value == "False");
         renderedModel.Metrics.Should().Contain(m => m.Label == "approved_assignments" && m.Value == "1");

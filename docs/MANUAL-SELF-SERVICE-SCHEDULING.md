@@ -255,8 +255,6 @@ group:
   approval from the review queue
 - a member/admin browser lifecycle test for shift-change request submission,
   admin approval, and reassignment verification
-- a member browser lifecycle test for cancelling an approved shift and verifying
-  the cancelled state
 - a member-to-member browser lifecycle test for proposing and accepting a shift
   swap with final assignment verification
 - a member-to-member browser lifecycle test for proposing and declining a shift
