@@ -352,6 +352,9 @@ foreach ($property in @(
         "pendingAbsenceReports",
         "pendingChangeRequests",
         "activeWaitlistEntries",
+        "specialDaySlotCount",
+        "noCoverageSpecialDaySlotCount",
+        "underfilledSpecialDaySlotCount",
         "issueCount"
     )) {
     Assert-Property $closeout $property "Self-service closeout"
