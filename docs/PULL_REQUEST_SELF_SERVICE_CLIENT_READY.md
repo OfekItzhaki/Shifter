@@ -289,6 +289,8 @@ packaging, and self-service export package validation readiness.
   `smoke-hosted-vps.ps1` resolves web/API URLs from an env file and checks API
   readiness, API health, public web/auth pages, the PWA manifest/icon, and the
   service worker against local mock endpoints.
+- Customer-hosted preflight CI run `27432361955` passed for commit `fb21872`
+  on June 12, 2026 after adding the hosted VPS smoke harness.
 - Before merge, use the workflow history above to confirm the latest
   package-relevant run for `feat/self-service-client-ready` is green.
 - `infra/scripts/backup-compose.sh`, `infra/scripts/deploy-compose.sh`,
