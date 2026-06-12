@@ -121,6 +121,8 @@ packaging, and self-service export package validation readiness.
   overlaps are allowed and highlighted to admins.
 - Adds special-day impact to cycle closeout and exports: total special-day
   slots, no-coverage special-day slots, and underfilled special-day slots.
+- Exposes member workflow policy flags in the My Shifts response and hides
+  member change, absence, and swap actions when the group policy disables them.
 - Ends the current session after password changes and shows a login success
   notice, preventing stale authenticated sessions after credential rotation.
 - Supports PWA install prompts on mobile and desktop when the browser reports
@@ -156,9 +158,16 @@ packaging, and self-service export package validation readiness.
   state.
 - `node_modules\\.bin\\vitest.cmd run __tests__\\selfService\\selfServiceOperationsTab.test.tsx`
   passed: 1 passed, 0 failed, including the closeout special-day impact row.
+- `dotnet test apps\\api\\Jobuler.Tests\\Jobuler.Tests.csproj --filter FullyQualifiedName~SelfServiceScopeTests.ListMine_CurrentShiftCount_CountsOnlyApprovedAssignments`
+  passed: 1 passed, 0 failed, including My Shifts workflow policy flags.
+- `node_modules\\.bin\\vitest.cmd run __tests__\\selfService\\myShiftsTab.test.tsx`
+  passed: 11 passed, 0 failed, including hidden member actions when workflows
+  are disabled.
 - `node_modules\\.bin\\eslint.cmd app\\groups\\[groupId]\\tabs\\SlotBrowserTab.tsx lib\\api\\selfService.ts __tests__\\selfService\\slotBrowserTab.test.tsx`
   passed.
 - `node_modules\\.bin\\eslint.cmd components\\groups\\selfService\\SelfServiceOperationsTab.tsx lib\\api\\selfService.ts __tests__\\selfService\\selfServiceOperationsTab.test.tsx`
+  passed.
+- `node_modules\\.bin\\eslint.cmd components\\groups\\selfService\\MyShiftsTab.tsx lib\\api\\selfService.ts __tests__\\selfService\\myShiftsTab.test.tsx`
   passed.
 - `node_modules\\.bin\\eslint.cmd e2e\\self-service.browser.spec.ts` passed.
 - `node_modules\\.bin\\playwright.cmd test self-service.browser.spec.ts --list`

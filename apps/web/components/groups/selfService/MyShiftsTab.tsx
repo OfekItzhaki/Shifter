@@ -501,6 +501,9 @@ export default function MyShiftsTab({ spaceId, groupId, onNavigate }: MyShiftsTa
     lateCancellationWindowHours,
   } = data;
   const isUnderScheduled = currentShiftCount < minShiftsPerCycle;
+  const allowShiftChangeRequests = data.allowShiftChangeRequests ?? true;
+  const allowAbsenceReports = data.allowAbsenceReports ?? true;
+  const allowShiftSwaps = data.allowShiftSwaps ?? true;
   const pendingLeaveCount = specialLeaveRequests.filter((request) => request.status === "Pending").length;
   const pendingChangeCount = changeRequests.filter((request) => request.status === "Pending").length;
   const pendingAbsenceCount = absenceReports.filter((report) => report.status === "Pending").length;
@@ -655,8 +658,8 @@ export default function MyShiftsTab({ spaceId, groupId, onNavigate }: MyShiftsTa
             title={t("actionGuide.change.title")}
             description={t("actionGuide.change.description")}
             tone="default"
-            actionLabel={onNavigate ? t("actionGuide.change.swapAction") : undefined}
-            onAction={onNavigate ? () => onNavigate("swaps") : undefined}
+            actionLabel={onNavigate && allowShiftSwaps ? t("actionGuide.change.swapAction") : undefined}
+            onAction={onNavigate && allowShiftSwaps ? () => onNavigate("swaps") : undefined}
           />
           <ActionGuideCard
             title={t("actionGuide.cannotAttend.title")}
@@ -825,6 +828,8 @@ export default function MyShiftsTab({ spaceId, groupId, onNavigate }: MyShiftsTa
           onCancel={openCancelDialog}
           onCannotAttend={openCannotAttendDialog}
           onChange={openChangeDialog}
+          allowAbsenceReports={allowAbsenceReports}
+          allowShiftChangeRequests={allowShiftChangeRequests}
         />
       )}
 
@@ -841,6 +846,8 @@ export default function MyShiftsTab({ spaceId, groupId, onNavigate }: MyShiftsTa
           onCancel={openCancelDialog}
           onCannotAttend={openCannotAttendDialog}
           onChange={openChangeDialog}
+          allowAbsenceReports={allowAbsenceReports}
+          allowShiftChangeRequests={allowShiftChangeRequests}
         />
       )}
 
@@ -857,6 +864,8 @@ export default function MyShiftsTab({ spaceId, groupId, onNavigate }: MyShiftsTa
           onCancel={openCancelDialog}
           onCannotAttend={openCannotAttendDialog}
           onChange={openChangeDialog}
+          allowAbsenceReports={allowAbsenceReports}
+          allowShiftChangeRequests={allowShiftChangeRequests}
         />
       )}
 
@@ -1398,6 +1407,8 @@ interface ShiftSectionProps {
   lateCancellationWindowHours: number;
   absenceReportsRemaining: number;
   lateReportsRemaining: number;
+  allowAbsenceReports: boolean;
+  allowShiftChangeRequests: boolean;
   onCancel: (request: ShiftRequestDto) => void;
   onCannotAttend: (request: ShiftRequestDto) => void;
   onChange: (request: ShiftRequestDto) => void;
@@ -1411,6 +1422,8 @@ function ShiftSection({
   lateCancellationWindowHours,
   absenceReportsRemaining,
   lateReportsRemaining,
+  allowAbsenceReports,
+  allowShiftChangeRequests,
   onCancel,
   onCannotAttend,
   onChange,
@@ -1432,6 +1445,8 @@ function ShiftSection({
             lateCancellationWindowHours={lateCancellationWindowHours}
             absenceReportsRemaining={absenceReportsRemaining}
             lateReportsRemaining={lateReportsRemaining}
+            allowAbsenceReports={allowAbsenceReports}
+            allowShiftChangeRequests={allowShiftChangeRequests}
             onCancel={onCancel}
             onCannotAttend={onCannotAttend}
             onChange={onChange}
@@ -1450,6 +1465,8 @@ interface ShiftCardProps {
   lateCancellationWindowHours: number;
   absenceReportsRemaining: number;
   lateReportsRemaining: number;
+  allowAbsenceReports: boolean;
+  allowShiftChangeRequests: boolean;
   onCancel: (request: ShiftRequestDto) => void;
   onCannotAttend: (request: ShiftRequestDto) => void;
   onChange: (request: ShiftRequestDto) => void;
@@ -1461,6 +1478,8 @@ function ShiftCard({
   lateCancellationWindowHours,
   absenceReportsRemaining,
   lateReportsRemaining,
+  allowAbsenceReports,
+  allowShiftChangeRequests,
   onCancel,
   onCannotAttend,
   onChange,
@@ -1468,7 +1487,9 @@ function ShiftCard({
   const t = useTranslations("selfService.myShifts");
   const style = STATUS_BADGE_STYLES[request.status];
   const showCancelButton = canCancelShift(request, cancellationCutoffHours);
-  const showCannotAttendButton = isFutureApprovedShift(request);
+  const futureApprovedShift = isFutureApprovedShift(request);
+  const showChangeButton = futureApprovedShift && allowShiftChangeRequests;
+  const showCannotAttendButton = futureApprovedShift && allowAbsenceReports;
   const absenceReportWouldBeBlocked = showCannotAttendButton
     && absenceReportsRemaining <= 0;
   const lateReportWouldBeBlocked = showCannotAttendButton
@@ -1536,7 +1557,7 @@ function ShiftCard({
               {t("cancelButton")}
             </button>
           )}
-          {showCannotAttendButton && (
+          {showChangeButton && (
             <button
               onClick={() => onChange(request)}
               data-testid="self-service-change-shift"

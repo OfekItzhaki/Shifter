@@ -240,6 +240,9 @@ export interface MyShiftsResponse {
   cancellationCutoffHours: number;
   maxLateReports: number;
   lateCancellationWindowHours: number;
+  allowShiftChangeRequests?: boolean;
+  allowAbsenceReports?: boolean;
+  allowShiftSwaps?: boolean;
 }
 
 export interface CannotAttendResponse {

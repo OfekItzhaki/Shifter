@@ -2841,6 +2841,14 @@ public class SelfServiceScopeTests
         db.People.Add(person);
         db.Groups.Add(group);
         db.GroupMemberships.Add(GroupMembership.Create(spaceId, group.Id, person.Id));
+        var config = SelfServiceConfig.Create(spaceId, group.Id);
+        config.SetWorkflowPermissions(
+            allowMemberShiftClaims: true,
+            allowWaitlist: true,
+            allowShiftChangeRequests: false,
+            allowAbsenceReports: false,
+            allowShiftSwaps: false);
+        db.SelfServiceConfigs.Add(config);
         await db.SaveChangesAsync();
 
         services.Mediator
@@ -2897,6 +2905,9 @@ public class SelfServiceScopeTests
         var response = ok.Value.Should().BeOfType<MyShiftRequestsResponse>().Subject;
         response.CurrentShiftCount.Should().Be(1);
         response.Requests.Should().HaveCount(2);
+        response.AllowShiftChangeRequests.Should().BeFalse();
+        response.AllowAbsenceReports.Should().BeFalse();
+        response.AllowShiftSwaps.Should().BeFalse();
     }
 
     [Fact]

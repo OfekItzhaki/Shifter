@@ -722,7 +722,10 @@ public class ShiftRequestsController : ControllerBase
             config?.MaxShiftsPerCycle ?? 7,
             config?.CancellationCutoffHours ?? 24,
             config?.MaxLateCancellationsPerCycle ?? 2,
-            config?.LateCancellationWindowHours ?? config?.CancellationCutoffHours ?? 24));
+            config?.LateCancellationWindowHours ?? config?.CancellationCutoffHours ?? 24,
+            config?.AllowShiftChangeRequests ?? true,
+            config?.AllowAbsenceReports ?? true,
+            config?.AllowShiftSwaps ?? true));
     }
 
     /// <summary>
@@ -901,7 +904,10 @@ public record MyShiftRequestsResponse(
     int MaxShiftsPerCycle,
     int CancellationCutoffHours,
     int MaxLateReports,
-    int LateCancellationWindowHours);
+    int LateCancellationWindowHours,
+    bool AllowShiftChangeRequests,
+    bool AllowAbsenceReports,
+    bool AllowShiftSwaps);
 
 public record ShiftRequestResponse(
     Guid Id,

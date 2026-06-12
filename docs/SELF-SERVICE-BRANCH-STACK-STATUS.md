@@ -272,6 +272,8 @@ Known verification:
   notifications.
 - Adds special-day impact to cycle closeout and exports: total special-day
   slots, no-coverage special-day slots, and underfilled special-day slots.
+- Exposes member workflow policy flags in the My Shifts response and hides
+  member change, absence, and swap actions when the group policy disables them.
 - Ends sessions after password changes and redirects users back to login with a
   success notice.
 - Supports PWA install prompts on mobile and desktop when the browser reports
@@ -384,6 +386,11 @@ Known verification:
   `node_modules\\.bin\\vitest.cmd run __tests__\\selfService\\selfServiceOperationsTab.test.tsx`
   and
   `node_modules\\.bin\\eslint.cmd components\\groups\\selfService\\SelfServiceOperationsTab.tsx lib\\api\\selfService.ts __tests__\\selfService\\selfServiceOperationsTab.test.tsx`.
+- Focused My Shifts workflow policy tests and lint passed:
+  `dotnet test apps\\api\\Jobuler.Tests\\Jobuler.Tests.csproj --filter FullyQualifiedName~SelfServiceScopeTests.ListMine_CurrentShiftCount_CountsOnlyApprovedAssignments`,
+  `node_modules\\.bin\\vitest.cmd run __tests__\\selfService\\myShiftsTab.test.tsx`,
+  and
+  `node_modules\\.bin\\eslint.cmd components\\groups\\selfService\\MyShiftsTab.tsx lib\\api\\selfService.ts __tests__\\selfService\\myShiftsTab.test.tsx`.
 - Customer-hosted package assembly preflight passed:
   `infra\\scripts\\test-package-customer-hosted.ps1`.
 - Backup, deploy, restore, and seed compose script syntax checks passed after
