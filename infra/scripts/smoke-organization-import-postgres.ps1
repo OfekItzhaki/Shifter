@@ -77,9 +77,11 @@ try {
     $previousConnection = $env:SHIFTER_POSTGRES_IMPORT_SMOKE_CONNECTION
     $env:SHIFTER_POSTGRES_IMPORT_SMOKE_CONNECTION = $connectionString
     try {
-        & dotnet test $testProject --filter "FullyQualifiedName~PostgresImportOrganizationPackage" --logger "console;verbosity=minimal"
-        if ($LASTEXITCODE -ne 0) {
-            throw "PostgreSQL organization import smoke failed with exit code $LASTEXITCODE."
+        $testOutput = & dotnet test $testProject --filter "FullyQualifiedName~PostgresImportOrganizationPackage" --logger "console;verbosity=minimal" 2>&1
+        $testOutput | ForEach-Object { Write-Host $_ }
+        $testExitCode = if ($null -eq $LASTEXITCODE) { 0 } else { $LASTEXITCODE }
+        if ($testExitCode -ne 0) {
+            throw "PostgreSQL organization import smoke failed with exit code $testExitCode. Output:`n$($testOutput | Out-String)"
         }
     }
     finally {
