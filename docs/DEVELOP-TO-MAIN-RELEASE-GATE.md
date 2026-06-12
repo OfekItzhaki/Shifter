@@ -35,6 +35,13 @@ Use this checklist before opening or merging a `develop` to `main` PR.
 
 - Manual staging smoke passes:
   - use [Staging manual smoke evidence](STAGING-MANUAL-SMOKE-EVIDENCE.md)
+  - validate the completed evidence file:
+
+    ```powershell
+    .\infra\scripts\check-staging-smoke-evidence.ps1 `
+      -EvidencePath <completed-staging-smoke-evidence.md>
+    ```
+
   - login
   - registration or invite acceptance
   - forgot-password and reset-password

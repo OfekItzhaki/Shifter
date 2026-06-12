@@ -4,6 +4,13 @@ Use this template for the final staging sign-off before opening or merging a
 `develop` to `main` PR. Do not paste passwords, tokens, private URLs with
 embedded credentials, reset links, or user PII into this document.
 
+After filling a copy of this file, validate it:
+
+```powershell
+.\infra\scripts\check-staging-smoke-evidence.ps1 `
+  -EvidencePath <completed-staging-smoke-evidence.md>
+```
+
 ## Environment
 
 - Test date:

@@ -104,6 +104,9 @@ packaging, and self-service export package validation readiness.
 - Adds `docs/STAGING-MANUAL-SMOKE-EVIDENCE.md` so staging sign-off captures the
   exact user-like auth, PWA, self-service, closeout, provider, backup, and
   operational evidence required before `develop` moves to `main`.
+- Adds `infra/scripts/check-staging-smoke-evidence.ps1` so a completed staging
+  sign-off can be checked for required metadata, no pending rows, explicit
+  `develop` to `main` acceptance, and obvious secret-like values before use.
 - Requires `NEXT_PUBLIC_LEGAL_EMAIL` in customer env validation so private
   installs do not silently route support/contact UI to the SaaS fallback.
 - Wires public frontend deployment variables through the web Docker build and
@@ -362,6 +365,9 @@ packaging, and self-service export package validation readiness.
   manual staging sign-off template. No real staging user-flow sign-off has been
   recorded yet because staging URLs, environment variables, and the GitHub
   `staging` environment are still missing.
+- `infra/scripts/test-check-staging-smoke-evidence.ps1` passed locally on
+  June 13, 2026, proving completed staging evidence passes and the blank
+  template is rejected.
 - `infra/scripts/check-release-readiness.ps1 -SkipHostedSmoke` currently fails
   as intended until GitHub staging setup is completed: the `staging`
   environment and `STAGING_WEB_BASE_URL`, `STAGING_API_BASE_URL`,
