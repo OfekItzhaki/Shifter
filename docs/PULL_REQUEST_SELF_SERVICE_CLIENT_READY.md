@@ -121,6 +121,8 @@ packaging, and self-service export package validation readiness.
   overlaps are allowed and highlighted to admins.
 - Adds special-day impact to cycle closeout and exports: total special-day
   slots, no-coverage special-day slots, and underfilled special-day slots.
+- Adds active member workflow policy flags to closeout responses, CSV exports,
+  and PDF reports, plus a compact Operations UI policy snapshot.
 - Exposes member workflow policy flags in the My Shifts response and hides
   member change, absence, and swap actions when the group policy disables them.
 - Exposes pick/waitlist policy flags in the Available Slots response and shows

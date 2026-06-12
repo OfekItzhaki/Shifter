@@ -444,6 +444,19 @@ public class SelfServiceCyclesController : ControllerBase
                 g => g.Key,
                 g => g.All(d => d.RequiresCoverage));
 
+        var workflowPolicy = await _db.SelfServiceConfigs
+            .AsNoTracking()
+            .Where(c => c.SpaceId == cycle.SpaceId && c.GroupId == cycle.GroupId)
+            .Select(c => new
+            {
+                c.AllowMemberShiftClaims,
+                c.AllowWaitlist,
+                c.AllowShiftChangeRequests,
+                c.AllowAbsenceReports,
+                c.AllowShiftSwaps
+            })
+            .FirstOrDefaultAsync(ct);
+
         var shiftRequests = await _db.ShiftRequests
             .AsNoTracking()
             .Where(r => r.SpaceId == cycle.SpaceId
@@ -573,6 +586,11 @@ public class SelfServiceCyclesController : ControllerBase
             cycle.StartsAt,
             cycle.EndsAt,
             cycle.EndsAt <= DateTime.UtcNow,
+            workflowPolicy?.AllowMemberShiftClaims ?? true,
+            workflowPolicy?.AllowWaitlist ?? true,
+            workflowPolicy?.AllowShiftChangeRequests ?? true,
+            workflowPolicy?.AllowAbsenceReports ?? true,
+            workflowPolicy?.AllowShiftSwaps ?? true,
             slotCount,
             totalCapacity,
             filledCount,
@@ -679,6 +697,11 @@ public class SelfServiceCyclesController : ControllerBase
             ("starts_at", FormatDate(closeout.StartsAt)),
             ("ends_at", FormatDate(closeout.EndsAt)),
             ("is_closed", closeout.IsClosed.ToString()),
+            ("allow_member_shift_claims", closeout.AllowMemberShiftClaims.ToString()),
+            ("allow_waitlist", closeout.AllowWaitlist.ToString()),
+            ("allow_shift_change_requests", closeout.AllowShiftChangeRequests.ToString()),
+            ("allow_absence_reports", closeout.AllowAbsenceReports.ToString()),
+            ("allow_shift_swaps", closeout.AllowShiftSwaps.ToString()),
             ("slot_count", closeout.SlotCount.ToString(CultureInfo.InvariantCulture)),
             ("total_capacity", closeout.TotalCapacity.ToString(CultureInfo.InvariantCulture)),
             ("filled_count", closeout.FilledCount.ToString(CultureInfo.InvariantCulture)),
@@ -778,6 +801,11 @@ public record SelfServiceCycleCloseoutResponse(
     DateTime? StartsAt,
     DateTime? EndsAt,
     bool IsClosed,
+    bool AllowMemberShiftClaims,
+    bool AllowWaitlist,
+    bool AllowShiftChangeRequests,
+    bool AllowAbsenceReports,
+    bool AllowShiftSwaps,
     int SlotCount,
     int TotalCapacity,
     int FilledCount,
@@ -821,5 +849,5 @@ public record SelfServiceCycleCloseoutResponse(
     int IssueCount)
 {
     public static SelfServiceCycleCloseoutResponse Empty() =>
-        new(null, null, null, false, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+        new(null, null, null, false, true, true, true, true, true, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 }

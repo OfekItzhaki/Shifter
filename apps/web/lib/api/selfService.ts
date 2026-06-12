@@ -129,6 +129,11 @@ export interface SelfServiceCycleCloseoutDto {
   startsAt: string | null;
   endsAt: string | null;
   isClosed: boolean;
+  allowMemberShiftClaims: boolean;
+  allowWaitlist: boolean;
+  allowShiftChangeRequests: boolean;
+  allowAbsenceReports: boolean;
+  allowShiftSwaps: boolean;
   slotCount: number;
   totalCapacity: number;
   filledCount: number;

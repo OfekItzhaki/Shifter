@@ -229,6 +229,15 @@ export default function SelfServiceOperationsTab({
       ].filter((signal) => signal.count > 0)
     : [];
   const priorityUnderfilledSlots = status?.underfilledSlots.slice(0, 3) ?? [];
+  const closeoutWorkflowEnabledCount = closeout
+    ? [
+        closeout.allowMemberShiftClaims,
+        closeout.allowWaitlist,
+        closeout.allowShiftChangeRequests,
+        closeout.allowAbsenceReports,
+        closeout.allowShiftSwaps,
+      ].filter(Boolean).length
+    : 0;
 
   return (
     <div className="space-y-5">
@@ -478,6 +487,15 @@ export default function SelfServiceOperationsTab({
                 total: closeout.specialDaySlotCount,
                 noCoverage: closeout.noCoverageSpecialDaySlotCount,
                 underfilled: closeout.underfilledSpecialDaySlotCount,
+              })}
+          />
+          <CloseoutDetail
+            label={t("closeout.details.workflowPolicy")}
+            value={statusLoading || !closeout
+              ? "-"
+              : t("closeout.details.workflowPolicyValue", {
+                enabled: closeoutWorkflowEnabledCount,
+                total: 5,
               })}
           />
         </div>

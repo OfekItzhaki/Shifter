@@ -87,8 +87,8 @@ Before merging holiday-calendar changes after this branch:
   special days.
 - Verify the self-service operations panel still shows special-day cycle counts
   and marks underfilled special-day slots.
-- Verify closeout and exports include special-day slot, no-coverage special-day,
-  and underfilled special-day counts.
+- Verify closeout and exports include active member workflow policy flags,
+  special-day slot, no-coverage special-day, and underfilled special-day counts.
 - Run the smoke path from space special-day setup to a self-service cycle that
   visibly overlaps the marked day.
 - Treat holiday-specific policy behavior, such as altered capacity or forced

@@ -3302,9 +3302,17 @@ public class SelfServiceScopeTests
             cycle.StartsAt.AddHours(4),
             "Appointment",
             alice.LinkedUserId!.Value);
+        var config = SelfServiceConfig.Create(spaceId, group.Id);
+        config.SetWorkflowPermissions(
+            allowMemberShiftClaims: true,
+            allowWaitlist: false,
+            allowShiftChangeRequests: true,
+            allowAbsenceReports: false,
+            allowShiftSwaps: true);
 
         db.People.AddRange(alice, bob, charlie);
         db.Groups.Add(group);
+        db.SelfServiceConfigs.Add(config);
         db.GroupMemberships.AddRange(
             GroupMembership.Create(spaceId, group.Id, alice.Id),
             GroupMembership.Create(spaceId, group.Id, bob.Id),
@@ -3376,6 +3384,11 @@ public class SelfServiceScopeTests
         var ok = result.Should().BeOfType<OkObjectResult>().Subject;
         var response = ok.Value.Should().BeOfType<SelfServiceCycleCloseoutResponse>().Subject;
         response.CycleId.Should().Be(cycle.Id);
+        response.AllowMemberShiftClaims.Should().BeTrue();
+        response.AllowWaitlist.Should().BeFalse();
+        response.AllowShiftChangeRequests.Should().BeTrue();
+        response.AllowAbsenceReports.Should().BeFalse();
+        response.AllowShiftSwaps.Should().BeTrue();
         response.SlotCount.Should().Be(3);
         response.TotalCapacity.Should().Be(3);
         response.FilledCount.Should().Be(3);
@@ -3424,8 +3437,16 @@ public class SelfServiceScopeTests
         var request = ShiftRequest.Create(spaceId, slot.Id, person.Id, group.Id, cycle.Id);
         request.Approve(adminUserId);
         slot.IncrementFillCount();
+        var config = SelfServiceConfig.Create(spaceId, group.Id);
+        config.SetWorkflowPermissions(
+            allowMemberShiftClaims: false,
+            allowWaitlist: true,
+            allowShiftChangeRequests: false,
+            allowAbsenceReports: true,
+            allowShiftSwaps: false);
 
         db.Groups.Add(group);
+        db.SelfServiceConfigs.Add(config);
         db.People.Add(person);
         db.GroupMemberships.Add(GroupMembership.Create(spaceId, group.Id, person.Id));
         db.SchedulingCycles.Add(cycle);
@@ -3470,6 +3491,11 @@ public class SelfServiceScopeTests
         var csv = Encoding.UTF8.GetString(file.FileContents);
         csv.Should().Contain("metric,value");
         csv.Should().Contain($"cycle_id,{cycle.Id}");
+        csv.Should().Contain("allow_member_shift_claims,False");
+        csv.Should().Contain("allow_waitlist,True");
+        csv.Should().Contain("allow_shift_change_requests,False");
+        csv.Should().Contain("allow_absence_reports,True");
+        csv.Should().Contain("allow_shift_swaps,False");
         csv.Should().Contain("approved_assignments,1");
         csv.Should().Contain("special_day_slot_count,1");
         csv.Should().Contain("no_coverage_special_day_slot_count,1");
@@ -3495,9 +3521,17 @@ public class SelfServiceScopeTests
         var request = ShiftRequest.Create(spaceId, slot.Id, person.Id, group.Id, cycle.Id);
         request.Approve(adminUserId);
         slot.IncrementFillCount();
+        var config = SelfServiceConfig.Create(spaceId, group.Id);
+        config.SetWorkflowPermissions(
+            allowMemberShiftClaims: false,
+            allowWaitlist: false,
+            allowShiftChangeRequests: true,
+            allowAbsenceReports: true,
+            allowShiftSwaps: true);
 
         db.Spaces.Add(space);
         db.Groups.Add(group);
+        db.SelfServiceConfigs.Add(config);
         db.People.Add(person);
         db.GroupMemberships.Add(GroupMembership.Create(spaceId, group.Id, person.Id));
         db.SchedulingCycles.Add(cycle);
@@ -3541,6 +3575,8 @@ public class SelfServiceScopeTests
         renderedModel.GroupName.Should().Be("Self-service group");
         renderedModel.CycleId.Should().Be(cycle.Id);
         renderedModel.ReportFingerprint.Should().MatchRegex("^[A-F0-9]{64}$");
+        renderedModel.Metrics.Should().Contain(m => m.Label == "allow_member_shift_claims" && m.Value == "False");
+        renderedModel.Metrics.Should().Contain(m => m.Label == "allow_waitlist" && m.Value == "False");
         renderedModel.Metrics.Should().Contain(m => m.Label == "approved_assignments" && m.Value == "1");
         renderedModel.Metrics.Should().Contain(m => m.Label == "special_day_slot_count" && m.Value == "1");
     }

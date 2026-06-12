@@ -2651,7 +2651,9 @@
           "waitlist": "Waitlist",
           "waitlistValue": "{active} active / {accepted} accepted / {expired} expired",
           "specialDays": "Special days",
-          "specialDaysValue": "{total} slot(s) / {noCoverage} no-coverage / {underfilled} under-filled"
+          "specialDaysValue": "{total} slot(s) / {noCoverage} no-coverage / {underfilled} under-filled",
+          "workflowPolicy": "Workflow policy",
+          "workflowPolicyValue": "{enabled}/{total} workflows enabled"
         }
       },
       "policy": {

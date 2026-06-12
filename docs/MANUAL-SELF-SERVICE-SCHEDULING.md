@@ -73,7 +73,7 @@ present in the product.
 | Fill gaps manually | Not applicable | `Admin overrides` assignment/removal | admin override commands with safety checks |
 | Run cycles | Members see generated slots | Config, templates, cycle controls, operations dashboard | self-service config, templates, cycle generation jobs |
 | Confirm attendance | Not applicable | Attendance mark on approved shift requests | `ShiftAttendanceRecord` and shift request attendance endpoint |
-| Close out cycles | Not applicable | Closeout summary, CSV export, and PDF report in Operations, including no-show, unconfirmed attendance, special-day slot, no-coverage special-day, and underfilled special-day counts | `SelfServiceCyclesController` closeout endpoint |
+| Close out cycles | Not applicable | Closeout summary, CSV export, and PDF report in Operations, including active workflow policy flags, no-show, unconfirmed attendance, special-day slot, no-coverage special-day, and underfilled special-day counts | `SelfServiceCyclesController` closeout endpoint |
 
 The strongest member entry point is `/pick`, especially for PWA/mobile users.
 The strongest manager entry point is the self-service group operations tab.
@@ -137,9 +137,11 @@ The strongest manager entry point is the self-service group operations tab.
 
 - Review the closeout summary for coverage, unresolved requests, late reports,
   cancellations, overrides, swaps, waitlist outcomes, attendance/no-shows,
-  special-day impact, and special leave.
+  special-day impact, active workflow policy, and special leave.
 - Export the closeout CSV when the cycle needs to be archived or shared with a
-  customer administrator.
+  customer administrator. The export includes the member workflow toggles that
+  were active for the group, so a customer can audit which self-service actions
+  were allowed for the cycle.
 - Clear or document any remaining underfilled slots and pending review items.
 - Mark approved assignments as present, no-show, or excused once attendance is
   known.
