@@ -104,6 +104,10 @@ Customer-hosted means:
    script syntax checks, `docker compose config`, and a temporary PostgreSQL
    organization import smoke against the customer env template.
 
+   The same package preflight is also covered by the
+   `Customer-Hosted Preflight` GitHub Actions workflow for relevant changes, so
+   package drift should fail before merge.
+
    Before installing with real customer secrets, run the same preflight against
    the actual env file and require the env validator to pass:
 

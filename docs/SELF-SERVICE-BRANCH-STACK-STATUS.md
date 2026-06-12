@@ -314,6 +314,9 @@ Known verification:
 - Explicit-env customer-hosted package preflight passed against the checked-in
   customer template path:
   `infra/scripts/test-customer-hosted-package.ps1 -EnvFile infra/compose/.env.customer.example`.
+- Customer-hosted package preflight is CI-backed by
+  `.github/workflows/customer-hosted-preflight.yml` on relevant PRs, pushes to
+  `feat/self-service-client-ready`, and manual dispatch.
 - PostgreSQL organization import smoke passed:
   `infra\\scripts\\smoke-organization-import-postgres.ps1`, which starts a
   temporary PostgreSQL 16 container, applies all SQL migrations, and imports a
