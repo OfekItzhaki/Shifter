@@ -61,18 +61,25 @@ exit 0
     $calls = Get-Content -LiteralPath $callLog -Raw
     foreach ($pattern in @(
             "api -X PUT repos/OfekItzhaki/Shifter/rulesets/17292274 --input",
-            "api -X POST repos/OfekItzhaki/Shifter/rulesets --input",
-            '"type":  "pull_request"',
-            '"type":  "required_status_checks"',
-            '"context":  "API Build \u0026 Test"',
-            '"context":  "Frontend Build"',
-            '"context":  "Solver Lint \u0026 Test"',
-            '"context":  "Package Preflight"',
-            '"include":  [',
-            '"refs/heads/develop"'
+            "api -X POST repos/OfekItzhaki/Shifter/rulesets --input"
         )) {
         if ($calls -notmatch [regex]::Escape($pattern)) {
             throw "Apply mode did not include '$pattern'. Calls:`n$calls"
+        }
+    }
+
+    foreach ($pattern in @(
+            '"type"\s*:\s*"pull_request"',
+            '"type"\s*:\s*"required_status_checks"',
+            '"context"\s*:\s*"API Build (\\u0026|&) Test"',
+            '"context"\s*:\s*"Frontend Build"',
+            '"context"\s*:\s*"Solver Lint (\\u0026|&) Test"',
+            '"context"\s*:\s*"Package Preflight"',
+            '"include"\s*:\s*\[',
+            '"refs/heads/develop"'
+        )) {
+        if ($calls -notmatch $pattern) {
+            throw "Apply mode did not match '$pattern'. Calls:`n$calls"
         }
     }
 
