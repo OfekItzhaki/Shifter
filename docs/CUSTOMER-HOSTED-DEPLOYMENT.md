@@ -378,6 +378,10 @@ min shifts must be `0..100`, max shifts `1..100`, min cannot exceed max,
 request-window open offset must be greater than close offset, hour fields must
 be `1..720`, waitlist offers must be `15..1440` minutes, cycle duration must
 be `1..30` days, and workflow toggles must be `true` or `false`.
+The package preflight also renders the extracted Docker Compose config and
+asserts these `SELF_SERVICE_DEFAULT_*` values are still mapped into the API's
+`SelfServiceDefaults__*` environment keys, so packaging drift cannot silently
+drop the runtime binding.
 
 Space owners can also configure the same template inside Shifter from
 `Space Settings` -> `Self-Service`. A saved space template is used before the

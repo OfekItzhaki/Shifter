@@ -233,8 +233,9 @@ packaging, and self-service export package validation readiness.
 - `infra/scripts/test-package-customer-hosted.ps1` passed, proving the
   customer handoff package creates a zip plus `.sha256` checksum, extracts
   cleanly with dotfiles such as `.env.customer.example`, validates the
-  extracted Compose config, blocks obvious private material, and dry-runs the
-  packaged install verifier from the extracted directory.
+  extracted Compose config, asserts self-service install defaults remain wired
+  into the rendered API environment, blocks obvious private material, and
+  dry-runs the packaged install verifier from the extracted directory.
 - `infra/scripts/test-seed-compose-dry-run.ps1` passed, proving the compose seed
   loader resolves the env file, Compose project, database, user, and seed file
   without loading demo data.
