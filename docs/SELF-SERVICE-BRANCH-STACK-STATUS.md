@@ -220,6 +220,8 @@ Known verification:
   picker browser flow.
 - Targeted organization-defaults and portability tests passed:
   `dotnet test apps\\api\\Jobuler.Tests\\Jobuler.Tests.csproj --filter "FullyQualifiedName~ChangeSchedulingModeCommandTests|FullyQualifiedName~OrganizationPortabilityTests"`.
+- Organization import controller route coverage passed:
+  `dotnet test apps\\api\\Jobuler.Tests\\Jobuler.Tests.csproj --filter FullyQualifiedName~PlatformControllerImportTests`.
 - Fresh SQL install from all `infra/migrations/*.sql` plus `seed.sql` passed
   after adding `086_organization_self_service_defaults.sql`.
 - PWA prompt regression tests passed:
