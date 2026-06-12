@@ -94,7 +94,9 @@ packaging, and self-service export package validation readiness.
 - `infra/scripts/test-customer-env-validator.ps1` passed, covering valid env,
   private no-export AI, public no-export AI rejection, and short
   `FIELD_ENCRYPTION_KEY` rejection across the PowerShell validator and Git Bash
-  validator when available.
+  validator when available. It also asserts customer-hosted warning output when
+  optional external processors such as PostHog, Sentry, Crisp, or LemonSqueezy
+  are configured.
 - `infra/scripts/test-restore-compose-dry-run.ps1` passed, proving
   `restore-compose.sh` honors a custom `ENV_FILE` during dry-run Compose
   validation.

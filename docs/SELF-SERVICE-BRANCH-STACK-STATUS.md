@@ -195,7 +195,9 @@ Known verification:
   replacement.
 - Adds a customer env validator harness that checks valid envs, no-export AI
   rejection/allowance, and short field encryption keys against the PowerShell
-  validator and Git Bash validator when available.
+  validator and Git Bash validator when available. It also asserts warning
+  output when optional external processors are configured for customer-hosted
+  installs.
 - Adds `infra/scripts/smoke-self-service-client-ready.ps1` for live seeded stack
   preflight plus the holiday/special-day picker browser flow.
 - The smoke script also checks `infra/scripts/restore-compose.sh` syntax when

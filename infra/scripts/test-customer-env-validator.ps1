@@ -94,7 +94,8 @@ function Test-Case {
     param(
         [string]$Name,
         [System.Collections.IDictionary]$Values,
-        [int]$ExpectedExit
+        [int]$ExpectedExit,
+        [string[]]$ExpectedOutputPatterns = @()
     )
 
     $envPath = Join-Path $tempDir "$Name.env"
@@ -104,12 +105,22 @@ function Test-Case {
         & $script:PowerShellExe -NoProfile -File $validatorPs -ShifterDir $ShifterDir -EnvFile $envPath
     }
     Assert-ExitCode $psResult $ExpectedExit
+    foreach ($pattern in $ExpectedOutputPatterns) {
+        if ($psResult.Output -notmatch [regex]::Escape($pattern)) {
+            throw "$($psResult.Name) output did not contain expected text '$pattern'. Output:`n$($psResult.Output)"
+        }
+    }
 
     if (-not [string]::IsNullOrWhiteSpace($script:BashPath)) {
         $bashResult = Invoke-Validator "Bash $Name" {
             & $script:BashPath -lc "cd '$($ShifterDir -replace '\\', '/')' && ENV_FILE='$($envPath -replace '\\', '/')' bash infra/scripts/validate-customer-env.sh"
         }
         Assert-ExitCode $bashResult $ExpectedExit
+        foreach ($pattern in $ExpectedOutputPatterns) {
+            if ($bashResult.Output -notmatch [regex]::Escape($pattern)) {
+                throw "$($bashResult.Name) output did not contain expected text '$pattern'. Output:`n$($bashResult.Output)"
+            }
+        }
     }
 }
 
@@ -164,6 +175,22 @@ try {
     $shortFieldKey = New-BaseEnv
     $shortFieldKey["FIELD_ENCRYPTION_KEY"] = "too-short"
     Test-Case -Name "reject-short-field-key" -Values $shortFieldKey -ExpectedExit 1
+
+    $externalProcessors = New-BaseEnv
+    $externalProcessors["NEXT_PUBLIC_POSTHOG_KEY"] = "phc_customer_approved"
+    $externalProcessors["NEXT_PUBLIC_SENTRY_DSN"] = "https://public@sentry.example/1"
+    $externalProcessors["NEXT_PUBLIC_CRISP_WEBSITE_ID"] = "customer-crisp-id"
+    $externalProcessors["LEMONSQUEEZY_API_KEY"] = "ls_customer_approved"
+    Test-Case `
+        -Name "warn-external-processors" `
+        -Values $externalProcessors `
+        -ExpectedExit 0 `
+        -ExpectedOutputPatterns @(
+            "NEXT_PUBLIC_POSTHOG_KEY is set",
+            "NEXT_PUBLIC_SENTRY_DSN is set",
+            "NEXT_PUBLIC_CRISP_WEBSITE_ID is set",
+            "LEMONSQUEEZY_API_KEY is set"
+        )
 
     Write-Host "Customer env validator tests passed." -ForegroundColor Green
 }
