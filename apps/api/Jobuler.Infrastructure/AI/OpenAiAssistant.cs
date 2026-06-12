@@ -28,7 +28,9 @@ public class OpenAiAssistant : IAiAssistant
     {
         _http = http;
         _logger = logger;
-        _model = config["AI:Model"] ?? "gpt-4o";
+        _model = string.IsNullOrWhiteSpace(config["AI:Model"])
+            ? "gpt-4o"
+            : config["AI:Model"]!.Trim();
         _baseUrl = (config["AI:BaseUrl"] ?? "https://api.openai.com/v1").TrimEnd('/');
 
         var apiKey = config["AI:ApiKey"];

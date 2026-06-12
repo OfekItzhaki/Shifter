@@ -4,6 +4,26 @@ namespace Jobuler.Infrastructure.AI;
 
 public static class AiConfigurationGuard
 {
+    public static void Validate(IConfiguration configuration)
+    {
+        ValidateEndpointConfiguration(configuration);
+        ValidateNoExportPolicy(configuration);
+    }
+
+    public static void ValidateEndpointConfiguration(IConfiguration configuration)
+    {
+        var baseUrl = configuration["AI:BaseUrl"]?.Trim();
+        if (string.IsNullOrWhiteSpace(baseUrl))
+            return;
+
+        if (!Uri.TryCreate(baseUrl, UriKind.Absolute, out _))
+            throw new InvalidOperationException($"AI:BaseUrl must be an absolute OpenAI-compatible endpoint URL: {baseUrl}");
+
+        var model = configuration["AI:Model"]?.Trim();
+        if (string.IsNullOrWhiteSpace(model))
+            throw new InvalidOperationException("AI:Model is required when AI:BaseUrl is configured.");
+    }
+
     public static void ValidateNoExportPolicy(IConfiguration configuration)
     {
         var noExportRequired = FirstConfigured(

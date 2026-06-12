@@ -7,6 +7,65 @@ namespace Jobuler.Tests.Application;
 
 public class AiConfigurationGuardTests
 {
+    [Fact]
+    public void ValidateEndpointConfiguration_WhenBaseUrlHasModel_AllowsEndpoint()
+    {
+        var config = CreateConfig(new Dictionary<string, string?>
+        {
+            ["AI:BaseUrl"] = "http://local-ai.internal/v1",
+            ["AI:Model"] = "local-model"
+        });
+
+        var act = () => AiConfigurationGuard.ValidateEndpointConfiguration(config);
+
+        act.Should().NotThrow();
+    }
+
+    [Fact]
+    public void ValidateEndpointConfiguration_WhenBaseUrlIsConfiguredWithoutModel_RejectsConfiguration()
+    {
+        var config = CreateConfig(new Dictionary<string, string?>
+        {
+            ["AI:BaseUrl"] = "http://local-ai.internal/v1",
+            ["AI:Model"] = ""
+        });
+
+        var act = () => AiConfigurationGuard.ValidateEndpointConfiguration(config);
+
+        act.Should().Throw<InvalidOperationException>()
+            .WithMessage("AI:Model is required when AI:BaseUrl is configured.");
+    }
+
+    [Fact]
+    public void ValidateEndpointConfiguration_WhenBaseUrlIsInvalid_RejectsConfiguration()
+    {
+        var config = CreateConfig(new Dictionary<string, string?>
+        {
+            ["AI:BaseUrl"] = "local-ai.internal/v1",
+            ["AI:Model"] = "local-model"
+        });
+
+        var act = () => AiConfigurationGuard.ValidateEndpointConfiguration(config);
+
+        act.Should().Throw<InvalidOperationException>()
+            .WithMessage("*AI:BaseUrl must be an absolute*");
+    }
+
+    [Fact]
+    public void Validate_WhenNoExportEndpointIsPrivateAndModelIsConfigured_AllowsConfiguration()
+    {
+        var config = CreateConfig(new Dictionary<string, string?>
+        {
+            ["AI:NoExportRequired"] = "true",
+            ["AI:BaseUrl"] = "http://local-ai.internal/v1",
+            ["AI:Model"] = "local-model"
+        });
+
+        var act = () => AiConfigurationGuard.Validate(config);
+
+        act.Should().NotThrow();
+    }
+
     [Theory]
     [InlineData("http://localhost:11434/v1")]
     [InlineData("http://127.0.0.1:8000/v1")]

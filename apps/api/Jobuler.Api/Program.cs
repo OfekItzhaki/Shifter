@@ -323,7 +323,7 @@ builder.Services.AddHttpClient<ISolverClient, SolverHttpClient>(client =>
 
 // ─── AI assistant (optional — only registered when API key is configured) ────
 builder.Services.AddSingleton<IStructuredImportParser, StructuredImportParser>();
-AiConfigurationGuard.ValidateNoExportPolicy(builder.Configuration);
+AiConfigurationGuard.Validate(builder.Configuration);
 
 if (!string.IsNullOrWhiteSpace(builder.Configuration["AI:ApiKey"]) ||
     !string.IsNullOrWhiteSpace(builder.Configuration["AI:BaseUrl"]))
