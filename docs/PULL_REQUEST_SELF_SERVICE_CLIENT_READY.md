@@ -91,6 +91,10 @@ packaging, and self-service export package validation readiness.
 - Adds a Cloudflare edge security baseline covering DNS/TLS, WAF/rate-limit
   rules for auth, billing, imports, solver triggers, uploads, and admin paths,
   plus PWA/API caching guidance.
+- Adds a hosted VPS MVP launch checklist that separates OfekLabs-managed
+  hosted-service rollout from customer-hosted package delivery, covering the
+  smoke checks, backups, providers, PWA, AI, monitoring, and edge-security
+  items to verify before inviting real users.
 - Requires `NEXT_PUBLIC_LEGAL_EMAIL` in customer env validation so private
   installs do not silently route support/contact UI to the SaaS fallback.
 - Wires public frontend deployment variables through the web Docker build and
