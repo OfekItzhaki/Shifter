@@ -3023,7 +3023,7 @@
   },
   "pwaInstall": {
     "title": "Install Shifter",
-    "description": "Install Shifter on this computer or phone for faster access and offline schedule viewing.",
+    "description": "Install Shifter on this phone for faster access and offline schedule viewing.",
     "iosDescription": "On iPhone, tap Share, then Add to Home Screen to install Shifter.",
     "install": "Install",
     "notNow": "Not now",
