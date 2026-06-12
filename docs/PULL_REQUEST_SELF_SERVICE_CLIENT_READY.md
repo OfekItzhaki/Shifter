@@ -280,6 +280,9 @@ packaging, and self-service export package validation readiness.
 - GitHub Actions first-party setup actions were upgraded to Node 24-compatible
   majors after that run to avoid the upcoming Node 20 action-runtime
   deprecation warning.
+- Customer-hosted preflight CI run `27431644839` passed for commit `031e0bb`
+  on June 12, 2026: `Package Preflight` completed successfully after the
+  action-major upgrades.
 - Before merge, use the workflow history above to confirm the latest
   package-relevant run for `feat/self-service-client-ready` is green.
 - `infra/scripts/backup-compose.sh`, `infra/scripts/deploy-compose.sh`,
