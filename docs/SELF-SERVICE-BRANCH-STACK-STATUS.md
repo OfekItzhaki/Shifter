@@ -201,7 +201,8 @@ Known verification:
 - Customer env validators fail partial optional provider groups for Resend,
   Twilio, Web Push VAPID, Pushover, and LemonSqueezy before deployment.
 - Adds `infra/scripts/smoke-self-service-client-ready.ps1` for live seeded stack
-  preflight plus the holiday/special-day picker browser flow.
+  preflight, member/admin self-service workflow read-model checks, admin
+  assignment/closeout checks, plus the holiday/special-day picker browser flow.
 - The smoke script also checks `infra/scripts/restore-compose.sh` syntax when
   Bash/Git Bash is available.
 - Adds `infra/scripts/restore-compose.sh` and customer-hosted restore runbook
@@ -231,8 +232,12 @@ Known verification:
   templates are included in export/import package validation.
 - Ends sessions after password changes and redirects users back to login with a
   success notice.
-- Restricts the custom PWA install prompt to mobile/touch install surfaces, with
-  desktop install left to the browser UI.
+- Supports PWA install prompts on mobile and desktop when the browser reports
+  install availability, uses device-neutral copy, and caches/refreshes
+  self-service member read models for installed/offline usage.
+- Refreshes member-safe self-service cache entries on reconnect for the current
+  group and last picked self-service group, while avoiding admin-only closeout
+  refreshes for normal members.
 - Keeps Sentry disabled unless `NEXT_PUBLIC_SENTRY_DSN` is explicitly
   configured, so customer-hosted installs can leave error tracking off by
   default.
@@ -241,13 +246,18 @@ Known verification:
 - Keeps Crisp disabled unless `NEXT_PUBLIC_CRISP_WEBSITE_ID` is explicitly
   configured, trimming accidental whitespace before loading the widget.
 - Enforces `AI_NO_EXPORT_REQUIRED=true` in both customer env validation and API
-  startup, rejecting public hosted AI endpoints for no-export installs.
+  startup, rejecting public hosted AI endpoints for no-export installs, and
+  validates private AI endpoint URL/model requirements at startup.
+- Provider health checks treat unconfigured LemonSqueezy billing as skipped,
+  report partial billing configuration with exact missing keys, and expose
+  core/optional provider readiness in the platform UI.
 - Live client-ready smoke passed against a fresh SQL install from all
   migrations plus `seed.sql`, a live API, and a rebuilt production web server:
   `infra/scripts/smoke-self-service-client-ready.ps1 -ApiBaseUrl http://localhost:5015 -WebBaseUrl http://localhost:3015`.
   This covered restore script syntax, seeded demo users, the self-service demo
-  cycle, available slots, web reachability, and the Playwright special-day
-  picker browser flow.
+  cycle, member/admin workflow read models, available slots, admin assignment
+  reads, cycle closeout metrics, web reachability, and the Playwright
+  special-day picker browser flow.
 - Targeted organization-defaults and portability tests passed:
   `dotnet test apps\\api\\Jobuler.Tests\\Jobuler.Tests.csproj --filter "FullyQualifiedName~ChangeSchedulingModeCommandTests|FullyQualifiedName~OrganizationPortabilityTests"`.
 - Organization import controller route coverage passed:
@@ -274,10 +284,16 @@ Known verification:
   `ENV_FILE` propagation.
 - Resend sender and health check coverage passed:
   `dotnet test apps\\api\\Jobuler.Tests\\Jobuler.Tests.csproj --filter "FullyQualifiedName~ResendHealthCheckTests|FullyQualifiedName~ResendEmailSenderTests"`.
+- Provider health check coverage passed:
+  `dotnet test apps\\api\\Jobuler.Tests\\Jobuler.Tests.csproj --filter FullyQualifiedName~HealthChecks`.
 - Fresh SQL install from all `infra/migrations/*.sql` plus `seed.sql` passed
   after adding `086_organization_self_service_defaults.sql`.
 - PWA prompt regression tests passed:
   `node_modules\\.bin\\vitest.cmd run __tests__\\shell\\pwaInstallPrompt.test.tsx`.
+- PWA self-service cache regression tests and service worker syntax checks
+  passed:
+  `node_modules\\.bin\\vitest.cmd run __tests__\\cache\\backgroundRefresh.test.ts __tests__\\cache\\cacheLifecycle.test.ts`
+  and `node --check public\\sw.js`.
 - Focused PWA prompt ESLint and `node_modules\\.bin\\next.cmd build` passed.
 - Sentry config tests and focused ESLint passed:
   `node_modules\\.bin\\vitest.cmd run __tests__\\monitoring\\sentryConfig.test.ts`

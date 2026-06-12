@@ -33,15 +33,19 @@ packaging, and self-service export package validation readiness.
   it required by the customer-hosted env validator.
 - Adds a Windows/PowerShell customer env validator alongside the Bash validator.
 - Adds `infra/scripts/smoke-self-service-client-ready.ps1` to preflight web/API
-  health, seeded demo users, the self-service demo cycle, available slots, and
-  the customer-hosted restore script syntax, plus the special-day Playwright
-  picker flow.
+  health, seeded demo users, the self-service demo cycle, member/admin
+  self-service workflow read models, available slots, admin assignment reads,
+  cycle closeout metrics, and the customer-hosted restore script syntax, plus
+  the special-day Playwright picker flow.
 - Supports `-SkipBrowserTest` for API/seed preflight when the web app is not
   running.
 - Adds AI support fallback coverage for private/local AI endpoint failure and
   readable localized support actions when AI is disabled.
 - Enforces no-export AI mode at API startup and in customer Compose config, so
   `AI_NO_EXPORT_REQUIRED=true` cannot silently use a public hosted endpoint.
+- Validates private AI endpoint configuration at API startup: `AI_BASE_URL`
+  must be absolute and `AI_MODEL` must be explicit when a customer-hosted
+  endpoint is configured.
 - Routes native assistant contact payloads to the configured
   `NEXT_PUBLIC_LEGAL_EMAIL`, so customer-hosted installs can point support
   requests at the customer's own help address.
@@ -68,8 +72,12 @@ packaging, and self-service export package validation readiness.
   organization templates are included in export/import package validation.
 - Ends the current session after password changes and shows a login success
   notice, preventing stale authenticated sessions after credential rotation.
-- Keeps the custom PWA install prompt focused on mobile/touch install surfaces
-  while desktop users can still use the browser's native install affordance.
+- Supports PWA install prompts on mobile and desktop when the browser reports
+  install availability, uses device-neutral copy, and caches/refreshes
+  self-service member read models for installed/offline usage.
+- Refreshes member-safe self-service cache entries on reconnect for the current
+  group and last picked self-service group, while avoiding admin-only closeout
+  refreshes for normal members.
 
 ## Verification
 
@@ -88,8 +96,9 @@ packaging, and self-service export package validation readiness.
   passed against a fresh SQL install from all migrations plus `seed.sql`, a
   live API, and a rebuilt production web server. This covered customer-hosted
   restore script syntax, seeded demo users, the self-service demo cycle,
-  available slots, web reachability, and the Playwright special-day picker
-  browser flow.
+  member/admin workflow read models, available slots, admin assignment reads,
+  cycle closeout metrics, web reachability, and the Playwright special-day
+  picker browser flow.
 - `infra/scripts/validate-customer-env.ps1` parser check passed locally.
 - `infra/scripts/test-customer-env-validator.ps1` passed, covering valid env,
   private no-export AI, public no-export AI rejection, and short
@@ -99,6 +108,9 @@ packaging, and self-service export package validation readiness.
   are configured.
 - Customer env validators now fail partial optional provider groups for Resend,
   Twilio, Web Push VAPID, Pushover, and LemonSqueezy before deployment.
+- Provider health checks treat unconfigured LemonSqueezy billing as skipped,
+  report partial billing configuration with exact missing keys, and expose
+  core/optional provider readiness in the platform UI.
 - `infra/scripts/test-restore-compose-dry-run.ps1` passed, proving
   `restore-compose.sh` honors a custom `ENV_FILE` during dry-run Compose
   validation.
@@ -124,9 +136,11 @@ packaging, and self-service export package validation readiness.
 - `dotnet test apps\\api\\Jobuler.Tests\\Jobuler.Tests.csproj --filter FullyQualifiedName~AiAssistantSupportTests`
   passed: 6 passed, 0 failed.
 - `dotnet test apps\\api\\Jobuler.Tests\\Jobuler.Tests.csproj --filter "FullyQualifiedName~AiConfigurationGuardTests|FullyQualifiedName~AiAssistantSupportTests|FullyQualifiedName~AiHealthCheckTests"`
-  passed: 26 passed, 0 failed.
+  passed: 30 passed, 0 failed.
 - `dotnet test apps\\api\\Jobuler.Tests\\Jobuler.Tests.csproj --filter "FullyQualifiedName~ResendHealthCheckTests|FullyQualifiedName~ResendEmailSenderTests"`
   passed: 5 passed, 0 failed.
+- `dotnet test apps\\api\\Jobuler.Tests\\Jobuler.Tests.csproj --filter FullyQualifiedName~HealthChecks`
+  passed: 49 passed, 0 failed.
 - `dotnet test apps\\api\\Jobuler.Tests\\Jobuler.Tests.csproj --filter FullyQualifiedName~SpaceSpecialDayCommandTests`
   passed: 4 passed, 0 failed.
 - `dotnet test apps\\api\\Jobuler.Tests\\Jobuler.Tests.csproj --filter FullyQualifiedName~OrganizationPortabilityTests`
@@ -152,6 +166,11 @@ packaging, and self-service export package validation readiness.
   passed: 2 passed, 0 failed.
 - `node_modules\\.bin\\eslint.cmd components\\shell\\PwaInstallPrompt.tsx __tests__\\shell\\pwaInstallPrompt.test.tsx`
   passed.
+- `node_modules\\.bin\\vitest.cmd run __tests__\\cache\\backgroundRefresh.test.ts __tests__\\cache\\cacheLifecycle.test.ts`
+  passed: 6 passed, 0 failed.
+- `node_modules\\.bin\\eslint.cmd lib\\cache\\backgroundRefresh.ts lib\\hooks\\useCacheLifecycle.ts __tests__\\cache\\backgroundRefresh.test.ts __tests__\\cache\\cacheLifecycle.test.ts`
+  passed.
+- `node --check public\\sw.js` from `apps/web` passed.
 - `node_modules\\.bin\\next.cmd build` from `apps/web` passed after the PWA
   prompt update.
 - `node_modules\\.bin\\vitest.cmd run __tests__\\monitoring\\sentryConfig.test.ts __tests__\\monitoring\\posthogConfig.test.ts __tests__\\monitoring\\crispConfig.test.ts`
