@@ -226,6 +226,8 @@ Known verification:
   `dotnet test apps\\api\\Jobuler.Tests\\Jobuler.Tests.csproj --filter FullyQualifiedName~PlatformControllerImportTests`.
 - AI no-export guard, assistant fallback, and AI health checks passed:
   `dotnet test apps\\api\\Jobuler.Tests\\Jobuler.Tests.csproj --filter "FullyQualifiedName~AiConfigurationGuardTests|FullyQualifiedName~AiAssistantSupportTests|FullyQualifiedName~AiHealthCheckTests"`.
+- Resend sender and health check coverage passed:
+  `dotnet test apps\\api\\Jobuler.Tests\\Jobuler.Tests.csproj --filter "FullyQualifiedName~ResendHealthCheckTests|FullyQualifiedName~ResendEmailSenderTests"`.
 - Fresh SQL install from all `infra/migrations/*.sql` plus `seed.sql` passed
   after adding `086_organization_self_service_defaults.sql`.
 - PWA prompt regression tests passed:
