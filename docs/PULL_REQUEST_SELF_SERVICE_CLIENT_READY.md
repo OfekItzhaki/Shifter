@@ -101,6 +101,10 @@ packaging, and self-service export package validation readiness.
 - `infra/scripts/test-deploy-compose-rollback.ps1` passed with fake Git,
   Docker, and Curl shims, proving a failed deploy health check rolls back to
   the previous git revision, restarts Compose, and verifies rollback health.
+- `infra/scripts/test-customer-hosted-package.ps1` passed, running the customer
+  env validator, restore dry-run, backup, deploy happy-path, deploy rollback,
+  Compose script syntax, and customer Docker Compose config checks as one
+  preflight command.
 - `infra/scripts/backup-compose.sh`, `infra/scripts/deploy-compose.sh`, and
   `infra/scripts/restore-compose.sh` syntax checks passed after wiring custom
   `ENV_FILE` through their Compose calls.
