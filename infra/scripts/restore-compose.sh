@@ -27,11 +27,15 @@ SKIP_PRE_RESTORE_BACKUP="${SKIP_PRE_RESTORE_BACKUP:-0}"
 TIMESTAMP="$(date +%Y%m%d_%H%M%S)"
 APP_SERVICES_STOPPED=0
 
+compose() {
+  docker compose --env-file "$ENV_FILE" --project-name "$COMPOSE_PROJECT_NAME" "$@"
+}
+
 restart_app_services_on_error() {
   local exit_code=$?
   if [ "$APP_SERVICES_STOPPED" = "1" ]; then
     echo "[$(date)] ERROR: restore failed with exit code $exit_code. Restarting app services..." >&2
-    docker compose --project-name "$COMPOSE_PROJECT_NAME" up -d api web solver || true
+    compose up -d api web solver || true
   fi
   exit "$exit_code"
 }
@@ -104,16 +108,16 @@ if [ "$DRY_RUN" = "1" ]; then
   else
     echo "  Uploads restore: skipped"
   fi
-  docker compose --project-name "$COMPOSE_PROJECT_NAME" config --quiet
+  compose config --quiet
   echo "[$(date)] Compose config is valid. No containers, database, or volumes were changed."
   exit 0
 fi
 
 echo "[$(date)] Ensuring PostgreSQL is running for project '$COMPOSE_PROJECT_NAME'..."
-docker compose --project-name "$COMPOSE_PROJECT_NAME" up -d postgres
+compose up -d postgres
 
 echo "[$(date)] Stopping app services before database restore..."
-docker compose --project-name "$COMPOSE_PROJECT_NAME" stop api web solver || true
+compose stop api web solver || true
 APP_SERVICES_STOPPED=1
 trap restart_app_services_on_error ERR
 
@@ -122,7 +126,7 @@ if [ "$SKIP_PRE_RESTORE_BACKUP" != "1" ]; then
   PRE_RESTORE_BACKUP="$BACKUP_DIR/pre_restore_${COMPOSE_PROJECT_NAME}_${TIMESTAMP}.dump"
 
   echo "[$(date)] Creating pre-restore safety backup: $PRE_RESTORE_BACKUP"
-  docker compose --project-name "$COMPOSE_PROJECT_NAME" exec -T postgres \
+  compose exec -T postgres \
     pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" --format=custom --compress=9 > "$PRE_RESTORE_BACKUP"
 
   if [ ! -s "$PRE_RESTORE_BACKUP" ]; then
@@ -137,7 +141,7 @@ else
 fi
 
 echo "[$(date)] Restoring PostgreSQL database '$POSTGRES_DB' from $DB_BACKUP..."
-docker compose --project-name "$COMPOSE_PROJECT_NAME" exec -T postgres \
+compose exec -T postgres \
   pg_restore -U "$POSTGRES_USER" -d "$POSTGRES_DB" --clean --if-exists --no-owner \
     --single-transaction --exit-on-error < "$DB_BACKUP"
 
@@ -174,7 +178,7 @@ if [ "$RESTORE_UPLOADS" = "1" ]; then
 fi
 
 echo "[$(date)] Starting app services..."
-docker compose --project-name "$COMPOSE_PROJECT_NAME" up -d api web solver
+compose up -d api web solver
 APP_SERVICES_STOPPED=0
 trap - ERR
 

@@ -88,6 +88,9 @@ packaging, and self-service export package validation readiness.
   private no-export AI, public no-export AI rejection, and short
   `FIELD_ENCRYPTION_KEY` rejection across the PowerShell validator and Git Bash
   validator when available.
+- `infra/scripts/test-restore-compose-dry-run.ps1` passed, proving
+  `restore-compose.sh` honors a custom `ENV_FILE` during dry-run Compose
+  validation.
 - `C:\\Program Files\\Git\\bin\\bash.exe -n infra/scripts/restore-compose.sh`
   passed.
 - `dotnet test apps\\api\\Jobuler.Tests\\Jobuler.Tests.csproj --filter FullyQualifiedName~AiAssistantSupportTests`
