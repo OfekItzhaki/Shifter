@@ -100,6 +100,44 @@ require_complete_group() {
   done
 }
 
+validate_integer_range() {
+  local key="$1"
+  local min="$2"
+  local max="$3"
+  local value
+
+  value="$(env_value "$key")"
+  if [ -z "$value" ]; then
+    return
+  fi
+
+  if ! echo "$value" | grep -Eq '^-?[0-9]+$'; then
+    echo "ERROR: $key must be an integer between $min and $max." >&2
+    errors=$((errors + 1))
+    return
+  fi
+
+  if [ "$value" -lt "$min" ] || [ "$value" -gt "$max" ]; then
+    echo "ERROR: $key must be between $min and $max." >&2
+    errors=$((errors + 1))
+  fi
+}
+
+validate_boolean() {
+  local key="$1"
+  local value
+
+  value="$(env_value "$key")"
+  if [ -z "$value" ]; then
+    return
+  fi
+
+  if [ "$value" != "true" ] && [ "$value" != "false" ]; then
+    echo "ERROR: $key must be true, false, or empty." >&2
+    errors=$((errors + 1))
+  fi
+}
+
 mode="$(env_value SHIFTER_DEPLOYMENT_MODE)"
 if [ "$mode" != "customer-hosted" ]; then
   echo "ERROR: SHIFTER_DEPLOYMENT_MODE must be customer-hosted for this validator." >&2
@@ -252,6 +290,37 @@ if has_value VAPID_PUBLIC_KEY && has_value NEXT_PUBLIC_VAPID_PUBLIC_KEY && [ "$v
   echo "ERROR: NEXT_PUBLIC_VAPID_PUBLIC_KEY must match VAPID_PUBLIC_KEY." >&2
   errors=$((errors + 1))
 fi
+
+validate_integer_range SELF_SERVICE_DEFAULT_MIN_SHIFTS_PER_CYCLE 0 100
+validate_integer_range SELF_SERVICE_DEFAULT_MAX_SHIFTS_PER_CYCLE 1 100
+validate_integer_range SELF_SERVICE_DEFAULT_REQUEST_WINDOW_OPEN_OFFSET_HOURS 1 720
+validate_integer_range SELF_SERVICE_DEFAULT_REQUEST_WINDOW_CLOSE_OFFSET_HOURS 1 720
+validate_integer_range SELF_SERVICE_DEFAULT_CANCELLATION_CUTOFF_HOURS 1 720
+validate_integer_range SELF_SERVICE_DEFAULT_MAX_ABSENCES_PER_CYCLE 0 100
+validate_integer_range SELF_SERVICE_DEFAULT_MAX_LATE_CANCELLATIONS_PER_CYCLE 0 100
+validate_integer_range SELF_SERVICE_DEFAULT_LATE_CANCELLATION_WINDOW_HOURS 1 720
+validate_integer_range SELF_SERVICE_DEFAULT_WAITLIST_OFFER_MINUTES 15 1440
+validate_integer_range SELF_SERVICE_DEFAULT_CYCLE_DURATION_DAYS 1 30
+
+default_min_shifts="$(env_value SELF_SERVICE_DEFAULT_MIN_SHIFTS_PER_CYCLE)"
+default_max_shifts="$(env_value SELF_SERVICE_DEFAULT_MAX_SHIFTS_PER_CYCLE)"
+if echo "$default_min_shifts" | grep -Eq '^-?[0-9]+$' && echo "$default_max_shifts" | grep -Eq '^-?[0-9]+$' && [ "$default_min_shifts" -gt "$default_max_shifts" ]; then
+  echo "ERROR: SELF_SERVICE_DEFAULT_MIN_SHIFTS_PER_CYCLE must be less than or equal to SELF_SERVICE_DEFAULT_MAX_SHIFTS_PER_CYCLE." >&2
+  errors=$((errors + 1))
+fi
+
+default_open_offset="$(env_value SELF_SERVICE_DEFAULT_REQUEST_WINDOW_OPEN_OFFSET_HOURS)"
+default_close_offset="$(env_value SELF_SERVICE_DEFAULT_REQUEST_WINDOW_CLOSE_OFFSET_HOURS)"
+if echo "$default_open_offset" | grep -Eq '^-?[0-9]+$' && echo "$default_close_offset" | grep -Eq '^-?[0-9]+$' && [ "$default_open_offset" -le "$default_close_offset" ]; then
+  echo "ERROR: SELF_SERVICE_DEFAULT_REQUEST_WINDOW_OPEN_OFFSET_HOURS must be greater than SELF_SERVICE_DEFAULT_REQUEST_WINDOW_CLOSE_OFFSET_HOURS." >&2
+  errors=$((errors + 1))
+fi
+
+validate_boolean SELF_SERVICE_DEFAULT_ALLOW_MEMBER_SHIFT_CLAIMS
+validate_boolean SELF_SERVICE_DEFAULT_ALLOW_WAITLIST
+validate_boolean SELF_SERVICE_DEFAULT_ALLOW_SHIFT_CHANGE_REQUESTS
+validate_boolean SELF_SERVICE_DEFAULT_ALLOW_ABSENCE_REPORTS
+validate_boolean SELF_SERVICE_DEFAULT_ALLOW_SHIFT_SWAPS
 require_complete_group "Pushover health alerts" PUSHOVER_USER_KEY PUSHOVER_APP_TOKEN
 require_complete_group "LemonSqueezy" \
   LEMONSQUEEZY_API_KEY \

@@ -373,6 +373,12 @@ The values are applied only when the group's self-service policy record is first
 created. Existing group policies remain under admin control and are not
 overwritten by later env changes.
 
+The customer env validators reject invalid install defaults before rollout:
+min shifts must be `0..100`, max shifts `1..100`, min cannot exceed max,
+request-window open offset must be greater than close offset, hour fields must
+be `1..720`, waitlist offers must be `15..1440` minutes, cycle duration must
+be `1..30` days, and workflow toggles must be `true` or `false`.
+
 Space owners can also configure the same template inside Shifter from
 `Space Settings` -> `Self-Service`. A saved space template is used before the
 install-level env defaults when a group is first switched to `SelfService`.

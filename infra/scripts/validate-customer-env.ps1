@@ -121,6 +121,42 @@ function Require-Complete-Group {
     }
 }
 
+function Validate-IntegerRange {
+    param(
+        [string]$Key,
+        [int]$Min,
+        [int]$Max
+    )
+
+    $value = Get-EnvValue $Key
+    if ([string]::IsNullOrWhiteSpace($value)) {
+        return
+    }
+
+    $parsed = 0
+    if (-not [int]::TryParse($value, [ref]$parsed)) {
+        Add-Error "$Key must be an integer between $Min and $Max."
+        return
+    }
+
+    if ($parsed -lt $Min -or $parsed -gt $Max) {
+        Add-Error "$Key must be between $Min and $Max."
+    }
+}
+
+function Validate-Boolean {
+    param([string]$Key)
+
+    $value = Get-EnvValue $Key
+    if ([string]::IsNullOrWhiteSpace($value)) {
+        return
+    }
+
+    if ($value -ne "true" -and $value -ne "false") {
+        Add-Error "$Key must be true, false, or empty."
+    }
+}
+
 $mode = Get-EnvValue "SHIFTER_DEPLOYMENT_MODE"
 if ($mode -ne "customer-hosted") {
     Add-Error "SHIFTER_DEPLOYMENT_MODE must be customer-hosted for this validator."
@@ -257,6 +293,43 @@ if ((Has-Value "VAPID_PUBLIC_KEY") -and
     $vapidPublicKey -ne $nextPublicVapidPublicKey) {
     Add-Error "NEXT_PUBLIC_VAPID_PUBLIC_KEY must match VAPID_PUBLIC_KEY."
 }
+
+Validate-IntegerRange "SELF_SERVICE_DEFAULT_MIN_SHIFTS_PER_CYCLE" 0 100
+Validate-IntegerRange "SELF_SERVICE_DEFAULT_MAX_SHIFTS_PER_CYCLE" 1 100
+Validate-IntegerRange "SELF_SERVICE_DEFAULT_REQUEST_WINDOW_OPEN_OFFSET_HOURS" 1 720
+Validate-IntegerRange "SELF_SERVICE_DEFAULT_REQUEST_WINDOW_CLOSE_OFFSET_HOURS" 1 720
+Validate-IntegerRange "SELF_SERVICE_DEFAULT_CANCELLATION_CUTOFF_HOURS" 1 720
+Validate-IntegerRange "SELF_SERVICE_DEFAULT_MAX_ABSENCES_PER_CYCLE" 0 100
+Validate-IntegerRange "SELF_SERVICE_DEFAULT_MAX_LATE_CANCELLATIONS_PER_CYCLE" 0 100
+Validate-IntegerRange "SELF_SERVICE_DEFAULT_LATE_CANCELLATION_WINDOW_HOURS" 1 720
+Validate-IntegerRange "SELF_SERVICE_DEFAULT_WAITLIST_OFFER_MINUTES" 15 1440
+Validate-IntegerRange "SELF_SERVICE_DEFAULT_CYCLE_DURATION_DAYS" 1 30
+
+$defaultMinShifts = Get-EnvValue "SELF_SERVICE_DEFAULT_MIN_SHIFTS_PER_CYCLE"
+$defaultMaxShifts = Get-EnvValue "SELF_SERVICE_DEFAULT_MAX_SHIFTS_PER_CYCLE"
+if (-not [string]::IsNullOrWhiteSpace($defaultMinShifts) -and -not [string]::IsNullOrWhiteSpace($defaultMaxShifts)) {
+    $parsedMin = 0
+    $parsedMax = 0
+    if ([int]::TryParse($defaultMinShifts, [ref]$parsedMin) -and [int]::TryParse($defaultMaxShifts, [ref]$parsedMax) -and $parsedMin -gt $parsedMax) {
+        Add-Error "SELF_SERVICE_DEFAULT_MIN_SHIFTS_PER_CYCLE must be less than or equal to SELF_SERVICE_DEFAULT_MAX_SHIFTS_PER_CYCLE."
+    }
+}
+
+$defaultOpenOffset = Get-EnvValue "SELF_SERVICE_DEFAULT_REQUEST_WINDOW_OPEN_OFFSET_HOURS"
+$defaultCloseOffset = Get-EnvValue "SELF_SERVICE_DEFAULT_REQUEST_WINDOW_CLOSE_OFFSET_HOURS"
+if (-not [string]::IsNullOrWhiteSpace($defaultOpenOffset) -and -not [string]::IsNullOrWhiteSpace($defaultCloseOffset)) {
+    $parsedOpen = 0
+    $parsedClose = 0
+    if ([int]::TryParse($defaultOpenOffset, [ref]$parsedOpen) -and [int]::TryParse($defaultCloseOffset, [ref]$parsedClose) -and $parsedOpen -le $parsedClose) {
+        Add-Error "SELF_SERVICE_DEFAULT_REQUEST_WINDOW_OPEN_OFFSET_HOURS must be greater than SELF_SERVICE_DEFAULT_REQUEST_WINDOW_CLOSE_OFFSET_HOURS."
+    }
+}
+
+Validate-Boolean "SELF_SERVICE_DEFAULT_ALLOW_MEMBER_SHIFT_CLAIMS"
+Validate-Boolean "SELF_SERVICE_DEFAULT_ALLOW_WAITLIST"
+Validate-Boolean "SELF_SERVICE_DEFAULT_ALLOW_SHIFT_CHANGE_REQUESTS"
+Validate-Boolean "SELF_SERVICE_DEFAULT_ALLOW_ABSENCE_REPORTS"
+Validate-Boolean "SELF_SERVICE_DEFAULT_ALLOW_SHIFT_SWAPS"
 Require-Complete-Group "Pushover health alerts" @("PUSHOVER_USER_KEY", "PUSHOVER_APP_TOKEN")
 Require-Complete-Group "LemonSqueezy" @(
     "LEMONSQUEEZY_API_KEY",

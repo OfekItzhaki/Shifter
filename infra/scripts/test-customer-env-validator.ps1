@@ -63,6 +63,21 @@ function New-BaseEnv {
         LEMONSQUEEZY_STORE_ID = ""
         LEMONSQUEEZY_DEFAULT_VARIANT_ID = ""
         LEMONSQUEEZY_TEST_VARIANT_ID = ""
+        SELF_SERVICE_DEFAULT_MIN_SHIFTS_PER_CYCLE = "0"
+        SELF_SERVICE_DEFAULT_MAX_SHIFTS_PER_CYCLE = "7"
+        SELF_SERVICE_DEFAULT_REQUEST_WINDOW_OPEN_OFFSET_HOURS = "168"
+        SELF_SERVICE_DEFAULT_REQUEST_WINDOW_CLOSE_OFFSET_HOURS = "24"
+        SELF_SERVICE_DEFAULT_CANCELLATION_CUTOFF_HOURS = "24"
+        SELF_SERVICE_DEFAULT_MAX_ABSENCES_PER_CYCLE = "3"
+        SELF_SERVICE_DEFAULT_MAX_LATE_CANCELLATIONS_PER_CYCLE = "2"
+        SELF_SERVICE_DEFAULT_LATE_CANCELLATION_WINDOW_HOURS = "24"
+        SELF_SERVICE_DEFAULT_WAITLIST_OFFER_MINUTES = "60"
+        SELF_SERVICE_DEFAULT_CYCLE_DURATION_DAYS = "7"
+        SELF_SERVICE_DEFAULT_ALLOW_MEMBER_SHIFT_CLAIMS = "true"
+        SELF_SERVICE_DEFAULT_ALLOW_WAITLIST = "true"
+        SELF_SERVICE_DEFAULT_ALLOW_SHIFT_CHANGE_REQUESTS = "true"
+        SELF_SERVICE_DEFAULT_ALLOW_ABSENCE_REPORTS = "true"
+        SELF_SERVICE_DEFAULT_ALLOW_SHIFT_SWAPS = "true"
     }
 }
 
@@ -281,6 +296,24 @@ try {
         -Values $partialLemonSqueezy `
         -ExpectedExit 1 `
         -ExpectedOutputPatterns @("LemonSqueezy is partially configured")
+
+    $invalidSelfServiceDefaults = New-BaseEnv
+    $invalidSelfServiceDefaults["SELF_SERVICE_DEFAULT_MIN_SHIFTS_PER_CYCLE"] = "8"
+    $invalidSelfServiceDefaults["SELF_SERVICE_DEFAULT_MAX_SHIFTS_PER_CYCLE"] = "3"
+    $invalidSelfServiceDefaults["SELF_SERVICE_DEFAULT_REQUEST_WINDOW_OPEN_OFFSET_HOURS"] = "12"
+    $invalidSelfServiceDefaults["SELF_SERVICE_DEFAULT_REQUEST_WINDOW_CLOSE_OFFSET_HOURS"] = "24"
+    $invalidSelfServiceDefaults["SELF_SERVICE_DEFAULT_WAITLIST_OFFER_MINUTES"] = "5"
+    $invalidSelfServiceDefaults["SELF_SERVICE_DEFAULT_ALLOW_SHIFT_SWAPS"] = "maybe"
+    Test-Case `
+        -Name "reject-invalid-self-service-defaults" `
+        -Values $invalidSelfServiceDefaults `
+        -ExpectedExit 1 `
+        -ExpectedOutputPatterns @(
+            "SELF_SERVICE_DEFAULT_MIN_SHIFTS_PER_CYCLE must be less than or equal",
+            "SELF_SERVICE_DEFAULT_REQUEST_WINDOW_OPEN_OFFSET_HOURS must be greater than",
+            "SELF_SERVICE_DEFAULT_WAITLIST_OFFER_MINUTES must be between 15 and 1440",
+            "SELF_SERVICE_DEFAULT_ALLOW_SHIFT_SWAPS must be true, false, or empty"
+        )
 
     $externalProcessors = New-BaseEnv
     $externalProcessors["NEXT_PUBLIC_POSTHOG_KEY"] = "phc_customer_approved"
