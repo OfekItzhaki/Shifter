@@ -6,9 +6,14 @@ holiday-calendar integration, and customer-hosted portability.
 ## Current Resume Point
 
 - Active branch: `feat/self-service-client-ready`
-- Latest pushed commit: `5028bceb docs(self-service): clarify special leave browser evidence`
-- Latest package-relevant green CI:
-  https://github.com/OfekItzhaki/Shifter/actions/runs/27423685909
+- Current pushed commit:
+
+  ```powershell
+  git log -1 --oneline origin/feat/self-service-client-ready
+  ```
+
+- Package-relevant CI history:
+  https://github.com/OfekItzhaki/Shifter/actions/workflows/customer-hosted-preflight.yml
 - Resume on another machine with:
 
   ```powershell
