@@ -65,6 +65,10 @@ packaging, and self-service export package validation readiness.
   archives, including a manifest, `.sha256` checksum sidecar, dotfile-safe zip
   creation, private material exclusion checks, extracted-package Compose
   validation, and dry-run verification from the extracted archive.
+- Adds `docs/CUSTOMER-HOSTED-HANDOFF-NOTES.md` as the go-live handoff template
+  for package checksum, license, domains, env/secrets ownership, provider
+  approvals, verification evidence, backup/restore, migration, security, and
+  escalation sign-off.
 - Lets the live self-service smoke read `APP_FRONTEND_BASE_URL`,
   `NEXT_PUBLIC_API_URL`/`APP_API_BASE_URL`, and optional seeded demo credentials
   from the customer env file with `-EnvFile`, plus `-ResolveOnly` for dry config
@@ -194,6 +198,10 @@ packaging, and self-service export package validation readiness.
 - `infra/scripts/test-customer-hosted-package.ps1 -EnvFile infra/compose/.env.customer.example`
   passed, proving the preflight can target an explicit env file path without
   requiring real customer secrets in CI/local package checks.
+- `infra/scripts/test-customer-hosted-package.ps1 -EnvFile infra/compose/.env.customer.example`
+  passed again after adding the handoff notes template to the package, proving
+  the customer archive still assembles, extracts, validates Compose, verifies
+  checksum output, and runs the PostgreSQL organization import smoke.
 - `.github/workflows/customer-hosted-preflight.yml` now runs
   `infra/scripts/test-customer-hosted-package.ps1 -EnvFile infra/compose/.env.customer.example`
   on relevant PRs, pushes to this branch, and manual dispatch, so the

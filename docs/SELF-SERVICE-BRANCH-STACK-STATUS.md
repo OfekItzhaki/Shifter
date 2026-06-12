@@ -238,6 +238,10 @@ Known verification:
   re-check web/API health.
 - Adds a customer-hosted package preflight that runs the env, restore, backup,
   deploy, rollback, script syntax, and Compose config checks as one command.
+- Adds a customer-hosted handoff notes template for package checksum, license,
+  domains, env/secrets ownership, provider approvals, verification evidence,
+  backup/restore, migration, security, and escalation sign-off, and includes it
+  in the generated customer package.
 - The customer-hosted package preflight can now target a real customer env file
   with `-EnvFile ... -ValidateEnvFile`, so placeholder-free customer secrets and
   domains are checked before install.
@@ -332,6 +336,9 @@ Known verification:
   extracts the archive in the test harness, validates the extracted Compose
   config, blocks obvious private env/license/key material, and dry-runs the
   packaged install verifier from the extracted directory.
+- Customer-hosted package assembly now requires
+  `docs/CUSTOMER-HOSTED-HANDOFF-NOTES.md`, so the operational handoff checklist
+  ships with the package and is asserted by the extracted-package test.
 - Explicit-env customer-hosted package preflight passed against the checked-in
   customer template path:
   `infra/scripts/test-customer-hosted-package.ps1 -EnvFile infra/compose/.env.customer.example`.
