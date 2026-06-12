@@ -17,6 +17,7 @@ using Jobuler.Application.Scheduling.SelfService;
 using Jobuler.Infrastructure.AI;
 using Jobuler.Infrastructure.Auth;
 using Jobuler.Infrastructure.Caching;
+using Jobuler.Infrastructure.Configuration;
 using Jobuler.Infrastructure.Email;
 using Jobuler.Application.Auth;
 using Jobuler.Infrastructure.Logging;
@@ -38,6 +39,7 @@ using System.Threading.RateLimiting;
 using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
+DeploymentEntitlementGuard.Validate(builder.Configuration);
 
 // ─── Serilog ─────────────────────────────────────────────────────────────────
 Log.Logger = new LoggerConfiguration()

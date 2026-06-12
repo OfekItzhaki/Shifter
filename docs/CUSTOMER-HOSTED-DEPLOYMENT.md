@@ -73,6 +73,8 @@ Customer-hosted means:
 
    ```env
    SHIFTER_DEPLOYMENT_MODE=customer-hosted
+   SHIFTER_LICENSEE="Customer Legal Name"
+   SHIFTER_LICENSE_KEY=<customer-license-key-from-ofeklabs>
    APP_FRONTEND_BASE_URL=https://shifter.customer.example
    APP_API_BASE_URL=https://api-shifter.customer.example
    NEXT_PUBLIC_API_URL=https://api-shifter.customer.example
@@ -248,6 +250,22 @@ For customer-hosted deployments:
 - Do not use LemonSqueezy inside a private enterprise install unless the
   contract explicitly requires self-service billing.
 
+## License And Entitlement
+
+Customer-hosted installs are fail-closed on startup unless the env file includes
+the customer legal name and issued license key:
+
+```env
+SHIFTER_LICENSEE="Customer Legal Name"
+SHIFTER_LICENSE_KEY=...
+```
+
+The install validators reject missing, placeholder, or too-short license values,
+and the API repeats the same check at startup when
+`SHIFTER_DEPLOYMENT_MODE=customer-hosted`. Store the license values with the rest
+of the customer secrets and update them through the normal maintenance window
+process.
+
 ## Manual Self-Service Defaults
 
 Set these before switching customer groups to `SelfService` mode when the
@@ -374,4 +392,5 @@ customer-hosted package:
 
 - Helm chart for Kubernetes customers.
 - Offline image bundle for air-gapped sites.
-- License/entitlement enforcement for on-prem contracts.
+- Signed offline license files or activation portal for larger on-prem
+  contracts.

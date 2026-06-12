@@ -193,6 +193,8 @@ Known verification:
 - Adds compose/env wiring for `FIELD_ENCRYPTION_KEY`.
 - Adds customer env validation for `FIELD_ENCRYPTION_KEY` length and placeholder
   replacement.
+- Adds customer-hosted entitlement validation for `SHIFTER_LICENSEE` and
+  `SHIFTER_LICENSE_KEY` in both install validators and API startup.
 - Adds a customer env validator harness that checks valid envs, no-export AI
   rejection/allowance, and short field encryption keys against the PowerShell
   validator and Git Bash validator when available. It also asserts warning

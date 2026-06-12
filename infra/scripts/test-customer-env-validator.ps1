@@ -17,6 +17,8 @@ function New-BaseEnv {
         REDIS_PASSWORD = "valid-redis-password"
         API_PORT = "5000"
         WEB_PORT = "3000"
+        SHIFTER_LICENSEE = "Acme Scheduling Ltd"
+        SHIFTER_LICENSE_KEY = "valid-customer-license-key-2026"
         JWT_SECRET = "valid-jwt-secret-minimum-32-chars"
         JWT_ISSUER = "shifter-customer-api"
         JWT_AUDIENCE = "shifter-customer-web"
@@ -190,6 +192,22 @@ try {
     $shortFieldKey = New-BaseEnv
     $shortFieldKey["FIELD_ENCRYPTION_KEY"] = "too-short"
     Test-Case -Name "reject-short-field-key" -Values $shortFieldKey -ExpectedExit 1
+
+    $missingLicense = New-BaseEnv
+    $missingLicense["SHIFTER_LICENSE_KEY"] = ""
+    Test-Case `
+        -Name "reject-missing-license-key" `
+        -Values $missingLicense `
+        -ExpectedExit 1 `
+        -ExpectedOutputPatterns @("SHIFTER_LICENSE_KEY is required")
+
+    $shortLicense = New-BaseEnv
+    $shortLicense["SHIFTER_LICENSE_KEY"] = "too-short"
+    Test-Case `
+        -Name "reject-short-license-key" `
+        -Values $shortLicense `
+        -ExpectedExit 1 `
+        -ExpectedOutputPatterns @("SHIFTER_LICENSE_KEY must be at least 24 characters")
 
     $partialResend = New-BaseEnv
     $partialResend["RESEND_API_KEY"] = "re_customer_key"

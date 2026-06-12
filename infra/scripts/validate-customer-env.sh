@@ -113,6 +113,8 @@ required_keys=(
   REDIS_PASSWORD
   API_PORT
   WEB_PORT
+  SHIFTER_LICENSEE
+  SHIFTER_LICENSE_KEY
   JWT_SECRET
   JWT_ISSUER
   JWT_AUDIENCE
@@ -134,6 +136,12 @@ done
 jwt_secret="$(env_value JWT_SECRET)"
 if [ -n "$jwt_secret" ] && [ "${#jwt_secret}" -lt 32 ]; then
   echo "ERROR: JWT_SECRET must be at least 32 characters." >&2
+  errors=$((errors + 1))
+fi
+
+license_key="$(env_value SHIFTER_LICENSE_KEY)"
+if [ -n "$license_key" ] && [ "${#license_key}" -lt 24 ]; then
+  echo "ERROR: SHIFTER_LICENSE_KEY must be at least 24 characters." >&2
   errors=$((errors + 1))
 fi
 

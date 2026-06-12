@@ -133,6 +133,8 @@ $requiredKeys = @(
     "REDIS_PASSWORD",
     "API_PORT",
     "WEB_PORT",
+    "SHIFTER_LICENSEE",
+    "SHIFTER_LICENSE_KEY",
     "JWT_SECRET",
     "JWT_ISSUER",
     "JWT_AUDIENCE",
@@ -154,6 +156,11 @@ foreach ($key in $requiredKeys) {
 $jwtSecret = Get-EnvValue "JWT_SECRET"
 if (-not [string]::IsNullOrWhiteSpace($jwtSecret) -and $jwtSecret.Length -lt 32) {
     Add-Error "JWT_SECRET must be at least 32 characters."
+}
+
+$licenseKey = Get-EnvValue "SHIFTER_LICENSE_KEY"
+if (-not [string]::IsNullOrWhiteSpace($licenseKey) -and $licenseKey.Length -lt 24) {
+    Add-Error "SHIFTER_LICENSE_KEY must be at least 24 characters."
 }
 
 $fieldEncryptionKey = Get-EnvValue "FIELD_ENCRYPTION_KEY"
