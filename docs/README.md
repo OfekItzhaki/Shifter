@@ -40,6 +40,8 @@ manual self-service scheduling decisions.
 
 ## Deployment
 
+- [Hosted VPS MVP launch checklist](HOSTED-VPS-MVP-LAUNCH-CHECKLIST.md) - what
+  to verify before inviting real users to the OfekLabs-hosted VPS service.
 - [Customer-hosted deployment](CUSTOMER-HOSTED-DEPLOYMENT.md) - first supported
   package for installs inside a customer's infrastructure.
   Use `infra/scripts/validate-customer-env.sh` or

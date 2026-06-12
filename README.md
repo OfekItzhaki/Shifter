@@ -122,6 +122,10 @@ The API returns structured JSON logs (Serilog) suitable for ingestion by Seq, EL
 
 For the full documentation menu, start at [docs/README.md](docs/README.md).
 
+For the OfekLabs-hosted VPS service, use the hosted MVP checklist:
+
+- [Hosted VPS MVP launch checklist](docs/HOSTED-VPS-MVP-LAUNCH-CHECKLIST.md)
+
 For organizations that need Shifter installed in their own infrastructure, use
 the Docker Compose customer-hosted package:
 
