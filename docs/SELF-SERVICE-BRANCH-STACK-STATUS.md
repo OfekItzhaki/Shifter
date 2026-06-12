@@ -270,6 +270,10 @@ Known verification:
   special-day picker browser flow.
 - Targeted organization-defaults and portability tests passed:
   `dotnet test apps\\api\\Jobuler.Tests\\Jobuler.Tests.csproj --filter "FullyQualifiedName~ChangeSchedulingModeCommandTests|FullyQualifiedName~OrganizationPortabilityTests"`.
+- Organization portability coverage now exports, validates, and imports the full
+  manual self-service graph into a clean target context, including defaults,
+  special days, cycles, slots, requests, attendance, absences, change requests,
+  waitlists, swaps, special leave, notifications, and audit logs.
 - Organization import controller route coverage passed:
   `dotnet test apps\\api\\Jobuler.Tests\\Jobuler.Tests.csproj --filter FullyQualifiedName~PlatformControllerImportTests`.
 - AI no-export guard, assistant fallback, and AI health checks passed:

@@ -490,7 +490,7 @@ public class OrganizationPortabilityTests
     }
 
     [Fact]
-    public async Task ExportPackage_IncludesManifestAndScopedDataOnly()
+    public async Task ExportPackage_IncludesManifestAndScopedDataOnly_AndImportsSelfServiceGraph()
     {
         var db = CreateDb();
         var ownerId = Guid.NewGuid();
@@ -748,6 +748,37 @@ public class OrganizationPortabilityTests
         importValidation.Counts.WaitlistEntries.Should().Be(1);
         importValidation.Counts.SwapRequests.Should().Be(1);
         importValidation.Counts.SpecialLeaveRequests.Should().Be(1);
+
+        var targetDb = CreateDb();
+        var importResult = await new ImportOrganizationPackageCommandHandler(targetDb)
+            .Handle(new ImportOrganizationPackageCommand(
+                System.Text.Encoding.UTF8.GetString(result.Content),
+                ConfirmImport: true), CancellationToken.None);
+
+        importResult.OrganizationId.Should().Be(organization.Id);
+        importResult.Counts.Should().Be(importValidation.Counts);
+
+        (await targetDb.OrganizationSelfServiceDefaults.FindAsync(organizationDefaults.Id)).Should().NotBeNull();
+        (await targetDb.SpaceSelfServiceDefaults.FindAsync(defaults.Id)).Should().NotBeNull();
+        (await targetDb.SpaceSpecialDays.FindAsync(specialDay.Id)).Should().NotBeNull();
+        (await targetDb.SelfServiceConfigs.FindAsync(config.Id)).Should().NotBeNull();
+        (await targetDb.SchedulingCycles.FindAsync(cycle.Id)).Should().NotBeNull();
+        (await targetDb.ShiftTemplates.FindAsync(template.Id)).Should().NotBeNull();
+        (await targetDb.ShiftSlots.FindAsync(slot.Id)).Should().NotBeNull();
+        (await targetDb.ShiftRequests.FindAsync(shiftRequest.Id)).Should().NotBeNull();
+        (await targetDb.ShiftRequests.FindAsync(targetShiftRequest.Id)).Should().NotBeNull();
+        (await targetDb.ShiftAttendanceRecords.FindAsync(attendance.Id)).Should().NotBeNull();
+        (await targetDb.ShiftAbsenceReports.FindAsync(absence.Id)).Should().NotBeNull();
+        (await targetDb.ShiftChangeRequests.FindAsync(change.Id)).Should().NotBeNull();
+        (await targetDb.WaitlistEntries.FindAsync(waitlist.Id)).Should().NotBeNull();
+        (await targetDb.SwapRequests.FindAsync(swap.Id)).Should().NotBeNull();
+        (await targetDb.SpecialLeaveRequests.FindAsync(specialLeave.Id)).Should().NotBeNull();
+        (await targetDb.Notifications.FindAsync(notification.Id)).Should().NotBeNull();
+        (await targetDb.AuditLogs.FindAsync(auditLog.Id)).Should().NotBeNull();
+
+        (await targetDb.SelfServiceConfigs.AnyAsync(c => c.Id == outsideConfig.Id)).Should().BeFalse();
+        (await targetDb.Notifications.AnyAsync(n => n.Id == outsideNotification.Id)).Should().BeFalse();
+        (await targetDb.AuditLogs.AnyAsync(a => a.Id == outsideAuditLog.Id)).Should().BeFalse();
     }
 
     [Fact]
