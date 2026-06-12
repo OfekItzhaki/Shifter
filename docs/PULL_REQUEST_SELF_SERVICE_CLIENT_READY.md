@@ -116,6 +116,9 @@ packaging, and self-service export package validation readiness.
   with `requiresCoverage=false` remain visible with no-coverage labels, but
   member picks, waitlist joins, waitlist offer cascades, and stale offer
   acceptance are blocked. Admin overrides remain the explicit exception path.
+- Extends the special-day policy to special leave requests: requests overlapping
+  no-coverage special days are rejected, while coverage-required special-day
+  overlaps are allowed and highlighted to admins.
 - Ends the current session after password changes and shows a login success
   notice, preventing stale authenticated sessions after credential rotation.
 - Supports PWA install prompts on mobile and desktop when the browser reports
@@ -140,6 +143,9 @@ packaging, and self-service export package validation readiness.
 - `dotnet test apps\\api\\Jobuler.Tests\\Jobuler.Tests.csproj --filter "FullyQualifiedName~SlotAvailabilityEngineTests|FullyQualifiedName~ManualSelfServiceLifecycleTests|FullyQualifiedName~WaitlistServiceTests"`
   passed: 42 passed, 0 failed, including no-coverage special-day member action
   policy coverage.
+- `dotnet test apps\\api\\Jobuler.Tests\\Jobuler.Tests.csproj --filter FullyQualifiedName~SpecialLeaveRequestCommandTests`
+  passed: 18 passed, 0 failed, including special leave overlap handling for
+  no-coverage and coverage-required special days.
 - `node_modules\\.bin\\vitest.cmd run __tests__\\selfService\\slotBrowserTab.test.tsx`
   passed: 5 passed, 0 failed, including the no-coverage special-day picker
   state.

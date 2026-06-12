@@ -37,8 +37,10 @@ The first version is conservative: marked special days are visible in member and
 admin workflows, and `requiresCoverage=false` is treated as a no-coverage day
 for member self-service. Members cannot pick those slots, join their waitlists,
 or accept stale waitlist offers for them; admin override tools remain available
-for explicit exceptions. Other holiday-specific staffing policies remain future
-scope. Silent behavior changes would be worse than no integration.
+for explicit exceptions. Special leave requests overlapping no-coverage special
+days are rejected, while requests overlapping coverage-required special days are
+allowed and highlighted to admins. Other holiday-specific staffing policies
+remain future scope. Silent behavior changes would be worse than no integration.
 
 ## Data Rules
 
@@ -63,9 +65,11 @@ tests for at least:
 2. A normal self-service cycle without special days behaves exactly as before.
 3. A no-coverage special day blocks member picks, waitlist joins, waitlist offer
    cascades, and stale waitlist offer acceptance.
-4. Tenant/space isolation prevents a special day from leaking into another
+4. Special leave requests reject no-coverage special-day overlap and surface
+   coverage-required special-day context to admins.
+5. Tenant/space isolation prevents a special day from leaking into another
    space's self-service schedule.
-5. Closeout or operations status shows special-day impact when the group has
+6. Closeout or operations status shows special-day impact when the group has
    holiday-aware behavior enabled.
 
 ## Merge Gate

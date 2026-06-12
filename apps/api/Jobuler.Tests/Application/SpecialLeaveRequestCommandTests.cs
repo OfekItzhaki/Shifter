@@ -5,6 +5,7 @@ using Jobuler.Application.People.SpecialLeave;
 using Jobuler.Application.Scheduling;
 using Jobuler.Domain.Groups;
 using Jobuler.Domain.People;
+using Jobuler.Domain.Spaces;
 using Jobuler.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
@@ -94,6 +95,87 @@ public class SpecialLeaveRequestCommandTests
 
         await notifications.DidNotReceiveWithAnyArgs()
             .NotifySpaceAdminsAsync(default, default!, default!, default!, default!, default, default);
+    }
+
+    [Fact]
+    public async Task Submit_RejectsNoCoverageSpecialDayOverlap()
+    {
+        await using var db = CreateDb();
+        var spaceId = Guid.NewGuid();
+        var userId = Guid.NewGuid();
+        var person = Person.Create(spaceId, "Ofek", linkedUserId: userId);
+        var start = new DateTime(2026, 9, 22, 8, 0, 0, DateTimeKind.Utc);
+        db.People.Add(person);
+        db.SpaceSpecialDays.Add(SpaceSpecialDay.Create(
+            spaceId,
+            DateOnly.FromDateTime(start),
+            "Office Closure",
+            SpaceSpecialDayKind.Custom,
+            requiresCoverage: false));
+        await db.SaveChangesAsync();
+
+        var notifications = Substitute.For<INotificationService>();
+        var audit = CreateAuditLogger();
+        var handler = new SubmitSpecialLeaveRequestCommandHandler(db, notifications, audit);
+
+        var act = () => handler.Handle(new SubmitSpecialLeaveRequestCommand(
+            spaceId,
+            person.Id,
+            start,
+            start.AddHours(8),
+            "Family event",
+            userId), CancellationToken.None);
+
+        await act.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("Special leave overlaps no-coverage special day(s): Office Closure. Adjust the request to days that require coverage.");
+
+        (await db.SpecialLeaveRequests.CountAsync()).Should().Be(0);
+        await notifications.DidNotReceiveWithAnyArgs()
+            .NotifySpaceAdminsAsync(default, default!, default!, default!, default!, default, default);
+        await audit.DidNotReceiveWithAnyArgs()
+            .LogAsync(default, default, default!, default, default, default, default, default, default);
+    }
+
+    [Fact]
+    public async Task Submit_HighlightsCoverageRequiredSpecialDayOverlap()
+    {
+        await using var db = CreateDb();
+        var spaceId = Guid.NewGuid();
+        var userId = Guid.NewGuid();
+        var person = Person.Create(spaceId, "Ofek", linkedUserId: userId);
+        var start = new DateTime(2026, 9, 22, 8, 0, 0, DateTimeKind.Utc);
+        db.People.Add(person);
+        db.SpaceSpecialDays.Add(SpaceSpecialDay.Create(
+            spaceId,
+            DateOnly.FromDateTime(start),
+            "Rosh Hashanah",
+            SpaceSpecialDayKind.Holiday,
+            requiresCoverage: true));
+        await db.SaveChangesAsync();
+
+        var notifications = Substitute.For<INotificationService>();
+        var audit = CreateAuditLogger();
+        var handler = new SubmitSpecialLeaveRequestCommandHandler(db, notifications, audit);
+
+        var requestId = await handler.Handle(new SubmitSpecialLeaveRequestCommand(
+            spaceId,
+            person.Id,
+            start,
+            start.AddHours(8),
+            "Family event",
+            userId), CancellationToken.None);
+
+        (await db.SpecialLeaveRequests.CountAsync()).Should().Be(1);
+        await notifications.Received(1).NotifySpaceAdminsAsync(
+            spaceId,
+            "self_service.special_leave_requested",
+            "Time-off Requested",
+            Arg.Is<string>(body => body.Contains("Rosh Hashanah") && body.Contains("coverage-required")),
+            Arg.Is<string>(metadata => metadata.Contains(requestId.ToString())
+                && metadata.Contains("Rosh Hashanah")
+                && metadata.Contains("RequiresCoverage")),
+            null,
+            Arg.Any<CancellationToken>());
     }
 
     [Fact]

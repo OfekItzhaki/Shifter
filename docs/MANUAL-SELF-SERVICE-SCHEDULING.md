@@ -29,6 +29,9 @@ Manual self-service currently supports:
 - Special-day policy for closures or no-coverage dates: slots on marked special
   days with `requiresCoverage=false` stay visible with a no-coverage label, but
   members cannot pick them or join/accept waitlists for them.
+- Special leave validation against special days: leave requests overlapping
+  `requiresCoverage=false` dates are rejected, while coverage-required special
+  days remain requestable and are highlighted to admins.
 
 The deterministic solver is still available for automatic groups. Self-service
 groups do not require hosted AI.
@@ -45,7 +48,7 @@ when the organization accepts an admin-operated review queue:
 | Members cannot attend | Supported through absence reports, with late-report counting per cycle. |
 | Members ask to change shifts | Supported for specific target slots and flexible admin-selected targets. |
 | Members swap shifts | Supported through member-to-member swap requests with ownership and schedule-safety checks. |
-| Members request planned time off | Supported through special leave requests and admin review. |
+| Members request planned time off | Supported through special leave requests and admin review, with special-day overlap checks. |
 | Admin fills gaps manually | Supported through admin assignment/removal overrides. Overrides can exceed capacity when needed, but still reject started/closed slots, duplicate assignments, overlap conflicts, and rest-window violations. |
 | Admin sees the operating state | Supported through operations status, prioritized underfilled-slot gaps, closeout summary, attendance/no-show counts, review counts, waitlist/admin queues, and manual assignment tools. |
 | Customer-hosted/no-AI use | Supported. Manual self-service does not require hosted AI. |
@@ -180,6 +183,10 @@ Shift change requests:
 
 Special leave:
 
+- Requests overlapping no-coverage special days are rejected because there is no
+  coverage obligation to be excused from.
+- Requests overlapping coverage-required special days are allowed, and admin
+  notifications include the special-day context.
 - Pending leave can be cancelled by the member.
 - Admin approval/rejection records the decision and note.
 - Approved leave should be considered when planning future cycles and manual

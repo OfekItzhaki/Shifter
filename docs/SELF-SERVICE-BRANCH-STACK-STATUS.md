@@ -267,6 +267,9 @@ Known verification:
   `requiresCoverage=false` special days block member picks, waitlist joins,
   waitlist offer cascades, and stale waitlist offer acceptance while keeping the
   slots visible with no-coverage labels.
+- Extends the same policy to special leave: no-coverage special-day overlaps are
+  rejected, and coverage-required special-day overlaps are highlighted in admin
+  notifications.
 - Ends sessions after password changes and redirects users back to login with a
   success notice.
 - Supports PWA install prompts on mobile and desktop when the browser reports
@@ -368,6 +371,10 @@ Known verification:
   `node_modules\\.bin\\vitest.cmd run __tests__\\selfService\\slotBrowserTab.test.tsx`
   and
   `node_modules\\.bin\\eslint.cmd app\\groups\\[groupId]\\tabs\\SlotBrowserTab.tsx lib\\api\\selfService.ts __tests__\\selfService\\slotBrowserTab.test.tsx`.
+- Focused special leave special-day policy tests passed:
+  `dotnet test apps\\api\\Jobuler.Tests\\Jobuler.Tests.csproj --filter FullyQualifiedName~SpecialLeaveRequestCommandTests`.
+  This includes rejecting no-coverage special-day overlap and highlighting
+  coverage-required special-day overlap to admins.
 - Backup, deploy, restore, and seed compose script syntax checks passed after
   custom `ENV_FILE` propagation.
 - Resend sender and health check coverage passed:
