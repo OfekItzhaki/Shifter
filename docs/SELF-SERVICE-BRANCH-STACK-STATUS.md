@@ -3,6 +3,20 @@
 Use this as the current branch-stack map for manual self-service,
 holiday-calendar integration, and customer-hosted portability.
 
+## Current Resume Point
+
+- Active branch: `feat/self-service-client-ready`
+- Latest pushed commit: `e40fe378 docs(pr): update latest client-ready preflight link`
+- Latest package-relevant green CI:
+  https://github.com/OfekItzhaki/Shifter/actions/runs/27420585630
+- Resume on another machine with:
+
+  ```powershell
+  git fetch origin
+  git checkout feat/self-service-client-ready
+  git pull
+  ```
+
 ## Merge Order
 
 Merge and test in this order:
