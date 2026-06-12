@@ -428,6 +428,10 @@ Known verification:
   `node_modules\\.bin\\vitest.cmd run __tests__\\selfService\\myShiftsTab.test.tsx`,
   and
   `node_modules\\.bin\\eslint.cmd components\\groups\\selfService\\MyShiftsTab.tsx lib\\api\\selfService.ts __tests__\\selfService\\myShiftsTab.test.tsx`.
+- Browser lifecycle discovery passed with 15 tests, and the suite now includes
+  slot fill-count final-state coverage for picks, waitlist join/leave, shift
+  cancellation, shift-change approval/rejection, swap accept/decline/cancel,
+  and cannot-attend rejection.
 - Customer-hosted package assembly preflight passed:
   `infra\\scripts\\test-package-customer-hosted.ps1`.
   This now renders the extracted package Compose config with non-default

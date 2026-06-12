@@ -186,7 +186,9 @@ packaging, and self-service export package validation readiness.
 - `node_modules\\.bin\\eslint.cmd e2e\\self-service.browser.spec.ts` passed.
 - `node_modules\\.bin\\playwright.cmd test self-service.browser.spec.ts --list`
   discovered 15 browser lifecycle tests, including the special-day label flow
-  and cancellation final-state coverage that verifies slot fill count decreases.
+  and final-state slot fill-count coverage for picks, waitlist join/leave,
+  shift cancellation, shift-change approval/rejection, swap
+  accept/decline/cancel, and cannot-attend rejection.
 - `infra/scripts/smoke-self-service-client-ready.ps1 -ApiBaseUrl http://localhost:5015 -WebBaseUrl http://localhost:3015`
   passed against a fresh SQL install from all migrations plus `seed.sql`, a
   live API, and a rebuilt production web server. This covered customer-hosted
