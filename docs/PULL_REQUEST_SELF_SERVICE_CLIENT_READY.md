@@ -275,6 +275,11 @@ packaging, and self-service export package validation readiness.
   customer-facing handoff docs.
 - Customer-hosted preflight CI passed on this branch; see the workflow history:
   https://github.com/OfekItzhaki/Shifter/actions/workflows/customer-hosted-preflight.yml
+- Customer-hosted preflight CI run `27425585221` passed for commit `f6dfe0a2`
+  on June 12, 2026: `Package Preflight` completed successfully in 1m 58s.
+- GitHub Actions first-party setup actions were upgraded to Node 24-compatible
+  majors after that run to avoid the upcoming Node 20 action-runtime
+  deprecation warning.
 - Before merge, use the workflow history above to confirm the latest
   package-relevant run for `feat/self-service-client-ready` is green.
 - `infra/scripts/backup-compose.sh`, `infra/scripts/deploy-compose.sh`,
