@@ -37,6 +37,9 @@ private customer AI, or a customer-owned database.
   .\infra\scripts\smoke-hosted-vps.ps1 -EnvFile .\infra\compose\.env
   ```
 
+- The GitHub `Deploy to VPS` workflow also runs this hosted smoke check after
+  a successful VPS deployment, and uses the API `/ready` endpoint for the
+  rollback gate before declaring the deployed Compose stack ready.
 - Confirm login, registration/invite, password reset, and change-password flows.
 - Confirm Resend is configured for production email if email flows are enabled.
 - Confirm AI mode:

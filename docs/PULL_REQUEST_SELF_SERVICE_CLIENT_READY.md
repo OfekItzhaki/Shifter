@@ -288,6 +288,12 @@ packaging, and self-service export package validation readiness.
 - Manual CI run `27439067258` passed on `develop` for commit `cdf836e` on
   June 12, 2026, covering API build/tests, frontend typecheck/lint/build,
   solver lint/tests, and solver health.
+- The `Deploy to VPS` workflow now uses API `/ready` for the rollback gate,
+  runs Docker Compose with flags before service names, and runs the hosted VPS
+  smoke script against `https://shifter.ofeklabs.com` and
+  `https://api.shifter.ofeklabs.com` after deployment.
+- Manual CI run `27439465974` passed on `develop` for commit `1bc45c6` on
+  June 12, 2026 after the VPS deploy workflow hardening.
 - `infra/scripts/smoke-self-service-client-ready.ps1 -ApiBaseUrl http://localhost:5015 -WebBaseUrl http://localhost:3015`
   passed locally on June 12, 2026 against an isolated temporary PostgreSQL 16
   database, isolated Redis, a fresh API on port `5015`, and the current-branch
