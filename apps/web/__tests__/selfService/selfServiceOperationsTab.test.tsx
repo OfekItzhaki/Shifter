@@ -42,6 +42,10 @@ vi.mock("next-intl", () => ({
       "closeout.details.changesValue": `${values?.approved ?? 0} approved / ${values?.rejected ?? 0} rejected / ${values?.pending ?? 0} pending`,
       "closeout.details.waitlist": "Waitlist",
       "closeout.details.waitlistValue": `${values?.active ?? 0} active / ${values?.accepted ?? 0} accepted / ${values?.expired ?? 0} expired`,
+      "closeout.details.specialDays": "Special days",
+      "closeout.details.specialDaysValue": `${values?.total ?? 0} slot(s) / ${values?.noCoverage ?? 0} no-coverage / ${values?.underfilled ?? 0} under-filled`,
+      "closeout.details.workflowPolicy": "Workflow policy",
+      "closeout.details.workflowPolicyValue": `${values?.enabled ?? 0}/${values?.total ?? 0} workflows enabled`,
       "policy.title": "Active member policy",
       "policy.description": "Current rules for members.",
       "policy.edit": "Edit policy",
@@ -194,11 +198,19 @@ describe("SelfServiceOperationsTab", () => {
       startsAt: "2026-06-20T00:00:00",
       endsAt: "2026-06-27T00:00:00",
       isClosed: false,
+      allowMemberShiftClaims: true,
+      allowWaitlist: false,
+      allowShiftChangeRequests: false,
+      allowAbsenceReports: true,
+      allowShiftSwaps: true,
       slotCount: 10,
       totalCapacity: 20,
       filledCount: 17,
       underfilledSlotCount: 3,
       overfilledSlotCount: 0,
+      specialDaySlotCount: 2,
+      noCoverageSpecialDaySlotCount: 1,
+      underfilledSpecialDaySlotCount: 1,
       approvedAssignments: 17,
       cancelledAssignments: 2,
       rejectedRequests: 1,
@@ -282,6 +294,8 @@ describe("SelfServiceOperationsTab", () => {
     expect(screen.getByText("15 unresolved item(s)")).toBeInTheDocument();
     expect(screen.getByText("17/20")).toBeInTheDocument();
     expect(screen.getByText("12 present / 2 no-show / 2 unconfirmed")).toBeInTheDocument();
+    expect(screen.getByText("2 slot(s) / 1 no-coverage / 1 under-filled")).toBeInTheDocument();
+    expect(screen.getByText("3/5 workflows enabled")).toBeInTheDocument();
     expect(screen.getByText("6 pending review item(s)")).toBeInTheDocument();
     expect(screen.getByText("4 active waitlist item(s)")).toBeInTheDocument();
     expect(screen.getByText("2 pending swap proposal(s)")).toBeInTheDocument();

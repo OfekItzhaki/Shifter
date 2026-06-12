@@ -56,6 +56,13 @@ Requirements:
 Run Shifter in the customer's environment and point `AI__BaseUrl` to a local
 OpenAI-compatible inference server such as vLLM or Ollama.
 
+```env
+AI_API_KEY=
+AI_BASE_URL=http://local-ai.customer.internal:8000/v1
+AI_MODEL=customer-approved-model
+AI_NO_EXPORT_REQUIRED=true
+```
+
 Good for:
 - Defense, public sector, hospitals, and organizations with strict no-data-export
   rules.
@@ -69,6 +76,8 @@ Tradeoffs:
 
 Requirements:
 - No external AI calls.
+- Customer env validation and API startup both enforce
+  `AI_NO_EXPORT_REQUIRED=true` by rejecting public/default AI endpoints.
 - No external email provider unless explicitly configured by the customer.
 - File imports and chat prompts stay inside the customer network.
 - Disable analytics, external chat widgets, and external error tracking unless
@@ -88,6 +97,15 @@ It only checks endpoint/auth reachability. For SaaS with `AI_API_KEY` and no
 `AI_BASE_URL`, the API checks `https://api.openai.com/v1/models`. For
 customer-hosted no-export installs, it checks the customer's private
 `AI_BASE_URL`.
+
+The detailed health result also includes non-sensitive AI mode metadata:
+
+- `details.mode`: `disabled`, `hosted`, `private-compatible`, or `no-export`.
+- `details.endpointKind`: `none`, `hosted`, `private`, or `unknown`.
+- `details.noExportRequired`: `true` or `false`.
+
+For a customer that forbids data export, verify `/health/detailed` reports
+`mode=no-export`, `endpointKind=private`, and `noExportRequired=true`.
 
 ## Provider Choice
 

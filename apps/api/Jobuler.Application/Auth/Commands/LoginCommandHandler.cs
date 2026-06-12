@@ -16,6 +16,7 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, LoginResult>
     private readonly AppDbContext _db;
     private readonly IJwtService _jwt;
     private readonly ITimezoneResolver _timezoneResolver;
+    private readonly IContactLookupProtector _contactLookup;
     private readonly int _refreshTokenExpiryDays;
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<LoginCommandHandler> _logger;
@@ -24,6 +25,7 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, LoginResult>
         AppDbContext db,
         IJwtService jwt,
         ITimezoneResolver timezoneResolver,
+        IContactLookupProtector contactLookup,
         IConfiguration config,
         IServiceScopeFactory scopeFactory,
         ILogger<LoginCommandHandler> logger)
@@ -31,6 +33,7 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, LoginResult>
         _db = db;
         _jwt = jwt;
         _timezoneResolver = timezoneResolver;
+        _contactLookup = contactLookup;
         _refreshTokenExpiryDays = int.Parse(config["Jwt:RefreshTokenExpiryDays"] ?? "7");
         _scopeFactory = scopeFactory;
         _logger = logger;
@@ -38,7 +41,7 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, LoginResult>
 
     public async Task<LoginResult> Handle(LoginCommand request, CancellationToken ct)
     {
-        var identifier = request.Identifier.Trim().ToLowerInvariant();
+        var identifier = request.Identifier.Trim();
 
         // Determine if identifier is email or phone
         var isEmail = identifier.Contains('@');
@@ -46,15 +49,31 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, LoginResult>
         User? user;
         if (isEmail)
         {
+            var normalizedEmail = _contactLookup.NormalizeEmail(identifier);
+            var emailLookupHash = _contactLookup.HashEmail(identifier);
             user = await _db.Users
-                .FirstOrDefaultAsync(u => u.Email == identifier && u.IsActive, ct);
+                .FirstOrDefaultAsync(u => u.EmailLookupHash == emailLookupHash && u.IsActive, ct);
+            if (user is null)
+            {
+                var legacyUsers = await _db.Users
+                    .Where(u => u.EmailLookupHash == null && u.IsActive)
+                    .ToListAsync(ct);
+                user = legacyUsers.FirstOrDefault(u => _contactLookup.NormalizeEmail(u.Email) == normalizedEmail);
+            }
         }
         else
         {
-            // Normalize phone: strip spaces, dashes, parentheses
-            var normalizedPhone = NormalizePhone(request.Identifier.Trim());
+            var normalizedPhone = _contactLookup.NormalizePhone(identifier);
+            var phoneLookupHash = _contactLookup.HashPhone(identifier);
             user = await _db.Users
-                .FirstOrDefaultAsync(u => u.PhoneNumber != null && u.PhoneNumber == normalizedPhone && u.IsActive, ct);
+                .FirstOrDefaultAsync(u => u.PhoneLookupHash == phoneLookupHash && u.IsActive, ct);
+            if (user is null)
+            {
+                var legacyUsers = await _db.Users
+                    .Where(u => u.PhoneLookupHash == null && u.PhoneNumber != null && u.IsActive)
+                    .ToListAsync(ct);
+                user = legacyUsers.FirstOrDefault(u => u.PhoneNumber is not null && _contactLookup.NormalizePhone(u.PhoneNumber) == normalizedPhone);
+            }
         }
 
         if (user == null)
@@ -98,11 +117,5 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, LoginResult>
 
         return new LoginResult(accessToken, rawRefresh, expiresAt, user.Id, user.DisplayName, user.PreferredLocale, user.IsPlatformAdmin,
             timezone.IanaTimezoneId, timezone.OffsetMinutes);
-    }
-
-    private static string NormalizePhone(string phone)
-    {
-        // Remove common formatting characters
-        return phone.Replace(" ", "").Replace("-", "").Replace("(", "").Replace(")", "");
     }
 }

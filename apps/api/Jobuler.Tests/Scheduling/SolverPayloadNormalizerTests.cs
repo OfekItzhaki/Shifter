@@ -3,6 +3,7 @@
 // Validates: Tasks 20.1, 20.2, 20.3
 
 using FluentAssertions;
+using Jobuler.Application.Scheduling.Models;
 using Jobuler.Application.Scheduling;
 using Jobuler.Domain.Constraints;
 using Jobuler.Domain.Groups;
@@ -55,10 +56,197 @@ public class SolverPayloadNormalizerTests
         return rule;
     }
 
+    private static SolverPayloadNormalizer CreateNormalizer(AppDbContext db)
+    {
+        var cumulativeTracker = Substitute.For<ICumulativeTracker>();
+        cumulativeTracker.GetForSolverPayloadAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(new List<CumulativeTrackingDto>()));
+
+        return new SolverPayloadNormalizer(
+            db,
+            NullLogger<SolverPayloadNormalizer>.Instance,
+            cumulativeTracker);
+    }
+
+    private static Group AddGroup(AppDbContext db, Guid spaceId, string name, Guid? parentGroupId = null)
+    {
+        var group = Group.Create(spaceId, null, name);
+        if (parentGroupId.HasValue)
+            group.SetParentGroup(parentGroupId);
+        db.Groups.Add(group);
+        return group;
+    }
+
+    private static Person AddPerson(AppDbContext db, Guid spaceId, Group group, string name)
+    {
+        var person = Person.Create(spaceId, name);
+        db.People.Add(person);
+        db.GroupMemberships.Add(GroupMembership.Create(spaceId, group.Id, person.Id));
+        return person;
+    }
+
+    private static GroupTask AddTask(
+        AppDbContext db,
+        Guid spaceId,
+        Group group,
+        string name,
+        DateTime startsAt)
+    {
+        var task = GroupTask.Create(
+            spaceId,
+            group.Id,
+            name,
+            startsAt,
+            startsAt.AddHours(4),
+            shiftDurationMinutes: 120,
+            requiredHeadcount: 1,
+            burdenLevel: TaskBurdenLevel.Normal,
+            allowsDoubleShift: false,
+            allowsOverlap: false,
+            createdByUserId: Guid.NewGuid());
+        db.GroupTasks.Add(task);
+        return task;
+    }
+
     // ── Task 20.3: Unit tests for effective-date filtering ────────────────────
 
     // Property 10: Effective-date filtering is uniform across scope types
     // Feature: schedule-table-autoschedule-role-constraints, Property 10: effective-date filtering uniform
+
+    [Fact]
+    public async Task BuildAsync_ForParentGroup_IncludesDescendantTasksAndMembers_ExcludesSiblings()
+    {
+        var (db, spaceId) = await SetupSpaceAsync();
+        var startsAt = new DateTime(2026, 6, 7, 8, 0, 0, DateTimeKind.Utc);
+
+        var parent = AddGroup(db, spaceId, "Restaurant");
+        var child = AddGroup(db, spaceId, "Kitchen", parent.Id);
+        var grandchild = AddGroup(db, spaceId, "Morning Shift", child.Id);
+        var sibling = AddGroup(db, spaceId, "Bar");
+
+        var parentPerson = AddPerson(db, spaceId, parent, "Parent Member");
+        var childPerson = AddPerson(db, spaceId, child, "Child Member");
+        var grandchildPerson = AddPerson(db, spaceId, grandchild, "Grandchild Member");
+        var siblingPerson = AddPerson(db, spaceId, sibling, "Sibling Member");
+
+        AddTask(db, spaceId, parent, "Parent Task", startsAt);
+        AddTask(db, spaceId, child, "Child Task", startsAt);
+        AddTask(db, spaceId, grandchild, "Grandchild Task", startsAt);
+        AddTask(db, spaceId, sibling, "Sibling Task", startsAt);
+        await db.SaveChangesAsync();
+
+        var payload = await CreateNormalizer(db).BuildAsync(
+            spaceId, Guid.NewGuid(), "standard", null, parent.Id, startsAt);
+
+        payload.TaskSlots.Select(s => s.TaskTypeName).Should().Contain(["Parent Task", "Child Task", "Grandchild Task"]);
+        payload.TaskSlots.Select(s => s.TaskTypeName).Should().NotContain("Sibling Task");
+        payload.People.Select(p => p.PersonId).Should().Contain([
+            parentPerson.Id.ToString(),
+            childPerson.Id.ToString(),
+            grandchildPerson.Id.ToString()
+        ]);
+        payload.People.Select(p => p.PersonId).Should().NotContain(siblingPerson.Id.ToString());
+    }
+
+    [Fact]
+    public async Task BuildAsync_ForChildGroup_ExcludesSiblingTasksAndIncludesAncestorBlockers()
+    {
+        var (db, spaceId) = await SetupSpaceAsync();
+        var userId = Guid.NewGuid();
+        var startsAt = new DateTime(2026, 6, 7, 8, 0, 0, DateTimeKind.Utc);
+
+        var parent = AddGroup(db, spaceId, "Restaurant");
+        var child = AddGroup(db, spaceId, "Kitchen", parent.Id);
+        var sibling = AddGroup(db, spaceId, "Bar", parent.Id);
+
+        var childPerson = AddPerson(db, spaceId, child, "Child Member");
+        var parentTask = AddTask(db, spaceId, parent, "Parent Task", startsAt);
+        AddTask(db, spaceId, child, "Child Task", startsAt);
+        AddTask(db, spaceId, sibling, "Sibling Task", startsAt);
+
+        var published = ScheduleVersion.CreateDraft(spaceId, 1, null, null, userId);
+        published.Publish(userId);
+        db.ScheduleVersions.Add(published);
+        db.Assignments.Add(Assignment.Create(
+            spaceId,
+            published.Id,
+            DeriveShiftGuid(parentTask.Id, 0),
+            childPerson.Id));
+        await db.SaveChangesAsync();
+
+        var payload = await CreateNormalizer(db).BuildAsync(
+            spaceId, Guid.NewGuid(), "standard", published.Id, child.Id, startsAt);
+
+        payload.TaskSlots.Select(s => s.TaskTypeName).Should().Contain("Child Task");
+        payload.TaskSlots.Select(s => s.TaskTypeName).Should().NotContain(["Parent Task", "Sibling Task"]);
+        payload.ParentSchedule.Should().NotBeNull();
+        payload.ParentSchedule!.Should().ContainSingle(p =>
+            p.PersonId == childPerson.Id.ToString()
+            && p.StartsAt == startsAt.ToString("o")
+            && p.EndsAt == startsAt.AddHours(2).ToString("o"));
+    }
+
+    [Fact]
+    public async Task BuildAsync_ForGroupTree_ExcludesInactiveAndDeletedDescendantGroups()
+    {
+        var (db, spaceId) = await SetupSpaceAsync();
+        var startsAt = new DateTime(2026, 6, 7, 8, 0, 0, DateTimeKind.Utc);
+
+        var parent = AddGroup(db, spaceId, "Restaurant");
+        var activeChild = AddGroup(db, spaceId, "Kitchen", parent.Id);
+        var inactiveChild = AddGroup(db, spaceId, "Inactive Branch", parent.Id);
+        var deletedChild = AddGroup(db, spaceId, "Deleted Branch", parent.Id);
+        inactiveChild.Deactivate();
+        deletedChild.SoftDelete();
+
+        var activePerson = AddPerson(db, spaceId, activeChild, "Active Member");
+        var inactivePerson = AddPerson(db, spaceId, inactiveChild, "Inactive Member");
+        var deletedPerson = AddPerson(db, spaceId, deletedChild, "Deleted Member");
+
+        AddTask(db, spaceId, activeChild, "Active Child Task", startsAt);
+        AddTask(db, spaceId, inactiveChild, "Inactive Child Task", startsAt);
+        AddTask(db, spaceId, deletedChild, "Deleted Child Task", startsAt);
+        await db.SaveChangesAsync();
+
+        var payload = await CreateNormalizer(db).BuildAsync(
+            spaceId, Guid.NewGuid(), "standard", null, parent.Id, startsAt);
+
+        payload.TaskSlots.Select(s => s.TaskTypeName).Should().Contain("Active Child Task");
+        payload.TaskSlots.Select(s => s.TaskTypeName).Should().NotContain(["Inactive Child Task", "Deleted Child Task"]);
+        payload.People.Select(p => p.PersonId).Should().Contain(activePerson.Id.ToString());
+        payload.People.Select(p => p.PersonId).Should().NotContain([
+            inactivePerson.Id.ToString(),
+            deletedPerson.Id.ToString()
+        ]);
+    }
+
+    [Fact]
+    public async Task BuildAsync_ForGroupTree_IncludesOnlyGroupConstraintsInsideTree()
+    {
+        var (db, spaceId) = await SetupSpaceAsync();
+        var startsAt = new DateTime(2026, 6, 7, 8, 0, 0, DateTimeKind.Utc);
+
+        var parent = AddGroup(db, spaceId, "Restaurant");
+        var child = AddGroup(db, spaceId, "Kitchen", parent.Id);
+        var sibling = AddGroup(db, spaceId, "Bar", parent.Id);
+
+        AddPerson(db, spaceId, child, "Child Member");
+        AddTask(db, spaceId, parent, "Parent Task", startsAt);
+        AddTask(db, spaceId, child, "Child Task", startsAt);
+
+        var parentConstraint = MakeConstraint(spaceId, ConstraintScopeType.Group, parent.Id, null, null);
+        var childConstraint = MakeConstraint(spaceId, ConstraintScopeType.Group, child.Id, null, null);
+        var siblingConstraint = MakeConstraint(spaceId, ConstraintScopeType.Group, sibling.Id, null, null);
+        db.ConstraintRules.AddRange(parentConstraint, childConstraint, siblingConstraint);
+        await db.SaveChangesAsync();
+
+        var payload = await CreateNormalizer(db).BuildAsync(
+            spaceId, Guid.NewGuid(), "standard", null, child.Id, startsAt);
+
+        payload.HardConstraints.Select(c => c.ScopeId).Should().Contain(child.Id.ToString());
+        payload.HardConstraints.Select(c => c.ScopeId).Should().NotContain(parent.Id.ToString());
+        payload.HardConstraints.Select(c => c.ScopeId).Should().NotContain(sibling.Id.ToString());
+    }
 
     [Fact]
     public async Task ConstraintWithEffectiveUntilBeforeHorizonStart_IsExcluded()
@@ -265,6 +453,49 @@ public class SolverPayloadNormalizerTests
     }
 
     [Fact]
+    public async Task BuildAsync_IncludesSpecialDaysWithinHorizonOnly()
+    {
+        var (db, spaceId) = await SetupSpaceAsync();
+        var horizonStart = new DateTime(2026, 9, 21, 0, 0, 0, DateTimeKind.Utc);
+        var inHorizon = SpaceSpecialDay.Create(
+            spaceId,
+            DateOnly.FromDateTime(horizonStart.AddDays(1)),
+            "Rosh Hashanah",
+            SpaceSpecialDayKind.Holiday,
+            homeLeaveWeightMultiplier: 2.5m,
+            requiresCoverage: true,
+            isAutoGenerated: true);
+        var outsideHorizon = SpaceSpecialDay.Create(
+            spaceId,
+            DateOnly.FromDateTime(horizonStart.AddDays(8)),
+            "After horizon",
+            SpaceSpecialDayKind.Custom);
+
+        db.SpaceSpecialDays.AddRange(inHorizon, outsideHorizon);
+
+        await db.SaveChangesAsync();
+
+        var normalizer = new SolverPayloadNormalizer(
+            db,
+            NullLogger<SolverPayloadNormalizer>.Instance,
+            Substitute.For<ICumulativeTracker>());
+
+        var payload = await normalizer.BuildAsync(
+            spaceId,
+            Guid.NewGuid(),
+            "standard",
+            baselineVersionId: null,
+            startTime: horizonStart);
+
+        payload.SpecialDays.Should().ContainSingle();
+        payload.SpecialDays![0].Date.Should().Be("2026-09-22");
+        payload.SpecialDays[0].Name.Should().Be("Rosh Hashanah");
+        payload.SpecialDays[0].Kind.Should().Be("holiday");
+        payload.SpecialDays[0].HomeLeaveWeightMultiplier.Should().Be(2.5);
+        payload.SpecialDays[0].RequiresCoverage.Should().BeTrue();
+    }
+
+    [Fact]
     public async Task BuildAsync_AddsRestBlockForRecentBaselineAssignmentOutsideCurrentSlots()
     {
         var (db, spaceId) = await SetupSpaceAsync();
@@ -323,4 +554,13 @@ public class SolverPayloadNormalizerTests
     private static string ToSnakeCase(string s) =>
         string.Concat(s.Select((c, i) =>
             i > 0 && char.IsUpper(c) ? "_" + char.ToLower(c) : char.ToLower(c).ToString()));
+
+    private static Guid DeriveShiftGuid(Guid taskId, int shiftIndex)
+    {
+        var bytes = taskId.ToByteArray();
+        var indexBytes = BitConverter.GetBytes(shiftIndex);
+        for (var i = 0; i < 4; i++)
+            bytes[12 + i] ^= indexBytes[i];
+        return new Guid(bytes);
+    }
 }

@@ -21,9 +21,17 @@ export function useEffectiveAuth() {
       setHasAccessToken(hasStoredAccessToken());
     }
 
+    function markHydrated() {
+      queueMicrotask(() => setIsHydrated(true));
+    }
+
     syncAccessToken();
+    if (hasStoredAccessToken()) {
+      markHydrated();
+    }
+
     if (!persistApi) {
-      setIsHydrated(true);
+      markHydrated();
       window.addEventListener("storage", syncAccessToken);
       window.addEventListener(AUTH_TOKEN_CHANGED_EVENT, syncAccessToken);
       return () => {
@@ -33,7 +41,7 @@ export function useEffectiveAuth() {
     }
 
     if (persistApi.hasHydrated?.()) {
-      setIsHydrated(true);
+      markHydrated();
     }
 
     const unsubHydration =

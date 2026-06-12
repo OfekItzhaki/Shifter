@@ -1,0 +1,550 @@
+using System.Text.Json;
+using Jobuler.Infrastructure.Persistence;
+using MediatR;
+using Microsoft.EntityFrameworkCore;
+
+namespace Jobuler.Application.Organizations.Commands;
+
+public record ValidateOrganizationImportPackageCommand(string PackageJson)
+    : IRequest<OrganizationImportValidationResult>;
+
+public record OrganizationImportValidationResult(
+    bool IsImportSafe,
+    Guid? OrganizationId,
+    string? OrganizationName,
+    int SchemaVersion,
+    OrganizationImportValidationCounts Counts,
+    List<string> Conflicts,
+    List<string> Warnings,
+    List<string> Errors);
+
+public record OrganizationImportValidationCounts(
+    int Spaces,
+    int Groups,
+    int People,
+    int SpaceMemberships,
+    int GroupMemberships,
+    int GroupTasks,
+    int TaskTypes,
+    int TaskSlots,
+    int Constraints,
+    int ScheduleRuns,
+    int ScheduleVersions,
+    int Assignments,
+    int OrganizationSelfServiceDefaults,
+    int SpaceSelfServiceDefaults,
+    int SpaceSpecialDays,
+    int SelfServiceConfigs,
+    int SchedulingCycles,
+    int ShiftTemplates,
+    int ShiftSlots,
+    int ShiftRequests,
+    int ShiftAttendanceRecords,
+    int ShiftAbsenceReports,
+    int ShiftChangeRequests,
+    int WaitlistEntries,
+    int SwapRequests,
+    int SpecialLeaveRequests,
+    int Notifications,
+    int AuditLogs);
+
+public class ValidateOrganizationImportPackageCommandHandler
+    : IRequestHandler<ValidateOrganizationImportPackageCommand, OrganizationImportValidationResult>
+{
+    private readonly AppDbContext _db;
+
+    public ValidateOrganizationImportPackageCommandHandler(AppDbContext db) => _db = db;
+
+    public async Task<OrganizationImportValidationResult> Handle(
+        ValidateOrganizationImportPackageCommand request,
+        CancellationToken ct)
+    {
+        var errors = new List<string>();
+        var warnings = new List<string>();
+        var conflicts = new List<string>();
+        Guid? organizationId = null;
+        string? organizationName = null;
+        var schemaVersion = 0;
+        var counts = new OrganizationImportValidationCounts(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+
+        JsonDocument document;
+        try
+        {
+            document = JsonDocument.Parse(request.PackageJson);
+        }
+        catch (JsonException ex)
+        {
+            return new OrganizationImportValidationResult(
+                false,
+                null,
+                null,
+                0,
+                counts,
+                conflicts,
+                warnings,
+                [$"Invalid JSON package: {ex.Message}"]);
+        }
+
+        using (document)
+        {
+            var root = document.RootElement;
+            if (!TryGetObject(root, "manifest", out var manifest))
+                errors.Add("Missing manifest object.");
+            if (!TryGetObject(root, "data", out var data))
+                errors.Add("Missing data object.");
+
+            schemaVersion = TryGetInt(root, "schemaVersion") ?? 0;
+            if (schemaVersion != 1)
+                errors.Add($"Unsupported schemaVersion '{schemaVersion}'.");
+
+            if (manifest.ValueKind == JsonValueKind.Object)
+            {
+                organizationId = TryGetGuid(manifest, "organizationId");
+                organizationName = TryGetString(manifest, "organizationName");
+
+                if (!organizationId.HasValue)
+                    errors.Add("Manifest organizationId is missing or invalid.");
+                if (string.IsNullOrWhiteSpace(organizationName))
+                    warnings.Add("Manifest organization name is empty.");
+            }
+
+            if (data.ValueKind == JsonValueKind.Object)
+            {
+                var spaces = GetArray(data, "spaces");
+                var groups = GetArray(data, "groups");
+                var people = GetArray(data, "people");
+                var spaceMemberships = GetArray(data, "spaceMemberships");
+                var groupMemberships = GetArray(data, "groupMemberships");
+                var groupTasks = GetArray(data, "groupTasks");
+                var taskTypes = GetArray(data, "taskTypes");
+                var taskSlots = GetArray(data, "taskSlots");
+                var constraints = GetArray(data, "constraints");
+                var scheduleRuns = GetArray(data, "scheduleRuns");
+                var scheduleVersions = GetArray(data, "scheduleVersions");
+                var assignments = GetArray(data, "assignments");
+                var organizationSelfServiceDefaults = GetArray(data, "organizationSelfServiceDefaults");
+                var spaceSelfServiceDefaults = GetArray(data, "spaceSelfServiceDefaults");
+                var spaceSpecialDays = GetArray(data, "spaceSpecialDays");
+                var selfServiceConfigs = GetArray(data, "selfServiceConfigs");
+                var schedulingCycles = GetArray(data, "schedulingCycles");
+                var shiftTemplates = GetArray(data, "shiftTemplates");
+                var shiftSlots = GetArray(data, "shiftSlots");
+                var shiftRequests = GetArray(data, "shiftRequests");
+                var shiftAttendanceRecords = GetArray(data, "shiftAttendanceRecords");
+                var shiftAbsenceReports = GetArray(data, "shiftAbsenceReports");
+                var shiftChangeRequests = GetArray(data, "shiftChangeRequests");
+                var waitlistEntries = GetArray(data, "waitlistEntries");
+                var swapRequests = GetArray(data, "swapRequests");
+                var specialLeaveRequests = GetArray(data, "specialLeaveRequests");
+                var notifications = GetArray(data, "notifications");
+                var auditLogs = GetArray(data, "auditLogs");
+
+                counts = new OrganizationImportValidationCounts(
+                    spaces.Count,
+                    groups.Count,
+                    people.Count,
+                    spaceMemberships.Count,
+                    groupMemberships.Count,
+                    groupTasks.Count,
+                    taskTypes.Count,
+                    taskSlots.Count,
+                    constraints.Count,
+                    scheduleRuns.Count,
+                    scheduleVersions.Count,
+                    assignments.Count,
+                    organizationSelfServiceDefaults.Count,
+                    spaceSelfServiceDefaults.Count,
+                    spaceSpecialDays.Count,
+                    selfServiceConfigs.Count,
+                    schedulingCycles.Count,
+                    shiftTemplates.Count,
+                    shiftSlots.Count,
+                    shiftRequests.Count,
+                    shiftAttendanceRecords.Count,
+                    shiftAbsenceReports.Count,
+                    shiftChangeRequests.Count,
+                    waitlistEntries.Count,
+                    swapRequests.Count,
+                    specialLeaveRequests.Count,
+                    notifications.Count,
+                    auditLogs.Count);
+
+                ValidateManifestCounts(manifest, counts, errors);
+
+                var organizationObjectId = TryGetObject(data, "organization", out var organization)
+                    ? TryGetGuid(organization, "id")
+                    : null;
+                if (organizationId.HasValue && organizationObjectId.HasValue && organizationObjectId != organizationId)
+                    errors.Add("Manifest organizationId does not match data.organization.id.");
+                ValidateRowsAreScopedToExportedOrganization(
+                    "organizationSelfServiceDefaults",
+                    organizationSelfServiceDefaults,
+                    organizationId,
+                    errors);
+
+                var exportedSpaceIds = ExtractIds(spaces).ToHashSet();
+                ValidateRowsAreScopedToExportedSpaces("groups", groups, exportedSpaceIds, errors);
+                ValidateRowsAreScopedToExportedSpaces("people", people, exportedSpaceIds, errors);
+                ValidateRowsAreScopedToExportedSpaces("spaceMemberships", spaceMemberships, exportedSpaceIds, errors);
+                ValidateRowsAreScopedToExportedSpaces("groupMemberships", groupMemberships, exportedSpaceIds, errors);
+                ValidateRowsAreScopedToExportedSpaces("groupTasks", groupTasks, exportedSpaceIds, errors);
+                ValidateRowsAreScopedToExportedSpaces("taskTypes", taskTypes, exportedSpaceIds, errors);
+                ValidateRowsAreScopedToExportedSpaces("taskSlots", taskSlots, exportedSpaceIds, errors);
+                ValidateRowsAreScopedToExportedSpaces("constraints", constraints, exportedSpaceIds, errors);
+                ValidateRowsAreScopedToExportedSpaces("scheduleRuns", scheduleRuns, exportedSpaceIds, errors);
+                ValidateRowsAreScopedToExportedSpaces("scheduleVersions", scheduleVersions, exportedSpaceIds, errors);
+                ValidateRowsAreScopedToExportedSpaces("assignments", assignments, exportedSpaceIds, errors);
+                ValidateRowsAreScopedToExportedSpaces("spaceSelfServiceDefaults", spaceSelfServiceDefaults, exportedSpaceIds, errors);
+                ValidateRowsAreScopedToExportedSpaces("spaceSpecialDays", spaceSpecialDays, exportedSpaceIds, errors);
+                ValidateRowsAreScopedToExportedSpaces("selfServiceConfigs", selfServiceConfigs, exportedSpaceIds, errors);
+                ValidateRowsAreScopedToExportedSpaces("schedulingCycles", schedulingCycles, exportedSpaceIds, errors);
+                ValidateRowsAreScopedToExportedSpaces("shiftTemplates", shiftTemplates, exportedSpaceIds, errors);
+                ValidateRowsAreScopedToExportedSpaces("shiftSlots", shiftSlots, exportedSpaceIds, errors);
+                ValidateRowsAreScopedToExportedSpaces("shiftRequests", shiftRequests, exportedSpaceIds, errors);
+                ValidateRowsAreScopedToExportedSpaces("shiftAttendanceRecords", shiftAttendanceRecords, exportedSpaceIds, errors);
+                ValidateRowsAreScopedToExportedSpaces("shiftAbsenceReports", shiftAbsenceReports, exportedSpaceIds, errors);
+                ValidateRowsAreScopedToExportedSpaces("shiftChangeRequests", shiftChangeRequests, exportedSpaceIds, errors);
+                ValidateRowsAreScopedToExportedSpaces("waitlistEntries", waitlistEntries, exportedSpaceIds, errors);
+                ValidateRowsAreScopedToExportedSpaces("swapRequests", swapRequests, exportedSpaceIds, errors);
+                ValidateRowsAreScopedToExportedSpaces("specialLeaveRequests", specialLeaveRequests, exportedSpaceIds, errors);
+                ValidateRowsAreScopedToExportedSpaces("notifications", notifications, exportedSpaceIds, errors);
+                ValidateRowsAreScopedToExportedSpaces("auditLogs", auditLogs, exportedSpaceIds, errors, allowMissingSpaceId: true);
+
+                var userIds = ExtractIds(GetArray(data, "users")).ToHashSet();
+                var groupIds = ExtractIds(groups).ToHashSet();
+                var personIds = ExtractIds(people).ToHashSet();
+                var taskTypeIds = ExtractIds(taskTypes).ToHashSet();
+                var taskSlotIds = ExtractIds(taskSlots).ToHashSet();
+                var scheduleRunIds = ExtractIds(scheduleRuns).ToHashSet();
+                var scheduleVersionIds = ExtractIds(scheduleVersions).ToHashSet();
+                var groupTaskIds = ExtractIds(groupTasks).ToHashSet();
+                var cycleIds = ExtractIds(schedulingCycles).ToHashSet();
+                var shiftTemplateIds = ExtractIds(shiftTemplates).ToHashSet();
+                var shiftSlotIds = ExtractIds(shiftSlots).ToHashSet();
+                var shiftRequestIds = ExtractIds(shiftRequests).ToHashSet();
+
+                ValidateReferences("spaces", spaces, "ownerUserId", userIds, "users", errors);
+                ValidateReferences("spaceMemberships", spaceMemberships, "userId", userIds, "users", errors);
+                ValidateReferences("people", people, "linkedUserId", userIds, "users", errors, allowMissingReference: true);
+                ValidateReferences("groupMemberships", groupMemberships, "groupId", groupIds, "groups", errors);
+                ValidateReferences("groupMemberships", groupMemberships, "personId", personIds, "people", errors);
+                ValidateReferences("groups", groups, "createdByUserId", userIds, "users", errors, allowMissingReference: true);
+                ValidateReferences("groupTasks", groupTasks, "groupId", groupIds, "groups", errors);
+                ValidateReferences("groupTasks", groupTasks, "createdByUserId", userIds, "users", errors);
+                ValidateReferences("groupTasks", groupTasks, "updatedByUserId", userIds, "users", errors, allowMissingReference: true);
+                ValidateReferences("taskSlots", taskSlots, "taskTypeId", taskTypeIds, "taskTypes", errors);
+                ValidateReferences("taskSlots", taskSlots, "createdByUserId", userIds, "users", errors);
+                ValidateReferences("constraints", constraints, "createdByUserId", userIds, "users", errors);
+                ValidateReferences("constraints", constraints, "updatedByUserId", userIds, "users", errors, allowMissingReference: true);
+                ValidateReferences("scheduleVersions", scheduleVersions, "sourceRunId", scheduleRunIds, "scheduleRuns", errors, allowMissingReference: true);
+                ValidateReferences("scheduleVersions", scheduleVersions, "baselineVersionId", scheduleVersionIds, "scheduleVersions", errors, allowMissingReference: true);
+                ValidateReferences("scheduleVersions", scheduleVersions, "rollbackSourceVersionId", scheduleVersionIds, "scheduleVersions", errors, allowMissingReference: true);
+                ValidateReferences("scheduleVersions", scheduleVersions, "supersedesVersionId", scheduleVersionIds, "scheduleVersions", errors, allowMissingReference: true);
+                ValidateReferences("scheduleVersions", scheduleVersions, "createdByUserId", userIds, "users", errors, allowMissingReference: true);
+                ValidateReferences("scheduleVersions", scheduleVersions, "publishedByUserId", userIds, "users", errors, allowMissingReference: true);
+                ValidateReferences("assignments", assignments, "scheduleVersionId", scheduleVersionIds, "scheduleVersions", errors);
+                ValidateReferences("assignments", assignments, "taskSlotId", taskSlotIds, "taskSlots", errors);
+                ValidateReferences("assignments", assignments, "personId", personIds, "people", errors);
+                ValidateReferences("selfServiceConfigs", selfServiceConfigs, "groupId", groupIds, "groups", errors);
+                ValidateReferences("schedulingCycles", schedulingCycles, "groupId", groupIds, "groups", errors);
+                ValidateReferences("shiftTemplates", shiftTemplates, "groupId", groupIds, "groups", errors);
+                ValidateReferences("shiftTemplates", shiftTemplates, "groupTaskId", groupTaskIds, "groupTasks", errors);
+                ValidateReferences("shiftSlots", shiftSlots, "groupId", groupIds, "groups", errors);
+                ValidateReferences("shiftSlots", shiftSlots, "groupTaskId", groupTaskIds, "groupTasks", errors);
+                ValidateReferences("shiftSlots", shiftSlots, "shiftTemplateId", shiftTemplateIds, "shiftTemplates", errors);
+                ValidateReferences("shiftSlots", shiftSlots, "schedulingCycleId", cycleIds, "schedulingCycles", errors);
+                ValidateReferences("shiftRequests", shiftRequests, "groupId", groupIds, "groups", errors);
+                ValidateReferences("shiftRequests", shiftRequests, "schedulingCycleId", cycleIds, "schedulingCycles", errors);
+                ValidateReferences("shiftRequests", shiftRequests, "shiftSlotId", shiftSlotIds, "shiftSlots", errors);
+                ValidateReferences("shiftRequests", shiftRequests, "personId", personIds, "people", errors);
+                ValidateReferences("shiftAttendanceRecords", shiftAttendanceRecords, "groupId", groupIds, "groups", errors);
+                ValidateReferences("shiftAttendanceRecords", shiftAttendanceRecords, "schedulingCycleId", cycleIds, "schedulingCycles", errors);
+                ValidateReferences("shiftAttendanceRecords", shiftAttendanceRecords, "shiftRequestId", shiftRequestIds, "shiftRequests", errors);
+                ValidateReferences("shiftAttendanceRecords", shiftAttendanceRecords, "shiftSlotId", shiftSlotIds, "shiftSlots", errors);
+                ValidateReferences("shiftAttendanceRecords", shiftAttendanceRecords, "personId", personIds, "people", errors);
+                ValidateReferences("shiftAbsenceReports", shiftAbsenceReports, "groupId", groupIds, "groups", errors);
+                ValidateReferences("shiftAbsenceReports", shiftAbsenceReports, "schedulingCycleId", cycleIds, "schedulingCycles", errors);
+                ValidateReferences("shiftAbsenceReports", shiftAbsenceReports, "shiftRequestId", shiftRequestIds, "shiftRequests", errors);
+                ValidateReferences("shiftAbsenceReports", shiftAbsenceReports, "shiftSlotId", shiftSlotIds, "shiftSlots", errors);
+                ValidateReferences("shiftAbsenceReports", shiftAbsenceReports, "personId", personIds, "people", errors);
+                ValidateReferences("shiftChangeRequests", shiftChangeRequests, "groupId", groupIds, "groups", errors);
+                ValidateReferences("shiftChangeRequests", shiftChangeRequests, "schedulingCycleId", cycleIds, "schedulingCycles", errors);
+                ValidateReferences("shiftChangeRequests", shiftChangeRequests, "shiftRequestId", shiftRequestIds, "shiftRequests", errors);
+                ValidateReferences("shiftChangeRequests", shiftChangeRequests, "originalShiftSlotId", shiftSlotIds, "shiftSlots", errors);
+                ValidateReferences("shiftChangeRequests", shiftChangeRequests, "requestedShiftSlotId", shiftSlotIds, "shiftSlots", errors, allowMissingReference: true);
+                ValidateReferences("shiftChangeRequests", shiftChangeRequests, "personId", personIds, "people", errors);
+                ValidateReferences("waitlistEntries", waitlistEntries, "shiftSlotId", shiftSlotIds, "shiftSlots", errors);
+                ValidateReferences("waitlistEntries", waitlistEntries, "personId", personIds, "people", errors);
+                ValidateReferences("swapRequests", swapRequests, "groupId", groupIds, "groups", errors);
+                ValidateReferences("swapRequests", swapRequests, "initiatorPersonId", personIds, "people", errors);
+                ValidateReferences("swapRequests", swapRequests, "targetPersonId", personIds, "people", errors);
+                ValidateReferences("swapRequests", swapRequests, "initiatorShiftRequestId", shiftRequestIds, "shiftRequests", errors);
+                ValidateReferences("swapRequests", swapRequests, "targetShiftRequestId", shiftRequestIds, "shiftRequests", errors);
+                ValidateReferences("specialLeaveRequests", specialLeaveRequests, "personId", personIds, "people", errors);
+                ValidateReferences("specialLeaveRequests", specialLeaveRequests, "requestedByUserId", userIds, "users", errors);
+                ValidateReferences("specialLeaveRequests", specialLeaveRequests, "processedByUserId", userIds, "users", errors, allowMissingReference: true);
+                ValidateReferences("notifications", notifications, "userId", userIds, "users", errors);
+                ValidateReferences("auditLogs", auditLogs, "actorUserId", userIds, "users", errors, allowMissingReference: true);
+
+                await AddConflictAsync(
+                    organizationId.HasValue
+                        ? await _db.Organizations.AnyAsync(o => o.Id == organizationId.Value, ct)
+                        : false,
+                    "Organization id already exists in target deployment.",
+                    conflicts);
+
+                await AddEntityConflictsAsync(_db.Spaces, ExtractIds(spaces), "space", conflicts, ct);
+                await AddEntityConflictsAsync(_db.Groups, ExtractIds(groups), "group", conflicts, ct);
+                await AddEntityConflictsAsync(_db.People, ExtractIds(people), "person", conflicts, ct);
+                await AddEntityConflictsAsync(_db.ScheduleVersions, ExtractIds(scheduleVersions), "schedule version", conflicts, ct);
+                await AddEntityConflictsAsync(_db.Assignments, ExtractIds(assignments), "assignment", conflicts, ct);
+                await AddEntityConflictsAsync(_db.OrganizationSelfServiceDefaults, ExtractIds(organizationSelfServiceDefaults), "organization self-service defaults", conflicts, ct);
+                await AddEntityConflictsAsync(_db.SpaceSpecialDays, ExtractIds(spaceSpecialDays), "space special day", conflicts, ct);
+                await AddEntityConflictsAsync(_db.SchedulingCycles, ExtractIds(schedulingCycles), "self-service cycle", conflicts, ct);
+                await AddEntityConflictsAsync(_db.ShiftTemplates, ExtractIds(shiftTemplates), "shift template", conflicts, ct);
+                await AddEntityConflictsAsync(_db.ShiftSlots, ExtractIds(shiftSlots), "shift slot", conflicts, ct);
+                await AddEntityConflictsAsync(_db.ShiftRequests, ExtractIds(shiftRequests), "shift request", conflicts, ct);
+                await AddEntityConflictsAsync(_db.ShiftAttendanceRecords, ExtractIds(shiftAttendanceRecords), "shift attendance record", conflicts, ct);
+                await AddEntityConflictsAsync(_db.ShiftAbsenceReports, ExtractIds(shiftAbsenceReports), "shift absence report", conflicts, ct);
+                await AddEntityConflictsAsync(_db.ShiftChangeRequests, ExtractIds(shiftChangeRequests), "shift change request", conflicts, ct);
+                await AddEntityConflictsAsync(_db.WaitlistEntries, ExtractIds(waitlistEntries), "waitlist entry", conflicts, ct);
+                await AddEntityConflictsAsync(_db.SwapRequests, ExtractIds(swapRequests), "swap request", conflicts, ct);
+                await AddEntityConflictsAsync(_db.SpecialLeaveRequests, ExtractIds(specialLeaveRequests), "special leave request", conflicts, ct);
+                await AddEntityConflictsAsync(_db.Notifications, ExtractIds(notifications), "notification", conflicts, ct);
+                await AddEntityConflictsAsync(_db.AuditLogs, ExtractIds(auditLogs), "audit log", conflicts, ct);
+
+                var existingUserCount = await _db.Users.CountAsync(u => userIds.Contains(u.Id), ct);
+                if (existingUserCount > 0)
+                    warnings.Add($"{existingUserCount} user id(s) already exist; import must re-bind or confirm matching identities.");
+            }
+        }
+
+        var isImportSafe = errors.Count == 0 && conflicts.Count == 0;
+        return new OrganizationImportValidationResult(
+            isImportSafe,
+            organizationId,
+            organizationName,
+            schemaVersion,
+            counts,
+            conflicts,
+            warnings,
+            errors);
+    }
+
+    private static async Task AddConflictAsync(bool hasConflict, string message, List<string> conflicts)
+    {
+        await Task.CompletedTask;
+        if (hasConflict)
+            conflicts.Add(message);
+    }
+
+    private static async Task AddEntityConflictsAsync<TEntity>(
+        DbSet<TEntity> set,
+        IReadOnlyCollection<Guid> ids,
+        string label,
+        List<string> conflicts,
+        CancellationToken ct)
+        where TEntity : Jobuler.Domain.Common.Entity
+    {
+        if (ids.Count == 0)
+            return;
+
+        var count = await set.CountAsync(e => ids.Contains(e.Id), ct);
+        if (count > 0)
+            conflicts.Add($"{count} {label} id(s) already exist in target deployment.");
+    }
+
+    private static void ValidateManifestCounts(
+        JsonElement manifest,
+        OrganizationImportValidationCounts actual,
+        List<string> errors)
+    {
+        if (!TryGetObject(manifest, "counts", out var expected))
+            return;
+
+        Compare("spaces", actual.Spaces);
+        Compare("groups", actual.Groups);
+        Compare("people", actual.People);
+        Compare("spaceMemberships", actual.SpaceMemberships);
+        Compare("groupMemberships", actual.GroupMemberships);
+        Compare("groupTasks", actual.GroupTasks);
+        Compare("taskTypes", actual.TaskTypes);
+        Compare("taskSlots", actual.TaskSlots);
+        Compare("constraints", actual.Constraints);
+        Compare("scheduleRuns", actual.ScheduleRuns);
+        Compare("scheduleVersions", actual.ScheduleVersions);
+        Compare("assignments", actual.Assignments);
+        Compare("organizationSelfServiceDefaults", actual.OrganizationSelfServiceDefaults);
+        Compare("spaceSelfServiceDefaults", actual.SpaceSelfServiceDefaults);
+        Compare("spaceSpecialDays", actual.SpaceSpecialDays);
+        Compare("selfServiceConfigs", actual.SelfServiceConfigs);
+        Compare("schedulingCycles", actual.SchedulingCycles);
+        Compare("shiftTemplates", actual.ShiftTemplates);
+        Compare("shiftSlots", actual.ShiftSlots);
+        Compare("shiftRequests", actual.ShiftRequests);
+        Compare("shiftAttendanceRecords", actual.ShiftAttendanceRecords);
+        Compare("shiftAbsenceReports", actual.ShiftAbsenceReports);
+        Compare("shiftChangeRequests", actual.ShiftChangeRequests);
+        Compare("waitlistEntries", actual.WaitlistEntries);
+        Compare("swapRequests", actual.SwapRequests);
+        Compare("specialLeaveRequests", actual.SpecialLeaveRequests);
+        Compare("notifications", actual.Notifications);
+        Compare("auditLogs", actual.AuditLogs);
+
+        void Compare(string propertyName, int actualValue)
+        {
+            var expectedValue = TryGetInt(expected, propertyName);
+            if (expectedValue.HasValue && expectedValue.Value != actualValue)
+                errors.Add($"Manifest count mismatch for {propertyName}: expected {expectedValue.Value}, package has {actualValue}.");
+        }
+    }
+
+    private static List<JsonElement> GetArray(JsonElement parent, string propertyName)
+    {
+        if (!parent.TryGetProperty(propertyName, out var value) || value.ValueKind != JsonValueKind.Array)
+            return [];
+
+        return value.EnumerateArray().ToList();
+    }
+
+    private static List<Guid> ExtractIds(IEnumerable<JsonElement> rows) =>
+        rows.Select(row => TryGetGuid(row, "id"))
+            .Where(id => id.HasValue)
+            .Select(id => id!.Value)
+            .Distinct()
+            .ToList();
+
+    private static void ValidateRowsAreScopedToExportedSpaces(
+        string collectionName,
+        IEnumerable<JsonElement> rows,
+        IReadOnlySet<Guid> exportedSpaceIds,
+        List<string> errors,
+        bool allowMissingSpaceId = false)
+    {
+        var leakedCount = 0;
+        var missingCount = 0;
+
+        foreach (var row in rows)
+        {
+            var spaceId = TryGetGuid(row, "spaceId");
+            if (!spaceId.HasValue)
+            {
+                if (!allowMissingSpaceId)
+                    missingCount++;
+                continue;
+            }
+
+            if (!exportedSpaceIds.Contains(spaceId.Value))
+                leakedCount++;
+        }
+
+        if (missingCount > 0)
+            errors.Add($"{collectionName} contains {missingCount} row(s) without a valid spaceId.");
+
+        if (leakedCount > 0)
+            errors.Add($"{collectionName} contains {leakedCount} row(s) outside the exported spaces.");
+    }
+
+    private static void ValidateRowsAreScopedToExportedOrganization(
+        string collectionName,
+        IEnumerable<JsonElement> rows,
+        Guid? organizationId,
+        List<string> errors)
+    {
+        if (!organizationId.HasValue)
+            return;
+
+        var leakedCount = 0;
+        var missingCount = 0;
+
+        foreach (var row in rows)
+        {
+            var rowOrganizationId = TryGetGuid(row, "organizationId");
+            if (!rowOrganizationId.HasValue)
+            {
+                missingCount++;
+                continue;
+            }
+
+            if (rowOrganizationId.Value != organizationId.Value)
+                leakedCount++;
+        }
+
+        if (missingCount > 0)
+            errors.Add($"{collectionName} contains {missingCount} row(s) without a valid organizationId.");
+
+        if (leakedCount > 0)
+            errors.Add($"{collectionName} contains {leakedCount} row(s) outside the exported organization.");
+    }
+
+    private static void ValidateReferences(
+        string collectionName,
+        IEnumerable<JsonElement> rows,
+        string propertyName,
+        IReadOnlySet<Guid> allowedIds,
+        string targetCollectionName,
+        List<string> errors,
+        bool allowMissingReference = false)
+    {
+        var missingCount = 0;
+        var invalidCount = 0;
+
+        foreach (var row in rows)
+        {
+            var id = TryGetGuid(row, propertyName);
+            if (!id.HasValue)
+            {
+                if (!allowMissingReference)
+                    missingCount++;
+                continue;
+            }
+
+            if (!allowedIds.Contains(id.Value))
+                invalidCount++;
+        }
+
+        if (missingCount > 0)
+            errors.Add($"{collectionName} contains {missingCount} row(s) without a valid {propertyName}.");
+
+        if (invalidCount > 0)
+            errors.Add($"{collectionName} contains {invalidCount} row(s) whose {propertyName} is not in exported {targetCollectionName}.");
+    }
+
+    private static bool TryGetObject(JsonElement parent, string propertyName, out JsonElement value)
+    {
+        if (parent.TryGetProperty(propertyName, out value) && value.ValueKind == JsonValueKind.Object)
+            return true;
+
+        value = default;
+        return false;
+    }
+
+    private static Guid? TryGetGuid(JsonElement parent, string propertyName)
+    {
+        if (!parent.TryGetProperty(propertyName, out var value))
+            return null;
+
+        if (value.ValueKind == JsonValueKind.String && Guid.TryParse(value.GetString(), out var parsed))
+            return parsed;
+
+        return null;
+    }
+
+    private static int? TryGetInt(JsonElement parent, string propertyName)
+    {
+        if (!parent.TryGetProperty(propertyName, out var value))
+            return null;
+
+        return value.ValueKind == JsonValueKind.Number && value.TryGetInt32(out var parsed)
+            ? parsed
+            : null;
+    }
+
+    private static string? TryGetString(JsonElement parent, string propertyName)
+    {
+        if (!parent.TryGetProperty(propertyName, out var value) || value.ValueKind != JsonValueKind.String)
+            return null;
+
+        return value.GetString();
+    }
+}

@@ -126,6 +126,42 @@ public class HealthEndpointIntegrationTests
 
     // Validates: Requirement 1.2 — returns 200 when all healthy
     [Fact]
+    public async Task Detailed_PreservesNonSensitiveServiceDetails()
+    {
+        var report = new HealthCheckReport(
+            OverallStatus: "healthy",
+            Version: "1.0.0",
+            Timestamp: DateTime.UtcNow,
+            Checks: new List<ServiceHealthResult>
+            {
+                new(
+                    "ai",
+                    "healthy",
+                    Details: new Dictionary<string, string>
+                    {
+                        ["mode"] = "private-compatible",
+                        ["endpointKind"] = "private",
+                        ["noExportRequired"] = "true"
+                    })
+            });
+        var runner = Substitute.For<IHealthCheckRunner>();
+        runner.RunAllAsync(Arg.Any<CancellationToken>()).Returns(report);
+
+        var controller = CreateController(healthCheckRunner: runner);
+
+        var result = await controller.Detailed(CancellationToken.None);
+
+        var objectResult = result.Should().BeOfType<ObjectResult>().Subject;
+        var body = objectResult.Value.Should().BeOfType<HealthCheckReport>().Subject;
+        var ai = body.Checks.Should().ContainSingle(c => c.ServiceName == "ai").Subject;
+        ai.Details.Should().NotBeNull();
+        ai.Details.Should().Contain("mode", "private-compatible");
+        ai.Details.Should().Contain("endpointKind", "private");
+        ai.Details.Should().Contain("noExportRequired", "true");
+    }
+
+    // Validates: detailed health preserves non-sensitive provider metadata.
+    [Fact]
     public async Task Detailed_Returns200_WhenAllServicesHealthy()
     {
         // Arrange
@@ -164,7 +200,7 @@ public class HealthEndpointIntegrationTests
 
     // Validates: Requirement 1.6 — /health/detailed requires authentication (exposes infrastructure details)
     [Fact]
-    public void Detailed_Endpoint_HasAllowAnonymousAttribute()
+    public void Detailed_Endpoint_HasAuthorizeAttribute()
     {
         // The Detailed endpoint exposes infrastructure details and requires authentication.
         var method = typeof(HealthController).GetMethod(nameof(HealthController.Detailed));
@@ -321,6 +357,54 @@ public class HealthEndpointIntegrationTests
 
         allowAnonymousAttrs.Should().NotBeEmpty(
             because: "the /health endpoint must remain accessible without authentication (Req 7.2)");
+    }
+
+    [Fact]
+    public async Task Ready_ReturnsExpectedStructure_WithCoreDependencyChecks()
+    {
+        var db = CreateDb();
+        var redis = CreateHealthyRedis();
+        var controller = CreateController(db: db, redis: redis);
+
+        var result = await controller.Ready(CancellationToken.None);
+
+        var objectResult = result.Should().BeAssignableTo<ObjectResult>().Subject;
+        var body = objectResult.Value!;
+
+        var statusProp = body.GetType().GetProperty("status");
+        var timestampProp = body.GetType().GetProperty("timestamp");
+        var checksProp = body.GetType().GetProperty("checks");
+
+        statusProp.Should().NotBeNull("readiness response must have 'status'");
+        timestampProp.Should().NotBeNull("readiness response must have 'timestamp'");
+        checksProp.Should().NotBeNull("readiness response must have 'checks'");
+
+        var checks = checksProp!.GetValue(body) as Dictionary<string, string>;
+        checks.Should().NotBeNull();
+        checks.Should().ContainKeys("postgres", "redis");
+    }
+
+    [Fact]
+    public async Task Ready_Returns503_WhenCoreDependencyIsUnreachable()
+    {
+        var db = CreateDb();
+        var redis = CreateUnhealthyRedis();
+        var controller = CreateController(db: db, redis: redis);
+
+        var result = await controller.Ready(CancellationToken.None);
+
+        var objectResult = result.Should().BeAssignableTo<ObjectResult>().Subject;
+        objectResult.StatusCode.Should().Be(503);
+    }
+
+    [Fact]
+    public void Ready_Endpoint_HasTopLevelAndNestedRoutes()
+    {
+        var method = typeof(HealthController).GetMethod(nameof(HealthController.Ready));
+        var httpGetAttrs = method!.GetCustomAttributes(
+            typeof(HttpGetAttribute), true).Cast<HttpGetAttribute>();
+
+        httpGetAttrs.Select(attr => attr.Template).Should().Contain(new[] { "ready", "~/ready" });
     }
 
     // Validates: Requirement 7.1 — /health response includes version and timestamp

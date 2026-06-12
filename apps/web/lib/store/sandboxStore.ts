@@ -101,6 +101,14 @@ export interface CumulativeTrackingDto {
   [key: string]: unknown;
 }
 
+export interface SpecialDayDto {
+  date: string;
+  name: string;
+  kind: string;
+  home_leave_weight_multiplier: number;
+  requires_coverage: boolean;
+}
+
 export interface SolverInputDto {
   spaceId: string;
   runId: string;
@@ -123,6 +131,7 @@ export interface SolverInputDto {
   taskRotation?: TaskRotationDto[];
   preview_mode?: boolean;
   cumulative_tracking?: CumulativeTrackingDto[];
+  special_days?: SpecialDayDto[];
 }
 
 // ── Solver Output Types ───────────────────────────────────────────────────────

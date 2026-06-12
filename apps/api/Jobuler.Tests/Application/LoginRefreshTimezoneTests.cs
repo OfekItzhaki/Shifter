@@ -10,6 +10,7 @@ using Jobuler.Application.Common;
 using Jobuler.Application.Conflicts;
 using Jobuler.Domain.Identity;
 using Jobuler.Infrastructure.Persistence;
+using Jobuler.Tests;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -114,7 +115,7 @@ public class LoginRefreshTimezoneTests
         var user = await SeedUser(db, countryCode: "US", stateCode: "CA");
 
         var handler = new LoginCommandHandler(
-            db, jwt, timezoneResolver, BuildConfig(), BuildScopeFactory(),
+            db, jwt, timezoneResolver, TestContactLookupProtector.Create(), BuildConfig(), BuildScopeFactory(),
             Substitute.For<ILogger<LoginCommandHandler>>());
 
         // Act
@@ -143,7 +144,7 @@ public class LoginRefreshTimezoneTests
         var user = await SeedUser(db, countryCode: "IL");
 
         var handler = new LoginCommandHandler(
-            db, jwt, timezoneResolver, BuildConfig(), BuildScopeFactory(),
+            db, jwt, timezoneResolver, TestContactLookupProtector.Create(), BuildConfig(), BuildScopeFactory(),
             Substitute.For<ILogger<LoginCommandHandler>>());
 
         // Act
@@ -172,7 +173,7 @@ public class LoginRefreshTimezoneTests
         var user = await SeedUser(db); // no country/state set
 
         var handler = new LoginCommandHandler(
-            db, jwt, timezoneResolver, BuildConfig(), BuildScopeFactory(),
+            db, jwt, timezoneResolver, TestContactLookupProtector.Create(), BuildConfig(), BuildScopeFactory(),
             Substitute.For<ILogger<LoginCommandHandler>>());
 
         // Act
@@ -202,7 +203,7 @@ public class LoginRefreshTimezoneTests
         var user = await SeedUser(db, countryCode: "GB", stateCode: null);
 
         var handler = new LoginCommandHandler(
-            db, jwt, timezoneResolver, BuildConfig(), BuildScopeFactory(),
+            db, jwt, timezoneResolver, TestContactLookupProtector.Create(), BuildConfig(), BuildScopeFactory(),
             Substitute.For<ILogger<LoginCommandHandler>>());
 
         // Act

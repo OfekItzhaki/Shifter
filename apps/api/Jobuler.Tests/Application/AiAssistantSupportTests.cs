@@ -34,6 +34,36 @@ public class AiAssistantSupportTests
         result.SuggestedActions.Should().Contain(a => a.Type == "feedback");
     }
 
+    [Theory]
+    [InlineData("he", "דבר עם תמיכה", "שלח פידבק", "העוזר החכם")]
+    [InlineData("ru", "Связаться с поддержкой", "Отправить отзыв", "AI assistant is not configured")]
+    public async Task NoOpChat_LocalizedSupportActions_AreReadable(
+        string locale,
+        string supportLabel,
+        string feedbackLabel,
+        string expectedMessageFragment)
+    {
+        var assistant = new NoOpAiAssistant();
+
+        var result = await assistant.ChatAsync(new AiChatRequestDto(
+            "help",
+            locale,
+            "Ofek",
+            "/profile",
+            IsAuthenticated: true,
+            IsAdminMode: false,
+            RecentMessages: []));
+
+        result.Message.Should().Contain(expectedMessageFragment);
+        result.SuggestedActions.Should().ContainSingle(a =>
+            a.Type == "contact" &&
+            a.Label == supportLabel &&
+            a.Payload != null);
+        result.SuggestedActions.Should().ContainSingle(a =>
+            a.Type == "feedback" &&
+            a.Label == feedbackLabel);
+    }
+
     [Fact]
     public async Task OpenAiChat_WhenSupportRequestedAndModelOmitsContact_AddsHumanSupportAction()
     {
@@ -114,6 +144,39 @@ public class AiAssistantSupportTests
         handler.Request.Headers.Authorization.Should().BeNull();
     }
 
+    [Fact]
+    public async Task OpenAiChat_WhenProviderFails_ReturnsLocalizedHebrewSupportActions()
+    {
+        var http = new HttpClient(new ThrowingHandler());
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["AI:BaseUrl"] = "http://local-ai.internal/v1",
+                ["AI:Model"] = "local-model"
+            })
+            .Build();
+        var assistant = new OpenAiAssistant(http, config, NullLogger<OpenAiAssistant>.Instance);
+
+        var result = await assistant.ChatAsync(new AiChatRequestDto(
+            "אני צריך תמיכה",
+            "he",
+            "Ofek",
+            "/settings",
+            IsAuthenticated: true,
+            IsAdminMode: true,
+            RecentMessages: []));
+
+        result.Message.Should().Contain("לא הצלחתי לענות");
+        result.SuggestedActions.Should().ContainSingle(a =>
+            a.Type == "contact" &&
+            a.Label == "דבר עם תמיכה" &&
+            a.Payload != null &&
+            a.Payload.Contains("אני צריך תמיכה"));
+        result.SuggestedActions.Should().ContainSingle(a =>
+            a.Type == "feedback" &&
+            a.Label == "שלח פידבק");
+    }
+
     private sealed class StaticResponseHandler : HttpMessageHandler
     {
         private readonly string _responseBody;
@@ -133,6 +196,16 @@ public class AiAssistantSupportTests
             };
 
             return Task.FromResult(response);
+        }
+    }
+
+    private sealed class ThrowingHandler : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request,
+            CancellationToken cancellationToken)
+        {
+            throw new HttpRequestException("AI endpoint unavailable");
         }
     }
 }

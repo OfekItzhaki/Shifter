@@ -73,9 +73,17 @@ Customer-hosted means:
 
    ```env
    SHIFTER_DEPLOYMENT_MODE=customer-hosted
+   SHIFTER_LICENSEE="Customer Legal Name"
+   SHIFTER_LICENSE_KEY=<customer-license-key-from-ofeklabs>
+   # Optional for offline/private-network contracts:
+   # SHIFTER_LICENSE_FILE_HOST_PATH=/opt/shifter/license.customer.json
+   # SHIFTER_LICENSE_FILE_CONTAINER_PATH=/run/secrets/shifter-license.json
+   # SHIFTER_LICENSE_PUBLIC_KEY=<ofeklabs-license-public-key-pem>
    APP_FRONTEND_BASE_URL=https://shifter.customer.example
    APP_API_BASE_URL=https://api-shifter.customer.example
    NEXT_PUBLIC_API_URL=https://api-shifter.customer.example
+   NEXT_PUBLIC_LEGAL_EMAIL=it-support@customer.example
+   FIELD_ENCRYPTION_KEY=<unique-customer-secret-at-least-32-chars>
    ```
 
 5. Validate the env file:
@@ -84,6 +92,71 @@ Customer-hosted means:
    bash infra/scripts/validate-customer-env.sh
    ```
 
+   On Windows/PowerShell:
+
+   ```powershell
+   .\infra\scripts\validate-customer-env.ps1
+   ```
+
+   Before a customer install or demo, run the package preflight from the repo
+   root against the checked-in customer template:
+
+   ```powershell
+   .\infra\scripts\test-customer-hosted-package.ps1
+   ```
+
+   This runs the customer env validator harness, restore dry-run harness,
+   backup harness, deploy happy-path harness, deploy rollback harness, Compose
+   script syntax checks, `docker compose config`, and a temporary PostgreSQL
+   organization import smoke against the customer env template.
+
+   The same package preflight is also covered by the
+   `Customer-Hosted Preflight` GitHub Actions workflow for relevant changes, so
+   package drift should fail before merge.
+
+   To assemble a customer handoff package from tracked source, docs, Compose
+   assets, migrations, and install scripts, run:
+
+   ```powershell
+   .\infra\scripts\package-customer-hosted.ps1
+   ```
+
+   The package script writes a staging directory and zip under
+   `artifacts/customer-hosted/packages`, adds `CUSTOMER-HOSTED-MANIFEST.txt`,
+   emits a `.sha256` checksum sidecar for transfer verification, and refuses
+   obvious private env/license/key material. The package preflight extracts the
+   generated zip, validates the extracted Compose config, and dry-runs the
+   packaged install verifier. Use `-DryRun` to validate the package selection
+   without creating the archive, or `-DryRun -ListFiles` to also print the
+   selected files. License private keys must stay outside the package.
+
+   Before installing with real customer secrets, run the same preflight against
+   the actual env file and require the env validator to pass:
+
+   ```powershell
+   .\infra\scripts\test-customer-hosted-package.ps1 `
+     -EnvFile .\infra\compose\.env `
+     -ValidateEnvFile
+   ```
+
+   If Docker is not available on the workstation running the preflight, add
+   `-SkipDockerComposeConfig -SkipPostgresImportSmoke` and run those Docker-based
+   checks on the target host.
+
+   On the target host, the full verification wrapper runs the real env
+   validation, package preflight, seed target check, and live smoke in order:
+
+   ```powershell
+   .\infra\scripts\verify-customer-hosted-install.ps1 `
+     -EnvFile .\infra\compose\.env `
+     -SeedDryRun `
+     -ResolveOnly
+   ```
+
+   Remove `-SeedDryRun -ResolveOnly` after the stack is running and you are ready
+   to load demo seed data and call the live web/API services. Add
+   `-SkipBrowserTest` for API-only smoke verification.
+
 6. Start the stack:
 
    ```bash
@@ -91,24 +164,81 @@ Customer-hosted means:
    docker compose --project-name shifter up -d --build
    ```
 
+   For restricted-network installs, build and save the full image set on a
+   connected build machine first:
+
+   ```bash
+   ENV_FILE=/opt/shifter/infra/compose/.env \
+     SHIFTER_DIR=/opt/shifter \
+     /opt/shifter/infra/scripts/bundle-compose-images.sh
+   ```
+
+   This creates `artifacts/customer-hosted/shifter-<project>-images.tar`, a
+   manifest, and a SHA-256 checksum. Transfer those files to the target host,
+   verify the checksum, then load the images before starting Compose:
+
+   ```bash
+   sha256sum -c shifter-shifter-images.tar.sha256
+   docker load -i shifter-shifter-images.tar
+   cd /opt/shifter/infra/compose
+   docker compose --project-name shifter up -d
+   ```
+
+   To validate image names without building or saving images, run with
+   `DRY_RUN=1`.
+
 7. Check health:
 
    ```bash
+   curl -fsS http://127.0.0.1:5000/ready
    curl -fsS http://127.0.0.1:5000/health
    curl -fsS http://127.0.0.1:5000/health/detailed
    curl -fsS http://127.0.0.1:3000
    ```
 
-   The detailed report includes `ai`, `resend`, `push`, `solver`, `postgres`,
-   and `redis`. The `ai` check is `skipped` when AI is disabled, and otherwise
-   calls `{AI_BASE_URL}/models` without sending prompts, schedules, files, or
-   customer data. The `push` check validates VAPID configuration locally and
-   does not contact external push providers.
+   `/ready` is the API readiness probe used by Compose and deployment rollback
+   checks; it fails if PostgreSQL or Redis is unavailable. `/health` keeps the
+   older deep health response for external uptime monitoring. The detailed
+   report includes `ai`, `resend`, `push`, `solver`, `postgres`, and `redis`.
+   The `ai` check is `skipped` when AI is disabled, and otherwise calls
+   `{AI_BASE_URL}/models` without sending prompts, schedules, files, or customer
+   data. The `push` check validates VAPID configuration locally and does not
+   contact external push providers.
 
    Platform admins can also review the same provider status inside Shifter on
    the Platform page.
 
+   Before a customer demo using the seeded self-service dataset, load the demo
+   seed into the running Compose PostgreSQL service:
+
+   ```bash
+   ENV_FILE=/opt/shifter/infra/compose/.env \
+     COMPOSE_PROJECT_NAME=shifter \
+     /opt/shifter/infra/scripts/seed-compose.sh
+   ```
+
+   To validate the resolved Compose project, database, user, and seed file
+   without writing demo data, add `DRY_RUN=1`.
+
+   Then run the live smoke:
+
+   ```powershell
+   .\infra\scripts\smoke-self-service-client-ready.ps1 `
+     -EnvFile .\infra\compose\.env
+   ```
+
+   This verifies the web/API endpoints, seeded users, the self-service demo
+   cycle, available member slots, and the holiday/special-day picker label
+   browser flow. For API/seed verification without the browser flow, add
+   `-SkipBrowserTest`. The script checks already-running services; it does not
+   start Docker Compose. It reads `APP_FRONTEND_BASE_URL`,
+   `NEXT_PUBLIC_API_URL`/`APP_API_BASE_URL`, and optional `E2E_ADMIN_EMAIL`,
+   `E2E_MEMBER_EMAIL`, and `E2E_DEMO_PASSWORD` from the env file. To verify the
+   resolved values without calling live services, add `-ResolveOnly`.
+
 8. Put HTTPS in front of the web/API ports using the customer's proxy or WAF.
+   For Cloudflare, start from the
+   [Cloudflare edge security baseline](CLOUDFLARE-EDGE-SECURITY.md).
 
 ## AI Choices
 
@@ -145,12 +275,17 @@ OpenAI-compatible server:
 AI_API_KEY=
 AI_BASE_URL=http://local-ai.customer.internal:8000/v1
 AI_MODEL=customer-approved-model
+AI_NO_EXPORT_REQUIRED=true
 ```
 
 If no AI variables are set, Shifter starts with AI disabled. The scheduling
 solver still works because it is deterministic OR-Tools logic, not hosted AI.
 Manual self-service scheduling also works without hosted AI; see
 [Manual self-service scheduling](MANUAL-SELF-SERVICE-SCHEDULING.md).
+
+When `AI_NO_EXPORT_REQUIRED=true`, the customer env validators and the API
+startup guard reject hosted/default AI and require `AI_BASE_URL` to use
+localhost, a private IP, `.internal`, or `.local`.
 
 ## Email, Messaging, And Billing
 
@@ -161,6 +296,64 @@ For customer-hosted deployments:
 - Leave Twilio empty unless WhatsApp delivery is approved.
 - Do not use LemonSqueezy inside a private enterprise install unless the
   contract explicitly requires self-service billing.
+
+## License And Entitlement
+
+Customer-hosted installs are fail-closed on startup unless the env file includes
+one of these entitlement paths.
+
+Simple customer-hosted license key:
+
+```env
+SHIFTER_LICENSEE="Customer Legal Name"
+SHIFTER_LICENSE_KEY=...
+```
+
+Signed offline license file for private-network installs:
+
+```env
+SHIFTER_LICENSEE="Customer Legal Name"
+SHIFTER_LICENSE_KEY=
+SHIFTER_LICENSE_FILE_HOST_PATH=/opt/shifter/license.customer.json
+SHIFTER_LICENSE_FILE_CONTAINER_PATH=/run/secrets/shifter-license.json
+SHIFTER_LICENSE_PUBLIC_KEY="-----BEGIN PUBLIC KEY-----\n...\n-----END PUBLIC KEY-----"
+```
+
+The API verifies the signed JSON license file with the configured RSA public
+key at startup. The signed license file must include `deploymentMode`,
+`licensee`, `licenseKey`, optional `expiresAt`, and `signature`. The signature
+is over this canonical payload:
+
+```text
+deploymentMode=customer-hosted
+licensee=<customer legal name>
+licenseKey=<issued license key>
+expiresAt=<UTC ISO timestamp or empty>
+```
+
+Generate the customer license and OfekLabs signing keypair from a secure admin
+machine. Keep the private key outside the customer package:
+
+```powershell
+.\infra\scripts\generate-signed-license.ps1 `
+  -Licensee "Customer Legal Name" `
+  -LicenseKey "issued-customer-license-key-2026" `
+  -ExpiresAt "2031-01-01T00:00:00Z" `
+  -PrivateKeyPath .\secrets\shifter-license-private.xml `
+  -PublicKeyPath .\secrets\shifter-license-public.pem `
+  -OutputPath .\license.customer.json `
+  -GenerateKeyPair
+```
+
+For later customers, reuse the protected private key and omit
+`-GenerateKeyPair`. Give the customer only the signed JSON license file and the
+public key.
+
+The install validators reject missing, placeholder, partial, or too-short
+license values, and the API repeats the entitlement check at startup when
+`SHIFTER_DEPLOYMENT_MODE=customer-hosted`. Store license files/keys with the
+rest of the customer secrets and update them through the normal maintenance
+window process.
 
 ## Manual Self-Service Defaults
 
@@ -180,9 +373,24 @@ The values are applied only when the group's self-service policy record is first
 created. Existing group policies remain under admin control and are not
 overwritten by later env changes.
 
+The customer env validators reject invalid install defaults before rollout:
+min shifts must be `0..100`, max shifts `1..100`, min cannot exceed max,
+request-window open offset must be greater than close offset, hour fields must
+be `1..720`, waitlist offers must be `15..1440` minutes, cycle duration must
+be `1..30` days, and workflow toggles must be `true` or `false`.
+The package preflight also renders the extracted Docker Compose config with
+non-default `SELF_SERVICE_DEFAULT_*` probe values and asserts those exact values
+appear in the API's `SelfServiceDefaults__*` environment keys, so packaging
+drift cannot silently drop or bypass the runtime binding.
+
 Space owners can also configure the same template inside Shifter from
 `Space Settings` -> `Self-Service`. A saved space template is used before the
 install-level env defaults when a group is first switched to `SelfService`.
+For multi-space organizations, platform admins can set an organization-level
+self-service defaults template through
+`/platform/organizations/{organizationId}/self-service-defaults`; spaces without
+their own template inherit the organization template before falling back to the
+install-level env defaults.
 
 ## Backups
 
@@ -192,12 +400,52 @@ The compose backup script creates PostgreSQL and upload-volume backups:
 SHIFTER_DIR=/opt/shifter bash /opt/shifter/infra/scripts/backup-compose.sh
 ```
 
+Restore requires an explicit confirmation flag and should be run during a
+maintenance window. By default, the restore script creates a `pre_restore_*.dump`
+of the current target database before replacing it. If `RESTORE_UPLOADS=1`, it
+also creates a `pre_restore_uploads_*.tar.gz` archive before replacing the
+uploads volume. PostgreSQL restore runs in a single transaction with
+exit-on-error, and stopped app services are restarted if the script fails after
+taking them down.
+
+```bash
+DRY_RUN=1 \
+DB_BACKUP=/opt/shifter/backups/postgres_shifter_20260612_030000.dump \
+SHIFTER_DIR=/opt/shifter \
+bash /opt/shifter/infra/scripts/restore-compose.sh
+```
+
+```bash
+CONFIRM=restore \
+DB_BACKUP=/opt/shifter/backups/postgres_shifter_20260612_030000.dump \
+SHIFTER_DIR=/opt/shifter \
+bash /opt/shifter/infra/scripts/restore-compose.sh
+```
+
+To restore uploaded files from the matching `uploads_*.tar.gz` archive:
+
+```bash
+CONFIRM=restore \
+RESTORE_UPLOADS=1 \
+DB_BACKUP=/opt/shifter/backups/postgres_shifter_20260612_030000.dump \
+UPLOADS_BACKUP=/opt/shifter/backups/uploads_shifter_20260612_030000.tar.gz \
+SHIFTER_DIR=/opt/shifter \
+bash /opt/shifter/infra/scripts/restore-compose.sh
+```
+
 Recommended production policy:
 
 - Run backups at least daily.
 - Copy backups to customer-owned off-host storage.
+- Run `DRY_RUN=1` before any restore to validate the env file, backup paths,
+  Compose project, and upload-volume plan without changing data.
+- Keep the default pre-restore safety dumps enabled. Only use
+  `SKIP_PRE_RESTORE_BACKUP=1` when the target database is already disposable or
+  too damaged to dump, and the current uploads volume is safe to discard.
 - Test restore before go-live and once per quarter.
 - Keep database dumps and uploaded files under the same retention policy.
+- If using an external S3-compatible bucket instead of local uploads, back up
+  and restore that bucket through the customer's storage provider tooling.
 
 ## Upgrades
 
@@ -210,14 +458,76 @@ SHIFTER_DIR=/opt/shifter GIT_REF=main bash /opt/shifter/infra/scripts/deploy-com
 For enterprise customers, agree on a maintenance window and take a backup before
 each upgrade.
 
+## Go-Live Gate
+
+Before treating a customer-hosted install as production-ready, complete this
+gate on the target host with the customer's real env file, domains, secrets, and
+license:
+
+- Verify the handoff archive checksum before extraction:
+
+  ```bash
+  sha256sum -c shifter-customer-hosted-<version>.zip.sha256
+  ```
+
+- Run env validation with real values and no placeholders:
+
+  ```powershell
+  .\infra\scripts\validate-customer-env.ps1 -EnvFile .\infra\compose\.env
+  ```
+
+- Run the full target-host verifier before loading demo data or calling live
+  services:
+
+  ```powershell
+  .\infra\scripts\verify-customer-hosted-install.ps1 `
+    -EnvFile .\infra\compose\.env `
+    -SeedDryRun `
+    -ResolveOnly
+  ```
+
+- Start the stack, then rerun the verifier without `-SeedDryRun -ResolveOnly`.
+  Add `-SkipBrowserTest` only when the browser flow is intentionally out of
+  scope for that deployment.
+- Confirm `/ready`, `/health/detailed`, web reachability, provider health, and
+  Platform provider status are clean for the customer's chosen providers.
+- Confirm analytics, chat, error tracking, billing, AI, email, SMS, and push
+  are either fully configured and approved or intentionally disabled/skipped.
+- Run one backup and one restore dry-run, then document where customer-owned
+  off-host backup copies are stored.
+- Put HTTPS/WAF/rate limits in front of public web/API traffic before inviting
+  real users.
+- For tenant-by-tenant migrations, run
+  `infra/scripts/smoke-organization-import-postgres.ps1` against the customer's
+  target PostgreSQL before moving production data. For whole-install moves, use
+  the Compose backup/restore flow instead.
+- Record the exact package zip checksum, license expiration, env file owner,
+  backup location, domain names, and support escalation contact in
+  [Customer-Hosted Handoff Notes](CUSTOMER-HOSTED-HANDOFF-NOTES.md).
+
 ## Security Baseline
 
 - Use HTTPS only for public access.
 - Restrict Postgres, Redis, MinIO, and Seq to private network or localhost.
 - Generate unique `JWT_SECRET`, database, Redis, MinIO, and Seq passwords.
+- Generate a unique `FIELD_ENCRYPTION_KEY` and keep it stable for the lifetime
+  of the customer database; changing it without a migration plan prevents
+  protected contact fields from decrypting.
 - Disable analytics/chat/error tracking unless approved.
-- Put WAF/rate limits in front of auth, billing, import, solver, and admin
-  endpoints.
+- Leave `NEXT_PUBLIC_SENTRY_DSN`, `NEXT_PUBLIC_POSTHOG_KEY`, and
+  `NEXT_PUBLIC_CRISP_WEBSITE_ID` empty unless the customer explicitly approves
+  those processors. Empty Sentry DSN disables Sentry even in production builds,
+  empty PostHog key disables PostHog tracking calls, and empty Crisp website ID
+  prevents the chat widget from loading.
+- Configure provider credentials as complete groups: Resend requires API key
+  plus sender email/name, Twilio requires SID/token/from number, Web Push
+  requires all VAPID keys plus matching public frontend key, Pushover requires
+  both alert keys, and LemonSqueezy requires all billing/webhook identifiers.
+  The customer env validator fails partial groups.
+- Put WAF/rate limits in front of auth, billing, import, solver, uploads, and
+  admin endpoints. See
+  [Cloudflare edge security baseline](CLOUDFLARE-EDGE-SECURITY.md) for the
+  first rule set.
 - Keep OS and Docker patched.
 - Store env files in customer secrets management where possible.
 
@@ -227,6 +537,4 @@ These are good next iterations, but not required for the first sellable
 customer-hosted package:
 
 - Helm chart for Kubernetes customers.
-- One-command restore script.
-- Offline image bundle for air-gapped sites.
-- License/entitlement enforcement for on-prem contracts.
+- Activation portal for larger on-prem contracts.

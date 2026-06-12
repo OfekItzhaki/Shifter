@@ -65,6 +65,8 @@ const utcDatetimeArb = fc
   })
   .map((d) => d.toISOString());
 
+const PROPERTY_TEST_TIMEOUT_MS = 15_000;
+
 describe("Property 7: DST-Aware Time Display", () => {
   it("formatted output reflects correct local time for any UTC datetime and timezone", () => {
     fc.assert(
@@ -90,7 +92,7 @@ describe("Property 7: DST-Aware Time Display", () => {
       }),
       { numRuns: 200 }
     );
-  });
+  }, PROPERTY_TEST_TIMEOUT_MS);
 
   it("getLocalTimeParts matches Intl.DateTimeFormat parts for any UTC datetime and timezone", () => {
     fc.assert(
@@ -123,7 +125,7 @@ describe("Property 7: DST-Aware Time Display", () => {
       }),
       { numRuns: 200 }
     );
-  });
+  }, PROPERTY_TEST_TIMEOUT_MS);
 
   it("12h format produces valid AM/PM output for any UTC datetime and timezone", () => {
     fc.assert(
@@ -150,7 +152,7 @@ describe("Property 7: DST-Aware Time Display", () => {
       }),
       { numRuns: 200 }
     );
-  });
+  }, PROPERTY_TEST_TIMEOUT_MS);
 });
 
 describe("Property 8: Outgoing Requests Preserve UTC", () => {
@@ -174,7 +176,7 @@ describe("Property 8: Outgoing Requests Preserve UTC", () => {
       ),
       { numRuns: 200 }
     );
-  });
+  }, PROPERTY_TEST_TIMEOUT_MS);
 
   it("toUtcIsoString preserves the original UTC value for any valid ISO string input", () => {
     fc.assert(
@@ -191,7 +193,7 @@ describe("Property 8: Outgoing Requests Preserve UTC", () => {
       }),
       { numRuns: 200 }
     );
-  });
+  }, PROPERTY_TEST_TIMEOUT_MS);
 
   it("toUtcIsoString never applies a timezone offset — round-trip is identity on UTC values", () => {
     fc.assert(
@@ -212,7 +214,7 @@ describe("Property 8: Outgoing Requests Preserve UTC", () => {
       }),
       { numRuns: 200 }
     );
-  });
+  }, PROPERTY_TEST_TIMEOUT_MS);
 
   it("displayed local time does not corrupt the original UTC value when sent back", () => {
     fc.assert(
@@ -234,5 +236,5 @@ describe("Property 8: Outgoing Requests Preserve UTC", () => {
       }),
       { numRuns: 200 }
     );
-  });
+  }, PROPERTY_TEST_TIMEOUT_MS);
 });

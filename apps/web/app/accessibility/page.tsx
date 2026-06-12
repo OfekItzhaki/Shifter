@@ -2,6 +2,9 @@ import Link from "next/link";
 import { getLocale } from "next-intl/server";
 import ShifterLogo from "@/components/shell/ShifterLogo";
 import { legalDir } from "@/lib/legal/legalContent";
+import { getConfiguredSupportEmail } from "@/lib/support/contact";
+
+const SUPPORT_EMAIL = getConfiguredSupportEmail();
 
 const CONTENT = {
   en: {
@@ -9,7 +12,7 @@ const CONTENT = {
     title: "Accessibility Statement",
     updated: "Last updated",
     calloutTitle: "Need accessibility help?",
-    calloutBody: "Email support@shifter.app with the page, device, browser, and the barrier you encountered.",
+    calloutBody: `Email ${SUPPORT_EMAIL} with the page, device, browser, and the barrier you encountered.`,
     sections: [
       {
         title: "Our approach",
@@ -40,7 +43,7 @@ const CONTENT = {
     title: "הצהרת נגישות",
     updated: "עודכן לאחרונה",
     calloutTitle: "צריך עזרה בנושא נגישות?",
-    calloutBody: "שלחו מייל ל-support@shifter.app עם העמוד, המכשיר, הדפדפן והחסם שנתקלתם בו.",
+    calloutBody: `שלחו מייל ל-${SUPPORT_EMAIL} עם העמוד, המכשיר, הדפדפן והחסם שנתקלתם בו.`,
     sections: [
       {
         title: "הגישה שלנו",
@@ -71,7 +74,7 @@ const CONTENT = {
     title: "Accessibility Statement",
     updated: "Last updated",
     calloutTitle: "Need accessibility help?",
-    calloutBody: "Email support@shifter.app with the page, device, browser, and the barrier you encountered.",
+    calloutBody: `Email ${SUPPORT_EMAIL} with the page, device, browser, and the barrier you encountered.`,
     sections: [
       {
         title: "Our approach",

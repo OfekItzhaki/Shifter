@@ -138,6 +138,16 @@ public class ShiftRequestService : IShiftRequestService
                         AlternativeSlots: null);
                 }
 
+                if (await SpecialDaySelfServicePolicy.IsMemberActionBlockedAsync(_db, slot, ct))
+                {
+                    await transaction.RollbackAsync(ct);
+                    return new ShiftRequestResult(
+                        Success: false,
+                        ShiftRequestId: null,
+                        RejectionReason: SpecialDaySelfServicePolicy.NoCoverageMessage,
+                        AlternativeSlots: null);
+                }
+
                 // Req 4.6: Check for duplicate request (Pending or Approved on same slot by same person)
                 var hasDuplicate = await _db.ShiftRequests
                     .AnyAsync(r => r.ShiftSlotId == shiftSlotId

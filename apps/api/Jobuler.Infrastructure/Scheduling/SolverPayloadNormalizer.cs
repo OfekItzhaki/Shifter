@@ -1,4 +1,5 @@
 using Jobuler.Application.Common;
+using Jobuler.Application.Groups;
 using Jobuler.Application.Scheduling;
 using Jobuler.Application.Scheduling.Models;
 using Jobuler.Domain.Constraints;
@@ -46,6 +47,14 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
                 spaceId.ToString());
         }
 
+        var groupScope = groupId.HasValue
+            ? await GroupHierarchyResolver.ResolveAsync(_db, spaceId, groupId.Value, ct)
+            : null;
+        IReadOnlySet<Guid>? scopedGroupIds = groupId.HasValue
+            ? groupScope?.TreeGroupIds ?? new HashSet<Guid>()
+            : null;
+        var ancestorGroupIds = groupScope?.AncestorGroupIds ?? new HashSet<Guid>();
+
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
         // Use the provided startTime if given, otherwise default to midnight (00:00 UTC) of today.
         // This ensures shifts always align to day boundaries for cleaner schedules.
@@ -70,7 +79,7 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
         if (groupId.HasValue)
         {
             var groupData = await _db.Groups.AsNoTracking()
-                .Where(g => g.Id == groupId.Value && g.SpaceId == spaceId && g.DeletedAt == null)
+                .Where(g => g.Id == groupId.Value && g.SpaceId == spaceId && g.DeletedAt == null && g.IsActive)
                 .Select(g => new { g.SolverHorizonDays, g.IsClosedBase, g.MinRestBetweenShiftsHours })
                 .FirstOrDefaultAsync(ct);
             maxHorizon = groupData?.SolverHorizonDays ?? 7;
@@ -99,7 +108,10 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
             {
                 // Use space-level config — overrides group-level values
                 var hlMemberCount = await _db.GroupMemberships.AsNoTracking()
-                    .CountAsync(m => m.GroupId == groupId.Value && m.SpaceId == spaceId, ct);
+                    .Where(m => m.SpaceId == spaceId && scopedGroupIds!.Contains(m.GroupId))
+                    .Select(m => m.PersonId)
+                    .Distinct()
+                    .CountAsync(ct);
                 homeLeaveConfigDto = BuildHomeLeaveConfigDto(spaceHlConfig, hlMemberCount, minRestBetweenShiftsHours);
 
                 emergencyBypass = spaceHlConfig.EmergencyFreezeActive && spaceHlConfig.EmergencyUseForScheduling;
@@ -114,7 +126,10 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
                     && hlConfig.LeaveDurationHours > 0)
                 {
                     var hlMemberCount = await _db.GroupMemberships.AsNoTracking()
-                        .CountAsync(m => m.GroupId == groupId.Value && m.SpaceId == spaceId, ct);
+                        .Where(m => m.SpaceId == spaceId && scopedGroupIds!.Contains(m.GroupId))
+                        .Select(m => m.PersonId)
+                        .Distinct()
+                        .CountAsync(ct);
                     homeLeaveConfigDto = BuildHomeLeaveConfigDto(hlConfig, hlMemberCount, minRestBetweenShiftsHours);
 
                     emergencyBypass = hlConfig.EmergencyFreezeActive && hlConfig.EmergencyUseForScheduling;
@@ -136,8 +151,9 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
         if (groupId.HasValue)
         {
             var memberIds = await _db.GroupMemberships.AsNoTracking()
-                .Where(m => m.GroupId == groupId.Value && m.SpaceId == spaceId)
+                .Where(m => scopedGroupIds!.Contains(m.GroupId) && m.SpaceId == spaceId)
                 .Select(m => m.PersonId)
+                .Distinct()
                 .ToListAsync(ct);
             groupMemberIdSet = memberIds.ToHashSet();
         }
@@ -147,16 +163,20 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
                 && (groupMemberIdSet == null || groupMemberIdSet.Contains(p.Id)))
             .ToListAsync(ct);
 
+        var scopedPersonIds = people.Select(p => p.Id).ToHashSet();
+
         var roleAssignments = await _db.PersonRoleAssignments.AsNoTracking()
-            .Where(r => r.SpaceId == spaceId)
+            .Where(r => r.SpaceId == spaceId && scopedPersonIds.Contains(r.PersonId))
             .ToListAsync(ct);
 
         var qualifications = await _db.PersonQualifications.AsNoTracking()
-            .Where(q => q.SpaceId == spaceId && q.IsActive)
+            .Where(q => q.SpaceId == spaceId && q.IsActive && scopedPersonIds.Contains(q.PersonId))
             .ToListAsync(ct);
 
         var groupMemberships = await _db.GroupMemberships.AsNoTracking()
-            .Where(m => m.SpaceId == spaceId)
+            .Where(m => m.SpaceId == spaceId
+                && scopedPersonIds.Contains(m.PersonId)
+                && (scopedGroupIds == null || scopedGroupIds.Contains(m.GroupId)))
             .ToListAsync(ct);
 
         var peopleDto = people.Select(p => new PersonEligibilityDto(
@@ -191,6 +211,7 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
 
         var availability = await _db.AvailabilityWindows.AsNoTracking()
             .Where(a => a.SpaceId == spaceId
+                && scopedPersonIds.Contains(a.PersonId)
                 && a.EndsAt >= horizonStartDt
                 && a.StartsAt <= horizonEndDt)
             .ToListAsync(ct);
@@ -208,6 +229,7 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
         // windows to avoid assigning them during their leave periods (Req 7.1, 7.2, 7.4).
         var presence = await _db.PresenceWindows.AsNoTracking()
             .Where(p => p.SpaceId == spaceId
+                && scopedPersonIds.Contains(p.PersonId)
                 && p.EndsAt >= horizonStartDt
                 && p.StartsAt <= horizonEndDt)
             .ToListAsync(ct);
@@ -219,12 +241,14 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
             p.EndsAt.ToString("o"))).ToList();
 
         // ── Task slots ────────────────────────────────────────────────────────
-        var slots = await _db.TaskSlots.AsNoTracking()
-            .Where(s => s.SpaceId == spaceId
-                && s.Status == TaskSlotStatus.Active
-                && s.EndsAt >= horizonStartDt
-                && s.StartsAt <= horizonEndDt)
-            .ToListAsync(ct);
+        List<TaskSlot> slots = groupId.HasValue
+            ? []
+            : await _db.TaskSlots.AsNoTracking()
+                .Where(s => s.SpaceId == spaceId
+                    && s.Status == TaskSlotStatus.Active
+                    && s.EndsAt >= horizonStartDt
+                    && s.StartsAt <= horizonEndDt)
+                .ToListAsync(ct);
 
         var taskTypes = await _db.TaskTypes.AsNoTracking()
             .Where(t => t.SpaceId == spaceId)
@@ -272,7 +296,7 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
                 && t.IsActive
                 && t.StartsAt <= horizonEndDt
                 && t.EndsAt > horizonStartDt   // ← skip tasks that have already ended
-                && (groupId == null || t.GroupId == groupId.Value))
+                && (scopedGroupIds == null || scopedGroupIds.Contains(t.GroupId)))
             .ToListAsync(ct);
 
         foreach (var task in groupTasks)
@@ -386,7 +410,9 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
                     || c.ScopeType == ConstraintScopeType.Space
                     || c.ScopeType == ConstraintScopeType.Person
                     || c.ScopeType == ConstraintScopeType.Role
-                    || (c.ScopeType == ConstraintScopeType.Group && c.ScopeId == groupId)
+                    || (c.ScopeType == ConstraintScopeType.Group
+                        && (scopedGroupIds == null
+                            || (c.ScopeId.HasValue && scopedGroupIds.Contains(c.ScopeId.Value))))
                     || c.ScopeType == ConstraintScopeType.TaskType))
             .ToListAsync(ct);
 
@@ -474,7 +500,7 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
 
         // ── Fairness counters ─────────────────────────────────────────────────
         var fairness = await _db.FairnessCounters.AsNoTracking()
-            .Where(f => f.SpaceId == spaceId && f.AsOfDate == today)
+            .Where(f => f.SpaceId == spaceId && f.AsOfDate == today && scopedPersonIds.Contains(f.PersonId))
             .ToListAsync(ct);
 
         var fairnessDto = fairness.Select(f => new FairnessCountersDto(
@@ -500,15 +526,17 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
         if (groupId.HasValue)
         {
             var rotationRecords = await _db.TaskRotationProgress.AsNoTracking()
-                .Where(r => r.SpaceId == spaceId && r.GroupId == groupId.Value)
+                .Where(r => r.SpaceId == spaceId && scopedGroupIds!.Contains(r.GroupId))
                 .ToListAsync(ct);
 
             if (rotationRecords.Count > 0)
             {
-                taskRotationDto = rotationRecords.Select(r => new TaskRotationDto(
-                    r.PersonId.ToString(),
-                    r.CompletedTaskTypeIds.Select(id => id.ToString()).ToList()
-                )).ToList();
+                taskRotationDto = rotationRecords
+                    .GroupBy(r => r.PersonId)
+                    .Select(g => new TaskRotationDto(
+                        g.Key.ToString(),
+                        g.SelectMany(r => r.CompletedTaskTypeIds).Distinct().Select(id => id.ToString()).ToList()))
+                    .ToList();
             }
         }
 
@@ -516,23 +544,24 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
         List<CumulativeTrackingDto> cumulativeTrackingDto = [];
         if (groupId.HasValue)
         {
-            var cumulativeData = await _cumulativeTracker.GetForSolverPayloadAsync(spaceId, groupId.Value, ct) ?? [];
-            if (cumulativeData.Count > 0)
+            foreach (var scopedGroupId in scopedGroupIds!)
             {
-                cumulativeTrackingDto = cumulativeData;
+                cumulativeTrackingDto.AddRange(
+                    await _cumulativeTracker.GetForSolverPayloadAsync(spaceId, scopedGroupId, ct) ?? []);
             }
+
+            cumulativeTrackingDto = cumulativeTrackingDto
+                .Where(c => scopedPersonIds.Contains(Guid.Parse(c.PersonId)))
+                .GroupBy(c => c.PersonId)
+                .Select(g => g.First())
+                .ToList();
         }
 
         // ── Parent schedule cascading ─────────────────────────────────────────
         List<ParentAssignmentDto>? parentScheduleDto = null;
         if (groupId.HasValue)
         {
-            var parentGroupId = await _db.Groups.AsNoTracking()
-                .Where(g => g.Id == groupId.Value && g.SpaceId == spaceId)
-                .Select(g => g.ParentGroupId)
-                .FirstOrDefaultAsync(ct);
-
-            if (parentGroupId.HasValue)
+            if (ancestorGroupIds.Count > 0)
             {
                 // Get the latest published version for this space
                 var parentVersion = await _db.ScheduleVersions.AsNoTracking()
@@ -542,13 +571,11 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
 
                 if (parentVersion is not null)
                 {
-                    // Get all parent group task IDs to identify which assignments belong to the parent
-                    var parentGroupTaskIds = await _db.GroupTasks.AsNoTracking()
-                        .Where(gt => gt.SpaceId == spaceId && gt.GroupId == parentGroupId.Value && gt.IsActive)
-                        .Select(gt => gt.Id)
+                    var parentTasks = await _db.GroupTasks.AsNoTracking()
+                        .Where(gt => gt.SpaceId == spaceId && ancestorGroupIds.Contains(gt.GroupId) && gt.IsActive)
                         .ToListAsync(ct);
 
-                    if (parentGroupTaskIds.Count > 0)
+                    if (parentTasks.Count > 0)
                     {
                         // Get all assignments from the published version
                         var allAssignments = await _db.Assignments.AsNoTracking()
@@ -558,9 +585,6 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
                         // Filter to assignments whose TaskSlotId is derived from a parent group task
                         // DeriveShiftGuid XORs the task GUID with the shift index
                         var parentAssignments = new List<ParentAssignmentDto>();
-                        var parentTasks = await _db.GroupTasks.AsNoTracking()
-                            .Where(gt => gt.SpaceId == spaceId && gt.GroupId == parentGroupId.Value && gt.IsActive)
-                            .ToListAsync(ct);
 
                         foreach (var assignment in allAssignments)
                         {
@@ -599,6 +623,20 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
             }
         }
 
+        var specialDays = await _db.SpaceSpecialDays.AsNoTracking()
+            .Where(d => d.SpaceId == spaceId
+                && d.Date >= horizonStart
+                && d.Date < horizonEnd)
+            .OrderBy(d => d.Date)
+            .ThenBy(d => d.Name)
+            .Select(d => new SpecialDayDto(
+                d.Date.ToString("yyyy-MM-dd"),
+                d.Name,
+                d.Kind.ToString().ToSnakeCase(),
+                (double)d.HomeLeaveWeightMultiplier,
+                d.RequiresCoverage))
+            .ToListAsync(ct);
+
         return new SolverInputDto(
             spaceId.ToString(), runId.ToString(), triggerMode,
             horizonStart.ToString("yyyy-MM-dd"),
@@ -612,7 +650,8 @@ public class SolverPayloadNormalizer : ISolverPayloadNormalizer
             homeLeaveConfigDto,
             taskRotationDto,
             CumulativeTracking: cumulativeTrackingDto,
-            ParentSchedule: parentScheduleDto);
+            ParentSchedule: parentScheduleDto,
+            SpecialDays: specialDays);
     }
 
     public async Task<SolverInputDto> BuildPreviewAsync(

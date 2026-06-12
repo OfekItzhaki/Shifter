@@ -21,6 +21,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using NSubstitute;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using Xunit;
@@ -394,6 +395,63 @@ public class SelfServiceScopeTests
             CancellationToken.None);
 
         result.Should().BeOfType<NotFoundResult>();
+        (await db.ShiftChangeRequests.CountAsync()).Should().Be(0);
+        await services.NotificationService.DidNotReceiveWithAnyArgs()
+            .NotifySpaceAdminsAsync(default, default!, default!, default!, default, default, default);
+    }
+
+    [Fact]
+    public async Task SubmitShiftChange_Returns422_WhenShiftChangeRequestsAreDisabled()
+    {
+        using var db = CreateDb();
+        var services = CreateControllerServices();
+        var spaceId = Guid.NewGuid();
+        var group = Group.Create(spaceId, null, "Route Group");
+        var userId = Guid.NewGuid();
+        var ownerUserId = Guid.NewGuid();
+        var person = Person.Create(spaceId, "Member", linkedUserId: userId);
+        var cycle = CreateCycle(spaceId, group.Id);
+        var originalTask = CreateTask(spaceId, group.Id, "Original Task", ownerUserId);
+        var requestedTask = CreateTask(spaceId, group.Id, "Requested Task", ownerUserId);
+        var originalSlot = CreateSlot(spaceId, group.Id, originalTask.Id, cycle.Id, daysFromNow: 2);
+        var requestedSlot = CreateSlot(spaceId, group.Id, requestedTask.Id, cycle.Id, daysFromNow: 3);
+        var shiftRequest = ShiftRequest.Create(spaceId, originalSlot.Id, person.Id, group.Id, cycle.Id);
+        shiftRequest.Approve();
+        originalSlot.IncrementFillCount();
+        var config = SelfServiceConfig.Create(spaceId, group.Id);
+        config.SetWorkflowPermissions(
+            allowMemberShiftClaims: true,
+            allowWaitlist: true,
+            allowShiftChangeRequests: false,
+            allowAbsenceReports: true,
+            allowShiftSwaps: true);
+
+        db.People.Add(person);
+        db.Groups.Add(group);
+        db.GroupMemberships.Add(GroupMembership.Create(spaceId, group.Id, person.Id));
+        db.SchedulingCycles.Add(cycle);
+        db.GroupTasks.AddRange(originalTask, requestedTask);
+        db.ShiftSlots.AddRange(originalSlot, requestedSlot);
+        db.ShiftRequests.Add(shiftRequest);
+        db.SelfServiceConfigs.Add(config);
+        await db.SaveChangesAsync();
+
+        var controller = new ShiftChangeRequestsController(
+            services.Permissions,
+            services.NotificationService,
+            services.PushSender,
+            services.Audit,
+            db);
+        controller.ControllerContext = CreateControllerContext(userId);
+
+        var result = await controller.Submit(
+            spaceId,
+            group.Id,
+            new SubmitShiftChangeRequest(shiftRequest.Id, requestedSlot.Id, "Need another shift"),
+            CancellationToken.None);
+
+        result.Should().BeAssignableTo<ObjectResult>()
+            .Which.StatusCode.Should().Be(StatusCodes.Status422UnprocessableEntity);
         (await db.ShiftChangeRequests.CountAsync()).Should().Be(0);
         await services.NotificationService.DidNotReceiveWithAnyArgs()
             .NotifySpaceAdminsAsync(default, default!, default!, default!, default, default, default);
@@ -2106,6 +2164,13 @@ public class SelfServiceScopeTests
         var cycle = CreateCycle(spaceId, group.Id);
         var task = CreateTask(spaceId, group.Id, "Task", ownerUserId);
         var slot = CreateSlot(spaceId, group.Id, task.Id, cycle.Id, daysFromNow: 2);
+        var config = SelfServiceConfig.Create(spaceId, group.Id);
+        config.SetWorkflowPermissions(
+            allowMemberShiftClaims: false,
+            allowWaitlist: false,
+            allowShiftChangeRequests: true,
+            allowAbsenceReports: true,
+            allowShiftSwaps: true);
 
         db.People.Add(person);
         db.Groups.Add(group);
@@ -2113,6 +2178,7 @@ public class SelfServiceScopeTests
         db.SchedulingCycles.Add(cycle);
         db.GroupTasks.Add(task);
         db.ShiftSlots.Add(slot);
+        db.SelfServiceConfigs.Add(config);
         await db.SaveChangesAsync();
 
         services.Mediator
@@ -2148,7 +2214,10 @@ public class SelfServiceScopeTests
             cycle.Id.ToString(),
             CancellationToken.None);
 
-        result.Should().BeOfType<OkObjectResult>();
+        var ok = result.Should().BeOfType<OkObjectResult>().Subject;
+        ok.Value.Should().NotBeNull();
+        ok.Value!.GetType().GetProperty("allowMemberShiftClaims")!.GetValue(ok.Value).Should().Be(false);
+        ok.Value.GetType().GetProperty("allowWaitlist")!.GetValue(ok.Value).Should().Be(false);
         await services.Permissions.DidNotReceiveWithAnyArgs()
             .RequirePermissionAsync(default, default, default!, default);
     }
@@ -2784,6 +2853,14 @@ public class SelfServiceScopeTests
         db.People.Add(person);
         db.Groups.Add(group);
         db.GroupMemberships.Add(GroupMembership.Create(spaceId, group.Id, person.Id));
+        var config = SelfServiceConfig.Create(spaceId, group.Id);
+        config.SetWorkflowPermissions(
+            allowMemberShiftClaims: true,
+            allowWaitlist: true,
+            allowShiftChangeRequests: false,
+            allowAbsenceReports: false,
+            allowShiftSwaps: false);
+        db.SelfServiceConfigs.Add(config);
         await db.SaveChangesAsync();
 
         services.Mediator
@@ -2840,6 +2917,9 @@ public class SelfServiceScopeTests
         var response = ok.Value.Should().BeOfType<MyShiftRequestsResponse>().Subject;
         response.CurrentShiftCount.Should().Be(1);
         response.Requests.Should().HaveCount(2);
+        response.AllowShiftChangeRequests.Should().BeFalse();
+        response.AllowAbsenceReports.Should().BeFalse();
+        response.AllowShiftSwaps.Should().BeFalse();
     }
 
     [Fact]
@@ -3038,6 +3118,62 @@ public class SelfServiceScopeTests
     }
 
     [Fact]
+    public async Task GetCycleStatus_IncludesSpaceSpecialDayWarningsForCycleSlots()
+    {
+        using var db = CreateDb();
+        var services = CreateControllerServices();
+        var spaceId = Guid.NewGuid();
+        var otherSpaceId = Guid.NewGuid();
+        var group = Group.Create(spaceId, null, "Route Group");
+        var userId = Guid.NewGuid();
+        var ownerUserId = Guid.NewGuid();
+        var cycle = CreateCycle(spaceId, group.Id);
+        var task = CreateTask(spaceId, group.Id, "Holiday Shift", ownerUserId);
+        var slot = CreateSlot(spaceId, group.Id, task.Id, cycle.Id, daysFromNow: 2);
+        var specialDate = slot.Date;
+
+        db.Groups.Add(group);
+        db.SchedulingCycles.Add(cycle);
+        db.GroupTasks.Add(task);
+        db.ShiftSlots.Add(slot);
+        db.SpaceSpecialDays.Add(SpaceSpecialDay.Create(
+            spaceId,
+            specialDate,
+            "Festival",
+            SpaceSpecialDayKind.Holiday,
+            requiresCoverage: true));
+        db.SpaceSpecialDays.Add(SpaceSpecialDay.Create(
+            otherSpaceId,
+            specialDate,
+            "Other Space Festival",
+            SpaceSpecialDayKind.Holiday,
+            requiresCoverage: true));
+        await db.SaveChangesAsync();
+
+        services.Permissions
+            .RequirePermissionAsync(userId, spaceId, Permissions.SpaceView, Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+
+        var controller = new SelfServiceCyclesController(
+            db,
+            services.Permissions,
+            Substitute.For<ISlotGenerationService>(),
+            services.Mediator,
+            Substitute.For<IPdfRenderer>());
+        controller.ControllerContext = CreateControllerContext(userId);
+
+        var result = await controller.GetStatus(spaceId, group.Id, CancellationToken.None);
+
+        var ok = result.Should().BeOfType<OkObjectResult>().Subject;
+        var response = ok.Value.Should().BeOfType<SelfServiceCycleStatusResponse>().Subject;
+        response.SpecialDayCount.Should().Be(1);
+        response.UnderfilledSlots.Should().ContainSingle();
+        response.UnderfilledSlots[0].IsSpecialDay.Should().BeTrue();
+        response.UnderfilledSlots[0].SpecialDayName.Should().Be("Festival");
+        response.UnderfilledSlots[0].SpecialDayKind.Should().Be(nameof(SpaceSpecialDayKind.Holiday));
+    }
+
+    [Fact]
     public async Task GetCycleCloseout_SummarizesCurrentCycleOperatingMetrics()
     {
         using var db = CreateDb();
@@ -3167,9 +3303,17 @@ public class SelfServiceScopeTests
             cycle.StartsAt.AddHours(4),
             "Appointment",
             alice.LinkedUserId!.Value);
+        var config = SelfServiceConfig.Create(spaceId, group.Id);
+        config.SetWorkflowPermissions(
+            allowMemberShiftClaims: true,
+            allowWaitlist: false,
+            allowShiftChangeRequests: true,
+            allowAbsenceReports: false,
+            allowShiftSwaps: true);
 
         db.People.AddRange(alice, bob, charlie);
         db.Groups.Add(group);
+        db.SelfServiceConfigs.Add(config);
         db.GroupMemberships.AddRange(
             GroupMembership.Create(spaceId, group.Id, alice.Id),
             GroupMembership.Create(spaceId, group.Id, bob.Id),
@@ -3177,6 +3321,19 @@ public class SelfServiceScopeTests
         db.SchedulingCycles.Add(cycle);
         db.GroupTasks.Add(task);
         db.ShiftSlots.AddRange(filledSlot, underfilledSlot, overfilledSlot);
+        db.SpaceSpecialDays.AddRange(
+            SpaceSpecialDay.Create(
+                spaceId,
+                underfilledSlot.Date,
+                "Coverage Day",
+                SpaceSpecialDayKind.Holiday,
+                requiresCoverage: true),
+            SpaceSpecialDay.Create(
+                spaceId,
+                overfilledSlot.Date,
+                "Closed Day",
+                SpaceSpecialDayKind.Custom,
+                requiresCoverage: false));
         db.ShiftRequests.AddRange(
             approvedRequest,
             pendingRequest,
@@ -3228,11 +3385,19 @@ public class SelfServiceScopeTests
         var ok = result.Should().BeOfType<OkObjectResult>().Subject;
         var response = ok.Value.Should().BeOfType<SelfServiceCycleCloseoutResponse>().Subject;
         response.CycleId.Should().Be(cycle.Id);
+        response.AllowMemberShiftClaims.Should().BeTrue();
+        response.AllowWaitlist.Should().BeFalse();
+        response.AllowShiftChangeRequests.Should().BeTrue();
+        response.AllowAbsenceReports.Should().BeFalse();
+        response.AllowShiftSwaps.Should().BeTrue();
         response.SlotCount.Should().Be(3);
         response.TotalCapacity.Should().Be(3);
         response.FilledCount.Should().Be(3);
         response.UnderfilledSlotCount.Should().Be(1);
         response.OverfilledSlotCount.Should().Be(1);
+        response.SpecialDaySlotCount.Should().Be(2);
+        response.NoCoverageSpecialDaySlotCount.Should().Be(1);
+        response.UnderfilledSpecialDaySlotCount.Should().Be(1);
         response.ApprovedAssignments.Should().Be(3);
         response.CancelledAssignments.Should().Be(1);
         response.RejectedRequests.Should().Be(1);
@@ -3269,17 +3434,31 @@ public class SelfServiceScopeTests
         var person = Person.Create(spaceId, "Alice", linkedUserId: Guid.NewGuid());
         var cycle = CreateCycle(spaceId, group.Id);
         var task = CreateTask(spaceId, group.Id, "Guard", adminUserId);
-        var slot = CreateSlot(spaceId, group.Id, task.Id, cycle.Id, daysFromNow: -1);
+        var slot = CreateSlot(spaceId, group.Id, task.Id, cycle.Id, daysFromNow: 2);
         var request = ShiftRequest.Create(spaceId, slot.Id, person.Id, group.Id, cycle.Id);
         request.Approve(adminUserId);
         slot.IncrementFillCount();
+        var config = SelfServiceConfig.Create(spaceId, group.Id);
+        config.SetWorkflowPermissions(
+            allowMemberShiftClaims: false,
+            allowWaitlist: true,
+            allowShiftChangeRequests: false,
+            allowAbsenceReports: true,
+            allowShiftSwaps: false);
 
         db.Groups.Add(group);
+        db.SelfServiceConfigs.Add(config);
         db.People.Add(person);
         db.GroupMemberships.Add(GroupMembership.Create(spaceId, group.Id, person.Id));
         db.SchedulingCycles.Add(cycle);
         db.GroupTasks.Add(task);
         db.ShiftSlots.Add(slot);
+        db.SpaceSpecialDays.Add(SpaceSpecialDay.Create(
+            spaceId,
+            slot.Date,
+            "Closed Day",
+            SpaceSpecialDayKind.Custom,
+            requiresCoverage: false));
         db.ShiftRequests.Add(request);
         db.ShiftAttendanceRecords.Add(ShiftAttendanceRecord.Create(
             spaceId,
@@ -3313,7 +3492,15 @@ public class SelfServiceScopeTests
         var csv = Encoding.UTF8.GetString(file.FileContents);
         csv.Should().Contain("metric,value");
         csv.Should().Contain($"cycle_id,{cycle.Id}");
+        csv.Should().Contain("allow_member_shift_claims,False");
+        csv.Should().Contain("allow_waitlist,True");
+        csv.Should().Contain("allow_shift_change_requests,False");
+        csv.Should().Contain("allow_absence_reports,True");
+        csv.Should().Contain("allow_shift_swaps,False");
         csv.Should().Contain("approved_assignments,1");
+        csv.Should().Contain("special_day_slot_count,1");
+        csv.Should().Contain("no_coverage_special_day_slot_count,1");
+        csv.Should().Contain("underfilled_special_day_slot_count,0");
         csv.Should().Contain("no_show_attendance_records,1");
         csv.Should().Contain("unconfirmed_attendance_count,0");
     }
@@ -3331,18 +3518,32 @@ public class SelfServiceScopeTests
         var person = Person.Create(spaceId, "Alice", linkedUserId: Guid.NewGuid());
         var cycle = CreateCycle(spaceId, group.Id);
         var task = CreateTask(spaceId, group.Id, "Guard", adminUserId);
-        var slot = CreateSlot(spaceId, group.Id, task.Id, cycle.Id, daysFromNow: -1);
+        var slot = CreateSlot(spaceId, group.Id, task.Id, cycle.Id, daysFromNow: 2);
         var request = ShiftRequest.Create(spaceId, slot.Id, person.Id, group.Id, cycle.Id);
         request.Approve(adminUserId);
         slot.IncrementFillCount();
+        var config = SelfServiceConfig.Create(spaceId, group.Id);
+        config.SetWorkflowPermissions(
+            allowMemberShiftClaims: false,
+            allowWaitlist: false,
+            allowShiftChangeRequests: true,
+            allowAbsenceReports: true,
+            allowShiftSwaps: true);
 
         db.Spaces.Add(space);
         db.Groups.Add(group);
+        db.SelfServiceConfigs.Add(config);
         db.People.Add(person);
         db.GroupMemberships.Add(GroupMembership.Create(spaceId, group.Id, person.Id));
         db.SchedulingCycles.Add(cycle);
         db.GroupTasks.Add(task);
         db.ShiftSlots.Add(slot);
+        db.SpaceSpecialDays.Add(SpaceSpecialDay.Create(
+            spaceId,
+            slot.Date,
+            "Holiday Coverage",
+            SpaceSpecialDayKind.Holiday,
+            requiresCoverage: true));
         db.ShiftRequests.Add(request);
         await db.SaveChangesAsync();
 
@@ -3375,7 +3576,14 @@ public class SelfServiceScopeTests
         renderedModel.GroupName.Should().Be("Self-service group");
         renderedModel.CycleId.Should().Be(cycle.Id);
         renderedModel.ReportFingerprint.Should().MatchRegex("^[A-F0-9]{64}$");
+        var csvResult = await controller.ExportCloseoutCsv(spaceId, group.Id, cycle.Id, CancellationToken.None);
+        var csvFile = csvResult.Should().BeOfType<FileContentResult>().Subject;
+        var expectedFingerprint = Convert.ToHexString(SHA256.HashData(csvFile.FileContents));
+        renderedModel.ReportFingerprint.Should().Be(expectedFingerprint);
+        renderedModel.Metrics.Should().Contain(m => m.Label == "allow_member_shift_claims" && m.Value == "False");
+        renderedModel.Metrics.Should().Contain(m => m.Label == "allow_waitlist" && m.Value == "False");
         renderedModel.Metrics.Should().Contain(m => m.Label == "approved_assignments" && m.Value == "1");
+        renderedModel.Metrics.Should().Contain(m => m.Label == "special_day_slot_count" && m.Value == "1");
     }
 
     [Fact]

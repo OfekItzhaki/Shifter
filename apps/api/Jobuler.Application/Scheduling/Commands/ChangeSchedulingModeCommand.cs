@@ -93,8 +93,21 @@ public class ChangeSchedulingModeCommandHandler : IRequestHandler<ChangeScheduli
                     .AsNoTracking()
                     .FirstOrDefaultAsync(d => d.SpaceId == request.SpaceId, ct);
 
+                var organizationId = await _db.Spaces
+                    .AsNoTracking()
+                    .Where(s => s.Id == request.SpaceId)
+                    .Select(s => (Guid?)s.OrganizationId)
+                    .FirstOrDefaultAsync(ct);
+
+                var organizationDefaults = organizationId.HasValue
+                    ? await _db.OrganizationSelfServiceDefaults
+                        .AsNoTracking()
+                        .FirstOrDefaultAsync(d => d.OrganizationId == organizationId.Value, ct)
+                    : null;
+
                 _db.SelfServiceConfigs.Add(
                     spaceDefaults?.ToConfig(request.GroupId)
+                    ?? organizationDefaults?.ToConfig(request.SpaceId, request.GroupId)
                     ?? _selfServiceDefaults.ToConfig(request.SpaceId, request.GroupId));
             }
         }

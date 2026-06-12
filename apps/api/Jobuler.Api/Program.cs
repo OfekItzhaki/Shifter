@@ -17,11 +17,13 @@ using Jobuler.Application.Scheduling.SelfService;
 using Jobuler.Infrastructure.AI;
 using Jobuler.Infrastructure.Auth;
 using Jobuler.Infrastructure.Caching;
+using Jobuler.Infrastructure.Configuration;
 using Jobuler.Infrastructure.Email;
 using Jobuler.Application.Auth;
 using Jobuler.Infrastructure.Logging;
 using Jobuler.Infrastructure.Persistence;
 using Jobuler.Infrastructure.Scheduling;
+using Jobuler.Infrastructure.Security;
 using Jobuler.Infrastructure.Storage;
 using Jobuler.Infrastructure.Timezone;
 using MediatR;
@@ -37,6 +39,7 @@ using System.Threading.RateLimiting;
 using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
+DeploymentEntitlementGuard.Validate(builder.Configuration);
 
 // ─── Serilog ─────────────────────────────────────────────────────────────────
 Log.Logger = new LoggerConfiguration()
@@ -44,6 +47,20 @@ Log.Logger = new LoggerConfiguration()
     .CreateLogger();
 
 builder.Host.UseSerilog();
+
+var fieldProtectionSecret = FirstConfigured(
+        builder.Configuration["DataProtection:FieldEncryptionKey"],
+        Environment.GetEnvironmentVariable("FIELD_ENCRYPTION_KEY"),
+        builder.Configuration["Jwt:Secret"])
+    ?? throw new InvalidOperationException("DataProtection:FieldEncryptionKey or Jwt:Secret must be configured.");
+
+if (string.IsNullOrWhiteSpace(builder.Configuration["DataProtection:FieldEncryptionKey"])
+    && string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("FIELD_ENCRYPTION_KEY")))
+{
+    Log.Warning("DataProtection:FieldEncryptionKey is not configured. Falling back to Jwt:Secret for local field protection; configure a dedicated secret before production use.");
+}
+
+FieldEncryption.Configure(fieldProtectionSecret);
 
 // ─── Database ────────────────────────────────────────────────────────────────
 // Tell AppDbContext (defined in Application) where to find EF configurations
@@ -74,6 +91,9 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization();
 
+static string? FirstConfigured(params string?[] values) =>
+    values.FirstOrDefault(value => !string.IsNullOrWhiteSpace(value));
+
 // ─── Application services ────────────────────────────────────────────────────
 builder.Services.AddMediatR(cfg =>
 {
@@ -84,6 +104,8 @@ builder.Services.AddMediatR(cfg =>
 builder.Services.AddValidatorsFromAssembly(typeof(LoginCommand).Assembly);
 
 builder.Services.AddScoped<IJwtService, JwtService>();
+builder.Services.AddSingleton<IContactLookupProtector, ContactLookupProtector>();
+builder.Services.AddHostedService<ContactFieldProtectionBackfillService>();
 
 // ─── WebAuthn / FIDO2 ────────────────────────────────────────────────────────
 builder.Services.AddMemoryCache();
@@ -107,8 +129,13 @@ builder.Services.AddScoped<IPushNotificationSender, PushNotificationSender>();
 builder.Services.AddScoped<IPdfRenderer, QuestPdfRenderer>();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<ITimezoneResolver, TimezoneResolver>();
-builder.Services.Configure<Jobuler.Application.Scheduling.SelfService.SelfServiceDefaultPolicyOptions>(
-    builder.Configuration.GetSection("SelfServiceDefaults"));
+builder.Services
+    .AddOptions<SelfServiceDefaultPolicyOptions>()
+    .Bind(builder.Configuration.GetSection("SelfServiceDefaults"))
+    .Validate(
+        options => options.Validate().Count == 0,
+        "SelfServiceDefaults contains invalid values.")
+    .ValidateOnStart();
 
 // ─── VAPID configuration (Web Push) ──────────────────────────────────────────
 builder.Services.Configure<VapidSettings>(options =>
@@ -303,6 +330,7 @@ builder.Services.AddHttpClient<ISolverClient, SolverHttpClient>(client =>
 
 // ─── AI assistant (optional — only registered when API key is configured) ────
 builder.Services.AddSingleton<IStructuredImportParser, StructuredImportParser>();
+AiConfigurationGuard.Validate(builder.Configuration);
 
 if (!string.IsNullOrWhiteSpace(builder.Configuration["AI:ApiKey"]) ||
     !string.IsNullOrWhiteSpace(builder.Configuration["AI:BaseUrl"]))

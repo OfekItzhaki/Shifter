@@ -260,6 +260,11 @@ export default function CycleControlPanel({ spaceId, groupId, onNavigate, onStat
                   actionLabel={t("openReviewQueue", { queue: t("metrics.leaveReview") })}
                   onClick={onNavigate ? () => onNavigate("absence-reports") : undefined}
                 />
+                <Metric
+                  label={t("metrics.specialDays")}
+                  value={`${status.specialDayCount ?? 0}`}
+                  tone={(status.specialDayCount ?? 0) > 0 ? "warning" : "default"}
+                />
                 <Metric label={t("metrics.generated")} value={status.isGenerated ? t("yes") : t("no")} />
               </div>
 
@@ -280,6 +285,13 @@ export default function CycleControlPanel({ spaceId, groupId, onNavigate, onStat
                           <p className="text-xs text-slate-500">
                             {formatDate(slot.date)} | {slot.startTime}-{slot.endTime}
                           </p>
+                          {slot.isSpecialDay && (
+                            <p className="mt-1 text-xs font-medium text-amber-700">
+                              {slot.specialDayName
+                                ? t("specialDayNamed", { name: slot.specialDayName })
+                                : t("specialDay")}
+                            </p>
+                          )}
                         </div>
                         <div className="shrink-0 text-right">
                           <p className="text-sm font-semibold text-amber-800">{t("openSeatCount", { count: slot.openSeats })}</p>

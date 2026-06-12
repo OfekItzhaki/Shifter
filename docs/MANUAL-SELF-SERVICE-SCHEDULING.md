@@ -23,9 +23,15 @@ Manual self-service currently supports:
 - Admin assignment and removal overrides.
 - Admin review queues for absences, shift changes, and special leave.
 - Cycle closeout summary for coverage, unresolved items, overrides, absences,
-  swaps, waitlist state, and special leave.
+  swaps, waitlist state, special leave, and special-day impact.
 - Admin-confirmed attendance outcomes for approved shifts: present, no-show, or
   excused.
+- Special-day policy for closures or no-coverage dates: slots on marked special
+  days with `requiresCoverage=false` stay visible with a no-coverage label, but
+  members cannot pick them or join/accept waitlists for them.
+- Special leave validation against special days: leave requests overlapping
+  `requiresCoverage=false` dates are rejected, while coverage-required special
+  days remain requestable and are highlighted to admins.
 
 The deterministic solver is still available for automatic groups. Self-service
 groups do not require hosted AI.
@@ -37,12 +43,12 @@ when the organization accepts an admin-operated review queue:
 
 | Need | Current support |
 |---|---|
-| Members choose shifts | Supported through available slots, with duplicate, overlap, rest-window, capacity, and max-shift checks. |
+| Members choose shifts | Supported through available slots, with duplicate, overlap, rest-window, capacity, max-shift, and no-coverage special-day checks. |
 | Full slots stay useful | Supported through waitlists and timed offers. |
 | Members cannot attend | Supported through absence reports, with late-report counting per cycle. |
 | Members ask to change shifts | Supported for specific target slots and flexible admin-selected targets. |
 | Members swap shifts | Supported through member-to-member swap requests with ownership and schedule-safety checks. |
-| Members request planned time off | Supported through special leave requests and admin review. |
+| Members request planned time off | Supported through special leave requests and admin review, with special-day overlap checks. |
 | Admin fills gaps manually | Supported through admin assignment/removal overrides. Overrides can exceed capacity when needed, but still reject started/closed slots, duplicate assignments, overlap conflicts, and rest-window violations. |
 | Admin sees the operating state | Supported through operations status, prioritized underfilled-slot gaps, closeout summary, attendance/no-show counts, review counts, waitlist/admin queues, and manual assignment tools. |
 | Customer-hosted/no-AI use | Supported. Manual self-service does not require hosted AI. |
@@ -58,7 +64,7 @@ present in the product.
 | Workflow | Member surface | Admin surface | Backend support |
 |---|---|---|---|
 | Pick shifts | `Available slots` tab and `/pick` mobile route | Operations status and admin overrides | `ShiftSlotsController`, `ShiftRequestsController`, `ShiftRequestService`, `SlotAvailabilityEngine` |
-| Waitlist full shifts | `Waitlist` tab, offer accept/decline, leave waitlist | Admin waitlist queue and manual assignment from waitlist | `WaitlistService`, waitlist endpoints, expired-offer job |
+| Waitlist full shifts | `Waitlist` tab, offer accept/decline, leave waitlist | Admin waitlist queue and manual assignment from waitlist | `WaitlistService`, waitlist endpoints, expired-offer job, no-coverage special-day checks |
 | Cancel owned shifts | `My shifts` cancel action before cutoff | Cancelled request visibility in review history | shift request cancellation flow with cutoff checks |
 | Report cannot attend | `My shifts` cannot-attend action | `Reviews` queue for absence approval/rejection | `ShiftAbsenceReport` flow with late-report counting |
 | Ask to change shift | `My shifts` change request, specific slot or flexible | `Reviews` queue with target slot selection | `ShiftChangeRequestsController` and change request domain model |
@@ -67,7 +73,7 @@ present in the product.
 | Fill gaps manually | Not applicable | `Admin overrides` assignment/removal | admin override commands with safety checks |
 | Run cycles | Members see generated slots | Config, templates, cycle controls, operations dashboard | self-service config, templates, cycle generation jobs |
 | Confirm attendance | Not applicable | Attendance mark on approved shift requests | `ShiftAttendanceRecord` and shift request attendance endpoint |
-| Close out cycles | Not applicable | Closeout summary, CSV export, and PDF report in Operations, including no-show and unconfirmed attendance counts | `SelfServiceCyclesController` closeout endpoint |
+| Close out cycles | Not applicable | Closeout summary, CSV export, and PDF report in Operations, including active workflow policy flags, no-show, unconfirmed attendance, special-day slot, no-coverage special-day, and underfilled special-day counts | `SelfServiceCyclesController` closeout endpoint |
 
 The strongest member entry point is `/pick`, especially for PWA/mobile users.
 The strongest manager entry point is the self-service group operations tab.
@@ -78,9 +84,10 @@ The strongest manager entry point is the self-service group operations tab.
    Shifter creates a default self-service policy record when the mode is
    enabled, so the group has concrete limits before the first cycle is opened.
    Space owners can set the default template from `Space Settings` ->
-   `Self-Service`. Customer-hosted deployments can also set install-level
-   defaults with
-   `SELF_SERVICE_DEFAULT_*` env vars before groups are switched to
+   `Self-Service`. Platform admins can also set an organization-level template
+   from the Platform organization self-service defaults panel for multi-space
+   customers. Customer-hosted deployments can also set install-level defaults
+   with `SELF_SERVICE_DEFAULT_*` env vars before groups are switched to
    `SelfService`.
 2. Add members, roles, qualifications, and tasks as usual.
 3. Open the self-service admin area for the group.
@@ -129,10 +136,12 @@ The strongest manager entry point is the self-service group operations tab.
 ### After The Cycle
 
 - Review the closeout summary for coverage, unresolved requests, late reports,
-  cancellations, overrides, swaps, waitlist outcomes, attendance/no-shows, and
-  special leave.
+  cancellations, overrides, swaps, waitlist outcomes, attendance/no-shows,
+  special-day impact, active workflow policy, and special leave.
 - Export the closeout CSV when the cycle needs to be archived or shared with a
-  customer administrator.
+  customer administrator. The export includes the member workflow toggles that
+  were active for the group, so a customer can audit which self-service actions
+  were allowed for the cycle.
 - Clear or document any remaining underfilled slots and pending review items.
 - Mark approved assignments as present, no-show, or excused once attendance is
   known.
@@ -176,6 +185,10 @@ Shift change requests:
 
 Special leave:
 
+- Requests overlapping no-coverage special days are rejected because there is no
+  coverage obligation to be excused from.
+- Requests overlapping coverage-required special days are allowed, and admin
+  notifications include the special-day context.
 - Pending leave can be cancelled by the member.
 - Admin approval/rejection records the decision and note.
 - Approved leave should be considered when planning future cycles and manual
@@ -192,6 +205,9 @@ override actions:
 - Members can join waitlists for full slots instead of directly overfilling a
   slot.
 - Waitlist offers expire, and accepted offers are rechecked before assignment.
+- Special days marked with `requiresCoverage=false` block member picks,
+  waitlist joins, waitlist offer cascades, and stale waitlist offer acceptance.
+  Admins can still use override tools when a real exception is needed.
 - Admin assignment can exceed capacity for emergency coverage, but it still
   blocks unsafe assignment conflicts and only targets open future slots.
 - Admin removal cancels the assignment, decrements fill count, and triggers
@@ -215,11 +231,13 @@ The implementation has focused unit/property coverage for:
 - swaps, including propose, accept, decline, cancel, expiry, ownership checks,
   conflict checks, and stale-state refresh
 - self-service config validation and policy warnings
+- workflow toggles that disable member shift claims, waitlists, absence
+  reports, shift-change requests, and swaps
 - admin overrides, absence/change/special-leave review queues, and cycle
   operations status
 - cycle closeout metrics, including coverage totals, unresolved items,
-  absences, changes, swaps, waitlists, attendance/no-shows, special leave, and
-  admin overrides
+  absences, changes, swaps, waitlists, attendance/no-shows, special-day impact,
+  special leave, and admin overrides
 - attendance record creation/update behavior and tenant-scoped closeout counts
 - API lifecycle tests for request limits, notifications, waitlist processing,
   swaps, absence reports, shift changes, and scope isolation
@@ -227,29 +245,41 @@ The implementation has focused unit/property coverage for:
 There are also browser Playwright checks using the seeded `Self-Service Demo`
 group:
 
+- a client-ready smoke runner:
+  `.\infra\scripts\smoke-self-service-client-ready.ps1`
 - a mobile smoke test for self-service admin cycle controls and operations
 - a member browser lifecycle test for picking an open shift and joining/viewing
-  a full-slot waitlist
-- a member browser lifecycle test for leaving a waiting-list entry
+  a full-slot waitlist, including pick capacity increase and waitlist capacity
+  stability checks
+- a member browser lifecycle test for leaving a waiting-list entry without slot
+  fill-count drift
 - a member/admin browser lifecycle test for cannot-attend reporting and admin
   approval from the review queue
 - a member/admin browser lifecycle test for shift-change request submission,
-  admin approval, and reassignment verification
-- a member browser lifecycle test for cancelling an approved shift and verifying
-  the cancelled state
+  admin approval, reassignment verification, and source/target slot fill-count
+  verification
 - a member-to-member browser lifecycle test for proposing and accepting a shift
-  swap with final assignment verification
+  swap with final assignment and stable slot fill-count verification
 - a member-to-member browser lifecycle test for proposing and declining a shift
-  swap
+  swap with unchanged assignment and slot fill-count verification
 - a member browser lifecycle test for cancelling an outgoing pending shift swap
+  with unchanged assignment and slot fill-count verification
+- a member browser lifecycle test for cancelling an approved shift with final
+  request status and slot fill-count verification
 - an admin browser lifecycle test for rejecting a shift-change request while
-  preserving the member's original assignment
+  preserving the member's original assignment and original slot fill count
 - an admin browser lifecycle test for rejecting a cannot-attend report and
-  reinstating the member's released shift
+  reinstating the member's released shift with slot fill-count verification
 - a member/admin browser lifecycle test for special leave submission and admin
-  approval
-- a member browser lifecycle test for special leave cancellation
-- a member/admin browser lifecycle test for special leave rejection
+  approval with presence-window creation verification
+- a member browser lifecycle test for special leave cancellation with no
+  presence-window creation
+- a member/admin browser lifecycle test for special leave rejection with no
+  presence-window creation
+- a member browser lifecycle test for holiday/special-day labels on available
+  shifts
+- a member browser lifecycle test for no-coverage special-day slots staying
+  visible while blocking direct member claims in both API and UI
 
 ## Customer-Hosted Use
 
@@ -277,15 +307,21 @@ large deployments:
 
 - Broader browser end-to-end coverage for the complete member/admin cycle:
   remaining rejection paths and richer final slot-state verification. The
-  browser suite already covers picking, waitlist entry, waitlist leaving,
+  browser suite already covers picking with slot fill-count increase, waitlist
+  entry without slot fill-count drift, waitlist leaving without slot fill-count
+  drift,
   cannot-attend reporting, absence approval, absence rejection with shift
-  reinstatement, shift cancellation, shift-change approval with reassignment,
-  shift-change rejection, member-to-member swap acceptance, member-to-member
-  swap decline, and initiator swap cancellation, special leave approval, special
-  leave cancellation, and special leave rejection.
-- Organization-level defaults for self-service policy through the admin UI.
-  Space owners can configure space-level defaults today; a higher-level
-  organization template for multi-space installs is still deferred.
+  reinstatement and slot fill-count verification, shift cancellation with slot
+  fill-count verification, shift-change approval with source/target slot
+  fill-count verification, shift-change rejection with original slot fill-count
+  verification, member-to-member swap acceptance with stable slot fill-count
+  verification, member-to-member swap decline with stable slot fill-count
+  verification, initiator swap cancellation with stable slot fill-count
+  verification, special leave approval with presence-window creation, special
+  leave cancellation without presence-window creation, special leave rejection
+  without presence-window creation, and no-coverage special-day claim blocking.
 - Formal certificate signing for closeout reports. PDF closeout reports already
   include a verification fingerprint for archive/tamper checks, but they are not
-  certificate-signed legal documents.
+  certificate-signed legal documents. Treat certificate signing as a deployment
+  policy decision because it requires certificate ownership, trust-chain, and
+  renewal/rotation choices.

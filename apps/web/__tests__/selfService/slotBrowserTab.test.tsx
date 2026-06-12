@@ -16,6 +16,10 @@ const translations: Record<string, string> = {
   "selfService.slotBrowser.full": "Full",
   "selfService.slotBrowser.requestButton": "Pick Shift",
   "selfService.slotBrowser.joinWaitlistButton": "Join Waitlist",
+  "selfService.slotBrowser.specialDayNoCoverage": "No coverage required",
+  "selfService.slotBrowser.specialDayUnavailable": "Not open for picking",
+  "selfService.slotBrowser.claimDisabled": "Picking disabled",
+  "selfService.slotBrowser.waitlistDisabled": "Waitlist disabled",
   "selfService.slotBrowser.requestSuccess": "Shift confirmed. It was added to your shifts.",
   "selfService.slotBrowser.windowClosed": "Request window closed",
 };
@@ -30,6 +34,9 @@ vi.mock("next-intl", () => ({
         }
         if (`${namespace}.${key}` === "selfService.slotBrowser.windowOpensAt") {
           return `Opens ${values?.date ?? ""}`;
+        }
+        if (`${namespace}.${key}` === "selfService.slotBrowser.specialDayNamed") {
+          return `Special day: ${values?.name ?? ""}`;
         }
         return translations[`${namespace}.${key}`] ?? key;
       });
@@ -146,5 +153,97 @@ describe("SlotBrowserTab", () => {
     });
     expect(await screen.findByText("Joined waitlist at position 3")).toBeInTheDocument();
     expect(mockSubmitShiftRequest).not.toHaveBeenCalled();
+  });
+
+  it("shows special-day labels on matching slots", async () => {
+    mockGetAvailableSlots.mockResolvedValue({
+      ...makeAvailableResponse(0),
+      slots: [
+        {
+          id: "slot-holiday",
+          date: "2026-06-20",
+          startTime: "09:00:00",
+          endTime: "17:00:00",
+          taskName: "Desk",
+          capacity: 2,
+          currentFillCount: 0,
+          isSpecialDay: true,
+          specialDayName: "Festival",
+          specialDayKind: "Holiday",
+        },
+      ],
+    });
+
+    render(<SlotBrowserTab spaceId="space-1" groupId="group-1" isAdmin={false} />);
+
+    expect(await screen.findByText("Special day: Festival")).toBeInTheDocument();
+  });
+
+  it("disables member actions when a special day does not require coverage", async () => {
+    mockGetAvailableSlots.mockResolvedValue({
+      ...makeAvailableResponse(0),
+      slots: [
+        {
+          id: "slot-closed",
+          date: "2026-06-20",
+          startTime: "09:00:00",
+          endTime: "17:00:00",
+          taskName: "Desk",
+          capacity: 2,
+          currentFillCount: 0,
+          isSpecialDay: true,
+          specialDayName: "Closure",
+          specialDayKind: "Custom",
+          specialDayRequiresCoverage: false,
+        },
+      ],
+    });
+
+    render(<SlotBrowserTab spaceId="space-1" groupId="group-1" isAdmin={false} />);
+
+    expect(await screen.findByText("Special day: Closure")).toBeInTheDocument();
+    expect(screen.getByText("No coverage required")).toBeInTheDocument();
+    expect(screen.getByText("Not open for picking")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Pick Shift" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Join Waitlist" })).not.toBeInTheDocument();
+  });
+
+  it("hides pick and waitlist actions when member workflows are disabled", async () => {
+    mockGetAvailableSlots.mockResolvedValue({
+      requestWindowOpen: true,
+      requestWindowOpensAt: null,
+      requestWindowClosesAt: "2026-06-19T00:00:00Z",
+      allowMemberShiftClaims: false,
+      allowWaitlist: false,
+      slots: [
+        {
+          id: "slot-open",
+          date: "2026-06-20",
+          startTime: "09:00:00",
+          endTime: "17:00:00",
+          taskName: "Desk",
+          capacity: 2,
+          currentFillCount: 0,
+        },
+        {
+          id: "slot-full",
+          date: "2026-06-20",
+          startTime: "18:00:00",
+          endTime: "22:00:00",
+          taskName: "Desk",
+          capacity: 1,
+          currentFillCount: 1,
+        },
+      ],
+    });
+
+    render(<SlotBrowserTab spaceId="space-1" groupId="group-1" isAdmin={false} />);
+
+    expect(await screen.findByText("Picking disabled")).toBeInTheDocument();
+    expect(screen.getByText("Waitlist disabled")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Pick Shift" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Join Waitlist" })).not.toBeInTheDocument();
+    expect(mockSubmitShiftRequest).not.toHaveBeenCalled();
+    expect(mockJoinWaitlist).not.toHaveBeenCalled();
   });
 });

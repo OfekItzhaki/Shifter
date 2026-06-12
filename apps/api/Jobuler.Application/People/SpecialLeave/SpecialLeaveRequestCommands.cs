@@ -4,6 +4,7 @@ using Jobuler.Application.Notifications;
 using Jobuler.Application.Scheduling;
 using Jobuler.Domain.Notifications;
 using Jobuler.Domain.People;
+using Jobuler.Domain.Spaces;
 using Jobuler.Infrastructure.Persistence;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -66,6 +67,24 @@ public class SubmitSpecialLeaveRequestCommandHandler
                 if (overlapsExistingRequest)
                     throw new InvalidOperationException("An active special leave request already overlaps this time.");
 
+                var specialDayOverlaps = await GetOverlappingSpecialDaysAsync(
+                    _db,
+                    req.SpaceId,
+                    req.StartsAt,
+                    req.EndsAt,
+                    ct);
+
+                var noCoverageDays = specialDayOverlaps
+                    .Where(d => !d.RequiresCoverage)
+                    .ToList();
+
+                if (noCoverageDays.Count > 0)
+                {
+                    var names = string.Join(", ", noCoverageDays.Select(d => d.Name));
+                    throw new InvalidOperationException(
+                        $"Special leave overlaps no-coverage special day(s): {names}. Adjust the request to days that require coverage.");
+                }
+
                 var request = SpecialLeaveRequest.Create(
                     req.SpaceId, req.PersonId, req.StartsAt, req.EndsAt, req.Reason, req.RequestedByUserId);
 
@@ -103,7 +122,7 @@ public class SubmitSpecialLeaveRequestCommandHandler
             req.SpaceId,
             "self_service.special_leave_requested",
             "Time-off Requested",
-            $"{person.Name} requested time off from {req.StartsAt:MMM dd HH:mm} to {req.EndsAt:MMM dd HH:mm}.",
+            await BuildAdminNotificationBodyAsync(_db, req, person.Name, ct),
             JsonSerializer.Serialize(new
             {
                 requestId,
@@ -111,14 +130,62 @@ public class SubmitSpecialLeaveRequestCommandHandler
                 personName = person.Name,
                 startsAt = req.StartsAt,
                 endsAt = req.EndsAt,
-                reason = req.Reason
+                reason = req.Reason,
+                specialDays = await GetOverlappingSpecialDaysAsync(_db, req.SpaceId, req.StartsAt, req.EndsAt, ct)
             }),
             groupId: null,
             ct);
 
         return requestId;
     }
+
+    private static async Task<string> BuildAdminNotificationBodyAsync(
+        AppDbContext db,
+        SubmitSpecialLeaveRequestCommand req,
+        string personName,
+        CancellationToken ct)
+    {
+        var body = $"{personName} requested time off from {req.StartsAt:MMM dd HH:mm} to {req.EndsAt:MMM dd HH:mm}.";
+        var specialDays = await GetOverlappingSpecialDaysAsync(db, req.SpaceId, req.StartsAt, req.EndsAt, ct);
+        var coverageDays = specialDays.Where(d => d.RequiresCoverage).Select(d => d.Name).ToList();
+
+        return coverageDays.Count == 0
+            ? body
+            : $"{body} Includes coverage-required special day(s): {string.Join(", ", coverageDays)}.";
+    }
+
+    private static async Task<List<SpecialLeaveSpecialDayOverlap>> GetOverlappingSpecialDaysAsync(
+        AppDbContext db,
+        Guid spaceId,
+        DateTime startsAt,
+        DateTime endsAt,
+        CancellationToken ct)
+    {
+        if (endsAt <= startsAt)
+            return [];
+
+        var from = DateOnly.FromDateTime(startsAt);
+        var to = DateOnly.FromDateTime(endsAt.AddTicks(-1));
+
+        return await db.SpaceSpecialDays
+            .AsNoTracking()
+            .Where(d => d.SpaceId == spaceId && d.Date >= from && d.Date <= to)
+            .OrderBy(d => d.Date)
+            .ThenBy(d => d.Name)
+            .Select(d => new SpecialLeaveSpecialDayOverlap(
+                d.Date,
+                d.Name,
+                d.Kind,
+                d.RequiresCoverage))
+            .ToListAsync(ct);
+    }
 }
+
+public record SpecialLeaveSpecialDayOverlap(
+    DateOnly Date,
+    string Name,
+    SpaceSpecialDayKind Kind,
+    bool RequiresCoverage);
 
 public record ApproveSpecialLeaveRequestCommand(
     Guid SpaceId,

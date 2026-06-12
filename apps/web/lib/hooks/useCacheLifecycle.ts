@@ -16,7 +16,7 @@ function shouldUseServiceWorkerCache(): boolean {
  * Maps a cached API URL to the corresponding React Query key(s) to invalidate.
  * Returns null if the URL doesn't match any known pattern.
  */
-function getQueryKeysForUrl(url: string): unknown[][] | null {
+export function getQueryKeysForUrl(url: string): unknown[][] | null {
   try {
     const { pathname } = new URL(url);
 
@@ -57,6 +57,34 @@ function getQueryKeysForUrl(url: string): unknown[][] | null {
     );
     if (billingMatch) {
       return [["billing", billingMatch[1]]];
+    }
+
+    const selfServiceMatch = pathname.match(
+      /\/spaces\/([^/]+)\/groups\/([^/]+)\/(self-service-config|self-service-cycles\/(?:status|closeout)|shift-slots\/available|shift-requests\/mine|shift-requests\/absence-reports(?:\/mine)?|shift-change-requests\/(?:mine|admin)|waitlist\/(?:mine|admin)|shift-swaps\/(?:my|admin))$/
+    );
+    if (selfServiceMatch) {
+      const [, spaceId, groupId, endpoint] = selfServiceMatch;
+      const keys: unknown[][] = [["self-service", spaceId, groupId]];
+
+      if (endpoint === "self-service-config") {
+        keys.push(["self-service-config", spaceId, groupId]);
+      } else if (endpoint.startsWith("self-service-cycles/")) {
+        keys.push(["self-service-cycle", spaceId, groupId]);
+      } else if (endpoint === "shift-slots/available") {
+        keys.push(["self-service-slots", spaceId, groupId]);
+      } else if (endpoint === "shift-requests/mine") {
+        keys.push(["self-service-my-shifts", spaceId, groupId]);
+      } else if (endpoint.startsWith("shift-requests/absence-reports")) {
+        keys.push(["self-service-absence-reports", spaceId, groupId]);
+      } else if (endpoint.startsWith("shift-change-requests/")) {
+        keys.push(["self-service-shift-changes", spaceId, groupId]);
+      } else if (endpoint.startsWith("waitlist/")) {
+        keys.push(["self-service-waitlist", spaceId, groupId]);
+      } else if (endpoint.startsWith("shift-swaps/")) {
+        keys.push(["self-service-swaps", spaceId, groupId]);
+      }
+
+      return keys;
     }
 
     return null;

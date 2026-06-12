@@ -5,6 +5,7 @@ using Jobuler.Application.People.SpecialLeave;
 using Jobuler.Application.Scheduling;
 using Jobuler.Domain.Groups;
 using Jobuler.Domain.People;
+using Jobuler.Domain.Spaces;
 using Jobuler.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
@@ -94,6 +95,87 @@ public class SpecialLeaveRequestCommandTests
 
         await notifications.DidNotReceiveWithAnyArgs()
             .NotifySpaceAdminsAsync(default, default!, default!, default!, default!, default, default);
+    }
+
+    [Fact]
+    public async Task Submit_RejectsNoCoverageSpecialDayOverlap()
+    {
+        await using var db = CreateDb();
+        var spaceId = Guid.NewGuid();
+        var userId = Guid.NewGuid();
+        var person = Person.Create(spaceId, "Ofek", linkedUserId: userId);
+        var start = new DateTime(2026, 9, 22, 8, 0, 0, DateTimeKind.Utc);
+        db.People.Add(person);
+        db.SpaceSpecialDays.Add(SpaceSpecialDay.Create(
+            spaceId,
+            DateOnly.FromDateTime(start),
+            "Office Closure",
+            SpaceSpecialDayKind.Custom,
+            requiresCoverage: false));
+        await db.SaveChangesAsync();
+
+        var notifications = Substitute.For<INotificationService>();
+        var audit = CreateAuditLogger();
+        var handler = new SubmitSpecialLeaveRequestCommandHandler(db, notifications, audit);
+
+        var act = () => handler.Handle(new SubmitSpecialLeaveRequestCommand(
+            spaceId,
+            person.Id,
+            start,
+            start.AddHours(8),
+            "Family event",
+            userId), CancellationToken.None);
+
+        await act.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("Special leave overlaps no-coverage special day(s): Office Closure. Adjust the request to days that require coverage.");
+
+        (await db.SpecialLeaveRequests.CountAsync()).Should().Be(0);
+        await notifications.DidNotReceiveWithAnyArgs()
+            .NotifySpaceAdminsAsync(default, default!, default!, default!, default!, default, default);
+        await audit.DidNotReceiveWithAnyArgs()
+            .LogAsync(default, default, default!, default, default, default, default, default, default);
+    }
+
+    [Fact]
+    public async Task Submit_HighlightsCoverageRequiredSpecialDayOverlap()
+    {
+        await using var db = CreateDb();
+        var spaceId = Guid.NewGuid();
+        var userId = Guid.NewGuid();
+        var person = Person.Create(spaceId, "Ofek", linkedUserId: userId);
+        var start = new DateTime(2026, 9, 22, 8, 0, 0, DateTimeKind.Utc);
+        db.People.Add(person);
+        db.SpaceSpecialDays.Add(SpaceSpecialDay.Create(
+            spaceId,
+            DateOnly.FromDateTime(start),
+            "Rosh Hashanah",
+            SpaceSpecialDayKind.Holiday,
+            requiresCoverage: true));
+        await db.SaveChangesAsync();
+
+        var notifications = Substitute.For<INotificationService>();
+        var audit = CreateAuditLogger();
+        var handler = new SubmitSpecialLeaveRequestCommandHandler(db, notifications, audit);
+
+        var requestId = await handler.Handle(new SubmitSpecialLeaveRequestCommand(
+            spaceId,
+            person.Id,
+            start,
+            start.AddHours(8),
+            "Family event",
+            userId), CancellationToken.None);
+
+        (await db.SpecialLeaveRequests.CountAsync()).Should().Be(1);
+        await notifications.Received(1).NotifySpaceAdminsAsync(
+            spaceId,
+            "self_service.special_leave_requested",
+            "Time-off Requested",
+            Arg.Is<string>(body => body.Contains("Rosh Hashanah") && body.Contains("coverage-required")),
+            Arg.Is<string>(metadata => metadata.Contains(requestId.ToString())
+                && metadata.Contains("Rosh Hashanah")
+                && metadata.Contains("RequiresCoverage")),
+            null,
+            Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -591,16 +673,20 @@ public class SpecialLeaveRequestCommandTests
     {
         await using var db = CreateDb();
         var spaceId = Guid.NewGuid();
+        var otherSpaceId = Guid.NewGuid();
         var userId = Guid.NewGuid();
         var person = Person.Create(spaceId, "Ofek", displayName: "Ofek L.", linkedUserId: userId);
         var otherPerson = Person.Create(spaceId, "Other", linkedUserId: Guid.NewGuid());
+        var sameUserOtherSpacePerson = Person.Create(otherSpaceId, "Other Space Ofek", linkedUserId: userId);
         var start = DateTime.UtcNow.AddDays(3);
 
-        db.People.AddRange(person, otherPerson);
+        db.People.AddRange(person, otherPerson, sameUserOtherSpacePerson);
         db.SpecialLeaveRequests.Add(SpecialLeaveRequest.Create(
             spaceId, person.Id, start, start.AddDays(1), "Family event", userId));
         db.SpecialLeaveRequests.Add(SpecialLeaveRequest.Create(
             spaceId, otherPerson.Id, start, start.AddDays(1), "Other event", Guid.NewGuid()));
+        db.SpecialLeaveRequests.Add(SpecialLeaveRequest.Create(
+            otherSpaceId, sameUserOtherSpacePerson.Id, start, start.AddDays(1), "Other space event", userId));
         await db.SaveChangesAsync();
 
         var handler = new GetMySpecialLeaveRequestsQueryHandler(db);
@@ -620,24 +706,31 @@ public class SpecialLeaveRequestCommandTests
     {
         await using var db = CreateDb();
         var spaceId = Guid.NewGuid();
+        var otherSpaceId = Guid.NewGuid();
         var group = Group.Create(spaceId, null, "Route Group");
         var otherGroup = Group.Create(spaceId, null, "Other Group");
+        var otherSpaceGroup = Group.Create(otherSpaceId, null, "Other Space Group");
         var memberUserId = Guid.NewGuid();
         var otherMemberUserId = Guid.NewGuid();
+        var otherSpaceMemberUserId = Guid.NewGuid();
         var member = Person.Create(spaceId, "Member", linkedUserId: memberUserId);
         var otherMember = Person.Create(spaceId, "Other Member", linkedUserId: otherMemberUserId);
+        var otherSpaceMember = Person.Create(otherSpaceId, "Other Space Member", linkedUserId: otherSpaceMemberUserId);
         var start = DateTime.UtcNow.AddDays(3);
         var request = SpecialLeaveRequest.Create(
             spaceId, member.Id, start, start.AddDays(1), "Family event", memberUserId);
         var otherRequest = SpecialLeaveRequest.Create(
             spaceId, otherMember.Id, start, start.AddDays(1), "Other event", otherMemberUserId);
+        var otherSpaceRequest = SpecialLeaveRequest.Create(
+            otherSpaceId, otherSpaceMember.Id, start, start.AddDays(1), "Other space event", otherSpaceMemberUserId);
 
-        db.Groups.AddRange(group, otherGroup);
-        db.People.AddRange(member, otherMember);
+        db.Groups.AddRange(group, otherGroup, otherSpaceGroup);
+        db.People.AddRange(member, otherMember, otherSpaceMember);
         db.GroupMemberships.AddRange(
             GroupMembership.Create(spaceId, group.Id, member.Id),
-            GroupMembership.Create(spaceId, otherGroup.Id, otherMember.Id));
-        db.SpecialLeaveRequests.AddRange(request, otherRequest);
+            GroupMembership.Create(spaceId, otherGroup.Id, otherMember.Id),
+            GroupMembership.Create(otherSpaceId, otherSpaceGroup.Id, otherSpaceMember.Id));
+        db.SpecialLeaveRequests.AddRange(request, otherRequest, otherSpaceRequest);
         await db.SaveChangesAsync();
 
         var handler = new GetSpecialLeaveRequestsForAdminQueryHandler(db);

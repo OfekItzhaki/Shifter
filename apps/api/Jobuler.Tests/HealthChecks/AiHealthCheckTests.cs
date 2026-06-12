@@ -18,6 +18,9 @@ public class AiHealthCheckTests
 
         result.ServiceName.Should().Be("ai");
         result.Status.Should().Be("skipped");
+        result.Details.Should().Contain("mode", "disabled");
+        result.Details.Should().Contain("endpointKind", "none");
+        result.Details.Should().Contain("noExportRequired", "false");
     }
 
     [Fact]
@@ -33,9 +36,31 @@ public class AiHealthCheckTests
         var result = await check.CheckAsync(CancellationToken.None);
 
         result.Status.Should().Be("healthy");
+        result.Details.Should().Contain("mode", "private-compatible");
+        result.Details.Should().Contain("endpointKind", "private");
+        result.Details.Should().Contain("noExportRequired", "false");
         handler.Request.Should().NotBeNull();
         handler.Request!.RequestUri!.ToString().Should().Be("http://local-ai.internal/v1/models");
         handler.Request.Headers.Authorization.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task CheckAsync_WithNoExportPrivateBaseUrl_ReportsNoExportMode()
+    {
+        var handler = new CaptureHandler(HttpStatusCode.OK);
+        var check = CreateCheck(new Dictionary<string, string?>
+        {
+            ["AI:BaseUrl"] = "http://local-ai.internal/v1",
+            ["AI:Model"] = "local-model",
+            ["AI:NoExportRequired"] = "true"
+        }, handler);
+
+        var result = await check.CheckAsync(CancellationToken.None);
+
+        result.Status.Should().Be("healthy");
+        result.Details.Should().Contain("mode", "no-export");
+        result.Details.Should().Contain("endpointKind", "private");
+        result.Details.Should().Contain("noExportRequired", "true");
     }
 
     [Fact]
@@ -51,6 +76,9 @@ public class AiHealthCheckTests
         var result = await check.CheckAsync(CancellationToken.None);
 
         result.Status.Should().Be("healthy");
+        result.Details.Should().Contain("mode", "hosted");
+        result.Details.Should().Contain("endpointKind", "hosted");
+        result.Details.Should().Contain("noExportRequired", "false");
         handler.Request.Should().NotBeNull();
         handler.Request!.RequestUri!.ToString().Should().Be("https://api.openai.com/v1/models");
         handler.Request.Headers.Authorization!.Scheme.Should().Be("Bearer");

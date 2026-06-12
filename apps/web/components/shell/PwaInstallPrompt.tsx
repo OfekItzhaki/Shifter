@@ -28,6 +28,15 @@ function isIosSafari(): boolean {
   return isiOS && isSafari;
 }
 
+function isMobileInstallSurface(): boolean {
+  if (typeof window === "undefined" || typeof navigator === "undefined") return false;
+  return isIosSafari() || window.matchMedia("(pointer: coarse)").matches;
+}
+
+function shouldShowIosHint(): boolean {
+  return isMobileInstallSurface() && isIosSafari();
+}
+
 function recentlyDismissed(): boolean {
   if (typeof window === "undefined") return true;
   const raw = window.localStorage.getItem(DISMISSED_KEY);
@@ -43,7 +52,7 @@ export default function PwaInstallPrompt() {
   const t = useTranslations("pwaInstall");
   const [installEvent, setInstallEvent] = useState<BeforeInstallPromptEvent | null>(null);
   const [dismissed, setDismissed] = useState(() => isStandaloneDisplay() || recentlyDismissed());
-  const [showIosHint, setShowIosHint] = useState(() => !dismissed && isIosSafari());
+  const [showIosHint, setShowIosHint] = useState(() => !isStandaloneDisplay() && !recentlyDismissed() && shouldShowIosHint());
 
   const canShow = useMemo(
     () => !dismissed && !isStandaloneDisplay() && (Boolean(installEvent) || showIosHint),

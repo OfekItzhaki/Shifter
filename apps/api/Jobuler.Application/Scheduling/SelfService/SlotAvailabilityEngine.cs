@@ -65,6 +65,23 @@ public class SlotAvailabilityEngine : ISlotAvailabilityEngine
         if (slotsWithTasks.Count == 0)
             return new SlotAvailabilityResult([], isReadOnly, message);
 
+        var slotDates = slotsWithTasks
+            .Select(s => s.Slot.Date)
+            .Distinct()
+            .ToList();
+
+        var specialDaysByDate = await _db.SpaceSpecialDays
+            .AsNoTracking()
+            .Where(d => d.SpaceId == cycle.SpaceId && slotDates.Contains(d.Date))
+            .OrderBy(d => d.RequiresCoverage)
+            .ThenBy(d => d.Name)
+            .Select(d => new { d.Date, d.Name, d.Kind, d.RequiresCoverage })
+            .ToListAsync(ct);
+
+        var specialDayLookup = specialDaysByDate
+            .GroupBy(d => d.Date)
+            .ToDictionary(g => g.Key, g => g.First());
+
         // Load the member's existing pending/approved request slot IDs for this cycle
         var memberRequestedSlotIds = await _db.ShiftRequests
             .AsNoTracking()
@@ -100,6 +117,8 @@ public class SlotAvailabilityEngine : ISlotAvailabilityEngine
             if (assignmentConflict != ShiftAssignmentConflictKind.None)
                 continue;
 
+            specialDayLookup.TryGetValue(slot.Date, out var specialDay);
+
             availableSlots.Add(new AvailableSlotDto(
                 ShiftSlotId: slot.Id,
                 Date: slot.Date,
@@ -107,7 +126,11 @@ public class SlotAvailabilityEngine : ISlotAvailabilityEngine
                 EndTime: slot.EndTime,
                 TaskName: item.TaskName,
                 CurrentFillCount: slot.CurrentFillCount,
-                Capacity: slot.Capacity));
+                Capacity: slot.Capacity,
+                IsSpecialDay: specialDay is not null,
+                SpecialDayName: specialDay?.Name,
+                SpecialDayKind: specialDay?.Kind.ToString(),
+                SpecialDayRequiresCoverage: specialDay?.RequiresCoverage));
         }
 
         // Requirement 7.1: Sort by date ascending, then start time ascending

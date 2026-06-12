@@ -9,7 +9,8 @@ and rotate between missions and home-leave. It provides:
 """
 from ortools.sat.python import cp_model
 from models.solver_input import (
-    SolverInput, TaskSlot, HomeLeaveConfig, PersonEligibility, PresenceWindow, CumulativeTracking
+    SolverInput, TaskSlot, HomeLeaveConfig, PersonEligibility, PresenceWindow, CumulativeTracking,
+    SpecialDay,
 )
 from datetime import datetime, timezone, timedelta
 import logging
@@ -446,6 +447,54 @@ def add_home_leave_fairness_objective(
     # to make the weight meaningful in ratio-space, but since the weight is
     # already tuned (500), we just use max_dev directly.
     return [max_dev * FAIRNESS_WEIGHT]
+
+
+def add_home_leave_special_day_preference(
+    home_leave_vars: dict[tuple[int, int], "cp_model.IntVar"],
+    config: HomeLeaveConfig,
+    horizon_start_ts: int,
+    special_days: list[SpecialDay] | None = None,
+) -> list:
+    """
+    Prefer placing home-leave windows on reviewed special days.
+
+    This is a timing preference only. It does not create extra leave, relax
+    coverage, bypass min-rest, or override capacity. A higher multiplier gives
+    Shifter a stronger reason to choose a leave window that overlaps that date.
+    """
+    if not home_leave_vars or not special_days:
+        return []
+
+    balance = config.balance_value if config.balance_value is not None else 50
+    base_weight = min(balance * 4, 400)
+    if base_weight <= 0:
+        return []
+
+    leave_duration_seconds = int(config.leave_duration_hours * 3600)
+    rewards = []
+
+    for (p_idx, start_h), leave_var in home_leave_vars.items():
+        leave_start_ts = horizon_start_ts + start_h * 3600
+        leave_end_ts = leave_start_ts + leave_duration_seconds
+        slot_reward = 0
+
+        for special_day in special_days:
+            day_start = datetime(
+                special_day.date.year,
+                special_day.date.month,
+                special_day.date.day,
+                tzinfo=timezone.utc,
+            )
+            day_start_ts = int(day_start.timestamp())
+            day_end_ts = day_start_ts + 24 * 3600
+            if leave_start_ts < day_end_ts and day_start_ts < leave_end_ts:
+                multiplier = max(1.0, float(special_day.home_leave_weight_multiplier or 1.0))
+                slot_reward += int(base_weight * (multiplier - 1.0))
+
+        if slot_reward > 0:
+            rewards.append(leave_var * -slot_reward)
+
+    return rewards
 
 
 def add_home_leave_eligibility_preference(

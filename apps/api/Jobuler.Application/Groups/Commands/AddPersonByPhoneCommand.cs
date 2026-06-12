@@ -31,16 +31,18 @@ public class AddPersonByPhoneCommandHandler : IRequestHandler<AddPersonByPhoneCo
 {
     private readonly AppDbContext _db;
     private readonly IPeakMemberTracker _peakTracker;
+    private readonly IContactLookupProtector _contactLookup;
 
-    public AddPersonByPhoneCommandHandler(AppDbContext db, IPeakMemberTracker peakTracker)
+    public AddPersonByPhoneCommandHandler(AppDbContext db, IPeakMemberTracker peakTracker, IContactLookupProtector contactLookup)
     {
         _db = db;
         _peakTracker = peakTracker;
+        _contactLookup = contactLookup;
     }
 
     public async Task<AddPersonByPhoneResult> Handle(AddPersonByPhoneCommand req, CancellationToken ct)
     {
-        var phone = req.PhoneNumber.Trim();
+        var phone = _contactLookup.NormalizePhone(req.PhoneNumber);
 
         // Determine if the requesting user is the group owner
         var requestingPerson = await _db.People.AsNoTracking()
@@ -67,8 +69,16 @@ public class AddPersonByPhoneCommandHandler : IRequestHandler<AddPersonByPhoneCo
         }
 
         // 1. Find user account by phone number
+        var phoneLookupHash = _contactLookup.HashPhone(phone);
         var user = await _db.Users.AsNoTracking()
-            .FirstOrDefaultAsync(u => u.PhoneNumber == phone, ct);
+            .FirstOrDefaultAsync(u => u.PhoneLookupHash == phoneLookupHash, ct);
+        if (user is null)
+        {
+            var legacyUsers = await _db.Users.AsNoTracking()
+                .Where(u => u.PhoneLookupHash == null && u.PhoneNumber != null)
+                .ToListAsync(ct);
+            user = legacyUsers.FirstOrDefault(u => u.PhoneNumber is not null && _contactLookup.NormalizePhone(u.PhoneNumber) == phone);
+        }
 
         // 2. Find existing person in this space with that phone or linked to that user
         Person? person = null;

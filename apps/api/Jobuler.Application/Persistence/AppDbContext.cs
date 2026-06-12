@@ -5,6 +5,7 @@ using Jobuler.Domain.Groups;
 using Jobuler.Domain.Identity;
 using Jobuler.Domain.Logs;
 using Jobuler.Domain.Notifications;
+using Jobuler.Domain.Organizations;
 using Jobuler.Domain.People;
 using Jobuler.Domain.Platform;
 using Jobuler.Domain.Scheduling;
@@ -34,6 +35,8 @@ public class AppDbContext : DbContext
     public DbSet<ReAuthAttempt> ReAuthAttempts => Set<ReAuthAttempt>();
 
     // Spaces
+    public DbSet<Organization> Organizations => Set<Organization>();
+    public DbSet<OrganizationSelfServiceDefaults> OrganizationSelfServiceDefaults => Set<OrganizationSelfServiceDefaults>();
     public DbSet<Space> Spaces => Set<Space>();
     public DbSet<SpaceMembership> SpaceMemberships => Set<SpaceMembership>();
     public DbSet<SpacePermissionGrant> SpacePermissionGrants => Set<SpacePermissionGrant>();
@@ -41,6 +44,7 @@ public class AppDbContext : DbContext
     public DbSet<OwnershipTransferHistory> OwnershipTransferHistory => Set<OwnershipTransferHistory>();
     public DbSet<SpaceHomeLeaveConfig> SpaceHomeLeaveConfigs => Set<SpaceHomeLeaveConfig>();
     public DbSet<SpaceSelfServiceDefaults> SpaceSelfServiceDefaults => Set<SpaceSelfServiceDefaults>();
+    public DbSet<SpaceSpecialDay> SpaceSpecialDays => Set<SpaceSpecialDay>();
     public DbSet<UnavailabilityReason> UnavailabilityReasons => Set<UnavailabilityReason>();
     public DbSet<UserSpaceMigration> UserSpaceMigrations => Set<UserSpaceMigration>();
 
@@ -115,6 +119,7 @@ public class AppDbContext : DbContext
 
     // Billing
     public DbSet<Jobuler.Domain.Billing.GroupSubscription> GroupSubscriptions => Set<Jobuler.Domain.Billing.GroupSubscription>();
+    public DbSet<Jobuler.Domain.Billing.OrganizationSubscription> OrganizationSubscriptions => Set<Jobuler.Domain.Billing.OrganizationSubscription>();
     public DbSet<Jobuler.Domain.Billing.SpaceSubscription> SpaceSubscriptions => Set<Jobuler.Domain.Billing.SpaceSubscription>();
     public DbSet<Jobuler.Domain.Billing.WebhookEventLog> WebhookEventLogs => Set<Jobuler.Domain.Billing.WebhookEventLog>();
 

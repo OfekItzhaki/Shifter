@@ -11,7 +11,7 @@ jobs:
     name: Verify Build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 2
 
@@ -30,7 +30,7 @@ jobs:
 
       - name: Setup .NET
         if: steps.changes.outputs.api == 'true'
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: "8.0.x"
 
@@ -53,7 +53,7 @@ jobs:
 
       - name: Setup Node.js
         if: steps.changes.outputs.web == 'true'
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: "20"
           cache: "npm"
@@ -77,7 +77,7 @@ jobs:
     needs: verify
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Build web Docker image
         run: |

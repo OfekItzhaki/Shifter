@@ -1,6 +1,7 @@
 "use client";
 
 import posthog from "posthog-js";
+import { isPostHogEnabled } from "@/lib/analytics/posthogConfig";
 import { getAnalyticsConsent } from "@/lib/privacy/consent";
 
 const POSTHOG_KEY = process.env.NEXT_PUBLIC_POSTHOG_KEY;
@@ -13,11 +14,11 @@ const POSTHOG_HOST = process.env.NEXT_PUBLIC_POSTHOG_HOST || "https://us.i.posth
  */
 export function initPostHog() {
   if (typeof window === "undefined") return;
-  if (!POSTHOG_KEY) return;
-  if (process.env.NODE_ENV !== "production") return;
+  const key = POSTHOG_KEY?.trim();
+  if (!key || !isPostHogEnabled(key, process.env.NODE_ENV)) return;
   if (getAnalyticsConsent() !== "accepted") return;
 
-  posthog.init(POSTHOG_KEY, {
+  posthog.init(key, {
     api_host: POSTHOG_HOST,
     capture_pageview: true,
     capture_pageleave: true,
@@ -34,7 +35,7 @@ export function initPostHog() {
  * Identify a user after login.
  */
 export function identifyUser(userId: string, properties?: Record<string, unknown>) {
-  if (!POSTHOG_KEY) return;
+  if (!isPostHogEnabled(POSTHOG_KEY, process.env.NODE_ENV)) return;
   if (getAnalyticsConsent() !== "accepted") return;
   posthog.identify(userId, properties);
 }
@@ -43,7 +44,7 @@ export function identifyUser(userId: string, properties?: Record<string, unknown
  * Track a custom event.
  */
 export function trackEvent(event: string, properties?: Record<string, unknown>) {
-  if (!POSTHOG_KEY) return;
+  if (!isPostHogEnabled(POSTHOG_KEY, process.env.NODE_ENV)) return;
   if (getAnalyticsConsent() !== "accepted") return;
   posthog.capture(event, properties);
 }
@@ -52,6 +53,6 @@ export function trackEvent(event: string, properties?: Record<string, unknown>) 
  * Reset identity on logout.
  */
 export function resetAnalytics() {
-  if (!POSTHOG_KEY) return;
+  if (!isPostHogEnabled(POSTHOG_KEY, process.env.NODE_ENV)) return;
   posthog.reset();
 }

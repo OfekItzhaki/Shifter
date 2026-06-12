@@ -116,6 +116,14 @@ class TaskRotation(BaseModel):
     completed_task_type_ids: list[str]
 
 
+class SpecialDay(BaseModel):
+    date: date
+    name: str
+    kind: str  # holiday | weekend | custom
+    home_leave_weight_multiplier: float = 1.5
+    requires_coverage: bool = True
+
+
 class SolverInput(BaseModel):
     space_id: str
     run_id: str
@@ -139,6 +147,7 @@ class SolverInput(BaseModel):
     cumulative_tracking: list[CumulativeTracking] = []
     task_rotation: Optional[list[TaskRotation]] = None  # rotation data for army-template groups
     parent_schedule: Optional[list["ParentAssignment"]] = None  # assignments from parent group to avoid conflicts
+    special_days: list[SpecialDay] = []  # reviewed dates that should receive special scheduling treatment
 
     @property
     def locked_slot_ids_safe(self) -> list[str]:

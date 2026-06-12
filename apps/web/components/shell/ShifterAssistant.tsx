@@ -7,13 +7,14 @@ import { sendAiChatMessage, type AiChatAction, type AiChatMessage } from "@/lib/
 import { useAuthStore } from "@/lib/store/authStore";
 import { useSpaceStore } from "@/lib/store/spaceStore";
 import { openFeedbackModal } from "@/components/shell/FeedbackFab";
+import { getConfiguredSupportEmail } from "@/lib/support/contact";
 
 interface AssistantMessage extends AiChatMessage {
   id: string;
   actions?: AiChatAction[];
 }
 
-const SUPPORT_EMAIL = "ofeklabs@outlook.com";
+const SUPPORT_EMAIL = getConfiguredSupportEmail();
 
 function newId() {
   return `${Date.now()}-${Math.random().toString(16).slice(2)}`;

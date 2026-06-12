@@ -42,6 +42,14 @@ vi.mock("@/components/shell/OfflineBanner", () => ({
   default: () => null,
 }));
 
+vi.mock("@/components/shell/ShifterAssistant", () => ({
+  default: () => null,
+}));
+
+vi.mock("@/components/shell/PwaInstallPrompt", () => ({
+  default: () => null,
+}));
+
 vi.mock("@/components/admin/AdminSessionGuard", () => ({
   default: () => null,
 }));
@@ -54,6 +62,11 @@ vi.mock("@/components/shell/FeedbackFab", () => ({
 
 vi.mock("next/navigation", () => ({
   usePathname: () => pathname,
+}));
+
+vi.mock("next-intl", () => ({
+  useLocale: () => "en",
+  useTranslations: () => (key: string) => key,
 }));
 
 vi.mock("@/lib/analytics/posthog", () => ({

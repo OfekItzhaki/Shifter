@@ -54,6 +54,7 @@
     "optional": "אופציונלי",
     "accountCreated": "החשבון נוצר בהצלחה! התחבר כדי להמשיך.",
     "passwordResetSuccess": "הסיסמה אופסה בהצלחה! התחבר עם הסיסמה החדשה.",
+    "passwordChangedSuccess": "הסיסמה שונתה בהצלחה. התחבר שוב עם הסיסמה החדשה.",
     "signingIn": "מתחבר...",
     "noAccount": "אין לך חשבון?",
     "emailOrPhone": "אימייל או מספר טלפון",
@@ -736,7 +737,7 @@
       "confirm": "אימות סיסמה חדשה",
       "save": "שנה סיסמה",
       "saving": "משנה...",
-      "saved": "הסיסמה שונתה. במכשירים אחרים תידרש כניסה מחדש.",
+      "saved": "הסיסמה שונתה. התחבר שוב עם הסיסמה החדשה.",
       "mismatch": "הסיסמאות החדשות אינן תואמות.",
       "tooShort": "הסיסמה חייבת לכלול לפחות 8 תווים.",
       "error": "לא ניתן לשנות סיסמה. בדוק את הסיסמה הנוכחית ונסה שוב."
@@ -1107,6 +1108,53 @@
         "member": "חבר"
       }
     },
+    "specialDays": {
+      "title": "ימים מיוחדים",
+      "description": "סמן חגים, סופי שבוע ואירועים מקומיים שצריכים להשפיע יותר על תכנון יציאות הביתה.",
+      "dateLabel": "תאריך",
+      "nameLabel": "שם",
+      "namePlaceholder": "שם חג או אירוע",
+      "kindLabel": "סוג",
+      "weightLabel": "חשיבות ליציאה הביתה",
+      "requiresCoverage": "ביום הזה עדיין נדרש כיסוי רגיל",
+      "add": "הוסף יום",
+      "update": "עדכן יום",
+      "cancel": "ביטול",
+      "edit": "ערוך",
+      "delete": "מחק",
+      "deleting": "מוחק...",
+      "saving": "שומר...",
+      "saved": "נשמר",
+      "loading": "טוען ימים מיוחדים...",
+      "empty": "אין ימים מיוחדים לשנה הקרובה.",
+      "loadError": "לא ניתן לטעון ימים מיוחדים.",
+      "saveError": "לא ניתן לשמור את היום המיוחד.",
+      "deleteError": "לא ניתן למחוק את היום המיוחד.",
+      "validationError": "בחר תאריך, הזן שם, והשתמש בחשיבות בין 1 ל-5.",
+      "coverageOn": "נדרש כיסוי",
+      "weightValue": "חשיבות x{value}",
+      "kind": {
+        "Holiday": "חג",
+        "Weekend": "סוף שבוע",
+        "Custom": "מותאם"
+      },
+      "calendar": {
+        "title": "לוח חגים",
+        "description": "ייבא את החגים המרכזיים בישראל עבור שנה. ימים שכבר קיימים ידולגו.",
+        "yearLabel": "שנה",
+        "preview": "תצוגה מקדימה",
+        "previewing": "בודק...",
+        "import": "ייבא חגים בישראל",
+        "importing": "מייבא...",
+        "exists": "כבר נוסף",
+        "more": "+עוד {count}",
+        "previewLoaded": "נמצאו {count} חגים, {newCount} חדשים.",
+        "imported": "יובאו {imported} חגים. דולגו {skipped} ימים קיימים.",
+        "yearError": "השתמש בשנה בין 2000 ל-2100.",
+        "previewError": "לא ניתן להציג את לוח החגים.",
+        "importError": "לא ניתן לייבא את לוח החגים."
+      }
+    },
     "dangerZone": {
       "title": "אזור סכנה",
       "description": "פעולות בלתי הפיכות והרסניות. יש להמשיך בזהירות.",
@@ -1141,6 +1189,7 @@
       "windowError": "Request window open offset must be greater than the close offset.",
       "source": {
         "install": "Install default",
+        "organization": "Organization default",
         "space": "Space default"
       },
       "fields": {
@@ -1508,6 +1557,16 @@
     "saved": "נשמר",
     "settingsSaveError": "שמירת ההגדרות נכשלה.",
     "loading": "טוען...",
+    "organizationDefaults": {
+      "title": "Organization self-service defaults",
+      "description": "Set the policy template new self-service groups inherit before space-level overrides are created.",
+      "searchLabel": "Find organization",
+      "searchPlaceholder": "Search by organization, space, owner, or email",
+      "search": "Search",
+      "organizationLabel": "Organization",
+      "empty": "No organizations found.",
+      "loadOrganizationsError": "Could not load organizations."
+    },
     "health": {
       "title": "תקינות ספקים",
       "description": "מצב חי של תשתיות וספקים אופציונליים עבור התקנות בענן ואצל לקוחות.",
@@ -1518,6 +1577,9 @@
       "summary": "{healthy}/{total} תקינים, {unhealthy} לא תקינים, {skipped} דולגו",
       "updated": "עודכן {time}",
       "responseTime": "תגובה {time}",
+      "core": "ליבה",
+      "optional": "אופציונלי",
+      "optionalSkipped": "לא מוגדר בסביבה הזו.",
       "status": {
         "healthy": "תקין",
         "degraded": "חלקי",
@@ -2086,6 +2148,8 @@
       "highAvailability": "זמינות גבוהה",
       "nearlyFull": "כמעט מלא",
       "full": "מלא",
+      "specialDay": "יום מיוחד",
+      "specialDayNamed": "יום מיוחד: {name}",
       "dateFilter": "סנן לפי תאריך",
       "allDates": "כל התאריכים",
       "noSlots": "אין משמרות זמינות",
@@ -2100,7 +2164,11 @@
         "חמישי",
         "שישי",
         "שבת"
-      ]
+      ],
+      "specialDayNoCoverage": "לא נדרש כיסוי",
+      "specialDayUnavailable": "לא פתוח לבחירה",
+      "claimDisabled": "בחירת משמרות כבויה",
+      "waitlistDisabled": "רשימת המתנה כבויה"
     },
     "myShifts": {
       "title": "המשמרות שלי",
@@ -2603,7 +2671,11 @@
           "changes": "Changes",
           "changesValue": "{approved} approved / {rejected} rejected / {pending} pending",
           "waitlist": "Waitlist",
-          "waitlistValue": "{active} active / {accepted} accepted / {expired} expired"
+          "waitlistValue": "{active} active / {accepted} accepted / {expired} expired",
+          "specialDays": "Special days",
+          "specialDaysValue": "{total} slot(s) / {noCoverage} no-coverage / {underfilled} under-filled",
+          "workflowPolicy": "Workflow policy",
+          "workflowPolicyValue": "{enabled}/{total} workflows enabled"
         }
       },
       "policy": {
@@ -2784,7 +2856,8 @@
           "changeReview": "בדיקת שינוי",
           "pendingSwaps": "החלפות ממתינות",
           "generated": "נוצר",
-          "leaveReview": "בדיקת חופשה"
+          "leaveReview": "בדיקת חופשה",
+          "specialDays": "ימים מיוחדים"
         },
         "buttons": {
           "open": "פתח ל-24 שעות",
@@ -2981,7 +3054,7 @@
   },
   "pwaInstall": {
     "title": "התקן את Shifter",
-    "description": "התקן את Shifter במחשב או בטלפון לגישה מהירה וצפייה בסידור גם ללא חיבור.",
+    "description": "התקן את Shifter במכשיר הזה לגישה מהירה וצפייה בסידור גם ללא חיבור.",
     "iosDescription": "באייפון, לחץ על שיתוף ואז על הוסף למסך הבית כדי להתקין את Shifter.",
     "install": "התקן",
     "notNow": "לא עכשיו",

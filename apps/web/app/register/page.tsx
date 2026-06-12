@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, Suspense } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { register } from "@/lib/api/auth";
@@ -10,6 +10,18 @@ import AuthBrand from "@/components/shell/AuthBrand";
 import ImageUpload from "@/components/ImageUpload";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import LegalLinks from "@/components/legal/LegalLinks";
+import { COUNTRIES } from "@/lib/data/countries";
+
+const SETUP_TEMPLATES = [
+  "general",
+  "restaurant_hospitality",
+  "retail_store",
+  "security_patrol",
+  "military_style",
+  "medical_clinic",
+  "education_campus",
+  "custom",
+] as const;
 
 /** Maps known backend validation errors to i18n keys */
 function translateValidationError(error: string, t: (key: string) => string): string {
@@ -34,6 +46,7 @@ export default function RegisterPage() {
 
 function RegisterForm() {
   const t = useTranslations("auth");
+  const locale = useLocale() as "en" | "he" | "ru";
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirect = searchParams.get("redirect");
@@ -46,6 +59,9 @@ function RegisterForm() {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [birthday, setBirthday] = useState("");
   const [profileImageUrl, setProfileImageUrl] = useState("");
+  const [countryCode, setCountryCode] = useState("IL");
+  const [setupTemplate, setSetupTemplate] = useState<(typeof SETUP_TEMPLATES)[number]>("general");
+  const [organizationName, setOrganizationName] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -76,7 +92,17 @@ function RegisterForm() {
 
     setLoading(true);
     try {
-      await register(displayName, password, "he", email || undefined, phoneNumber || undefined, profileImageUrl || undefined, birthday || undefined);
+      await register(
+        displayName,
+        password,
+        locale,
+        email || undefined,
+        phoneNumber || undefined,
+        profileImageUrl || undefined,
+        birthday || undefined,
+        countryCode || undefined,
+        setupTemplate,
+        organizationName.trim() || undefined);
       const loginUrl = redirect
         ? "/login?registered=1&redirect=" + encodeURIComponent(redirect)
         : "/login?registered=1";
@@ -180,6 +206,58 @@ function RegisterForm() {
                 placeholder={t("phonePlaceholder")}
                 style={{ width: "100%", border: "1px solid #e2e8f0", borderRadius: 10, padding: "0.625rem 0.875rem", fontSize: "0.875rem", color: "#0f172a", outline: "none", boxSizing: "border-box" }}
               />
+            </div>
+
+            <div>
+              <label style={{ display: "block", fontSize: "0.875rem", fontWeight: 500, color: "#374151", marginBottom: "0.375rem" }}>
+                {t("operatingCountry")} <span style={{ color: "#ef4444" }}>*</span>
+              </label>
+              <select
+                required
+                value={countryCode}
+                onChange={e => setCountryCode(e.target.value)}
+                style={{ width: "100%", border: "1px solid #e2e8f0", borderRadius: 10, padding: "0.625rem 0.875rem", fontSize: "0.875rem", color: "#0f172a", outline: "none", boxSizing: "border-box", background: "white" }}
+              >
+                {COUNTRIES.map(country => (
+                  <option key={country.code} value={country.code}>
+                    {country.name[locale] ?? country.name.en}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label style={{ display: "block", fontSize: "0.875rem", fontWeight: 500, color: "#374151", marginBottom: "0.375rem" }}>
+                {t("setupTemplate")} <span style={{ color: "#ef4444" }}>*</span>
+              </label>
+              <select
+                required
+                value={setupTemplate}
+                onChange={e => setSetupTemplate(e.target.value as (typeof SETUP_TEMPLATES)[number])}
+                style={{ width: "100%", border: "1px solid #e2e8f0", borderRadius: 10, padding: "0.625rem 0.875rem", fontSize: "0.875rem", color: "#0f172a", outline: "none", boxSizing: "border-box", background: "white" }}
+              >
+                {SETUP_TEMPLATES.map(template => (
+                  <option key={template} value={template}>
+                    {t(`setupTemplates.${template}`)}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label style={{ display: "block", fontSize: "0.875rem", fontWeight: 500, color: "#374151", marginBottom: "0.375rem" }}>
+                {t("organizationName")} <span style={{ color: "#94a3b8", fontWeight: 400 }}>({t("optional")})</span>
+              </label>
+              <input
+                type="text"
+                value={organizationName}
+                onChange={e => setOrganizationName(e.target.value)}
+                placeholder={t("organizationNamePlaceholder")}
+                style={{ width: "100%", border: "1px solid #e2e8f0", borderRadius: 10, padding: "0.625rem 0.875rem", fontSize: "0.875rem", color: "#0f172a", outline: "none", boxSizing: "border-box" }}
+              />
+              <p style={{ fontSize: "0.75rem", color: "#64748b", margin: "0.375rem 0 0" }}>
+                {t("organizationNameHint")}
+              </p>
             </div>
 
             <div>

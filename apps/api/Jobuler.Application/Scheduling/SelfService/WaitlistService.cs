@@ -84,6 +84,14 @@ public class WaitlistService : IWaitlistService
                 ErrorMessage: "Waitlists are disabled for this group.");
         }
 
+        if (await SpecialDaySelfServicePolicy.IsMemberActionBlockedAsync(_db, slot, ct))
+        {
+            return new WaitlistResult(
+                Success: false,
+                Position: null,
+                ErrorMessage: SpecialDaySelfServicePolicy.NoCoverageMessage);
+        }
+
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
         var shiftStartUtc = slot.Date.ToDateTime(slot.StartTime, DateTimeKind.Utc);
         if (shiftStartUtc <= utcNow)
@@ -297,6 +305,14 @@ public class WaitlistService : IWaitlistService
             _logger.LogDebug(
                 "Slot {SlotId} is not eligible for a waitlist offer. Status: {Status}, fill: {Fill}/{Capacity}.",
                 shiftSlotId, slot.Status, slot.CurrentFillCount, slot.Capacity);
+            return;
+        }
+
+        if (await SpecialDaySelfServicePolicy.IsMemberActionBlockedAsync(_db, slot, ct))
+        {
+            _logger.LogInformation(
+                "Slot {SlotId} is on a no-coverage special day. Skipping waitlist offer cascade.",
+                shiftSlotId);
             return;
         }
 

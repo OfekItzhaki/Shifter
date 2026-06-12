@@ -20,8 +20,44 @@ public class SelfServiceDefaultPolicyOptions
     public bool AllowAbsenceReports { get; set; } = true;
     public bool AllowShiftSwaps { get; set; } = true;
 
+    public IReadOnlyList<string> Validate()
+    {
+        var errors = new List<string>();
+
+        AddRangeError(errors, nameof(MinShiftsPerCycle), MinShiftsPerCycle, 0, 100);
+        AddRangeError(errors, nameof(MaxShiftsPerCycle), MaxShiftsPerCycle, 1, 100);
+
+        if (MinShiftsPerCycle > MaxShiftsPerCycle)
+        {
+            errors.Add($"{nameof(MinShiftsPerCycle)} must be less than or equal to {nameof(MaxShiftsPerCycle)}.");
+        }
+
+        AddRangeError(errors, nameof(RequestWindowOpenOffsetHours), RequestWindowOpenOffsetHours, 1, 720);
+        AddRangeError(errors, nameof(RequestWindowCloseOffsetHours), RequestWindowCloseOffsetHours, 1, 720);
+
+        if (RequestWindowOpenOffsetHours <= RequestWindowCloseOffsetHours)
+        {
+            errors.Add($"{nameof(RequestWindowOpenOffsetHours)} must be greater than {nameof(RequestWindowCloseOffsetHours)}.");
+        }
+
+        AddRangeError(errors, nameof(CancellationCutoffHours), CancellationCutoffHours, 1, 720);
+        AddRangeError(errors, nameof(MaxAbsencesPerCycle), MaxAbsencesPerCycle, 0, 100);
+        AddRangeError(errors, nameof(MaxLateCancellationsPerCycle), MaxLateCancellationsPerCycle, 0, 100);
+        AddRangeError(errors, nameof(LateCancellationWindowHours), LateCancellationWindowHours, 1, 720);
+        AddRangeError(errors, nameof(WaitlistOfferMinutes), WaitlistOfferMinutes, 15, 1440);
+        AddRangeError(errors, nameof(CycleDurationDays), CycleDurationDays, 1, 30);
+
+        return errors;
+    }
+
     public SelfServiceConfig ToConfig(Guid spaceId, Guid groupId)
     {
+        var errors = Validate();
+        if (errors.Count > 0)
+        {
+            throw new InvalidOperationException($"SelfServiceDefaults contains invalid values: {string.Join(" ", errors)}");
+        }
+
         var config = SelfServiceConfig.Create(
             spaceId,
             groupId,
@@ -44,5 +80,13 @@ public class SelfServiceDefaultPolicyOptions
             AllowShiftSwaps);
 
         return config;
+    }
+
+    private static void AddRangeError(List<string> errors, string name, int value, int min, int max)
+    {
+        if (value < min || value > max)
+        {
+            errors.Add($"{name} must be between {min} and {max}.");
+        }
     }
 }

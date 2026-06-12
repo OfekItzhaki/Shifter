@@ -142,6 +142,27 @@ curl http://localhost:8000/health
 # Open http://localhost:3000 in browser
 ```
 
+For the seeded manual self-service + holiday/special-day smoke path:
+
+```powershell
+.\infra\scripts\smoke-self-service-client-ready.ps1
+```
+
+This checks API/web health, seeded demo logins, the `Self-Service Demo` group,
+an active self-service cycle, available member slots, and then runs the
+Playwright flow that creates a special day for a seeded slot and verifies the
+member picker shows the label. Use `-SkipBrowserTest` when you only want the
+API/seed preflight:
+
+```powershell
+.\infra\scripts\smoke-self-service-client-ready.ps1 `
+  -ApiBaseUrl http://localhost:5000 `
+  -SkipBrowserTest
+```
+
+The smoke script verifies already-running services; it does not start the API,
+web app, database, or seed process for you.
+
 ---
 
 ## Configuration

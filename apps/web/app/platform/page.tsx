@@ -7,6 +7,7 @@ import AppShell from "@/components/shell/AppShell";
 import { getPlatformStats, PlatformStats } from "@/lib/api/platform";
 import { apiClient } from "@/lib/api/client";
 import BillingTestPanel from "@/components/platform/BillingTestPanel";
+import OrganizationSelfServiceDefaultsPanel from "@/components/platform/OrganizationSelfServiceDefaultsPanel";
 import PlatformSettings from "@/components/platform/PlatformSettings";
 import ProviderHealthPanel from "@/components/platform/ProviderHealthPanel";
 import ReAuthDialog from "@/components/admin/ReAuthDialog";
@@ -73,25 +74,45 @@ export default function PlatformPage() {
     if (!isHydrated) return;
     if (!isLoggedIn) { router.push("/login"); return; }
 
-    if (isElevated && elevatedMode === "platform") {
-      setPlatformAuthenticated(true);
+    if (isElevated && elevatedMode === "platform" && !platformAuthenticated) {
+      void Promise.resolve().then(() => setPlatformAuthenticated(true));
+      return;
     } else if (!platformAuthenticated) {
-      setShowReAuth(true);
+      void Promise.resolve().then(() => setShowReAuth(true));
       apiClient.get<{ platformTimeoutMinutes: number }>("/platform/settings")
         .then(({ data }) => setPlatformTimeoutMinutes(data.platformTimeoutMinutes ?? 15))
         .catch(() => setPlatformTimeoutMinutes(15));
       return;
     }
 
-    setLoading(true);
-    const timeout = setTimeout(() => { setLoading(false); setError("Loading failed — try refreshing"); }, 10000);
-    getPlatformStats()
-      .then(setStats)
-      .catch((err) => {
-        if (err?.response?.status === 403) setAccessDenied(true);
-        else setError(err?.response?.data?.error ?? err?.message ?? "Error loading platform data");
-      })
-      .finally(() => { setLoading(false); clearTimeout(timeout); });
+    let cancelled = false;
+    void Promise.resolve().then(() => {
+      if (cancelled) return;
+      setLoading(true);
+      const timeout = setTimeout(() => {
+        if (!cancelled) {
+          setLoading(false);
+          setError("Loading failed - try refreshing");
+        }
+      }, 10000);
+      getPlatformStats()
+        .then((nextStats) => {
+          if (!cancelled) setStats(nextStats);
+        })
+        .catch((err) => {
+          if (cancelled) return;
+          if (err?.response?.status === 403) setAccessDenied(true);
+          else setError(err?.response?.data?.error ?? err?.message ?? "Error loading platform data");
+        })
+        .finally(() => {
+          clearTimeout(timeout);
+          if (!cancelled) setLoading(false);
+        });
+    });
+
+    return () => {
+      cancelled = true;
+    };
   }, [isHydrated, isLoggedIn, router, platformAuthenticated, isElevated, elevatedMode]);
 
   const handleReAuthSuccess = useCallback(() => {
@@ -204,6 +225,9 @@ export default function PlatformPage() {
 
             {/* Platform Settings */}
             <PlatformSettings />
+
+            {/* Organization Self-Service Defaults */}
+            <OrganizationSelfServiceDefaultsPanel />
           </div>
         )}
       </div>

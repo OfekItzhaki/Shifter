@@ -175,7 +175,16 @@ public class ShiftSlotsController : ControllerBase
             resolvedCycleId = await TryResolveCycleIdAsync(spaceId, groupId, cycleId, ct) ?? Guid.Empty;
 
             if (resolvedCycleId == Guid.Empty)
-                return Ok(new { slots = Array.Empty<object>(), requestWindowOpen = false, requestWindowOpensAt = (DateTime?)null, requestWindowClosesAt = (DateTime?)null, currentCycleId = (Guid?)null });
+                return Ok(new
+                {
+                    slots = Array.Empty<object>(),
+                    requestWindowOpen = false,
+                    requestWindowOpensAt = (DateTime?)null,
+                    requestWindowClosesAt = (DateTime?)null,
+                    currentCycleId = (Guid?)null,
+                    allowMemberShiftClaims = true,
+                    allowWaitlist = true
+                });
         }
         else if (!Guid.TryParse(cycleId, out resolvedCycleId))
         {
@@ -196,6 +205,11 @@ public class ShiftSlotsController : ControllerBase
             .Where(c => c.Id == resolvedCycleId)
             .Select(c => new { c.RequestWindowOpensAt, c.RequestWindowClosesAt })
             .FirstOrDefaultAsync(ct);
+        var config = await _db.SelfServiceConfigs
+            .AsNoTracking()
+            .Where(c => c.SpaceId == spaceId && c.GroupId == groupId)
+            .Select(c => new { c.AllowMemberShiftClaims, c.AllowWaitlist })
+            .FirstOrDefaultAsync(ct);
 
         return Ok(new
         {
@@ -203,7 +217,9 @@ public class ShiftSlotsController : ControllerBase
             requestWindowOpen = !result.IsReadOnly,
             requestWindowOpensAt = cycle?.RequestWindowOpensAt,
             requestWindowClosesAt = cycle?.RequestWindowClosesAt,
-            currentCycleId = resolvedCycleId
+            currentCycleId = resolvedCycleId,
+            allowMemberShiftClaims = config?.AllowMemberShiftClaims ?? true,
+            allowWaitlist = config?.AllowWaitlist ?? true
         });
     }
 

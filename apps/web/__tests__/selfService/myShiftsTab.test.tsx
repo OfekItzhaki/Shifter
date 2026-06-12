@@ -210,6 +210,47 @@ describe("MyShiftsTab", () => {
     expect(onNavigate).toHaveBeenCalledWith("swaps");
   });
 
+  it("hides member workflow actions when the group policy disables them", async () => {
+    const shiftStart = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000);
+    const shiftEnd = new Date(shiftStart.getTime() + 8 * 60 * 60 * 1000);
+    mockGetMyShiftRequests.mockResolvedValue({
+      requests: [
+        {
+          id: "request-policy-disabled",
+          shiftSlotId: "slot-policy-disabled",
+          schedulingCycleId: "cycle-1",
+          slotDate: formatLocalDate(shiftStart),
+          slotStartTime: formatLocalTime(shiftStart),
+          slotEndTime: formatLocalTime(shiftEnd),
+          taskName: "Front desk",
+          status: "Approved",
+          isAdminOverride: false,
+          rejectionReason: null,
+          cancellationReason: null,
+          cancelledAt: null,
+          createdAt: "2026-06-10T08:00:00",
+        },
+      ],
+      currentShiftCount: 1,
+      minShiftsPerCycle: 1,
+      maxShiftsPerCycle: 3,
+      cancellationCutoffHours: 48,
+      maxLateReports: 2,
+      lateCancellationWindowHours: 24,
+      allowShiftChangeRequests: false,
+      allowAbsenceReports: false,
+      allowShiftSwaps: false,
+    });
+
+    render(<MyShiftsTab spaceId="space-1" groupId="group-1" onNavigate={vi.fn()} />);
+
+    await screen.findByText("1 of 3 shifts");
+
+    expect(screen.queryByRole("button", { name: "Request change" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Can't make it" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Open peer swaps" })).not.toBeInTheDocument();
+  });
+
   it("lets members cancel a pending shift-change request", async () => {
     mockCancelShiftChangeRequest.mockResolvedValue(undefined);
     mockGetMyShiftChangeRequests.mockResolvedValue([

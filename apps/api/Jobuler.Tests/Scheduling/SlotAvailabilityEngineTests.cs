@@ -2,6 +2,7 @@ using FluentAssertions;
 using Jobuler.Application.Scheduling.SelfService;
 using Jobuler.Domain.Groups;
 using Jobuler.Domain.Scheduling;
+using Jobuler.Domain.Spaces;
 using Jobuler.Domain.Tasks;
 using Jobuler.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -364,6 +365,76 @@ public class SlotAvailabilityEngineTests
         dto.TaskName.Should().Be("Morning Shift");
         dto.CurrentFillCount.Should().Be(2);
         dto.Capacity.Should().Be(5);
+    }
+
+    [Fact]
+    public async Task GetAvailableSlotsAsync_LabelsSlotsOnSpaceSpecialDays()
+    {
+        using var db = CreateDb();
+        var (spaceId, groupId, cycleId, taskId) = SeedBaseData(db);
+
+        var specialDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(8));
+        var normalDate = specialDate.AddDays(1);
+        var specialSlot = AddSlot(db, spaceId, groupId, taskId, cycleId, specialDate,
+            new TimeOnly(8, 0), new TimeOnly(16, 0));
+        AddSlot(db, spaceId, groupId, taskId, cycleId, normalDate,
+            new TimeOnly(8, 0), new TimeOnly(16, 0));
+        db.SpaceSpecialDays.Add(SpaceSpecialDay.Create(
+            spaceId,
+            specialDate,
+            "Independence Day",
+            SpaceSpecialDayKind.Holiday,
+            requiresCoverage: true));
+        db.SpaceSpecialDays.Add(SpaceSpecialDay.Create(
+            Guid.NewGuid(),
+            normalDate,
+            "Wrong Space Holiday",
+            SpaceSpecialDayKind.Holiday,
+            requiresCoverage: true));
+        await db.SaveChangesAsync();
+
+        var engine = new SlotAvailabilityEngine(db);
+        var result = await engine.GetAvailableSlotsAsync(Guid.NewGuid(), groupId, cycleId);
+
+        var labeledSlot = result.Slots.Single(s => s.ShiftSlotId == specialSlot.Id);
+        labeledSlot.IsSpecialDay.Should().BeTrue();
+        labeledSlot.SpecialDayName.Should().Be("Independence Day");
+        labeledSlot.SpecialDayKind.Should().Be(nameof(SpaceSpecialDayKind.Holiday));
+        labeledSlot.SpecialDayRequiresCoverage.Should().BeTrue();
+        result.Slots.Single(s => s.Date == normalDate).IsSpecialDay.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task GetAvailableSlotsAsync_PrefersNoCoverageSpecialDayPolicy()
+    {
+        using var db = CreateDb();
+        var (spaceId, groupId, cycleId, taskId) = SeedBaseData(db);
+
+        var specialDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(8));
+        var slot = AddSlot(db, spaceId, groupId, taskId, cycleId, specialDate,
+            new TimeOnly(8, 0), new TimeOnly(16, 0));
+        db.SpaceSpecialDays.Add(SpaceSpecialDay.Create(
+            spaceId,
+            specialDate,
+            "Open Holiday",
+            SpaceSpecialDayKind.Holiday,
+            requiresCoverage: true));
+        db.SpaceSpecialDays.Add(SpaceSpecialDay.Create(
+            spaceId,
+            specialDate,
+            "Closure",
+            SpaceSpecialDayKind.Custom,
+            requiresCoverage: false));
+        await db.SaveChangesAsync();
+
+        var engine = new SlotAvailabilityEngine(db);
+        var result = await engine.GetAvailableSlotsAsync(Guid.NewGuid(), groupId, cycleId);
+
+        var labeledSlot = result.Slots.Single(s => s.ShiftSlotId == slot.Id);
+        labeledSlot.IsSpecialDay.Should().BeTrue();
+        labeledSlot.SpecialDayName.Should().Be("Closure");
+        labeledSlot.SpecialDayKind.Should().Be(nameof(SpaceSpecialDayKind.Custom));
+        labeledSlot.SpecialDayRequiresCoverage.Should().BeFalse();
     }
 
     [Fact]

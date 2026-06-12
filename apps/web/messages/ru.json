@@ -54,6 +54,7 @@
     "optional": "необязательно",
     "accountCreated": "Аккаунт создан! Войдите, чтобы продолжить.",
     "passwordResetSuccess": "Пароль сброшен! Войдите с новым паролем.",
+    "passwordChangedSuccess": "Пароль изменен. Войдите снова с новым паролем.",
     "signingIn": "Вход...",
     "noAccount": "Нет аккаунта?",
     "emailOrPhone": "Email или номер телефона",
@@ -732,7 +733,7 @@
       "confirm": "Подтвердите новый пароль",
       "save": "Изменить пароль",
       "saving": "Изменение...",
-      "saved": "Пароль изменен. На других устройствах потребуется войти снова.",
+      "saved": "Пароль изменен. Войдите снова с новым паролем.",
       "mismatch": "Новые пароли не совпадают.",
       "tooShort": "Пароль должен содержать не менее 8 символов.",
       "error": "Не удалось изменить пароль. Проверьте текущий пароль и попробуйте снова."
@@ -1057,6 +1058,53 @@
         "member": "Участник"
       }
     },
+    "specialDays": {
+      "title": "Особые дни",
+      "description": "Отметьте праздники, выходные и местные события, которые должны сильнее влиять на планирование отпуска домой.",
+      "dateLabel": "Дата",
+      "nameLabel": "Название",
+      "namePlaceholder": "Название праздника или события",
+      "kindLabel": "Тип",
+      "weightLabel": "Важность отпуска домой",
+      "requiresCoverage": "В этот день всё равно нужно обычное покрытие",
+      "add": "Добавить день",
+      "update": "Обновить день",
+      "cancel": "Отмена",
+      "edit": "Изменить",
+      "delete": "Удалить",
+      "deleting": "Удаление...",
+      "saving": "Сохранение...",
+      "saved": "Сохранено",
+      "loading": "Загрузка особых дней...",
+      "empty": "Нет особых дней на следующий год.",
+      "loadError": "Не удалось загрузить особые дни.",
+      "saveError": "Не удалось сохранить этот особый день.",
+      "deleteError": "Не удалось удалить этот особый день.",
+      "validationError": "Выберите дату, введите название и укажите важность от 1 до 5.",
+      "coverageOn": "требуется покрытие",
+      "weightValue": "важность x{value}",
+      "kind": {
+        "Holiday": "Праздник",
+        "Weekend": "Выходной",
+        "Custom": "Другое"
+      },
+      "calendar": {
+        "title": "Календарь праздников",
+        "description": "Импортируйте основные праздники Израиля на год. Уже добавленные дни будут пропущены.",
+        "yearLabel": "Год",
+        "preview": "Предпросмотр",
+        "previewing": "Проверка...",
+        "import": "Импортировать праздники Израиля",
+        "importing": "Импорт...",
+        "exists": "уже добавлено",
+        "more": "+ещё {count}",
+        "previewLoaded": "Найдено праздников: {count}, новых: {newCount}.",
+        "imported": "Импортировано: {imported}. Пропущено существующих: {skipped}.",
+        "yearError": "Укажите год от 2000 до 2100.",
+        "previewError": "Не удалось показать календарь праздников.",
+        "importError": "Не удалось импортировать календарь праздников."
+      }
+    },
     "dangerZone": {
       "title": "Опасная зона",
       "description": "Необратимые и разрушительные действия. Действуйте осторожно.",
@@ -1136,6 +1184,7 @@
       "windowError": "Request window open offset must be greater than the close offset.",
       "source": {
         "install": "Install default",
+        "organization": "Organization default",
         "space": "Space default"
       },
       "fields": {
@@ -1496,6 +1545,16 @@
     "saved": "Сохранено",
     "settingsSaveError": "Не удалось сохранить настройки.",
     "loading": "Загрузка...",
+    "organizationDefaults": {
+      "title": "Organization self-service defaults",
+      "description": "Set the policy template new self-service groups inherit before space-level overrides are created.",
+      "searchLabel": "Find organization",
+      "searchPlaceholder": "Search by organization, space, owner, or email",
+      "search": "Search",
+      "organizationLabel": "Organization",
+      "empty": "No organizations found.",
+      "loadOrganizationsError": "Could not load organizations."
+    },
     "health": {
       "title": "Состояние провайдеров",
       "description": "Готовность инфраструктуры и дополнительных провайдеров для облачных и клиентских установок.",
@@ -1506,6 +1565,9 @@
       "summary": "{healthy}/{total} исправны, {unhealthy} неисправны, {skipped} пропущены",
       "updated": "Обновлено {time}",
       "responseTime": "Ответ {time}",
+      "core": "Основной",
+      "optional": "Необязательный",
+      "optionalSkipped": "Не настроен для этой среды.",
       "status": {
         "healthy": "Исправен",
         "degraded": "Частично",
@@ -2074,6 +2136,8 @@
       "highAvailability": "Много мест",
       "nearlyFull": "Почти заполнено",
       "full": "Заполнено",
+      "specialDay": "Особый день",
+      "specialDayNamed": "Особый день: {name}",
       "dateFilter": "Фильтр по дате",
       "allDates": "Все даты",
       "noSlots": "Нет доступных смен",
@@ -2088,7 +2152,11 @@
         "Четверг",
         "Пятница",
         "Суббота"
-      ]
+      ],
+      "specialDayNoCoverage": "Покрытие не требуется",
+      "specialDayUnavailable": "Недоступно для выбора",
+      "claimDisabled": "Выбор смен отключен",
+      "waitlistDisabled": "Лист ожидания отключен"
     },
     "myShifts": {
       "title": "Мои смены",
@@ -2591,7 +2659,11 @@
           "changes": "Changes",
           "changesValue": "{approved} approved / {rejected} rejected / {pending} pending",
           "waitlist": "Waitlist",
-          "waitlistValue": "{active} active / {accepted} accepted / {expired} expired"
+          "waitlistValue": "{active} active / {accepted} accepted / {expired} expired",
+          "specialDays": "Special days",
+          "specialDaysValue": "{total} slot(s) / {noCoverage} no-coverage / {underfilled} under-filled",
+          "workflowPolicy": "Workflow policy",
+          "workflowPolicyValue": "{enabled}/{total} workflows enabled"
         }
       },
       "policy": {
@@ -2772,7 +2844,8 @@
           "changeReview": "???????? ?????????",
           "pendingSwaps": "Ожидающие обмены",
           "generated": "???????",
-          "leaveReview": "???????? ????????"
+          "leaveReview": "???????? ????????",
+          "specialDays": "Особые дни"
         },
         "buttons": {
           "open": "??????? ?? 24?",
@@ -2969,7 +3042,7 @@
   },
   "pwaInstall": {
     "title": "Установить Shifter",
-    "description": "Установите Shifter на этот компьютер или телефон для быстрого доступа и просмотра расписания офлайн.",
+    "description": "Установите Shifter на это устройство для быстрого доступа и просмотра расписания офлайн.",
     "iosDescription": "На iPhone нажмите Поделиться, затем Добавить на экран Домой, чтобы установить Shifter.",
     "install": "Установить",
     "notNow": "Не сейчас",

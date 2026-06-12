@@ -31,13 +31,19 @@ interface GroupMemberDto {
 
 interface CycleStatusDto {
   cycleId: string | null;
+  specialDayCount?: number;
 }
 
 interface AvailableSlotDto {
   id?: string;
   shiftSlotId?: string;
+  date?: string;
   capacity: number;
   currentFillCount: number;
+  isSpecialDay?: boolean;
+  specialDayName?: string | null;
+  specialDayKind?: string | null;
+  specialDayRequiresCoverage?: boolean | null;
 }
 
 interface AvailableSlotsResponse {
@@ -104,6 +110,14 @@ interface SpecialLeaveRequestDto {
   presenceWindowId: string | null;
 }
 
+interface SpaceSpecialDayDto {
+  id: string;
+  date: string;
+  name: string;
+  kind: "Holiday" | "Weekend" | "Custom";
+  requiresCoverage: boolean;
+}
+
 async function login(request: APIRequestContext, identifier: string): Promise<string> {
   const response = await request.post(`${API_URL}/auth/login`, {
     data: { identifier, password: DEMO_PASSWORD },
@@ -143,6 +157,26 @@ async function apiNoContent(
   });
 
   expect(response.ok(), `${method} ${path} failed with ${response.status()}: ${await response.text()}`).toBeTruthy();
+}
+
+async function apiExpectStatus(
+  request: APIRequestContext,
+  token: string,
+  method: HttpMethod,
+  path: string,
+  expectedStatus: number,
+  data?: unknown
+): Promise<string> {
+  const response = await request.fetch(`${API_URL}${path}`, {
+    method,
+    headers: { Authorization: `Bearer ${token}` },
+    data,
+  });
+
+  const text = await response.text();
+  expect(response.status(), `${method} ${path} expected ${expectedStatus} but got ${response.status()}: ${text}`)
+    .toBe(expectedStatus);
+  return text;
 }
 
 async function findDemoSelfServiceGroup(
@@ -226,6 +260,25 @@ async function ensureApprovedShift(
   const assigned = refreshed.requests.find((row) => row.id === created.shiftRequestId);
   expect(assigned?.status).toBe("Approved");
   return assigned!;
+}
+
+async function getAdminSlot(
+  request: APIRequestContext,
+  adminToken: string,
+  spaceId: string,
+  groupId: string,
+  cycleId: string,
+  shiftSlotId: string
+): Promise<AvailableSlotDto> {
+  const adminSlots = await api<AvailableSlotsResponse>(
+    request,
+    adminToken,
+    "GET",
+    `/spaces/${spaceId}/groups/${groupId}/shift-slots/admin/slots?cycleId=${cycleId}`
+  );
+  const slot = adminSlots.slots.find((row) => (row.id ?? row.shiftSlotId) === shiftSlotId);
+  expect(slot, `admin slot list should include ${shiftSlotId}`).toBeTruthy();
+  return slot!;
 }
 
 async function ensureAbsenceReportableApprovedShift(
@@ -461,6 +514,77 @@ async function findOpenTargetSlot(
   return targetSlot!;
 }
 
+async function ensureSpecialDayForAvailableSlot(
+  request: APIRequestContext,
+  adminToken: string,
+  memberToken: string,
+  spaceId: string,
+  groupId: string,
+  cycleId: string,
+  requiresCoverage = true
+): Promise<{ slot: AvailableSlotDto; specialDayId: string; specialDayName: string }> {
+  const slotsBefore = await api<AvailableSlotsResponse>(
+    request,
+    memberToken,
+    "GET",
+    `/spaces/${spaceId}/groups/${groupId}/shift-slots/available?cycleId=${cycleId}`
+  );
+  const targetSlot = slotsBefore.slots.find((slot) =>
+    (slot.id ?? slot.shiftSlotId) && slot.date && slot.currentFillCount < slot.capacity
+  ) ?? slotsBefore.slots.find((slot) => (slot.id ?? slot.shiftSlotId) && slot.date);
+
+  expect(targetSlot, "holiday browser test needs a dated self-service slot").toBeTruthy();
+
+  const slotDate = targetSlot!.date!;
+  const specialDayName = `E2E ${requiresCoverage ? "Coverage" : "No Coverage"} Special Day ${slotDate}`;
+  const existing = await api<SpaceSpecialDayDto[]>(
+    request,
+    adminToken,
+    "GET",
+    `/spaces/${spaceId}/special-days?from=${slotDate}&to=${slotDate}`
+  );
+
+  for (const day of existing.filter((row) => row.name === specialDayName)) {
+    await apiNoContent(request, adminToken, "DELETE", `/spaces/${spaceId}/special-days/${day.id}`);
+  }
+
+  const created = await api<{ id: string }>(
+    request,
+    adminToken,
+    "POST",
+    `/spaces/${spaceId}/special-days`,
+    {
+      date: slotDate,
+      name: specialDayName,
+      kind: "Holiday",
+      homeLeaveWeightMultiplier: 1.5,
+      requiresCoverage,
+    }
+  );
+
+  const labeledSlots = await api<AvailableSlotsResponse>(
+    request,
+    memberToken,
+    "GET",
+    `/spaces/${spaceId}/groups/${groupId}/shift-slots/available?cycleId=${cycleId}`
+  );
+  const slotId = targetSlot!.id ?? targetSlot!.shiftSlotId;
+  const labeledSlot = labeledSlots.slots.find((slot) => (slot.id ?? slot.shiftSlotId) === slotId);
+  expect(labeledSlot?.isSpecialDay).toBeTruthy();
+  expect(labeledSlot?.specialDayName).toBe(specialDayName);
+  expect(labeledSlot?.specialDayRequiresCoverage).toBe(requiresCoverage);
+
+  const status = await api<CycleStatusDto>(
+    request,
+    adminToken,
+    "GET",
+    `/spaces/${spaceId}/groups/${groupId}/self-service-cycles/status`
+  );
+  expect(status.specialDayCount ?? 0).toBeGreaterThan(0);
+
+  return { slot: labeledSlot!, specialDayId: created.id, specialDayName };
+}
+
 async function ensureWaitingWaitlistEntry(
   request: APIRequestContext,
   memberToken: string,
@@ -631,6 +755,93 @@ async function submitSpecialLeaveThroughUi(
 }
 
 test.describe("Self-service browser lifecycle", () => {
+  test("member sees special-day labels on available shifts", async ({ page, request }) => {
+    const adminEmail = process.env.E2E_ADMIN_EMAIL ?? "admin@demo.local";
+    const memberEmail = process.env.E2E_MEMBER_EMAIL ?? "ofek@demo.local";
+    const adminToken = await login(request, adminEmail);
+    const memberToken = await login(request, memberEmail);
+    const { spaceId, groupId } = await findDemoSelfServiceGroup(request, adminToken);
+    const status = await api<CycleStatusDto>(
+      request,
+      adminToken,
+      "GET",
+      `/spaces/${spaceId}/groups/${groupId}/self-service-cycles/status`
+    );
+    expect(status.cycleId).toBeTruthy();
+
+    const { specialDayName } = await ensureSpecialDayForAvailableSlot(
+      request,
+      adminToken,
+      memberToken,
+      spaceId,
+      groupId,
+      status.cycleId!
+    );
+
+    await loginAsUser(page, memberEmail, DEMO_PASSWORD);
+    await page.evaluate((targetGroupId) => {
+      localStorage.setItem("shifter-pick-last-group", targetGroupId);
+    }, groupId);
+    await page.goto(`${BASE}/pick`);
+    await page.getByTestId("pick-tab-slots").click();
+
+    await expect(page.getByText(specialDayName)).toBeVisible({ timeout: 15000 });
+  });
+
+  test("no-coverage special-day slots are visible but not claimable", async ({ page, request }) => {
+    const adminEmail = process.env.E2E_ADMIN_EMAIL ?? "admin@demo.local";
+    const memberEmail = process.env.E2E_MEMBER_EMAIL ?? "ofek@demo.local";
+    const adminToken = await login(request, adminEmail);
+    const memberToken = await login(request, memberEmail);
+    const { spaceId, groupId } = await findDemoSelfServiceGroup(request, adminToken);
+    const status = await api<CycleStatusDto>(
+      request,
+      adminToken,
+      "GET",
+      `/spaces/${spaceId}/groups/${groupId}/self-service-cycles/status`
+    );
+    expect(status.cycleId).toBeTruthy();
+
+    const { slot, specialDayId, specialDayName } = await ensureSpecialDayForAvailableSlot(
+      request,
+      adminToken,
+      memberToken,
+      spaceId,
+      groupId,
+      status.cycleId!,
+      false
+    );
+    const shiftSlotId = slot.id ?? slot.shiftSlotId;
+    expect(shiftSlotId).toBeTruthy();
+
+    try {
+      const rejection = await apiExpectStatus(
+        request,
+        memberToken,
+        "POST",
+        `/spaces/${spaceId}/groups/${groupId}/shift-requests`,
+        422,
+        { shiftSlotId }
+      );
+      expect(rejection).toContain("not configured for coverage");
+
+      await loginAsUser(page, memberEmail, DEMO_PASSWORD);
+      await page.evaluate((targetGroupId) => {
+        localStorage.setItem("shifter-pick-last-group", targetGroupId);
+      }, groupId);
+      await page.goto(`${BASE}/pick`);
+      await page.getByTestId("pick-tab-slots").click();
+
+      const card = page.locator(`[data-shift-slot-id="${shiftSlotId}"]`);
+      await expect(card.getByText(specialDayName)).toBeVisible({ timeout: 15000 });
+      await expect(card.getByTestId("self-service-special-day-unavailable")).toBeVisible();
+      await expect(card.getByTestId("self-service-request-shift")).toHaveCount(0);
+      await expect(card.getByTestId("self-service-join-waitlist")).toHaveCount(0);
+    } finally {
+      await apiNoContent(request, adminToken, "DELETE", `/spaces/${spaceId}/special-days/${specialDayId}`);
+    }
+  });
+
   test("member proposes and target accepts a shift swap through the UI", async ({ page, request }) => {
     const adminEmail = process.env.E2E_ADMIN_EMAIL ?? "admin@demo.local";
     const initiatorEmail = process.env.E2E_SWAP_INITIATOR_EMAIL ?? "ofek@demo.local";
@@ -669,6 +880,22 @@ test.describe("Self-service browser lifecycle", () => {
       [initiatorShift.shiftSlotId]
     );
     expect(targetShift.shiftSlotId).not.toBe(initiatorShift.shiftSlotId);
+    const initiatorSlotBeforeSwap = await getAdminSlot(
+      request,
+      adminToken,
+      spaceId,
+      groupId,
+      status.cycleId!,
+      initiatorShift.shiftSlotId
+    );
+    const targetSlotBeforeSwap = await getAdminSlot(
+      request,
+      adminToken,
+      spaceId,
+      groupId,
+      status.cycleId!,
+      targetShift.shiftSlotId
+    );
 
     await loginAsUser(page, initiatorEmail, DEMO_PASSWORD);
     await page.evaluate((targetGroupId) => {
@@ -738,6 +965,25 @@ test.describe("Self-service browser lifecycle", () => {
     );
     expect(initiatorShifts.requests.find((row) => row.id === initiatorShift.id)?.shiftSlotId).toBe(targetShift.shiftSlotId);
     expect(targetShifts.requests.find((row) => row.id === targetShift.id)?.shiftSlotId).toBe(initiatorShift.shiftSlotId);
+
+    const initiatorSlotAfterSwap = await getAdminSlot(
+      request,
+      adminToken,
+      spaceId,
+      groupId,
+      status.cycleId!,
+      initiatorShift.shiftSlotId
+    );
+    const targetSlotAfterSwap = await getAdminSlot(
+      request,
+      adminToken,
+      spaceId,
+      groupId,
+      status.cycleId!,
+      targetShift.shiftSlotId
+    );
+    expect(initiatorSlotAfterSwap.currentFillCount).toBe(initiatorSlotBeforeSwap.currentFillCount);
+    expect(targetSlotAfterSwap.currentFillCount).toBe(targetSlotBeforeSwap.currentFillCount);
   });
 
   test("member proposes and target declines a shift swap through the UI", async ({ page, request }) => {
@@ -778,6 +1024,22 @@ test.describe("Self-service browser lifecycle", () => {
       [initiatorShift.shiftSlotId]
     );
     expect(targetShift.shiftSlotId).not.toBe(initiatorShift.shiftSlotId);
+    const initiatorSlotBeforeDecline = await getAdminSlot(
+      request,
+      adminToken,
+      spaceId,
+      groupId,
+      status.cycleId!,
+      initiatorShift.shiftSlotId
+    );
+    const targetSlotBeforeDecline = await getAdminSlot(
+      request,
+      adminToken,
+      spaceId,
+      groupId,
+      status.cycleId!,
+      targetShift.shiftSlotId
+    );
 
     await loginAsUser(page, initiatorEmail, DEMO_PASSWORD);
     await page.evaluate((targetGroupId) => {
@@ -847,6 +1109,25 @@ test.describe("Self-service browser lifecycle", () => {
     );
     expect(initiatorShifts.requests.find((row) => row.id === initiatorShift.id)?.shiftSlotId).toBe(initiatorShift.shiftSlotId);
     expect(targetShifts.requests.find((row) => row.id === targetShift.id)?.shiftSlotId).toBe(targetShift.shiftSlotId);
+
+    const initiatorSlotAfterDecline = await getAdminSlot(
+      request,
+      adminToken,
+      spaceId,
+      groupId,
+      status.cycleId!,
+      initiatorShift.shiftSlotId
+    );
+    const targetSlotAfterDecline = await getAdminSlot(
+      request,
+      adminToken,
+      spaceId,
+      groupId,
+      status.cycleId!,
+      targetShift.shiftSlotId
+    );
+    expect(initiatorSlotAfterDecline.currentFillCount).toBe(initiatorSlotBeforeDecline.currentFillCount);
+    expect(targetSlotAfterDecline.currentFillCount).toBe(targetSlotBeforeDecline.currentFillCount);
   });
 
   test("member proposes and cancels a pending shift swap through the UI", async ({ page, request }) => {
@@ -887,6 +1168,22 @@ test.describe("Self-service browser lifecycle", () => {
       [initiatorShift.shiftSlotId]
     );
     expect(targetShift.shiftSlotId).not.toBe(initiatorShift.shiftSlotId);
+    const initiatorSlotBeforeCancel = await getAdminSlot(
+      request,
+      adminToken,
+      spaceId,
+      groupId,
+      status.cycleId!,
+      initiatorShift.shiftSlotId
+    );
+    const targetSlotBeforeCancel = await getAdminSlot(
+      request,
+      adminToken,
+      spaceId,
+      groupId,
+      status.cycleId!,
+      targetShift.shiftSlotId
+    );
 
     await loginAsUser(page, initiatorEmail, DEMO_PASSWORD);
     await page.evaluate((targetGroupId) => {
@@ -950,6 +1247,25 @@ test.describe("Self-service browser lifecycle", () => {
     );
     expect(initiatorShifts.requests.find((row) => row.id === initiatorShift.id)?.shiftSlotId).toBe(initiatorShift.shiftSlotId);
     expect(targetShifts.requests.find((row) => row.id === targetShift.id)?.shiftSlotId).toBe(targetShift.shiftSlotId);
+
+    const initiatorSlotAfterCancel = await getAdminSlot(
+      request,
+      adminToken,
+      spaceId,
+      groupId,
+      status.cycleId!,
+      initiatorShift.shiftSlotId
+    );
+    const targetSlotAfterCancel = await getAdminSlot(
+      request,
+      adminToken,
+      spaceId,
+      groupId,
+      status.cycleId!,
+      targetShift.shiftSlotId
+    );
+    expect(initiatorSlotAfterCancel.currentFillCount).toBe(initiatorSlotBeforeCancel.currentFillCount);
+    expect(targetSlotAfterCancel.currentFillCount).toBe(targetSlotBeforeCancel.currentFillCount);
   });
 
   test("member cancels an approved shift through the UI", async ({ page, request }) => {
@@ -977,6 +1293,14 @@ test.describe("Self-service browser lifecycle", () => {
       member.personId
     );
     const reason = `Browser E2E cancellation ${Date.now()}`;
+    const slotBefore = await getAdminSlot(
+      request,
+      adminToken,
+      spaceId,
+      groupId,
+      status.cycleId!,
+      ownedShift.shiftSlotId
+    );
 
     await loginAsUser(page, memberEmail, DEMO_PASSWORD);
     await page.evaluate((targetGroupId) => {
@@ -1005,6 +1329,15 @@ test.describe("Self-service browser lifecycle", () => {
     const cancelledShift = refreshedShifts.requests.find((row) => row.id === ownedShift.id);
     expect(cancelledShift?.status).toBe("Cancelled");
     expect(cancelledShift?.cancellationReason).toBe(reason);
+    const slotAfter = await getAdminSlot(
+      request,
+      adminToken,
+      spaceId,
+      groupId,
+      status.cycleId!,
+      ownedShift.shiftSlotId
+    );
+    expect(slotAfter.currentFillCount).toBe(slotBefore.currentFillCount - 1);
 
     await expect(shiftCard).toBeVisible({ timeout: 15000 });
   });
@@ -1043,6 +1376,22 @@ test.describe("Self-service browser lifecycle", () => {
     );
     const targetSlotId = targetSlot.id ?? targetSlot.shiftSlotId;
     expect(targetSlotId).toBeTruthy();
+    const originalSlotBeforeChange = await getAdminSlot(
+      request,
+      adminToken,
+      spaceId,
+      groupId,
+      status.cycleId!,
+      ownedShift.shiftSlotId
+    );
+    const targetSlotBeforeChange = await getAdminSlot(
+      request,
+      adminToken,
+      spaceId,
+      groupId,
+      status.cycleId!,
+      targetSlotId!
+    );
 
     const reason = `Browser E2E shift change ${Date.now()}`;
 
@@ -1108,6 +1457,25 @@ test.describe("Self-service browser lifecycle", () => {
     const reassignedShift = refreshedShifts.requests.find((row) => row.id === ownedShift.id);
     expect(reassignedShift?.status).toBe("Approved");
     expect(reassignedShift?.shiftSlotId).toBe(targetSlotId);
+
+    const originalSlotAfterChange = await getAdminSlot(
+      request,
+      adminToken,
+      spaceId,
+      groupId,
+      status.cycleId!,
+      ownedShift.shiftSlotId
+    );
+    const targetSlotAfterChange = await getAdminSlot(
+      request,
+      adminToken,
+      spaceId,
+      groupId,
+      status.cycleId!,
+      targetSlotId!
+    );
+    expect(originalSlotAfterChange.currentFillCount).toBe(originalSlotBeforeChange.currentFillCount - 1);
+    expect(targetSlotAfterChange.currentFillCount).toBe(targetSlotBeforeChange.currentFillCount + 1);
   });
 
   test("admin rejects a member shift-change request through the UI", async ({ page, request }) => {
@@ -1136,6 +1504,14 @@ test.describe("Self-service browser lifecycle", () => {
     );
     const originalSlotId = ownedShift.shiftSlotId;
     const reason = `Browser E2E reject shift change ${Date.now()}`;
+    const originalSlotBeforeChange = await getAdminSlot(
+      request,
+      adminToken,
+      spaceId,
+      groupId,
+      status.cycleId!,
+      originalSlotId
+    );
 
     await loginAsUser(page, memberEmail, DEMO_PASSWORD);
     await page.evaluate((targetGroupId) => {
@@ -1196,6 +1572,16 @@ test.describe("Self-service browser lifecycle", () => {
     const unchangedShift = refreshedShifts.requests.find((row) => row.id === ownedShift.id);
     expect(unchangedShift?.status).toBe("Approved");
     expect(unchangedShift?.shiftSlotId).toBe(originalSlotId);
+
+    const originalSlotAfterRejection = await getAdminSlot(
+      request,
+      adminToken,
+      spaceId,
+      groupId,
+      status.cycleId!,
+      originalSlotId
+    );
+    expect(originalSlotAfterRejection.currentFillCount).toBe(originalSlotBeforeChange.currentFillCount);
   });
 
   test("member can pick an open shift and join a full-slot waitlist through the UI", async ({ page, request }) => {
@@ -1235,6 +1621,14 @@ test.describe("Self-service browser lifecycle", () => {
 
     if (openSlot) {
       const openSlotId = openSlot.id ?? openSlot.shiftSlotId;
+      const openSlotBeforePick = await getAdminSlot(
+        request,
+        adminToken,
+        spaceId,
+        groupId,
+        status.cycleId!,
+        openSlotId!
+      );
       await page.getByTestId("pick-tab-slots").click();
       await expect(page.getByTestId("self-service-open-slot").first()).toBeVisible({ timeout: 15000 });
       await Promise.all([
@@ -1253,6 +1647,16 @@ test.describe("Self-service browser lifecycle", () => {
       expect(shifts.requests.some((row) =>
         row.shiftSlotId === openSlotId && row.status === "Approved"
       )).toBeTruthy();
+
+      const openSlotAfterPick = await getAdminSlot(
+        request,
+        adminToken,
+        spaceId,
+        groupId,
+        status.cycleId!,
+        openSlotId!
+      );
+      expect(openSlotAfterPick.currentFillCount).toBe(openSlotBeforePick.currentFillCount + 1);
     }
 
     const alreadyWaitlisted = fullSlot
@@ -1263,6 +1667,15 @@ test.describe("Self-service browser lifecycle", () => {
       : existingWaitlist.some((entry) => entry.status === "Waiting" || entry.status === "Offered");
 
     if (fullSlot && !alreadyWaitlisted) {
+      const fullSlotId = fullSlot.id ?? fullSlot.shiftSlotId;
+      const fullSlotBeforeWaitlist = await getAdminSlot(
+        request,
+        adminToken,
+        spaceId,
+        groupId,
+        status.cycleId!,
+        fullSlotId!
+      );
       await page.getByTestId("pick-tab-slots").click();
       await expect(page.getByTestId("self-service-full-slot").first()).toBeVisible({ timeout: 15000 });
       await Promise.all([
@@ -1271,6 +1684,16 @@ test.describe("Self-service browser lifecycle", () => {
         ),
         page.getByTestId("self-service-join-waitlist").first().click(),
       ]);
+
+      const fullSlotAfterWaitlist = await getAdminSlot(
+        request,
+        adminToken,
+        spaceId,
+        groupId,
+        status.cycleId!,
+        fullSlotId!
+      );
+      expect(fullSlotAfterWaitlist.currentFillCount).toBe(fullSlotBeforeWaitlist.currentFillCount);
     }
 
     const waitlistAfter = await api<WaitlistEntryDto[]>(
@@ -1310,6 +1733,14 @@ test.describe("Self-service browser lifecycle", () => {
       groupId,
       status.cycleId!
     );
+    const slotBeforeLeave = await getAdminSlot(
+      request,
+      adminToken,
+      spaceId,
+      groupId,
+      status.cycleId!,
+      waitingEntry.shiftSlotId
+    );
 
     await loginAsUser(page, memberEmail, DEMO_PASSWORD);
     await page.evaluate((targetGroupId) => {
@@ -1340,6 +1771,16 @@ test.describe("Self-service browser lifecycle", () => {
     expect(entriesAfter.some((entry) =>
       entry.id === waitingEntry.id && (entry.status === "Waiting" || entry.status === "Offered")
     )).toBeFalsy();
+
+    const slotAfterLeave = await getAdminSlot(
+      request,
+      adminToken,
+      spaceId,
+      groupId,
+      status.cycleId!,
+      waitingEntry.shiftSlotId
+    );
+    expect(slotAfterLeave.currentFillCount).toBe(slotBeforeLeave.currentFillCount);
   });
 
   test("member reports cannot attend and admin approves it through the UI", async ({ page, request }) => {
@@ -1459,6 +1900,14 @@ test.describe("Self-service browser lifecycle", () => {
       member.personId
     );
     const reason = `Browser E2E reject cannot attend ${Date.now()}`;
+    const slotBeforeReport = await getAdminSlot(
+      request,
+      adminToken,
+      spaceId,
+      groupId,
+      status.cycleId!,
+      ownedShift.shiftSlotId
+    );
 
     await loginAsUser(page, memberEmail, DEMO_PASSWORD);
     await page.evaluate((targetGroupId) => {
@@ -1521,6 +1970,16 @@ test.describe("Self-service browser lifecycle", () => {
     expect(restoredShift?.status).toBe("Approved");
     expect(restoredShift?.shiftSlotId).toBe(ownedShift.shiftSlotId);
     expect(restoredShift?.cancellationReason).toBeNull();
+
+    const slotAfterRejection = await getAdminSlot(
+      request,
+      adminToken,
+      spaceId,
+      groupId,
+      status.cycleId!,
+      ownedShift.shiftSlotId
+    );
+    expect(slotAfterRejection.currentFillCount).toBe(slotBeforeReport.currentFillCount);
   });
 
   test("member requests special leave and admin approves it through the UI", async ({ page, request }) => {

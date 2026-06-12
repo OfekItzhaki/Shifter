@@ -4,6 +4,58 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { getProviderHealthReport, ProviderHealthReport } from "@/lib/api/platform";
 
+type ProviderCatalogEntry = {
+  label: string;
+  purpose: string;
+  optional: boolean;
+};
+
+const providerCatalog: Record<string, ProviderCatalogEntry> = {
+  postgres: {
+    label: "PostgreSQL",
+    purpose: "Primary application database",
+    optional: false,
+  },
+  redis: {
+    label: "Redis",
+    purpose: "Cache, sessions, and coordination",
+    optional: false,
+  },
+  solver: {
+    label: "Solver",
+    purpose: "Automatic schedule generation",
+    optional: false,
+  },
+  resend: {
+    label: "Resend",
+    purpose: "Email delivery",
+    optional: true,
+  },
+  lemonsqueezy: {
+    label: "LemonSqueezy",
+    purpose: "Billing and subscription checkout",
+    optional: true,
+  },
+  ai: {
+    label: "AI",
+    purpose: "Schedule import, scan, and assistant features",
+    optional: true,
+  },
+  push: {
+    label: "Push notifications",
+    purpose: "Browser and PWA notifications",
+    optional: true,
+  },
+};
+
+function getProviderInfo(serviceName: string): ProviderCatalogEntry {
+  return providerCatalog[serviceName.toLowerCase()] ?? {
+    label: serviceName,
+    purpose: "Configured service",
+    optional: false,
+  };
+}
+
 function statusClasses(status: string): string {
   switch (status) {
     case "healthy":
@@ -31,9 +83,8 @@ export default function ProviderHealthPanel() {
   const [refreshing, setRefreshing] = useState(false);
   const [errorKey, setErrorKey] = useState<string | null>(null);
 
-  const load = useCallback(async (isRefresh = false) => {
-    if (isRefresh) setRefreshing(true);
-    else setLoading(true);
+  const refresh = useCallback(async () => {
+    setRefreshing(true);
     setErrorKey(null);
 
     try {
@@ -41,14 +92,32 @@ export default function ProviderHealthPanel() {
     } catch {
       setErrorKey("loadError");
     } finally {
-      setLoading(false);
       setRefreshing(false);
     }
   }, []);
 
   useEffect(() => {
-    void load();
-  }, [load]);
+    let isMounted = true;
+
+    void getProviderHealthReport()
+      .then((nextReport) => {
+        if (!isMounted) return;
+        setReport(nextReport);
+        setErrorKey(null);
+      })
+      .catch(() => {
+        if (!isMounted) return;
+        setErrorKey("loadError");
+      })
+      .finally(() => {
+        if (!isMounted) return;
+        setLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const counts = useMemo(() => {
     const checks = report?.checks ?? [];
@@ -69,7 +138,7 @@ export default function ProviderHealthPanel() {
         </div>
         <button
           type="button"
-          onClick={() => void load(true)}
+          onClick={() => void refresh()}
           disabled={loading || refreshing}
           className="inline-flex w-fit rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-sky-700 transition hover:border-sky-200 hover:bg-sky-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900 dark:text-sky-300 dark:hover:border-sky-700"
         >
@@ -103,32 +172,51 @@ export default function ProviderHealthPanel() {
 
           <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             {report.checks.map((check) => (
-              <div
-                key={check.serviceName}
-                className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-900/40"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="text-sm font-semibold text-slate-900 dark:text-white">{check.serviceName}</p>
-                    {check.responseTime && (
-                      <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                        {t("responseTime", { time: check.responseTime })}
-                      </p>
-                    )}
-                  </div>
-                  <span className={`shrink-0 rounded-full border px-2 py-0.5 text-xs font-semibold ${statusClasses(check.status)}`}>
-                    {t(`status.${check.status}`)}
-                  </span>
-                </div>
-                {check.errorMessage && (
-                  <p className="mt-3 rounded-lg border border-red-200 bg-white px-3 py-2 text-xs leading-5 text-red-700 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-300">
-                    {check.errorMessage}
-                  </p>
-                )}
-              </div>
+              <ProviderHealthCard key={check.serviceName} check={check} />
             ))}
           </div>
         </>
+      )}
+    </div>
+  );
+}
+
+function ProviderHealthCard({
+  check,
+}: {
+  check: ProviderHealthReport["checks"][number];
+}) {
+  const t = useTranslations("platform.health");
+  const provider = getProviderInfo(check.serviceName);
+
+  return (
+    <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-900/40">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="text-sm font-semibold text-slate-900 dark:text-white">{provider.label}</p>
+            <span className="rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[11px] font-semibold text-slate-500 dark:border-slate-700 dark:bg-slate-950/40 dark:text-slate-400">
+              {provider.optional ? t("optional") : t("core")}
+            </span>
+          </div>
+          <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">{provider.purpose}</p>
+          {check.status === "skipped" && provider.optional && (
+            <p className="mt-1 text-xs leading-5 text-slate-400 dark:text-slate-500">{t("optionalSkipped")}</p>
+          )}
+          {check.responseTime && (
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+              {t("responseTime", { time: check.responseTime })}
+            </p>
+          )}
+        </div>
+        <span className={`shrink-0 rounded-full border px-2 py-0.5 text-xs font-semibold ${statusClasses(check.status)}`}>
+          {t(`status.${check.status}`)}
+        </span>
+      </div>
+      {check.errorMessage && (
+        <p className="mt-3 rounded-lg border border-red-200 bg-white px-3 py-2 text-xs leading-5 text-red-700 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-300">
+          {check.errorMessage}
+        </p>
       )}
     </div>
   );

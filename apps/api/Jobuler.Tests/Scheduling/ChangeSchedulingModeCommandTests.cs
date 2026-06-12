@@ -2,7 +2,9 @@ using FluentAssertions;
 using Jobuler.Application.Common;
 using Jobuler.Application.Scheduling.Commands;
 using Jobuler.Application.Scheduling.SelfService;
+using Jobuler.Application.Spaces.Queries;
 using Jobuler.Domain.Groups;
+using Jobuler.Domain.Organizations;
 using Jobuler.Domain.Scheduling;
 using Jobuler.Domain.Spaces;
 using Jobuler.Infrastructure.Persistence;
@@ -127,8 +129,28 @@ public class ChangeSchedulingModeCommandTests
     {
         // Arrange
         using var db = CreateDb();
-        var spaceId = Guid.NewGuid();
+        var ownerId = Guid.NewGuid();
+        var organization = Organization.Create("Client Org", ownerId, "IL", "security", "he");
+        var space = Space.Create("Client Space", ownerId, organizationId: organization.Id);
+        var spaceId = space.Id;
         var group = Group.Create(spaceId, null, "Test Group");
+        var organizationDefaults = OrganizationSelfServiceDefaults.Create(
+            organization.Id,
+            minShiftsPerCycle: 3,
+            maxShiftsPerCycle: 8,
+            requestWindowOpenOffsetHours: 216,
+            requestWindowCloseOffsetHours: 30,
+            cancellationCutoffHours: 28,
+            maxAbsencesPerCycle: 2,
+            maxLateCancellationsPerCycle: 1,
+            lateCancellationWindowHours: 16,
+            waitlistOfferMinutes: 75,
+            cycleDurationDays: 12,
+            allowMemberShiftClaims: true,
+            allowWaitlist: true,
+            allowShiftChangeRequests: false,
+            allowAbsenceReports: true,
+            allowShiftSwaps: false);
         var spaceDefaults = SpaceSelfServiceDefaults.Create(
             spaceId,
             minShiftsPerCycle: 2,
@@ -147,7 +169,10 @@ public class ChangeSchedulingModeCommandTests
             allowAbsenceReports: false,
             allowShiftSwaps: true);
 
+        db.Organizations.Add(organization);
+        db.Spaces.Add(space);
         db.Groups.Add(group);
+        db.OrganizationSelfServiceDefaults.Add(organizationDefaults);
         db.SpaceSelfServiceDefaults.Add(spaceDefaults);
         await db.SaveChangesAsync();
 
@@ -191,6 +216,129 @@ public class ChangeSchedulingModeCommandTests
         config.AllowWaitlist.Should().BeFalse();
         config.AllowAbsenceReports.Should().BeFalse();
         config.AllowShiftSwaps.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task Handle_ChangesToSelfService_UsesOrganizationDefaultsBeforeInstallDefaults()
+    {
+        // Arrange
+        using var db = CreateDb();
+        var ownerId = Guid.NewGuid();
+        var organization = Organization.Create("Client Org", ownerId, "IL", "security", "he");
+        var space = Space.Create("Client Space", ownerId, organizationId: organization.Id);
+        var group = Group.Create(space.Id, null, "Test Group");
+        var organizationDefaults = OrganizationSelfServiceDefaults.Create(
+            organization.Id,
+            minShiftsPerCycle: 3,
+            maxShiftsPerCycle: 8,
+            requestWindowOpenOffsetHours: 216,
+            requestWindowCloseOffsetHours: 30,
+            cancellationCutoffHours: 28,
+            maxAbsencesPerCycle: 2,
+            maxLateCancellationsPerCycle: 1,
+            lateCancellationWindowHours: 16,
+            waitlistOfferMinutes: 75,
+            cycleDurationDays: 12,
+            allowMemberShiftClaims: true,
+            allowWaitlist: true,
+            allowShiftChangeRequests: false,
+            allowAbsenceReports: true,
+            allowShiftSwaps: false);
+
+        db.Organizations.Add(organization);
+        db.Spaces.Add(space);
+        db.Groups.Add(group);
+        db.OrganizationSelfServiceDefaults.Add(organizationDefaults);
+        await db.SaveChangesAsync();
+
+        var installDefaults = new SelfServiceDefaultPolicyOptions
+        {
+            MinShiftsPerCycle = 0,
+            MaxShiftsPerCycle = 3,
+            RequestWindowOpenOffsetHours = 120,
+            RequestWindowCloseOffsetHours = 24,
+            CancellationCutoffHours = 24,
+            MaxAbsencesPerCycle = 9,
+            MaxLateCancellationsPerCycle = 9,
+            LateCancellationWindowHours = 24,
+            WaitlistOfferMinutes = 30,
+            CycleDurationDays = 7,
+            AllowMemberShiftClaims = false,
+            AllowWaitlist = false,
+            AllowShiftChangeRequests = true,
+            AllowAbsenceReports = false,
+            AllowShiftSwaps = true
+        };
+
+        var handler = new ChangeSchedulingModeCommandHandler(db, AllowAll(), Options.Create(installDefaults));
+        var command = new ChangeSchedulingModeCommand(space.Id, group.Id, Guid.NewGuid(), SchedulingMode.SelfService);
+
+        // Act
+        await handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        var config = await db.SelfServiceConfigs.SingleAsync(c => c.GroupId == group.Id);
+        config.MinShiftsPerCycle.Should().Be(3);
+        config.MaxShiftsPerCycle.Should().Be(8);
+        config.RequestWindowOpenOffsetHours.Should().Be(216);
+        config.RequestWindowCloseOffsetHours.Should().Be(30);
+        config.CancellationCutoffHours.Should().Be(28);
+        config.MaxAbsencesPerCycle.Should().Be(2);
+        config.MaxLateCancellationsPerCycle.Should().Be(1);
+        config.LateCancellationWindowHours.Should().Be(16);
+        config.WaitlistOfferMinutes.Should().Be(75);
+        config.CycleDurationDays.Should().Be(12);
+        config.AllowWaitlist.Should().BeTrue();
+        config.AllowShiftChangeRequests.Should().BeFalse();
+        config.AllowShiftSwaps.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task GetSpaceSelfServiceDefaults_ReturnsOrganizationDefaults_WhenSpaceDefaultsMissing()
+    {
+        // Arrange
+        using var db = CreateDb();
+        var ownerId = Guid.NewGuid();
+        var organization = Organization.Create("Client Org", ownerId, "IL", "security", "he");
+        var space = Space.Create("Client Space", ownerId, organizationId: organization.Id);
+        var organizationDefaults = OrganizationSelfServiceDefaults.Create(
+            organization.Id,
+            minShiftsPerCycle: 2,
+            maxShiftsPerCycle: 9,
+            requestWindowOpenOffsetHours: 200,
+            requestWindowCloseOffsetHours: 40,
+            cancellationCutoffHours: 30,
+            maxAbsencesPerCycle: 4,
+            maxLateCancellationsPerCycle: 1,
+            lateCancellationWindowHours: 18,
+            waitlistOfferMinutes: 80,
+            cycleDurationDays: 14,
+            allowMemberShiftClaims: true,
+            allowWaitlist: false,
+            allowShiftChangeRequests: true,
+            allowAbsenceReports: true,
+            allowShiftSwaps: false);
+
+        db.Organizations.Add(organization);
+        db.Spaces.Add(space);
+        db.OrganizationSelfServiceDefaults.Add(organizationDefaults);
+        await db.SaveChangesAsync();
+
+        var handler = new GetSpaceSelfServiceDefaultsQueryHandler(
+            db,
+            Options.Create(new SelfServiceDefaultPolicyOptions()));
+
+        // Act
+        var result = await handler.Handle(new GetSpaceSelfServiceDefaultsQuery(space.Id), CancellationToken.None);
+
+        // Assert
+        result.Source.Should().Be("organization");
+        result.MinShiftsPerCycle.Should().Be(2);
+        result.MaxShiftsPerCycle.Should().Be(9);
+        result.RequestWindowOpenOffsetHours.Should().Be(200);
+        result.RequestWindowCloseOffsetHours.Should().Be(40);
+        result.AllowWaitlist.Should().BeFalse();
+        result.AllowShiftSwaps.Should().BeFalse();
     }
 
     [Fact]

@@ -54,6 +54,7 @@
     "optional": "optional",
     "accountCreated": "Account created successfully! Sign in to continue.",
     "passwordResetSuccess": "Password reset successfully! Sign in with your new password.",
+    "passwordChangedSuccess": "Password changed successfully. Sign in again with your new password.",
     "signingIn": "Signing in...",
     "noAccount": "Don't have an account?",
     "emailOrPhone": "Email or Phone Number",
@@ -732,7 +733,7 @@
       "confirm": "Confirm new password",
       "save": "Change password",
       "saving": "Changing...",
-      "saved": "Password changed. Please sign in again on other devices.",
+      "saved": "Password changed. Sign in again with your new password.",
       "mismatch": "The new passwords do not match.",
       "tooShort": "Password must be at least 8 characters.",
       "error": "Could not change password. Check your current password and try again."
@@ -1097,6 +1098,7 @@
       "windowError": "Request window open offset must be greater than the close offset.",
       "source": {
         "install": "Install default",
+        "organization": "Organization default",
         "space": "Space default"
       },
       "fields": {
@@ -1132,6 +1134,53 @@
         "groupOwner": "Group Owner",
         "admin": "Admin",
         "member": "Member"
+      }
+    },
+    "specialDays": {
+      "title": "Special Days",
+      "description": "Mark holidays, weekends, and local events that should matter more when Shifter plans home leave.",
+      "dateLabel": "Date",
+      "nameLabel": "Name",
+      "namePlaceholder": "Holiday or event name",
+      "kindLabel": "Type",
+      "weightLabel": "Home-leave importance",
+      "requiresCoverage": "This date still needs normal coverage",
+      "add": "Add day",
+      "update": "Update day",
+      "cancel": "Cancel",
+      "edit": "Edit",
+      "delete": "Delete",
+      "deleting": "Deleting...",
+      "saving": "Saving...",
+      "saved": "Saved",
+      "loading": "Loading special days...",
+      "empty": "No special days for the next year.",
+      "loadError": "Could not load special days.",
+      "saveError": "Could not save this special day.",
+      "deleteError": "Could not delete this special day.",
+      "validationError": "Choose a date, enter a name, and use an importance between 1 and 5.",
+      "coverageOn": "coverage required",
+      "weightValue": "importance x{value}",
+      "kind": {
+        "Holiday": "Holiday",
+        "Weekend": "Weekend",
+        "Custom": "Custom"
+      },
+      "calendar": {
+        "title": "Holiday calendar",
+        "description": "Import the main Israel holidays for a year. Existing days are skipped.",
+        "yearLabel": "Year",
+        "preview": "Preview",
+        "previewing": "Previewing...",
+        "import": "Import Israel holidays",
+        "importing": "Importing...",
+        "exists": "already added",
+        "more": "+{count} more",
+        "previewLoaded": "{count} holidays found, {newCount} new.",
+        "imported": "Imported {imported} holidays. Skipped {skipped} existing days.",
+        "yearError": "Use a year between 2000 and 2100.",
+        "previewError": "Could not preview the holiday calendar.",
+        "importError": "Could not import the holiday calendar."
       }
     },
     "dangerZone": {
@@ -1496,6 +1545,16 @@
     "saved": "Saved",
     "settingsSaveError": "Failed to save settings.",
     "loading": "Loading...",
+    "organizationDefaults": {
+      "title": "Organization self-service defaults",
+      "description": "Set the policy template new self-service groups inherit before space-level overrides are created.",
+      "searchLabel": "Find organization",
+      "searchPlaceholder": "Search by organization, space, owner, or email",
+      "search": "Search",
+      "organizationLabel": "Organization",
+      "empty": "No organizations found.",
+      "loadOrganizationsError": "Could not load organizations."
+    },
     "health": {
       "title": "Provider Health",
       "description": "Live readiness for infrastructure and optional providers used by hosted and customer-hosted installs.",
@@ -1506,6 +1565,9 @@
       "summary": "{healthy}/{total} healthy, {unhealthy} unhealthy, {skipped} skipped",
       "updated": "Updated {time}",
       "responseTime": "Response {time}",
+      "core": "Core",
+      "optional": "Optional",
+      "optionalSkipped": "Not configured for this environment.",
       "status": {
         "healthy": "Healthy",
         "degraded": "Degraded",
@@ -2074,6 +2136,12 @@
       "highAvailability": "High availability",
       "nearlyFull": "Nearly full",
       "full": "Full",
+      "specialDay": "Special day",
+      "specialDayNamed": "Special day: {name}",
+      "specialDayNoCoverage": "No coverage required",
+      "specialDayUnavailable": "Not open for picking",
+      "claimDisabled": "Picking disabled",
+      "waitlistDisabled": "Waitlist disabled",
       "dateFilter": "Filter by date",
       "allDates": "All dates",
       "noSlots": "No available slots",
@@ -2593,7 +2661,11 @@
           "changes": "Changes",
           "changesValue": "{approved} approved / {rejected} rejected / {pending} pending",
           "waitlist": "Waitlist",
-          "waitlistValue": "{active} active / {accepted} accepted / {expired} expired"
+          "waitlistValue": "{active} active / {accepted} accepted / {expired} expired",
+          "specialDays": "Special days",
+          "specialDaysValue": "{total} slot(s) / {noCoverage} no-coverage / {underfilled} under-filled",
+          "workflowPolicy": "Workflow policy",
+          "workflowPolicyValue": "{enabled}/{total} workflows enabled"
         }
       },
       "policy": {
@@ -2774,7 +2846,8 @@
           "changeReview": "Change review",
           "pendingSwaps": "Pending swaps",
           "generated": "Generated",
-          "leaveReview": "Leave review"
+          "leaveReview": "Leave review",
+          "specialDays": "Special days"
         },
         "buttons": {
           "open": "Open 24h",
@@ -2971,7 +3044,7 @@
   },
   "pwaInstall": {
     "title": "Install Shifter",
-    "description": "Install Shifter on this computer or phone for faster access and offline schedule viewing.",
+    "description": "Install Shifter on this device for faster access and offline schedule viewing.",
     "iosDescription": "On iPhone, tap Share, then Add to Home Screen to install Shifter.",
     "install": "Install",
     "notNow": "Not now",

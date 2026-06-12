@@ -101,7 +101,7 @@ export interface UpdateSpaceHomeLeaveConfigPayload {
 
 export interface SpaceSelfServiceDefaultsDto {
   id: string | null;
-  source: "space" | "install";
+  source: "space" | "organization" | "install";
   minShiftsPerCycle: number;
   maxShiftsPerCycle: number;
   requestWindowOpenOffsetHours: number;

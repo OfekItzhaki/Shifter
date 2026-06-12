@@ -45,9 +45,33 @@ INSERT INTO users (id, email, display_name, password_hash, preferred_locale) VAL
   ('d4e5f6a7-b8c9-4d0e-1f2a-b3c4d5e6f7a8', 'viewer@demo.local',  'Viewer',  '$2a$12$WqeSlsFmXzSru4YK23qfeuMYIUd/4ZkHLLwx0NAehm.Vbmq1MYEEa', 'he')
 ON CONFLICT (id) DO UPDATE SET password_hash = EXCLUDED.password_hash;
 
+-- Demo Organization
+INSERT INTO organizations (
+  id,
+  display_name,
+  normalized_name,
+  primary_owner_user_id,
+  country_code,
+  setup_template,
+  default_locale,
+  default_timezone_id,
+  status
+) VALUES (
+  'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9',
+  'Unit Alpha Demo',
+  'UNIT ALPHA DEMO',
+  'a1b2c3d4-e5f6-4a7b-8c9d-e0f1a2b3c4d5',
+  'IL',
+  'military_style',
+  'he',
+  'Asia/Jerusalem',
+  'Active'
+)
+ON CONFLICT (id) DO NOTHING;
+
 -- Demo Space
-INSERT INTO spaces (id, name, description, owner_user_id, locale) VALUES
-  ('e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'Unit Alpha', 'Demo space for local development', 'a1b2c3d4-e5f6-4a7b-8c9d-e0f1a2b3c4d5', 'he')
+INSERT INTO spaces (id, organization_id, name, description, owner_user_id, locale) VALUES
+  ('e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'Unit Alpha', 'Demo space for local development', 'a1b2c3d4-e5f6-4a7b-8c9d-e0f1a2b3c4d5', 'he')
 ON CONFLICT DO NOTHING;
 
 -- Memberships
@@ -76,6 +100,12 @@ ON CONFLICT DO NOTHING;
 -- Viewer gets only space.view
 INSERT INTO space_permission_grants (space_id, user_id, permission_key, granted_by_user_id) VALUES
   ('e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'd4e5f6a7-b8c9-4d0e-1f2a-b3c4d5e6f7a8', 'space.view', 'a1b2c3d4-e5f6-4a7b-8c9d-e0f1a2b3c4d5')
+ON CONFLICT DO NOTHING;
+
+-- Self-service demo members need space.view so the member picker can load their groups.
+INSERT INTO space_permission_grants (space_id, user_id, permission_key, granted_by_user_id) VALUES
+  ('e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'b2c3d4e5-f6a7-4b8c-9d0e-f1a2b3c4d5e6', 'space.view', 'a1b2c3d4-e5f6-4a7b-8c9d-e0f1a2b3c4d5'),
+  ('e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'c3d4e5f6-a7b8-4c9d-0e1f-a2b3c4d5e6f7', 'space.view', 'a1b2c3d4-e5f6-4a7b-8c9d-e0f1a2b3c4d5')
 ON CONFLICT DO NOTHING;
 
 -- Operational Roles
@@ -505,6 +535,25 @@ ON CONFLICT (id) DO UPDATE SET
   capacity = EXCLUDED.capacity,
   current_fill_count = EXCLUDED.current_fill_count,
   status = 'Open',
+  updated_at = NOW();
+
+INSERT INTO space_special_days (id, space_id, date, name, kind, home_leave_weight_multiplier, requires_coverage, is_auto_generated, created_at, updated_at) VALUES
+  ('f1a2b3c4-d5e6-4f7a-8b9c-0d1e2f3a4b5c',
+   'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9',
+   (NOW() + INTERVAL '2 days')::date,
+   'Self-Service Demo Special Day',
+   0,
+   1.50,
+   TRUE,
+   FALSE,
+   NOW(),
+   NOW())
+ON CONFLICT (id) DO UPDATE SET
+  date = EXCLUDED.date,
+  kind = EXCLUDED.kind,
+  home_leave_weight_multiplier = EXCLUDED.home_leave_weight_multiplier,
+  requires_coverage = TRUE,
+  is_auto_generated = FALSE,
   updated_at = NOW();
 
 INSERT INTO shift_requests (id, space_id, shift_slot_id, person_id, group_id, scheduling_cycle_id, status, is_admin_override, processed_by_user_id, created_at, updated_at) VALUES

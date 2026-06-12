@@ -65,6 +65,7 @@ services:
 
   # ─── API (ASP.NET Core) ─────────────────────────────────────
   api:
+    image: shifter-api:${COMPOSE_PROJECT_NAME:-local}
     build:
       context: ../../apps/api
       dockerfile: ../../infra/docker/api.Dockerfile
@@ -78,6 +79,10 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Production
       App__DeploymentMode: ${SHIFTER_DEPLOYMENT_MODE:-saas}
+      Entitlement__Licensee: ${SHIFTER_LICENSEE:-}
+      Entitlement__LicenseKey: ${SHIFTER_LICENSE_KEY:-}
+      Entitlement__LicenseFile: ${SHIFTER_LICENSE_FILE_CONTAINER_PATH:-}
+      Entitlement__LicensePublicKey: ${SHIFTER_LICENSE_PUBLIC_KEY:-}
       ConnectionStrings__DefaultConnection: "Host=${POSTGRES_HOST};Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}"
       Redis__ConnectionString: "${REDIS_HOST}:6379,password=${REDIS_PASSWORD}"
       Jwt__Secret: ${JWT_SECRET}
@@ -85,6 +90,7 @@ services:
       Jwt__Audience: ${JWT_AUDIENCE}
       Jwt__AccessTokenExpiryMinutes: ${JWT_ACCESS_TOKEN_EXPIRY_MINUTES}
       Jwt__RefreshTokenExpiryDays: ${JWT_REFRESH_TOKEN_EXPIRY_DAYS}
+      FIELD_ENCRYPTION_KEY: ${FIELD_ENCRYPTION_KEY:-}
       Solver__BaseUrl: "http://solver:${SOLVER_PORT}"
       App__FrontendBaseUrl: ${APP_FRONTEND_BASE_URL:-http://localhost:3000}
       App__ApiBaseUrl: ${APP_API_BASE_URL:-http://localhost:5000}
@@ -114,6 +120,7 @@ services:
       AI__ApiKey: ${AI_API_KEY:-}
       AI__BaseUrl: ${AI_BASE_URL:-}
       AI__Model: ${AI_MODEL:-gpt-4o}
+      AI__NoExportRequired: ${AI_NO_EXPORT_REQUIRED:-false}
       Feedback__DeveloperEmail: ${FEEDBACK_DEVELOPER_EMAIL:-ofeklabs@outlook.com}
       Resend__ApiKey: ${RESEND_API_KEY:-}
       Resend__FromEmail: ${RESEND_FROM_EMAIL:-noreply@shifter.app}
@@ -135,13 +142,14 @@ services:
       - "127.0.0.1:${API_PORT}:8080"
     volumes:
       - uploads_data:/app/wwwroot/uploads
+      - ${SHIFTER_LICENSE_FILE_HOST_PATH:-./license.customer.example.json}:${SHIFTER_LICENSE_FILE_CONTAINER_PATH:-/run/secrets/shifter-license.json}:ro
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -sf http://localhost:8080/health || exit 1"]
+      test: ["CMD-SHELL", "curl -sf http://localhost:8080/ready || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -149,6 +157,7 @@ services:
 
   # ─── Solver (Python + OR-Tools) ─────────────────────────────
   solver:
+    image: shifter-solver:${COMPOSE_PROJECT_NAME:-local}
     build:
       context: ../../apps/solver
       dockerfile: ../../infra/docker/solver.Dockerfile
@@ -181,10 +190,22 @@ services:
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:5000}
         NEXT_PUBLIC_VAPID_PUBLIC_KEY: ${NEXT_PUBLIC_VAPID_PUBLIC_KEY:-}
         NEXT_PUBLIC_SENTRY_DSN: ${NEXT_PUBLIC_SENTRY_DSN:-}
+        NEXT_PUBLIC_CRISP_WEBSITE_ID: ${NEXT_PUBLIC_CRISP_WEBSITE_ID:-}
+        NEXT_PUBLIC_LEGAL_EMAIL: ${NEXT_PUBLIC_LEGAL_EMAIL:-support@ofeklabs.com}
+        NEXT_PUBLIC_POSTHOG_KEY: ${NEXT_PUBLIC_POSTHOG_KEY:-}
+        NEXT_PUBLIC_POSTHOG_HOST: ${NEXT_PUBLIC_POSTHOG_HOST:-}
+        NEXT_PUBLIC_APP_VERSION: ${NEXT_PUBLIC_APP_VERSION:-dev}
     restart: unless-stopped
     logging: *default-logging
     environment:
-      NEXT_PUBLIC_API_URL: "http://localhost:${API_PORT}"
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:5000}
+      NEXT_PUBLIC_VAPID_PUBLIC_KEY: ${NEXT_PUBLIC_VAPID_PUBLIC_KEY:-}
+      NEXT_PUBLIC_SENTRY_DSN: ${NEXT_PUBLIC_SENTRY_DSN:-}
+      NEXT_PUBLIC_CRISP_WEBSITE_ID: ${NEXT_PUBLIC_CRISP_WEBSITE_ID:-}
+      NEXT_PUBLIC_LEGAL_EMAIL: ${NEXT_PUBLIC_LEGAL_EMAIL:-support@ofeklabs.com}
+      NEXT_PUBLIC_POSTHOG_KEY: ${NEXT_PUBLIC_POSTHOG_KEY:-}
+      NEXT_PUBLIC_POSTHOG_HOST: ${NEXT_PUBLIC_POSTHOG_HOST:-}
+      NEXT_PUBLIC_APP_VERSION: ${NEXT_PUBLIC_APP_VERSION:-dev}
     ports:
       - "127.0.0.1:${WEB_PORT}:3000"
     depends_on:

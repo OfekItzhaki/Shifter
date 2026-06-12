@@ -97,7 +97,7 @@ export const LANDING_CONTENT: Record<LandingLang, LandingContent> = {
         "Shifter turns people, roles, constraints, imports, and last-minute changes into a clear schedule your team can open from any phone.",
       primary: "Start free",
       secondary: "Sign in",
-      install: "Installable on iPhone and Android as a PWA",
+      install: "Installable on phones and supported desktop browsers as a PWA",
     },
     finder: {
       title: "Find the workflow you care about",
@@ -107,7 +107,7 @@ export const LANDING_CONTENT: Record<LandingLang, LandingContent> = {
         { label: "Automatic scheduling", desc: "Generate fair drafts from roles, rules, rest, availability, and coverage needs.", href: "#features", keywords: ["schedule", "automatic", "solver", "constraints", "fair", "roster"] },
         { label: "Imports and scan flow", desc: "Bring spreadsheet data in and prepare messy files for AI-assisted cleanup.", href: "#features", keywords: ["import", "excel", "csv", "scan", "ai", "files"] },
         { label: "Swaps and absences", desc: "Let members report absence, request changes, and handle swaps with admin visibility.", href: "#features", keywords: ["swap", "absence", "change", "cannot attend", "self service"] },
-        { label: "Installable mobile app", desc: "Use Shifter as a PWA on phones and supported desktop browsers.", href: "#faq", keywords: ["pwa", "install", "iphone", "android", "desktop", "offline"] },
+        { label: "Installable web app", desc: "Use Shifter as a PWA on phones and supported desktop browsers.", href: "#faq", keywords: ["pwa", "install", "iphone", "android", "desktop", "offline"] },
         { label: "Accessibility", desc: "Read the accessibility statement and supported access practices.", href: "/accessibility", keywords: ["accessibility", "a11y", "contrast", "keyboard", "screen reader"] },
         { label: "Security and customer hosting", desc: "Review security posture, privacy controls, and deployment options.", href: "/security", keywords: ["security", "privacy", "hosting", "server", "cloudflare", "data"] },
         { label: "Talk to support", desc: "Ask about rollout, pricing, hosting, or how to model your scheduling rules.", href: "#contact", keywords: ["support", "contact", "demo", "help", "whatsapp", "sales"] },
@@ -188,7 +188,7 @@ export const LANDING_CONTENT: Record<LandingLang, LandingContent> = {
       title: "Questions before you switch",
       subtitle: "The practical details teams usually ask before replacing spreadsheets.",
       items: [
-        { q: "Do users need to download an app?", a: "No. Shifter works in the browser and can be installed as a PWA on iPhone and Android." },
+        { q: "Do users need to download an app?", a: "No. Shifter works in the browser and can be installed as a PWA on phones and supported desktop browsers." },
         { q: "Will the PWA keep users logged in?", a: "On Chromium browsers, same-domain installs use the same origin storage. On iPhone, Apple may isolate the installed app, so the user may need to sign in once inside the PWA." },
         { q: "Can managers still edit the generated schedule?", a: "Yes. The generated schedule is a draft until you review and publish it." },
         { q: "Can we import existing files?", a: "Yes. Shifter supports CSV and Excel imports, with AI-assisted cleanup planned for messy scan/import cases." },
@@ -221,7 +221,7 @@ export const LANDING_CONTENT: Record<LandingLang, LandingContent> = {
         "Shifter מחבר אנשים, תפקידים, אילוצים, יבוא קבצים ושינויים של הרגע האחרון לסידור ברור שכל הצוות פותח מכל טלפון.",
       primary: "להתחיל בחינם",
       secondary: "כניסה",
-      install: "ניתן להתקנה באייפון ובאנדרואיד כ-PWA",
+      install: "ניתן להתקנה כ-PWA בטלפון ובדפדפני דסקטופ נתמכים",
     },
     proof: [
       { value: "90%", label: "פחות עבודת סידור" },
@@ -298,7 +298,7 @@ export const LANDING_CONTENT: Record<LandingLang, LandingContent> = {
       title: "שאלות לפני שעוברים",
       subtitle: "הפרטים המעשיים שצוותים שואלים לפני שמחליפים אקסלים.",
       items: [
-        { q: "צריך להוריד אפליקציה?", a: "לא. Shifter עובד בדפדפן וניתן להתקנה כ-PWA באייפון ובאנדרואיד." },
+        { q: "צריך להוריד אפליקציה?", a: "לא. Shifter עובד בדפדפן וניתן להתקנה כ-PWA בטלפונים ובדפדפני דסקטופ נתמכים." },
         { q: "ה-PWA ישאיר משתמשים מחוברים?", a: "בדפדפני Chromium התקנה מאותו דומיין משתמשת באותו אחסון מקור. באייפון Apple יכולה לבודד את האפליקציה המותקנת, ולכן ייתכן שצריך להתחבר פעם אחת בתוך ה-PWA." },
         { q: "מנהל יכול לערוך את הסידור שנוצר?", a: "כן. הסידור הוא טיוטה עד שמאשרים ומפרסמים אותו." },
         { q: "אפשר לייבא קבצים קיימים?", a: "כן. Shifter תומך ב-CSV וב-Excel, ובהמשך AI יעזור לנקות קלטים מורכבים יותר." },
@@ -331,7 +331,7 @@ export const LANDING_CONTENT: Record<LandingLang, LandingContent> = {
         "Shifter turns people, roles, constraints, imports, and last-minute changes into a clear schedule your team can open from any phone.",
       primary: "Start free",
       secondary: "Sign in",
-      install: "Installable on iPhone and Android as a PWA",
+      install: "Installable on phones and supported desktop browsers as a PWA",
     },
     proof: [
       { value: "90%", label: "less scheduling work" },
@@ -392,7 +392,7 @@ export const LANDING_CONTENT: Record<LandingLang, LandingContent> = {
       title: "Questions before you switch",
       subtitle: "The practical details teams usually ask before replacing spreadsheets.",
       items: [
-        { q: "Do users need to download an app?", a: "No. Shifter works in the browser and can be installed as a PWA on iPhone and Android." },
+        { q: "Do users need to download an app?", a: "No. Shifter works in the browser and can be installed as a PWA on phones and supported desktop browsers." },
         { q: "Will the PWA keep users logged in?", a: "On Chromium browsers, same-domain installs use the same origin storage. On iPhone, Apple may isolate the installed app, so the user may need to sign in once inside the PWA." },
         { q: "Can managers still edit the generated schedule?", a: "Yes. The generated schedule is a draft until you review and publish it." },
         { q: "Can we import existing files?", a: "Yes. Shifter supports CSV and Excel imports, with AI-assisted cleanup planned for messy scan/import cases." },

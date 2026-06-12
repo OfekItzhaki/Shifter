@@ -165,10 +165,10 @@ class TestMinRestHardConstraintClosedBase:
         assert len(result.assignments) == 1
         assert len(result.uncovered_slot_ids) == 1
 
-    def test_min_rest_uses_config_value(self):
+    def test_min_rest_clamps_low_config_to_closed_base_floor(self):
         """
-        The min_rest_hours from home_leave_config overrides the default.
-        With min_rest_hours=4, a 5h gap is allowed.
+        Closed-base min_rest_hours is never below the 8h safety floor.
+        With min_rest_hours=4, a 5h gap is still blocked.
         """
         people = [make_person("p1")]
         # Slot 1: 08:00-16:00, Slot 2: 21:00-05:00 next day (5h gap)
@@ -197,7 +197,8 @@ class TestMinRestHardConstraintClosedBase:
         )
         result = solve(make_input(slots, people, home_leave_config=config))
         assert result.feasible
-        assert len(result.assignments) == 2
+        assert len(result.assignments) == 1
+        assert len(result.uncovered_slot_ids) == 1
 
     def test_min_rest_config_value_blocks_when_gap_too_small(self):
         """

@@ -14,13 +14,23 @@ public class GetMySpacesQueryHandler : IRequestHandler<GetMySpacesQuery, List<Sp
 
     public async Task<List<SpaceDto>> Handle(GetMySpacesQuery request, CancellationToken ct)
     {
-        return await _db.SpaceMemberships
-            .AsNoTracking()
-            .Where(m => m.UserId == request.UserId && m.IsActive)
-            .Join(_db.Spaces.Where(s => s.IsActive && s.DeletedAt == null),
-                m => m.SpaceId,
-                s => s.Id,
-                (m, s) => new SpaceDto(s.Id, s.Name, s.Description, s.OwnerUserId, s.Locale, s.IsActive, s.CreatedAt))
+        return await (from membership in _db.SpaceMemberships.AsNoTracking()
+                      join space in _db.Spaces on membership.SpaceId equals space.Id
+                      join organization in _db.Organizations on space.OrganizationId equals organization.Id into organizations
+                      from organization in organizations.DefaultIfEmpty()
+                      where membership.UserId == request.UserId
+                          && membership.IsActive
+                          && space.IsActive
+                          && space.DeletedAt == null
+                          && (organization == null || organization.Status == Jobuler.Domain.Organizations.OrganizationStatus.Active)
+                      select new SpaceDto(
+                          space.Id,
+                          space.Name,
+                          space.Description,
+                          space.OwnerUserId,
+                          space.Locale,
+                          space.IsActive,
+                          space.CreatedAt))
             .ToListAsync(ct);
     }
 }

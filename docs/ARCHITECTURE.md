@@ -176,6 +176,12 @@ Space
 
 A user may belong to multiple spaces. The frontend stores the active `spaceId` in Zustand and includes it in every API request path (`/spaces/{spaceId}/...`).
 
+Future dedicated deployments and customer/account isolation are covered in
+[Portable Space Isolation](./architecture/portable-space-isolation.md). The
+short version: `Space` remains the operational tenant boundary, but spaces must
+stay portable so a customer can move from shared SaaS to a dedicated deployment
+without a code fork.
+
 ---
 
 ## Authentication Flow
@@ -238,7 +244,7 @@ The frontend polls `GET /spaces/{id}/notifications?unreadOnly=true` on a short i
 
 ## Security Model
 
-**Authentication:** JWT Bearer, all endpoints require `[Authorize]` except `/auth/register`, `/auth/login`, `/auth/refresh`, `/auth/forgot-password`, `/auth/reset-password`, `/health`, `/group-opt-out/{token}`, and `/groups/confirm-transfer`.
+**Authentication:** JWT Bearer, all endpoints require `[Authorize]` except `/auth/register`, `/auth/login`, `/auth/refresh`, `/auth/forgot-password`, `/auth/reset-password`, `/health`, `/health/live`, `/ready`, `/group-opt-out/{token}`, and `/groups/confirm-transfer`.
 
 **Authorization:** Permission checks in the Application layer via `IPermissionService.RequirePermissionAsync`. Space owners implicitly hold all permissions. Fine-grained grants are stored in `space_permission_grants`. Key permission keys: `space.view`, `space.admin_mode`, `people.manage`, `tasks.manage`, `constraints.manage`, `schedule.recalculate`, `schedule.publish`, `schedule.rollback`, `restrictions.manage_sensitive`, `logs.view_sensitive`.
 

@@ -9,15 +9,43 @@ const PUBLIC_PATHS = [
   "/verify-email",
   "/pricing",
   "/billing",
+  "/terms",
+  "/privacy",
+  "/privacy-requests",
+  "/security",
+  "/subprocessors",
+  "/dpa",
   "/invitations",
   "/group-opt-out",
+  "/terms",
+  "/privacy",
+  "/security",
+  "/privacy-requests",
+  "/dpa",
+  "/subprocessors",
   "/error",
 ];
 
 const isDevelopment = process.env.NODE_ENV === "development";
+const configuredApiOrigin = getOrigin(process.env.NEXT_PUBLIC_API_URL);
+const localApiOrigins = ["http://localhost:5000", "http://localhost:5015"];
+const apiOrigins = Array.from(new Set([
+  ...localApiOrigins,
+  ...(configuredApiOrigin ? [configuredApiOrigin] : []),
+]));
 
 function createNonce(): string {
   return btoa(crypto.randomUUID());
+}
+
+function getOrigin(url: string | undefined): string | null {
+  if (!url) return null;
+
+  try {
+    return new URL(url).origin;
+  } catch {
+    return null;
+  }
 }
 
 function createContentSecurityPolicy(nonce: string): string {
@@ -32,9 +60,9 @@ function createContentSecurityPolicy(nonce: string): string {
       ...(isDevelopment ? ["'unsafe-eval'"] : []),
     ].join(" "),
     "style-src 'self' 'unsafe-inline'",
-    "img-src 'self' data: blob: http://localhost:5000 https://api.shifter.ofeklabs.com https:",
+    `img-src 'self' data: blob: ${apiOrigins.join(" ")} https:`,
     "font-src 'self'",
-    "connect-src 'self' http://localhost:5000 https://api.shifter.ofeklabs.com https://*.ofeklabs.com ws://localhost:3000 wss: https://*.sentry.io https://*.ingest.sentry.io https://*.posthog.com https://us.i.posthog.com https://*.crisp.chat wss://*.crisp.chat",
+    `connect-src 'self' ${apiOrigins.join(" ")} https://api.shifter.ofeklabs.com https://*.ofeklabs.com ws://localhost:3000 ws://localhost:3015 wss: https://*.sentry.io https://*.ingest.sentry.io https://*.posthog.com https://us.i.posthog.com https://*.crisp.chat wss://*.crisp.chat`,
     "worker-src 'self'",
     "frame-src https://client.crisp.chat https://*.crisp.chat",
     "frame-ancestors 'none'",

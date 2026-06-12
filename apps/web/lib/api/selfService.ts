@@ -84,6 +84,10 @@ export interface AvailableSlotDto {
   capacity: number;
   currentFillCount: number;
   schedulingCycleId: string;
+  isSpecialDay?: boolean;
+  specialDayName?: string | null;
+  specialDayKind?: string | null;
+  specialDayRequiresCoverage?: boolean | null;
 }
 
 export interface AvailableSlotsResponse {
@@ -92,6 +96,8 @@ export interface AvailableSlotsResponse {
   requestWindowOpensAt: string | null;
   requestWindowClosesAt: string | null;
   currentCycleId: string | null;
+  allowMemberShiftClaims?: boolean;
+  allowWaitlist?: boolean;
 }
 
 export interface SelfServiceCycleStatusDto {
@@ -113,6 +119,7 @@ export interface SelfServiceCycleStatusDto {
   pendingShiftChangeRequestCount: number;
   pendingSwapRequestCount: number;
   pendingSpecialLeaveRequestCount: number;
+  specialDayCount: number;
   underfilledSlotCount: number;
   underfilledSlots: UnderfilledSlotDto[];
 }
@@ -122,11 +129,19 @@ export interface SelfServiceCycleCloseoutDto {
   startsAt: string | null;
   endsAt: string | null;
   isClosed: boolean;
+  allowMemberShiftClaims: boolean;
+  allowWaitlist: boolean;
+  allowShiftChangeRequests: boolean;
+  allowAbsenceReports: boolean;
+  allowShiftSwaps: boolean;
   slotCount: number;
   totalCapacity: number;
   filledCount: number;
   underfilledSlotCount: number;
   overfilledSlotCount: number;
+  specialDaySlotCount: number;
+  noCoverageSpecialDaySlotCount: number;
+  underfilledSpecialDaySlotCount: number;
   approvedAssignments: number;
   cancelledAssignments: number;
   rejectedRequests: number;
@@ -171,6 +186,10 @@ export interface UnderfilledSlotDto {
   currentFillCount: number;
   capacity: number;
   openSeats: number;
+  isSpecialDay?: boolean;
+  specialDayName?: string | null;
+  specialDayKind?: string | null;
+  specialDayRequiresCoverage?: boolean | null;
 }
 
 export interface UnderScheduledMemberDto {
@@ -228,6 +247,9 @@ export interface MyShiftsResponse {
   cancellationCutoffHours: number;
   maxLateReports: number;
   lateCancellationWindowHours: number;
+  allowShiftChangeRequests?: boolean;
+  allowAbsenceReports?: boolean;
+  allowShiftSwaps?: boolean;
 }
 
 export interface CannotAttendResponse {

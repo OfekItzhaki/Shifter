@@ -5,6 +5,7 @@ using Jobuler.Application.Scheduling.SelfService.Commands;
 using Jobuler.Domain.Groups;
 using Jobuler.Domain.People;
 using Jobuler.Domain.Scheduling;
+using Jobuler.Domain.Spaces;
 using Jobuler.Domain.Tasks;
 using Jobuler.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -192,6 +193,38 @@ public class WaitlistServiceTests
     }
 
     [Fact]
+    public async Task JoinWaitlistAsync_RejectsNoCoverageSpecialDay()
+    {
+        using var db = CreateDb();
+        var (spaceId, groupId, cycleId, taskId) = SeedBaseData(db);
+        var assignedPerson = Person.Create(spaceId, "Assigned", linkedUserId: Guid.NewGuid());
+        var waitingPerson = Person.Create(spaceId, "Waiting", linkedUserId: Guid.NewGuid());
+        var slot = CreateSlot(spaceId, groupId, taskId, cycleId);
+        var shiftRequest = ShiftRequest.Create(spaceId, slot.Id, assignedPerson.Id, groupId, cycleId);
+        shiftRequest.Approve();
+        slot.IncrementFillCount();
+
+        db.SpaceSpecialDays.Add(SpaceSpecialDay.Create(
+            spaceId,
+            slot.Date,
+            "Closed Day",
+            SpaceSpecialDayKind.Custom,
+            requiresCoverage: false));
+        db.People.AddRange(assignedPerson, waitingPerson);
+        db.ShiftSlots.Add(slot);
+        db.ShiftRequests.Add(shiftRequest);
+        await db.SaveChangesAsync();
+
+        var service = CreateService(db);
+
+        var result = await service.JoinWaitlistAsync(waitingPerson.Id, slot.Id);
+
+        result.Success.Should().BeFalse();
+        result.ErrorMessage.Should().Be(SpecialDaySelfServicePolicy.NoCoverageMessage);
+        (await db.WaitlistEntries.CountAsync()).Should().Be(0);
+    }
+
+    [Fact]
     public async Task AcceptWaitlistOffer_ApprovesShiftAndAcceptsEntry()
     {
         using var db = CreateDb();
@@ -298,6 +331,55 @@ public class WaitlistServiceTests
 
         await waitlistService.Received(1)
             .ProcessSlotReleasedAsync(offeredSlot.Id, Arg.Any<CancellationToken>());
+        await pushSender.DidNotReceiveWithAnyArgs()
+            .SendPushToUserAsync(default, default, default!, default);
+        await notificationService.DidNotReceiveWithAnyArgs()
+            .NotifySpaceAdminsAsync(default, default!, default!, default!, default!, default, default);
+    }
+
+    [Fact]
+    public async Task AcceptWaitlistOffer_RejectsNoCoverageSpecialDay()
+    {
+        using var db = CreateDb();
+        var (spaceId, groupId, cycleId, taskId) = SeedBaseData(db);
+        var offeredPerson = Person.Create(spaceId, "Offered", linkedUserId: Guid.NewGuid());
+        var slot = CreateSlot(spaceId, groupId, taskId, cycleId);
+        var entry = WaitlistEntry.Create(spaceId, slot.Id, offeredPerson.Id, position: 1);
+        entry.Offer(DateTime.UtcNow.AddMinutes(30));
+
+        db.SpaceSpecialDays.Add(SpaceSpecialDay.Create(
+            spaceId,
+            slot.Date,
+            "Closed Day",
+            SpaceSpecialDayKind.Custom,
+            requiresCoverage: false));
+        db.People.Add(offeredPerson);
+        db.ShiftSlots.Add(slot);
+        db.WaitlistEntries.Add(entry);
+        await db.SaveChangesAsync();
+
+        var waitlistService = Substitute.For<IWaitlistService>();
+        var pushSender = Substitute.For<IPushNotificationSender>();
+        var notificationService = Substitute.For<INotificationService>();
+        var handler = new AcceptWaitlistOfferCommandHandler(
+            db,
+            waitlistService,
+            pushSender,
+            notificationService,
+            NullLogger<AcceptWaitlistOfferCommandHandler>.Instance);
+
+        var result = await handler.Handle(
+            new AcceptWaitlistOfferCommand(spaceId, offeredPerson.Id, slot.Id),
+            CancellationToken.None);
+
+        result.Success.Should().BeFalse();
+        result.ErrorMessage.Should().Be(SpecialDaySelfServicePolicy.NoCoverageMessage);
+        result.ShiftRequestId.Should().BeNull();
+
+        var updatedEntry = await db.WaitlistEntries.SingleAsync(e => e.Id == entry.Id);
+        updatedEntry.Status.Should().Be(WaitlistEntryStatus.Removed);
+        (await db.ShiftRequests.CountAsync()).Should().Be(0);
+
         await pushSender.DidNotReceiveWithAnyArgs()
             .SendPushToUserAsync(default, default, default!, default);
         await notificationService.DidNotReceiveWithAnyArgs()
@@ -631,6 +713,39 @@ public class WaitlistServiceTests
         db.People.AddRange(assignedPerson, waitingPerson);
         db.ShiftSlots.Add(slot);
         db.ShiftRequests.Add(assignedRequest);
+        db.WaitlistEntries.Add(waitingEntry);
+        await db.SaveChangesAsync();
+
+        var pushSender = Substitute.For<IPushNotificationSender>();
+        var service = CreateService(db, pushSender);
+
+        await service.ProcessSlotReleasedAsync(slot.Id);
+
+        var updatedWaitingEntry = await db.WaitlistEntries.SingleAsync(e => e.Id == waitingEntry.Id);
+        updatedWaitingEntry.Status.Should().Be(WaitlistEntryStatus.Waiting);
+        updatedWaitingEntry.OfferedAt.Should().BeNull();
+        updatedWaitingEntry.ExpiresAt.Should().BeNull();
+        await pushSender.DidNotReceiveWithAnyArgs()
+            .SendPushToUserAsync(default, default, default!, default);
+    }
+
+    [Fact]
+    public async Task ProcessSlotReleasedAsync_DoesNotOfferNextMember_WhenSlotIsNoCoverageSpecialDay()
+    {
+        using var db = CreateDb();
+        var (spaceId, groupId, cycleId, taskId) = SeedBaseData(db);
+        var waitingPerson = Person.Create(spaceId, "Waiting", linkedUserId: Guid.NewGuid());
+        var slot = CreateSlot(spaceId, groupId, taskId, cycleId);
+        var waitingEntry = WaitlistEntry.Create(spaceId, slot.Id, waitingPerson.Id, position: 1);
+
+        db.SpaceSpecialDays.Add(SpaceSpecialDay.Create(
+            spaceId,
+            slot.Date,
+            "Closed Day",
+            SpaceSpecialDayKind.Custom,
+            requiresCoverage: false));
+        db.People.Add(waitingPerson);
+        db.ShiftSlots.Add(slot);
         db.WaitlistEntries.Add(waitingEntry);
         await db.SaveChangesAsync();
 

@@ -31,16 +31,18 @@ public class AddPersonByEmailCommandHandler : IRequestHandler<AddPersonByEmailCo
 {
     private readonly AppDbContext _db;
     private readonly IPeakMemberTracker _peakTracker;
+    private readonly IContactLookupProtector _contactLookup;
 
-    public AddPersonByEmailCommandHandler(AppDbContext db, IPeakMemberTracker peakTracker)
+    public AddPersonByEmailCommandHandler(AppDbContext db, IPeakMemberTracker peakTracker, IContactLookupProtector contactLookup)
     {
         _db = db;
         _peakTracker = peakTracker;
+        _contactLookup = contactLookup;
     }
 
     public async Task<AddPersonByEmailResult> Handle(AddPersonByEmailCommand req, CancellationToken ct)
     {
-        var email = req.Email.Trim().ToLowerInvariant();
+        var email = _contactLookup.NormalizeEmail(req.Email);
 
         // Determine if the requesting user is the group owner
         var requestingPerson = await _db.People.AsNoTracking()
@@ -67,8 +69,16 @@ public class AddPersonByEmailCommandHandler : IRequestHandler<AddPersonByEmailCo
         }
 
         // 1. Find user account by email
+        var emailLookupHash = _contactLookup.HashEmail(email);
         var user = await _db.Users.AsNoTracking()
-            .FirstOrDefaultAsync(u => u.Email == email, ct);
+            .FirstOrDefaultAsync(u => u.EmailLookupHash == emailLookupHash, ct);
+        if (user is null)
+        {
+            var legacyUsers = await _db.Users.AsNoTracking()
+                .Where(u => u.EmailLookupHash == null)
+                .ToListAsync(ct);
+            user = legacyUsers.FirstOrDefault(u => _contactLookup.NormalizeEmail(u.Email) == email);
+        }
 
         // 2. Find existing person in this space linked to that user
         Person? person = null;
