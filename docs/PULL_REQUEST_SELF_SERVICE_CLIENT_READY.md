@@ -101,6 +101,9 @@ packaging, and self-service export package validation readiness.
 - Adds `infra/scripts/setup-github-staging.ps1` as a dry-run-first helper for
   creating the GitHub `staging` environment and staging repository variables
   without storing real SSH secrets in the repository.
+- Adds `docs/STAGING-MANUAL-SMOKE-EVIDENCE.md` so staging sign-off captures the
+  exact user-like auth, PWA, self-service, closeout, provider, backup, and
+  operational evidence required before `develop` moves to `main`.
 - Requires `NEXT_PUBLIC_LEGAL_EMAIL` in customer env validation so private
   installs do not silently route support/contact UI to the SaaS fallback.
 - Wires public frontend deployment variables through the web Docker build and
@@ -355,6 +358,10 @@ packaging, and self-service export package validation readiness.
   June 12, 2026, proving the GitHub staging setup helper dry-runs without
   calling `gh`, writes the expected environment and variables in apply mode,
   and fails clearly when required staging URLs are missing.
+- `docs/STAGING-MANUAL-SMOKE-EVIDENCE.md` was added on June 13, 2026 as the
+  manual staging sign-off template. No real staging user-flow sign-off has been
+  recorded yet because staging URLs, environment variables, and the GitHub
+  `staging` environment are still missing.
 - `infra/scripts/check-release-readiness.ps1 -SkipHostedSmoke` currently fails
   as intended until GitHub staging setup is completed: the `staging`
   environment and `STAGING_WEB_BASE_URL`, `STAGING_API_BASE_URL`,

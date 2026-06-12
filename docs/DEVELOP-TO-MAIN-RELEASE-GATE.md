@@ -34,6 +34,7 @@ Use this checklist before opening or merging a `develop` to `main` PR.
   ```
 
 - Manual staging smoke passes:
+  - use [Staging manual smoke evidence](STAGING-MANUAL-SMOKE-EVIDENCE.md)
   - login
   - registration or invite acceptance
   - forgot-password and reset-password
@@ -51,7 +52,7 @@ Use this checklist before opening or merging a `develop` to `main` PR.
 
 ## Current Status
 
-As of June 12, 2026:
+As of June 13, 2026:
 
 - `develop` has green CI evidence.
 - Customer-hosted package verification has passed locally and in GitHub Actions.
@@ -61,6 +62,8 @@ As of June 12, 2026:
 - The release readiness audit script is in place and its harness passes.
 - The GitHub staging setup helper is in place and dry-run/apply behavior is
   covered by a local harness.
+- The staging manual smoke evidence template is in place, but no real staging
+  user-flow sign-off has been recorded yet.
 - The real release readiness audit currently fails because the GitHub
   `staging` environment and staging URL/path repository variables are not
   configured yet. This is the expected blocker before a `develop` to `main` PR.

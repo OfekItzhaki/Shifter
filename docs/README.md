@@ -44,6 +44,8 @@ manual self-service scheduling decisions.
   to verify before inviting real users to the OfekLabs-hosted VPS service.
 - [Develop to main release gate](DEVELOP-TO-MAIN-RELEASE-GATE.md) - required
   staging and manual smoke evidence before opening the final production PR.
+- [Staging manual smoke evidence](STAGING-MANUAL-SMOKE-EVIDENCE.md) - sign-off
+  template for user-like staging verification before production.
 - [Customer-hosted deployment](CUSTOMER-HOSTED-DEPLOYMENT.md) - first supported
   package for installs inside a customer's infrastructure.
   Use `infra/scripts/validate-customer-env.sh` or

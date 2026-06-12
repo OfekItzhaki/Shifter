@@ -19,7 +19,8 @@ private customer AI, or a customer-owned database.
 ## Before Inviting Real Users
 
 - Deploy `develop` to staging and complete the staging smoke/manual checks
-  before opening the final `develop` to `main` PR.
+  before opening the final `develop` to `main` PR. Record those checks with
+  [Staging manual smoke evidence](STAGING-MANUAL-SMOKE-EVIDENCE.md).
 - Deploy the intended branch to the production VPS.
 - Run database migrations against the production database.
 - Confirm the production domain uses HTTPS.
