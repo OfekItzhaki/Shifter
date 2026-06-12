@@ -26,10 +26,10 @@ jobs:
       - name: Deploy on staging host
         uses: appleboy/ssh-action@v1
         with:
-          host: ${{ secrets.STAGING_HOST || secrets.HETZNER_HOST }}
-          username: ${{ secrets.STAGING_USER || secrets.HETZNER_USER }}
-          key: ${{ secrets.STAGING_SSH_KEY || secrets.HETZNER_SSH_KEY }}
-          port: ${{ secrets.STAGING_PORT || 22 }}
+          host: ${{ secrets.STAGING_HOST || secrets.HETZNER_HOST || secrets.VPS_HOST }}
+          username: ${{ secrets.STAGING_USER || secrets.HETZNER_USER || secrets.VPS_USER }}
+          key: ${{ secrets.STAGING_SSH_KEY || secrets.HETZNER_SSH_KEY || secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.STAGING_PORT || secrets.VPS_PORT || 22 }}
           command_timeout: 15m
           script: |
             set -euo pipefail

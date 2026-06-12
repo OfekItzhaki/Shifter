@@ -108,4 +108,5 @@ For VPS operations, use:
 
 - [Availability runbook](../infra/AVAILABILITY.md)
 - [Staging and previews](../infra/STAGING_AND_PREVIEWS.md)
+- [Develop to main release gate](DEVELOP-TO-MAIN-RELEASE-GATE.md)
 - [Cloudflare front door plan](../infra/CLOUDFLARE_FRONT_DOOR.md)

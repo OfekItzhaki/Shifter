@@ -140,6 +140,13 @@ Fallback secrets, if you prefer shared Hetzner names:
 - `HETZNER_USER`
 - `HETZNER_SSH_KEY`
 
+Fallback secrets, if reusing the current VPS secret naming convention:
+
+- `VPS_HOST`
+- `VPS_USER`
+- `VPS_SSH_KEY`
+- optional `VPS_PORT`
+
 Recommended staging variables:
 
 - `ENABLE_STAGING_DEPLOY=false` until the staging host is ready
@@ -147,6 +154,15 @@ Recommended staging variables:
 - `STAGING_COMPOSE_PROJECT_NAME=shifter-staging`
 - `STAGING_WEB_BASE_URL=https://staging.example.com`
 - `STAGING_API_BASE_URL=https://staging-api.example.com`
+
+Current GitHub setup status as of June 12, 2026:
+
+- no repository variables are configured yet
+- no `staging` environment is configured yet
+- the repository has `VPS_*` secrets for the existing VPS path, but no
+  dedicated `STAGING_*` secrets yet
+- therefore push-triggered staging deploys intentionally skip until staging is
+  provisioned and `ENABLE_STAGING_DEPLOY=true`
 
 ## Production Deploy Rule
 
