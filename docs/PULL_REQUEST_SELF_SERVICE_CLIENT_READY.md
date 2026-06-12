@@ -40,6 +40,8 @@ packaging, and self-service export package validation readiness.
   running.
 - Adds AI support fallback coverage for private/local AI endpoint failure and
   readable localized support actions when AI is disabled.
+- Enforces no-export AI mode at API startup and in customer Compose config, so
+  `AI_NO_EXPORT_REQUIRED=true` cannot silently use a public hosted endpoint.
 - Routes native assistant contact payloads to the configured
   `NEXT_PUBLIC_LEGAL_EMAIL`, so customer-hosted installs can point support
   requests at the customer's own help address.
@@ -86,6 +88,8 @@ packaging, and self-service export package validation readiness.
   passed.
 - `dotnet test apps\\api\\Jobuler.Tests\\Jobuler.Tests.csproj --filter FullyQualifiedName~AiAssistantSupportTests`
   passed: 6 passed, 0 failed.
+- `dotnet test apps\\api\\Jobuler.Tests\\Jobuler.Tests.csproj --filter "FullyQualifiedName~AiConfigurationGuardTests|FullyQualifiedName~AiAssistantSupportTests|FullyQualifiedName~AiHealthCheckTests"`
+  passed: 26 passed, 0 failed.
 - `dotnet test apps\\api\\Jobuler.Tests\\Jobuler.Tests.csproj --filter FullyQualifiedName~SpaceSpecialDayCommandTests`
   passed: 4 passed, 0 failed.
 - `dotnet test apps\\api\\Jobuler.Tests\\Jobuler.Tests.csproj --filter FullyQualifiedName~OrganizationPortabilityTests`

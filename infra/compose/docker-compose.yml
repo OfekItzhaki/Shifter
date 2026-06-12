@@ -115,6 +115,7 @@ services:
       AI__ApiKey: ${AI_API_KEY:-}
       AI__BaseUrl: ${AI_BASE_URL:-}
       AI__Model: ${AI_MODEL:-gpt-4o}
+      AI__NoExportRequired: ${AI_NO_EXPORT_REQUIRED:-false}
       Feedback__DeveloperEmail: ${FEEDBACK_DEVELOPER_EMAIL:-ofeklabs@outlook.com}
       Resend__ApiKey: ${RESEND_API_KEY:-}
       Resend__FromEmail: ${RESEND_FROM_EMAIL:-noreply@shifter.app}

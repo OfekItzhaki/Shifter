@@ -64,6 +64,7 @@ For Docker Compose, copy `infra/compose/.env.example` to `infra/compose/.env` an
 | `AI__ApiKey` | OpenAI API key (optional) |
 | `AI__BaseUrl` | Optional OpenAI-compatible endpoint for OpenRouter, Azure gateways, vLLM, Ollama, or private AI |
 | `AI__Model` | OpenAI model for assistant/import features, defaults to `gpt-4o` |
+| `AI__NoExportRequired` | Set `true` for customer no-export installs; API startup rejects public AI endpoints |
 | `Feedback__DeveloperEmail` | Human support recipient for feedback/escalation emails |
 | `Resend__ApiKey` | Resend API key for real email delivery; without it feedback is logged only |
 | `Solver__BaseUrl` | URL of the Python solver service |

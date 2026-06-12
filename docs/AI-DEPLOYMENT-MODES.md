@@ -76,8 +76,8 @@ Tradeoffs:
 
 Requirements:
 - No external AI calls.
-- Customer env validation must set `AI_NO_EXPORT_REQUIRED=true` and reject
-  public/default AI endpoints.
+- Customer env validation and API startup both enforce
+  `AI_NO_EXPORT_REQUIRED=true` by rejecting public/default AI endpoints.
 - No external email provider unless explicitly configured by the customer.
 - File imports and chat prompts stay inside the customer network.
 - Disable analytics, external chat widgets, and external error tracking unless

@@ -212,6 +212,8 @@ Known verification:
   success notice.
 - Restricts the custom PWA install prompt to mobile/touch install surfaces, with
   desktop install left to the browser UI.
+- Enforces `AI_NO_EXPORT_REQUIRED=true` in both customer env validation and API
+  startup, rejecting public hosted AI endpoints for no-export installs.
 - Live client-ready smoke passed against a fresh SQL install from all
   migrations plus `seed.sql`, a live API, and a rebuilt production web server:
   `infra/scripts/smoke-self-service-client-ready.ps1 -ApiBaseUrl http://localhost:5015 -WebBaseUrl http://localhost:3015`.
@@ -222,6 +224,8 @@ Known verification:
   `dotnet test apps\\api\\Jobuler.Tests\\Jobuler.Tests.csproj --filter "FullyQualifiedName~ChangeSchedulingModeCommandTests|FullyQualifiedName~OrganizationPortabilityTests"`.
 - Organization import controller route coverage passed:
   `dotnet test apps\\api\\Jobuler.Tests\\Jobuler.Tests.csproj --filter FullyQualifiedName~PlatformControllerImportTests`.
+- AI no-export guard, assistant fallback, and AI health checks passed:
+  `dotnet test apps\\api\\Jobuler.Tests\\Jobuler.Tests.csproj --filter "FullyQualifiedName~AiConfigurationGuardTests|FullyQualifiedName~AiAssistantSupportTests|FullyQualifiedName~AiHealthCheckTests"`.
 - Fresh SQL install from all `infra/migrations/*.sql` plus `seed.sql` passed
   after adding `086_organization_self_service_defaults.sql`.
 - PWA prompt regression tests passed:

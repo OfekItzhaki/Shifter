@@ -175,9 +175,9 @@ solver still works because it is deterministic OR-Tools logic, not hosted AI.
 Manual self-service scheduling also works without hosted AI; see
 [Manual self-service scheduling](MANUAL-SELF-SERVICE-SCHEDULING.md).
 
-When `AI_NO_EXPORT_REQUIRED=true`, the customer env validators reject hosted
-default AI and require `AI_BASE_URL` to use localhost, a private IP, `.internal`,
-or `.local`.
+When `AI_NO_EXPORT_REQUIRED=true`, the customer env validators and the API
+startup guard reject hosted/default AI and require `AI_BASE_URL` to use
+localhost, a private IP, `.internal`, or `.local`.
 
 ## Email, Messaging, And Billing
 
