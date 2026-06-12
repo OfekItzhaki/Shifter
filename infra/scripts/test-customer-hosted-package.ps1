@@ -91,6 +91,19 @@ Invoke-Step "Deploy compose rollback harness" {
     & (Join-Path $PSScriptRoot "test-deploy-compose-rollback.ps1") -BashPath $bash
 }
 
+Invoke-Step "PowerShell script syntax" {
+    $parseErrors = $null
+    $tokens = $null
+    [System.Management.Automation.Language.Parser]::ParseFile(
+        (Join-Path $PSScriptRoot "verify-customer-hosted-install.ps1"),
+        [ref]$tokens,
+        [ref]$parseErrors) | Out-Null
+
+    if ($parseErrors.Count -gt 0) {
+        throw "verify-customer-hosted-install.ps1 has parse errors: $($parseErrors | Out-String)"
+    }
+}
+
 Invoke-Step "Compose script syntax" {
     $syntaxCommand = @(
         "cd '$(To-BashPath $root)'",

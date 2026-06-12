@@ -36,6 +36,9 @@ packaging, and self-service export package validation readiness.
 - Lets `infra/scripts/test-customer-hosted-package.ps1` run against a real
   customer env file with `-EnvFile ... -ValidateEnvFile`, while retaining the
   template/package preflight path.
+- Adds `infra/scripts/verify-customer-hosted-install.ps1` as the target-host
+  wrapper for real env validation, package preflight, seeded demo data setup,
+  and live self-service smoke checks.
 - Adds `infra/scripts/smoke-self-service-client-ready.ps1` to preflight web/API
   health, seeded demo users, the self-service demo cycle, member/admin
   self-service workflow read models, available slots, admin assignment reads,
@@ -153,6 +156,9 @@ packaging, and self-service export package validation readiness.
 - `infra/scripts/test-seed-compose-dry-run.ps1` passed, proving the compose seed
   loader resolves the env file, Compose project, database, user, and seed file
   without loading demo data.
+- `infra/scripts/verify-customer-hosted-install.ps1 -EnvFile infra/compose/.env.customer.example -SkipPackagePreflight -SeedDryRun -ResolveOnly`
+  passed, proving the target-host wrapper can dry-run seeded data and live smoke
+  configuration from one command.
 - `infra/scripts/test-customer-hosted-package.ps1 -EnvFile infra/compose/.env.customer.example`
   passed, proving the preflight can target an explicit env file path without
   requiring real customer secrets in CI/local package checks.

@@ -117,6 +117,20 @@ Customer-hosted means:
    `-SkipDockerComposeConfig -SkipPostgresImportSmoke` and run those Docker-based
    checks on the target host.
 
+   On the target host, the full verification wrapper runs the real env
+   validation, package preflight, seed target check, and live smoke in order:
+
+   ```powershell
+   .\infra\scripts\verify-customer-hosted-install.ps1 `
+     -EnvFile .\infra\compose\.env `
+     -SeedDryRun `
+     -ResolveOnly
+   ```
+
+   Remove `-SeedDryRun -ResolveOnly` after the stack is running and you are ready
+   to load demo seed data and call the live web/API services. Add
+   `-SkipBrowserTest` for API-only smoke verification.
+
 6. Start the stack:
 
    ```bash

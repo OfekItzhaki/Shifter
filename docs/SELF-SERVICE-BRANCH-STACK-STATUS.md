@@ -230,6 +230,9 @@ Known verification:
 - The customer-hosted package preflight can now target a real customer env file
   with `-EnvFile ... -ValidateEnvFile`, so placeholder-free customer secrets and
   domains are checked before install.
+- Adds `infra/scripts/verify-customer-hosted-install.ps1` as the target-host
+  wrapper for the real customer env preflight, seed setup, and live smoke
+  sequence.
 - Adds package reference validation for exported users, owner/member links, core
   scheduling rows, and self-service workflow relationships.
 - Adds a conservative organization package import executor for safe packages,
@@ -296,6 +299,8 @@ Known verification:
   `infra/scripts/test-restore-compose-dry-run.ps1`.
 - Seed compose dry-run harness passed:
   `infra/scripts/test-seed-compose-dry-run.ps1`.
+- Customer-hosted install wrapper dry-run passed:
+  `infra/scripts/verify-customer-hosted-install.ps1 -EnvFile infra/compose/.env.customer.example -SkipPackagePreflight -SeedDryRun -ResolveOnly`.
 - Backup compose harness passed:
   `infra/scripts/test-backup-compose.ps1`.
 - Deploy compose harness passed:
