@@ -23,7 +23,6 @@ const GROUP_CACHED_ENDPOINTS = [
   "/spaces/{spaceId}/groups/{groupId}/tasks",
   "/spaces/{spaceId}/groups/{groupId}/self-service-config",
   "/spaces/{spaceId}/groups/{groupId}/self-service-cycles/status",
-  "/spaces/{spaceId}/groups/{groupId}/self-service-cycles/closeout",
   "/spaces/{spaceId}/groups/{groupId}/shift-slots/available?cycleId=current",
   "/spaces/{spaceId}/groups/{groupId}/shift-requests/mine?schedulingCycleId=current",
   "/spaces/{spaceId}/groups/{groupId}/shift-requests/absence-reports/mine?cycleId=current",

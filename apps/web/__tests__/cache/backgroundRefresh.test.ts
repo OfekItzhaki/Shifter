@@ -24,5 +24,6 @@ describe("buildRefreshUrls", () => {
 
     expect(urls.filter((url) => url.includes("/groups/group-1/self-service-config"))).toHaveLength(1);
     expect(urls.some((url) => url.includes("/admin"))).toBe(false);
+    expect(urls.some((url) => url.includes("/closeout"))).toBe(false);
   });
 });
