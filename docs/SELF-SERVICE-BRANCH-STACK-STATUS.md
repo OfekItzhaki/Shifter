@@ -193,6 +193,9 @@ Known verification:
 - Adds compose/env wiring for `FIELD_ENCRYPTION_KEY`.
 - Adds customer env validation for `FIELD_ENCRYPTION_KEY` length and placeholder
   replacement.
+- Adds a customer env validator harness that checks valid envs, no-export AI
+  rejection/allowance, and short field encryption keys against the PowerShell
+  validator and Git Bash validator when available.
 - Adds `infra/scripts/smoke-self-service-client-ready.ps1` for live seeded stack
   preflight plus the holiday/special-day picker browser flow.
 - The smoke script also checks `infra/scripts/restore-compose.sh` syntax when
@@ -226,6 +229,8 @@ Known verification:
   `dotnet test apps\\api\\Jobuler.Tests\\Jobuler.Tests.csproj --filter FullyQualifiedName~PlatformControllerImportTests`.
 - AI no-export guard, assistant fallback, and AI health checks passed:
   `dotnet test apps\\api\\Jobuler.Tests\\Jobuler.Tests.csproj --filter "FullyQualifiedName~AiConfigurationGuardTests|FullyQualifiedName~AiAssistantSupportTests|FullyQualifiedName~AiHealthCheckTests"`.
+- Customer env validator harness passed:
+  `infra/scripts/test-customer-env-validator.ps1`.
 - Resend sender and health check coverage passed:
   `dotnet test apps\\api\\Jobuler.Tests\\Jobuler.Tests.csproj --filter "FullyQualifiedName~ResendHealthCheckTests|FullyQualifiedName~ResendEmailSenderTests"`.
 - Fresh SQL install from all `infra/migrations/*.sql` plus `seed.sql` passed
