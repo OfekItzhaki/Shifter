@@ -1271,6 +1271,22 @@ test.describe("Self-service browser lifecycle", () => {
     );
     const targetSlotId = targetSlot.id ?? targetSlot.shiftSlotId;
     expect(targetSlotId).toBeTruthy();
+    const originalSlotBeforeChange = await getAdminSlot(
+      request,
+      adminToken,
+      spaceId,
+      groupId,
+      status.cycleId!,
+      ownedShift.shiftSlotId
+    );
+    const targetSlotBeforeChange = await getAdminSlot(
+      request,
+      adminToken,
+      spaceId,
+      groupId,
+      status.cycleId!,
+      targetSlotId!
+    );
 
     const reason = `Browser E2E shift change ${Date.now()}`;
 
@@ -1336,6 +1352,25 @@ test.describe("Self-service browser lifecycle", () => {
     const reassignedShift = refreshedShifts.requests.find((row) => row.id === ownedShift.id);
     expect(reassignedShift?.status).toBe("Approved");
     expect(reassignedShift?.shiftSlotId).toBe(targetSlotId);
+
+    const originalSlotAfterChange = await getAdminSlot(
+      request,
+      adminToken,
+      spaceId,
+      groupId,
+      status.cycleId!,
+      ownedShift.shiftSlotId
+    );
+    const targetSlotAfterChange = await getAdminSlot(
+      request,
+      adminToken,
+      spaceId,
+      groupId,
+      status.cycleId!,
+      targetSlotId!
+    );
+    expect(originalSlotAfterChange.currentFillCount).toBe(originalSlotBeforeChange.currentFillCount - 1);
+    expect(targetSlotAfterChange.currentFillCount).toBe(targetSlotBeforeChange.currentFillCount + 1);
   });
 
   test("admin rejects a member shift-change request through the UI", async ({ page, request }) => {
