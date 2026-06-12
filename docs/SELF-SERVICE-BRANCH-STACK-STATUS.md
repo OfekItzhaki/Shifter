@@ -206,6 +206,8 @@ Known verification:
   Compose and adds a dry-run harness for that path.
 - Ensures backup, deploy, and restore compose scripts all pass the configured
   `ENV_FILE` to Docker Compose.
+- Adds a backup compose harness with a fake Docker shim to verify database dump
+  creation and custom env/project propagation without touching real Docker.
 - Adds package reference validation for exported users, owner/member links, core
   scheduling rows, and self-service workflow relationships.
 - Adds a conservative organization package import executor for safe packages,
@@ -237,6 +239,8 @@ Known verification:
   `infra/scripts/test-customer-env-validator.ps1`.
 - Restore dry-run harness passed:
   `infra/scripts/test-restore-compose-dry-run.ps1`.
+- Backup compose harness passed:
+  `infra/scripts/test-backup-compose.ps1`.
 - Backup, deploy, and restore compose script syntax checks passed after custom
   `ENV_FILE` propagation.
 - Resend sender and health check coverage passed:

@@ -91,6 +91,9 @@ packaging, and self-service export package validation readiness.
 - `infra/scripts/test-restore-compose-dry-run.ps1` passed, proving
   `restore-compose.sh` honors a custom `ENV_FILE` during dry-run Compose
   validation.
+- `infra/scripts/test-backup-compose.ps1` passed with a fake Docker shim,
+  proving `backup-compose.sh` passes custom `ENV_FILE` and project name to
+  Compose while producing a non-empty database dump.
 - `infra/scripts/backup-compose.sh`, `infra/scripts/deploy-compose.sh`, and
   `infra/scripts/restore-compose.sh` syntax checks passed after wiring custom
   `ENV_FILE` through their Compose calls.
