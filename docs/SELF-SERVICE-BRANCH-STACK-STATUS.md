@@ -250,6 +250,9 @@ Known verification:
   configured in production, including direct analytics calls.
 - Keeps Crisp disabled unless `NEXT_PUBLIC_CRISP_WEBSITE_ID` is explicitly
   configured, trimming accidental whitespace before loading the widget.
+- Routes assistant, landing, profile feedback, and accessibility contact entry
+  points through `NEXT_PUBLIC_LEGAL_EMAIL`, with a fallback support mailbox only
+  when the public legal/support email is not configured.
 - Enforces `AI_NO_EXPORT_REQUIRED=true` in both customer env validation and API
   startup, rejecting public hosted AI endpoints for no-export installs, and
   validates private AI endpoint URL/model requirements at startup.
@@ -320,6 +323,8 @@ Known verification:
   `node_modules\\.bin\\vitest.cmd run __tests__\\monitoring\\sentryConfig.test.ts __tests__\\monitoring\\posthogConfig.test.ts __tests__\\monitoring\\crispConfig.test.ts`
   and
   `node_modules\\.bin\\eslint.cmd app\\layout.tsx lib\\support\\crispConfig.ts __tests__\\monitoring\\crispConfig.test.ts`.
+- Support contact routing tests passed:
+  `node_modules\\.bin\\vitest.cmd run __tests__\\support\\contact.test.ts`.
 
 Remaining manual/product check:
 

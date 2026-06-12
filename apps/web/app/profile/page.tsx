@@ -14,6 +14,7 @@ import { formatLocalDate } from "@/lib/utils/formatTime";
 import { clearAuthGuardCookie } from "@/lib/auth/authGuardCookie";
 import { notifyAuthTokenChanged } from "@/lib/auth/tokenState";
 import { isRtl as isRtlLocale } from "@/lib/i18n/locales";
+import { buildSupportMailtoHref } from "@/lib/support/contact";
 function getInitials(name: string): string {
   return name
     .split(" ")
@@ -382,7 +383,7 @@ function FeedbackSection() {
         {t("feedbackDesc")}
       </p>
       <a
-        href="mailto:support@shifter.app?subject=Bug Report / Feedback"
+        href={buildSupportMailtoHref("Bug Report / Feedback")}
         className="inline-flex items-center gap-2 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors no-underline"
       >
         <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

@@ -8,6 +8,7 @@ import { clearAuthGuardCookie, setLocaleCookie } from "@/lib/auth/authGuardCooki
 import { notifyAuthTokenChanged } from "@/lib/auth/tokenState";
 import { useEffectiveAuth } from "@/lib/hooks/useEffectiveAuth";
 import { LOCALE_META, SUPPORTED_LOCALES, getLocaleDirection } from "@/lib/i18n/locales";
+import { buildSupportMailtoHref } from "@/lib/support/contact";
 import { LANDING_CONTENT, LANDING_LEGAL_LINKS, type LandingLang } from "./landingContent";
 
 const accentClasses = [
@@ -17,7 +18,12 @@ const accentClasses = [
   "border-rose-200 bg-rose-50 text-rose-800",
 ];
 
-export default function LandingPage({ initialLocale }: { initialLocale: LandingLang }) {
+interface LandingPageProps {
+  initialLocale: LandingLang;
+  supportEmail: string;
+}
+
+export default function LandingPage({ initialLocale, supportEmail }: LandingPageProps) {
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [lang, setLang] = useState<LandingLang>(initialLocale);
@@ -50,6 +56,8 @@ export default function LandingPage({ initialLocale }: { initialLocale: LandingL
 
   const c = LANDING_CONTENT[lang];
   const finder = c.finder ?? LANDING_CONTENT.en.finder!;
+  const supportHref = buildSupportMailtoHref("Shifter support", supportEmail);
+  const walkthroughHref = buildSupportMailtoHref("Shifter walkthrough", supportEmail);
 
   function switchLang(nextLang: LandingLang) {
     setLang(nextLang);
@@ -273,10 +281,10 @@ export default function LandingPage({ initialLocale }: { initialLocale: LandingL
               <h2 className="text-3xl font-black tracking-normal text-slate-950">{c.contact.title}</h2>
               <p className="mt-4 max-w-2xl text-base leading-7 text-slate-600">{c.contact.subtitle}</p>
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                <a href="mailto:support@shifter.app?subject=Shifter%20support" className="inline-flex justify-center rounded-lg bg-slate-950 px-5 py-3 text-sm font-bold text-white hover:bg-slate-800">
+                <a href={supportHref} className="inline-flex justify-center rounded-lg bg-slate-950 px-5 py-3 text-sm font-bold text-white hover:bg-slate-800">
                   {c.contact.email}
                 </a>
-                <a href="mailto:support@shifter.app?subject=Shifter%20walkthrough" className="inline-flex justify-center rounded-lg border border-slate-300 px-5 py-3 text-sm font-bold text-slate-800 hover:bg-slate-50">
+                <a href={walkthroughHref} className="inline-flex justify-center rounded-lg border border-slate-300 px-5 py-3 text-sm font-bold text-slate-800 hover:bg-slate-50">
                   {c.contact.demo}
                 </a>
               </div>

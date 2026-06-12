@@ -46,9 +46,9 @@ packaging, and self-service export package validation readiness.
 - Validates private AI endpoint configuration at API startup: `AI_BASE_URL`
   must be absolute and `AI_MODEL` must be explicit when a customer-hosted
   endpoint is configured.
-- Routes native assistant contact payloads to the configured
-  `NEXT_PUBLIC_LEGAL_EMAIL`, so customer-hosted installs can point support
-  requests at the customer's own help address.
+- Routes native assistant, landing, profile feedback, and accessibility contact
+  entry points to the configured `NEXT_PUBLIC_LEGAL_EMAIL`, so customer-hosted
+  installs can point support requests at the customer's own help address.
 - Adds a Cloudflare edge security baseline covering DNS/TLS, WAF/rate-limit
   rules for auth, billing, imports, solver triggers, uploads, and admin paths,
   plus PWA/API caching guidance.
@@ -195,6 +195,9 @@ packaging, and self-service export package validation readiness.
   passed.
 - `node_modules\\.bin\\eslint.cmd app\\layout.tsx lib\\support\\crispConfig.ts __tests__\\monitoring\\crispConfig.test.ts`
   passed.
+- `node_modules\\.bin\\vitest.cmd run __tests__\\support\\contact.test.ts`
+  passed, covering configured/fallback support email links and guarding
+  product support entry points against hardcoded hosted support mailboxes.
 
 ## Remaining Product Checks
 
