@@ -274,6 +274,12 @@ packaging, and self-service export package validation readiness.
   and Windows PowerShell smoke-script compatibility fix.
 - Customer-hosted preflight CI runs `27437749280` (push) and `27437751010`
   (PR to `develop`) passed for commit `3972561` on June 12, 2026.
+- `feat/self-service-client-ready` was squash-merged into `develop` by PR
+  `#36` on June 12, 2026 as merge commit `20fb7d3`.
+- Customer-hosted preflight now also runs on pushes to `develop`, so the
+  integration branch is checked after feature merges.
+- Customer-hosted preflight CI run `27438644946` passed on `develop` for commit
+  `1785a2c` on June 12, 2026 after enabling the develop push trigger.
 - `infra/scripts/smoke-self-service-client-ready.ps1 -ApiBaseUrl http://localhost:5015 -WebBaseUrl http://localhost:3015`
   passed locally on June 12, 2026 against an isolated temporary PostgreSQL 16
   database, isolated Redis, a fresh API on port `5015`, and the current-branch
