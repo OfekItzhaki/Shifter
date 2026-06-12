@@ -228,6 +228,7 @@ export default function SlotBrowserTab({ spaceId, groupId }: SlotBrowserTabProps
               <div
                 key={slot.id}
                 data-testid={isFull ? "self-service-full-slot" : "self-service-open-slot"}
+                data-shift-slot-id={slot.id}
                 className={`bg-white border rounded-xl px-4 py-3 transition-colors ${
                   capacityClass === "high-availability"
                     ? "border-emerald-200"
@@ -290,7 +291,10 @@ export default function SlotBrowserTab({ spaceId, groupId }: SlotBrowserTabProps
                   <div className="flex-shrink-0">
                     {requestWindowOpen ? (
                       specialDayClosed ? (
-                        <span className="inline-flex max-w-36 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-center text-xs font-medium text-slate-500">
+                        <span
+                          data-testid="self-service-special-day-unavailable"
+                          className="inline-flex max-w-36 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-center text-xs font-medium text-slate-500"
+                        >
                           {t("specialDayUnavailable")}
                         </span>
                       ) : claimDisabled ? (

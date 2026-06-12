@@ -272,6 +272,8 @@ group:
 - a member/admin browser lifecycle test for special leave rejection
 - a member browser lifecycle test for holiday/special-day labels on available
   shifts
+- a member browser lifecycle test for no-coverage special-day slots staying
+  visible while blocking direct member claims in both API and UI
 
 ## Customer-Hosted Use
 
@@ -304,7 +306,8 @@ large deployments:
   reinstatement, shift cancellation, shift-change approval with reassignment,
   shift-change rejection, member-to-member swap acceptance, member-to-member
   swap decline, and initiator swap cancellation, special leave approval, special
-  leave cancellation, and special leave rejection.
+  leave cancellation, special leave rejection, and no-coverage special-day
+  claim blocking.
 - Formal certificate signing for closeout reports. PDF closeout reports already
   include a verification fingerprint for archive/tamper checks, but they are not
   certificate-signed legal documents.

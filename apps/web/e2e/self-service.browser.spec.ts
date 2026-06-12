@@ -43,6 +43,7 @@ interface AvailableSlotDto {
   isSpecialDay?: boolean;
   specialDayName?: string | null;
   specialDayKind?: string | null;
+  specialDayRequiresCoverage?: boolean | null;
 }
 
 interface AvailableSlotsResponse {
@@ -114,6 +115,7 @@ interface SpaceSpecialDayDto {
   date: string;
   name: string;
   kind: "Holiday" | "Weekend" | "Custom";
+  requiresCoverage: boolean;
 }
 
 async function login(request: APIRequestContext, identifier: string): Promise<string> {
@@ -155,6 +157,26 @@ async function apiNoContent(
   });
 
   expect(response.ok(), `${method} ${path} failed with ${response.status()}: ${await response.text()}`).toBeTruthy();
+}
+
+async function apiExpectStatus(
+  request: APIRequestContext,
+  token: string,
+  method: HttpMethod,
+  path: string,
+  expectedStatus: number,
+  data?: unknown
+): Promise<string> {
+  const response = await request.fetch(`${API_URL}${path}`, {
+    method,
+    headers: { Authorization: `Bearer ${token}` },
+    data,
+  });
+
+  const text = await response.text();
+  expect(response.status(), `${method} ${path} expected ${expectedStatus} but got ${response.status()}: ${text}`)
+    .toBe(expectedStatus);
+  return text;
 }
 
 async function findDemoSelfServiceGroup(
@@ -479,8 +501,9 @@ async function ensureSpecialDayForAvailableSlot(
   memberToken: string,
   spaceId: string,
   groupId: string,
-  cycleId: string
-): Promise<{ slot: AvailableSlotDto; specialDayName: string }> {
+  cycleId: string,
+  requiresCoverage = true
+): Promise<{ slot: AvailableSlotDto; specialDayId: string; specialDayName: string }> {
   const slotsBefore = await api<AvailableSlotsResponse>(
     request,
     memberToken,
@@ -494,7 +517,7 @@ async function ensureSpecialDayForAvailableSlot(
   expect(targetSlot, "holiday browser test needs a dated self-service slot").toBeTruthy();
 
   const slotDate = targetSlot!.date!;
-  const specialDayName = `E2E Special Day ${slotDate}`;
+  const specialDayName = `E2E ${requiresCoverage ? "Coverage" : "No Coverage"} Special Day ${slotDate}`;
   const existing = await api<SpaceSpecialDayDto[]>(
     request,
     adminToken,
@@ -506,7 +529,7 @@ async function ensureSpecialDayForAvailableSlot(
     await apiNoContent(request, adminToken, "DELETE", `/spaces/${spaceId}/special-days/${day.id}`);
   }
 
-  await api<{ id: string }>(
+  const created = await api<{ id: string }>(
     request,
     adminToken,
     "POST",
@@ -516,7 +539,7 @@ async function ensureSpecialDayForAvailableSlot(
       name: specialDayName,
       kind: "Holiday",
       homeLeaveWeightMultiplier: 1.5,
-      requiresCoverage: true,
+      requiresCoverage,
     }
   );
 
@@ -530,6 +553,7 @@ async function ensureSpecialDayForAvailableSlot(
   const labeledSlot = labeledSlots.slots.find((slot) => (slot.id ?? slot.shiftSlotId) === slotId);
   expect(labeledSlot?.isSpecialDay).toBeTruthy();
   expect(labeledSlot?.specialDayName).toBe(specialDayName);
+  expect(labeledSlot?.specialDayRequiresCoverage).toBe(requiresCoverage);
 
   const status = await api<CycleStatusDto>(
     request,
@@ -539,7 +563,7 @@ async function ensureSpecialDayForAvailableSlot(
   );
   expect(status.specialDayCount ?? 0).toBeGreaterThan(0);
 
-  return { slot: labeledSlot!, specialDayName };
+  return { slot: labeledSlot!, specialDayId: created.id, specialDayName };
 }
 
 async function ensureWaitingWaitlistEntry(
@@ -743,6 +767,60 @@ test.describe("Self-service browser lifecycle", () => {
     await page.getByTestId("pick-tab-slots").click();
 
     await expect(page.getByText(specialDayName)).toBeVisible({ timeout: 15000 });
+  });
+
+  test("no-coverage special-day slots are visible but not claimable", async ({ page, request }) => {
+    const adminEmail = process.env.E2E_ADMIN_EMAIL ?? "admin@demo.local";
+    const memberEmail = process.env.E2E_MEMBER_EMAIL ?? "ofek@demo.local";
+    const adminToken = await login(request, adminEmail);
+    const memberToken = await login(request, memberEmail);
+    const { spaceId, groupId } = await findDemoSelfServiceGroup(request, adminToken);
+    const status = await api<CycleStatusDto>(
+      request,
+      adminToken,
+      "GET",
+      `/spaces/${spaceId}/groups/${groupId}/self-service-cycles/status`
+    );
+    expect(status.cycleId).toBeTruthy();
+
+    const { slot, specialDayId, specialDayName } = await ensureSpecialDayForAvailableSlot(
+      request,
+      adminToken,
+      memberToken,
+      spaceId,
+      groupId,
+      status.cycleId!,
+      false
+    );
+    const shiftSlotId = slot.id ?? slot.shiftSlotId;
+    expect(shiftSlotId).toBeTruthy();
+
+    try {
+      const rejection = await apiExpectStatus(
+        request,
+        memberToken,
+        "POST",
+        `/spaces/${spaceId}/groups/${groupId}/shift-requests`,
+        422,
+        { shiftSlotId }
+      );
+      expect(rejection).toContain("not configured for coverage");
+
+      await loginAsUser(page, memberEmail, DEMO_PASSWORD);
+      await page.evaluate((targetGroupId) => {
+        localStorage.setItem("shifter-pick-last-group", targetGroupId);
+      }, groupId);
+      await page.goto(`${BASE}/pick`);
+      await page.getByTestId("pick-tab-slots").click();
+
+      const card = page.locator(`[data-shift-slot-id="${shiftSlotId}"]`);
+      await expect(card.getByText(specialDayName)).toBeVisible({ timeout: 15000 });
+      await expect(card.getByTestId("self-service-special-day-unavailable")).toBeVisible();
+      await expect(card.getByTestId("self-service-request-shift")).toHaveCount(0);
+      await expect(card.getByTestId("self-service-join-waitlist")).toHaveCount(0);
+    } finally {
+      await apiNoContent(request, adminToken, "DELETE", `/spaces/${spaceId}/special-days/${specialDayId}`);
+    }
   });
 
   test("member proposes and target accepts a shift swap through the UI", async ({ page, request }) => {
