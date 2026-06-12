@@ -168,6 +168,8 @@ packaging, and self-service export package validation readiness.
   `infra/scripts/test-customer-hosted-package.ps1 -EnvFile infra/compose/.env.customer.example`
   on relevant PRs, pushes to this branch, and manual dispatch, so the
   customer-hosted package checks cannot quietly drift.
+- Customer-hosted preflight CI passed on this branch:
+  https://github.com/OfekItzhaki/Shifter/actions/runs/27398168101
 - `infra/scripts/backup-compose.sh`, `infra/scripts/deploy-compose.sh`,
   `infra/scripts/restore-compose.sh`, and `infra/scripts/seed-compose.sh`
   syntax checks passed after wiring custom `ENV_FILE` through their Compose
