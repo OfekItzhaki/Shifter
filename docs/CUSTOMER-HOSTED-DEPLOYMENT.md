@@ -126,8 +126,9 @@ Customer-hosted means:
    emits a `.sha256` checksum sidecar for transfer verification, and refuses
    obvious private env/license/key material. The package preflight extracts the
    generated zip, validates the extracted Compose config, and dry-runs the
-   packaged install verifier. Use `-DryRun` to print the selected files without
-   creating the archive. License private keys must stay outside the package.
+   packaged install verifier. Use `-DryRun` to validate the package selection
+   without creating the archive, or `-DryRun -ListFiles` to also print the
+   selected files. License private keys must stay outside the package.
 
    Before installing with real customer secrets, run the same preflight against
    the actual env file and require the env validator to pass:
