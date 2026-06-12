@@ -150,6 +150,9 @@ Customer-hosted means:
      /opt/shifter/infra/scripts/seed-compose.sh
    ```
 
+   To validate the resolved Compose project, database, user, and seed file
+   without writing demo data, add `DRY_RUN=1`.
+
    Then run the live smoke:
 
    ```powershell

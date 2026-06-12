@@ -204,7 +204,8 @@ Known verification:
   preflight, member/admin self-service workflow read-model checks, admin
   assignment/closeout checks, plus the holiday/special-day picker browser flow.
 - Adds `infra/scripts/seed-compose.sh` to load the seeded demo dataset into a
-  running customer/local Compose PostgreSQL service before live smoke tests.
+  running customer/local Compose PostgreSQL service before live smoke tests,
+  with a dry-run harness for target resolution.
 - The live self-service smoke can now read target URLs and optional seeded demo
   credentials from the customer env file with `-EnvFile`, and supports
   `-ResolveOnly` for dry configuration checks before live services are ready.
@@ -293,6 +294,8 @@ Known verification:
   `infra/scripts/test-customer-env-validator.ps1`.
 - Restore dry-run harness passed:
   `infra/scripts/test-restore-compose-dry-run.ps1`.
+- Seed compose dry-run harness passed:
+  `infra/scripts/test-seed-compose-dry-run.ps1`.
 - Backup compose harness passed:
   `infra/scripts/test-backup-compose.ps1`.
 - Deploy compose harness passed:

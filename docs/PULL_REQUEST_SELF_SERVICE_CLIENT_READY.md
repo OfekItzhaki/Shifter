@@ -42,7 +42,8 @@ packaging, and self-service export package validation readiness.
   cycle closeout metrics, and the customer-hosted restore script syntax, plus
   the special-day Playwright picker flow.
 - Adds `infra/scripts/seed-compose.sh` so customer-hosted demo smoke data can be
-  loaded through Docker Compose without requiring `psql` on the host.
+  loaded through Docker Compose without requiring `psql` on the host, including
+  a dry-run mode for validating the resolved target.
 - Lets the live self-service smoke read `APP_FRONTEND_BASE_URL`,
   `NEXT_PUBLIC_API_URL`/`APP_API_BASE_URL`, and optional seeded demo credentials
   from the customer env file with `-EnvFile`, plus `-ResolveOnly` for dry config
@@ -146,9 +147,12 @@ packaging, and self-service export package validation readiness.
   Docker, and Curl shims, proving a failed deploy health check rolls back to
   the previous git revision, restarts Compose, and verifies rollback health.
 - `infra/scripts/test-customer-hosted-package.ps1` passed, running the customer
-  env validator, restore dry-run, backup, deploy happy-path, deploy rollback,
-  Compose script syntax, customer Docker Compose config checks, and the
-  PostgreSQL organization import smoke as one preflight command.
+  env validator, restore dry-run, seed dry-run, backup, deploy happy-path,
+  deploy rollback, Compose script syntax, customer Docker Compose config
+  checks, and the PostgreSQL organization import smoke as one preflight command.
+- `infra/scripts/test-seed-compose-dry-run.ps1` passed, proving the compose seed
+  loader resolves the env file, Compose project, database, user, and seed file
+  without loading demo data.
 - `infra/scripts/test-customer-hosted-package.ps1 -EnvFile infra/compose/.env.customer.example`
   passed, proving the preflight can target an explicit env file path without
   requiring real customer secrets in CI/local package checks.

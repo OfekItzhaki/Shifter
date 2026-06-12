@@ -12,6 +12,7 @@ COMPOSE_DIR="${COMPOSE_DIR:-$SHIFTER_DIR/infra/compose}"
 ENV_FILE="${ENV_FILE:-$COMPOSE_DIR/.env}"
 COMPOSE_PROJECT_NAME="${COMPOSE_PROJECT_NAME:-shifter}"
 SEED_FILE="${SEED_FILE:-$SHIFTER_DIR/infra/scripts/seed.sql}"
+DRY_RUN="${DRY_RUN:-0}"
 
 if [ ! -f "$ENV_FILE" ]; then
   echo "Missing env file: $ENV_FILE" >&2
@@ -46,5 +47,17 @@ compose() {
 }
 
 echo "Loading seed data into Compose project '$COMPOSE_PROJECT_NAME' database '$POSTGRES_DB'..."
+if [ "$DRY_RUN" = "1" ]; then
+  echo "Seed dry run passed."
+  echo "Env file: $ENV_FILE"
+  echo "Compose file: $COMPOSE_DIR/docker-compose.yml"
+  echo "Seed file: $SEED_FILE"
+  echo "Project: $COMPOSE_PROJECT_NAME"
+  echo "Database: $POSTGRES_DB"
+  echo "User: $POSTGRES_USER"
+  echo "Command: docker compose --env-file '$ENV_FILE' --project-name '$COMPOSE_PROJECT_NAME' -f '$COMPOSE_DIR/docker-compose.yml' exec -T postgres psql -U '$POSTGRES_USER' -d '$POSTGRES_DB' < '$SEED_FILE'"
+  exit 0
+fi
+
 compose exec -T postgres psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" < "$SEED_FILE"
 echo "Seed complete."

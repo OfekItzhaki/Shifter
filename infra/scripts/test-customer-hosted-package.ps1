@@ -75,6 +75,10 @@ Invoke-Step "Restore dry-run harness" {
     & (Join-Path $PSScriptRoot "test-restore-compose-dry-run.ps1") -ShifterDir $root -BashPath $bash
 }
 
+Invoke-Step "Seed compose dry-run harness" {
+    & (Join-Path $PSScriptRoot "test-seed-compose-dry-run.ps1") -ShifterDir $root -BashPath $bash
+}
+
 Invoke-Step "Backup compose harness" {
     & (Join-Path $PSScriptRoot "test-backup-compose.ps1") -ShifterDir $root -BashPath $bash
 }
