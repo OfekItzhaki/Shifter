@@ -271,9 +271,11 @@ group:
 - an admin browser lifecycle test for rejecting a cannot-attend report and
   reinstating the member's released shift with slot fill-count verification
 - a member/admin browser lifecycle test for special leave submission and admin
-  approval
-- a member browser lifecycle test for special leave cancellation
-- a member/admin browser lifecycle test for special leave rejection
+  approval with presence-window creation verification
+- a member browser lifecycle test for special leave cancellation with no
+  presence-window creation
+- a member/admin browser lifecycle test for special leave rejection with no
+  presence-window creation
 - a member browser lifecycle test for holiday/special-day labels on available
   shifts
 - a member browser lifecycle test for no-coverage special-day slots staying
@@ -315,8 +317,9 @@ large deployments:
   verification, member-to-member swap acceptance with stable slot fill-count
   verification, member-to-member swap decline with stable slot fill-count
   verification, initiator swap cancellation with stable slot fill-count
-  verification, special leave approval, special leave cancellation, special
-  leave rejection, and no-coverage special-day claim blocking.
+  verification, special leave approval with presence-window creation, special
+  leave cancellation without presence-window creation, special leave rejection
+  without presence-window creation, and no-coverage special-day claim blocking.
 - Formal certificate signing for closeout reports. PDF closeout reports already
   include a verification fingerprint for archive/tamper checks, but they are not
   certificate-signed legal documents.
