@@ -55,6 +55,8 @@ packaging, and self-service export package validation readiness.
   approved.
 - Keeps PostHog disabled unless `NEXT_PUBLIC_POSTHOG_KEY` is explicitly
   configured in production, including direct identify/track/reset calls.
+- Keeps Crisp disabled unless `NEXT_PUBLIC_CRISP_WEBSITE_ID` is explicitly
+  configured, trimming accidental whitespace before loading the widget.
 - Adds `infra/scripts/restore-compose.sh` with `DRY_RUN=1` preflight support,
   automatic database/uploads pre-restore safety dumps, transactional
   `pg_restore`, app-service restart on restore-script failure, and restore
@@ -148,11 +150,13 @@ packaging, and self-service export package validation readiness.
   passed.
 - `node_modules\\.bin\\next.cmd build` from `apps/web` passed after the PWA
   prompt update.
-- `node_modules\\.bin\\vitest.cmd run __tests__\\monitoring\\sentryConfig.test.ts __tests__\\monitoring\\posthogConfig.test.ts`
-  passed: 4 passed, 0 failed.
+- `node_modules\\.bin\\vitest.cmd run __tests__\\monitoring\\sentryConfig.test.ts __tests__\\monitoring\\posthogConfig.test.ts __tests__\\monitoring\\crispConfig.test.ts`
+  passed: 6 passed, 0 failed.
 - `node_modules\\.bin\\eslint.cmd sentry.client.config.ts sentry.server.config.ts lib\\monitoring\\sentryConfig.ts __tests__\\monitoring\\sentryConfig.test.ts`
   passed.
 - `node_modules\\.bin\\eslint.cmd lib\\analytics\\posthog.ts lib\\analytics\\posthogConfig.ts __tests__\\monitoring\\posthogConfig.test.ts`
+  passed.
+- `node_modules\\.bin\\eslint.cmd app\\layout.tsx lib\\support\\crispConfig.ts __tests__\\monitoring\\crispConfig.test.ts`
   passed.
 
 ## Remaining Product Checks

@@ -234,6 +234,8 @@ Known verification:
   default.
 - Keeps PostHog disabled unless `NEXT_PUBLIC_POSTHOG_KEY` is explicitly
   configured in production, including direct analytics calls.
+- Keeps Crisp disabled unless `NEXT_PUBLIC_CRISP_WEBSITE_ID` is explicitly
+  configured, trimming accidental whitespace before loading the widget.
 - Enforces `AI_NO_EXPORT_REQUIRED=true` in both customer env validation and API
   startup, rejecting public hosted AI endpoints for no-export installs.
 - Live client-ready smoke passed against a fresh SQL install from all
@@ -281,6 +283,10 @@ Known verification:
   `node_modules\\.bin\\vitest.cmd run __tests__\\monitoring\\sentryConfig.test.ts __tests__\\monitoring\\posthogConfig.test.ts`
   and
   `node_modules\\.bin\\eslint.cmd lib\\analytics\\posthog.ts lib\\analytics\\posthogConfig.ts __tests__\\monitoring\\posthogConfig.test.ts`.
+- Crisp config tests and focused ESLint passed:
+  `node_modules\\.bin\\vitest.cmd run __tests__\\monitoring\\sentryConfig.test.ts __tests__\\monitoring\\posthogConfig.test.ts __tests__\\monitoring\\crispConfig.test.ts`
+  and
+  `node_modules\\.bin\\eslint.cmd app\\layout.tsx lib\\support\\crispConfig.ts __tests__\\monitoring\\crispConfig.test.ts`.
 
 Remaining manual/product check:
 

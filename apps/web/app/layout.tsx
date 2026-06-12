@@ -5,6 +5,7 @@ import { isRtl } from "@/i18n/request";
 import type { Locale } from "@/i18n/request";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import CrispChat from "@/components/shell/CrispChat";
+import { getConfiguredCrispWebsiteId } from "@/lib/support/crispConfig";
 import { Providers } from "./providers";
 import "./globals.css";
 
@@ -46,6 +47,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const locale = (await getLocale()) as Locale;
   const messages = await getMessages();
   const dir = isRtl(locale) ? "rtl" : "ltr";
+  const crispWebsiteId = getConfiguredCrispWebsiteId(process.env.NEXT_PUBLIC_CRISP_WEBSITE_ID);
 
   return (
     <html lang={locale} dir={dir}>
@@ -64,9 +66,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             </ErrorBoundary>
           </Providers>
         </NextIntlClientProvider>
-        {process.env.NEXT_PUBLIC_CRISP_WEBSITE_ID && (
-          <CrispChat websiteId={process.env.NEXT_PUBLIC_CRISP_WEBSITE_ID} />
-        )}
+        {crispWebsiteId && <CrispChat websiteId={crispWebsiteId} />}
       </body>
     </html>
   );
