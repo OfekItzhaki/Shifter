@@ -267,7 +267,7 @@ packaging, and self-service export package validation readiness.
 - Customer-hosted preflight CI passed on this branch; see the workflow history:
   https://github.com/OfekItzhaki/Shifter/actions/workflows/customer-hosted-preflight.yml
 - Latest customer-hosted package preflight CI passed for this branch:
-  https://github.com/OfekItzhaki/Shifter/actions/runs/27422394910
+  https://github.com/OfekItzhaki/Shifter/actions/runs/27423271339
 - `infra/scripts/backup-compose.sh`, `infra/scripts/deploy-compose.sh`,
   `infra/scripts/restore-compose.sh`, and `infra/scripts/seed-compose.sh`
   syntax checks passed after wiring custom `ENV_FILE` through their Compose

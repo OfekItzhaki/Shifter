@@ -6,9 +6,9 @@ holiday-calendar integration, and customer-hosted portability.
 ## Current Resume Point
 
 - Active branch: `feat/self-service-client-ready`
-- Latest pushed commit: `1468d2ca test(self-service): verify inactive swaps preserve slot fill`
+- Latest pushed commit: `810f542c test(self-service): verify waitlist leave preserves slot fill`
 - Latest package-relevant green CI:
-  https://github.com/OfekItzhaki/Shifter/actions/runs/27422394910
+  https://github.com/OfekItzhaki/Shifter/actions/runs/27423271339
 - Resume on another machine with:
 
   ```powershell
