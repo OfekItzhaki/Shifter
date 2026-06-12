@@ -164,6 +164,10 @@ packaging, and self-service export package validation readiness.
 - `infra/scripts/test-customer-hosted-package.ps1 -EnvFile infra/compose/.env.customer.example`
   passed, proving the preflight can target an explicit env file path without
   requiring real customer secrets in CI/local package checks.
+- `.github/workflows/customer-hosted-preflight.yml` now runs
+  `infra/scripts/test-customer-hosted-package.ps1 -EnvFile infra/compose/.env.customer.example`
+  on relevant PRs, pushes to this branch, and manual dispatch, so the
+  customer-hosted package checks cannot quietly drift.
 - `infra/scripts/backup-compose.sh`, `infra/scripts/deploy-compose.sh`,
   `infra/scripts/restore-compose.sh`, and `infra/scripts/seed-compose.sh`
   syntax checks passed after wiring custom `ENV_FILE` through their Compose

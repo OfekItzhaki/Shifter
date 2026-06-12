@@ -7,6 +7,7 @@ $ErrorActionPreference = "Stop"
 
 $wrapperScript = Join-Path $PSScriptRoot "verify-customer-hosted-install.ps1"
 $exampleEnv = Join-Path $ShifterDir "infra\compose\.env.customer.example"
+$powerShellExe = (Get-Process -Id $PID).Path
 
 $command = @(
     "-NoProfile",
@@ -23,7 +24,7 @@ if (-not [string]::IsNullOrWhiteSpace($BashPath)) {
     $command += @("-BashPath", $BashPath)
 }
 
-$output = & powershell @command 2>&1
+$output = & $powerShellExe @command 2>&1
 if ($LASTEXITCODE -ne 0) {
     throw "verify-customer-hosted-install dry run failed with exit code $LASTEXITCODE. Output:`n$($output | Out-String)"
 }

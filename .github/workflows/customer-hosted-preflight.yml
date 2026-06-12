@@ -1,0 +1,44 @@
+name: Customer-Hosted Preflight
+
+on:
+  pull_request:
+    branches:
+      - main
+      - develop
+    paths:
+      - ".github/workflows/customer-hosted-preflight.yml"
+      - "apps/api/**"
+      - "infra/compose/**"
+      - "infra/migrations/**"
+      - "infra/scripts/**"
+      - "docs/CUSTOMER-HOSTED-DEPLOYMENT.md"
+      - "docs/PULL_REQUEST_SELF_SERVICE_CLIENT_READY.md"
+  push:
+    branches:
+      - feat/self-service-client-ready
+    paths:
+      - ".github/workflows/customer-hosted-preflight.yml"
+      - "apps/api/**"
+      - "infra/compose/**"
+      - "infra/migrations/**"
+      - "infra/scripts/**"
+      - "docs/CUSTOMER-HOSTED-DEPLOYMENT.md"
+      - "docs/PULL_REQUEST_SELF_SERVICE_CLIENT_READY.md"
+  workflow_dispatch:
+
+jobs:
+  package-preflight:
+    name: Package Preflight
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Run customer-hosted package preflight
+        shell: pwsh
+        run: ./infra/scripts/test-customer-hosted-package.ps1 -EnvFile ./infra/compose/.env.customer.example
