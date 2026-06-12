@@ -97,6 +97,8 @@ Invoke-Step "Compose script syntax" {
         "&&",
         "bash -n infra/scripts/restore-compose.sh",
         "&&",
+        "bash -n infra/scripts/seed-compose.sh",
+        "&&",
         "bash -n infra/scripts/validate-customer-env.sh"
     ) -join " "
 

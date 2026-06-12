@@ -41,6 +41,8 @@ packaging, and self-service export package validation readiness.
   self-service workflow read models, available slots, admin assignment reads,
   cycle closeout metrics, and the customer-hosted restore script syntax, plus
   the special-day Playwright picker flow.
+- Adds `infra/scripts/seed-compose.sh` so customer-hosted demo smoke data can be
+  loaded through Docker Compose without requiring `psql` on the host.
 - Lets the live self-service smoke read `APP_FRONTEND_BASE_URL`,
   `NEXT_PUBLIC_API_URL`/`APP_API_BASE_URL`, and optional seeded demo credentials
   from the customer env file with `-EnvFile`, plus `-ResolveOnly` for dry config
@@ -150,9 +152,10 @@ packaging, and self-service export package validation readiness.
 - `infra/scripts/test-customer-hosted-package.ps1 -EnvFile infra/compose/.env.customer.example`
   passed, proving the preflight can target an explicit env file path without
   requiring real customer secrets in CI/local package checks.
-- `infra/scripts/backup-compose.sh`, `infra/scripts/deploy-compose.sh`, and
-  `infra/scripts/restore-compose.sh` syntax checks passed after wiring custom
-  `ENV_FILE` through their Compose calls.
+- `infra/scripts/backup-compose.sh`, `infra/scripts/deploy-compose.sh`,
+  `infra/scripts/restore-compose.sh`, and `infra/scripts/seed-compose.sh`
+  syntax checks passed after wiring custom `ENV_FILE` through their Compose
+  calls.
 - `C:\\Program Files\\Git\\bin\\bash.exe -n infra/scripts/restore-compose.sh`
   passed.
 - `dotnet test apps\\api\\Jobuler.Tests\\Jobuler.Tests.csproj --filter FullyQualifiedName~AiAssistantSupportTests`

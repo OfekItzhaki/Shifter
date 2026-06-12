@@ -203,6 +203,8 @@ Known verification:
 - Adds `infra/scripts/smoke-self-service-client-ready.ps1` for live seeded stack
   preflight, member/admin self-service workflow read-model checks, admin
   assignment/closeout checks, plus the holiday/special-day picker browser flow.
+- Adds `infra/scripts/seed-compose.sh` to load the seeded demo dataset into a
+  running customer/local Compose PostgreSQL service before live smoke tests.
 - The live self-service smoke can now read target URLs and optional seeded demo
   credentials from the customer env file with `-EnvFile`, and supports
   `-ResolveOnly` for dry configuration checks before live services are ready.
@@ -310,8 +312,8 @@ Known verification:
   `dotnet test apps\\api\\Jobuler.Tests\\Jobuler.Tests.csproj --filter "FullyQualifiedName~SelfServiceScopeTests|FullyQualifiedName~ManualSelfServiceLifecycleTests"`.
   This includes disabled workflow policy coverage for shift-change request
   submission.
-- Backup, deploy, and restore compose script syntax checks passed after custom
-  `ENV_FILE` propagation.
+- Backup, deploy, restore, and seed compose script syntax checks passed after
+  custom `ENV_FILE` propagation.
 - Resend sender and health check coverage passed:
   `dotnet test apps\\api\\Jobuler.Tests\\Jobuler.Tests.csproj --filter "FullyQualifiedName~ResendHealthCheckTests|FullyQualifiedName~ResendEmailSenderTests"`.
 - Provider health check coverage passed:

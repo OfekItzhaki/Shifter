@@ -141,7 +141,16 @@ Customer-hosted means:
    Platform admins can also review the same provider status inside Shifter on
    the Platform page.
 
-   Before a customer demo using the seeded self-service dataset, run:
+   Before a customer demo using the seeded self-service dataset, load the demo
+   seed into the running Compose PostgreSQL service:
+
+   ```bash
+   ENV_FILE=/opt/shifter/infra/compose/.env \
+     COMPOSE_PROJECT_NAME=shifter \
+     /opt/shifter/infra/scripts/seed-compose.sh
+   ```
+
+   Then run the live smoke:
 
    ```powershell
    .\infra\scripts\smoke-self-service-client-ready.ps1 `
@@ -152,7 +161,7 @@ Customer-hosted means:
    cycle, available member slots, and the holiday/special-day picker label
    browser flow. For API/seed verification without the browser flow, add
    `-SkipBrowserTest`. The script checks already-running services; it does not
-   start Docker Compose or load seed data. It reads `APP_FRONTEND_BASE_URL`,
+   start Docker Compose. It reads `APP_FRONTEND_BASE_URL`,
    `NEXT_PUBLIC_API_URL`/`APP_API_BASE_URL`, and optional `E2E_ADMIN_EMAIL`,
    `E2E_MEMBER_EMAIL`, and `E2E_DEMO_PASSWORD` from the env file. To verify the
    resolved values without calling live services, add `-ResolveOnly`.
