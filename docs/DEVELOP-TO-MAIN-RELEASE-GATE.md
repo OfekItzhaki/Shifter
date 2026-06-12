@@ -7,6 +7,12 @@ Use this checklist before opening or merging a `develop` to `main` PR.
 - `develop` is clean and pushed.
 - Customer-hosted preflight is green for the latest code-changing commit.
 - Broad CI is green for the latest code-changing commit.
+- GitHub release controls pass:
+
+  ```powershell
+  .\infra\scripts\check-github-release-controls.ps1
+  ```
+
 - Staging is deployed from `develop`.
 - Release readiness audit has no failures:
 
@@ -71,6 +77,10 @@ As of June 13, 2026:
   covered by a local harness.
 - The staging manual smoke evidence template is in place, but no real staging
   user-flow sign-off has been recorded yet.
+- The GitHub release-control audit is in place. It currently passes the
+  no-delete/no-force-push rule for `main`, but fails because `main` does not
+  require pull requests or status checks yet. `develop` also does not currently
+  have active no-delete/no-force-push rules.
 - The real release readiness audit currently fails because the GitHub
   `staging` environment and staging URL/path repository variables are not
   configured yet. This is the expected blocker before a `develop` to `main` PR.

@@ -99,6 +99,10 @@ Invoke-Step "Deploy workflow harness" {
     & (Join-Path $PSScriptRoot "test-deploy-workflows.ps1") -ShifterDir $root
 }
 
+Invoke-Step "GitHub release controls harness" {
+    & (Join-Path $PSScriptRoot "test-check-github-release-controls.ps1") -ShifterDir $root
+}
+
 Invoke-Step "Release readiness audit harness" {
     & (Join-Path $PSScriptRoot "test-check-release-readiness.ps1") -ShifterDir $root
 }
@@ -147,6 +151,8 @@ Invoke-Step "PowerShell script syntax" {
             "test-smoke-hosted-vps.ps1",
             "check-release-readiness.ps1",
             "test-check-release-readiness.ps1",
+            "check-github-release-controls.ps1",
+            "test-check-github-release-controls.ps1",
             "setup-github-staging.ps1",
             "test-setup-github-staging.ps1",
             "check-staging-smoke-evidence.ps1",

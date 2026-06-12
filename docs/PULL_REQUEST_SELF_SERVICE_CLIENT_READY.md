@@ -113,6 +113,8 @@ packaging, and self-service export package validation readiness.
 - Runs `infra/scripts/backup-compose.sh` inside the production `Deploy to VPS`
   workflow before migrations, and adds a workflow harness so production/staging
   deploy guards cannot drift quietly.
+- Adds `infra/scripts/check-github-release-controls.ps1` so production release
+  controls can be audited before opening the final `develop` to `main` PR.
 - Requires `NEXT_PUBLIC_LEGAL_EMAIL` in customer env validation so private
   installs do not silently route support/contact UI to the SaaS fallback.
 - Wires public frontend deployment variables through the web Docker build and
@@ -381,6 +383,13 @@ packaging, and self-service export package validation readiness.
   proving the production workflow keeps the main-only guard, SHA check,
   pre-migration backup, readiness check, and hosted smoke, and the staging
   workflow keeps its environment/ref/SHA/smoke guards.
+- `infra/scripts/test-check-github-release-controls.ps1` passed locally on
+  June 13, 2026, proving the release-control audit accepts a protected `main`
+  with PR/status-check gates and rejects the current weaker shape.
+- `infra/scripts/check-github-release-controls.ps1` currently fails against
+  GitHub because `main` blocks deletion/force-push but does not require pull
+  requests or status checks yet; `develop` also lacks active no-delete/no-force
+  rules.
 - `infra/scripts/check-release-readiness.ps1 -SkipHostedSmoke` currently fails
   as intended until GitHub staging setup is completed: the `staging`
   environment and `STAGING_WEB_BASE_URL`, `STAGING_API_BASE_URL`,
