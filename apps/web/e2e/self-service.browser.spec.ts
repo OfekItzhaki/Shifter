@@ -880,6 +880,22 @@ test.describe("Self-service browser lifecycle", () => {
       [initiatorShift.shiftSlotId]
     );
     expect(targetShift.shiftSlotId).not.toBe(initiatorShift.shiftSlotId);
+    const initiatorSlotBeforeSwap = await getAdminSlot(
+      request,
+      adminToken,
+      spaceId,
+      groupId,
+      status.cycleId!,
+      initiatorShift.shiftSlotId
+    );
+    const targetSlotBeforeSwap = await getAdminSlot(
+      request,
+      adminToken,
+      spaceId,
+      groupId,
+      status.cycleId!,
+      targetShift.shiftSlotId
+    );
 
     await loginAsUser(page, initiatorEmail, DEMO_PASSWORD);
     await page.evaluate((targetGroupId) => {
@@ -949,6 +965,25 @@ test.describe("Self-service browser lifecycle", () => {
     );
     expect(initiatorShifts.requests.find((row) => row.id === initiatorShift.id)?.shiftSlotId).toBe(targetShift.shiftSlotId);
     expect(targetShifts.requests.find((row) => row.id === targetShift.id)?.shiftSlotId).toBe(initiatorShift.shiftSlotId);
+
+    const initiatorSlotAfterSwap = await getAdminSlot(
+      request,
+      adminToken,
+      spaceId,
+      groupId,
+      status.cycleId!,
+      initiatorShift.shiftSlotId
+    );
+    const targetSlotAfterSwap = await getAdminSlot(
+      request,
+      adminToken,
+      spaceId,
+      groupId,
+      status.cycleId!,
+      targetShift.shiftSlotId
+    );
+    expect(initiatorSlotAfterSwap.currentFillCount).toBe(initiatorSlotBeforeSwap.currentFillCount);
+    expect(targetSlotAfterSwap.currentFillCount).toBe(targetSlotBeforeSwap.currentFillCount);
   });
 
   test("member proposes and target declines a shift swap through the UI", async ({ page, request }) => {
