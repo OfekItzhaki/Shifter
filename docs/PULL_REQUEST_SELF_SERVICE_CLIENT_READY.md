@@ -331,6 +331,10 @@ packaging, and self-service export package validation readiness.
   non-`main` ref and verifies the VPS checkout matches the GitHub deploy SHA,
   preventing a mixed deployment where the web image and API checkout come from
   different branches.
+- Manual CI run `27440857189` passed on `develop` for commit `47fa18f` on
+  June 12, 2026 after the production deploy-ref guard, covering API
+  build/tests, frontend typecheck/lint/build, solver lint/tests, and solver
+  health.
 - `infra/scripts/smoke-self-service-client-ready.ps1 -ApiBaseUrl http://localhost:5015 -WebBaseUrl http://localhost:3015`
   passed locally on June 12, 2026 against an isolated temporary PostgreSQL 16
   database, isolated Redis, a fresh API on port `5015`, and the current-branch
