@@ -8,10 +8,14 @@ $ErrorActionPreference = "Stop"
 $wrapperScript = Join-Path $PSScriptRoot "verify-customer-hosted-install.ps1"
 $exampleEnv = Join-Path $ShifterDir "infra\compose\.env.customer.example"
 $powerShellExe = (Get-Process -Id $PID).Path
+$isWindowsHost = [System.Environment]::OSVersion.Platform -eq [System.PlatformID]::Win32NT
 
-$command = @(
-    "-NoProfile",
-    "-ExecutionPolicy", "Bypass",
+$command = @("-NoProfile")
+if ($isWindowsHost) {
+    $command += @("-ExecutionPolicy", "Bypass")
+}
+
+$command += @(
     "-File", $wrapperScript,
     "-ShifterDir", $ShifterDir,
     "-EnvFile", $exampleEnv,
