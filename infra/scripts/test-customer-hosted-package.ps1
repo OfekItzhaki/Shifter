@@ -79,6 +79,10 @@ Invoke-Step "Seed compose dry-run harness" {
     & (Join-Path $PSScriptRoot "test-seed-compose-dry-run.ps1") -ShifterDir $root -BashPath $bash
 }
 
+Invoke-Step "Customer-hosted install wrapper dry-run harness" {
+    & (Join-Path $PSScriptRoot "test-verify-customer-hosted-install-dry-run.ps1") -ShifterDir $root -BashPath $bash
+}
+
 Invoke-Step "Backup compose harness" {
     & (Join-Path $PSScriptRoot "test-backup-compose.ps1") -ShifterDir $root -BashPath $bash
 }
@@ -92,15 +96,20 @@ Invoke-Step "Deploy compose rollback harness" {
 }
 
 Invoke-Step "PowerShell script syntax" {
-    $parseErrors = $null
-    $tokens = $null
-    [System.Management.Automation.Language.Parser]::ParseFile(
-        (Join-Path $PSScriptRoot "verify-customer-hosted-install.ps1"),
-        [ref]$tokens,
-        [ref]$parseErrors) | Out-Null
+    foreach ($scriptName in @(
+            "verify-customer-hosted-install.ps1",
+            "test-verify-customer-hosted-install-dry-run.ps1"
+        )) {
+        $parseErrors = $null
+        $tokens = $null
+        [System.Management.Automation.Language.Parser]::ParseFile(
+            (Join-Path $PSScriptRoot $scriptName),
+            [ref]$tokens,
+            [ref]$parseErrors) | Out-Null
 
-    if ($parseErrors.Count -gt 0) {
-        throw "verify-customer-hosted-install.ps1 has parse errors: $($parseErrors | Out-String)"
+        if ($parseErrors.Count -gt 0) {
+            throw "$scriptName has parse errors: $($parseErrors | Out-String)"
+        }
     }
 }
 

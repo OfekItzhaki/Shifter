@@ -159,6 +159,8 @@ packaging, and self-service export package validation readiness.
 - `infra/scripts/verify-customer-hosted-install.ps1 -EnvFile infra/compose/.env.customer.example -SkipPackagePreflight -SeedDryRun -ResolveOnly`
   passed, proving the target-host wrapper can dry-run seeded data and live smoke
   configuration from one command.
+- `infra/scripts/test-verify-customer-hosted-install-dry-run.ps1` passed, and is
+  included in the customer-hosted package preflight.
 - `infra/scripts/test-customer-hosted-package.ps1 -EnvFile infra/compose/.env.customer.example`
   passed, proving the preflight can target an explicit env file path without
   requiring real customer secrets in CI/local package checks.

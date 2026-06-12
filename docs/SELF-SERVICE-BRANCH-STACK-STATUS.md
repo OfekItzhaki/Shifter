@@ -301,6 +301,8 @@ Known verification:
   `infra/scripts/test-seed-compose-dry-run.ps1`.
 - Customer-hosted install wrapper dry-run passed:
   `infra/scripts/verify-customer-hosted-install.ps1 -EnvFile infra/compose/.env.customer.example -SkipPackagePreflight -SeedDryRun -ResolveOnly`.
+- Customer-hosted install wrapper harness passed:
+  `infra/scripts/test-verify-customer-hosted-install-dry-run.ps1`.
 - Backup compose harness passed:
   `infra/scripts/test-backup-compose.ps1`.
 - Deploy compose harness passed:
