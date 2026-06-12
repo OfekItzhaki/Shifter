@@ -95,6 +95,9 @@ packaging, and self-service export package validation readiness.
   hosted-service rollout from customer-hosted package delivery, covering the
   smoke checks, backups, providers, PWA, AI, monitoring, and edge-security
   items to verify before inviting real users.
+- Adds `infra/scripts/check-release-readiness.ps1` so the `develop` to `main`
+  gate can audit local cleanliness, GitHub staging configuration, green CI,
+  green customer-hosted preflight, and optional hosted smoke evidence.
 - Requires `NEXT_PUBLIC_LEGAL_EMAIL` in customer env validation so private
   installs do not silently route support/contact UI to the SaaS fallback.
 - Wires public frontend deployment variables through the web Docker build and
@@ -342,6 +345,18 @@ packaging, and self-service export package validation readiness.
   are configured.
 - Manual CI run `27441388300` passed on `develop` for commit `cb786b2` on
   June 12, 2026 after adding the gated staging deploy workflow.
+- `infra/scripts/test-check-release-readiness.ps1` passed locally on
+  June 12, 2026, proving the release readiness audit handles both a fully
+  configured staging setup and the current missing-staging setup.
+- `infra/scripts/check-release-readiness.ps1 -SkipHostedSmoke` currently fails
+  as intended until GitHub staging setup is completed: the `staging`
+  environment and `STAGING_WEB_BASE_URL`, `STAGING_API_BASE_URL`,
+  `STAGING_PATH`, and `STAGING_COMPOSE_PROJECT_NAME` repository variables are
+  missing. It confirms the latest successful CI run `27441388300` on `cb786b2`
+  and customer-hosted preflight run `27440419425` on `c31afc3`.
+- `infra/scripts/test-customer-hosted-package.ps1 -EnvFile infra/compose/.env.customer.example`
+  passed locally on June 12, 2026 after adding the release readiness audit
+  harness to the customer-hosted package preflight.
 - `infra/scripts/smoke-self-service-client-ready.ps1 -ApiBaseUrl http://localhost:5015 -WebBaseUrl http://localhost:3015`
   passed locally on June 12, 2026 against an isolated temporary PostgreSQL 16
   database, isolated Redis, a fresh API on port `5015`, and the current-branch
