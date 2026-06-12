@@ -208,6 +208,10 @@ Known verification:
   customers. First-time self-service group policy resolves from space defaults,
   then organization defaults, then install env defaults, and organization
   templates are included in export/import package validation.
+- Ends sessions after password changes and redirects users back to login with a
+  success notice.
+- Restricts the custom PWA install prompt to mobile/touch install surfaces, with
+  desktop install left to the browser UI.
 - Live client-ready smoke passed against a fresh SQL install from all
   migrations plus `seed.sql`, a live API, and a rebuilt production web server:
   `infra/scripts/smoke-self-service-client-ready.ps1 -ApiBaseUrl http://localhost:5015 -WebBaseUrl http://localhost:3015`.
@@ -218,6 +222,9 @@ Known verification:
   `dotnet test apps\\api\\Jobuler.Tests\\Jobuler.Tests.csproj --filter "FullyQualifiedName~ChangeSchedulingModeCommandTests|FullyQualifiedName~OrganizationPortabilityTests"`.
 - Fresh SQL install from all `infra/migrations/*.sql` plus `seed.sql` passed
   after adding `086_organization_self_service_defaults.sql`.
+- PWA prompt regression tests passed:
+  `node_modules\\.bin\\vitest.cmd run __tests__\\shell\\pwaInstallPrompt.test.tsx`.
+- Focused PWA prompt ESLint and `node_modules\\.bin\\next.cmd build` passed.
 
 Remaining manual/product check:
 

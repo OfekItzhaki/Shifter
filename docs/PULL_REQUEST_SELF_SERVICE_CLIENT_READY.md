@@ -57,6 +57,10 @@ packaging, and self-service export package validation readiness.
   customers. Spaces now resolve first-time self-service group policy from space
   defaults, then organization defaults, then install env defaults, and
   organization templates are included in export/import package validation.
+- Ends the current session after password changes and shows a login success
+  notice, preventing stale authenticated sessions after credential rotation.
+- Keeps the custom PWA install prompt focused on mobile/touch install surfaces
+  while desktop users can still use the browser's native install affordance.
 
 ## Verification
 
@@ -98,6 +102,12 @@ packaging, and self-service export package validation readiness.
   passed: 37 passed, 0 failed.
 - Fresh SQL install from all `infra/migrations/*.sql` plus `seed.sql` passed
   after adding `086_organization_self_service_defaults.sql`.
+- `node_modules\\.bin\\vitest.cmd run __tests__\\shell\\pwaInstallPrompt.test.tsx`
+  passed: 2 passed, 0 failed.
+- `node_modules\\.bin\\eslint.cmd components\\shell\\PwaInstallPrompt.tsx __tests__\\shell\\pwaInstallPrompt.test.tsx`
+  passed.
+- `node_modules\\.bin\\next.cmd build` from `apps/web` passed after the PWA
+  prompt update.
 
 ## Remaining Product Checks
 

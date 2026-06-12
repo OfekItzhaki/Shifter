@@ -62,11 +62,13 @@ as the merge gate for product behavior, policy, data scope, and tests.
 
 `feat/portable-space-isolation` is related to customer-hosted deployments and
 organization boundaries, but it is not the same feature as manual self-service.
+The reconciled umbrella branch is now `feat/self-service-client-ready`.
 
-That branch appears to contain organization export and import validation,
-organization billing,
-tenant isolation, and contact-field protection work. It also has a wide diff
-against `main`, so it should not be merged casually into self-service.
+The original portable branch contained organization export/import validation,
+organization billing, tenant isolation, and contact-field protection work. The
+client-ready branch has already reconciled the portable work that belongs with
+manual self-service, including package import and self-service workflow export
+coverage.
 
 Recommended sequence:
 
