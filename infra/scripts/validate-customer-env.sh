@@ -128,6 +128,7 @@ fi
 ai_key="$(env_value AI_API_KEY)"
 ai_base_url="$(env_value AI_BASE_URL)"
 ai_model="$(env_value AI_MODEL)"
+ai_no_export="$(env_value AI_NO_EXPORT_REQUIRED)"
 if [ -n "$ai_key" ] && [ -z "$ai_base_url" ]; then
   echo "WARN: AI_API_KEY is set but AI_BASE_URL is empty; the API will use OpenAI's default endpoint." >&2
   warnings=$((warnings + 1))
@@ -139,6 +140,18 @@ fi
 if [ -z "$ai_key" ] && [ -z "$ai_base_url" ]; then
   echo "WARN: AI is disabled. Schedule solving still works, but AI chat/import features will not." >&2
   warnings=$((warnings + 1))
+fi
+if [ "$ai_no_export" = "true" ]; then
+  if [ -z "$ai_base_url" ]; then
+    echo "ERROR: AI_NO_EXPORT_REQUIRED=true requires AI_BASE_URL to point to a private/local OpenAI-compatible endpoint." >&2
+    errors=$((errors + 1))
+  elif ! echo "$ai_base_url" | grep -Eiq '^(http://(localhost|127\.|10\.|192\.168\.|172\.(1[6-9]|2[0-9]|3[0-1])\.|[^/]*\.(internal|local))|https://[^/]*\.(internal|local))'; then
+    echo "ERROR: AI_NO_EXPORT_REQUIRED=true requires AI_BASE_URL to use localhost, a private IP, .internal, or .local endpoint: $ai_base_url" >&2
+    errors=$((errors + 1))
+  fi
+elif [ -n "$ai_no_export" ] && [ "$ai_no_export" != "false" ]; then
+  echo "ERROR: AI_NO_EXPORT_REQUIRED must be true, false, or empty." >&2
+  errors=$((errors + 1))
 fi
 
 storage_bucket="$(env_value STORAGE_S3_BUCKET_NAME)"

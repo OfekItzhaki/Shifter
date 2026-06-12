@@ -56,6 +56,13 @@ Requirements:
 Run Shifter in the customer's environment and point `AI__BaseUrl` to a local
 OpenAI-compatible inference server such as vLLM or Ollama.
 
+```env
+AI_API_KEY=
+AI_BASE_URL=http://local-ai.customer.internal:8000/v1
+AI_MODEL=customer-approved-model
+AI_NO_EXPORT_REQUIRED=true
+```
+
 Good for:
 - Defense, public sector, hospitals, and organizations with strict no-data-export
   rules.
@@ -69,6 +76,8 @@ Tradeoffs:
 
 Requirements:
 - No external AI calls.
+- Customer env validation must set `AI_NO_EXPORT_REQUIRED=true` and reject
+  public/default AI endpoints.
 - No external email provider unless explicitly configured by the customer.
 - File imports and chat prompts stay inside the customer network.
 - Disable analytics, external chat widgets, and external error tracking unless

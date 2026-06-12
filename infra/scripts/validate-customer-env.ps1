@@ -144,6 +144,7 @@ if (-not [string]::IsNullOrWhiteSpace($apiUrl) -and -not [string]::IsNullOrWhite
 $aiKey = Get-EnvValue "AI_API_KEY"
 $aiBaseUrl = Get-EnvValue "AI_BASE_URL"
 $aiModel = Get-EnvValue "AI_MODEL"
+$aiNoExport = Get-EnvValue "AI_NO_EXPORT_REQUIRED"
 if (-not [string]::IsNullOrWhiteSpace($aiKey) -and [string]::IsNullOrWhiteSpace($aiBaseUrl)) {
     Add-WarningMessage "AI_API_KEY is set but AI_BASE_URL is empty; the API will use OpenAI's default endpoint."
 }
@@ -152,6 +153,17 @@ if (-not [string]::IsNullOrWhiteSpace($aiBaseUrl) -and [string]::IsNullOrWhiteSp
 }
 if ([string]::IsNullOrWhiteSpace($aiKey) -and [string]::IsNullOrWhiteSpace($aiBaseUrl)) {
     Add-WarningMessage "AI is disabled. Schedule solving still works, but AI chat/import features will not."
+}
+if ($aiNoExport -eq "true") {
+    if ([string]::IsNullOrWhiteSpace($aiBaseUrl)) {
+        Add-Error "AI_NO_EXPORT_REQUIRED=true requires AI_BASE_URL to point to a private/local OpenAI-compatible endpoint."
+    }
+    elseif ($aiBaseUrl -notmatch '^(http://(localhost|127\.|10\.|192\.168\.|172\.(1[6-9]|2[0-9]|3[0-1])\.|[^/]*\.(internal|local))|https://[^/]*\.(internal|local))') {
+        Add-Error "AI_NO_EXPORT_REQUIRED=true requires AI_BASE_URL to use localhost, a private IP, .internal, or .local endpoint: $aiBaseUrl"
+    }
+}
+elseif (-not [string]::IsNullOrWhiteSpace($aiNoExport) -and $aiNoExport -ne "false") {
+    Add-Error "AI_NO_EXPORT_REQUIRED must be true, false, or empty."
 }
 
 $storageBucket = Get-EnvValue "STORAGE_S3_BUCKET_NAME"
