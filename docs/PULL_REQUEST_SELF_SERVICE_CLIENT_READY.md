@@ -69,6 +69,9 @@ packaging, and self-service export package validation readiness.
   for package checksum, license, domains, env/secrets ownership, provider
   approvals, verification evidence, backup/restore, migration, security, and
   escalation sign-off.
+- Records closeout CSV/PDF export smoke evidence, closeout PDF fingerprint
+  checks, and the customer-specific closeout report signing policy in the
+  customer-hosted handoff template.
 - Lets the live self-service smoke read `APP_FRONTEND_BASE_URL`,
   `NEXT_PUBLIC_API_URL`/`APP_API_BASE_URL`, and optional seeded demo credentials
   from the customer env file with `-EnvFile`, plus `-ResolveOnly` for dry config
