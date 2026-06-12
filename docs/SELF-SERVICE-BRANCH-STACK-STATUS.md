@@ -238,6 +238,8 @@ Known verification:
 - Supports PWA install prompts on mobile and desktop when the browser reports
   install availability, uses device-neutral copy, and caches/refreshes
   self-service member read models for installed/offline usage.
+- Adds installed-PWA shortcuts for personal shifts, self-service shift picking,
+  and profile/account tools.
 - Refreshes member-safe self-service cache entries on reconnect for the current
   group and last picked self-service group, while avoiding admin-only closeout
   refreshes for normal members.
@@ -299,6 +301,8 @@ Known verification:
   passed:
   `node_modules\\.bin\\vitest.cmd run __tests__\\cache\\backgroundRefresh.test.ts __tests__\\cache\\cacheLifecycle.test.ts`
   and `node --check public\\sw.js`.
+- PWA manifest shortcut validation passed for `/schedule/my-missions`, `/pick`,
+  and `/profile` with existing icon assets.
 - Focused PWA prompt ESLint and `node_modules\\.bin\\next.cmd build` passed.
 - Sentry config tests and focused ESLint passed:
   `node_modules\\.bin\\vitest.cmd run __tests__\\monitoring\\sentryConfig.test.ts`

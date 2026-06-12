@@ -39,6 +39,47 @@
       "type": "image/png"
     }
   ],
+  "shortcuts": [
+    {
+      "name": "My shifts",
+      "short_name": "Shifts",
+      "description": "Open your personal shift schedule",
+      "url": "/schedule/my-missions",
+      "icons": [
+        {
+          "src": "/shifter_icon_192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Pick shifts",
+      "short_name": "Pick",
+      "description": "Open self-service shift picking",
+      "url": "/pick",
+      "icons": [
+        {
+          "src": "/shifter_icon_192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "My profile",
+      "short_name": "Profile",
+      "description": "Open your profile and account tools",
+      "url": "/profile",
+      "icons": [
+        {
+          "src": "/shifter_icon_192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    }
+  ],
   "categories": ["productivity", "utilities"],
   "lang": "he",
   "dir": "rtl"
