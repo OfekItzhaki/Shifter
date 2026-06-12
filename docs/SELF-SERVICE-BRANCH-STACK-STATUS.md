@@ -197,6 +197,8 @@ Known verification:
   `SHIFTER_LICENSE_KEY` in both install validators and API startup.
 - Supports signed offline license files for private-network installs, verified
   with an RSA public key at API startup.
+- Adds a signed license generator script for issuing customer license JSON
+  files from an OfekLabs-owned RSA private key.
 - Adds a customer env validator harness that checks valid envs, no-export AI
   rejection/allowance, and short field encryption keys against the PowerShell
   validator and Git Bash validator when available. It also asserts warning
@@ -310,6 +312,8 @@ Known verification:
   `infra/scripts/test-restore-compose-dry-run.ps1`.
 - Seed compose dry-run harness passed:
   `infra/scripts/test-seed-compose-dry-run.ps1`.
+- Signed license generator harness passed:
+  `infra/scripts/test-generate-signed-license.ps1`.
 - Offline image bundle harness passed:
   `infra/scripts/test-bundle-compose-images.ps1`.
 - Customer-hosted install wrapper dry-run passed:

@@ -79,6 +79,10 @@ Invoke-Step "Seed compose dry-run harness" {
     & (Join-Path $PSScriptRoot "test-seed-compose-dry-run.ps1") -ShifterDir $root -BashPath $bash
 }
 
+Invoke-Step "Signed license generator harness" {
+    & (Join-Path $PSScriptRoot "test-generate-signed-license.ps1") -ShifterDir $root
+}
+
 Invoke-Step "Offline image bundle harness" {
     & (Join-Path $PSScriptRoot "test-bundle-compose-images.ps1") -ShifterDir $root -BashPath $bash
 }
@@ -103,7 +107,9 @@ Invoke-Step "PowerShell script syntax" {
     foreach ($scriptName in @(
             "verify-customer-hosted-install.ps1",
             "test-verify-customer-hosted-install-dry-run.ps1",
-            "test-bundle-compose-images.ps1"
+            "test-bundle-compose-images.ps1",
+            "generate-signed-license.ps1",
+            "test-generate-signed-license.ps1"
         )) {
         $parseErrors = $null
         $tokens = $null

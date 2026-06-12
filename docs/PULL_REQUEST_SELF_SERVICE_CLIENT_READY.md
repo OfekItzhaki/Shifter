@@ -38,6 +38,8 @@ packaging, and self-service export package validation readiness.
 - Supports signed offline license files for private-network installs via
   `SHIFTER_LICENSE_FILE_CONTAINER_PATH` and `SHIFTER_LICENSE_PUBLIC_KEY`, with
   RSA signature verification at API startup.
+- Adds `infra/scripts/generate-signed-license.ps1` so OfekLabs can issue signed
+  customer license JSON files from a protected RSA private key.
 - Adds a Windows/PowerShell customer env validator alongside the Bash validator.
 - Lets `infra/scripts/test-customer-hosted-package.ps1` run against a real
   customer env file with `-EnvFile ... -ValidateEnvFile`, while retaining the
@@ -170,6 +172,8 @@ packaging, and self-service export package validation readiness.
 - `infra/scripts/test-seed-compose-dry-run.ps1` passed, proving the compose seed
   loader resolves the env file, Compose project, database, user, and seed file
   without loading demo data.
+- `infra/scripts/test-generate-signed-license.ps1` passed, proving the license
+  generator writes a signed JSON license and verifiable RSA public key.
 - `infra/scripts/test-bundle-compose-images.ps1` passed with a fake Docker
   shim, proving the image bundle script builds app services, pulls bundled
   infrastructure services, writes a manifest, and saves the resolved image set.

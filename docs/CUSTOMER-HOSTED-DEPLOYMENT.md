@@ -315,6 +315,24 @@ licenseKey=<issued license key>
 expiresAt=<UTC ISO timestamp or empty>
 ```
 
+Generate the customer license and OfekLabs signing keypair from a secure admin
+machine. Keep the private key outside the customer package:
+
+```powershell
+.\infra\scripts\generate-signed-license.ps1 `
+  -Licensee "Customer Legal Name" `
+  -LicenseKey "issued-customer-license-key-2026" `
+  -ExpiresAt "2031-01-01T00:00:00Z" `
+  -PrivateKeyPath .\secrets\shifter-license-private.xml `
+  -PublicKeyPath .\secrets\shifter-license-public.pem `
+  -OutputPath .\license.customer.json `
+  -GenerateKeyPair
+```
+
+For later customers, reuse the protected private key and omit
+`-GenerateKeyPair`. Give the customer only the signed JSON license file and the
+public key.
+
 The install validators reject missing, placeholder, partial, or too-short
 license values, and the API repeats the entitlement check at startup when
 `SHIFTER_DEPLOYMENT_MODE=customer-hosted`. Store license files/keys with the
