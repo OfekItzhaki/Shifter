@@ -63,6 +63,10 @@ The script:
 5. checks the frontend and API health endpoint
 6. rolls back to the previous git revision if the new version fails health verification
 
+The GitHub `Deploy to VPS` workflow also runs `backup-compose.sh` before
+production migrations, after verifying that the VPS checkout matches the GitHub
+run SHA.
+
 ## Staging Deploy
 
 Run this on the staging VPS:

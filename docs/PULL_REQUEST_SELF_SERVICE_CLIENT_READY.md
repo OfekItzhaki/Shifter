@@ -110,6 +110,9 @@ packaging, and self-service export package validation readiness.
 - Adds an `EXPECTED_REVISION` guard to `infra/scripts/deploy-compose.sh` and
   wires the staging workflow to pass the GitHub run SHA, preventing staging
   deploys from silently running a different commit than the workflow intended.
+- Runs `infra/scripts/backup-compose.sh` inside the production `Deploy to VPS`
+  workflow before migrations, and adds a workflow harness so production/staging
+  deploy guards cannot drift quietly.
 - Requires `NEXT_PUBLIC_LEGAL_EMAIL` in customer env validation so private
   installs do not silently route support/contact UI to the SaaS fallback.
 - Wires public frontend deployment variables through the web Docker build and
@@ -374,6 +377,10 @@ packaging, and self-service export package validation readiness.
 - `infra/scripts/test-deploy-compose-expected-revision.ps1` passed locally on
   June 13, 2026, proving deploys stop before Docker/Compose when the checked
   out revision does not match `EXPECTED_REVISION`.
+- `infra/scripts/test-deploy-workflows.ps1` passed locally on June 13, 2026,
+  proving the production workflow keeps the main-only guard, SHA check,
+  pre-migration backup, readiness check, and hosted smoke, and the staging
+  workflow keeps its environment/ref/SHA/smoke guards.
 - `infra/scripts/check-release-readiness.ps1 -SkipHostedSmoke` currently fails
   as intended until GitHub staging setup is completed: the `staging`
   environment and `STAGING_WEB_BASE_URL`, `STAGING_API_BASE_URL`,

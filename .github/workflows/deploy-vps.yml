@@ -118,7 +118,7 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_PORT || 22 }}
-          command_timeout: 5m
+          command_timeout: 15m
           script: |
             set -e
             cd /opt/shifter
@@ -138,6 +138,11 @@ jobs:
             docker compose images --format json 2>/dev/null | jq -r '.[].Tag' > /dev/null 2>&1 || true
             docker tag shifter-web:latest shifter-web:previous 2>/dev/null || true
             docker tag compose-api:latest compose-api:previous 2>/dev/null || true
+
+            echo "=== Running pre-deploy backup ==="
+            cd /opt/shifter
+            chmod +x infra/scripts/backup-compose.sh 2>/dev/null || true
+            SHIFTER_DIR=/opt/shifter /opt/shifter/infra/scripts/backup-compose.sh
 
             echo "=== Running migrations ==="
             cd /opt/shifter

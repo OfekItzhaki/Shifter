@@ -95,6 +95,10 @@ Invoke-Step "Hosted VPS smoke harness" {
     & (Join-Path $PSScriptRoot "test-smoke-hosted-vps.ps1") -ShifterDir $root
 }
 
+Invoke-Step "Deploy workflow harness" {
+    & (Join-Path $PSScriptRoot "test-deploy-workflows.ps1") -ShifterDir $root
+}
+
 Invoke-Step "Release readiness audit harness" {
     & (Join-Path $PSScriptRoot "test-check-release-readiness.ps1") -ShifterDir $root
 }
@@ -147,6 +151,7 @@ Invoke-Step "PowerShell script syntax" {
             "test-setup-github-staging.ps1",
             "check-staging-smoke-evidence.ps1",
             "test-check-staging-smoke-evidence.ps1",
+            "test-deploy-workflows.ps1",
             "test-bundle-compose-images.ps1",
             "generate-signed-license.ps1",
             "test-generate-signed-license.ps1",
