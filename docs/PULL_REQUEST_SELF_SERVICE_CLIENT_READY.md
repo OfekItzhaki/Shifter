@@ -280,6 +280,14 @@ packaging, and self-service export package validation readiness.
   integration branch is checked after feature merges.
 - Customer-hosted preflight CI run `27438644946` passed on `develop` for commit
   `1785a2c` on June 12, 2026 after enabling the develop push trigger.
+- Manual CI run `27438830021` exposed that the solver job expected
+  `pytest-timeout` for `pytest --timeout=60`; `apps/solver/requirements.txt`
+  now includes that test dependency.
+- Customer-hosted preflight CI run `27439061391` passed on `develop` for commit
+  `cdf836e` on June 12, 2026 after the solver test dependency fix.
+- Manual CI run `27439067258` passed on `develop` for commit `cdf836e` on
+  June 12, 2026, covering API build/tests, frontend typecheck/lint/build,
+  solver lint/tests, and solver health.
 - `infra/scripts/smoke-self-service-client-ready.ps1 -ApiBaseUrl http://localhost:5015 -WebBaseUrl http://localhost:3015`
   passed locally on June 12, 2026 against an isolated temporary PostgreSQL 16
   database, isolated Redis, a fresh API on port `5015`, and the current-branch
