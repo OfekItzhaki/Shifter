@@ -259,8 +259,9 @@ group:
 - a member-to-member browser lifecycle test for proposing and accepting a shift
   swap with final assignment and stable slot fill-count verification
 - a member-to-member browser lifecycle test for proposing and declining a shift
-  swap
+  swap with unchanged assignment and slot fill-count verification
 - a member browser lifecycle test for cancelling an outgoing pending shift swap
+  with unchanged assignment and slot fill-count verification
 - a member browser lifecycle test for cancelling an approved shift with final
   request status and slot fill-count verification
 - an admin browser lifecycle test for rejecting a shift-change request while
@@ -308,9 +309,10 @@ large deployments:
   fill-count verification, shift-change approval with source/target slot
   fill-count verification, shift-change rejection with original slot fill-count
   verification, member-to-member swap acceptance with stable slot fill-count
-  verification, member-to-member swap decline, and initiator swap cancellation,
-  special leave approval, special leave cancellation, special leave rejection,
-  and no-coverage special-day claim blocking.
+  verification, member-to-member swap decline with stable slot fill-count
+  verification, initiator swap cancellation with stable slot fill-count
+  verification, special leave approval, special leave cancellation, special
+  leave rejection, and no-coverage special-day claim blocking.
 - Formal certificate signing for closeout reports. PDF closeout reports already
   include a verification fingerprint for archive/tamper checks, but they are not
   certificate-signed legal documents.

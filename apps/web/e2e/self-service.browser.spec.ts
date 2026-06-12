@@ -1024,6 +1024,22 @@ test.describe("Self-service browser lifecycle", () => {
       [initiatorShift.shiftSlotId]
     );
     expect(targetShift.shiftSlotId).not.toBe(initiatorShift.shiftSlotId);
+    const initiatorSlotBeforeDecline = await getAdminSlot(
+      request,
+      adminToken,
+      spaceId,
+      groupId,
+      status.cycleId!,
+      initiatorShift.shiftSlotId
+    );
+    const targetSlotBeforeDecline = await getAdminSlot(
+      request,
+      adminToken,
+      spaceId,
+      groupId,
+      status.cycleId!,
+      targetShift.shiftSlotId
+    );
 
     await loginAsUser(page, initiatorEmail, DEMO_PASSWORD);
     await page.evaluate((targetGroupId) => {
@@ -1093,6 +1109,25 @@ test.describe("Self-service browser lifecycle", () => {
     );
     expect(initiatorShifts.requests.find((row) => row.id === initiatorShift.id)?.shiftSlotId).toBe(initiatorShift.shiftSlotId);
     expect(targetShifts.requests.find((row) => row.id === targetShift.id)?.shiftSlotId).toBe(targetShift.shiftSlotId);
+
+    const initiatorSlotAfterDecline = await getAdminSlot(
+      request,
+      adminToken,
+      spaceId,
+      groupId,
+      status.cycleId!,
+      initiatorShift.shiftSlotId
+    );
+    const targetSlotAfterDecline = await getAdminSlot(
+      request,
+      adminToken,
+      spaceId,
+      groupId,
+      status.cycleId!,
+      targetShift.shiftSlotId
+    );
+    expect(initiatorSlotAfterDecline.currentFillCount).toBe(initiatorSlotBeforeDecline.currentFillCount);
+    expect(targetSlotAfterDecline.currentFillCount).toBe(targetSlotBeforeDecline.currentFillCount);
   });
 
   test("member proposes and cancels a pending shift swap through the UI", async ({ page, request }) => {
@@ -1133,6 +1168,22 @@ test.describe("Self-service browser lifecycle", () => {
       [initiatorShift.shiftSlotId]
     );
     expect(targetShift.shiftSlotId).not.toBe(initiatorShift.shiftSlotId);
+    const initiatorSlotBeforeCancel = await getAdminSlot(
+      request,
+      adminToken,
+      spaceId,
+      groupId,
+      status.cycleId!,
+      initiatorShift.shiftSlotId
+    );
+    const targetSlotBeforeCancel = await getAdminSlot(
+      request,
+      adminToken,
+      spaceId,
+      groupId,
+      status.cycleId!,
+      targetShift.shiftSlotId
+    );
 
     await loginAsUser(page, initiatorEmail, DEMO_PASSWORD);
     await page.evaluate((targetGroupId) => {
@@ -1196,6 +1247,25 @@ test.describe("Self-service browser lifecycle", () => {
     );
     expect(initiatorShifts.requests.find((row) => row.id === initiatorShift.id)?.shiftSlotId).toBe(initiatorShift.shiftSlotId);
     expect(targetShifts.requests.find((row) => row.id === targetShift.id)?.shiftSlotId).toBe(targetShift.shiftSlotId);
+
+    const initiatorSlotAfterCancel = await getAdminSlot(
+      request,
+      adminToken,
+      spaceId,
+      groupId,
+      status.cycleId!,
+      initiatorShift.shiftSlotId
+    );
+    const targetSlotAfterCancel = await getAdminSlot(
+      request,
+      adminToken,
+      spaceId,
+      groupId,
+      status.cycleId!,
+      targetShift.shiftSlotId
+    );
+    expect(initiatorSlotAfterCancel.currentFillCount).toBe(initiatorSlotBeforeCancel.currentFillCount);
+    expect(targetSlotAfterCancel.currentFillCount).toBe(targetSlotBeforeCancel.currentFillCount);
   });
 
   test("member cancels an approved shift through the UI", async ({ page, request }) => {
