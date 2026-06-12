@@ -31,6 +31,20 @@ public class LemonSqueezyHealthCheck : IServiceHealthCheck
 
     public async Task<ServiceHealthResult> CheckAsync(CancellationToken ct)
     {
+        var missingSettings = GetMissingRequiredSettings();
+        if (missingSettings.Count == 5)
+        {
+            return new ServiceHealthResult(ServiceName, "skipped");
+        }
+
+        if (missingSettings.Count > 0)
+        {
+            return new ServiceHealthResult(
+                ServiceName,
+                "unhealthy",
+                $"Missing required LemonSqueezy configuration: {string.Join(", ", missingSettings)}");
+        }
+
         var stopwatch = Stopwatch.StartNew();
 
         try
@@ -58,5 +72,27 @@ public class LemonSqueezyHealthCheck : IServiceHealthCheck
             _logger.LogWarning(ex, "LemonSqueezy health check threw an exception");
             return new ServiceHealthResult(ServiceName, "unhealthy", ex.Message, stopwatch.Elapsed);
         }
+    }
+
+    private List<string> GetMissingRequiredSettings()
+    {
+        var missing = new List<string>();
+
+        if (string.IsNullOrWhiteSpace(_settings.ApiKey))
+            missing.Add("LemonSqueezy__ApiKey");
+
+        if (string.IsNullOrWhiteSpace(_settings.WebhookSecret))
+            missing.Add("LemonSqueezy__WebhookSecret");
+
+        if (string.IsNullOrWhiteSpace(_settings.StoreId))
+            missing.Add("LemonSqueezy__StoreId");
+
+        if (string.IsNullOrWhiteSpace(_settings.DefaultVariantId))
+            missing.Add("LemonSqueezy__DefaultVariantId");
+
+        if (string.IsNullOrWhiteSpace(_settings.TestVariantId))
+            missing.Add("LemonSqueezy__TestVariantId");
+
+        return missing;
     }
 }
