@@ -1733,6 +1733,14 @@ test.describe("Self-service browser lifecycle", () => {
       groupId,
       status.cycleId!
     );
+    const slotBeforeLeave = await getAdminSlot(
+      request,
+      adminToken,
+      spaceId,
+      groupId,
+      status.cycleId!,
+      waitingEntry.shiftSlotId
+    );
 
     await loginAsUser(page, memberEmail, DEMO_PASSWORD);
     await page.evaluate((targetGroupId) => {
@@ -1763,6 +1771,16 @@ test.describe("Self-service browser lifecycle", () => {
     expect(entriesAfter.some((entry) =>
       entry.id === waitingEntry.id && (entry.status === "Waiting" || entry.status === "Offered")
     )).toBeFalsy();
+
+    const slotAfterLeave = await getAdminSlot(
+      request,
+      adminToken,
+      spaceId,
+      groupId,
+      status.cycleId!,
+      waitingEntry.shiftSlotId
+    );
+    expect(slotAfterLeave.currentFillCount).toBe(slotBeforeLeave.currentFillCount);
   });
 
   test("member reports cannot attend and admin approves it through the UI", async ({ page, request }) => {
