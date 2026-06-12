@@ -33,6 +33,7 @@ $root = (Resolve-Path $ShifterDir).Path
 $bash = Find-Bash $BashPath
 $packageScript = Join-Path $PSScriptRoot "package-customer-hosted.ps1"
 $tempDir = Join-Path ([System.IO.Path]::GetTempPath()) "shifter-package-test-$([Guid]::NewGuid().ToString('N'))"
+$extractDir = Join-Path ([System.IO.Path]::GetTempPath()) "shifter-package-extract-test-$([Guid]::NewGuid().ToString('N'))"
 $packageName = "shifter-customer-hosted-test"
 
 try {
@@ -56,6 +57,16 @@ try {
         }
     }
 
+    Expand-Archive -LiteralPath $archivePath -DestinationPath $extractDir
+    $extractedPackageRoot = Join-Path $extractDir $packageName
+    $extractedManifestPath = Join-Path $extractedPackageRoot "CUSTOMER-HOSTED-MANIFEST.txt"
+
+    foreach ($expectedPath in @($extractedPackageRoot, $extractedManifestPath)) {
+        if (-not (Test-Path -LiteralPath $expectedPath)) {
+            throw "Expected extracted package artifact was not found: $expectedPath"
+        }
+    }
+
     foreach ($relativePath in @(
             "infra\compose\docker-compose.yml",
             "infra\compose\.env.customer.example",
@@ -68,7 +79,7 @@ try {
             "docs\AI-DEPLOYMENT-MODES.md",
             "apps\web\package.json"
         )) {
-        $expectedPath = Join-Path $packageRoot $relativePath
+        $expectedPath = Join-Path $extractedPackageRoot $relativePath
         if (-not (Test-Path -LiteralPath $expectedPath)) {
             throw "Package is missing expected file: $relativePath"
         }
@@ -81,17 +92,17 @@ try {
             "node_modules",
             "\\\.git(\\|$)"
         )) {
-        $blocked = Get-ChildItem -LiteralPath $packageRoot -Recurse -Force |
+        $blocked = Get-ChildItem -LiteralPath $extractedPackageRoot -Recurse -Force |
             Where-Object { $_.FullName -match $blockedPattern -and $_.Name -ne ".env.customer.example" }
         if ($blocked) {
             throw "Package contains blocked path matching $blockedPattern`: $($blocked.FullName -join ', ')"
         }
     }
 
-    $packagedVerifier = Join-Path $packageRoot "infra\scripts\verify-customer-hosted-install.ps1"
-    $packagedEnvFile = Join-Path $packageRoot "infra\compose\.env.customer.example"
+    $packagedVerifier = Join-Path $extractedPackageRoot "infra\scripts\verify-customer-hosted-install.ps1"
+    $packagedEnvFile = Join-Path $extractedPackageRoot "infra\compose\.env.customer.example"
     $verifierOutput = & $packagedVerifier `
-        -ShifterDir $packageRoot `
+        -ShifterDir $extractedPackageRoot `
         -EnvFile $packagedEnvFile `
         -BashPath $bash `
         -SkipPackagePreflight `
@@ -108,5 +119,8 @@ try {
 finally {
     if (Test-Path -LiteralPath $tempDir) {
         Remove-Item -LiteralPath $tempDir -Recurse -Force
+    }
+    if (Test-Path -LiteralPath $extractDir) {
+        Remove-Item -LiteralPath $extractDir -Recurse -Force
     }
 }
