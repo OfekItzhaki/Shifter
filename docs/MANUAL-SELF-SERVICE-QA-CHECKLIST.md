@@ -83,12 +83,15 @@ happy path, deploy rollback, Compose script syntax, and customer Compose config.
 Before merging holiday-calendar changes after this branch:
 
 - Verify special leave browser coverage still passes.
-- Verify special days do not affect self-service groups until explicit
-  self-service holiday behavior is added.
-- Add a test for holiday-aware self-service cycle generation or policy warnings
-  before calling holidays supported in manual mode.
-- Add a manual smoke path from space special-day setup to a self-service cycle
-  that visibly overlaps the marked day.
+- Verify self-service slot browsing still labels slots that overlap space
+  special days.
+- Verify the self-service operations panel still shows special-day cycle counts
+  and marks underfilled special-day slots.
+- Run the smoke path from space special-day setup to a self-service cycle that
+  visibly overlaps the marked day.
+- Treat holiday-specific policy behavior, such as altered capacity or forced
+  staffing rules on holidays, as future scope until a dedicated policy model is
+  added.
 
 Before merging portable-space-isolation changes after this branch:
 

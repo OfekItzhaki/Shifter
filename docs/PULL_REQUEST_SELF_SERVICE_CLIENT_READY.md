@@ -73,6 +73,9 @@ packaging, and self-service export package validation readiness.
   customers. Spaces now resolve first-time self-service group policy from space
   defaults, then organization defaults, then install env defaults, and
   organization templates are included in export/import package validation.
+- Clarifies the holiday/manual self-service boundary: special-day labels,
+  cycle counts, and underfilled-slot warnings are covered now; holiday-specific
+  staffing policy changes remain future scope.
 - Ends the current session after password changes and shows a login success
   notice, preventing stale authenticated sessions after credential rotation.
 - Supports PWA install prompts on mobile and desktop when the browser reports

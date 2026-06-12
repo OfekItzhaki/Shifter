@@ -230,6 +230,9 @@ Known verification:
   customers. First-time self-service group policy resolves from space defaults,
   then organization defaults, then install env defaults, and organization
   templates are included in export/import package validation.
+- Clarifies the holiday/manual self-service boundary: special-day labels,
+  cycle counts, and underfilled-slot warnings are covered now; holiday-specific
+  staffing policy changes remain future scope.
 - Ends sessions after password changes and redirects users back to login with a
   success notice.
 - Supports PWA install prompts on mobile and desktop when the browser reports
