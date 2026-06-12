@@ -322,4 +322,6 @@ large deployments:
   without presence-window creation, and no-coverage special-day claim blocking.
 - Formal certificate signing for closeout reports. PDF closeout reports already
   include a verification fingerprint for archive/tamper checks, but they are not
-  certificate-signed legal documents.
+  certificate-signed legal documents. Treat certificate signing as a deployment
+  policy decision because it requires certificate ownership, trust-chain, and
+  renewal/rotation choices.
