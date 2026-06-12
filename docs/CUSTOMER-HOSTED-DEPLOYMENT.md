@@ -210,6 +210,11 @@ overwritten by later env changes.
 Space owners can also configure the same template inside Shifter from
 `Space Settings` -> `Self-Service`. A saved space template is used before the
 install-level env defaults when a group is first switched to `SelfService`.
+For multi-space organizations, platform admins can set an organization-level
+self-service defaults template through
+`/platform/organizations/{organizationId}/self-service-defaults`; spaces without
+their own template inherit the organization template before falling back to the
+install-level env defaults.
 
 ## Backups
 

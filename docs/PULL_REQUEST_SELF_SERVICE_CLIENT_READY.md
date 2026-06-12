@@ -53,6 +53,10 @@ packaging, and self-service export package validation readiness.
   `pg_restore`, app-service restart on restore-script failure, and restore
   runbook docs for
   customer-hosted PostgreSQL dumps and optional uploads-volume archives.
+- Adds organization-level self-service default templates for multi-space
+  customers. Spaces now resolve first-time self-service group policy from space
+  defaults, then organization defaults, then install env defaults, and
+  organization templates are included in export/import package validation.
 
 ## Verification
 
@@ -67,9 +71,12 @@ packaging, and self-service export package validation readiness.
 - `node_modules\\.bin\\eslint.cmd e2e\\self-service.browser.spec.ts` passed.
 - `node_modules\\.bin\\playwright.cmd test self-service.browser.spec.ts --list`
   discovered 14 browser lifecycle tests, including the special-day label flow.
-- `infra/scripts/smoke-self-service-client-ready.ps1` parser/config checks
-  passed locally; live execution still depends on a responsive seeded API/web
-  stack.
+- `infra/scripts/smoke-self-service-client-ready.ps1 -ApiBaseUrl http://localhost:5015 -WebBaseUrl http://localhost:3015`
+  passed against a fresh SQL install from all migrations plus `seed.sql`, a
+  live API, and a rebuilt production web server. This covered customer-hosted
+  restore script syntax, seeded demo users, the self-service demo cycle,
+  available slots, web reachability, and the Playwright special-day picker
+  browser flow.
 - `infra/scripts/validate-customer-env.ps1` parser check passed locally.
 - `C:\\Program Files\\Git\\bin\\bash.exe -n infra/scripts/restore-compose.sh`
   passed.
@@ -87,11 +94,13 @@ packaging, and self-service export package validation readiness.
   passed after public frontend env wiring.
 - `docker compose --env-file infra\\compose\\.env.customer.example -f infra\\compose\\docker-compose.yml config --quiet`
   passed, proving the checked-in customer env template renders through Compose.
+- `dotnet test apps\\api\\Jobuler.Tests\\Jobuler.Tests.csproj --filter "FullyQualifiedName~ChangeSchedulingModeCommandTests|FullyQualifiedName~OrganizationPortabilityTests"`
+  passed: 37 passed, 0 failed.
+- Fresh SQL install from all `infra/migrations/*.sql` plus `seed.sql` passed
+  after adding `086_organization_self_service_defaults.sql`.
 
 ## Remaining Product Checks
 
-- Run `infra/scripts/smoke-self-service-client-ready.ps1` against a live seeded
-  stack before demo/merge.
 - Run a customer-hosted smoke with real customer secrets and a real database.
 - Smoke-test organization package import against a real PostgreSQL target before
   promising tenant-by-tenant migration in production. Full customer-hosted

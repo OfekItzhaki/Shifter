@@ -36,6 +36,7 @@ public class AppDbContext : DbContext
 
     // Spaces
     public DbSet<Organization> Organizations => Set<Organization>();
+    public DbSet<OrganizationSelfServiceDefaults> OrganizationSelfServiceDefaults => Set<OrganizationSelfServiceDefaults>();
     public DbSet<Space> Spaces => Set<Space>();
     public DbSet<SpaceMembership> SpaceMemberships => Set<SpaceMembership>();
     public DbSet<SpacePermissionGrant> SpacePermissionGrants => Set<SpacePermissionGrant>();

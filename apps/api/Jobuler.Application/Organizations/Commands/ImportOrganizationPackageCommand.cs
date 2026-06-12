@@ -75,6 +75,7 @@ public class ImportOrganizationPackageCommandHandler
             AddRange<ScheduleRun>(data, "scheduleRuns");
             AddRange<ScheduleVersion>(data, "scheduleVersions");
             AddRange<Assignment>(data, "assignments");
+            AddRange<OrganizationSelfServiceDefaults>(data, "organizationSelfServiceDefaults");
             AddRange<SpaceSelfServiceDefaults>(data, "spaceSelfServiceDefaults");
             AddRange<SpaceSpecialDay>(data, "spaceSpecialDays");
             AddRange<SelfServiceConfig>(data, "selfServiceConfigs");

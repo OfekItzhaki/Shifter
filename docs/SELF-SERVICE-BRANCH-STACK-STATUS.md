@@ -204,11 +204,23 @@ Known verification:
 - Adds a conservative organization package import executor for safe packages,
   with explicit confirmation and transactional writes.
 - Strengthens special-leave query isolation coverage across space boundaries.
+- Adds organization-level self-service default templates for multi-space
+  customers. First-time self-service group policy resolves from space defaults,
+  then organization defaults, then install env defaults, and organization
+  templates are included in export/import package validation.
+- Live client-ready smoke passed against a fresh SQL install from all
+  migrations plus `seed.sql`, a live API, and a rebuilt production web server:
+  `infra/scripts/smoke-self-service-client-ready.ps1 -ApiBaseUrl http://localhost:5015 -WebBaseUrl http://localhost:3015`.
+  This covered restore script syntax, seeded demo users, the self-service demo
+  cycle, available slots, web reachability, and the Playwright special-day
+  picker browser flow.
+- Targeted organization-defaults and portability tests passed:
+  `dotnet test apps\\api\\Jobuler.Tests\\Jobuler.Tests.csproj --filter "FullyQualifiedName~ChangeSchedulingModeCommandTests|FullyQualifiedName~OrganizationPortabilityTests"`.
+- Fresh SQL install from all `infra/migrations/*.sql` plus `seed.sql` passed
+  after adding `086_organization_self_service_defaults.sql`.
 
 Remaining manual/product check:
 
-- Run `infra/scripts/smoke-self-service-client-ready.ps1` against a live seeded
-  web/API stack.
 - Smoke-test customer-hosted setup with real customer secrets and a real
   database.
 - Smoke-test organization package import against a real PostgreSQL target before

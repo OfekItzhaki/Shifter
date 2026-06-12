@@ -517,6 +517,23 @@ public class OrganizationPortabilityTests
             allowsDoubleShift: false,
             allowsOverlap: false,
             ownerId);
+        var organizationDefaults = OrganizationSelfServiceDefaults.Create(
+            organization.Id,
+            minShiftsPerCycle: 1,
+            maxShiftsPerCycle: 5,
+            requestWindowOpenOffsetHours: 168,
+            requestWindowCloseOffsetHours: 24,
+            cancellationCutoffHours: 24,
+            maxAbsencesPerCycle: 2,
+            maxLateCancellationsPerCycle: 1,
+            lateCancellationWindowHours: 24,
+            waitlistOfferMinutes: 60,
+            cycleDurationDays: 7,
+            allowMemberShiftClaims: true,
+            allowWaitlist: true,
+            allowShiftChangeRequests: true,
+            allowAbsenceReports: true,
+            allowShiftSwaps: false);
         var defaults = SpaceSelfServiceDefaults.Create(
             space.Id,
             minShiftsPerCycle: 1,
@@ -650,6 +667,7 @@ public class OrganizationPortabilityTests
         db.Groups.AddRange(group, outsideGroup);
         db.People.AddRange(person, targetPerson, outsidePerson);
         db.GroupTasks.Add(groupTask);
+        db.OrganizationSelfServiceDefaults.Add(organizationDefaults);
         db.SpaceSelfServiceDefaults.Add(defaults);
         db.SpaceSpecialDays.Add(specialDay);
         db.SelfServiceConfigs.AddRange(config, outsideConfig);
@@ -682,6 +700,7 @@ public class OrganizationPortabilityTests
         root.GetProperty("schemaVersion").GetInt32().Should().Be(1);
         root.GetProperty("manifest").GetProperty("organizationId").GetGuid().Should().Be(organization.Id);
         var manifestCounts = root.GetProperty("manifest").GetProperty("counts");
+        manifestCounts.GetProperty("organizationSelfServiceDefaults").GetInt32().Should().Be(1);
         manifestCounts.GetProperty("shiftAttendanceRecords").GetInt32().Should().Be(1);
         manifestCounts.GetProperty("shiftAbsenceReports").GetInt32().Should().Be(1);
         manifestCounts.GetProperty("shiftChangeRequests").GetInt32().Should().Be(1);
@@ -700,6 +719,7 @@ public class OrganizationPortabilityTests
         var data = root.GetProperty("data");
         data.GetProperty("users").EnumerateArray().Should().ContainSingle(user =>
             user.GetProperty("id").GetGuid() == ownerId);
+        data.GetProperty("organizationSelfServiceDefaults").EnumerateArray().Should().ContainSingle();
         data.GetProperty("spaceSelfServiceDefaults").EnumerateArray().Should().ContainSingle();
         data.GetProperty("spaceSpecialDays").EnumerateArray().Should().ContainSingle();
         data.GetProperty("selfServiceConfigs").EnumerateArray().Should().ContainSingle();
@@ -721,6 +741,7 @@ public class OrganizationPortabilityTests
             .Handle(new ValidateOrganizationImportPackageCommand(
                 System.Text.Encoding.UTF8.GetString(result.Content)), CancellationToken.None);
         importValidation.IsImportSafe.Should().BeTrue();
+        importValidation.Counts.OrganizationSelfServiceDefaults.Should().Be(1);
         importValidation.Counts.ShiftAttendanceRecords.Should().Be(1);
         importValidation.Counts.ShiftAbsenceReports.Should().Be(1);
         importValidation.Counts.ShiftChangeRequests.Should().Be(1);

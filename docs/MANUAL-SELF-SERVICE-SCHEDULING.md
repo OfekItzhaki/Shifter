@@ -78,8 +78,9 @@ The strongest manager entry point is the self-service group operations tab.
    Shifter creates a default self-service policy record when the mode is
    enabled, so the group has concrete limits before the first cycle is opened.
    Space owners can set the default template from `Space Settings` ->
-   `Self-Service`. Customer-hosted deployments can also set install-level
-   defaults with
+   `Self-Service`. Platform admins can also set an organization-level template
+   through the platform organization self-service defaults API for multi-space
+   customers. Customer-hosted deployments can also set install-level defaults with
    `SELF_SERVICE_DEFAULT_*` env vars before groups are switched to
    `SelfService`.
 2. Add members, roles, qualifications, and tasks as usual.
@@ -287,9 +288,9 @@ large deployments:
   shift-change rejection, member-to-member swap acceptance, member-to-member
   swap decline, and initiator swap cancellation, special leave approval, special
   leave cancellation, and special leave rejection.
-- Organization-level defaults for self-service policy through the admin UI.
-  Space owners can configure space-level defaults today; a higher-level
-  organization template for multi-space installs is still deferred.
+- Organization-level defaults now exist in the backend and platform API, and
+  spaces inherit them before falling back to install defaults. A polished admin
+  UI for editing those organization templates is still deferred.
 - Formal certificate signing for closeout reports. PDF closeout reports already
   include a verification fingerprint for archive/tamper checks, but they are not
   certificate-signed legal documents.

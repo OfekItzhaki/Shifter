@@ -31,6 +31,7 @@ public record OrganizationPackageDataDto(
     List<object> ScheduleRuns,
     List<object> ScheduleVersions,
     List<object> Assignments,
+    List<object> OrganizationSelfServiceDefaults,
     List<object> SpaceSelfServiceDefaults,
     List<object> SpaceSpecialDays,
     List<object> SelfServiceConfigs,
@@ -367,6 +368,11 @@ public class ExportOrganizationPackageCommandHandler
                     a.ChangeReasonSummary,
                     a.CreatedAt
                 })
+                .Cast<object>()
+                .ToListAsync(ct),
+            OrganizationSelfServiceDefaults: await _db.OrganizationSelfServiceDefaults.AsNoTracking()
+                .Where(d => d.OrganizationId == request.OrganizationId)
+                .OrderBy(d => d.OrganizationId)
                 .Cast<object>()
                 .ToListAsync(ct),
             SpaceSelfServiceDefaults: await _db.SpaceSelfServiceDefaults.AsNoTracking()

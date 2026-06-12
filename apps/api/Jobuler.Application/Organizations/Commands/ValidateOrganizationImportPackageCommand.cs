@@ -31,6 +31,7 @@ public record OrganizationImportValidationCounts(
     int ScheduleRuns,
     int ScheduleVersions,
     int Assignments,
+    int OrganizationSelfServiceDefaults,
     int SpaceSelfServiceDefaults,
     int SpaceSpecialDays,
     int SelfServiceConfigs,
@@ -64,7 +65,7 @@ public class ValidateOrganizationImportPackageCommandHandler
         Guid? organizationId = null;
         string? organizationName = null;
         var schemaVersion = 0;
-        var counts = new OrganizationImportValidationCounts(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+        var counts = new OrganizationImportValidationCounts(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 
         JsonDocument document;
         try
@@ -121,6 +122,7 @@ public class ValidateOrganizationImportPackageCommandHandler
                 var scheduleRuns = GetArray(data, "scheduleRuns");
                 var scheduleVersions = GetArray(data, "scheduleVersions");
                 var assignments = GetArray(data, "assignments");
+                var organizationSelfServiceDefaults = GetArray(data, "organizationSelfServiceDefaults");
                 var spaceSelfServiceDefaults = GetArray(data, "spaceSelfServiceDefaults");
                 var spaceSpecialDays = GetArray(data, "spaceSpecialDays");
                 var selfServiceConfigs = GetArray(data, "selfServiceConfigs");
@@ -150,6 +152,7 @@ public class ValidateOrganizationImportPackageCommandHandler
                     scheduleRuns.Count,
                     scheduleVersions.Count,
                     assignments.Count,
+                    organizationSelfServiceDefaults.Count,
                     spaceSelfServiceDefaults.Count,
                     spaceSpecialDays.Count,
                     selfServiceConfigs.Count,
@@ -173,6 +176,11 @@ public class ValidateOrganizationImportPackageCommandHandler
                     : null;
                 if (organizationId.HasValue && organizationObjectId.HasValue && organizationObjectId != organizationId)
                     errors.Add("Manifest organizationId does not match data.organization.id.");
+                ValidateRowsAreScopedToExportedOrganization(
+                    "organizationSelfServiceDefaults",
+                    organizationSelfServiceDefaults,
+                    organizationId,
+                    errors);
 
                 var exportedSpaceIds = ExtractIds(spaces).ToHashSet();
                 ValidateRowsAreScopedToExportedSpaces("groups", groups, exportedSpaceIds, errors);
@@ -290,6 +298,7 @@ public class ValidateOrganizationImportPackageCommandHandler
                 await AddEntityConflictsAsync(_db.People, ExtractIds(people), "person", conflicts, ct);
                 await AddEntityConflictsAsync(_db.ScheduleVersions, ExtractIds(scheduleVersions), "schedule version", conflicts, ct);
                 await AddEntityConflictsAsync(_db.Assignments, ExtractIds(assignments), "assignment", conflicts, ct);
+                await AddEntityConflictsAsync(_db.OrganizationSelfServiceDefaults, ExtractIds(organizationSelfServiceDefaults), "organization self-service defaults", conflicts, ct);
                 await AddEntityConflictsAsync(_db.SpaceSpecialDays, ExtractIds(spaceSpecialDays), "space special day", conflicts, ct);
                 await AddEntityConflictsAsync(_db.SchedulingCycles, ExtractIds(schedulingCycles), "self-service cycle", conflicts, ct);
                 await AddEntityConflictsAsync(_db.ShiftTemplates, ExtractIds(shiftTemplates), "shift template", conflicts, ct);
@@ -365,6 +374,7 @@ public class ValidateOrganizationImportPackageCommandHandler
         Compare("scheduleRuns", actual.ScheduleRuns);
         Compare("scheduleVersions", actual.ScheduleVersions);
         Compare("assignments", actual.Assignments);
+        Compare("organizationSelfServiceDefaults", actual.OrganizationSelfServiceDefaults);
         Compare("spaceSelfServiceDefaults", actual.SpaceSelfServiceDefaults);
         Compare("spaceSpecialDays", actual.SpaceSpecialDays);
         Compare("selfServiceConfigs", actual.SelfServiceConfigs);
@@ -433,6 +443,38 @@ public class ValidateOrganizationImportPackageCommandHandler
 
         if (leakedCount > 0)
             errors.Add($"{collectionName} contains {leakedCount} row(s) outside the exported spaces.");
+    }
+
+    private static void ValidateRowsAreScopedToExportedOrganization(
+        string collectionName,
+        IEnumerable<JsonElement> rows,
+        Guid? organizationId,
+        List<string> errors)
+    {
+        if (!organizationId.HasValue)
+            return;
+
+        var leakedCount = 0;
+        var missingCount = 0;
+
+        foreach (var row in rows)
+        {
+            var rowOrganizationId = TryGetGuid(row, "organizationId");
+            if (!rowOrganizationId.HasValue)
+            {
+                missingCount++;
+                continue;
+            }
+
+            if (rowOrganizationId.Value != organizationId.Value)
+                leakedCount++;
+        }
+
+        if (missingCount > 0)
+            errors.Add($"{collectionName} contains {missingCount} row(s) without a valid organizationId.");
+
+        if (leakedCount > 0)
+            errors.Add($"{collectionName} contains {leakedCount} row(s) outside the exported organization.");
     }
 
     private static void ValidateReferences(

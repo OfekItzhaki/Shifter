@@ -30,6 +30,7 @@ public record OrganizationExportCountsDto(
     int ScheduleRuns,
     int ScheduleVersions,
     int Assignments,
+    int OrganizationSelfServiceDefaults,
     int SpaceSelfServiceDefaults,
     int SpaceSpecialDays,
     int SelfServiceConfigs,
@@ -137,6 +138,8 @@ public class GetOrganizationExportManifestQueryHandler
                 .CountAsync(r => spaceIds.Contains(r.SpaceId), ct),
             ScheduleVersions: scheduleVersionCountBySpace.Values.Sum(),
             Assignments: assignmentCountBySpace.Values.Sum(),
+            OrganizationSelfServiceDefaults: await _db.OrganizationSelfServiceDefaults.AsNoTracking()
+                .CountAsync(d => d.OrganizationId == request.OrganizationId, ct),
             SpaceSelfServiceDefaults: await _db.SpaceSelfServiceDefaults.AsNoTracking()
                 .CountAsync(d => spaceIds.Contains(d.SpaceId), ct),
             SpaceSpecialDays: await _db.SpaceSpecialDays.AsNoTracking()

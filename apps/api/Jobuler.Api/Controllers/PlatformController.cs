@@ -283,6 +283,59 @@ public class PlatformController : ControllerBase
     }
 
     /// <summary>
+    /// GET /platform/organizations/{organizationId}/self-service-defaults
+    /// Returns the organization-level self-service defaults template.
+    /// Platform admin only.
+    /// </summary>
+    [HttpGet("organizations/{organizationId:guid}/self-service-defaults")]
+    public async Task<IActionResult> GetOrganizationSelfServiceDefaults(
+        Guid organizationId,
+        CancellationToken ct)
+    {
+        if (!await IsPlatformAdminAsync(ct))
+            return Forbid();
+
+        var result = await _mediator.Send(
+            new GetOrganizationSelfServiceDefaultsQuery(organizationId), ct);
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// PUT /platform/organizations/{organizationId}/self-service-defaults
+    /// Updates the organization-level template used before install defaults.
+    /// Platform admin only.
+    /// </summary>
+    [HttpPut("organizations/{organizationId:guid}/self-service-defaults")]
+    public async Task<IActionResult> UpdateOrganizationSelfServiceDefaults(
+        Guid organizationId,
+        [FromBody] UpdateOrganizationSelfServiceDefaultsRequest request,
+        CancellationToken ct)
+    {
+        if (!await IsPlatformAdminAsync(ct))
+            return Forbid();
+
+        var result = await _mediator.Send(new UpdateOrganizationSelfServiceDefaultsCommand(
+            organizationId,
+            request.MinShiftsPerCycle,
+            request.MaxShiftsPerCycle,
+            request.RequestWindowOpenOffsetHours,
+            request.RequestWindowCloseOffsetHours,
+            request.CancellationCutoffHours,
+            request.MaxAbsencesPerCycle,
+            request.MaxLateCancellationsPerCycle,
+            request.LateCancellationWindowHours,
+            request.WaitlistOfferMinutes,
+            request.CycleDurationDays,
+            request.AllowMemberShiftClaims,
+            request.AllowWaitlist,
+            request.AllowShiftChangeRequests,
+            request.AllowAbsenceReports,
+            request.AllowShiftSwaps), ct);
+
+        return Ok(result);
+    }
+
+    /// <summary>
     /// POST /platform/organizations/{organizationId}/spaces/{spaceId}
     /// Moves a verified space into an official organization.
     /// Platform admin only.
@@ -430,6 +483,23 @@ public record UpdateOrganizationRequest(
     string? SetupTemplate,
     string? DefaultLocale,
     string? DefaultTimezoneId);
+
+public record UpdateOrganizationSelfServiceDefaultsRequest(
+    int MinShiftsPerCycle,
+    int MaxShiftsPerCycle,
+    int RequestWindowOpenOffsetHours,
+    int RequestWindowCloseOffsetHours,
+    int CancellationCutoffHours,
+    int MaxAbsencesPerCycle,
+    int MaxLateCancellationsPerCycle,
+    int LateCancellationWindowHours,
+    int WaitlistOfferMinutes,
+    int CycleDurationDays,
+    bool AllowMemberShiftClaims,
+    bool AllowWaitlist,
+    bool AllowShiftChangeRequests,
+    bool AllowAbsenceReports,
+    bool AllowShiftSwaps);
 
 public record ImportOrganizationRequest(JsonElement Package, bool ConfirmImport);
 
