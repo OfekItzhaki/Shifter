@@ -147,16 +147,20 @@ Customer-hosted means:
 7. Check health:
 
    ```bash
+   curl -fsS http://127.0.0.1:5000/ready
    curl -fsS http://127.0.0.1:5000/health
    curl -fsS http://127.0.0.1:5000/health/detailed
    curl -fsS http://127.0.0.1:3000
    ```
 
-   The detailed report includes `ai`, `resend`, `push`, `solver`, `postgres`,
-   and `redis`. The `ai` check is `skipped` when AI is disabled, and otherwise
-   calls `{AI_BASE_URL}/models` without sending prompts, schedules, files, or
-   customer data. The `push` check validates VAPID configuration locally and
-   does not contact external push providers.
+   `/ready` is the API readiness probe used by Compose and deployment rollback
+   checks; it fails if PostgreSQL or Redis is unavailable. `/health` keeps the
+   older deep health response for external uptime monitoring. The detailed
+   report includes `ai`, `resend`, `push`, `solver`, `postgres`, and `redis`.
+   The `ai` check is `skipped` when AI is disabled, and otherwise calls
+   `{AI_BASE_URL}/models` without sending prompts, schedules, files, or customer
+   data. The `push` check validates VAPID configuration locally and does not
+   contact external push providers.
 
    Platform admins can also review the same provider status inside Shifter on
    the Platform page.

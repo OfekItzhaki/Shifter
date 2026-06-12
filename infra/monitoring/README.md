@@ -96,6 +96,7 @@ aws logs filter-log-events \
 
 | Endpoint | Purpose | Auth |
 |----------|---------|------|
+| `GET /ready` | Readiness probe for deploys/orchestrators (DB + Redis) | None |
 | `GET /health` | Deep check (DB + Redis) | None |
 | `GET /health/live` | Liveness probe (no deps) | None |
 

@@ -37,35 +37,7 @@ public class HealthController : ControllerBase
             .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
             ?.InformationalVersion ?? "1.0.0";
 
-        var checks = new Dictionary<string, string>();
-        var healthy = true;
-
-        // Check PostgreSQL
-        try
-        {
-            await _db.Database.ExecuteSqlRawAsync("SELECT 1", ct);
-            checks["postgres"] = "healthy";
-        }
-        catch (Exception ex)
-        {
-            checks["postgres"] = "unhealthy";
-            healthy = false;
-            _logger.LogError(ex, "Health check: PostgreSQL is unreachable");
-        }
-
-        // Check Redis
-        try
-        {
-            var db = _redis.GetDatabase();
-            await db.PingAsync();
-            checks["redis"] = "healthy";
-        }
-        catch (Exception ex)
-        {
-            checks["redis"] = "unhealthy";
-            healthy = false;
-            _logger.LogError(ex, "Health check: Redis is unreachable");
-        }
+        var (healthy, checks) = await CheckCoreDependenciesAsync(ct);
 
         var result = new
         {
@@ -76,6 +48,23 @@ public class HealthController : ControllerBase
         };
 
         return healthy ? Ok(result) : StatusCode(503, result);
+    }
+
+    /// <summary>Readiness probe for orchestrators and deploy scripts.</summary>
+    [HttpGet("ready")]
+    [HttpGet("/ready")]
+    [AllowAnonymous]
+    public async Task<IActionResult> Ready(CancellationToken ct)
+    {
+        var (ready, checks) = await CheckCoreDependenciesAsync(ct);
+        var result = new
+        {
+            status = ready ? "ready" : "not_ready",
+            timestamp = DateTime.UtcNow,
+            checks,
+        };
+
+        return ready ? Ok(result) : StatusCode(503, result);
     }
 
     /// <summary>Lightweight liveness probe — no dependency checks.</summary>
@@ -100,4 +89,36 @@ public class HealthController : ControllerBase
         return StatusCode(statusCode, report);
     }
 
+    private async Task<(bool Healthy, Dictionary<string, string> Checks)> CheckCoreDependenciesAsync(CancellationToken ct)
+    {
+        var checks = new Dictionary<string, string>();
+        var healthy = true;
+
+        try
+        {
+            await _db.Database.ExecuteSqlRawAsync("SELECT 1", ct);
+            checks["postgres"] = "healthy";
+        }
+        catch (Exception ex)
+        {
+            checks["postgres"] = "unhealthy";
+            healthy = false;
+            _logger.LogError(ex, "Health check: PostgreSQL is unreachable");
+        }
+
+        try
+        {
+            var db = _redis.GetDatabase();
+            await db.PingAsync();
+            checks["redis"] = "healthy";
+        }
+        catch (Exception ex)
+        {
+            checks["redis"] = "unhealthy";
+            healthy = false;
+            _logger.LogError(ex, "Health check: Redis is unreachable");
+        }
+
+        return (healthy, checks);
+    }
 }

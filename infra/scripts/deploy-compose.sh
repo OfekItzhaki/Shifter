@@ -58,7 +58,7 @@ wait_for_health() {
 
     if [ -z "$unhealthy" ] \
       && curl -fsS "http://127.0.0.1:${WEB_PORT}" >/dev/null \
-      && curl -fsS "http://127.0.0.1:${API_PORT}/health" >/dev/null; then
+      && curl -fsS "http://127.0.0.1:${API_PORT}/ready" >/dev/null; then
       return 0
     fi
 

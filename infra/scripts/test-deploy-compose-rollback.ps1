@@ -253,7 +253,7 @@ exit 1
 
     $curlText = Get-Content -Raw -LiteralPath $curlLog
     if ($curlText -notmatch "http://127\.0\.0\.1:3015" -or
-        $curlText -notmatch "http://127\.0\.0\.1:5015/health") {
+        $curlText -notmatch "http://127\.0\.0\.1:5015/ready") {
         throw "Fake curl log did not show expected web/API health checks. Log:`n$curlText"
     }
 

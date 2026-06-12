@@ -235,6 +235,8 @@ Known verification:
 - Adds `infra/scripts/verify-customer-hosted-install.ps1` as the target-host
   wrapper for the real customer env preflight, seed setup, and live smoke
   sequence.
+- Adds `/ready` as the API readiness endpoint for Compose, deployment scripts,
+  and future orchestrators.
 - Adds package reference validation for exported users, owner/member links, core
   scheduling rows, and self-service workflow relationships.
 - Adds a conservative organization package import executor for safe packages,
@@ -336,6 +338,8 @@ Known verification:
   `dotnet test apps\\api\\Jobuler.Tests\\Jobuler.Tests.csproj --filter "FullyQualifiedName~ResendHealthCheckTests|FullyQualifiedName~ResendEmailSenderTests"`.
 - Provider health check coverage passed:
   `dotnet test apps\\api\\Jobuler.Tests\\Jobuler.Tests.csproj --filter FullyQualifiedName~HealthChecks`.
+- Health endpoint coverage passed after adding `/ready`:
+  `dotnet test apps\\api\\Jobuler.Tests\\Jobuler.Tests.csproj --filter FullyQualifiedName~HealthEndpointIntegrationTests`.
 - Fresh SQL install from all `infra/migrations/*.sql` plus `seed.sql` passed
   after adding `086_organization_self_service_defaults.sql`.
 - PWA prompt regression tests passed:

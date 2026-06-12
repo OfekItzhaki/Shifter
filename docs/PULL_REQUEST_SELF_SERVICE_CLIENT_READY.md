@@ -42,6 +42,9 @@ packaging, and self-service export package validation readiness.
 - Adds `infra/scripts/verify-customer-hosted-install.ps1` as the target-host
   wrapper for real env validation, package preflight, seeded demo data setup,
   and live self-service smoke checks.
+- Adds a top-level `/ready` API readiness probe for orchestrators and deploy
+  scripts, and switches Compose/deploy health checks to readiness instead of
+  the broader `/health` endpoint.
 - Adds `infra/scripts/smoke-self-service-client-ready.ps1` to preflight web/API
   health, seeded demo users, the self-service demo cycle, member/admin
   self-service workflow read models, available slots, admin assignment reads,
@@ -190,6 +193,8 @@ packaging, and self-service export package validation readiness.
   passed: 5 passed, 0 failed.
 - `dotnet test apps\\api\\Jobuler.Tests\\Jobuler.Tests.csproj --filter FullyQualifiedName~HealthChecks`
   passed: 49 passed, 0 failed.
+- `dotnet test apps\\api\\Jobuler.Tests\\Jobuler.Tests.csproj --filter FullyQualifiedName~HealthEndpointIntegrationTests`
+  passed after adding `/ready`.
 - `dotnet test apps\\api\\Jobuler.Tests\\Jobuler.Tests.csproj --filter FullyQualifiedName~SpaceSpecialDayCommandTests`
   passed: 4 passed, 0 failed.
 - `dotnet test apps\\api\\Jobuler.Tests\\Jobuler.Tests.csproj --filter FullyQualifiedName~OrganizationPortabilityTests`

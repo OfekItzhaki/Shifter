@@ -323,6 +323,54 @@ public class HealthEndpointIntegrationTests
             because: "the /health endpoint must remain accessible without authentication (Req 7.2)");
     }
 
+    [Fact]
+    public async Task Ready_ReturnsExpectedStructure_WithCoreDependencyChecks()
+    {
+        var db = CreateDb();
+        var redis = CreateHealthyRedis();
+        var controller = CreateController(db: db, redis: redis);
+
+        var result = await controller.Ready(CancellationToken.None);
+
+        var objectResult = result.Should().BeAssignableTo<ObjectResult>().Subject;
+        var body = objectResult.Value!;
+
+        var statusProp = body.GetType().GetProperty("status");
+        var timestampProp = body.GetType().GetProperty("timestamp");
+        var checksProp = body.GetType().GetProperty("checks");
+
+        statusProp.Should().NotBeNull("readiness response must have 'status'");
+        timestampProp.Should().NotBeNull("readiness response must have 'timestamp'");
+        checksProp.Should().NotBeNull("readiness response must have 'checks'");
+
+        var checks = checksProp!.GetValue(body) as Dictionary<string, string>;
+        checks.Should().NotBeNull();
+        checks.Should().ContainKeys("postgres", "redis");
+    }
+
+    [Fact]
+    public async Task Ready_Returns503_WhenCoreDependencyIsUnreachable()
+    {
+        var db = CreateDb();
+        var redis = CreateUnhealthyRedis();
+        var controller = CreateController(db: db, redis: redis);
+
+        var result = await controller.Ready(CancellationToken.None);
+
+        var objectResult = result.Should().BeAssignableTo<ObjectResult>().Subject;
+        objectResult.StatusCode.Should().Be(503);
+    }
+
+    [Fact]
+    public void Ready_Endpoint_HasTopLevelAndNestedRoutes()
+    {
+        var method = typeof(HealthController).GetMethod(nameof(HealthController.Ready));
+        var httpGetAttrs = method!.GetCustomAttributes(
+            typeof(HttpGetAttribute), true).Cast<HttpGetAttribute>();
+
+        httpGetAttrs.Select(attr => attr.Template).Should().Contain(new[] { "ready", "/ready" });
+    }
+
     // Validates: Requirement 7.1 — /health response includes version and timestamp
     [Fact]
     public async Task Health_ResponseFormat_IncludesVersionAndTimestamp()
