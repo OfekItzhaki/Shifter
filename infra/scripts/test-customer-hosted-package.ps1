@@ -91,6 +91,10 @@ Invoke-Step "Customer-hosted install wrapper dry-run harness" {
     & (Join-Path $PSScriptRoot "test-verify-customer-hosted-install-dry-run.ps1") -ShifterDir $root -BashPath $bash
 }
 
+Invoke-Step "Hosted VPS smoke harness" {
+    & (Join-Path $PSScriptRoot "test-smoke-hosted-vps.ps1") -ShifterDir $root
+}
+
 Invoke-Step "Customer-hosted package assembly harness" {
     $packageArgs = @{
         ShifterDir = $root
@@ -119,6 +123,8 @@ Invoke-Step "PowerShell script syntax" {
     foreach ($scriptName in @(
             "verify-customer-hosted-install.ps1",
             "test-verify-customer-hosted-install-dry-run.ps1",
+            "smoke-hosted-vps.ps1",
+            "test-smoke-hosted-vps.ps1",
             "test-bundle-compose-images.ps1",
             "generate-signed-license.ps1",
             "test-generate-signed-license.ps1",

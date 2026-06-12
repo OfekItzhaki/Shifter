@@ -285,6 +285,10 @@ packaging, and self-service export package validation readiness.
   action-major upgrades.
 - A temporary detached worktree merge check of `origin/main` into
   `feat/self-service-client-ready` completed cleanly with no conflicts.
+- `infra/scripts/test-smoke-hosted-vps.ps1` passed, proving
+  `smoke-hosted-vps.ps1` resolves web/API URLs from an env file and checks API
+  readiness, API health, public web/auth pages, the PWA manifest/icon, and the
+  service worker against local mock endpoints.
 - Before merge, use the workflow history above to confirm the latest
   package-relevant run for `feat/self-service-client-ready` is green.
 - `infra/scripts/backup-compose.sh`, `infra/scripts/deploy-compose.sh`,
