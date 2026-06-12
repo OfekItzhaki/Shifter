@@ -262,6 +262,25 @@ async function ensureApprovedShift(
   return assigned!;
 }
 
+async function getAdminSlot(
+  request: APIRequestContext,
+  adminToken: string,
+  spaceId: string,
+  groupId: string,
+  cycleId: string,
+  shiftSlotId: string
+): Promise<AvailableSlotDto> {
+  const adminSlots = await api<AvailableSlotsResponse>(
+    request,
+    adminToken,
+    "GET",
+    `/spaces/${spaceId}/groups/${groupId}/shift-slots/admin/slots?cycleId=${cycleId}`
+  );
+  const slot = adminSlots.slots.find((row) => (row.id ?? row.shiftSlotId) === shiftSlotId);
+  expect(slot, `admin slot list should include ${shiftSlotId}`).toBeTruthy();
+  return slot!;
+}
+
 async function ensureAbsenceReportableApprovedShift(
   request: APIRequestContext,
   adminToken: string,
@@ -1169,6 +1188,14 @@ test.describe("Self-service browser lifecycle", () => {
       member.personId
     );
     const reason = `Browser E2E cancellation ${Date.now()}`;
+    const slotBefore = await getAdminSlot(
+      request,
+      adminToken,
+      spaceId,
+      groupId,
+      status.cycleId!,
+      ownedShift.shiftSlotId
+    );
 
     await loginAsUser(page, memberEmail, DEMO_PASSWORD);
     await page.evaluate((targetGroupId) => {
@@ -1197,6 +1224,15 @@ test.describe("Self-service browser lifecycle", () => {
     const cancelledShift = refreshedShifts.requests.find((row) => row.id === ownedShift.id);
     expect(cancelledShift?.status).toBe("Cancelled");
     expect(cancelledShift?.cancellationReason).toBe(reason);
+    const slotAfter = await getAdminSlot(
+      request,
+      adminToken,
+      spaceId,
+      groupId,
+      status.cycleId!,
+      ownedShift.shiftSlotId
+    );
+    expect(slotAfter.currentFillCount).toBe(slotBefore.currentFillCount - 1);
 
     await expect(shiftCard).toBeVisible({ timeout: 15000 });
   });
