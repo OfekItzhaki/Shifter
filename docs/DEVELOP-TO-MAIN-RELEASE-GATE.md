@@ -71,6 +71,9 @@ Use this checklist before opening or merging a `develop` to `main` PR.
 As of June 13, 2026:
 
 - `develop` has green CI evidence.
+- The broad `CI` workflow now runs on pushes to `develop` and PRs into
+  `develop` or `main`, so release PR status checks can be enforced instead of
+  relying only on manual dispatch.
 - Customer-hosted package verification has passed locally and in GitHub Actions.
 - The production-hosted API `/health` is healthy, but `/ready` returns 404,
   which means the hosted API has not yet been deployed to the readiness-probe

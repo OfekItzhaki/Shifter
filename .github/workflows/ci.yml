@@ -1,8 +1,13 @@
 name: CI
 
-# Disabled — no CI runner configured for VPS deployment
-# Re-enable when CI environment is set up
 on:
+  pull_request:
+    branches:
+      - main
+      - develop
+  push:
+    branches:
+      - develop
   workflow_dispatch:
 
 jobs:

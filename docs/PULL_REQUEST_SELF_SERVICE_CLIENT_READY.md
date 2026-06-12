@@ -390,6 +390,10 @@ packaging, and self-service export package validation readiness.
   June 13, 2026 after folding the GitHub release-control checks into the main
   release readiness audit, so a single `develop` to `main` gate now fails on
   missing staging setup or weak production branch controls.
+- The broad `CI` workflow now runs automatically for pushes to `develop` and
+  pull requests into `develop` or `main`, so the production ruleset can require
+  `API Build & Test`, `Solver Lint & Test`, and `Frontend Build` checks on the
+  final release PR.
 - `infra/scripts/check-github-release-controls.ps1` currently fails against
   GitHub because `main` blocks deletion/force-push but does not require pull
   requests or status checks yet; `develop` also lacks active no-delete/no-force
