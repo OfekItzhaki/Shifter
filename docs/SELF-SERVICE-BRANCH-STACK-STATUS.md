@@ -396,6 +396,10 @@ Known verification:
 - Focused special-day closeout/export tests passed:
   `dotnet test apps\\api\\Jobuler.Tests\\Jobuler.Tests.csproj --filter "FullyQualifiedName~SelfServiceScopeTests.GetCycleCloseout|FullyQualifiedName~SelfServiceScopeTests.ExportCloseout"`.
   This includes closeout, CSV, and PDF special-day impact metrics.
+- Focused closeout archive verification passed:
+  `dotnet test apps\\api\\Jobuler.Tests\\Jobuler.Tests.csproj --filter FullyQualifiedName~SelfServiceScopeTests.ExportCloseout`.
+  This includes proof that the closeout PDF verification fingerprint matches
+  the SHA-256 of the exported closeout CSV bytes.
 - Focused operations closeout UI test and lint passed:
   `node_modules\\.bin\\vitest.cmd run __tests__\\selfService\\selfServiceOperationsTab.test.tsx`
   and
@@ -415,6 +419,15 @@ Known verification:
   `dotnet test apps\\api\\Jobuler.Tests\\Jobuler.Tests.csproj --filter FullyQualifiedName~HealthChecks`.
 - Health endpoint coverage passed after adding `/ready`:
   `dotnet test apps\\api\\Jobuler.Tests\\Jobuler.Tests.csproj --filter FullyQualifiedName~HealthEndpointIntegrationTests`.
+- Detailed health and AI mode metadata coverage passed:
+  `dotnet test apps\\api\\Jobuler.Tests\\Jobuler.Tests.csproj --filter "FullyQualifiedName~HealthEndpointIntegrationTests|FullyQualifiedName~AiHealthCheckTests"`.
+  This includes preserving provider metadata in `/health/detailed` so
+  customer-hosted no-export/private AI mode can be verified without exposing
+  secrets.
+- Install-level self-service default validation passed:
+  `dotnet test apps\\api\\Jobuler.Tests\\Jobuler.Tests.csproj --filter "FullyQualifiedName~SelfServiceDefaultPolicyOptionsTests|FullyQualifiedName~ChangeSchedulingModeCommandTests"`.
+  This includes startup-validation coverage for customer install defaults
+  before they can leak into new self-service group policy.
 - Fresh SQL install from all `infra/migrations/*.sql` plus `seed.sql` passed
   after adding `086_organization_self_service_defaults.sql`.
 - PWA prompt regression tests passed:
