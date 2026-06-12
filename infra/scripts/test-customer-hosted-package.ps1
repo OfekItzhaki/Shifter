@@ -92,7 +92,15 @@ Invoke-Step "Customer-hosted install wrapper dry-run harness" {
 }
 
 Invoke-Step "Customer-hosted package assembly harness" {
-    & (Join-Path $PSScriptRoot "test-package-customer-hosted.ps1") -ShifterDir $root -BashPath $bash
+    $packageArgs = @{
+        ShifterDir = $root
+        BashPath = $bash
+    }
+    if ($SkipDockerComposeConfig) {
+        $packageArgs.SkipDockerComposeConfig = $true
+    }
+
+    & (Join-Path $PSScriptRoot "test-package-customer-hosted.ps1") @packageArgs
 }
 
 Invoke-Step "Backup compose harness" {

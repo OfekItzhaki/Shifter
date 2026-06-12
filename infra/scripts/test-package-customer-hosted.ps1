@@ -1,6 +1,7 @@
 param(
     [string]$ShifterDir = $(Resolve-Path (Join-Path $PSScriptRoot "..\..")),
-    [string]$BashPath = ""
+    [string]$BashPath = "",
+    [switch]$SkipDockerComposeConfig
 )
 
 $ErrorActionPreference = "Stop"
@@ -114,8 +115,22 @@ try {
         }
     }
 
-    $packagedVerifier = Join-PackagePath -Root $extractedPackageRoot -RelativePath "infra/scripts/verify-customer-hosted-install.ps1"
     $packagedEnvFile = Join-PackagePath -Root $extractedPackageRoot -RelativePath "infra/compose/.env.customer.example"
+    $packagedComposeFile = Join-PackagePath -Root $extractedPackageRoot -RelativePath "infra/compose/docker-compose.yml"
+
+    if (-not $SkipDockerComposeConfig) {
+        $docker = Get-Command docker -ErrorAction SilentlyContinue
+        if (-not $docker) {
+            throw "Docker was not found. Re-run with -SkipDockerComposeConfig to skip extracted package compose validation."
+        }
+
+        & docker compose --env-file $packagedEnvFile -f $packagedComposeFile config --quiet
+        if ($LASTEXITCODE -ne 0) {
+            throw "Extracted package docker compose config failed with exit code $LASTEXITCODE."
+        }
+    }
+
+    $packagedVerifier = Join-PackagePath -Root $extractedPackageRoot -RelativePath "infra/scripts/verify-customer-hosted-install.ps1"
     $verifierOutput = & $packagedVerifier `
         -ShifterDir $extractedPackageRoot `
         -EnvFile $packagedEnvFile `
