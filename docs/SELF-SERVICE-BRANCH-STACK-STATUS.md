@@ -203,6 +203,9 @@ Known verification:
 - Adds `infra/scripts/smoke-self-service-client-ready.ps1` for live seeded stack
   preflight, member/admin self-service workflow read-model checks, admin
   assignment/closeout checks, plus the holiday/special-day picker browser flow.
+- The live self-service smoke can now read target URLs and optional seeded demo
+  credentials from the customer env file with `-EnvFile`, and supports
+  `-ResolveOnly` for dry configuration checks before live services are ready.
 - The smoke script also checks `infra/scripts/restore-compose.sh` syntax when
   Bash/Git Bash is available.
 - Adds `infra/scripts/restore-compose.sh` and customer-hosted restore runbook
@@ -272,6 +275,8 @@ Known verification:
   cycle, member/admin workflow read models, available slots, admin assignment
   reads, cycle closeout metrics, web reachability, and the Playwright
   special-day picker browser flow.
+- Live smoke env-file resolution passed:
+  `infra/scripts/smoke-self-service-client-ready.ps1 -EnvFile infra/compose/.env.customer.example -ResolveOnly`.
 - Targeted organization-defaults and portability tests passed:
   `dotnet test apps\\api\\Jobuler.Tests\\Jobuler.Tests.csproj --filter "FullyQualifiedName~ChangeSchedulingModeCommandTests|FullyQualifiedName~OrganizationPortabilityTests"`.
 - Organization portability coverage now exports, validates, and imports the full

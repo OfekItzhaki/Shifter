@@ -145,15 +145,17 @@ Customer-hosted means:
 
    ```powershell
    .\infra\scripts\smoke-self-service-client-ready.ps1 `
-     -WebBaseUrl https://shifter.customer.example `
-     -ApiBaseUrl https://api-shifter.customer.example
+     -EnvFile .\infra\compose\.env
    ```
 
    This verifies the web/API endpoints, seeded users, the self-service demo
    cycle, available member slots, and the holiday/special-day picker label
    browser flow. For API/seed verification without the browser flow, add
    `-SkipBrowserTest`. The script checks already-running services; it does not
-   start Docker Compose or load seed data.
+   start Docker Compose or load seed data. It reads `APP_FRONTEND_BASE_URL`,
+   `NEXT_PUBLIC_API_URL`/`APP_API_BASE_URL`, and optional `E2E_ADMIN_EMAIL`,
+   `E2E_MEMBER_EMAIL`, and `E2E_DEMO_PASSWORD` from the env file. To verify the
+   resolved values without calling live services, add `-ResolveOnly`.
 
 8. Put HTTPS in front of the web/API ports using the customer's proxy or WAF.
    For Cloudflare, start from the

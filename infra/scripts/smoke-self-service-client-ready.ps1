@@ -1,11 +1,13 @@
 param(
-    [string]$WebBaseUrl = $(if ($env:E2E_BASE_URL) { $env:E2E_BASE_URL } else { "http://localhost:3000" }),
-    [string]$ApiBaseUrl = $(if ($env:NEXT_PUBLIC_API_URL) { $env:NEXT_PUBLIC_API_URL } else { "http://localhost:5000" }),
-    [string]$AdminEmail = $(if ($env:E2E_ADMIN_EMAIL) { $env:E2E_ADMIN_EMAIL } else { "admin@demo.local" }),
-    [string]$MemberEmail = $(if ($env:E2E_MEMBER_EMAIL) { $env:E2E_MEMBER_EMAIL } else { "ofek@demo.local" }),
-    [string]$Password = $(if ($env:E2E_DEMO_PASSWORD) { $env:E2E_DEMO_PASSWORD } else { "Demo1234!" }),
+    [string]$EnvFile = "",
+    [string]$WebBaseUrl = "",
+    [string]$ApiBaseUrl = "",
+    [string]$AdminEmail = "",
+    [string]$MemberEmail = "",
+    [string]$Password = "",
     [int]$TimeoutSeconds = 10,
-    [switch]$SkipBrowserTest
+    [switch]$SkipBrowserTest,
+    [switch]$ResolveOnly
 )
 
 $ErrorActionPreference = "Stop"
@@ -14,6 +16,87 @@ $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $repoRoot = Resolve-Path (Join-Path $scriptDir "..\..")
 $webDir = Join-Path $repoRoot "apps\web"
 $restoreScript = Join-Path $repoRoot "infra\scripts\restore-compose.sh"
+
+function Read-EnvFile {
+    param([string]$Path)
+
+    $values = @{}
+    if ([string]::IsNullOrWhiteSpace($Path)) {
+        return $values
+    }
+
+    $resolvedPath = Resolve-Path $Path
+    foreach ($line in Get-Content -LiteralPath $resolvedPath.Path) {
+        if ($line -notmatch '^\s*([^#=\s]+)\s*=(.*)$') {
+            continue
+        }
+
+        $key = $Matches[1].Trim()
+        $value = $Matches[2]
+        $commentIndex = $value.IndexOf("#")
+        if ($commentIndex -ge 0) {
+            $value = $value.Substring(0, $commentIndex)
+        }
+
+        $values[$key] = $value.Trim().Trim('"').Trim("'")
+    }
+
+    return $values
+}
+
+function Get-ConfigValue {
+    param(
+        [hashtable]$Values,
+        [string[]]$Keys,
+        [string]$Fallback
+    )
+
+    foreach ($key in $Keys) {
+        if ($Values.ContainsKey($key) -and -not [string]::IsNullOrWhiteSpace([string]$Values[$key])) {
+            return [string]$Values[$key]
+        }
+
+        $processValue = [Environment]::GetEnvironmentVariable($key)
+        if (-not [string]::IsNullOrWhiteSpace($processValue)) {
+            return $processValue
+        }
+    }
+
+    return $Fallback
+}
+
+$envFileValues = Read-EnvFile $EnvFile
+
+if ([string]::IsNullOrWhiteSpace($WebBaseUrl)) {
+    $WebBaseUrl = Get-ConfigValue $envFileValues @("E2E_BASE_URL", "APP_FRONTEND_BASE_URL") "http://localhost:3000"
+}
+
+if ([string]::IsNullOrWhiteSpace($ApiBaseUrl)) {
+    $ApiBaseUrl = Get-ConfigValue $envFileValues @("NEXT_PUBLIC_API_URL", "APP_API_BASE_URL") "http://localhost:5000"
+}
+
+if ([string]::IsNullOrWhiteSpace($AdminEmail)) {
+    $AdminEmail = Get-ConfigValue $envFileValues @("E2E_ADMIN_EMAIL") "admin@demo.local"
+}
+
+if ([string]::IsNullOrWhiteSpace($MemberEmail)) {
+    $MemberEmail = Get-ConfigValue $envFileValues @("E2E_MEMBER_EMAIL") "ofek@demo.local"
+}
+
+if ([string]::IsNullOrWhiteSpace($Password)) {
+    $Password = Get-ConfigValue $envFileValues @("E2E_DEMO_PASSWORD") "Demo1234!"
+}
+
+if ($ResolveOnly) {
+    Write-Host "Resolved smoke configuration:" -ForegroundColor Cyan
+    Write-Host "  WebBaseUrl: $WebBaseUrl"
+    Write-Host "  ApiBaseUrl: $ApiBaseUrl"
+    Write-Host "  AdminEmail: $AdminEmail"
+    Write-Host "  MemberEmail: $MemberEmail"
+    Write-Host "  Password: $(if ([string]::IsNullOrWhiteSpace($Password)) { "not set" } else { "set" })"
+    Write-Host "  SkipBrowserTest: $SkipBrowserTest"
+    exit 0
+}
 
 function Write-Step {
     param([string]$Message)
