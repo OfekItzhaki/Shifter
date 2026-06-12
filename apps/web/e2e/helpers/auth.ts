@@ -19,11 +19,12 @@ export async function loginAsUser(
   password: string = ADMIN_PASS
 ): Promise<void> {
   await page.goto(`${BASE}/login`);
-  await page.locator('input[type="email"]').fill(email);
+  await page.locator('input[autocomplete="username"]').fill(email);
   await page.locator('input[type="password"]').fill(password);
   await page.locator('button[type="submit"]').click();
   // Wait until we leave /login
   await page.waitForFunction(() => !window.location.pathname.startsWith("/login"), { timeout: 20000 });
+  await ensureCurrentSpace(page);
 
   // If redirected to /spaces (space selection), pick the first space
   if (page.url().includes("/spaces")) {
@@ -31,8 +32,44 @@ export async function loginAsUser(
     if (await firstSpaceBtn.isVisible({ timeout: 5000 }).catch(() => false)) {
       await firstSpaceBtn.click();
       await page.waitForFunction(() => !window.location.pathname.startsWith("/spaces"), { timeout: 10000 });
+      await ensureCurrentSpace(page);
     }
   }
+}
+
+async function ensureCurrentSpace(page: Page): Promise<void> {
+  const hasSpace = await page.evaluate(() => {
+    const raw = localStorage.getItem("jobuler-space");
+    try {
+      return Boolean(raw ? JSON.parse(raw).state?.currentSpaceId : null);
+    } catch {
+      return false;
+    }
+  });
+
+  if (hasSpace) return;
+
+  const token = await page.evaluate(() => localStorage.getItem("access_token"));
+  if (!token) return;
+
+  const response = await page.request.get(`${API_URL}/spaces`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!response.ok()) return;
+
+  const spaces = await response.json() as Array<{ id: string; name: string }>;
+  const space = spaces[0];
+  if (!space) return;
+
+  await page.evaluate((selectedSpace) => {
+    localStorage.setItem("jobuler-space", JSON.stringify({
+      state: {
+        currentSpaceId: selectedSpace.id,
+        currentSpaceName: selectedSpace.name,
+      },
+      version: 0,
+    }));
+  }, space);
 }
 
 /**

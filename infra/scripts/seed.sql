@@ -102,6 +102,12 @@ INSERT INTO space_permission_grants (space_id, user_id, permission_key, granted_
   ('e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'd4e5f6a7-b8c9-4d0e-1f2a-b3c4d5e6f7a8', 'space.view', 'a1b2c3d4-e5f6-4a7b-8c9d-e0f1a2b3c4d5')
 ON CONFLICT DO NOTHING;
 
+-- Self-service demo members need space.view so the member picker can load their groups.
+INSERT INTO space_permission_grants (space_id, user_id, permission_key, granted_by_user_id) VALUES
+  ('e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'b2c3d4e5-f6a7-4b8c-9d0e-f1a2b3c4d5e6', 'space.view', 'a1b2c3d4-e5f6-4a7b-8c9d-e0f1a2b3c4d5'),
+  ('e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'c3d4e5f6-a7b8-4c9d-0e1f-a2b3c4d5e6f7', 'space.view', 'a1b2c3d4-e5f6-4a7b-8c9d-e0f1a2b3c4d5')
+ON CONFLICT DO NOTHING;
+
 -- Operational Roles
 INSERT INTO space_roles (id, space_id, name, description, created_by_user_id) VALUES
   ('f6a7b8c9-d0e1-4f2a-3b4c-d5e6f7a8b9c0', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'Soldier',   'Combat soldier',   'a1b2c3d4-e5f6-4a7b-8c9d-e0f1a2b3c4d5'),
