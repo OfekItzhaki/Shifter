@@ -25,6 +25,7 @@ on:
       - "docs/SELF-SERVICE-PORTABILITY-CONTRACT.md"
   push:
     branches:
+      - develop
       - feat/self-service-client-ready
     paths:
       - ".github/workflows/customer-hosted-preflight.yml"
