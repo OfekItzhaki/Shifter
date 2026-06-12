@@ -326,6 +326,9 @@ packaging, and self-service export package validation readiness.
   passed.
 - `node_modules\\.bin\\tsc.cmd --noEmit --pretty false` from `apps/web`
   passed after tightening PostHog key narrowing.
+- `node_modules\\.bin\\vitest.cmd run __tests__\\platform\\organizationSelfServiceDefaultsPanel.test.tsx`
+  passed: 2 passed, 0 failed, covering organization defaults load, edit/save,
+  and validation.
 - `node_modules\\.bin\\eslint.cmd components\\platform\\OrganizationSelfServiceDefaultsPanel.tsx app\\platform\\page.tsx lib\\api\\platform.ts lib\\analytics\\posthog.ts`
   passed after adding the Platform organization self-service defaults panel.
 - `node_modules\\.bin\\eslint.cmd app\\layout.tsx lib\\support\\crispConfig.ts __tests__\\monitoring\\crispConfig.test.ts`
