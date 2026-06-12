@@ -92,7 +92,7 @@ Invoke-Step "Customer-hosted install wrapper dry-run harness" {
 }
 
 Invoke-Step "Customer-hosted package assembly harness" {
-    & (Join-Path $PSScriptRoot "test-package-customer-hosted.ps1") -ShifterDir $root
+    & (Join-Path $PSScriptRoot "test-package-customer-hosted.ps1") -ShifterDir $root -BashPath $bash
 }
 
 Invoke-Step "Backup compose harness" {

@@ -1,10 +1,36 @@
 param(
-    [string]$ShifterDir = $(Resolve-Path (Join-Path $PSScriptRoot "..\.."))
+    [string]$ShifterDir = $(Resolve-Path (Join-Path $PSScriptRoot "..\..")),
+    [string]$BashPath = ""
 )
 
 $ErrorActionPreference = "Stop"
 
+function Find-Bash {
+    param([string]$RequestedPath)
+
+    if (-not [string]::IsNullOrWhiteSpace($RequestedPath)) {
+        return $RequestedPath
+    }
+
+    foreach ($candidate in @(
+        "C:\Program Files\Git\bin\bash.exe",
+        "C:\Program Files\Git\usr\bin\bash.exe"
+    )) {
+        if (Test-Path -LiteralPath $candidate) {
+            return $candidate
+        }
+    }
+
+    $bashCommand = Get-Command bash -ErrorAction SilentlyContinue
+    if ($bashCommand -and $bashCommand.Source -notlike "*System32*") {
+        return $bashCommand.Source
+    }
+
+    throw "Git Bash was not found. Install Git for Windows or pass -BashPath."
+}
+
 $root = (Resolve-Path $ShifterDir).Path
+$bash = Find-Bash $BashPath
 $packageScript = Join-Path $PSScriptRoot "package-customer-hosted.ps1"
 $tempDir = Join-Path ([System.IO.Path]::GetTempPath()) "shifter-package-test-$([Guid]::NewGuid().ToString('N'))"
 $packageName = "shifter-customer-hosted-test"
@@ -60,6 +86,21 @@ try {
         if ($blocked) {
             throw "Package contains blocked path matching $blockedPattern`: $($blocked.FullName -join ', ')"
         }
+    }
+
+    $packagedVerifier = Join-Path $packageRoot "infra\scripts\verify-customer-hosted-install.ps1"
+    $packagedEnvFile = Join-Path $packageRoot "infra\compose\.env.customer.example"
+    $verifierOutput = & $packagedVerifier `
+        -ShifterDir $packageRoot `
+        -EnvFile $packagedEnvFile `
+        -BashPath $bash `
+        -SkipPackagePreflight `
+        -SkipLiveSmoke `
+        -SeedDryRun `
+        -ResolveOnly 2>&1
+    $verifierOutput | ForEach-Object { Write-Host $_ }
+    if ($LASTEXITCODE -ne 0) {
+        throw "Packaged install verifier dry run failed with exit code $LASTEXITCODE. Output:`n$($verifierOutput | Out-String)"
     }
 
     Write-Host "Customer-hosted package assembly test passed." -ForegroundColor Green
