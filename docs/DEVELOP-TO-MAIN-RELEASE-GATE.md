@@ -15,6 +15,19 @@ Use this checklist before opening or merging a `develop` to `main` PR.
   .\infra\scripts\check-github-release-controls.ps1
   ```
 
+- To configure the expected controls, dry-run first and then apply:
+
+  ```powershell
+  .\infra\scripts\setup-github-release-controls.ps1
+
+  .\infra\scripts\setup-github-release-controls.ps1 -Apply
+  ```
+
+  This updates or creates active rulesets so `main` blocks deletion/force-push,
+  requires PRs, and requires `API Build & Test`, `Frontend Build`,
+  `Solver Lint & Test`, and `Package Preflight`; it also protects `develop`
+  from deletion and force-push.
+
 - Staging is deployed from `develop`.
 - Release readiness audit has no failures, including staging setup, latest CI
   evidence, customer-hosted preflight evidence, and GitHub release controls:
@@ -85,10 +98,10 @@ As of June 13, 2026:
   covered by a local harness.
 - The staging manual smoke evidence template is in place, but no real staging
   user-flow sign-off has been recorded yet.
-- The GitHub release-control audit is in place. It currently passes the
-  no-delete/no-force-push rule for `main`, but fails because `main` does not
-  require pull requests or status checks yet. `develop` also does not currently
-  have active no-delete/no-force-push rules.
+- The GitHub release-control audit is in place and currently passes: `main`
+  blocks deletion/force-push, requires pull requests, and requires the expected
+  status checks; `develop` blocks deletion/force-push. The setup helper is in
+  place and dry-run/apply behavior is covered by a local harness.
 - The real release readiness audit currently fails because the GitHub
   `staging` environment and staging URL/path repository variables are not
   configured yet. This is the expected blocker before a `develop` to `main` PR.

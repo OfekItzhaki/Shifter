@@ -394,18 +394,23 @@ packaging, and self-service export package validation readiness.
   pull requests into `develop` or `main`, so the production ruleset can require
   `API Build & Test`, `Solver Lint & Test`, and `Frontend Build` checks on the
   final release PR.
-- `infra/scripts/check-github-release-controls.ps1` currently fails against
-  GitHub because `main` blocks deletion/force-push but does not require pull
-  requests or status checks yet; `develop` also lacks active no-delete/no-force
-  rules.
+- `infra/scripts/setup-github-release-controls.ps1` and its harness were added
+  so the expected GitHub rulesets can be dry-run first, then applied
+  repeatably. The helper updates or creates the `Main` ruleset with
+  no-delete/no-force-push, PR, and expected status-check rules, and creates a
+  `Develop` no-delete/no-force-push ruleset when missing.
+- `infra/scripts/setup-github-release-controls.ps1 -Apply` was run against
+  GitHub on June 13, 2026. `infra/scripts/check-github-release-controls.ps1`
+  now passes against the live repository: `main` blocks deletion/force-push,
+  requires pull requests, and requires the expected status checks; `develop`
+  blocks deletion/force-push.
 - `infra/scripts/check-release-readiness.ps1 -SkipHostedSmoke` currently fails
   as intended until GitHub staging setup is completed: the `staging`
   environment and `STAGING_WEB_BASE_URL`, `STAGING_API_BASE_URL`,
   `STAGING_PATH`, and `STAGING_COMPOSE_PROJECT_NAME` repository variables are
-  missing, and the embedded release-control check also fails until `main`
-  requires pull requests and status checks. It confirms the latest successful
-  CI run `27441388300` on `cb786b2` and customer-hosted preflight run
-  `27444623907` on `53b79fe`.
+  missing. It confirms the latest successful CI run `27445368410` on `5d10408`,
+  customer-hosted preflight run `27445163461` on `a6209ed`, and passing live
+  GitHub release controls.
 - `infra/scripts/test-customer-hosted-package.ps1 -EnvFile infra/compose/.env.customer.example`
   passed locally on June 12, 2026 after adding the release readiness audit
   harness to the customer-hosted package preflight.

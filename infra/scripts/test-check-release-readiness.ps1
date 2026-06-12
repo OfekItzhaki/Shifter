@@ -47,7 +47,7 @@ if ($joined -like "api repos/*/environments*") {
 
 if ($joined -like "api repos/*/rulesets/1*") {
     if ($mode -eq "ready") {
-        '{"id":1,"name":"Main","enforcement":"active","conditions":{"ref_name":{"include":["~DEFAULT_BRANCH"]}},"rules":[{"type":"deletion"},{"type":"non_fast_forward"},{"type":"pull_request"},{"type":"required_status_checks"}]}'
+        '{"id":1,"name":"Main","enforcement":"active","conditions":{"ref_name":{"include":["~DEFAULT_BRANCH"]}},"rules":[{"type":"deletion"},{"type":"non_fast_forward"},{"type":"pull_request"},{"type":"required_status_checks","parameters":{"required_status_checks":[{"context":"API Build & Test"},{"context":"Frontend Build"},{"context":"Solver Lint & Test"},{"context":"Package Preflight"}],"strict_required_status_checks_policy":true}}]}'
     }
     else {
         '{"id":1,"name":"Main","enforcement":"active","conditions":{"ref_name":{"include":["~DEFAULT_BRANCH"]}},"rules":[{"type":"deletion"},{"type":"non_fast_forward"}]}'
@@ -96,7 +96,7 @@ exit 1
             "[PASS] Repository variable STAGING_WEB_BASE_URL is configured.",
             "[PASS] Dedicated STAGING_* SSH secrets are configured.",
             "[PASS] main requires pull requests.",
-            "[PASS] main requires status checks.",
+            "[PASS] main requires expected status checks:",
             "[PASS] develop blocks deletion and force pushes.",
             "Summary: 0 failed"
         )) {
@@ -116,7 +116,7 @@ exit 1
             "[FAIL] Repository variable STAGING_WEB_BASE_URL is missing.",
             "[WARN] Using VPS_* SSH secrets as staging fallback",
             "[FAIL] main must require pull requests before production merges.",
-            "[FAIL] main must require status checks before production merges.",
+            "[FAIL] main must require expected status checks before production merges:",
             "[WARN] develop does not have active no-delete/no-force-push rules.",
             "Summary:"
         )) {

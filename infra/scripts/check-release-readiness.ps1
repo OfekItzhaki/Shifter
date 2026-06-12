@@ -7,7 +7,13 @@ param(
     [switch]$SkipReleaseControlCheck,
     [switch]$SkipHostedSmoke,
     [string]$WebBaseUrl = "",
-    [string]$ApiBaseUrl = ""
+    [string]$ApiBaseUrl = "",
+    [string[]]$RequiredStatusChecks = @(
+        "API Build & Test",
+        "Frontend Build",
+        "Solver Lint & Test",
+        "Package Preflight"
+    )
 )
 
 $ErrorActionPreference = "Stop"
@@ -96,6 +102,33 @@ function Test-Rule {
     }
 
     return $false
+}
+
+function Test-RequiredStatusChecks {
+    param(
+        [object[]]$Rules,
+        [string[]]$ExpectedChecks
+    )
+
+    $statusRule = $Rules | Where-Object { [string]$_.type -eq "required_status_checks" } | Select-Object -First 1
+    if ($null -eq $statusRule) {
+        return $false
+    }
+
+    $configured = @()
+    foreach ($check in (ConvertTo-ObjectList $statusRule.parameters.required_status_checks)) {
+        if (-not [string]::IsNullOrWhiteSpace([string]$check.context)) {
+            $configured += [string]$check.context
+        }
+    }
+
+    foreach ($expected in $ExpectedChecks) {
+        if ($configured -notcontains $expected) {
+            return $false
+        }
+    }
+
+    return $true
 }
 
 function Test-RulesetMatchesBranch {
@@ -267,11 +300,11 @@ if (-not $SkipGitHubCheck) {
                 Write-Check FAIL "main must require pull requests before production merges."
             }
 
-            if (Test-Rule $mainRules "required_status_checks") {
-                Write-Check PASS "main requires status checks."
+            if (Test-RequiredStatusChecks $mainRules $RequiredStatusChecks) {
+                Write-Check PASS "main requires expected status checks: $($RequiredStatusChecks -join ', ')."
             }
             else {
-                Write-Check FAIL "main must require status checks before production merges."
+                Write-Check FAIL "main must require expected status checks before production merges: $($RequiredStatusChecks -join ', ')."
             }
 
             if ((Test-Rule $developRules "deletion") -and (Test-Rule $developRules "non_fast_forward")) {

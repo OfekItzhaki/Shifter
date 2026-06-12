@@ -22,7 +22,7 @@ if ($joined -like "api repos/*/rulesets") {
 
 if ($joined -like "api repos/*/rulesets/1") {
     if ($mode -eq "ready") {
-        '{"id":1,"name":"Main","enforcement":"active","conditions":{"ref_name":{"include":["~DEFAULT_BRANCH"],"exclude":[]}},"rules":[{"type":"deletion"},{"type":"non_fast_forward"},{"type":"pull_request"},{"type":"required_status_checks"}]}'
+        '{"id":1,"name":"Main","enforcement":"active","conditions":{"ref_name":{"include":["~DEFAULT_BRANCH"],"exclude":[]}},"rules":[{"type":"deletion"},{"type":"non_fast_forward"},{"type":"pull_request"},{"type":"required_status_checks","parameters":{"required_status_checks":[{"context":"API Build & Test"},{"context":"Frontend Build"},{"context":"Solver Lint & Test"},{"context":"Package Preflight"}],"strict_required_status_checks_policy":true}}]}'
     }
     else {
         '{"id":1,"name":"Main","enforcement":"active","conditions":{"ref_name":{"include":["~DEFAULT_BRANCH"],"exclude":[]}},"rules":[{"type":"deletion"},{"type":"non_fast_forward"}]}'
@@ -58,7 +58,7 @@ exit 1
     $readyText = $readyOutput | Out-String
     foreach ($pattern in @(
             "[PASS] main requires pull requests.",
-            "[PASS] main requires status checks.",
+            "[PASS] main requires expected status checks:",
             "[PASS] develop blocks deletion and force pushes.",
             "Summary: 0 failed"
         )) {
@@ -75,7 +75,7 @@ exit 1
     $missingText = $missingOutput | Out-String
     foreach ($pattern in @(
             "[FAIL] main must require pull requests before production merges.",
-            "[FAIL] main must require status checks before production merges.",
+            "[FAIL] main must require expected status checks before production merges:",
             "[WARN] develop does not have active no-delete/no-force-push rules.",
             "Summary:"
         )) {
