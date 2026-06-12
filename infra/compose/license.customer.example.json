@@ -1,0 +1,7 @@
+{
+  "deploymentMode": "customer-hosted",
+  "licensee": "change_me_customer_legal_name",
+  "licenseKey": "change_me_customer_license_key_min_24_chars",
+  "expiresAt": "2099-01-01T00:00:00Z",
+  "signature": "change_me_signature_from_ofeklabs"
+}

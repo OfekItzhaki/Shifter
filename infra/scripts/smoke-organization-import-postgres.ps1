@@ -25,9 +25,19 @@ function Write-Step {
 function Invoke-Docker {
     param([string[]]$Arguments)
 
-    & docker @Arguments
-    if ($LASTEXITCODE -ne 0) {
-        throw "docker $($Arguments -join ' ') failed with exit code $LASTEXITCODE."
+    $previousErrorActionPreference = $ErrorActionPreference
+    $ErrorActionPreference = "Continue"
+    try {
+        $output = & docker @Arguments 2>&1
+        $exitCode = if ($null -eq $LASTEXITCODE) { 0 } else { $LASTEXITCODE }
+    }
+    finally {
+        $ErrorActionPreference = $previousErrorActionPreference
+    }
+
+    $output | ForEach-Object { Write-Host $_ }
+    if ($exitCode -ne 0) {
+        throw "docker $($Arguments -join ' ') failed with exit code $exitCode. Output:`n$($output | Out-String)"
     }
 }
 

@@ -81,6 +81,8 @@ services:
       App__DeploymentMode: ${SHIFTER_DEPLOYMENT_MODE:-saas}
       Entitlement__Licensee: ${SHIFTER_LICENSEE:-}
       Entitlement__LicenseKey: ${SHIFTER_LICENSE_KEY:-}
+      Entitlement__LicenseFile: ${SHIFTER_LICENSE_FILE_CONTAINER_PATH:-}
+      Entitlement__LicensePublicKey: ${SHIFTER_LICENSE_PUBLIC_KEY:-}
       ConnectionStrings__DefaultConnection: "Host=${POSTGRES_HOST};Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}"
       Redis__ConnectionString: "${REDIS_HOST}:6379,password=${REDIS_PASSWORD}"
       Jwt__Secret: ${JWT_SECRET}
@@ -140,6 +142,7 @@ services:
       - "127.0.0.1:${API_PORT}:8080"
     volumes:
       - uploads_data:/app/wwwroot/uploads
+      - ${SHIFTER_LICENSE_FILE_HOST_PATH:-./license.customer.example.json}:${SHIFTER_LICENSE_FILE_CONTAINER_PATH:-/run/secrets/shifter-license.json}:ro
     depends_on:
       postgres:
         condition: service_healthy

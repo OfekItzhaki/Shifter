@@ -114,7 +114,6 @@ required_keys=(
   API_PORT
   WEB_PORT
   SHIFTER_LICENSEE
-  SHIFTER_LICENSE_KEY
   JWT_SECRET
   JWT_ISSUER
   JWT_AUDIENCE
@@ -140,9 +139,40 @@ if [ -n "$jwt_secret" ] && [ "${#jwt_secret}" -lt 32 ]; then
 fi
 
 license_key="$(env_value SHIFTER_LICENSE_KEY)"
-if [ -n "$license_key" ] && [ "${#license_key}" -lt 24 ]; then
+license_file_host_path="$(env_value SHIFTER_LICENSE_FILE_HOST_PATH)"
+license_file_container_path="$(env_value SHIFTER_LICENSE_FILE_CONTAINER_PATH)"
+license_public_key="$(env_value SHIFTER_LICENSE_PUBLIC_KEY)"
+uses_signed_license_file=0
+if [ -n "$license_file_container_path" ]; then
+  uses_signed_license_file=1
+fi
+
+if [ -z "$license_key" ] && [ "$uses_signed_license_file" -eq 0 ]; then
+  echo "ERROR: SHIFTER_LICENSE_KEY is required unless SHIFTER_LICENSE_FILE_CONTAINER_PATH and SHIFTER_LICENSE_PUBLIC_KEY are configured." >&2
+  errors=$((errors + 1))
+elif [ -n "$license_key" ] && [ "${#license_key}" -lt 24 ]; then
   echo "ERROR: SHIFTER_LICENSE_KEY must be at least 24 characters." >&2
   errors=$((errors + 1))
+fi
+
+if [ "$uses_signed_license_file" -eq 1 ] || [ -n "$license_public_key" ]; then
+  if [ -z "$license_file_host_path" ]; then
+    echo "ERROR: SHIFTER_LICENSE_FILE_HOST_PATH is required when signed license file mode is configured." >&2
+    errors=$((errors + 1))
+  elif echo "$license_file_host_path" | grep -Eq 'license\.customer\.example\.json$'; then
+    echo "ERROR: SHIFTER_LICENSE_FILE_HOST_PATH still points at the example license file." >&2
+    errors=$((errors + 1))
+  fi
+
+  if [ -z "$license_file_container_path" ]; then
+    echo "ERROR: SHIFTER_LICENSE_FILE_CONTAINER_PATH is required when signed license file mode is configured." >&2
+    errors=$((errors + 1))
+  fi
+
+  if [ -z "$license_public_key" ]; then
+    echo "ERROR: SHIFTER_LICENSE_PUBLIC_KEY is required when signed license file mode is configured." >&2
+    errors=$((errors + 1))
+  fi
 fi
 
 field_encryption_key="$(env_value FIELD_ENCRYPTION_KEY)"

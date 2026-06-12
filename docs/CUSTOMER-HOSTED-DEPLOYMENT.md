@@ -75,6 +75,10 @@ Customer-hosted means:
    SHIFTER_DEPLOYMENT_MODE=customer-hosted
    SHIFTER_LICENSEE="Customer Legal Name"
    SHIFTER_LICENSE_KEY=<customer-license-key-from-ofeklabs>
+   # Optional for offline/private-network contracts:
+   # SHIFTER_LICENSE_FILE_HOST_PATH=/opt/shifter/license.customer.json
+   # SHIFTER_LICENSE_FILE_CONTAINER_PATH=/run/secrets/shifter-license.json
+   # SHIFTER_LICENSE_PUBLIC_KEY=<ofeklabs-license-public-key-pem>
    APP_FRONTEND_BASE_URL=https://shifter.customer.example
    APP_API_BASE_URL=https://api-shifter.customer.example
    NEXT_PUBLIC_API_URL=https://api-shifter.customer.example
@@ -280,18 +284,42 @@ For customer-hosted deployments:
 ## License And Entitlement
 
 Customer-hosted installs are fail-closed on startup unless the env file includes
-the customer legal name and issued license key:
+one of these entitlement paths.
+
+Simple customer-hosted license key:
 
 ```env
 SHIFTER_LICENSEE="Customer Legal Name"
 SHIFTER_LICENSE_KEY=...
 ```
 
-The install validators reject missing, placeholder, or too-short license values,
-and the API repeats the same check at startup when
-`SHIFTER_DEPLOYMENT_MODE=customer-hosted`. Store the license values with the rest
-of the customer secrets and update them through the normal maintenance window
-process.
+Signed offline license file for private-network installs:
+
+```env
+SHIFTER_LICENSEE="Customer Legal Name"
+SHIFTER_LICENSE_KEY=
+SHIFTER_LICENSE_FILE_HOST_PATH=/opt/shifter/license.customer.json
+SHIFTER_LICENSE_FILE_CONTAINER_PATH=/run/secrets/shifter-license.json
+SHIFTER_LICENSE_PUBLIC_KEY="-----BEGIN PUBLIC KEY-----\n...\n-----END PUBLIC KEY-----"
+```
+
+The API verifies the signed JSON license file with the configured RSA public
+key at startup. The signed license file must include `deploymentMode`,
+`licensee`, `licenseKey`, optional `expiresAt`, and `signature`. The signature
+is over this canonical payload:
+
+```text
+deploymentMode=customer-hosted
+licensee=<customer legal name>
+licenseKey=<issued license key>
+expiresAt=<UTC ISO timestamp or empty>
+```
+
+The install validators reject missing, placeholder, partial, or too-short
+license values, and the API repeats the entitlement check at startup when
+`SHIFTER_DEPLOYMENT_MODE=customer-hosted`. Store license files/keys with the
+rest of the customer secrets and update them through the normal maintenance
+window process.
 
 ## Manual Self-Service Defaults
 
@@ -418,5 +446,4 @@ These are good next iterations, but not required for the first sellable
 customer-hosted package:
 
 - Helm chart for Kubernetes customers.
-- Signed offline license files or activation portal for larger on-prem
-  contracts.
+- Activation portal for larger on-prem contracts.

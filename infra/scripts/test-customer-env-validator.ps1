@@ -19,6 +19,9 @@ function New-BaseEnv {
         WEB_PORT = "3000"
         SHIFTER_LICENSEE = "Acme Scheduling Ltd"
         SHIFTER_LICENSE_KEY = "valid-customer-license-key-2026"
+        SHIFTER_LICENSE_FILE_HOST_PATH = ""
+        SHIFTER_LICENSE_FILE_CONTAINER_PATH = ""
+        SHIFTER_LICENSE_PUBLIC_KEY = ""
         JWT_SECRET = "valid-jwt-secret-minimum-32-chars"
         JWT_ISSUER = "shifter-customer-api"
         JWT_AUDIENCE = "shifter-customer-web"
@@ -199,7 +202,26 @@ try {
         -Name "reject-missing-license-key" `
         -Values $missingLicense `
         -ExpectedExit 1 `
-        -ExpectedOutputPatterns @("SHIFTER_LICENSE_KEY is required")
+        -ExpectedOutputPatterns @("SHIFTER_LICENSE_KEY is required unless")
+
+    $signedLicense = New-BaseEnv
+    $signedLicense["SHIFTER_LICENSE_KEY"] = ""
+    $signedLicense["SHIFTER_LICENSE_FILE_HOST_PATH"] = "/opt/shifter/license.customer.json"
+    $signedLicense["SHIFTER_LICENSE_FILE_CONTAINER_PATH"] = "/run/secrets/shifter-license.json"
+    $signedLicense["SHIFTER_LICENSE_PUBLIC_KEY"] = "-----BEGIN PUBLIC KEY-----\ncustomer-key\n-----END PUBLIC KEY-----"
+    Test-Case -Name "allow-signed-license-file" -Values $signedLicense -ExpectedExit 0
+
+    $partialSignedLicense = New-BaseEnv
+    $partialSignedLicense["SHIFTER_LICENSE_KEY"] = ""
+    $partialSignedLicense["SHIFTER_LICENSE_FILE_CONTAINER_PATH"] = "/run/secrets/shifter-license.json"
+    Test-Case `
+        -Name "reject-partial-signed-license-file" `
+        -Values $partialSignedLicense `
+        -ExpectedExit 1 `
+        -ExpectedOutputPatterns @(
+            "SHIFTER_LICENSE_FILE_HOST_PATH is required",
+            "SHIFTER_LICENSE_PUBLIC_KEY is required"
+        )
 
     $shortLicense = New-BaseEnv
     $shortLicense["SHIFTER_LICENSE_KEY"] = "too-short"

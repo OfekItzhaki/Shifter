@@ -134,7 +134,6 @@ $requiredKeys = @(
     "API_PORT",
     "WEB_PORT",
     "SHIFTER_LICENSEE",
-    "SHIFTER_LICENSE_KEY",
     "JWT_SECRET",
     "JWT_ISSUER",
     "JWT_AUDIENCE",
@@ -159,8 +158,33 @@ if (-not [string]::IsNullOrWhiteSpace($jwtSecret) -and $jwtSecret.Length -lt 32)
 }
 
 $licenseKey = Get-EnvValue "SHIFTER_LICENSE_KEY"
-if (-not [string]::IsNullOrWhiteSpace($licenseKey) -and $licenseKey.Length -lt 24) {
+$licenseFileHostPath = Get-EnvValue "SHIFTER_LICENSE_FILE_HOST_PATH"
+$licenseFileContainerPath = Get-EnvValue "SHIFTER_LICENSE_FILE_CONTAINER_PATH"
+$licensePublicKey = Get-EnvValue "SHIFTER_LICENSE_PUBLIC_KEY"
+$usesSignedLicenseFile = -not [string]::IsNullOrWhiteSpace($licenseFileContainerPath)
+
+if ([string]::IsNullOrWhiteSpace($licenseKey) -and -not $usesSignedLicenseFile) {
+    Add-Error "SHIFTER_LICENSE_KEY is required unless SHIFTER_LICENSE_FILE_CONTAINER_PATH and SHIFTER_LICENSE_PUBLIC_KEY are configured."
+}
+elseif (-not [string]::IsNullOrWhiteSpace($licenseKey) -and $licenseKey.Length -lt 24) {
     Add-Error "SHIFTER_LICENSE_KEY must be at least 24 characters."
+}
+
+if ($usesSignedLicenseFile -or -not [string]::IsNullOrWhiteSpace($licensePublicKey)) {
+    if ([string]::IsNullOrWhiteSpace($licenseFileHostPath)) {
+        Add-Error "SHIFTER_LICENSE_FILE_HOST_PATH is required when signed license file mode is configured."
+    }
+    elseif ($licenseFileHostPath -match 'license\.customer\.example\.json$') {
+        Add-Error "SHIFTER_LICENSE_FILE_HOST_PATH still points at the example license file."
+    }
+
+    if ([string]::IsNullOrWhiteSpace($licenseFileContainerPath)) {
+        Add-Error "SHIFTER_LICENSE_FILE_CONTAINER_PATH is required when signed license file mode is configured."
+    }
+
+    if ([string]::IsNullOrWhiteSpace($licensePublicKey)) {
+        Add-Error "SHIFTER_LICENSE_PUBLIC_KEY is required when signed license file mode is configured."
+    }
 }
 
 $fieldEncryptionKey = Get-EnvValue "FIELD_ENCRYPTION_KEY"

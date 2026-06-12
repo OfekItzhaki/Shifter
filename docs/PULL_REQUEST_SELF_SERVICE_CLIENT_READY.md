@@ -35,6 +35,9 @@ packaging, and self-service export package validation readiness.
 - Adds a customer-hosted entitlement startup guard and env validation for
   `SHIFTER_LICENSEE` and `SHIFTER_LICENSE_KEY`, so private installs cannot
   start from an unlicensed placeholder env file.
+- Supports signed offline license files for private-network installs via
+  `SHIFTER_LICENSE_FILE_CONTAINER_PATH` and `SHIFTER_LICENSE_PUBLIC_KEY`, with
+  RSA signature verification at API startup.
 - Adds a Windows/PowerShell customer env validator alongside the Bash validator.
 - Lets `infra/scripts/test-customer-hosted-package.ps1` run against a real
   customer env file with `-EnvFile ... -ValidateEnvFile`, while retaining the
@@ -137,7 +140,8 @@ packaging, and self-service export package validation readiness.
 - `infra/scripts/test-customer-env-validator.ps1` passed, covering valid env,
   private no-export AI, public no-export AI rejection, and short
   `FIELD_ENCRYPTION_KEY` rejection, missing/short `SHIFTER_LICENSE_KEY`
-  rejection, across the PowerShell validator and Git Bash validator when
+  rejection, signed offline license-file acceptance, and partial signed-license
+  rejection across the PowerShell validator and Git Bash validator when
   available. It also asserts customer-hosted warning output when optional
   external processors such as PostHog, Sentry, Crisp, or LemonSqueezy are
   configured.
@@ -193,8 +197,8 @@ packaging, and self-service export package validation readiness.
   passed: 6 passed, 0 failed.
 - `dotnet test apps\\api\\Jobuler.Tests\\Jobuler.Tests.csproj --filter "FullyQualifiedName~AiConfigurationGuardTests|FullyQualifiedName~AiAssistantSupportTests|FullyQualifiedName~AiHealthCheckTests"`
   passed: 30 passed, 0 failed.
-- `dotnet test apps\\api\\Jobuler.Tests\\Jobuler.Tests.csproj --filter "FullyQualifiedName~DeploymentEntitlementGuardTests|FullyQualifiedName~AiConfigurationGuardTests"`
-  passed: 27 passed, 0 failed.
+- `dotnet test apps\\api\\Jobuler.Tests\\Jobuler.Tests.csproj --filter FullyQualifiedName~DeploymentEntitlementGuardTests`
+  passed: 11 passed, 0 failed.
 - `dotnet test apps\\api\\Jobuler.Tests\\Jobuler.Tests.csproj --filter "FullyQualifiedName~ResendHealthCheckTests|FullyQualifiedName~ResendEmailSenderTests"`
   passed: 5 passed, 0 failed.
 - `dotnet test apps\\api\\Jobuler.Tests\\Jobuler.Tests.csproj --filter FullyQualifiedName~HealthChecks`

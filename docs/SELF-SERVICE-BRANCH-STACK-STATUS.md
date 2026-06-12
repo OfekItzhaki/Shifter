@@ -195,11 +195,15 @@ Known verification:
   replacement.
 - Adds customer-hosted entitlement validation for `SHIFTER_LICENSEE` and
   `SHIFTER_LICENSE_KEY` in both install validators and API startup.
+- Supports signed offline license files for private-network installs, verified
+  with an RSA public key at API startup.
 - Adds a customer env validator harness that checks valid envs, no-export AI
   rejection/allowance, and short field encryption keys against the PowerShell
   validator and Git Bash validator when available. It also asserts warning
   output when optional external processors are configured for customer-hosted
   installs.
+- The same env validator harness accepts complete signed offline license-file
+  configuration and rejects partial signed-license configuration.
 - Customer env validators fail partial optional provider groups for Resend,
   Twilio, Web Push VAPID, Pushover, and LemonSqueezy before deployment.
 - Adds `infra/scripts/smoke-self-service-client-ready.ps1` for live seeded stack

@@ -1,6 +1,9 @@
 using FluentAssertions;
 using Jobuler.Infrastructure.Configuration;
 using Microsoft.Extensions.Configuration;
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.Json;
 using Xunit;
 
 namespace Jobuler.Tests.Application;
@@ -48,6 +51,95 @@ public class DeploymentEntitlementGuardTests
         var act = () => DeploymentEntitlementGuard.Validate(config);
 
         act.Should().NotThrow();
+    }
+
+    [Fact]
+    public void Validate_WhenCustomerHostedHasSignedLicenseFile_AllowsConfiguration()
+    {
+        using var rsa = RSA.Create(2048);
+        var licenseFile = WriteSignedLicenseFile(
+            rsa,
+            "Acme Scheduling Ltd",
+            "valid-customer-license-key-2026",
+            DateTimeOffset.UtcNow.AddYears(1));
+        var config = CreateConfig(new Dictionary<string, string?>
+        {
+            ["App:DeploymentMode"] = "customer-hosted",
+            ["Entitlement:LicenseFile"] = licenseFile,
+            ["Entitlement:LicensePublicKey"] = rsa.ExportSubjectPublicKeyInfoPem()
+        });
+
+        var act = () => DeploymentEntitlementGuard.Validate(config);
+
+        act.Should().NotThrow();
+    }
+
+    [Fact]
+    public void Validate_WhenSignedLicenseFileSignatureIsInvalid_RejectsConfiguration()
+    {
+        using var signer = RSA.Create(2048);
+        using var verifier = RSA.Create(2048);
+        var licenseFile = WriteSignedLicenseFile(
+            signer,
+            "Acme Scheduling Ltd",
+            "valid-customer-license-key-2026",
+            DateTimeOffset.UtcNow.AddYears(1));
+        var config = CreateConfig(new Dictionary<string, string?>
+        {
+            ["App:DeploymentMode"] = "customer-hosted",
+            ["Entitlement:LicenseFile"] = licenseFile,
+            ["Entitlement:LicensePublicKey"] = verifier.ExportSubjectPublicKeyInfoPem()
+        });
+
+        var act = () => DeploymentEntitlementGuard.Validate(config);
+
+        act.Should().Throw<InvalidOperationException>()
+            .WithMessage("Signed license signature is invalid.");
+    }
+
+    [Fact]
+    public void Validate_WhenSignedLicenseFileIsExpired_RejectsConfiguration()
+    {
+        using var rsa = RSA.Create(2048);
+        var licenseFile = WriteSignedLicenseFile(
+            rsa,
+            "Acme Scheduling Ltd",
+            "valid-customer-license-key-2026",
+            DateTimeOffset.UtcNow.AddDays(-1));
+        var config = CreateConfig(new Dictionary<string, string?>
+        {
+            ["App:DeploymentMode"] = "customer-hosted",
+            ["Entitlement:LicenseFile"] = licenseFile,
+            ["Entitlement:LicensePublicKey"] = rsa.ExportSubjectPublicKeyInfoPem()
+        });
+
+        var act = () => DeploymentEntitlementGuard.Validate(config);
+
+        act.Should().Throw<InvalidOperationException>()
+            .WithMessage("Signed license has expired.");
+    }
+
+    [Fact]
+    public void Validate_WhenSignedLicenseFileDoesNotMatchConfiguredLicensee_RejectsConfiguration()
+    {
+        using var rsa = RSA.Create(2048);
+        var licenseFile = WriteSignedLicenseFile(
+            rsa,
+            "Acme Scheduling Ltd",
+            "valid-customer-license-key-2026",
+            DateTimeOffset.UtcNow.AddYears(1));
+        var config = CreateConfig(new Dictionary<string, string?>
+        {
+            ["App:DeploymentMode"] = "customer-hosted",
+            ["Entitlement:Licensee"] = "Other Customer Ltd",
+            ["Entitlement:LicenseFile"] = licenseFile,
+            ["Entitlement:LicensePublicKey"] = rsa.ExportSubjectPublicKeyInfoPem()
+        });
+
+        var act = () => DeploymentEntitlementGuard.Validate(config);
+
+        act.Should().Throw<InvalidOperationException>()
+            .WithMessage("SHIFTER_LICENSEE does not match the signed license file.");
     }
 
     [Fact]
@@ -106,4 +198,33 @@ public class DeploymentEntitlementGuardTests
         new ConfigurationBuilder()
             .AddInMemoryCollection(values)
             .Build();
+
+    private static string WriteSignedLicenseFile(
+        RSA rsa,
+        string licensee,
+        string licenseKey,
+        DateTimeOffset expiresAt)
+    {
+        var deploymentMode = "customer-hosted";
+        var payload = string.Join('\n', new[]
+        {
+            $"deploymentMode={deploymentMode}",
+            $"licensee={licensee}",
+            $"licenseKey={licenseKey}",
+            $"expiresAt={expiresAt.UtcDateTime:O}"
+        });
+        var signature = Convert.ToBase64String(
+            rsa.SignData(Encoding.UTF8.GetBytes(payload), HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1));
+        var license = new
+        {
+            deploymentMode,
+            licensee,
+            licenseKey,
+            expiresAt,
+            signature
+        };
+        var path = Path.Combine(Path.GetTempPath(), $"shifter-license-{Guid.NewGuid():N}.json");
+        File.WriteAllText(path, JsonSerializer.Serialize(license));
+        return path;
+    }
 }
