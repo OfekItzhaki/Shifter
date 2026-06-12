@@ -126,7 +126,12 @@ export default function SlotBrowserTab({ spaceId, groupId }: SlotBrowserTabProps
 
   if (!slotsResponse) return null;
 
-  const { requestWindowOpen, requestWindowOpensAt } = slotsResponse;
+  const {
+    requestWindowOpen,
+    requestWindowOpensAt,
+    allowMemberShiftClaims = true,
+    allowWaitlist = true,
+  } = slotsResponse;
 
   return (
     <div className="space-y-4">
@@ -211,6 +216,8 @@ export default function SlotBrowserTab({ spaceId, groupId }: SlotBrowserTabProps
           {filteredSlots.map((slot) => {
             const isFull = slot.currentFillCount >= slot.capacity;
             const specialDayClosed = slot.isSpecialDay && slot.specialDayRequiresCoverage === false;
+            const claimDisabled = !isFull && !allowMemberShiftClaims;
+            const waitlistDisabled = isFull && !allowWaitlist;
             const capacityClass = getCapacityClass(slot.currentFillCount, slot.capacity);
             const isActing = actionLoading === slot.id;
             const slotError = actionError?.slotId === slot.id ? actionError.message : null;
@@ -285,6 +292,14 @@ export default function SlotBrowserTab({ spaceId, groupId }: SlotBrowserTabProps
                       specialDayClosed ? (
                         <span className="inline-flex max-w-36 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-center text-xs font-medium text-slate-500">
                           {t("specialDayUnavailable")}
+                        </span>
+                      ) : claimDisabled ? (
+                        <span className="inline-flex max-w-36 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-center text-xs font-medium text-slate-500">
+                          {t("claimDisabled")}
+                        </span>
+                      ) : waitlistDisabled ? (
+                        <span className="inline-flex max-w-36 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-center text-xs font-medium text-slate-500">
+                          {t("waitlistDisabled")}
                         </span>
                       ) : (
                         isFull ? (

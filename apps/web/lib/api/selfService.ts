@@ -96,6 +96,8 @@ export interface AvailableSlotsResponse {
   requestWindowOpensAt: string | null;
   requestWindowClosesAt: string | null;
   currentCycleId: string | null;
+  allowMemberShiftClaims?: boolean;
+  allowWaitlist?: boolean;
 }
 
 export interface SelfServiceCycleStatusDto {

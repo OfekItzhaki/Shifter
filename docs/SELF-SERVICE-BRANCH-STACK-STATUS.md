@@ -274,6 +274,8 @@ Known verification:
   slots, no-coverage special-day slots, and underfilled special-day slots.
 - Exposes member workflow policy flags in the My Shifts response and hides
   member change, absence, and swap actions when the group policy disables them.
+- Exposes pick/waitlist policy flags in the Available Slots response and shows
+  disabled policy labels instead of pick or waitlist buttons.
 - Ends sessions after password changes and redirects users back to login with a
   success notice.
 - Supports PWA install prompts on mobile and desktop when the browser reports
@@ -375,6 +377,10 @@ Known verification:
   `node_modules\\.bin\\vitest.cmd run __tests__\\selfService\\slotBrowserTab.test.tsx`
   and
   `node_modules\\.bin\\eslint.cmd app\\groups\\[groupId]\\tabs\\SlotBrowserTab.tsx lib\\api\\selfService.ts __tests__\\selfService\\slotBrowserTab.test.tsx`.
+  This includes no-coverage special-day and disabled pick/waitlist policy
+  states.
+- Focused Available Slots policy flag API test passed:
+  `dotnet test apps\\api\\Jobuler.Tests\\Jobuler.Tests.csproj --filter FullyQualifiedName~SelfServiceScopeTests.GetAvailable_AllowsGroupMemberWithoutSpaceViewGrant`.
 - Focused special leave special-day policy tests passed:
   `dotnet test apps\\api\\Jobuler.Tests\\Jobuler.Tests.csproj --filter FullyQualifiedName~SpecialLeaveRequestCommandTests`.
   This includes rejecting no-coverage special-day overlap and highlighting

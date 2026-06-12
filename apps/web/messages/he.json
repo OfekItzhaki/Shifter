@@ -2156,7 +2156,9 @@
         "שבת"
       ],
       "specialDayNoCoverage": "לא נדרש כיסוי",
-      "specialDayUnavailable": "לא פתוח לבחירה"
+      "specialDayUnavailable": "לא פתוח לבחירה",
+      "claimDisabled": "בחירת משמרות כבויה",
+      "waitlistDisabled": "רשימת המתנה כבויה"
     },
     "myShifts": {
       "title": "המשמרות שלי",

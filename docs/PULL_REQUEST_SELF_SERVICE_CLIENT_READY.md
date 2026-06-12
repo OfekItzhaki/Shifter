@@ -123,6 +123,8 @@ packaging, and self-service export package validation readiness.
   slots, no-coverage special-day slots, and underfilled special-day slots.
 - Exposes member workflow policy flags in the My Shifts response and hides
   member change, absence, and swap actions when the group policy disables them.
+- Exposes pick/waitlist policy flags in the Available Slots response and shows
+  disabled policy labels instead of pick or waitlist buttons.
 - Ends the current session after password changes and shows a login success
   notice, preventing stale authenticated sessions after credential rotation.
 - Supports PWA install prompts on mobile and desktop when the browser reports
@@ -154,8 +156,8 @@ packaging, and self-service export package validation readiness.
   passed: 3 passed, 0 failed, including closeout, CSV, and PDF special-day
   impact metrics.
 - `node_modules\\.bin\\vitest.cmd run __tests__\\selfService\\slotBrowserTab.test.tsx`
-  passed: 5 passed, 0 failed, including the no-coverage special-day picker
-  state.
+  passed: 6 passed, 0 failed, including no-coverage special-day and disabled
+  pick/waitlist policy states.
 - `node_modules\\.bin\\vitest.cmd run __tests__\\selfService\\selfServiceOperationsTab.test.tsx`
   passed: 1 passed, 0 failed, including the closeout special-day impact row.
 - `dotnet test apps\\api\\Jobuler.Tests\\Jobuler.Tests.csproj --filter FullyQualifiedName~SelfServiceScopeTests.ListMine_CurrentShiftCount_CountsOnlyApprovedAssignments`
@@ -165,6 +167,9 @@ packaging, and self-service export package validation readiness.
   are disabled.
 - `node_modules\\.bin\\eslint.cmd app\\groups\\[groupId]\\tabs\\SlotBrowserTab.tsx lib\\api\\selfService.ts __tests__\\selfService\\slotBrowserTab.test.tsx`
   passed.
+- `dotnet test apps\\api\\Jobuler.Tests\\Jobuler.Tests.csproj --filter FullyQualifiedName~SelfServiceScopeTests.GetAvailable_AllowsGroupMemberWithoutSpaceViewGrant`
+  passed: 1 passed, 0 failed, including Available Slots pick/waitlist policy
+  flags.
 - `node_modules\\.bin\\eslint.cmd components\\groups\\selfService\\SelfServiceOperationsTab.tsx lib\\api\\selfService.ts __tests__\\selfService\\selfServiceOperationsTab.test.tsx`
   passed.
 - `node_modules\\.bin\\eslint.cmd components\\groups\\selfService\\MyShiftsTab.tsx lib\\api\\selfService.ts __tests__\\selfService\\myShiftsTab.test.tsx`

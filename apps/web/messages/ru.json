@@ -2144,7 +2144,9 @@
         "Суббота"
       ],
       "specialDayNoCoverage": "Покрытие не требуется",
-      "specialDayUnavailable": "Недоступно для выбора"
+      "specialDayUnavailable": "Недоступно для выбора",
+      "claimDisabled": "Выбор смен отключен",
+      "waitlistDisabled": "Лист ожидания отключен"
     },
     "myShifts": {
       "title": "Мои смены",

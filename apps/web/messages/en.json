@@ -2130,6 +2130,8 @@
       "specialDayNamed": "Special day: {name}",
       "specialDayNoCoverage": "No coverage required",
       "specialDayUnavailable": "Not open for picking",
+      "claimDisabled": "Picking disabled",
+      "waitlistDisabled": "Waitlist disabled",
       "dateFilter": "Filter by date",
       "allDates": "All dates",
       "noSlots": "No available slots",

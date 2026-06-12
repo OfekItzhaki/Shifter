@@ -2163,6 +2163,13 @@ public class SelfServiceScopeTests
         var cycle = CreateCycle(spaceId, group.Id);
         var task = CreateTask(spaceId, group.Id, "Task", ownerUserId);
         var slot = CreateSlot(spaceId, group.Id, task.Id, cycle.Id, daysFromNow: 2);
+        var config = SelfServiceConfig.Create(spaceId, group.Id);
+        config.SetWorkflowPermissions(
+            allowMemberShiftClaims: false,
+            allowWaitlist: false,
+            allowShiftChangeRequests: true,
+            allowAbsenceReports: true,
+            allowShiftSwaps: true);
 
         db.People.Add(person);
         db.Groups.Add(group);
@@ -2170,6 +2177,7 @@ public class SelfServiceScopeTests
         db.SchedulingCycles.Add(cycle);
         db.GroupTasks.Add(task);
         db.ShiftSlots.Add(slot);
+        db.SelfServiceConfigs.Add(config);
         await db.SaveChangesAsync();
 
         services.Mediator
@@ -2205,7 +2213,10 @@ public class SelfServiceScopeTests
             cycle.Id.ToString(),
             CancellationToken.None);
 
-        result.Should().BeOfType<OkObjectResult>();
+        var ok = result.Should().BeOfType<OkObjectResult>().Subject;
+        ok.Value.Should().NotBeNull();
+        ok.Value!.GetType().GetProperty("allowMemberShiftClaims")!.GetValue(ok.Value).Should().Be(false);
+        ok.Value.GetType().GetProperty("allowWaitlist")!.GetValue(ok.Value).Should().Be(false);
         await services.Permissions.DidNotReceiveWithAnyArgs()
             .RequirePermissionAsync(default, default, default!, default);
     }
