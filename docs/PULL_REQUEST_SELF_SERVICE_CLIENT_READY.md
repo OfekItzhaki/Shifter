@@ -91,6 +91,9 @@ packaging, and self-service export package validation readiness.
 - `infra/scripts/test-restore-compose-dry-run.ps1` passed, proving
   `restore-compose.sh` honors a custom `ENV_FILE` during dry-run Compose
   validation.
+- `infra/scripts/backup-compose.sh`, `infra/scripts/deploy-compose.sh`, and
+  `infra/scripts/restore-compose.sh` syntax checks passed after wiring custom
+  `ENV_FILE` through their Compose calls.
 - `C:\\Program Files\\Git\\bin\\bash.exe -n infra/scripts/restore-compose.sh`
   passed.
 - `dotnet test apps\\api\\Jobuler.Tests\\Jobuler.Tests.csproj --filter FullyQualifiedName~AiAssistantSupportTests`

@@ -14,6 +14,10 @@ BACKUP_DIR="${BACKUP_DIR:-$SHIFTER_DIR/backups}"
 RETENTION_DAYS="${RETENTION_DAYS:-7}"
 TIMESTAMP="$(date +%Y%m%d_%H%M%S)"
 
+compose() {
+  docker compose --env-file "$ENV_FILE" --project-name "$COMPOSE_PROJECT_NAME" "$@"
+}
+
 if [ ! -f "$ENV_FILE" ]; then
   echo "Missing env file: $ENV_FILE" >&2
   exit 1
@@ -46,7 +50,7 @@ DB_BACKUP="$BACKUP_DIR/postgres_${COMPOSE_PROJECT_NAME}_${TIMESTAMP}.dump"
 UPLOADS_BACKUP="$BACKUP_DIR/uploads_${COMPOSE_PROJECT_NAME}_${TIMESTAMP}.tar.gz"
 
 echo "[$(date)] Backing up PostgreSQL for project '$COMPOSE_PROJECT_NAME'..."
-docker compose --project-name "$COMPOSE_PROJECT_NAME" exec -T postgres \
+compose exec -T postgres \
   pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" --format=custom --compress=9 > "$DB_BACKUP"
 
 if [ ! -s "$DB_BACKUP" ]; then

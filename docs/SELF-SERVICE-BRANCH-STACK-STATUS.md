@@ -204,6 +204,8 @@ Known verification:
   docs for PostgreSQL dumps and optional uploads-volume archives.
 - Ensures `restore-compose.sh` passes the configured `ENV_FILE` through to
   Compose and adds a dry-run harness for that path.
+- Ensures backup, deploy, and restore compose scripts all pass the configured
+  `ENV_FILE` to Docker Compose.
 - Adds package reference validation for exported users, owner/member links, core
   scheduling rows, and self-service workflow relationships.
 - Adds a conservative organization package import executor for safe packages,
@@ -235,6 +237,8 @@ Known verification:
   `infra/scripts/test-customer-env-validator.ps1`.
 - Restore dry-run harness passed:
   `infra/scripts/test-restore-compose-dry-run.ps1`.
+- Backup, deploy, and restore compose script syntax checks passed after custom
+  `ENV_FILE` propagation.
 - Resend sender and health check coverage passed:
   `dotnet test apps\\api\\Jobuler.Tests\\Jobuler.Tests.csproj --filter "FullyQualifiedName~ResendHealthCheckTests|FullyQualifiedName~ResendEmailSenderTests"`.
 - Fresh SQL install from all `infra/migrations/*.sql` plus `seed.sql` passed
