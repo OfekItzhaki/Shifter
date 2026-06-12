@@ -129,8 +129,13 @@ builder.Services.AddScoped<IPushNotificationSender, PushNotificationSender>();
 builder.Services.AddScoped<IPdfRenderer, QuestPdfRenderer>();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<ITimezoneResolver, TimezoneResolver>();
-builder.Services.Configure<Jobuler.Application.Scheduling.SelfService.SelfServiceDefaultPolicyOptions>(
-    builder.Configuration.GetSection("SelfServiceDefaults"));
+builder.Services
+    .AddOptions<SelfServiceDefaultPolicyOptions>()
+    .Bind(builder.Configuration.GetSection("SelfServiceDefaults"))
+    .Validate(
+        options => options.Validate().Count == 0,
+        "SelfServiceDefaults contains invalid values.")
+    .ValidateOnStart();
 
 // ─── VAPID configuration (Web Push) ──────────────────────────────────────────
 builder.Services.Configure<VapidSettings>(options =>
