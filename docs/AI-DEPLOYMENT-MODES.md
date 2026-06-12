@@ -98,6 +98,15 @@ It only checks endpoint/auth reachability. For SaaS with `AI_API_KEY` and no
 customer-hosted no-export installs, it checks the customer's private
 `AI_BASE_URL`.
 
+The detailed health result also includes non-sensitive AI mode metadata:
+
+- `details.mode`: `disabled`, `hosted`, `private-compatible`, or `no-export`.
+- `details.endpointKind`: `none`, `hosted`, `private`, or `unknown`.
+- `details.noExportRequired`: `true` or `false`.
+
+For a customer that forbids data export, verify `/health/detailed` reports
+`mode=no-export`, `endpointKind=private`, and `noExportRequired=true`.
+
 ## Provider Choice
 
 The product should prefer this order:
