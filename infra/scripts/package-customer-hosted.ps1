@@ -81,6 +81,34 @@ function Copy-PackageFile {
     Copy-Item -LiteralPath $source -Destination $target
 }
 
+function New-PackageArchive {
+    param(
+        [string]$PackageRoot,
+        [string]$PackageName,
+        [string]$ArchivePath
+    )
+
+    Add-Type -AssemblyName System.IO.Compression
+    Add-Type -AssemblyName System.IO.Compression.FileSystem
+
+    $archive = [System.IO.Compression.ZipFile]::Open($ArchivePath, [System.IO.Compression.ZipArchiveMode]::Create)
+    try {
+        $rootWithSeparator = $PackageRoot.TrimEnd([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar) + [System.IO.Path]::DirectorySeparatorChar
+        foreach ($file in Get-ChildItem -LiteralPath $PackageRoot -Recurse -File -Force) {
+            $relativePath = $file.FullName.Substring($rootWithSeparator.Length)
+            $entryName = "$PackageName/$($relativePath -replace '\\', '/')"
+            [System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile(
+                $archive,
+                $file.FullName,
+                $entryName,
+                [System.IO.Compression.CompressionLevel]::Optimal) | Out-Null
+        }
+    }
+    finally {
+        $archive.Dispose()
+    }
+}
+
 $root = (Resolve-Path $ShifterDir).Path
 
 if ([string]::IsNullOrWhiteSpace($OutputDir)) {
@@ -236,7 +264,7 @@ if (-not $NoArchive) {
         Remove-Item -LiteralPath $archivePath -Force
     }
 
-    Compress-Archive -LiteralPath $stagingRoot -DestinationPath $archivePath -CompressionLevel Optimal
+    New-PackageArchive -PackageRoot $stagingRoot -PackageName $PackageName -ArchivePath $archivePath
     Write-Host "Archive: $archivePath"
 }
 
