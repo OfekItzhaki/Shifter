@@ -411,9 +411,9 @@ Known verification:
   `node_modules\\.bin\\eslint.cmd components\\groups\\selfService\\MyShiftsTab.tsx lib\\api\\selfService.ts __tests__\\selfService\\myShiftsTab.test.tsx`.
 - Customer-hosted package assembly preflight passed:
   `infra\\scripts\\test-package-customer-hosted.ps1`.
-  This now renders the extracted package Compose config and asserts
-  `SelfServiceDefaults__*` API environment bindings are present for the
-  customer-facing `SELF_SERVICE_DEFAULT_*` install defaults.
+  This now renders the extracted package Compose config with non-default
+  `SELF_SERVICE_DEFAULT_*` probe values and asserts those exact values appear
+  in the API's `SelfServiceDefaults__*` environment bindings.
 - Backup, deploy, restore, and seed compose script syntax checks passed after
   custom `ENV_FILE` propagation.
 - Resend sender and health check coverage passed:
