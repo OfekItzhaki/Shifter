@@ -1,0 +1,58 @@
+name: Deploy Staging
+
+on:
+  push:
+    branches:
+      - develop
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Deploy develop to staging
+    runs-on: ubuntu-latest
+    environment: staging
+    if: github.event_name == 'workflow_dispatch' || vars.ENABLE_STAGING_DEPLOY == 'true'
+
+    steps:
+      - name: Assert develop ref
+        if: github.ref_name != 'develop'
+        run: |
+          echo "::error title=Staging deploy must run from develop::Deploy Staging is for the develop integration branch only."
+          exit 1
+
+      - name: Checkout smoke scripts
+        uses: actions/checkout@v6
+
+      - name: Deploy on staging host
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.STAGING_HOST || secrets.HETZNER_HOST }}
+          username: ${{ secrets.STAGING_USER || secrets.HETZNER_USER }}
+          key: ${{ secrets.STAGING_SSH_KEY || secrets.HETZNER_SSH_KEY }}
+          port: ${{ secrets.STAGING_PORT || 22 }}
+          command_timeout: 15m
+          script: |
+            set -euo pipefail
+
+            SHIFTER_DIR="${{ vars.STAGING_PATH || '/opt/shifter-staging' }}"
+            COMPOSE_PROJECT_NAME="${{ vars.STAGING_COMPOSE_PROJECT_NAME || 'shifter-staging' }}"
+
+            GIT_REF=develop \
+              SHIFTER_DIR="$SHIFTER_DIR" \
+              COMPOSE_PROJECT_NAME="$COMPOSE_PROJECT_NAME" \
+              "$SHIFTER_DIR/infra/scripts/deploy-compose.sh"
+
+      - name: Hosted smoke check
+        shell: pwsh
+        run: |
+          $webBaseUrl = "${{ vars.STAGING_WEB_BASE_URL }}"
+          $apiBaseUrl = "${{ vars.STAGING_API_BASE_URL }}"
+
+          if ([string]::IsNullOrWhiteSpace($webBaseUrl) -or [string]::IsNullOrWhiteSpace($apiBaseUrl)) {
+            Write-Host "::warning title=Staging smoke skipped::Set STAGING_WEB_BASE_URL and STAGING_API_BASE_URL repository variables to run the hosted smoke check."
+            exit 0
+          }
+
+          ./infra/scripts/smoke-hosted-vps.ps1 `
+            -WebBaseUrl $webBaseUrl `
+            -ApiBaseUrl $apiBaseUrl

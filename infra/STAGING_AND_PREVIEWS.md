@@ -112,6 +112,42 @@ COMPOSE_PROJECT_NAME=shifter-staging \
 
 See `infra/AVAILABILITY.md` for the backup, health verification, and rollback flow used by this script.
 
+## GitHub Staging Deploy Workflow
+
+The `Deploy Staging` workflow deploys `develop` with the same
+`infra/scripts/deploy-compose.sh` path.
+
+It is safe by default:
+
+- manual dispatch must run from the `develop` ref
+- pushes to `develop` deploy only when repository variable
+  `ENABLE_STAGING_DEPLOY=true`
+- the workflow uses the GitHub `staging` environment, so add environment
+  protection/approval rules if the staging host should not update unattended
+- the hosted smoke check runs only when both `STAGING_WEB_BASE_URL` and
+  `STAGING_API_BASE_URL` repository variables are set
+
+Required staging secrets:
+
+- `STAGING_HOST`
+- `STAGING_USER`
+- `STAGING_SSH_KEY`
+- optional `STAGING_PORT`
+
+Fallback secrets, if you prefer shared Hetzner names:
+
+- `HETZNER_HOST`
+- `HETZNER_USER`
+- `HETZNER_SSH_KEY`
+
+Recommended staging variables:
+
+- `ENABLE_STAGING_DEPLOY=false` until the staging host is ready
+- `STAGING_PATH=/opt/shifter-staging`
+- `STAGING_COMPOSE_PROJECT_NAME=shifter-staging`
+- `STAGING_WEB_BASE_URL=https://staging.example.com`
+- `STAGING_API_BASE_URL=https://staging-api.example.com`
+
 ## Production Deploy Rule
 
 Production should deploy only from `main`.

@@ -18,6 +18,8 @@ private customer AI, or a customer-owned database.
 
 ## Before Inviting Real Users
 
+- Deploy `develop` to staging and complete the staging smoke/manual checks
+  before opening the final `develop` to `main` PR.
 - Deploy the intended branch to the production VPS.
 - Run database migrations against the production database.
 - Confirm the production domain uses HTTPS.
