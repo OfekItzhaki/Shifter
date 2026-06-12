@@ -57,6 +57,22 @@ function Assert-TextContains {
     }
 }
 
+function Set-EnvLine {
+    param(
+        [string]$Text,
+        [string]$Key,
+        [string]$Value
+    )
+
+    $pattern = "(?m)^$([regex]::Escape($Key))=.*$"
+    $replacement = "$Key=$Value"
+    if ($Text -notmatch $pattern) {
+        return "$Text`n$replacement"
+    }
+
+    return [regex]::Replace($Text, $pattern, $replacement)
+}
+
 $root = (Resolve-Path $ShifterDir).Path
 $bash = Find-Bash $BashPath
 $packageScript = Join-Path $PSScriptRoot "package-customer-hosted.ps1"
@@ -137,6 +153,7 @@ try {
 
     $packagedEnvFile = Join-PackagePath -Root $extractedPackageRoot -RelativePath "infra/compose/.env.customer.example"
     $packagedComposeFile = Join-PackagePath -Root $extractedPackageRoot -RelativePath "infra/compose/docker-compose.yml"
+    $composeProbeEnvFile = Join-Path $extractDir "self-service-defaults-probe.env"
 
     if (-not $SkipDockerComposeConfig) {
         $docker = Get-Command docker -ErrorAction SilentlyContinue
@@ -144,30 +161,60 @@ try {
             throw "Docker was not found. Re-run with -SkipDockerComposeConfig to skip extracted package compose validation."
         }
 
-        $composeOutput = & docker compose --env-file $packagedEnvFile -f $packagedComposeFile config 2>&1
+        $probeEnvText = Get-Content -LiteralPath $packagedEnvFile -Raw
+        $selfServiceDefaultsProbe = [ordered]@{
+            SELF_SERVICE_DEFAULT_MIN_SHIFTS_PER_CYCLE = "2"
+            SELF_SERVICE_DEFAULT_MAX_SHIFTS_PER_CYCLE = "4"
+            SELF_SERVICE_DEFAULT_REQUEST_WINDOW_OPEN_OFFSET_HOURS = "96"
+            SELF_SERVICE_DEFAULT_REQUEST_WINDOW_CLOSE_OFFSET_HOURS = "12"
+            SELF_SERVICE_DEFAULT_CANCELLATION_CUTOFF_HOURS = "36"
+            SELF_SERVICE_DEFAULT_MAX_ABSENCES_PER_CYCLE = "2"
+            SELF_SERVICE_DEFAULT_MAX_LATE_CANCELLATIONS_PER_CYCLE = "1"
+            SELF_SERVICE_DEFAULT_LATE_CANCELLATION_WINDOW_HOURS = "18"
+            SELF_SERVICE_DEFAULT_WAITLIST_OFFER_MINUTES = "45"
+            SELF_SERVICE_DEFAULT_CYCLE_DURATION_DAYS = "14"
+            SELF_SERVICE_DEFAULT_ALLOW_MEMBER_SHIFT_CLAIMS = "false"
+            SELF_SERVICE_DEFAULT_ALLOW_WAITLIST = "false"
+            SELF_SERVICE_DEFAULT_ALLOW_SHIFT_CHANGE_REQUESTS = "false"
+            SELF_SERVICE_DEFAULT_ALLOW_ABSENCE_REPORTS = "false"
+            SELF_SERVICE_DEFAULT_ALLOW_SHIFT_SWAPS = "false"
+        }
+
+        foreach ($entry in $selfServiceDefaultsProbe.GetEnumerator()) {
+            $probeEnvText = Set-EnvLine $probeEnvText $entry.Key $entry.Value
+        }
+
+        Set-Content -LiteralPath $composeProbeEnvFile -Value $probeEnvText
+
+        $composeOutput = & docker compose --env-file $composeProbeEnvFile -f $packagedComposeFile config 2>&1
         if ($LASTEXITCODE -ne 0) {
             throw "Extracted package docker compose config failed with exit code $LASTEXITCODE. Output:`n$($composeOutput | Out-String)"
         }
 
         $composeText = $composeOutput | Out-String
-        foreach ($expected in @(
-                "SelfServiceDefaults__MinShiftsPerCycle",
-                "SelfServiceDefaults__MaxShiftsPerCycle",
-                "SelfServiceDefaults__RequestWindowOpenOffsetHours",
-                "SelfServiceDefaults__RequestWindowCloseOffsetHours",
-                "SelfServiceDefaults__CancellationCutoffHours",
-                "SelfServiceDefaults__MaxAbsencesPerCycle",
-                "SelfServiceDefaults__MaxLateCancellationsPerCycle",
-                "SelfServiceDefaults__LateCancellationWindowHours",
-                "SelfServiceDefaults__WaitlistOfferMinutes",
-                "SelfServiceDefaults__CycleDurationDays",
-                "SelfServiceDefaults__AllowMemberShiftClaims",
-                "SelfServiceDefaults__AllowWaitlist",
-                "SelfServiceDefaults__AllowShiftChangeRequests",
-                "SelfServiceDefaults__AllowAbsenceReports",
-                "SelfServiceDefaults__AllowShiftSwaps"
-            )) {
-            Assert-TextContains $composeText $expected "Extracted package docker compose config"
+        $expectedApiEnvironment = [ordered]@{
+            "SelfServiceDefaults__MinShiftsPerCycle" = "2"
+            "SelfServiceDefaults__MaxShiftsPerCycle" = "4"
+            "SelfServiceDefaults__RequestWindowOpenOffsetHours" = "96"
+            "SelfServiceDefaults__RequestWindowCloseOffsetHours" = "12"
+            "SelfServiceDefaults__CancellationCutoffHours" = "36"
+            "SelfServiceDefaults__MaxAbsencesPerCycle" = "2"
+            "SelfServiceDefaults__MaxLateCancellationsPerCycle" = "1"
+            "SelfServiceDefaults__LateCancellationWindowHours" = "18"
+            "SelfServiceDefaults__WaitlistOfferMinutes" = "45"
+            "SelfServiceDefaults__CycleDurationDays" = "14"
+            "SelfServiceDefaults__AllowMemberShiftClaims" = "false"
+            "SelfServiceDefaults__AllowWaitlist" = "false"
+            "SelfServiceDefaults__AllowShiftChangeRequests" = "false"
+            "SelfServiceDefaults__AllowAbsenceReports" = "false"
+            "SelfServiceDefaults__AllowShiftSwaps" = "false"
+        }
+
+        foreach ($entry in $expectedApiEnvironment.GetEnumerator()) {
+            Assert-TextContains `
+                $composeText `
+                "$($entry.Key): `"$($entry.Value)`"" `
+                "Extracted package docker compose config"
         }
     }
 
