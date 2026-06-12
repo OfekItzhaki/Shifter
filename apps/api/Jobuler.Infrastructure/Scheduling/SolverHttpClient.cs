@@ -32,8 +32,15 @@ public class SolverHttpClient : ISolverClient
         _logger.LogInformation("Calling solver: run_id={RunId} space_id={SpaceId} slots={Slots} people={People}",
             input.RunId, input.SpaceId, input.TaskSlots.Count, input.People.Count);
 
-        // Ensure LockedSlotIds is never null — Python Pydantic requires a list, not null
-        var safeInput = input with { LockedSlotIds = input.LockedSlotIds ?? [] };
+        // Python Pydantic requires list fields to be arrays, not null.
+        var safeInput = input with
+        {
+            LockedSlotIds = input.LockedSlotIds ?? [],
+            TaskRotation = input.TaskRotation ?? [],
+            CumulativeTracking = input.CumulativeTracking ?? [],
+            ParentSchedule = input.ParentSchedule ?? [],
+            SpecialDays = input.SpecialDays ?? []
+        };
 
         var response = await _http.PostAsJsonAsync("/solve", safeInput, JsonOptions, ct);
 

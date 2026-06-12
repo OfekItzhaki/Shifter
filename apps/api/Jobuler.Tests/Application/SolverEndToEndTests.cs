@@ -23,6 +23,7 @@ namespace Jobuler.Tests.Application;
 /// Tests the exact JSON contract between the .NET worker and the solver.
 /// Automatically skipped when the solver is not running on localhost:8000.
 /// </summary>
+[Trait("Category", "RequiresSolver")]
 public class SolverEndToEndTests : IAsyncLifetime
 {
     private readonly ITestOutputHelper _out;
@@ -66,6 +67,15 @@ public class SolverEndToEndTests : IAsyncLifetime
         Skip.If(!_solverAvailable, "Solver is not running on localhost:8000. Start it to run these tests.");
     }
 
+    private static SolverInputDto NormalizeInput(SolverInputDto input) => input with
+    {
+        LockedSlotIds = input.LockedSlotIds ?? [],
+        TaskRotation = input.TaskRotation ?? [],
+        CumulativeTracking = input.CumulativeTracking ?? [],
+        ParentSchedule = input.ParentSchedule ?? [],
+        SpecialDays = input.SpecialDays ?? []
+    };
+
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private static string Tomorrow(int offsetHours = 0) =>
@@ -79,7 +89,7 @@ public class SolverEndToEndTests : IAsyncLifetime
 
     private async Task<SolverOutputDto> CallSolverAsync(SolverInputDto input)
     {
-        var response = await _http.PostAsJsonAsync("/solve", input, JsonOptions);
+        var response = await _http.PostAsJsonAsync("/solve", NormalizeInput(input), JsonOptions);
         var body = await response.Content.ReadAsStringAsync();
         _out.WriteLine($"HTTP {(int)response.StatusCode}");
         _out.WriteLine(body.Length > 2000 ? body[..2000] + "…" : body);
@@ -409,7 +419,7 @@ public class SolverEndToEndTests : IAsyncLifetime
             FairnessCounters: []);
 
         // Must not throw 500 — solver should handle empty input gracefully
-        var response = await _http.PostAsJsonAsync("/solve", input, JsonOptions);
+        var response = await _http.PostAsJsonAsync("/solve", NormalizeInput(input), JsonOptions);
         var body = await response.Content.ReadAsStringAsync();
         _out.WriteLine($"HTTP {(int)response.StatusCode}: {body}");
 

@@ -19,6 +19,12 @@ vi.mock("next-intl", () => ({
   useTranslations: () => (key: string) => key,
 }));
 
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({
+    replace: vi.fn(),
+  }),
+}));
+
 // Mock authStore
 const mockSetTimezone = vi.fn();
 const mockSetTimeFormat = vi.fn();

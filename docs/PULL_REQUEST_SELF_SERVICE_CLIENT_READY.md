@@ -294,6 +294,28 @@ packaging, and self-service export package validation readiness.
   `https://api.shifter.ofeklabs.com` after deployment.
 - Manual CI run `27439465974` passed on `develop` for commit `1bc45c6` on
   June 12, 2026 after the VPS deploy workflow hardening.
+- `infra/scripts/test-smoke-hosted-vps.ps1` passed locally on June 12, 2026,
+  proving the hosted VPS smoke script harness still validates the read-only
+  production checks.
+- `infra/scripts/test-customer-hosted-package.ps1 -EnvFile infra/compose/.env.customer.example`
+  passed locally on June 12, 2026, covering customer env validation, package
+  assembly/extraction, Docker Compose config validation, deploy/rollback
+  harnesses, PowerShell/Compose script syntax, and PostgreSQL organization
+  package import smoke.
+- `dotnet test apps/api/Jobuler.sln --configuration Release --verbosity minimal --filter "Category!=RequiresSolver"`
+  passed locally on June 12, 2026: 2,032 passed, 1 skipped, 0 failed.
+- `dotnet test apps/api/Jobuler.sln --configuration Release --verbosity minimal --filter "Category=RequiresSolver"`
+  passed locally on June 12, 2026 with the local solver reachable on
+  `localhost:8000`: 13 passed, 0 failed. The live solver tests are now tagged
+  `Category=RequiresSolver`, and the solver HTTP client normalizes optional
+  solver list fields to empty arrays instead of `null`.
+- `python -m pytest tests/ -v --timeout=60` from `apps/solver` passed locally
+  on June 12, 2026: 94 passed, 0 failed.
+- `npx tsc --noEmit`, `npm run build`, and `npm run test` from `apps/web`
+  passed locally on June 12, 2026. Vitest passed 91 files / 772 tests after
+  adding the missing `next/navigation` router mock for the settings page test.
+- `npm run lint` from `apps/web` completed with 0 errors and 89 existing
+  warnings on June 12, 2026.
 - `infra/scripts/smoke-self-service-client-ready.ps1 -ApiBaseUrl http://localhost:5015 -WebBaseUrl http://localhost:3015`
   passed locally on June 12, 2026 against an isolated temporary PostgreSQL 16
   database, isolated Redis, a fresh API on port `5015`, and the current-branch

@@ -33,6 +33,7 @@ namespace Jobuler.Tests.Integration;
 /// and verifies the worker correctly creates/skips versions.
 /// Automatically skipped when the solver is not running on localhost:8000.
 /// </summary>
+[Trait("Category", "RequiresSolver")]
 public class SolverWorkerPipelineTests : IAsyncLifetime
 {
     private readonly ITestOutputHelper _out;
