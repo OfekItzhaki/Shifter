@@ -301,8 +301,9 @@ Known verification:
   passed:
   `node_modules\\.bin\\vitest.cmd run __tests__\\cache\\backgroundRefresh.test.ts __tests__\\cache\\cacheLifecycle.test.ts`
   and `node --check public\\sw.js`.
-- PWA manifest shortcut validation passed for `/schedule/my-missions`, `/pick`,
-  and `/profile` with existing icon assets.
+- PWA manifest shortcut tests passed for install metadata plus
+  `/schedule/my-missions`, `/pick`, and `/profile` with existing icon assets:
+  `node_modules\\.bin\\vitest.cmd run __tests__\\pwa\\manifest.test.ts`.
 - Focused PWA prompt ESLint and `node_modules\\.bin\\next.cmd build` passed.
 - Sentry config tests and focused ESLint passed:
   `node_modules\\.bin\\vitest.cmd run __tests__\\monitoring\\sentryConfig.test.ts`

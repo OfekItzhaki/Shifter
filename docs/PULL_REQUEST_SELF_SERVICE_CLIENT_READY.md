@@ -179,8 +179,9 @@ packaging, and self-service export package validation readiness.
 - `node_modules\\.bin\\eslint.cmd lib\\cache\\backgroundRefresh.ts lib\\hooks\\useCacheLifecycle.ts __tests__\\cache\\backgroundRefresh.test.ts __tests__\\cache\\cacheLifecycle.test.ts`
   passed.
 - `node --check public\\sw.js` from `apps/web` passed.
-- PWA manifest shortcut validation passed, confirming `/schedule/my-missions`,
-  `/pick`, and `/profile` shortcuts reference existing icon assets.
+- `node_modules\\.bin\\vitest.cmd run __tests__\\pwa\\manifest.test.ts`
+  passed, confirming install metadata and `/schedule/my-missions`, `/pick`,
+  and `/profile` shortcuts reference existing icon assets.
 - `node_modules\\.bin\\next.cmd build` from `apps/web` passed after the PWA
   prompt update.
 - `node_modules\\.bin\\vitest.cmd run __tests__\\monitoring\\sentryConfig.test.ts __tests__\\monitoring\\posthogConfig.test.ts __tests__\\monitoring\\crispConfig.test.ts`
