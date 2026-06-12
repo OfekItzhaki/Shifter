@@ -210,6 +210,7 @@ export default function SlotBrowserTab({ spaceId, groupId }: SlotBrowserTabProps
         <div className="space-y-2">
           {filteredSlots.map((slot) => {
             const isFull = slot.currentFillCount >= slot.capacity;
+            const specialDayClosed = slot.isSpecialDay && slot.specialDayRequiresCoverage === false;
             const capacityClass = getCapacityClass(slot.currentFillCount, slot.capacity);
             const isActing = actionLoading === slot.id;
             const slotError = actionError?.slotId === slot.id ? actionError.message : null;
@@ -238,11 +239,18 @@ export default function SlotBrowserTab({ spaceId, groupId }: SlotBrowserTabProps
                       </span>
                     </div>
                     {slot.isSpecialDay && (
-                      <span className="mt-1 inline-flex w-fit items-center rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700">
-                        {slot.specialDayName
-                          ? t("specialDayNamed", { name: slot.specialDayName })
-                          : t("specialDay")}
-                      </span>
+                      <div className="mt-1 flex flex-wrap gap-2">
+                        <span className="inline-flex w-fit items-center rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700">
+                          {slot.specialDayName
+                            ? t("specialDayNamed", { name: slot.specialDayName })
+                            : t("specialDay")}
+                        </span>
+                        {specialDayClosed && (
+                          <span className="inline-flex w-fit items-center rounded-full border border-slate-200 bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">
+                            {t("specialDayNoCoverage")}
+                          </span>
+                        )}
+                      </div>
                     )}
                     <div className="flex items-center gap-2 mt-1">
                       <span className="text-xs text-slate-600">{slot.taskName}</span>
@@ -274,68 +282,74 @@ export default function SlotBrowserTab({ spaceId, groupId }: SlotBrowserTabProps
                   {/* Action button */}
                   <div className="flex-shrink-0">
                     {requestWindowOpen ? (
-                      isFull ? (
-                        <button
-                          onClick={() => handleJoinWaitlist(slot)}
-                          data-testid="self-service-join-waitlist"
-                          disabled={isActing}
-                          className="inline-flex items-center justify-center px-4 py-2 rounded-lg text-xs font-medium border border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          {isActing ? (
-                            <svg
-                              className="animate-spin h-4 w-4"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                            >
-                              <circle
-                                className="opacity-25"
-                                cx="12"
-                                cy="12"
-                                r="10"
-                                stroke="currentColor"
-                                strokeWidth="4"
-                              />
-                              <path
-                                className="opacity-75"
-                                fill="currentColor"
-                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-                              />
-                            </svg>
-                          ) : (
-                            t("joinWaitlistButton")
-                          )}
-                        </button>
+                      specialDayClosed ? (
+                        <span className="inline-flex max-w-36 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-center text-xs font-medium text-slate-500">
+                          {t("specialDayUnavailable")}
+                        </span>
                       ) : (
-                        <button
-                          onClick={() => handleRequest(slot)}
-                          data-testid="self-service-request-shift"
-                          disabled={isActing}
-                          className="inline-flex items-center justify-center px-4 py-2 rounded-lg text-xs font-medium bg-sky-600 text-white hover:bg-sky-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          {isActing ? (
-                            <svg
-                              className="animate-spin h-4 w-4"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                            >
-                              <circle
-                                className="opacity-25"
-                                cx="12"
-                                cy="12"
-                                r="10"
-                                stroke="currentColor"
-                                strokeWidth="4"
-                              />
-                              <path
-                                className="opacity-75"
-                                fill="currentColor"
-                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-                              />
-                            </svg>
-                          ) : (
-                            t("requestButton")
-                          )}
-                        </button>
+                        isFull ? (
+                          <button
+                            onClick={() => handleJoinWaitlist(slot)}
+                            data-testid="self-service-join-waitlist"
+                            disabled={isActing}
+                            className="inline-flex items-center justify-center px-4 py-2 rounded-lg text-xs font-medium border border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {isActing ? (
+                              <svg
+                                className="animate-spin h-4 w-4"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                              >
+                                <circle
+                                  className="opacity-25"
+                                  cx="12"
+                                  cy="12"
+                                  r="10"
+                                  stroke="currentColor"
+                                  strokeWidth="4"
+                                />
+                                <path
+                                  className="opacity-75"
+                                  fill="currentColor"
+                                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                                />
+                              </svg>
+                            ) : (
+                              t("joinWaitlistButton")
+                            )}
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => handleRequest(slot)}
+                            data-testid="self-service-request-shift"
+                            disabled={isActing}
+                            className="inline-flex items-center justify-center px-4 py-2 rounded-lg text-xs font-medium bg-sky-600 text-white hover:bg-sky-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {isActing ? (
+                              <svg
+                                className="animate-spin h-4 w-4"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                              >
+                                <circle
+                                  className="opacity-25"
+                                  cx="12"
+                                  cy="12"
+                                  r="10"
+                                  stroke="currentColor"
+                                  strokeWidth="4"
+                                />
+                                <path
+                                  className="opacity-75"
+                                  fill="currentColor"
+                                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                                />
+                              </svg>
+                            ) : (
+                              t("requestButton")
+                            )}
+                          </button>
+                        )
                       )
                     ) : null}
                   </div>

@@ -2142,7 +2142,9 @@
         "Четверг",
         "Пятница",
         "Суббота"
-      ]
+      ],
+      "specialDayNoCoverage": "Покрытие не требуется",
+      "specialDayUnavailable": "Недоступно для выбора"
     },
     "myShifts": {
       "title": "Мои смены",

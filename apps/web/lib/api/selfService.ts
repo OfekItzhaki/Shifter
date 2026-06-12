@@ -87,6 +87,7 @@ export interface AvailableSlotDto {
   isSpecialDay?: boolean;
   specialDayName?: string | null;
   specialDayKind?: string | null;
+  specialDayRequiresCoverage?: boolean | null;
 }
 
 export interface AvailableSlotsResponse {
@@ -178,6 +179,7 @@ export interface UnderfilledSlotDto {
   isSpecialDay?: boolean;
   specialDayName?: string | null;
   specialDayKind?: string | null;
+  specialDayRequiresCoverage?: boolean | null;
 }
 
 export interface UnderScheduledMemberDto {

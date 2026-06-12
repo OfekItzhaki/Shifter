@@ -137,6 +137,17 @@ public class AcceptWaitlistOfferCommandHandler : IRequestHandler<AcceptWaitlistO
                 ErrorMessage: "The shift slot is no longer available.");
         }
 
+        if (await SpecialDaySelfServicePolicy.IsMemberActionBlockedAsync(_db, slot, ct))
+        {
+            entry.Remove();
+            await _db.SaveChangesAsync(ct);
+
+            return new AcceptWaitlistOfferResult(
+                Success: false,
+                ShiftRequestId: null,
+                ErrorMessage: SpecialDaySelfServicePolicy.NoCoverageMessage);
+        }
+
         var hasActiveShiftRequest = await _db.ShiftRequests
             .AnyAsync(r => r.ShiftSlotId == request.ShiftSlotId
                            && r.PersonId == request.PersonId

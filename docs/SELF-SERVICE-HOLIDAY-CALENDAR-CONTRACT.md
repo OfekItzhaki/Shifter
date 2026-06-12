@@ -33,9 +33,12 @@ gain explicit behavior for:
 - absence/reporting limits when a special day has stricter coverage rules
 - closeout metrics that separate normal days from special days when relevant
 
-The first version can be conservative: show warnings and labels before adding
-automatic restrictions. Silent behavior changes would be worse than no
-integration.
+The first version is conservative: marked special days are visible in member and
+admin workflows, and `requiresCoverage=false` is treated as a no-coverage day
+for member self-service. Members cannot pick those slots, join their waitlists,
+or accept stale waitlist offers for them; admin override tools remain available
+for explicit exceptions. Other holiday-specific staffing policies remain future
+scope. Silent behavior changes would be worse than no integration.
 
 ## Data Rules
 
@@ -58,7 +61,8 @@ tests for at least:
 1. A self-service cycle that overlaps a special day exposes a visible warning or
    label.
 2. A normal self-service cycle without special days behaves exactly as before.
-3. Special leave overlap with a special day follows the configured policy.
+3. A no-coverage special day blocks member picks, waitlist joins, waitlist offer
+   cascades, and stale waitlist offer acceptance.
 4. Tenant/space isolation prevents a special day from leaking into another
    space's self-service schedule.
 5. Closeout or operations status shows special-day impact when the group has

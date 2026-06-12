@@ -6,6 +6,7 @@ using Jobuler.Application.Scheduling.SelfService.Commands;
 using Jobuler.Domain.Groups;
 using Jobuler.Domain.People;
 using Jobuler.Domain.Scheduling;
+using Jobuler.Domain.Spaces;
 using Jobuler.Domain.Tasks;
 using Jobuler.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -18,6 +19,66 @@ namespace Jobuler.Tests.Scheduling;
 
 public class ManualSelfServiceLifecycleTests
 {
+    [Fact]
+    public async Task NoCoverageSpecialDay_RejectsMemberClaimsAndWaitlists()
+    {
+        using var db = CreateDb();
+        var notifications = Substitute.For<INotificationService>();
+        var pushSender = Substitute.For<IPushNotificationSender>();
+        var audit = Substitute.For<IAuditLogger>();
+        var slotLock = Substitute.For<ISlotLockService>();
+        slotLock
+            .TryAcquireSlotLockAsync(Arg.Any<Guid>(), Arg.Any<TimeSpan>(), Arg.Any<CancellationToken>())
+            .Returns(true);
+
+        var (spaceId, groupId, cycleId, taskId) = SeedSelfServiceCycle(db);
+        var alice = Person.Create(spaceId, "Alice Member", linkedUserId: Guid.NewGuid());
+        var bob = Person.Create(spaceId, "Bob Member", linkedUserId: Guid.NewGuid());
+        var claimSlot = AddSlot(db, spaceId, groupId, taskId, cycleId);
+        var fullSlot = AddSlot(db, spaceId, groupId, taskId, cycleId);
+        var bobRequest = ShiftRequest.Create(spaceId, fullSlot.Id, bob.Id, groupId, cycleId);
+        bobRequest.Approve();
+        fullSlot.IncrementFillCount();
+
+        db.SpaceSpecialDays.Add(SpaceSpecialDay.Create(
+            spaceId,
+            claimSlot.Date,
+            "Closed Day",
+            SpaceSpecialDayKind.Custom,
+            requiresCoverage: false));
+        db.People.AddRange(alice, bob);
+        db.ShiftRequests.Add(bobRequest);
+        await db.SaveChangesAsync();
+
+        var waitlistService = new WaitlistService(
+            db,
+            pushSender,
+            notifications,
+            TimeProvider.System,
+            NullLogger<WaitlistService>.Instance);
+
+        var shiftRequests = new ShiftRequestService(
+            db,
+            slotLock,
+            TimeProvider.System,
+            NullLogger<ShiftRequestService>.Instance,
+            notifications,
+            pushSender,
+            audit,
+            waitlistService);
+
+        var claimResult = await shiftRequests.ProcessRequestAsync(alice.Id, claimSlot.Id);
+        claimResult.Success.Should().BeFalse();
+        claimResult.RejectionReason.Should().Be(SpecialDaySelfServicePolicy.NoCoverageMessage);
+
+        var waitlistResult = await waitlistService.JoinWaitlistAsync(alice.Id, fullSlot.Id);
+        waitlistResult.Success.Should().BeFalse();
+        waitlistResult.ErrorMessage.Should().Be(SpecialDaySelfServicePolicy.NoCoverageMessage);
+
+        (await db.ShiftRequests.CountAsync()).Should().Be(1);
+        (await db.WaitlistEntries.CountAsync()).Should().Be(0);
+    }
+
     [Fact]
     public async Task DisabledWorkflowPolicies_RejectMemberServiceActions()
     {

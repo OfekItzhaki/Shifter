@@ -73,9 +73,9 @@ public class SlotAvailabilityEngine : ISlotAvailabilityEngine
         var specialDaysByDate = await _db.SpaceSpecialDays
             .AsNoTracking()
             .Where(d => d.SpaceId == cycle.SpaceId && slotDates.Contains(d.Date))
-            .OrderByDescending(d => d.RequiresCoverage)
+            .OrderBy(d => d.RequiresCoverage)
             .ThenBy(d => d.Name)
-            .Select(d => new { d.Date, d.Name, d.Kind })
+            .Select(d => new { d.Date, d.Name, d.Kind, d.RequiresCoverage })
             .ToListAsync(ct);
 
         var specialDayLookup = specialDaysByDate
@@ -129,7 +129,8 @@ public class SlotAvailabilityEngine : ISlotAvailabilityEngine
                 Capacity: slot.Capacity,
                 IsSpecialDay: specialDay is not null,
                 SpecialDayName: specialDay?.Name,
-                SpecialDayKind: specialDay?.Kind.ToString()));
+                SpecialDayKind: specialDay?.Kind.ToString(),
+                SpecialDayRequiresCoverage: specialDay?.RequiresCoverage));
         }
 
         // Requirement 7.1: Sort by date ascending, then start time ascending

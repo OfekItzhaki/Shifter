@@ -26,6 +26,9 @@ Manual self-service currently supports:
   swaps, waitlist state, and special leave.
 - Admin-confirmed attendance outcomes for approved shifts: present, no-show, or
   excused.
+- Special-day policy for closures or no-coverage dates: slots on marked special
+  days with `requiresCoverage=false` stay visible with a no-coverage label, but
+  members cannot pick them or join/accept waitlists for them.
 
 The deterministic solver is still available for automatic groups. Self-service
 groups do not require hosted AI.
@@ -37,7 +40,7 @@ when the organization accepts an admin-operated review queue:
 
 | Need | Current support |
 |---|---|
-| Members choose shifts | Supported through available slots, with duplicate, overlap, rest-window, capacity, and max-shift checks. |
+| Members choose shifts | Supported through available slots, with duplicate, overlap, rest-window, capacity, max-shift, and no-coverage special-day checks. |
 | Full slots stay useful | Supported through waitlists and timed offers. |
 | Members cannot attend | Supported through absence reports, with late-report counting per cycle. |
 | Members ask to change shifts | Supported for specific target slots and flexible admin-selected targets. |
@@ -58,7 +61,7 @@ present in the product.
 | Workflow | Member surface | Admin surface | Backend support |
 |---|---|---|---|
 | Pick shifts | `Available slots` tab and `/pick` mobile route | Operations status and admin overrides | `ShiftSlotsController`, `ShiftRequestsController`, `ShiftRequestService`, `SlotAvailabilityEngine` |
-| Waitlist full shifts | `Waitlist` tab, offer accept/decline, leave waitlist | Admin waitlist queue and manual assignment from waitlist | `WaitlistService`, waitlist endpoints, expired-offer job |
+| Waitlist full shifts | `Waitlist` tab, offer accept/decline, leave waitlist | Admin waitlist queue and manual assignment from waitlist | `WaitlistService`, waitlist endpoints, expired-offer job, no-coverage special-day checks |
 | Cancel owned shifts | `My shifts` cancel action before cutoff | Cancelled request visibility in review history | shift request cancellation flow with cutoff checks |
 | Report cannot attend | `My shifts` cannot-attend action | `Reviews` queue for absence approval/rejection | `ShiftAbsenceReport` flow with late-report counting |
 | Ask to change shift | `My shifts` change request, specific slot or flexible | `Reviews` queue with target slot selection | `ShiftChangeRequestsController` and change request domain model |
@@ -193,6 +196,9 @@ override actions:
 - Members can join waitlists for full slots instead of directly overfilling a
   slot.
 - Waitlist offers expire, and accepted offers are rechecked before assignment.
+- Special days marked with `requiresCoverage=false` block member picks,
+  waitlist joins, waitlist offer cascades, and stale waitlist offer acceptance.
+  Admins can still use override tools when a real exception is needed.
 - Admin assignment can exceed capacity for emergency coverage, but it still
   blocks unsafe assignment conflicts and only targets open future slots.
 - Admin removal cancels the assignment, decrements fill count, and triggers

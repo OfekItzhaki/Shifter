@@ -2154,7 +2154,9 @@
         "חמישי",
         "שישי",
         "שבת"
-      ]
+      ],
+      "specialDayNoCoverage": "לא נדרש כיסוי",
+      "specialDayUnavailable": "לא פתוח לבחירה"
     },
     "myShifts": {
       "title": "המשמרות שלי",

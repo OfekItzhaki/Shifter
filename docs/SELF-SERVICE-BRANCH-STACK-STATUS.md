@@ -263,6 +263,10 @@ Known verification:
 - Clarifies the holiday/manual self-service boundary: special-day labels,
   cycle counts, and underfilled-slot warnings are covered now; holiday-specific
   staffing policy changes remain future scope.
+- Adds the first holiday/special-day policy behavior for manual self-service:
+  `requiresCoverage=false` special days block member picks, waitlist joins,
+  waitlist offer cascades, and stale waitlist offer acceptance while keeping the
+  slots visible with no-coverage labels.
 - Ends sessions after password changes and redirects users back to login with a
   success notice.
 - Supports PWA install prompts on mobile and desktop when the browser reports
@@ -356,6 +360,14 @@ Known verification:
   `dotnet test apps\\api\\Jobuler.Tests\\Jobuler.Tests.csproj --filter "FullyQualifiedName~SelfServiceScopeTests|FullyQualifiedName~ManualSelfServiceLifecycleTests"`.
   This includes disabled workflow policy coverage for shift-change request
   submission.
+- Focused no-coverage special-day policy tests passed:
+  `dotnet test apps\\api\\Jobuler.Tests\\Jobuler.Tests.csproj --filter "FullyQualifiedName~SlotAvailabilityEngineTests|FullyQualifiedName~ManualSelfServiceLifecycleTests|FullyQualifiedName~WaitlistServiceTests"`.
+  This includes picker read-model labels, member claim rejection, waitlist join
+  rejection, waitlist cascade suppression, and stale waitlist offer rejection.
+- Focused no-coverage picker test and lint passed:
+  `node_modules\\.bin\\vitest.cmd run __tests__\\selfService\\slotBrowserTab.test.tsx`
+  and
+  `node_modules\\.bin\\eslint.cmd app\\groups\\[groupId]\\tabs\\SlotBrowserTab.tsx lib\\api\\selfService.ts __tests__\\selfService\\slotBrowserTab.test.tsx`.
 - Backup, deploy, restore, and seed compose script syntax checks passed after
   custom `ENV_FILE` propagation.
 - Resend sender and health check coverage passed:

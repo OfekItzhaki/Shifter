@@ -13,6 +13,7 @@ namespace Jobuler.Application.Scheduling.SelfService.Models;
 /// <param name="IsSpecialDay">True when the slot date matches a marked space special day.</param>
 /// <param name="SpecialDayName">Display name of the matching special day, when any.</param>
 /// <param name="SpecialDayKind">Special day kind, when any.</param>
+/// <param name="SpecialDayRequiresCoverage">Whether the matching special day is configured to require coverage.</param>
 public record AvailableSlotDto(
     Guid ShiftSlotId,
     DateOnly Date,
@@ -23,4 +24,5 @@ public record AvailableSlotDto(
     int Capacity,
     bool IsSpecialDay = false,
     string? SpecialDayName = null,
-    string? SpecialDayKind = null);
+    string? SpecialDayKind = null,
+    bool? SpecialDayRequiresCoverage = null);

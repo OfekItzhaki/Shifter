@@ -16,6 +16,8 @@ const translations: Record<string, string> = {
   "selfService.slotBrowser.full": "Full",
   "selfService.slotBrowser.requestButton": "Pick Shift",
   "selfService.slotBrowser.joinWaitlistButton": "Join Waitlist",
+  "selfService.slotBrowser.specialDayNoCoverage": "No coverage required",
+  "selfService.slotBrowser.specialDayUnavailable": "Not open for picking",
   "selfService.slotBrowser.requestSuccess": "Shift confirmed. It was added to your shifts.",
   "selfService.slotBrowser.windowClosed": "Request window closed",
 };
@@ -173,5 +175,34 @@ describe("SlotBrowserTab", () => {
     render(<SlotBrowserTab spaceId="space-1" groupId="group-1" isAdmin={false} />);
 
     expect(await screen.findByText("Special day: Festival")).toBeInTheDocument();
+  });
+
+  it("disables member actions when a special day does not require coverage", async () => {
+    mockGetAvailableSlots.mockResolvedValue({
+      ...makeAvailableResponse(0),
+      slots: [
+        {
+          id: "slot-closed",
+          date: "2026-06-20",
+          startTime: "09:00:00",
+          endTime: "17:00:00",
+          taskName: "Desk",
+          capacity: 2,
+          currentFillCount: 0,
+          isSpecialDay: true,
+          specialDayName: "Closure",
+          specialDayKind: "Custom",
+          specialDayRequiresCoverage: false,
+        },
+      ],
+    });
+
+    render(<SlotBrowserTab spaceId="space-1" groupId="group-1" isAdmin={false} />);
+
+    expect(await screen.findByText("Special day: Closure")).toBeInTheDocument();
+    expect(screen.getByText("No coverage required")).toBeInTheDocument();
+    expect(screen.getByText("Not open for picking")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Pick Shift" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Join Waitlist" })).not.toBeInTheDocument();
   });
 });

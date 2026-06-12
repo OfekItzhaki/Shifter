@@ -2128,6 +2128,8 @@
       "full": "Full",
       "specialDay": "Special day",
       "specialDayNamed": "Special day: {name}",
+      "specialDayNoCoverage": "No coverage required",
+      "specialDayUnavailable": "Not open for picking",
       "dateFilter": "Filter by date",
       "allDates": "All dates",
       "noSlots": "No available slots",

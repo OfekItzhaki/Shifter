@@ -112,6 +112,10 @@ packaging, and self-service export package validation readiness.
 - Clarifies the holiday/manual self-service boundary: special-day labels,
   cycle counts, and underfilled-slot warnings are covered now; holiday-specific
   staffing policy changes remain future scope.
+- Adds the first special-day self-service policy rule: slots on special days
+  with `requiresCoverage=false` remain visible with no-coverage labels, but
+  member picks, waitlist joins, waitlist offer cascades, and stale offer
+  acceptance are blocked. Admin overrides remain the explicit exception path.
 - Ends the current session after password changes and shows a login success
   notice, preventing stale authenticated sessions after credential rotation.
 - Supports PWA install prompts on mobile and desktop when the browser reports
@@ -133,6 +137,14 @@ packaging, and self-service export package validation readiness.
   warnings and 0 errors.
 - `node_modules\\.bin\\vitest.cmd run __tests__\\selfService\\slotBrowserTab.test.tsx __tests__\\selfService\\cycleControlPanel.test.tsx`
   passed: 7 passed, 0 failed.
+- `dotnet test apps\\api\\Jobuler.Tests\\Jobuler.Tests.csproj --filter "FullyQualifiedName~SlotAvailabilityEngineTests|FullyQualifiedName~ManualSelfServiceLifecycleTests|FullyQualifiedName~WaitlistServiceTests"`
+  passed: 42 passed, 0 failed, including no-coverage special-day member action
+  policy coverage.
+- `node_modules\\.bin\\vitest.cmd run __tests__\\selfService\\slotBrowserTab.test.tsx`
+  passed: 5 passed, 0 failed, including the no-coverage special-day picker
+  state.
+- `node_modules\\.bin\\eslint.cmd app\\groups\\[groupId]\\tabs\\SlotBrowserTab.tsx lib\\api\\selfService.ts __tests__\\selfService\\slotBrowserTab.test.tsx`
+  passed.
 - `node_modules\\.bin\\eslint.cmd e2e\\self-service.browser.spec.ts` passed.
 - `node_modules\\.bin\\playwright.cmd test self-service.browser.spec.ts --list`
   discovered 14 browser lifecycle tests, including the special-day label flow.
