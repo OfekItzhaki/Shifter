@@ -232,6 +232,8 @@ Known verification:
 - Keeps Sentry disabled unless `NEXT_PUBLIC_SENTRY_DSN` is explicitly
   configured, so customer-hosted installs can leave error tracking off by
   default.
+- Keeps PostHog disabled unless `NEXT_PUBLIC_POSTHOG_KEY` is explicitly
+  configured in production, including direct analytics calls.
 - Enforces `AI_NO_EXPORT_REQUIRED=true` in both customer env validation and API
   startup, rejecting public hosted AI endpoints for no-export installs.
 - Live client-ready smoke passed against a fresh SQL install from all
@@ -275,6 +277,10 @@ Known verification:
   `node_modules\\.bin\\vitest.cmd run __tests__\\monitoring\\sentryConfig.test.ts`
   and
   `node_modules\\.bin\\eslint.cmd sentry.client.config.ts sentry.server.config.ts lib\\monitoring\\sentryConfig.ts __tests__\\monitoring\\sentryConfig.test.ts`.
+- PostHog config tests and focused ESLint passed:
+  `node_modules\\.bin\\vitest.cmd run __tests__\\monitoring\\sentryConfig.test.ts __tests__\\monitoring\\posthogConfig.test.ts`
+  and
+  `node_modules\\.bin\\eslint.cmd lib\\analytics\\posthog.ts lib\\analytics\\posthogConfig.ts __tests__\\monitoring\\posthogConfig.test.ts`.
 
 Remaining manual/product check:
 

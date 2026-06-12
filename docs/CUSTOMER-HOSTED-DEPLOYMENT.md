@@ -307,7 +307,8 @@ each upgrade.
 - Disable analytics/chat/error tracking unless approved.
 - Leave `NEXT_PUBLIC_SENTRY_DSN`, `NEXT_PUBLIC_POSTHOG_KEY`, and
   `NEXT_PUBLIC_CRISP_WEBSITE_ID` empty unless the customer explicitly approves
-  those processors. Empty Sentry DSN disables Sentry even in production builds.
+  those processors. Empty Sentry DSN disables Sentry even in production builds,
+  and empty PostHog key disables PostHog tracking calls.
 - Put WAF/rate limits in front of auth, billing, import, solver, and admin
   endpoints.
 - Keep OS and Docker patched.
