@@ -7,19 +7,43 @@ on:
       - develop
     paths:
       - ".github/workflows/customer-hosted-preflight.yml"
+      - "README.md"
       - "apps/api/**"
+      - "apps/web/**"
+      - "apps/solver/**"
       - "infra/compose/**"
+      - "infra/docker/**"
       - "infra/migrations/**"
       - "infra/scripts/**"
+      - "docs/AI-DEPLOYMENT-MODES.md"
+      - "docs/CLOUDFLARE-EDGE-SECURITY.md"
+      - "docs/CUSTOMER-HOSTED-DEPLOYMENT.md"
+      - "docs/CUSTOMER-HOSTED-HANDOFF-NOTES.md"
+      - "docs/MANUAL-SELF-SERVICE-QA-CHECKLIST.md"
+      - "docs/MANUAL-SELF-SERVICE-SCHEDULING.md"
+      - "docs/SELF-SERVICE-HOLIDAY-CALENDAR-CONTRACT.md"
+      - "docs/SELF-SERVICE-PORTABILITY-CONTRACT.md"
   push:
     branches:
       - feat/self-service-client-ready
     paths:
       - ".github/workflows/customer-hosted-preflight.yml"
+      - "README.md"
       - "apps/api/**"
+      - "apps/web/**"
+      - "apps/solver/**"
       - "infra/compose/**"
+      - "infra/docker/**"
       - "infra/migrations/**"
       - "infra/scripts/**"
+      - "docs/AI-DEPLOYMENT-MODES.md"
+      - "docs/CLOUDFLARE-EDGE-SECURITY.md"
+      - "docs/CUSTOMER-HOSTED-DEPLOYMENT.md"
+      - "docs/CUSTOMER-HOSTED-HANDOFF-NOTES.md"
+      - "docs/MANUAL-SELF-SERVICE-QA-CHECKLIST.md"
+      - "docs/MANUAL-SELF-SERVICE-SCHEDULING.md"
+      - "docs/SELF-SERVICE-HOLIDAY-CALENDAR-CONTRACT.md"
+      - "docs/SELF-SERVICE-PORTABILITY-CONTRACT.md"
   workflow_dispatch:
 
 jobs:

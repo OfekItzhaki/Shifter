@@ -363,6 +363,9 @@ Known verification:
 - Customer-hosted package preflight is CI-backed by
   `.github/workflows/customer-hosted-preflight.yml` on relevant PRs, pushes to
   `feat/self-service-client-ready`, and manual dispatch.
+- The workflow trigger watches the package-relevant API, web, solver,
+  Docker/Compose/migrations/scripts, and customer handoff docs so package
+  drift is checked when any shipped surface changes.
 - The branch preflight workflow has passed on package-relevant commits; see the
   workflow history:
   https://github.com/OfekItzhaki/Shifter/actions/workflows/customer-hosted-preflight.yml

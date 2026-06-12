@@ -254,6 +254,9 @@ packaging, and self-service export package validation readiness.
   `infra/scripts/test-customer-hosted-package.ps1 -EnvFile infra/compose/.env.customer.example`
   on relevant PRs, pushes to this branch, and manual dispatch, so the
   customer-hosted package checks cannot quietly drift.
+- The customer-hosted preflight watches the same package-relevant surface the
+  archive includes: API, web, solver, Docker/Compose/migrations/scripts, and
+  customer-facing handoff docs.
 - Customer-hosted preflight CI passed on this branch; see the workflow history:
   https://github.com/OfekItzhaki/Shifter/actions/workflows/customer-hosted-preflight.yml
 - Latest customer-hosted package preflight CI passed for this branch:
