@@ -448,6 +448,53 @@ SHIFTER_DIR=/opt/shifter GIT_REF=main bash /opt/shifter/infra/scripts/deploy-com
 For enterprise customers, agree on a maintenance window and take a backup before
 each upgrade.
 
+## Go-Live Gate
+
+Before treating a customer-hosted install as production-ready, complete this
+gate on the target host with the customer's real env file, domains, secrets, and
+license:
+
+- Verify the handoff archive checksum before extraction:
+
+  ```bash
+  sha256sum -c shifter-customer-hosted-<version>.zip.sha256
+  ```
+
+- Run env validation with real values and no placeholders:
+
+  ```powershell
+  .\infra\scripts\validate-customer-env.ps1 -EnvFile .\infra\compose\.env
+  ```
+
+- Run the full target-host verifier before loading demo data or calling live
+  services:
+
+  ```powershell
+  .\infra\scripts\verify-customer-hosted-install.ps1 `
+    -EnvFile .\infra\compose\.env `
+    -SeedDryRun `
+    -ResolveOnly
+  ```
+
+- Start the stack, then rerun the verifier without `-SeedDryRun -ResolveOnly`.
+  Add `-SkipBrowserTest` only when the browser flow is intentionally out of
+  scope for that deployment.
+- Confirm `/ready`, `/health/detailed`, web reachability, provider health, and
+  Platform provider status are clean for the customer's chosen providers.
+- Confirm analytics, chat, error tracking, billing, AI, email, SMS, and push
+  are either fully configured and approved or intentionally disabled/skipped.
+- Run one backup and one restore dry-run, then document where customer-owned
+  off-host backup copies are stored.
+- Put HTTPS/WAF/rate limits in front of public web/API traffic before inviting
+  real users.
+- For tenant-by-tenant migrations, run
+  `infra/scripts/smoke-organization-import-postgres.ps1` against the customer's
+  target PostgreSQL before moving production data. For whole-install moves, use
+  the Compose backup/restore flow instead.
+- Record the exact package zip checksum, license expiration, env file owner,
+  backup location, domain names, and support escalation contact in the customer
+  handoff notes.
+
 ## Security Baseline
 
 - Use HTTPS only for public access.
