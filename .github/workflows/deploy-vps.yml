@@ -6,7 +6,6 @@ on:
   workflow_dispatch:
 
 jobs:
-  # ── Verify: build + test gate before deploying ──────────────────────────────
   verify:
     name: Verify Build
     runs-on: ubuntu-latest
@@ -19,13 +18,15 @@ jobs:
         id: changes
         run: |
           CHANGED=$(git diff --name-only HEAD~1 HEAD 2>/dev/null || echo "all")
-          echo "api=$(echo "$CHANGED" | grep -q '^apps/api/' && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
-          echo "web=$(echo "$CHANGED" | grep -q '^apps/web/' && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
-          echo "infra=$(echo "$CHANGED" | grep -q '^infra/' && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
-          # Always run on workflow_dispatch or if CI/infra files changed
+          echo "api=$(echo "$CHANGED" | grep -q '^apps/api/' && echo 'true' || echo 'false')" >> "$GITHUB_OUTPUT"
+          echo "web=$(echo "$CHANGED" | grep -q '^apps/web/' && echo 'true' || echo 'false')" >> "$GITHUB_OUTPUT"
+          echo "infra=$(echo "$CHANGED" | grep -q '^infra/' && echo 'true' || echo 'false')" >> "$GITHUB_OUTPUT"
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "api=true" >> $GITHUB_OUTPUT
-            echo "web=true" >> $GITHUB_OUTPUT
+            echo "api=true" >> "$GITHUB_OUTPUT"
+            echo "web=true" >> "$GITHUB_OUTPUT"
+          elif echo "$CHANGED" | grep -qE '^(\.github/workflows/deploy-vps\.yml|infra/)'; then
+            echo "api=true" >> "$GITHUB_OUTPUT"
+            echo "web=true" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Setup .NET
@@ -34,7 +35,7 @@ jobs:
         with:
           dotnet-version: "8.0.x"
 
-      - name: Restore & Build API
+      - name: Restore and build API
         if: steps.changes.outputs.api == 'true'
         working-directory: apps/api
         run: |
@@ -59,7 +60,7 @@ jobs:
           cache: "npm"
           cache-dependency-path: apps/web/package-lock.json
 
-      - name: Build Frontend
+      - name: Build frontend
         if: steps.changes.outputs.web == 'true'
         working-directory: apps/web
         run: |
@@ -70,7 +71,6 @@ jobs:
           NEXT_PUBLIC_API_URL: https://api.shifter.ofeklabs.com
           NEXT_PUBLIC_APP_VERSION: ${{ github.sha }}
 
-  # ── Deploy: only runs after verify passes ───────────────────────────────────
   deploy:
     name: Deploy
     runs-on: ubuntu-latest
@@ -137,25 +137,32 @@ jobs:
 
             echo "=== Rebuilding API and restarting services ==="
             cd /opt/shifter/infra/compose
-            docker compose up -d --build api solver seq --force-recreate web --remove-orphans
+            docker compose up -d --build --force-recreate --remove-orphans api solver seq web
 
             echo "=== Waiting for services to start ==="
             sleep 10
 
-            echo "=== Health check ==="
-            if ! curl -sf --max-time 10 http://localhost:5000/health; then
-              echo "⚠️ API health check failed — attempting rollback..."
+            echo "=== Readiness check ==="
+            if ! curl -sf --max-time 10 http://localhost:5000/ready; then
+              echo "API readiness check failed; attempting rollback..."
               docker tag compose-api:previous compose-api:latest 2>/dev/null || true
               docker tag shifter-web:previous shifter-web:latest 2>/dev/null || true
               docker compose up -d --force-recreate api web
               sleep 5
               echo "=== Post-rollback status ==="
               docker compose ps
-              echo "❌ Deploy failed — rolled back to previous version"
+              echo "Deploy failed; rolled back to previous version"
               exit 1
             fi
 
             echo "=== Service status ==="
             docker compose ps
 
-            echo "✅ Deployed $(git rev-parse --short HEAD) at $(date)"
+            echo "Deployed $(git rev-parse --short HEAD) at $(date)"
+
+      - name: Hosted smoke check
+        shell: pwsh
+        run: |
+          ./infra/scripts/smoke-hosted-vps.ps1 `
+            -WebBaseUrl https://shifter.ofeklabs.com `
+            -ApiBaseUrl https://api.shifter.ofeklabs.com
