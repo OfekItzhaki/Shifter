@@ -291,6 +291,9 @@ packaging, and self-service export package validation readiness.
   service worker against local mock endpoints.
 - Customer-hosted preflight CI run `27432361955` passed for commit `fb21872`
   on June 12, 2026 after adding the hosted VPS smoke harness.
+- Pull request `#36` is open, mergeable into `main`, and its
+  pull-request-triggered Customer-hosted preflight run `27434174339` passed on
+  June 12, 2026.
 - Before merge, use the workflow history above to confirm the latest
   package-relevant run for `feat/self-service-client-ready` is green.
 - `infra/scripts/backup-compose.sh`, `infra/scripts/deploy-compose.sh`,
@@ -389,4 +392,4 @@ packaging, and self-service export package validation readiness.
 
 PR URL:
 
-https://github.com/OfekItzhaki/Shifter/pull/new/feat/self-service-client-ready
+https://github.com/OfekItzhaki/Shifter/pull/36
