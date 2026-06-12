@@ -24,6 +24,28 @@ function Get-CanonicalPayload {
     ) -join "`n"
 }
 
+function Invoke-RsaVerifyHash {
+    param(
+        [System.Security.Cryptography.RSA]$Rsa,
+        [byte[]]$Hash,
+        [byte[]]$Signature
+    )
+
+    try {
+        return $Rsa.VerifyHash(
+            $Hash,
+            $Signature,
+            [System.Security.Cryptography.HashAlgorithmName]::SHA256,
+            [System.Security.Cryptography.RSASignaturePadding]::Pkcs1)
+    }
+    catch [System.Management.Automation.MethodException] {
+        return $Rsa.VerifyHash(
+            $Hash,
+            [System.Security.Cryptography.CryptoConfig]::MapNameToOID("SHA256"),
+            $Signature)
+    }
+}
+
 try {
     $privateKey = Join-Path $tempDir "private.xml"
     $publicKey = Join-Path $tempDir "public.pem"
@@ -79,10 +101,10 @@ try {
         finally {
             $sha256.Dispose()
         }
-        $valid = $rsa.VerifyHash(
-            $hash,
-            [System.Security.Cryptography.CryptoConfig]::MapNameToOID("SHA256"),
-            [Convert]::FromBase64String($license.signature))
+        $valid = Invoke-RsaVerifyHash `
+            -Rsa $rsa `
+            -Hash $hash `
+            -Signature ([Convert]::FromBase64String($license.signature))
 
         if (-not $valid) {
             throw "Generated license signature did not verify with generated signing key."

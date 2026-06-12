@@ -170,6 +170,23 @@ function Get-CanonicalPayload {
     ) -join "`n"
 }
 
+function Invoke-RsaSignHash {
+    param(
+        [System.Security.Cryptography.RSA]$Rsa,
+        [byte[]]$Hash
+    )
+
+    try {
+        return $Rsa.SignHash(
+            $Hash,
+            [System.Security.Cryptography.HashAlgorithmName]::SHA256,
+            [System.Security.Cryptography.RSASignaturePadding]::Pkcs1)
+    }
+    catch [System.Management.Automation.MethodException] {
+        return $Rsa.SignHash($Hash, [System.Security.Cryptography.CryptoConfig]::MapNameToOID("SHA256"))
+    }
+}
+
 if ($LicenseKey.Trim().Length -lt 24) {
     throw "LicenseKey must be at least 24 characters."
 }
@@ -223,7 +240,7 @@ try {
     finally {
         $sha256.Dispose()
     }
-    $signature = [Convert]::ToBase64String($rsa.SignHash($hash, [System.Security.Cryptography.CryptoConfig]::MapNameToOID("SHA256")))
+    $signature = [Convert]::ToBase64String((Invoke-RsaSignHash $rsa $hash))
 
     $license = [ordered]@{
         deploymentMode = $deploymentMode
