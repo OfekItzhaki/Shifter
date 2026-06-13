@@ -95,10 +95,10 @@ Use this checklist before opening or merging a `develop` to `main` PR.
 As of June 13, 2026:
 
 - `develop` is the current integration branch and has green current-head CI
-  evidence for commit `fd9481b`
-  (`test(release): require current-head ci evidence`): broad `CI` run
-  `27454705062` passed and `Customer-Hosted Preflight` run `27454705066`
-  passed. `Deploy Staging` run `27454705063` skipped as expected while staging
+  evidence for commit `b84bc12`
+  (`test(release): validate staging basic auth secrets`): broad `CI` run
+  `27455516695` passed and `Customer-Hosted Preflight` run `27455516704`
+  passed. `Deploy Staging` run `27455516685` skipped as expected while staging
   deploy is disabled.
 - Local verification against a fresh migrated/seeded PostgreSQL database passed
   for the current `develop` head:
@@ -128,8 +128,9 @@ As of June 13, 2026:
   requires successful broad `CI` and `Customer-Hosted Preflight` runs for the
   current candidate HEAD, includes the GitHub release-control audit so the
   `develop` to `main` gate fails if `main` does not require PRs/status checks,
-  and fails until a successful `Deploy Staging` run exists for the current
-  `develop` HEAD.
+  rejects partial optional staging Basic Auth smoke-secret configuration, and
+  fails until a successful `Deploy Staging` run exists for the current `develop`
+  HEAD.
 - The GitHub staging setup helper is in place and dry-run/apply behavior is
   covered by a local harness. It also supports `-BootstrapOnly` to create the
   `staging` environment and safe non-URL defaults before staging DNS/URLs are

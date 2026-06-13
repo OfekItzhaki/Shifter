@@ -17,14 +17,14 @@ holiday-calendar integration, and customer-hosted portability.
   Latest verified value on June 13, 2026:
 
   ```text
-  fd9481b test(release): require current-head ci evidence
+  b84bc12 test(release): validate staging basic auth secrets
   ```
 
 - Current release gate status:
 
-  - Latest checked `develop` runs for `fd9481b`: `CI` run `27454705062`
-    passed, `Customer-Hosted Preflight` run `27454705066` passed, and
-    `Deploy Staging` run `27454705063` skipped as expected.
+  - Latest checked `develop` runs for `b84bc12`: `CI` run `27455516695`
+    passed, `Customer-Hosted Preflight` run `27455516704` passed, and
+    `Deploy Staging` run `27455516685` skipped as expected.
   - `Deploy Staging` is expected to skip while
     `ENABLE_STAGING_DEPLOY=false`.
   - The strict release readiness audit with
@@ -34,7 +34,8 @@ holiday-calendar integration, and customer-hosted portability.
     exist.
   - The release readiness audit now rejects stale broad `CI` and
     `Customer-Hosted Preflight` evidence; both must pass for the current
-    candidate HEAD.
+    candidate HEAD. It also fails clearly if only one of the optional staging
+    Basic Auth smoke secrets is configured.
   - Current local user-flow verification passed against a fresh migrated/seeded
     database: API build, web lint with 0 errors, full
     `e2e/self-service.browser.spec.ts` browser suite with 15 passed tests, and
