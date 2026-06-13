@@ -1,12 +1,12 @@
 using Jobuler.Application.Common;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 namespace Jobuler.Infrastructure.Storage;
 
 /// <summary>
-/// Stores uploaded files on the local filesystem under {ContentRoot}/wwwroot/uploads.
+/// Stores uploaded files on the local filesystem under {WebRootPath}/uploads.
 /// Returns a public URL based on App:ApiBaseUrl config.
 /// Swap for S3FileStorage in production by changing the DI registration.
 /// </summary>
@@ -17,12 +17,13 @@ public class LocalDiskFileStorage : IFileStorage
     private readonly ILogger<LocalDiskFileStorage> _logger;
 
     public LocalDiskFileStorage(
-        IHostEnvironment env,
+        IWebHostEnvironment env,
         IConfiguration configuration,
         ILogger<LocalDiskFileStorage> logger)
     {
-        // Store files in wwwroot/uploads — served as static files by the API
-        _uploadRoot = Path.Combine(env.ContentRootPath, "wwwroot", "uploads");
+        // Store files under the same web root served by UseStaticFiles().
+        var webRoot = env.WebRootPath ?? Path.Combine(env.ContentRootPath, "wwwroot");
+        _uploadRoot = Path.Combine(webRoot, "uploads");
         Directory.CreateDirectory(_uploadRoot);
 
         var apiBase = configuration["App:ApiBaseUrl"]?.TrimEnd('/')
