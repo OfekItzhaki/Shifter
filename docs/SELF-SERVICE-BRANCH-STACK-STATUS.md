@@ -16,15 +16,12 @@ holiday-calendar integration, and customer-hosted portability.
 
 - Current release gate status:
 
-  - Latest `develop` CI for `f8785b2` passed:
-    https://github.com/OfekItzhaki/Shifter/actions/runs/27450194891
-  - Latest `develop` customer-hosted preflight for `f8785b2` passed:
-    https://github.com/OfekItzhaki/Shifter/actions/runs/27450194900
-  - `Deploy Staging` for `f8785b2` was skipped as expected while
-    `ENABLE_STAGING_DEPLOY=false`:
-    https://github.com/OfekItzhaki/Shifter/actions/runs/27450194912
-  - `infra/scripts/check-release-readiness.ps1 -SkipHostedSmoke` still fails
-    as intended until `STAGING_WEB_BASE_URL`, `STAGING_API_BASE_URL`, and a
+  - Check the latest `develop` runs in GitHub Actions for `CI`,
+    `Customer-Hosted Preflight`, and `Deploy Staging`.
+  - `Deploy Staging` is expected to skip while
+    `ENABLE_STAGING_DEPLOY=false`.
+  - `infra/scripts/check-release-readiness.ps1 -SkipHostedSmoke` fails as
+    intended until `STAGING_WEB_BASE_URL`, `STAGING_API_BASE_URL`, and a
     successful staging deploy for the current `develop` head exist.
 
 - Package-relevant CI history:
