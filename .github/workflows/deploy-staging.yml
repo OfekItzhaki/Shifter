@@ -45,6 +45,9 @@ jobs:
 
       - name: Hosted smoke check
         shell: pwsh
+        env:
+          STAGING_BASIC_AUTH_USERNAME: ${{ secrets.STAGING_BASIC_AUTH_USERNAME }}
+          STAGING_BASIC_AUTH_PASSWORD: ${{ secrets.STAGING_BASIC_AUTH_PASSWORD }}
         run: |
           $webBaseUrl = "${{ vars.STAGING_WEB_BASE_URL }}"
           $apiBaseUrl = "${{ vars.STAGING_API_BASE_URL }}"
@@ -54,6 +57,14 @@ jobs:
             exit 0
           }
 
-          ./infra/scripts/smoke-hosted-vps.ps1 `
-            -WebBaseUrl $webBaseUrl `
-            -ApiBaseUrl $apiBaseUrl
+          $smokeArgs = @{
+            WebBaseUrl = $webBaseUrl
+            ApiBaseUrl = $apiBaseUrl
+          }
+
+          if (-not [string]::IsNullOrWhiteSpace($env:STAGING_BASIC_AUTH_USERNAME) -or -not [string]::IsNullOrWhiteSpace($env:STAGING_BASIC_AUTH_PASSWORD)) {
+            $smokeArgs.BasicAuthUsername = $env:STAGING_BASIC_AUTH_USERNAME
+            $smokeArgs.BasicAuthPassword = $env:STAGING_BASIC_AUTH_PASSWORD
+          }
+
+          ./infra/scripts/smoke-hosted-vps.ps1 @smokeArgs

@@ -43,6 +43,11 @@ private customer AI, or a customer-owned database.
   .\infra\scripts\smoke-hosted-vps.ps1 -EnvFile .\infra\compose\.env
   ```
 
+  For a protected staging URL, also provide `-BasicAuthUsername` and
+  `-BasicAuthPassword`, or configure `STAGING_BASIC_AUTH_USERNAME` and
+  `STAGING_BASIC_AUTH_PASSWORD` as GitHub secrets for the staging deploy
+  workflow.
+
 - The GitHub `Deploy to VPS` workflow also runs this hosted smoke check after
   a successful VPS deployment, and uses the API `/ready` endpoint for the
   rollback gate before declaring the deployed Compose stack ready. This workflow

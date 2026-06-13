@@ -2,6 +2,8 @@ param(
     [string]$EnvFile = "",
     [string]$WebBaseUrl = "",
     [string]$ApiBaseUrl = "",
+    [string]$BasicAuthUsername = "",
+    [string]$BasicAuthPassword = "",
     [int]$TimeoutSeconds = 15,
     [switch]$SkipAuthPages,
     [switch]$SkipPwaChecks,
@@ -76,8 +78,18 @@ function Invoke-SmokeRequest {
         [string]$ExpectedContentType = ""
     )
 
+    $headers = @{}
+    if (-not [string]::IsNullOrWhiteSpace($BasicAuthUsername) -or -not [string]::IsNullOrWhiteSpace($BasicAuthPassword)) {
+        if ([string]::IsNullOrWhiteSpace($BasicAuthUsername) -or [string]::IsNullOrWhiteSpace($BasicAuthPassword)) {
+            throw "$Context cannot use Basic Auth unless both BasicAuthUsername and BasicAuthPassword are set."
+        }
+
+        $credential = [Convert]::ToBase64String([System.Text.Encoding]::ASCII.GetBytes("${BasicAuthUsername}:${BasicAuthPassword}"))
+        $headers["Authorization"] = "Basic $credential"
+    }
+
     try {
-        $response = Invoke-WebRequest -Uri $Url -Method GET -TimeoutSec $TimeoutSeconds -UseBasicParsing
+        $response = Invoke-WebRequest -Uri $Url -Method GET -Headers $headers -TimeoutSec $TimeoutSeconds -UseBasicParsing
     }
     catch {
         throw "$Context failed at $Url. $($_.Exception.Message)"
@@ -152,6 +164,14 @@ if ([string]::IsNullOrWhiteSpace($ApiBaseUrl)) {
     $ApiBaseUrl = Get-ConfigValue $envFileValues @("APP_API_BASE_URL", "NEXT_PUBLIC_API_URL") "http://localhost:5000"
 }
 
+if ([string]::IsNullOrWhiteSpace($BasicAuthUsername)) {
+    $BasicAuthUsername = Get-ConfigValue $envFileValues @("STAGING_BASIC_AUTH_USERNAME", "BASIC_AUTH_USERNAME") ""
+}
+
+if ([string]::IsNullOrWhiteSpace($BasicAuthPassword)) {
+    $BasicAuthPassword = Get-ConfigValue $envFileValues @("STAGING_BASIC_AUTH_PASSWORD", "BASIC_AUTH_PASSWORD") ""
+}
+
 $WebBaseUrl = $WebBaseUrl.TrimEnd("/")
 $ApiBaseUrl = $ApiBaseUrl.TrimEnd("/")
 
@@ -161,6 +181,7 @@ if ($ResolveOnly) {
     Write-Host "  ApiBaseUrl: $ApiBaseUrl"
     Write-Host "  SkipAuthPages: $SkipAuthPages"
     Write-Host "  SkipPwaChecks: $SkipPwaChecks"
+    Write-Host "  BasicAuth: $(-not [string]::IsNullOrWhiteSpace($BasicAuthUsername) -or -not [string]::IsNullOrWhiteSpace($BasicAuthPassword))"
     exit 0
 }
 

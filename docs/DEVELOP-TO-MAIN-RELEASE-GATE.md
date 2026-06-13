@@ -62,6 +62,10 @@ Use this checklist before opening or merging a `develop` to `main` PR.
     -ApiBaseUrl <staging-api-url>
   ```
 
+  If staging is protected by Basic Auth, pass `-BasicAuthUsername` and
+  `-BasicAuthPassword`, or set `STAGING_BASIC_AUTH_USERNAME` and
+  `STAGING_BASIC_AUTH_PASSWORD` for the GitHub `Deploy Staging` smoke step.
+
 - Manual staging smoke passes:
   - use [Staging manual smoke evidence](STAGING-MANUAL-SMOKE-EVIDENCE.md)
   - validate the completed evidence file:

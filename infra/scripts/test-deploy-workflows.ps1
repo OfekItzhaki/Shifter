@@ -48,5 +48,7 @@ Assert-Contains $stagingWorkflow "environment: staging" "Staging workflow must u
 Assert-Contains $stagingWorkflow "github.ref_name != 'develop'" "Staging deploy workflow must fail fast outside develop."
 Assert-Contains $stagingWorkflow 'EXPECTED_REVISION="${{ github.sha }}"' "Staging workflow must pass the intended GitHub SHA to deploy-compose."
 Assert-Contains $stagingWorkflow "smoke-hosted-vps.ps1" "Staging workflow must run hosted smoke when URLs are configured."
+Assert-Contains $stagingWorkflow "STAGING_BASIC_AUTH_USERNAME" "Staging workflow must support Basic Auth for protected staging smoke."
+Assert-Contains $stagingWorkflow "BasicAuthUsername" "Staging workflow must pass Basic Auth credentials to hosted smoke when configured."
 
 Write-Host "Deploy workflow test passed." -ForegroundColor Green

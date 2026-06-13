@@ -134,6 +134,8 @@ Required staging secrets:
 - `STAGING_USER`
 - `STAGING_SSH_KEY`
 - optional `STAGING_PORT`
+- optional `STAGING_BASIC_AUTH_USERNAME` and `STAGING_BASIC_AUTH_PASSWORD`, if
+  Caddy Basic Auth protects the staging web/API URLs
 
 Fallback secrets, if you prefer shared Hetzner names:
 
@@ -188,6 +190,13 @@ gh secret set STAGING_SSH_KEY --repo OfekItzhaki/Shifter
 gh secret set STAGING_PORT --repo OfekItzhaki/Shifter
 ```
 
+If staging uses the recommended Caddy Basic Auth protection, also set:
+
+```powershell
+gh secret set STAGING_BASIC_AUTH_USERNAME --repo OfekItzhaki/Shifter
+gh secret set STAGING_BASIC_AUTH_PASSWORD --repo OfekItzhaki/Shifter
+```
+
 Current GitHub setup status as of June 13, 2026:
 
 - the GitHub `staging` environment exists
@@ -198,6 +207,7 @@ Current GitHub setup status as of June 13, 2026:
   staging DNS/URLs are allocated
 - the repository has `VPS_*` secrets for the existing VPS path, but no dedicated
   `STAGING_*` secrets yet
+- optional staging Basic Auth smoke secrets are supported but not required
 - therefore push-triggered staging deploys intentionally skip until staging is
   provisioned, staging URLs are configured, and `ENABLE_STAGING_DEPLOY=true`
 

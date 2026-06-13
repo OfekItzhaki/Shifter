@@ -19,7 +19,8 @@ function Start-MockHttpServer {
     param(
         [ValidateSet("api", "web")]
         [string]$Kind,
-        [string]$StopFile
+        [string]$StopFile,
+        [string]$RequiredAuthorization = ""
     )
 
     $port = Get-FreeTcpPort
@@ -27,7 +28,8 @@ function Start-MockHttpServer {
         param(
             [int]$Port,
             [string]$Kind,
-            [string]$StopFile
+            [string]$StopFile,
+            [string]$RequiredAuthorization
         )
 
         $ErrorActionPreference = "Stop"
@@ -45,10 +47,15 @@ function Start-MockHttpServer {
                     $stream = $client.GetStream()
                     $reader = [System.IO.StreamReader]::new($stream, [System.Text.Encoding]::ASCII, $false, 1024, $true)
                     $requestLine = $reader.ReadLine()
+                    $authorization = ""
                     while ($true) {
                         $headerLine = $reader.ReadLine()
                         if ($null -eq $headerLine -or [string]::IsNullOrWhiteSpace($headerLine)) {
                             break
+                        }
+
+                        if ($headerLine -match '^Authorization:\s*(.+)$') {
+                            $authorization = $Matches[1].Trim()
                         }
                     }
 
@@ -67,7 +74,12 @@ function Start-MockHttpServer {
                     $contentType = "text/plain"
                     $body = "ok"
 
-                    if ($Kind -eq "api") {
+                    if (-not [string]::IsNullOrWhiteSpace($RequiredAuthorization) -and $authorization -ne $RequiredAuthorization) {
+                        $status = "401 Unauthorized"
+                        $body = "unauthorized"
+                    }
+                    elseif ($Kind -eq "api") {
+
                         if ($path -eq "/ready") {
                             $contentType = "application/json"
                             $body = '{"status":"ready"}'
@@ -119,7 +131,7 @@ function Start-MockHttpServer {
         finally {
             $listener.Stop()
         }
-    } -ArgumentList $port, $Kind, $StopFile
+    } -ArgumentList $port, $Kind, $StopFile, $RequiredAuthorization
 
     return [pscustomobject]@{
         Port = $port
@@ -189,6 +201,70 @@ try {
         if ($text -notmatch [regex]::Escape($pattern)) {
             throw "Hosted VPS smoke output is missing '$pattern'. Output:`n$text"
         }
+    }
+
+    Stop-MockHttpServer -Server $apiServer -StopFile $apiStopFile
+    Stop-MockHttpServer -Server $webServer -StopFile $webStopFile
+    $apiServer = $null
+    $webServer = $null
+
+    $username = "staging-user"
+    $password = "staging-pass"
+    $requiredAuthorization = "Basic " + [Convert]::ToBase64String([System.Text.Encoding]::ASCII.GetBytes("${username}:${password}"))
+    $apiStopFile = Join-Path $tempDir "api-auth.stop"
+    $webStopFile = Join-Path $tempDir "web-auth.stop"
+    $apiServer = Start-MockHttpServer -Kind api -StopFile $apiStopFile -RequiredAuthorization $requiredAuthorization
+    $webServer = Start-MockHttpServer -Kind web -StopFile $webStopFile -RequiredAuthorization $requiredAuthorization
+    Start-Sleep -Milliseconds 250
+
+    $unprotectedEnvFile = Join-Path $tempDir ".protected-without-auth.env"
+    @(
+        "APP_FRONTEND_BASE_URL=$($webServer.BaseUrl)",
+        "APP_API_BASE_URL=$($apiServer.BaseUrl)"
+    ) | Set-Content -LiteralPath $unprotectedEnvFile -Encoding ASCII
+
+    $previousErrorActionPreference = $ErrorActionPreference
+    $ErrorActionPreference = "Continue"
+    try {
+        $unauthorizedCommand = @("-NoProfile")
+        if ($isWindowsHost) {
+            $unauthorizedCommand += @("-ExecutionPolicy", "Bypass")
+        }
+        $unauthorizedCommand += @("-File", $script, "-EnvFile", $unprotectedEnvFile, "-TimeoutSeconds", "5")
+        $unauthorizedOutput = & $powerShellExe @unauthorizedCommand 2>&1
+        $unauthorizedExitCode = $LASTEXITCODE
+    }
+    finally {
+        $ErrorActionPreference = $previousErrorActionPreference
+    }
+
+    if ($unauthorizedExitCode -eq 0) {
+        throw "Expected protected hosted VPS smoke without Basic Auth to fail. Output:`n$($unauthorizedOutput | Out-String)"
+    }
+    if (($unauthorizedOutput | Out-String) -notmatch "401|Unauthorized") {
+        throw "Protected hosted VPS smoke without Basic Auth did not report an authorization failure. Output:`n$($unauthorizedOutput | Out-String)"
+    }
+
+    $protectedEnvFile = Join-Path $tempDir ".protected.env"
+    @(
+        "APP_FRONTEND_BASE_URL=$($webServer.BaseUrl)",
+        "APP_API_BASE_URL=$($apiServer.BaseUrl)",
+        "STAGING_BASIC_AUTH_USERNAME=$username",
+        "STAGING_BASIC_AUTH_PASSWORD=$password"
+    ) | Set-Content -LiteralPath $protectedEnvFile -Encoding ASCII
+
+    $protectedCommand = @("-NoProfile")
+    if ($isWindowsHost) {
+        $protectedCommand += @("-ExecutionPolicy", "Bypass")
+    }
+    $protectedCommand += @("-File", $script, "-EnvFile", $protectedEnvFile, "-TimeoutSeconds", "5")
+    $protectedOutput = & $powerShellExe @protectedCommand 2>&1
+    if ($LASTEXITCODE -ne 0) {
+        throw "Hosted VPS smoke script with Basic Auth failed with exit code $LASTEXITCODE. Output:`n$($protectedOutput | Out-String)"
+    }
+
+    if (($protectedOutput | Out-String) -notmatch [regex]::Escape("Hosted VPS smoke checks passed.")) {
+        throw "Protected hosted VPS smoke output did not show success. Output:`n$($protectedOutput | Out-String)"
     }
 }
 finally {
