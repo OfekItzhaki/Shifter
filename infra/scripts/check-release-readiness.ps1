@@ -5,6 +5,7 @@ param(
     [switch]$SkipGitCheck,
     [switch]$SkipGitHubCheck,
     [switch]$SkipReleaseControlCheck,
+    [switch]$RequireDedicatedStagingSecrets,
     [switch]$SkipHostedSmoke,
     [string]$WebBaseUrl = "",
     [string]$ApiBaseUrl = "",
@@ -251,6 +252,9 @@ if (-not $SkipGitHubCheck) {
 
         if ($hasDedicatedStagingSecrets) {
             Write-Check PASS "Dedicated STAGING_* SSH secrets are configured."
+        }
+        elseif ($RequireDedicatedStagingSecrets) {
+            Write-Check FAIL "Dedicated STAGING_* SSH secrets are required for the final release gate."
         }
         elseif ($hasFallbackVpsSecrets) {
             Write-Check WARN "Using VPS_* SSH secrets as staging fallback; prefer dedicated STAGING_* secrets for isolation."

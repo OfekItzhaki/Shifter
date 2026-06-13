@@ -29,12 +29,14 @@ Use this checklist before opening or merging a `develop` to `main` PR.
   from deletion and force-push.
 
 - Staging is deployed from `develop`.
-- Release readiness audit has no failures, including staging setup, latest CI
-  evidence, customer-hosted preflight evidence, latest successful staging deploy,
-  and GitHub release controls:
+- Release readiness audit has no failures, including staging setup, dedicated
+  staging SSH secrets, latest CI evidence, customer-hosted preflight evidence,
+  latest successful staging deploy, and GitHub release controls:
 
   ```powershell
-  .\infra\scripts\check-release-readiness.ps1 -SkipHostedSmoke
+  .\infra\scripts\check-release-readiness.ps1 `
+    -RequireDedicatedStagingSecrets `
+    -SkipHostedSmoke
   ```
 
 - GitHub staging setup was applied with the intended staging URLs/path:
@@ -114,10 +116,11 @@ As of June 13, 2026:
   status checks; `develop` blocks deletion/force-push. The setup helper is in
   place and dry-run/apply behavior is covered by a local harness.
 - The GitHub `staging` environment is created, and staging path/project
-  variables are configured with push deploy disabled. The real release
-  readiness audit currently fails because `STAGING_WEB_BASE_URL` and
-  `STAGING_API_BASE_URL` are not configured yet. This is the expected blocker
-  before a staging deploy and `develop` to `main` PR.
+  variables are configured with push deploy disabled. The real strict release
+  readiness audit currently fails because `STAGING_WEB_BASE_URL`,
+  `STAGING_API_BASE_URL`, and dedicated `STAGING_*` SSH secrets are not
+  configured yet. This is the expected blocker before a staging deploy and
+  `develop` to `main` PR.
 - The `Deploy Staging` workflow exists, but staging variables and the GitHub
   URLs are not configured yet. It can use existing `VPS_*` secrets as a
   fallback, but dedicated `STAGING_*` secrets are preferred.

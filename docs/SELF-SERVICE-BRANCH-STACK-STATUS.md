@@ -22,7 +22,8 @@ holiday-calendar integration, and customer-hosted portability.
     `ENABLE_STAGING_DEPLOY=false`.
   - `infra/scripts/check-release-readiness.ps1 -SkipHostedSmoke` fails as
     intended until `STAGING_WEB_BASE_URL`, `STAGING_API_BASE_URL`, and a
-    successful staging deploy for the current `develop` head exist.
+    successful staging deploy for the current `develop` head exist. Use
+    `-RequireDedicatedStagingSecrets` for the final `develop` to `main` gate.
 
 - Package-relevant CI history:
   https://github.com/OfekItzhaki/Shifter/actions/workflows/customer-hosted-preflight.yml
@@ -514,11 +515,15 @@ Do not open or merge a `develop` to `main` PR until the release readiness gate
 passes against the current `develop` head:
 
 ```powershell
-infra/scripts/check-release-readiness.ps1 -SkipHostedSmoke
+infra/scripts/check-release-readiness.ps1 `
+  -RequireDedicatedStagingSecrets `
+  -SkipHostedSmoke
 ```
 
 That gate currently requires staging URL variables and a successful staging
-deploy for the exact candidate commit. After staging deploy succeeds, complete
+deploy for the exact candidate commit. For the final `develop` to `main` gate,
+it also requires dedicated `STAGING_*` SSH secrets instead of production-named
+fallback secrets. After staging deploy succeeds, complete
 `docs/STAGING-MANUAL-SMOKE-EVIDENCE.md`, verify it with
 `infra/scripts/check-staging-smoke-evidence.ps1`, and run the hosted smoke
 against the deployed staging or production URLs before moving to `main`.

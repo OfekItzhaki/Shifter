@@ -131,6 +131,15 @@ exit 1
             throw "Missing audit output missing '$pattern'. Output:`n$missingText"
         }
     }
+
+    $strictMissingOutput = & $powerShellExe @baseCommand -File $script -GhPath $fakeGh -SkipGitCheck -SkipHostedSmoke -RequireDedicatedStagingSecrets 2>&1
+    if ($LASTEXITCODE -eq 0) {
+        throw "Expected strict missing audit to fail. Output:`n$($strictMissingOutput | Out-String)"
+    }
+    $strictMissingText = $strictMissingOutput | Out-String
+    if ($strictMissingText -notmatch [regex]::Escape("[FAIL] Dedicated STAGING_* SSH secrets are required for the final release gate.")) {
+        throw "Strict missing audit did not require dedicated staging secrets. Output:`n$strictMissingText"
+    }
 }
 finally {
     Remove-Item Env:\SHIFTER_FAKE_GH_MODE -ErrorAction SilentlyContinue
