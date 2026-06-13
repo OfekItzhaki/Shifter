@@ -101,6 +101,7 @@ services:
       Storage__S3__ServiceUrl: ${STORAGE_S3_SERVICE_URL:-}
       Storage__S3__PublicBaseUrl: ${STORAGE_S3_PUBLIC_BASE_URL:-}
       Storage__S3__ForcePathStyle: ${STORAGE_S3_FORCE_PATH_STYLE:-false}
+      Storage__Local__PublicBaseUrl: ${STORAGE_LOCAL_PUBLIC_BASE_URL:-}
       AutoScheduler__Enabled: ${AUTO_SCHEDULER_ENABLED:-false}
       SelfServiceDefaults__MinShiftsPerCycle: ${SELF_SERVICE_DEFAULT_MIN_SHIFTS_PER_CYCLE:-0}
       SelfServiceDefaults__MaxShiftsPerCycle: ${SELF_SERVICE_DEFAULT_MAX_SHIFTS_PER_CYCLE:-7}

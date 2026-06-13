@@ -176,6 +176,99 @@ STORAGE_S3_FORCE_PATH_STYLE=true
 
 Do not commit these values. Store them only in the VPS `.env` or a secret manager.
 
+## Prepare `uploads.shifter.ofeklabs.com` without switching storage
+
+This preparation keeps local disk storage active and only gives the API a future-ready public URL for new uploads when you choose to enable it.
+
+Do not set this value until DNS and proxy routing are ready:
+
+```env
+STORAGE_LOCAL_PUBLIC_BASE_URL=https://uploads.shifter.ofeklabs.com
+```
+
+When enabled, local disk uploads will return URLs like:
+
+```text
+https://uploads.shifter.ofeklabs.com/uploads/<file-name>
+```
+
+Existing URLs that point at the API, such as:
+
+```text
+https://api.shifter.ofeklabs.com/uploads/<file-name>
+```
+
+can keep working as long as the API still serves `/uploads/*`.
+
+### DNS
+
+Create a DNS record:
+
+```text
+Type: CNAME
+Name: uploads
+Target: shifter.ofeklabs.com
+Proxy: enabled if using Cloudflare proxy/CDN
+```
+
+If the root app uses separate `api` and `web` hosts, target the same VPS ingress host that reaches the API/Nginx/Caddy process.
+
+### Reverse proxy
+
+Route only `/uploads/*` on the uploads host to the same static uploads location currently served by the API container.
+
+For Nginx, the shape is:
+
+```nginx
+server {
+    server_name uploads.shifter.ofeklabs.com;
+
+    location /uploads/ {
+        proxy_pass http://127.0.0.1:5000/uploads/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+}
+```
+
+Use the production API port from the VPS `.env`, not necessarily `5000`.
+
+### Switch local disk uploads to the clean URL
+
+After DNS and proxy routing return a test image successfully:
+
+```bash
+cd /opt/shifter/infra/compose
+sudo cp .env .env.before-uploads-url
+sudo nano .env
+```
+
+Set:
+
+```env
+STORAGE_LOCAL_PUBLIC_BASE_URL=https://uploads.shifter.ofeklabs.com
+```
+
+Restart the API:
+
+```bash
+cd /opt/shifter
+docker compose --env-file infra/compose/.env -f infra/compose/docker-compose.yml up -d api
+```
+
+Upload a new profile image and confirm the returned URL uses `uploads.shifter.ofeklabs.com`.
+
+### Later S3 migration
+
+When moving from VPS local disk to S3-compatible object storage, keep the same public URL:
+
+```env
+STORAGE_S3_PUBLIC_BASE_URL=https://uploads.shifter.ofeklabs.com
+```
+
+That lets new S3-backed uploads use the same host as local-disk uploads. Existing database URLs do not need to change if the same host remains valid.
+
 ## Minimum launch requirement
 
 Before onboarding real users, complete at least:

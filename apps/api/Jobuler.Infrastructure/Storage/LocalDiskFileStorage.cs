@@ -7,7 +7,7 @@ namespace Jobuler.Infrastructure.Storage;
 
 /// <summary>
 /// Stores uploaded files on the local filesystem under {WebRootPath}/uploads.
-/// Returns a public URL based on App:ApiBaseUrl config.
+/// Returns a public URL based on Storage:Local:PublicBaseUrl or App:ApiBaseUrl config.
 /// Swap for S3FileStorage in production by changing the DI registration.
 /// </summary>
 public class LocalDiskFileStorage : IFileStorage
@@ -26,9 +26,12 @@ public class LocalDiskFileStorage : IFileStorage
         _uploadRoot = Path.Combine(webRoot, "uploads");
         Directory.CreateDirectory(_uploadRoot);
 
+        var publicBase = configuration["Storage:Local:PublicBaseUrl"]?.TrimEnd('/');
         var apiBase = configuration["App:ApiBaseUrl"]?.TrimEnd('/')
             ?? "http://localhost:5000";
-        _baseUrl = $"{apiBase}/uploads";
+        _baseUrl = string.IsNullOrWhiteSpace(publicBase)
+            ? $"{apiBase}/uploads"
+            : $"{publicBase}/uploads";
         _logger = logger;
     }
 
