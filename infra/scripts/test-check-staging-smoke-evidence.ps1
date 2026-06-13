@@ -18,6 +18,7 @@ try {
     $replacements = [ordered]@{
         "- Test date:" = "- Test date: 2026-06-13"
         "- Tester:" = "- Tester: Ofek"
+        '- Source branch: `develop`' = '- Source branch: `develop`'
         "- Source commit:" = "- Source commit: abcdef1"
         "- Staging web URL:" = "- Staging web URL: https://staging.example.com"
         "- Staging API URL:" = "- Staging API URL: https://staging-api.example.com"
@@ -28,6 +29,11 @@ try {
         "- Hosted smoke command/result:" = "- Hosted smoke command/result: passed"
         "- Admin test account:" = "- Admin test account: admin@example.invalid"
         "- Member test account:" = "- Member test account: member@example.invalid"
+        "- Space:" = "- Space: Self-Service Demo"
+        "- Group:" = "- Group: Pilot Group"
+        "- Self-service cycle:" = "- Self-service cycle: 2026-W24"
+        "- Special-day test data present: yes / no" = "- Special-day test data present: yes"
+        "- Email inbox or provider used for reset/invite testing:" = "- Email inbox or provider used for reset/invite testing: Resend staging inbox"
         "- Browser/device matrix:" = "- Browser/device matrix: Chrome desktop, Safari mobile"
         '- Staging accepted for `develop` to `main` PR: yes / no' = '- Staging accepted for `develop` to `main` PR: yes'
         "- Accepted by:" = "- Accepted by: Ofek"
@@ -66,6 +72,8 @@ try {
     }
     foreach ($pattern in @(
             "'Test date' is not filled in.",
+            "'Space' is not filled in.",
+            "'Special-day test data present' must be either 'yes' or 'no'",
             "Evidence still contains pending checklist rows.",
             "Staging sign-off is not marked yes."
         )) {

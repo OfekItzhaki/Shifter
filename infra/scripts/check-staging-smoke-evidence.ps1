@@ -30,15 +30,56 @@ function Test-Field {
     $match = [regex]::Match($Text, "(?m)^- $escapedLabel[^\S\r\n]*:[^\S\r\n]*(.*)$")
     if (-not $match.Success) {
         Write-Check FAIL "Missing '$Label' field."
-        return
+        return $null
     }
 
     $value = $match.Groups[1].Value.Trim()
     if ([string]::IsNullOrWhiteSpace($value) -or $value -match "^<.*>$") {
         Write-Check FAIL "'$Label' is not filled in."
+        return $null
     }
     else {
         Write-Check PASS "'$Label' is filled in."
+        return $value
+    }
+}
+
+function Test-FieldEquals {
+    param(
+        [string]$Text,
+        [string]$Label,
+        [string]$Expected
+    )
+
+    $value = Test-Field $Text $Label
+    if ($null -eq $value) {
+        return
+    }
+
+    if ($value -eq $Expected) {
+        Write-Check PASS "'$Label' is '$Expected'."
+    }
+    else {
+        Write-Check FAIL "'$Label' must be '$Expected', got '$value'."
+    }
+}
+
+function Test-YesNoField {
+    param(
+        [string]$Text,
+        [string]$Label
+    )
+
+    $value = Test-Field $Text $Label
+    if ($null -eq $value) {
+        return
+    }
+
+    if ($value -in @("yes", "no")) {
+        Write-Check PASS "'$Label' is explicitly '$value'."
+    }
+    else {
+        Write-Check FAIL "'$Label' must be either 'yes' or 'no', got '$value'."
     }
 }
 
@@ -62,12 +103,19 @@ foreach ($label in @(
         "Hosted smoke command/result",
         "Admin test account",
         "Member test account",
+        "Space",
+        "Group",
+        "Self-service cycle",
+        "Email inbox or provider used for reset/invite testing",
         "Browser/device matrix",
         "Accepted by",
         "Accepted at"
     )) {
     Test-Field $text $label
 }
+
+Test-FieldEquals $text "Source branch" '`develop`'
+Test-YesNoField $text "Special-day test data present"
 
 if ($text -match "\|\s*pending\s*\|") {
     Write-Check FAIL "Evidence still contains pending checklist rows."
