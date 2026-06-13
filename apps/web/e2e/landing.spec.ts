@@ -9,11 +9,12 @@ test.describe("Landing Page", () => {
     await page.evaluate(() => {
       localStorage.removeItem("access_token");
       localStorage.removeItem("refresh_token");
+      document.cookie = "locale=en; path=/; max-age=31536000; SameSite=Strict";
     });
 
     await page.goto(BASE);
-    await expect(page.locator("h1")).toContainText("Smart Shift");
-    await expect(page.locator("h1")).toContainText("Scheduling");
+    await expect(page.locator("h1")).toContainText("Build fair schedules");
+    await expect(page.locator("text=Manual self-service")).toBeVisible();
   });
 
   test("has sign in and get started buttons", async ({ page }) => {
@@ -21,6 +22,7 @@ test.describe("Landing Page", () => {
     await page.evaluate(() => {
       localStorage.removeItem("access_token");
       localStorage.removeItem("refresh_token");
+      document.cookie = "locale=en; path=/; max-age=31536000; SameSite=Strict";
     });
 
     await page.goto(BASE);
@@ -33,11 +35,12 @@ test.describe("Landing Page", () => {
     await page.evaluate(() => {
       localStorage.removeItem("access_token");
       localStorage.removeItem("refresh_token");
+      document.cookie = "locale=en; path=/; max-age=31536000; SameSite=Strict";
     });
 
     await page.goto(BASE);
     await expect(page.locator("#features")).toBeVisible();
-    await expect(page.locator("text=Why Shifter")).toBeVisible();
+    await expect(page.locator("text=Two scheduling modes")).toBeVisible();
   });
 
   test("FAQ section has expandable items", async ({ page }) => {
@@ -45,6 +48,7 @@ test.describe("Landing Page", () => {
     await page.evaluate(() => {
       localStorage.removeItem("access_token");
       localStorage.removeItem("refresh_token");
+      document.cookie = "locale=en; path=/; max-age=31536000; SameSite=Strict";
     });
 
     await page.goto(BASE);
@@ -62,11 +66,12 @@ test.describe("Landing Page", () => {
     await page.evaluate(() => {
       localStorage.removeItem("access_token");
       localStorage.removeItem("refresh_token");
+      document.cookie = "locale=en; path=/; max-age=31536000; SameSite=Strict";
     });
 
     await page.goto(BASE);
-    await page.locator('a[href="#about"]').first().click();
-    await expect(page.locator("#about")).toBeInViewport({ timeout: 3000 });
+    await page.locator('a[href="#product"]').first().click();
+    await expect(page.locator("#product")).toBeInViewport({ timeout: 3000 });
   });
 
   test("terms page renders", async ({ page }) => {

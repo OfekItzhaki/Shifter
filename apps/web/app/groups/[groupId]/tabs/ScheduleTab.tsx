@@ -13,6 +13,7 @@ import ScheduleHistory from "@/components/schedule/ScheduleHistory";
 import RecommendationBanner from "@/components/recommendations/RecommendationBanner";
 import { getHistoricalSchedule } from "@/lib/api/stats";
 import { openFeedbackModal } from "@/components/shell/FeedbackFab";
+import { normalizePhoneForLooseComparison } from "@/lib/utils/phoneNumbers";
 
 interface DraftVersion { id: string; status: string; summaryJson?: string | null; sourceRunId?: string | null; }
 
@@ -78,7 +79,7 @@ function assignmentAppearsOnDate(a: ScheduleAssignment, date: string): boolean {
 }
 
 function normalizePhone(value: string | null | undefined): string {
-  return (value ?? "").replace(/[^\d+]/g, "");
+  return normalizePhoneForLooseComparison(value);
 }
 
 export default function ScheduleTab({

@@ -40,6 +40,9 @@ manual self-service scheduling decisions.
 
 ## Deployment
 
+- [Staging environment setup](STAGING-ENVIRONMENT-SETUP.md) - exact same-VPS
+  setup steps for `staging.shifter.ofeklabs.com` and
+  `staging-api.shifter.ofeklabs.com`.
 - [Hosted VPS MVP launch checklist](HOSTED-VPS-MVP-LAUNCH-CHECKLIST.md) - what
   to verify before inviting real users to the OfekLabs-hosted VPS service.
 - [Develop to main release gate](DEVELOP-TO-MAIN-RELEASE-GATE.md) - required

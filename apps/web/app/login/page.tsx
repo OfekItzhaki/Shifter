@@ -21,6 +21,7 @@ import { detectBrowserLocale } from "@/lib/utils/detectLocale";
 import { useEffectiveAuth } from "@/lib/hooks/useEffectiveAuth";
 import { notifyAuthTokenChanged } from "@/lib/auth/tokenState";
 import { setAuthGuardCookie, setLocaleCookie } from "@/lib/auth/authGuardCookie";
+import { normalizePhoneNumberForCountry } from "@/lib/utils/phoneNumbers";
 
 function completeLogin(tokens: LoginTokens) {
   localStorage.setItem("access_token", tokens.accessToken);
@@ -139,7 +140,10 @@ function LoginForm() {
     setLoading(true);
     setSuppressAuthRedirect(true);
     try {
-      await login(email, password);
+      const identifier = email.includes("@")
+        ? email
+        : normalizePhoneNumberForCountry(email, "IL").value || email;
+      await login(identifier, password);
       await finishPasswordLogin();
     } catch {
       setSuppressAuthRedirect(false);

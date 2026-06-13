@@ -67,6 +67,7 @@ import { getSelfServiceCycleStatus } from "@/lib/api/selfService";
 import { addGroupMemberById } from "@/lib/api/groups";
 import { apiClient } from "@/lib/api/client";
 import { DEFAULT_TASK_HORIZON_DAYS, MS_PER_DAY } from "@/lib/utils/constants";
+import { normalizePhoneForLooseComparison } from "@/lib/utils/phoneNumbers";
 import type { TaskForm } from "./tabs/TasksTab";
 import { useGroupPageState, DEFAULT_TASK_FORM } from "./useGroupPageState";
 
@@ -771,8 +772,9 @@ export default function GroupDetailPage() {
     }
 
     if (phoneTrimmed) {
+      const normalizedPhone = normalizePhoneForLooseComparison(phoneTrimmed);
       const duplicateByPhone = members.find(m =>
-        m.phoneNumber && m.phoneNumber.replace(/\s+/g, "") === phoneTrimmed.replace(/\s+/g, "")
+        m.phoneNumber && normalizePhoneForLooseComparison(m.phoneNumber) === normalizedPhone
       );
       if (duplicateByPhone) {
         setAddMemberError(tErrors("memberPhoneExists"));

@@ -13,7 +13,22 @@
     "register": "Регистрация",
     "email": "Электронная почта",
     "password": "Пароль",
-    "displayName": "Отображаемое имя",
+    "displayName": "Полное имя",
+    "operatingCountry": "Страна работы",
+    "setupTemplate": "Тип настройки",
+    "setupTemplates": {
+      "general": "Общее расписание",
+      "restaurant_hospitality": "Ресторан или гостиничный бизнес",
+      "retail_store": "Розничный магазин",
+      "security_patrol": "Охрана или патруль",
+      "military_style": "Военное подразделение",
+      "medical_clinic": "Медицинская клиника",
+      "education_campus": "Образование или кампус",
+      "custom": "Индивидуальная настройка"
+    },
+    "organizationName": "Название организации",
+    "organizationNamePlaceholder": "Ваш ресторан, подразделение, магазин или команда",
+    "organizationNameHint": "Используется для создания первого рабочего пространства.",
     "loginButton": "Войти",
     "registerButton": "Зарегистрироваться",
     "invalidCredentials": "Неверные учётные данные",
@@ -44,7 +59,9 @@
     "validationDigit": "Пароль должен содержать хотя бы одну цифру",
     "validationMinLength": "Пароль должен быть не менее 8 символов",
     "validationInvalidEmail": "Неверный формат email",
-    "validationDisplayNameRequired": "Имя обязательно для заполнения",
+    "validationInvalidPhone": "Введите корректный номер телефона для выбранной страны",
+    "validationInvalidDate": "Введите корректную дату в указанном формате",
+    "validationDisplayNameRequired": "Полное имя обязательно для заполнения",
     "registering": "Регистрация...",
     "alreadyHaveAccount": "Уже есть аккаунт?",
     "phone": "Номер телефона",
@@ -81,6 +98,16 @@
     "resend": "Отправить снова",
     "resendWithSeconds": "Отправить снова ({seconds}s)",
     "resendLimitReached": "Вы достигли лимита попыток. Попробуйте позже."
+  },
+  "invitations": {
+    "invalidLink": "Ссылка приглашения недействительна или в ней нет токена.",
+    "loginRequired": "Войдите, чтобы принять приглашение.",
+    "login": "Войти",
+    "accepting": "Принятие приглашения...",
+    "successMessage": "Приглашение принято. Теперь можно открыть группы.",
+    "goToGroups": "Перейти к группам",
+    "errorAccepting": "Не удалось принять приглашение.",
+    "backToGroups": "Назад к группам"
   },
   "nav": {
     "home": "Главная",
@@ -612,7 +639,9 @@
       "infeasible": "Shifter не смог создать план",
       "infeasibleDesc": "Система не смогла построить расписание с текущими ограничениями.",
       "infeasibleSolution": "Решения: добавьте участников, расширьте горизонт или смягчите ограничения.",
-      "noMissionsToday": "Нет заданий в этот день"
+      "noMissionsToday": "Нет заданий в этот день",
+      "runAgain": "Запустить снова",
+      "upgrade": "Обновить"
     },
     "home_leave_schedule": {
       "title": "График домашних отпусков",
@@ -650,7 +679,7 @@
     "saving": "Сохранение...",
     "saved": "Сохранено ✓",
     "fullName": "Полное имя",
-    "displayName": "Отображаемое имя",
+    "displayName": "Полное имя",
     "profileImage": "Фото профиля",
     "uploadImage": "Загрузить фото",
     "timeFormat": "Формат времени",
@@ -777,7 +806,7 @@
     "location": "Местоположение",
     "taskType": "Тип задачи",
     "fullName": "Полное имя",
-    "displayName": "Отображаемое имя",
+    "displayName": "Полное имя",
     "status": "Статус",
     "active": "Активен",
     "inactive": "Неактивен",
@@ -945,7 +974,8 @@
     "remove": "Удалить",
     "fileTooLarge": "Файл слишком большой. Максимум 10 МБ.",
     "uploadFailed": "Ошибка загрузки. Попробуйте ещё раз.",
-    "invalidUrl": "Введите корректный URL."
+    "invalidUrl": "Введите корректный URL.",
+    "previewUnavailable": "Изображение загружено, но URL предпросмотра недоступен."
   },
   "draftModal": {
     "title": "Предварительный просмотр расписания",
@@ -1041,6 +1071,7 @@
     "networkError": "Ошибка сети. Попробуйте ещё раз."
   },
   "spaces": {
+    "loading": "Загрузка...",
     "roleAssignment": {
       "title": "Назначение ролей",
       "description": "Назначьте уровни доступа участникам пространства",
@@ -1421,9 +1452,17 @@
     "errorPublish": "Ошибка публикации расписания",
     "errorDiscard": "Ошибка отмены черновика",
     "errorLoadSchedule": "Ошибка загрузки расписания",
+    "memberAlreadyExists": "Этот участник уже есть в группе.",
+    "memberPhoneExists": "Участник с этим номером телефона уже существует.",
+    "memberEmailExists": "Участник с этим email уже существует.",
     "offlineWithCache": "Нет подключения к интернету. Показывается кэшированное расписание от {date}",
     "offlineNoCache": "Нет подключения к интернету и нет кэшированного расписания",
+    "server": {
+      "title": "Что-то пошло не так",
+      "description": "Не удалось загрузить эту страницу. Попробуйте снова или вернитесь домой."
+    },
     "retry": "Повторить",
+    "goHome": "На главную",
     "reportProblem": "Сообщить о проблеме",
     "timeoutOutOfRange": "Тайм-аут должен быть целым числом от 5 до 120 минут."
   },
@@ -1514,7 +1553,13 @@
     "noAiKey": "Сервис ИИ не настроен. Добавьте API-ключ в настройках сервера.",
     "parseError": "Ошибка анализа файла. Попробуйте снова или загрузите другой файл.",
     "maxSize": "Максимальный размер: 10МБ",
-    "supportedFormats": "Поддерживаемые форматы: Excel, CSV, изображение, PDF"
+    "supportedFormats": "Поддерживаемые форматы: Excel, CSV, изображение, PDF",
+    "fieldExplanation": "Обязательные столбцы: имя, задача, день, время_начала, время_окончания",
+    "optionalColumns": "Необязательные столбцы: длительность_смены, требуемое_количество",
+    "downloadTemplate": "Скачать шаблон CSV",
+    "parseMethodStructured": "Структурный разбор",
+    "parseMethodAi": "Разбор с ИИ",
+    "warningsTitle": "Пропущенные строки"
   },
   "platform": {
     "title": "Платформа",
@@ -2827,6 +2872,8 @@
         "underfilledTitle": "????????????? ?????",
         "underfilledCount": "???????? ????????? ???????: {count}",
         "openSeatCount": "{count} ????????",
+        "specialDay": "Особый день",
+        "specialDayNamed": "Особый день: {name}",
         "underScheduledNone": "??? ???????? ???????????? ?????????? ????.",
         "underScheduledCount": "{count} ????????(??) ???? ????????.",
         "metrics": {

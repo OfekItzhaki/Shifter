@@ -24,12 +24,33 @@ public sealed class ContactLookupProtector : IContactLookupProtector
 
     public string NormalizeEmail(string email) => email.Trim().ToLowerInvariant();
 
-    public string NormalizePhone(string phone) =>
-        phone.Trim()
+    public string NormalizePhone(string phone)
+    {
+        var compact = phone.Trim()
             .Replace(" ", "", StringComparison.Ordinal)
             .Replace("-", "", StringComparison.Ordinal)
             .Replace("(", "", StringComparison.Ordinal)
-            .Replace(")", "", StringComparison.Ordinal);
+            .Replace(")", "", StringComparison.Ordinal)
+            .Replace(".", "", StringComparison.Ordinal);
+
+        if (compact.StartsWith("00", StringComparison.Ordinal))
+            compact = $"+{compact[2..]}";
+
+        var digits = compact.StartsWith('+') ? compact[1..] : compact;
+        if (!digits.All(char.IsDigit))
+            return compact;
+
+        if (digits.StartsWith("972", StringComparison.Ordinal))
+            return $"+{digits}";
+
+        if (digits.StartsWith('0') && IsLikelyIsraeliNationalNumber(digits))
+            return $"+972{digits[1..]}";
+
+        if (IsLikelyIsraeliSubscriberNumber(digits))
+            return $"+972{digits}";
+
+        return compact;
+    }
 
     public string HashEmail(string email) => ComputeHash(NormalizeEmail(email));
 
@@ -43,4 +64,21 @@ public sealed class ContactLookupProtector : IContactLookupProtector
 
     private static string? FirstConfigured(params string?[] values) =>
         values.FirstOrDefault(value => !string.IsNullOrWhiteSpace(value));
+
+    private static bool IsLikelyIsraeliNationalNumber(string digits)
+    {
+        if (digits.Length is not (9 or 10)) return false;
+        return digits[0] == '0' && IsLikelyIsraeliSubscriberNumber(digits[1..]);
+    }
+
+    private static bool IsLikelyIsraeliSubscriberNumber(string digits)
+    {
+        if (digits.Length == 9)
+            return digits[0] is '5' or '7' && digits.All(char.IsDigit);
+
+        if (digits.Length == 8)
+            return digits[0] is '2' or '3' or '4' or '8' or '9' && digits.All(char.IsDigit);
+
+        return false;
+    }
 }

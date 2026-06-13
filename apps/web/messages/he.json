@@ -13,7 +13,22 @@
     "register": "הרשמה",
     "email": "דואר אלקטרוני",
     "password": "סיסמה",
-    "displayName": "שם תצוגה",
+    "displayName": "שם מלא",
+    "operatingCountry": "מדינת פעילות",
+    "setupTemplate": "סוג ארגון",
+    "setupTemplates": {
+      "general": "סידור כללי",
+      "restaurant_hospitality": "מסעדה או אירוח",
+      "retail_store": "חנות קמעונאית",
+      "security_patrol": "אבטחה או סיורים",
+      "military_style": "יחידה בסגנון צבאי",
+      "medical_clinic": "מרפאה",
+      "education_campus": "חינוך או קמפוס",
+      "custom": "הגדרה מותאמת"
+    },
+    "organizationName": "שם הארגון",
+    "organizationNamePlaceholder": "המסעדה, היחידה, החנות או הצוות שלך",
+    "organizationNameHint": "ישמש ליצירת סביבת העבודה הראשונה שלך.",
     "loginButton": "כניסה",
     "registerButton": "הרשמה",
     "invalidCredentials": "פרטי התחברות שגויים",
@@ -44,7 +59,9 @@
     "validationDigit": "הסיסמה חייבת להכיל לפחות ספרה אחת",
     "validationMinLength": "הסיסמה חייבת להכיל לפחות 8 תווים",
     "validationInvalidEmail": "פורמט אימייל לא תקין",
-    "validationDisplayNameRequired": "שם תצוגה הוא שדה חובה",
+    "validationInvalidPhone": "יש להזין מספר טלפון תקין למדינה שנבחרה",
+    "validationInvalidDate": "יש להזין תאריך תקין לפי הפורמט שמוצג",
+    "validationDisplayNameRequired": "שם מלא הוא שדה חובה",
     "registering": "נרשם...",
     "alreadyHaveAccount": "כבר יש לך חשבון?",
     "phone": "מספר טלפון",
@@ -81,6 +98,16 @@
     "resend": "שלח שוב",
     "resendWithSeconds": "שלח שוב ({seconds}s)",
     "resendLimitReached": "הגעת למגבלת הניסיונות. נסה שוב מאוחר יותר."
+  },
+  "invitations": {
+    "invalidLink": "קישור ההזמנה לא תקין או שחסר בו אסימון.",
+    "loginRequired": "יש להתחבר כדי לקבל את ההזמנה.",
+    "login": "כניסה",
+    "accepting": "מקבל את ההזמנה...",
+    "successMessage": "ההזמנה התקבלה. אפשר לפתוח את הקבוצות שלך.",
+    "goToGroups": "עבור לקבוצות",
+    "errorAccepting": "לא ניתן לקבל את ההזמנה.",
+    "backToGroups": "חזרה לקבוצות"
   },
   "nav": {
     "home": "דף הבית",
@@ -616,6 +643,7 @@
       "infeasibleDesc": "המערכת לא הצליחה לבנות סידור עם האילוצים הנוכחיים.",
       "infeasibleSolution": "ניתן לפתור על ידי: הוספת חברים נוספים, הרחבת אופק הזמן, או הקלת אילוצים.",
       "noMissionsToday": "אין משימות ביום זה",
+      "runAgain": "הרץ שוב",
       "upgrade": "שדרג"
     },
     "home_leave_schedule": {
@@ -651,7 +679,7 @@
     "saving": "שומר...",
     "saved": "נשמר ✓",
     "fullName": "שם מלא",
-    "displayName": "שם תצוגה",
+    "displayName": "שם מלא",
     "profileImage": "תמונת פרופיל",
     "uploadImage": "העלה תמונה",
     "timeFormat": "תצוגת שעון",
@@ -776,7 +804,7 @@
     "location": "מיקום",
     "taskType": "סוג משימה",
     "fullName": "שם מלא",
-    "displayName": "שם תצוגה",
+    "displayName": "שם מלא",
     "status": "סטטוס",
     "active": "פעיל",
     "inactive": "לא פעיל",
@@ -950,7 +978,8 @@
     "remove": "הסר",
     "fileTooLarge": "הקובץ גדול מדי. מקסימום 10 MB.",
     "uploadFailed": "ההעלאה נכשלה. נסה שוב.",
-    "invalidUrl": "הזן URL תקין."
+    "invalidUrl": "הזן URL תקין.",
+    "previewUnavailable": "התמונה הועלתה, אבל כתובת התצוגה המקדימה אינה זמינה."
   },
   "draftModal": {
     "title": "תצוגה מקדימה של הסידור",
@@ -1046,6 +1075,7 @@
     "networkError": "שגיאת רשת. נסה שוב."
   },
   "spaces": {
+    "loading": "טוען...",
     "notMember": "אינך שייך לאף מרחב עדיין. צור אחד למטה.",
     "createNew": "צור מרחב חדש",
     "newWorkspace": "מרחב חדש",
@@ -1423,12 +1453,20 @@
     "errorPublish": "שגיאה בפרסום הסידור",
     "errorDiscard": "שגיאה בביטול הטיוטה",
     "errorLoadSchedule": "שגיאה בטעינת הסידור",
+    "memberAlreadyExists": "החבר כבר נמצא בקבוצה.",
+    "memberPhoneExists": "כבר קיים חבר עם מספר הטלפון הזה.",
+    "memberEmailExists": "כבר קיים חבר עם כתובת האימייל הזו.",
     "offlineWithCache": "אין חיבור לאינטרנט. מוצג סידור שמור מ-{date}",
     "offlineNoCache": "אין חיבור לאינטרנט ואין סידור שמור",
     "solverTimeout": "Shifter לא הגיב בזמן. ייתכן שהבעיה מורכבת מדי - נסה להקטין את אופק התכנון או לפשט את האילוצים.",
     "solverCheckError": "שגיאה בבדיקת סטטוס Shifter",
     "solverStartError": "שגיאה בהפעלת Shifter",
+    "server": {
+      "title": "משהו השתבש",
+      "description": "לא הצלחנו לטעון את העמוד. נסה שוב או חזור לדף הבית."
+    },
     "retry": "נסה שוב",
+    "goHome": "לדף הבית",
     "reportProblem": "דווח על בעיה",
     "timeoutOutOfRange": "הזמן הקצוב חייב להיות מספר שלם בין 5 ל-120 דקות."
   },
@@ -2839,6 +2877,8 @@
         "underfilledTitle": "משמרות חסרות",
         "underfilledCount": "מציג את {count} הפערים הקרובים",
         "openSeatCount": "{count} פתוחים",
+        "specialDay": "יום מיוחד",
+        "specialDayNamed": "יום מיוחד: {name}",
         "underScheduledNone": "כולם עומדים במינימום המשמרות.",
         "underScheduledCount": "{count} חברים מתחת למינימום.",
         "metrics": {

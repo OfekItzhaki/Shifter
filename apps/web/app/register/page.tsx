@@ -11,6 +11,8 @@ import ImageUpload from "@/components/ImageUpload";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import LegalLinks from "@/components/legal/LegalLinks";
 import { COUNTRIES } from "@/lib/data/countries";
+import { formatIsoDateForDateInput, getDateInputPattern, parseLocalizedDateInput } from "@/lib/utils/localizedDateInput";
+import { getPhonePlaceholder, normalizePhoneNumberForCountry } from "@/lib/utils/phoneNumbers";
 
 const SETUP_TEMPLATES = [
   "general",
@@ -32,6 +34,8 @@ function translateValidationError(error: string, t: (key: string) => string): st
     "Either email or phone number is required.": t("emailOrPhoneRequired"),
     "Invalid email format.": t("validationInvalidEmail"),
     "Display name is required.": t("validationDisplayNameRequired"),
+    "Invalid phone number.": t("validationInvalidPhone"),
+    "Invalid birthday.": t("validationInvalidDate"),
   };
   return map[error] ?? error;
 }
@@ -57,7 +61,7 @@ function RegisterForm() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
-  const [birthday, setBirthday] = useState("");
+  const [birthdayInput, setBirthdayInput] = useState("");
   const [profileImageUrl, setProfileImageUrl] = useState("");
   const [countryCode, setCountryCode] = useState("IL");
   const [setupTemplate, setSetupTemplate] = useState<(typeof SETUP_TEMPLATES)[number]>("general");
@@ -89,6 +93,16 @@ function RegisterForm() {
       setError(t("emailOrPhoneRequired"));
       return;
     }
+    const normalizedPhone = normalizePhoneNumberForCountry(phoneNumber, countryCode);
+    if (!normalizedPhone.isValid) {
+      setError(t("validationInvalidPhone"));
+      return;
+    }
+    const parsedBirthday = parseLocalizedDateInput(birthdayInput, countryCode, null, locale);
+    if (!parsedBirthday.isValid) {
+      setError(t("validationInvalidDate"));
+      return;
+    }
 
     setLoading(true);
     try {
@@ -97,9 +111,9 @@ function RegisterForm() {
         password,
         locale,
         email || undefined,
-        phoneNumber || undefined,
+        normalizedPhone.value || undefined,
         profileImageUrl || undefined,
-        birthday || undefined,
+        parsedBirthday.isoDate || undefined,
         countryCode || undefined,
         setupTemplate,
         organizationName.trim() || undefined);
@@ -141,6 +155,30 @@ function RegisterForm() {
       )}
     </svg>
   );
+
+  function handlePhoneBlur() {
+    const normalizedPhone = normalizePhoneNumberForCountry(phoneNumber, countryCode);
+    if (normalizedPhone.isValid && normalizedPhone.value) {
+      setPhoneNumber(normalizedPhone.value);
+    }
+  }
+
+  function handleBirthdayBlur() {
+    const parsedBirthday = parseLocalizedDateInput(birthdayInput, countryCode, null, locale);
+    if (parsedBirthday.isValid && parsedBirthday.isoDate) {
+      setBirthdayInput(formatIsoDateForDateInput(parsedBirthday.isoDate, countryCode, null, locale));
+    }
+  }
+
+  function handleCountryChange(nextCountryCode: string) {
+    const parsedBirthday = parseLocalizedDateInput(birthdayInput, countryCode, null, locale);
+    setCountryCode(nextCountryCode);
+    if (parsedBirthday.isValid && parsedBirthday.isoDate) {
+      setBirthdayInput(formatIsoDateForDateInput(parsedBirthday.isoDate, nextCountryCode, null, locale));
+    }
+  }
+
+  const birthdayPattern = getDateInputPattern(countryCode, null, locale);
 
   return (
     <main style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#f8fafc", padding: "1rem" }}>
@@ -203,7 +241,8 @@ function RegisterForm() {
                 type="tel"
                 value={phoneNumber}
                 onChange={e => setPhoneNumber(e.target.value)}
-                placeholder={t("phonePlaceholder")}
+                onBlur={handlePhoneBlur}
+                placeholder={getPhonePlaceholder(countryCode)}
                 style={{ width: "100%", border: "1px solid #e2e8f0", borderRadius: 10, padding: "0.625rem 0.875rem", fontSize: "0.875rem", color: "#0f172a", outline: "none", boxSizing: "border-box" }}
               />
             </div>
@@ -215,7 +254,7 @@ function RegisterForm() {
               <select
                 required
                 value={countryCode}
-                onChange={e => setCountryCode(e.target.value)}
+                onChange={e => handleCountryChange(e.target.value)}
                 style={{ width: "100%", border: "1px solid #e2e8f0", borderRadius: 10, padding: "0.625rem 0.875rem", fontSize: "0.875rem", color: "#0f172a", outline: "none", boxSizing: "border-box", background: "white" }}
               >
                 {COUNTRIES.map(country => (
@@ -265,9 +304,12 @@ function RegisterForm() {
                 {t("birthday")} <span style={{ color: "#94a3b8", fontWeight: 400 }}>({t("optional")})</span>
               </label>
               <input
-                type="date"
-                value={birthday}
-                onChange={e => setBirthday(e.target.value)}
+                type="text"
+                inputMode="numeric"
+                value={birthdayInput}
+                onChange={e => setBirthdayInput(e.target.value)}
+                onBlur={handleBirthdayBlur}
+                placeholder={birthdayPattern.placeholder}
                 style={{ width: "100%", border: "1px solid #e2e8f0", borderRadius: 10, padding: "0.625rem 0.875rem", fontSize: "0.875rem", color: "#0f172a", outline: "none", boxSizing: "border-box" }}
               />
             </div>

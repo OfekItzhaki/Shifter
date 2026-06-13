@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { uploadImage } from "@/lib/api/uploads";
 
@@ -50,10 +50,15 @@ export default function ImageUpload({
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [imageLoadFailed, setImageLoadFailed] = useState(false);
   const [mode, setMode] = useState<"preview" | "url">("preview");
   const [urlInput, setUrlInput] = useState("");
 
   const borderRadius = shape === "circle" ? "50%" : 12;
+
+  useEffect(() => {
+    setImageLoadFailed(false);
+  }, [value]);
 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -67,6 +72,7 @@ export default function ImageUpload({
     try {
       const url = await uploadImage(file);
       onChange(url);
+      setImageLoadFailed(false);
     } catch (err: unknown) {
       const msg =
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
@@ -84,6 +90,7 @@ export default function ImageUpload({
     if (!url) { setError(t("invalidUrl")); return; }
     setError(null);
     onChange(url);
+    setImageLoadFailed(false);
     setMode("preview");
     setUrlInput("");
   }
@@ -147,11 +154,20 @@ export default function ImageUpload({
         }}
         aria-label={resolvedLabel}
       >
-        {value ? (
+        {value && !imageLoadFailed ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={value} alt={resolvedLabel} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          <img
+            src={value}
+            alt={resolvedLabel}
+            onError={() => setImageLoadFailed(true)}
+            style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+          />
         ) : (
-          <span style={{ fontSize: 11, color: "#94a3b8", padding: 4, display: "block", textAlign: "center" }}>
+          <span style={{
+            width: "100%", height: "100%", fontSize: 11, lineHeight: 1.25, color: "#94a3b8",
+            padding: 4, display: "flex", alignItems: "center", justifyContent: "center",
+            textAlign: "center", boxSizing: "border-box",
+          }}>
             {uploading ? t("uploading") : resolvedLabel}
           </span>
         )}
@@ -202,7 +218,7 @@ export default function ImageUpload({
           {value && (
             <button
               type="button"
-              onClick={() => onChange("")}
+              onClick={() => { onChange(""); setImageLoadFailed(false); }}
               style={{
                 fontSize: 11, color: "#dc2626", background: "none",
                 border: "1px solid #fecaca", borderRadius: 8,
@@ -218,6 +234,11 @@ export default function ImageUpload({
       {error && (
         <span style={{ fontSize: 12, color: "#dc2626", maxWidth: size * 2, textAlign: "center" }}>
           {error}
+        </span>
+      )}
+      {value && imageLoadFailed && !error && (
+        <span style={{ fontSize: 12, color: "#dc2626", maxWidth: size * 2.5, textAlign: "center" }}>
+          {t("previewUnavailable")}
         </span>
       )}
 

@@ -55,15 +55,18 @@ export default function LandingPage({ initialLocale, supportEmail }: LandingPage
   }, [hasAccessToken, router]);
 
   const c = LANDING_CONTENT[lang];
-  const finder = c.finder ?? LANDING_CONTENT.en.finder!;
+  const finder = c.finder;
   const supportHref = buildSupportMailtoHref("Shifter support", supportEmail);
   const walkthroughHref = buildSupportMailtoHref("Shifter walkthrough", supportEmail);
 
+  useEffect(() => {
+    setLocaleCookie(lang);
+    document.documentElement.setAttribute("lang", lang);
+    document.documentElement.setAttribute("dir", getLocaleDirection(lang));
+  }, [lang]);
+
   function switchLang(nextLang: LandingLang) {
     setLang(nextLang);
-    setLocaleCookie(nextLang);
-    document.documentElement.setAttribute("lang", nextLang);
-    document.documentElement.setAttribute("dir", getLocaleDirection(nextLang));
   }
 
   return (
@@ -74,7 +77,7 @@ export default function LandingPage({ initialLocale, supportEmail }: LandingPage
             <ShifterLogo size={34} />
             <div className="hidden leading-tight sm:block">
               <p className="text-sm font-bold text-slate-950">Shifter</p>
-              <p className="text-xs text-slate-500">Smart Shift Scheduling</p>
+              <p className="text-xs text-slate-500">{c.nav.tagline}</p>
             </div>
           </Link>
 
@@ -110,7 +113,7 @@ export default function LandingPage({ initialLocale, supportEmail }: LandingPage
               type="button"
               onClick={() => setMobileMenuOpen(open => !open)}
               className="rounded-lg border border-slate-200 p-2 text-slate-700 lg:hidden"
-              aria-label="Menu"
+              aria-label={c.nav.menu}
             >
               <span className="block h-0.5 w-5 bg-current" />
               <span className="mt-1.5 block h-0.5 w-5 bg-current" />
@@ -290,7 +293,7 @@ export default function LandingPage({ initialLocale, supportEmail }: LandingPage
               </div>
             </div>
             <div className="border-t border-slate-200 bg-slate-100 p-6 lg:border-l lg:border-t-0">
-              <MiniOpsPanel alerts={c.preview.alerts} />
+              <MiniOpsPanel alerts={c.preview.alerts} c={c.preview} />
             </div>
           </div>
         </section>
@@ -420,94 +423,193 @@ function LandingFinder({ finder }: { finder: NonNullable<(typeof LANDING_CONTENT
 function ProductPreview({ c }: { c: (typeof LANDING_CONTENT)[LandingLang]["preview"] }) {
   return (
     <div className="relative">
-      <div className="rounded-lg border border-slate-200 bg-slate-950 p-3 shadow-2xl shadow-slate-300/50">
-        <div className="rounded-lg bg-slate-900 p-4">
-          <div className="flex items-center justify-between border-b border-white/10 pb-4">
-            <div>
-              <p className="text-xs font-semibold uppercase text-sky-300">{c.workspace}</p>
-              <p className="mt-1 text-lg font-black text-white">{c.scheduleTitle}</p>
-              <p className="text-sm text-slate-400">{c.scheduleSubtitle}</p>
+      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl shadow-slate-300/60">
+        <div className="flex h-[520px] max-h-[70vh] min-h-[440px] bg-slate-50">
+          <aside className="hidden w-52 shrink-0 border-e border-slate-200 bg-slate-950 p-3 text-slate-300 lg:block">
+            <div className="mb-4 flex items-center gap-2 rounded-lg px-2 py-2">
+              <ShifterLogo size={28} />
+              <div className="min-w-0">
+                <p className="text-sm font-black text-white">Shifter</p>
+                <p className="truncate text-[10px] font-semibold text-sky-200">{c.productSubtitle}</p>
+              </div>
             </div>
-            <div className="hidden rounded-lg bg-emerald-400 px-3 py-2 text-xs font-black text-emerald-950 sm:block">
-              Publish
-            </div>
-          </div>
-
-          <div className="mt-4 grid gap-3 lg:grid-cols-[1fr_0.65fr]">
-            <div className="grid gap-3">
-              {c.shifts.map((shift, index) => (
-                <div key={`${shift.time}-${shift.name}`} className="rounded-lg border border-white/10 bg-white/[0.04] p-4">
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <p className="text-sm font-black text-white">{shift.name}</p>
-                      <p className="mt-1 text-xs text-slate-400">{shift.time}</p>
-                    </div>
-                    <span className={`rounded-lg px-2.5 py-1 text-xs font-bold ${
-                      index === 0 ? "bg-emerald-400/15 text-emerald-200" : index === 1 ? "bg-amber-400/15 text-amber-200" : "bg-sky-400/15 text-sky-200"
-                    }`}>
-                      {shift.status}
-                    </span>
-                  </div>
-                  <div className="mt-4 grid grid-cols-5 gap-1.5">
-                    {[0, 1, 2, 3, 4].map(block => (
-                      <span key={block} className={`h-2 rounded-full ${block <= index + 1 ? "bg-sky-400" : "bg-white/10"}`} />
-                    ))}
-                  </div>
+            <div className="space-y-1 text-xs font-semibold">
+              {[c.scheduleView, c.pickView, c.operationsView].map((item, index) => (
+                <div
+                  key={item}
+                  className={`flex items-center justify-between rounded-lg px-3 py-2.5 ${
+                    index === 2
+                      ? "bg-sky-500/15 text-sky-100"
+                      : "text-slate-400"
+                  }`}
+                >
+                  <span>{item}</span>
+                  {index === 2 ? <span className="h-1.5 w-1.5 rounded-full bg-sky-400" /> : null}
                 </div>
               ))}
             </div>
+          </aside>
 
-            <div className="grid gap-3">
-              <div className="rounded-lg border border-sky-400/30 bg-sky-400/10 p-4 text-sky-100">
-                <p className="text-xs font-bold uppercase text-sky-300">{c.importLabel}</p>
-                <div className="mt-4 grid grid-cols-4 gap-1.5">
-                  {[80, 44, 64, 90, 55, 74, 36, 70].map((height, index) => (
-                    <span key={index} className="rounded-t bg-sky-300/80" style={{ height: `${height}px` }} />
+          <div className="min-w-0 flex-1">
+            <header className="flex h-14 items-center justify-between border-b border-slate-200 bg-white px-4">
+              <div>
+                <p className="text-xs font-semibold text-slate-500">{c.workspace}</p>
+                <p className="text-sm font-black text-slate-950">{c.desktopTitle}</p>
+              </div>
+              <button className="rounded-lg bg-slate-950 px-3 py-2 text-xs font-bold text-white">
+                {c.publishLabel}
+              </button>
+            </header>
+
+            <main className="space-y-4 p-4">
+              <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
+                  <div>
+                    <h3 className="text-base font-semibold text-slate-950">{c.desktopTitle}</h3>
+                    <p className="mt-1 max-w-md text-sm leading-6 text-slate-500">{c.desktopSubtitle}</p>
+                  </div>
+                  <span className="inline-flex w-fit rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700">
+                    {c.openWindowLabel}
+                  </span>
+                </div>
+
+                <div className="mt-4 grid grid-cols-3 gap-2">
+                  {[
+                    ["18", c.slotsLabel],
+                    ["5", c.requestsLabel],
+                    ["92%", c.coverageLabel],
+                  ].map(([value, label], index) => (
+                    <div key={label} className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                      <p className={`text-lg font-black ${
+                        index === 2 ? "text-emerald-700" : "text-slate-950"
+                      }`}>{value}</p>
+                      <p className="mt-1 text-xs font-medium text-slate-500">{label}</p>
+                    </div>
                   ))}
                 </div>
-              </div>
-              <div className="rounded-lg border border-amber-300/30 bg-amber-300/10 p-4 text-amber-100">
-                <p className="text-sm font-black">{c.aiLabel}</p>
-                <div className="mt-3 space-y-2">
-                  {c.alerts.map(alert => (
-                    <p key={alert} className="rounded-lg bg-black/20 px-3 py-2 text-xs text-amber-50">{alert}</p>
+              </section>
+
+              <section className="grid gap-3 md:grid-cols-[0.58fr_0.42fr]">
+                <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                  <div className="mb-3 flex items-center justify-between gap-3">
+                    <h3 className="text-sm font-semibold text-slate-950">{c.adminReviewLabel}</h3>
+                    <span className="rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700">
+                      {c.requestsLabel}
+                    </span>
+                  </div>
+                  <div className="space-y-2">
+                    {c.alerts.map((alert, index) => (
+                      <div key={alert} className="rounded-lg border border-slate-200 bg-white px-3 py-2">
+                        <div className="flex items-center gap-2">
+                          <span className={`h-2 w-2 rounded-full ${index === 0 ? "bg-amber-500" : "bg-sky-500"}`} />
+                          <p className="text-xs font-medium text-slate-700">{alert}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                  <h3 className="text-sm font-semibold text-slate-950">{c.opsSnapshot}</h3>
+                  <div className="mt-3 grid grid-cols-3 gap-2">
+                    {c.metrics.map((metric) => (
+                      <div key={metric.label} className="rounded-lg bg-slate-50 p-2 text-center">
+                        <p className="text-base font-black text-slate-950">{metric.value}</p>
+                        <p className="mt-1 text-[10px] font-medium text-slate-500">{metric.label}</p>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="mt-3 rounded-lg border border-sky-200 bg-sky-50 px-3 py-2 text-xs font-semibold text-sky-700">
+                    {c.live}
+                  </div>
+                </div>
+              </section>
+
+              <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <h3 className="text-sm font-semibold text-slate-950">{c.pickView}</h3>
+                  <span className="text-xs font-medium text-slate-500">{c.mobileSubtitle}</span>
+                </div>
+                <div className="space-y-2">
+                  {c.shifts.map((shift, index) => (
+                    <div key={`${shift.time}-${shift.name}`} className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-semibold text-slate-950">{shift.name}</p>
+                          <p className="mt-0.5 text-xs text-slate-500">{shift.assignee}</p>
+                        </div>
+                        <div className="shrink-0 text-end">
+                          <p className="text-sm font-black text-slate-950">{shift.time}</p>
+                          <span className={`mt-1 inline-flex rounded-full border px-2 py-0.5 text-[11px] font-medium ${
+                            index === 0
+                              ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                              : index === 1
+                                ? "border-amber-200 bg-amber-50 text-amber-700"
+                                : "border-sky-200 bg-sky-50 text-sky-700"
+                          }`}>
+                            {shift.status}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
                   ))}
                 </div>
-              </div>
-            </div>
+              </section>
+            </main>
           </div>
         </div>
       </div>
 
-      <div className="mx-auto -mt-10 w-48 rounded-[28px] border-4 border-slate-950 bg-white p-3 shadow-xl sm:absolute sm:-bottom-8 sm:end-6 sm:mt-0">
-        <div className="mb-3 h-1.5 w-14 rounded-full bg-slate-200 mx-auto" />
-        <p className="text-sm font-black text-slate-950">{c.phoneTitle}</p>
-        <p className="text-xs text-slate-500">{c.phoneSubtitle}</p>
-        <div className="mt-4 space-y-2">
+      <div className="mx-auto -mt-12 w-56 overflow-hidden rounded-[28px] border-4 border-slate-950 bg-slate-50 shadow-xl sm:absolute sm:-bottom-8 sm:end-6 sm:mt-0">
+        <div className="flex items-center gap-2 border-b border-slate-200 bg-white px-3 py-2">
+          <div className="h-8 w-8 rounded-lg bg-slate-100" />
+          <div className="min-w-0 flex-1 text-center">
+            <p className="truncate text-xs font-semibold text-slate-950">{c.workspace}</p>
+          </div>
+          <div className="h-8 w-8 rounded-lg bg-slate-100" />
+        </div>
+        <div className="p-3">
+          <p className="text-sm font-semibold text-slate-950">{c.mobileHeader}</p>
+          <p className="mt-1 text-xs leading-5 text-slate-500">{c.mobileSubtitle}</p>
+        <div className="mt-3 flex gap-1 overflow-hidden rounded-xl bg-slate-100 p-1">
+          {c.mobileTabs.map((tab, index) => (
+            <span
+              key={tab}
+              className={`rounded-lg px-2 py-1.5 text-[10px] font-semibold ${index === 0 ? "bg-white text-slate-950 shadow-sm" : "text-slate-500"}`}
+            >
+              {tab}
+            </span>
+          ))}
+        </div>
+          <div className="mt-3 space-y-2">
           {c.shifts.slice(0, 2).map(shift => (
-            <div key={shift.name} className="rounded-lg border border-slate-200 bg-slate-50 p-3">
-              <p className="text-xs font-bold text-slate-950">{shift.time}</p>
-              <p className="text-xs text-slate-600">{shift.name}</p>
+              <div key={shift.name} className="rounded-xl border border-slate-200 bg-white p-3">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-xs font-bold text-slate-950">{shift.time}</p>
+                <span className="rounded bg-emerald-50 px-1.5 py-0.5 text-[10px] font-bold text-emerald-700">{shift.status}</span>
+              </div>
+              <p className="mt-1 text-xs text-slate-600">{shift.name}</p>
             </div>
           ))}
+          </div>
         </div>
       </div>
     </div>
   );
 }
 
-function MiniOpsPanel({ alerts }: { alerts: string[] }) {
+function MiniOpsPanel({ alerts, c }: { alerts: string[]; c: (typeof LANDING_CONTENT)[LandingLang]["preview"] }) {
   return (
     <div className="rounded-lg bg-slate-950 p-5 text-white">
       <div className="flex items-center justify-between gap-3">
-        <p className="text-sm font-black">Ops snapshot</p>
-        <span className="rounded-lg bg-emerald-400 px-2.5 py-1 text-xs font-black text-emerald-950">Live</span>
+        <p className="text-sm font-black">{c.opsSnapshot}</p>
+        <span className="rounded-lg bg-emerald-400 px-2.5 py-1 text-xs font-black text-emerald-950">{c.live}</span>
       </div>
       <div className="mt-5 grid grid-cols-3 gap-2">
-        {[18, 7, 3].map((value, index) => (
-          <div key={value} className="rounded-lg bg-white/10 p-3">
-            <p className="text-xl font-black">{value}</p>
-            <p className="text-xs text-slate-400">{["shifts", "roles", "alerts"][index]}</p>
+        {c.metrics.map((metric) => (
+          <div key={metric.label} className="rounded-lg bg-white/10 p-3">
+            <p className="text-xl font-black">{metric.value}</p>
+            <p className="text-xs text-slate-400">{metric.label}</p>
           </div>
         ))}
       </div>

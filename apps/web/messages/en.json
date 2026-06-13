@@ -13,7 +13,22 @@
     "register": "Register",
     "email": "Email",
     "password": "Password",
-    "displayName": "Display Name",
+    "displayName": "Full name",
+    "operatingCountry": "Operating country",
+    "setupTemplate": "Setup type",
+    "setupTemplates": {
+      "general": "General scheduling",
+      "restaurant_hospitality": "Restaurant or hospitality",
+      "retail_store": "Retail store",
+      "security_patrol": "Security or patrol",
+      "military_style": "Military-style unit",
+      "medical_clinic": "Medical clinic",
+      "education_campus": "Education or campus",
+      "custom": "Custom setup"
+    },
+    "organizationName": "Organization name",
+    "organizationNamePlaceholder": "Your restaurant, unit, store, or team",
+    "organizationNameHint": "Used to create your first workspace.",
     "loginButton": "Sign In",
     "registerButton": "Sign Up",
     "invalidCredentials": "Invalid credentials",
@@ -44,7 +59,9 @@
     "validationDigit": "Password must contain at least one digit",
     "validationMinLength": "Password must be at least 8 characters",
     "validationInvalidEmail": "Invalid email format",
-    "validationDisplayNameRequired": "Display name is required",
+    "validationInvalidPhone": "Enter a valid phone number for the selected country",
+    "validationInvalidDate": "Enter a valid date in the shown format",
+    "validationDisplayNameRequired": "Full name is required",
     "registering": "Registering...",
     "alreadyHaveAccount": "Already have an account?",
     "phone": "Phone number",
@@ -81,6 +98,16 @@
     "resend": "Send again",
     "resendWithSeconds": "Send again ({seconds}s)",
     "resendLimitReached": "You have reached the attempt limit. Please try again later."
+  },
+  "invitations": {
+    "invalidLink": "This invitation link is invalid or missing a token.",
+    "loginRequired": "Sign in to accept this invitation.",
+    "login": "Sign in",
+    "accepting": "Accepting invitation...",
+    "successMessage": "Invitation accepted. You can now open your groups.",
+    "goToGroups": "Go to groups",
+    "errorAccepting": "Could not accept this invitation.",
+    "backToGroups": "Back to groups"
   },
   "nav": {
     "home": "Home",
@@ -612,7 +639,9 @@
       "infeasible": "Shifter could not create a plan",
       "infeasibleDesc": "The system could not build a schedule with the current constraints.",
       "infeasibleSolution": "Solutions: add more members, extend the time horizon, or relax constraints.",
-      "noMissionsToday": "No missions on this day"
+      "noMissionsToday": "No missions on this day",
+      "runAgain": "Run again",
+      "upgrade": "Upgrade"
     },
     "home_leave_schedule": {
       "title": "Home Leave Schedule",
@@ -647,7 +676,7 @@
     "saving": "Saving...",
     "saved": "Saved ✓",
     "fullName": "Full Name",
-    "displayName": "Display Name",
+    "displayName": "Full Name",
     "profileImage": "Profile Image",
     "uploadImage": "Upload Image",
     "timeFormat": "Time Format",
@@ -772,7 +801,7 @@
     "location": "Location",
     "taskType": "Task Type",
     "fullName": "Full Name",
-    "displayName": "Display Name",
+    "displayName": "Full Name",
     "status": "Status",
     "active": "Active",
     "inactive": "Inactive",
@@ -945,7 +974,8 @@
     "remove": "Remove",
     "fileTooLarge": "File too large. Maximum 10 MB.",
     "uploadFailed": "Upload failed. Please try again.",
-    "invalidUrl": "Please enter a valid URL."
+    "invalidUrl": "Please enter a valid URL.",
+    "previewUnavailable": "Image uploaded, but the preview URL is not reachable."
   },
   "draftModal": {
     "title": "Schedule Preview",
@@ -1041,6 +1071,7 @@
     "networkError": "Network error. Please try again."
   },
   "spaces": {
+    "loading": "Loading...",
     "notMember": "You don't belong to any workspace yet. Create one below.",
     "createNew": "Create new workspace",
     "newWorkspace": "New Workspace",
@@ -1418,12 +1449,20 @@
     "errorPublish": "Error publishing schedule",
     "errorDiscard": "Error discarding draft",
     "errorLoadSchedule": "Error loading schedule",
+    "memberAlreadyExists": "This member is already in the group.",
+    "memberPhoneExists": "A member with this phone number already exists.",
+    "memberEmailExists": "A member with this email already exists.",
     "offlineWithCache": "No internet connection. Showing cached schedule from {date}",
     "offlineNoCache": "No internet connection and no cached schedule",
     "solverTimeout": "Shifter did not respond in time. The problem may be too complex - try reducing the planning horizon or simplifying constraints.",
     "solverCheckError": "Error checking Shifter status",
     "solverStartError": "Error starting Shifter",
+    "server": {
+      "title": "Something went wrong",
+      "description": "We could not load this page. Try again, or return home."
+    },
     "retry": "Retry",
+    "goHome": "Go home",
     "reportProblem": "Report a problem",
     "timeoutOutOfRange": "Timeout must be a whole number between 5 and 120 minutes."
   },
@@ -1514,7 +1553,13 @@
     "noAiKey": "AI service not configured. Add an API key in server settings.",
     "parseError": "Error parsing file. Try again or upload a different file.",
     "maxSize": "Maximum size: 10MB",
-    "supportedFormats": "Supported formats: Excel, CSV, Image, PDF"
+    "supportedFormats": "Supported formats: Excel, CSV, Image, PDF",
+    "fieldExplanation": "Required columns: name, task, day, start_time, end_time",
+    "optionalColumns": "Optional columns: shift_duration, required_count",
+    "downloadTemplate": "Download CSV template",
+    "parseMethodStructured": "Structured parse",
+    "parseMethodAi": "AI parse",
+    "warningsTitle": "Skipped rows"
   },
   "platform": {
     "title": "Platform",
@@ -2829,6 +2874,8 @@
         "underfilledTitle": "Under-filled slots",
         "underfilledCount": "Showing the next {count} gaps",
         "openSeatCount": "{count} open",
+        "specialDay": "Special day",
+        "specialDayNamed": "Special day: {name}",
         "underScheduledNone": "Everyone meets the minimum shift requirement.",
         "underScheduledCount": "{count} member(s) are below the minimum.",
         "metrics": {
