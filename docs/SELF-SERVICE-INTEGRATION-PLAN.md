@@ -1,9 +1,12 @@
 # Self-Service Integration Plan
 
-This note keeps the current branch stack clear while manual self-service,
-holiday calendars, and customer-hosted portability are developed in parallel.
+This note records the historical branch stack for manual self-service, holiday
+calendars, and customer-hosted portability. The active integration branch is now
+`develop`; PR `#36` squash-merged the reconciled client-ready stack into
+`develop`, so do not use this document as an instruction to merge old feature
+branch tips.
 
-## Current Branch
+## Historical Branch
 
 `feat/manual-self-service-hardening` is the manual self-service branch.
 
@@ -62,7 +65,8 @@ as the merge gate for product behavior, policy, data scope, and tests.
 
 `feat/portable-space-isolation` is related to customer-hosted deployments and
 organization boundaries, but it is not the same feature as manual self-service.
-The reconciled umbrella branch is now `feat/self-service-client-ready`.
+The reconciled umbrella branch was `feat/self-service-client-ready`; it has
+already been merged into `develop` through PR `#36`.
 
 The original portable branch contained organization export/import validation,
 organization billing, tenant isolation, and contact-field protection work. The
@@ -101,9 +105,9 @@ Use the [self-service portability contract](SELF-SERVICE-PORTABILITY-CONTRACT.md
 as the merge gate for export/import-validation, tenant isolation, and special leave
 preservation.
 
-## Practical Merge Order
+## Historical Merge Order
 
-Use this order unless a production fix forces a different path:
+The original reconciliation order was:
 
 1. `feat/manual-self-service-hardening`
 2. `feat/holiday-calendars`
@@ -112,3 +116,8 @@ Use this order unless a production fix forces a different path:
 The reason is dependency shape: self-service defines the workflow and data that
 customers will operate; holidays add calendar semantics to that workflow; portable
 isolation packages the final system for customer-owned infrastructure.
+
+Current release work should continue from `develop`. If an audit finds a
+specific missing change on one of the old feature branches, cherry-pick or
+reapply only that reviewed change and verify it from `develop`; do not
+mechanically merge the old branch tips.

@@ -8,7 +8,6 @@ on:
   push:
     branches:
       - develop
-      - feat/self-service-client-ready
   workflow_dispatch:
 
 jobs:

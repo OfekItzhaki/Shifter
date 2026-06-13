@@ -1,7 +1,7 @@
 # Manual Self-Service QA Checklist
 
-Use this checklist before merging or demoing the manual self-service stack,
-especially the umbrella `feat/self-service-client-ready` branch.
+Use this checklist before demoing the manual self-service stack or before
+approving `develop` for a `main` release PR.
 
 ## Preconditions
 
@@ -78,9 +78,13 @@ Client-ready package preflight:
 This checks the customer-hosted env validator, backup, restore dry-run, deploy
 happy path, deploy rollback, Compose script syntax, and customer Compose config.
 
-## Branch Integration Checks
+## Integration Checks
 
-Before merging holiday-calendar changes after this branch:
+Holiday-calendar and portable/customer-hosted work have been integrated through
+PR `#36` into `develop`. Keep these checks as regression coverage before
+staging approval or a `develop` to `main` PR.
+
+For holiday/special-day behavior:
 
 - Verify special leave browser coverage still passes.
 - Verify self-service slot browsing still labels slots that overlap space
@@ -95,7 +99,7 @@ Before merging holiday-calendar changes after this branch:
   staffing rules on holidays, as future scope until a dedicated policy model is
   added.
 
-Before merging portable-space-isolation changes after this branch:
+For portable/customer-hosted behavior:
 
 - Confirm special leave API/application/domain files are preserved.
 - Confirm organization export, dry-run import validation, and package import
