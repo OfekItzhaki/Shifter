@@ -33,9 +33,7 @@ export async function register(
   phoneNumber?: string,
   profileImageUrl?: string,
   birthday?: string,
-  countryCode?: string,
-  setupTemplate?: string,
-  organizationName?: string
+  countryCode?: string
 ): Promise<{ userId: string }> {
   const { data } = await apiClient.post("/auth/register", {
     displayName, password, preferredLocale,
@@ -44,8 +42,6 @@ export async function register(
     ...(profileImageUrl ? { profileImageUrl } : {}),
     ...(birthday ? { birthday } : {}),
     ...(countryCode ? { countryCode } : {}),
-    ...(setupTemplate ? { setupTemplate } : {}),
-    ...(organizationName ? { organizationName } : {}),
   });
   return data;
 }

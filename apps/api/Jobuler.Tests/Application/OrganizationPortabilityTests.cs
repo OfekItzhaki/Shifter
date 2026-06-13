@@ -78,7 +78,7 @@ public class OrganizationPortabilityTests
     }
 
     [Fact]
-    public async Task Register_CreatesHiddenOrganizationFromCountryAndTemplate_WhenNameIsBlank()
+    public async Task Register_CreatesUserWithoutWorkspaceUntilOnboarding()
     {
         var db = CreateDb();
         var handler = CreateRegisterHandler(db);
@@ -93,15 +93,9 @@ public class OrganizationPortabilityTests
                 SetupTemplate: "military_style"),
             CancellationToken.None);
 
-        var organization = await db.Organizations.SingleAsync();
-        var space = await db.Spaces.SingleAsync();
-
-        organization.PrimaryOwnerUserId.Should().Be(userId);
-        organization.CountryCode.Should().Be("IL");
-        organization.SetupTemplate.Should().Be("military_style");
-        organization.DisplayName.Should().Be("IL Military Style");
-        organization.Status.Should().Be(OrganizationStatus.Active);
-        space.OrganizationId.Should().Be(organization.Id);
+        (await db.Users.FindAsync(userId)).Should().NotBeNull();
+        (await db.Organizations.AnyAsync()).Should().BeFalse();
+        (await db.Spaces.AnyAsync()).Should().BeFalse();
     }
 
     [Fact]
@@ -120,8 +114,13 @@ public class OrganizationPortabilityTests
                 OrganizationName: "Pizza Branch"),
             CancellationToken.None);
 
-        var organization = await db.Organizations.SingleAsync();
-        var space = await db.Spaces.SingleAsync();
+        var organization = Organization.Create("Pizza Branch", userId, "US", "restaurant_hospitality", "en");
+        var space = Space.Create("Pizza Branch", userId, locale: "en", organizationId: organization.Id);
+        db.Organizations.Add(organization);
+        db.Spaces.Add(space);
+        db.SpaceMemberships.Add(SpaceMembership.Create(space.Id, userId));
+        await db.SaveChangesAsync();
+
         organization.MarkRelocated("pizza-private-prod", DateTime.UtcNow);
         await db.SaveChangesAsync();
 

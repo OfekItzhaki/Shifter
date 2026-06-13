@@ -1,7 +1,6 @@
 using System.Security.Cryptography;
 using Jobuler.Application.Common;
 using Jobuler.Domain.Identity;
-using Jobuler.Domain.Organizations;
 using Jobuler.Infrastructure.Persistence;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -67,29 +66,6 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Guid>
 
         _db.Users.Add(user);
 
-        // Auto-create a personal space for the new user
-        var displayName = request.DisplayName ?? (string.IsNullOrWhiteSpace(request.Email) ? request.PhoneNumber! : request.Email.Split('@')[0]);
-        var setupTemplate = string.IsNullOrWhiteSpace(request.SetupTemplate) ? "general" : request.SetupTemplate;
-        var organizationName = string.IsNullOrWhiteSpace(request.OrganizationName)
-            ? Organization.BuildDefaultName(request.CountryCode, setupTemplate, displayName)
-            : request.OrganizationName;
-        var organization = Organization.Create(
-            organizationName,
-            user.Id,
-            request.CountryCode,
-            setupTemplate,
-            request.PreferredLocale);
-        _db.Organizations.Add(organization);
-
-        var spaceName = (request.PreferredLocale ?? "he") switch
-        {
-            "he" => $"{displayName} - Space",
-            "ru" => $"Пространство {displayName}",
-            _ => $"{displayName}'s Space",
-        };
-        var space = Jobuler.Domain.Spaces.Space.Create(spaceName, user.Id, organizationId: organization.Id);
-        _db.Spaces.Add(space);
-
         // Generate email verification token and send email only if real email provided
         var isRealEmail = !string.IsNullOrWhiteSpace(request.Email);
         if (isRealEmail)
@@ -100,9 +76,8 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Guid>
             _db.EmailVerificationTokens.Add(verificationToken);
 
             await _db.SaveChangesAsync(ct);
-            await AddOwnerMembershipAsync(space.Id, user.Id, ct);
 
-            // Send verification email — wrapped in try-catch so registration succeeds even if email fails
+            // Send verification email; registration should still succeed if email delivery fails.
             try
             {
                 var verifyUrl = $"{_frontendBaseUrl}/verify-email?token={rawToken}";
@@ -119,18 +94,9 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Guid>
         else
         {
             await _db.SaveChangesAsync(ct);
-            await AddOwnerMembershipAsync(space.Id, user.Id, ct);
         }
 
         return user.Id;
-    }
-
-    private async Task AddOwnerMembershipAsync(Guid spaceId, Guid userId, CancellationToken ct)
-    {
-        var membership = Jobuler.Domain.Spaces.SpaceMembership.Create(spaceId, userId);
-        membership.SetPermissionLevel(Jobuler.Domain.Spaces.SpacePermissionLevel.SpaceOwner);
-        _db.SpaceMemberships.Add(membership);
-        await _db.SaveChangesAsync(ct);
     }
 
     private static string ComputeSha256(string input)

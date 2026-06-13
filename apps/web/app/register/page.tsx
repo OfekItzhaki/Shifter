@@ -14,17 +14,6 @@ import { COUNTRIES } from "@/lib/data/countries";
 import { formatIsoDateForDateInput, getDateInputPattern, parseLocalizedDateInput } from "@/lib/utils/localizedDateInput";
 import { getPhonePlaceholder, normalizePhoneNumberForCountry } from "@/lib/utils/phoneNumbers";
 
-const SETUP_TEMPLATES = [
-  "general",
-  "restaurant_hospitality",
-  "retail_store",
-  "security_patrol",
-  "military_style",
-  "medical_clinic",
-  "education_campus",
-  "custom",
-] as const;
-
 /** Maps known backend validation errors to i18n keys */
 function translateValidationError(error: string, t: (key: string) => string): string {
   const map: Record<string, string> = {
@@ -64,8 +53,6 @@ function RegisterForm() {
   const [birthdayInput, setBirthdayInput] = useState("");
   const [profileImageUrl, setProfileImageUrl] = useState("");
   const [countryCode, setCountryCode] = useState("IL");
-  const [setupTemplate, setSetupTemplate] = useState<(typeof SETUP_TEMPLATES)[number]>("general");
-  const [organizationName, setOrganizationName] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -114,9 +101,7 @@ function RegisterForm() {
         normalizedPhone.value || undefined,
         profileImageUrl || undefined,
         parsedBirthday.isoDate || undefined,
-        countryCode || undefined,
-        setupTemplate,
-        organizationName.trim() || undefined);
+        countryCode || undefined);
       const loginUrl = redirect
         ? "/login?registered=1&redirect=" + encodeURIComponent(redirect)
         : "/login?registered=1";
@@ -263,40 +248,6 @@ function RegisterForm() {
                   </option>
                 ))}
               </select>
-            </div>
-
-            <div>
-              <label style={{ display: "block", fontSize: "0.875rem", fontWeight: 500, color: "#374151", marginBottom: "0.375rem" }}>
-                {t("setupTemplate")} <span style={{ color: "#ef4444" }}>*</span>
-              </label>
-              <select
-                required
-                value={setupTemplate}
-                onChange={e => setSetupTemplate(e.target.value as (typeof SETUP_TEMPLATES)[number])}
-                style={{ width: "100%", border: "1px solid #e2e8f0", borderRadius: 10, padding: "0.625rem 0.875rem", fontSize: "0.875rem", color: "#0f172a", outline: "none", boxSizing: "border-box", background: "white" }}
-              >
-                {SETUP_TEMPLATES.map(template => (
-                  <option key={template} value={template}>
-                    {t(`setupTemplates.${template}`)}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label style={{ display: "block", fontSize: "0.875rem", fontWeight: 500, color: "#374151", marginBottom: "0.375rem" }}>
-                {t("organizationName")} <span style={{ color: "#94a3b8", fontWeight: 400 }}>({t("optional")})</span>
-              </label>
-              <input
-                type="text"
-                value={organizationName}
-                onChange={e => setOrganizationName(e.target.value)}
-                placeholder={t("organizationNamePlaceholder")}
-                style={{ width: "100%", border: "1px solid #e2e8f0", borderRadius: 10, padding: "0.625rem 0.875rem", fontSize: "0.875rem", color: "#0f172a", outline: "none", boxSizing: "border-box" }}
-              />
-              <p style={{ fontSize: "0.75rem", color: "#64748b", margin: "0.375rem 0 0" }}>
-                {t("organizationNameHint")}
-              </p>
             </div>
 
             <div>
