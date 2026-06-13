@@ -550,22 +550,26 @@ packaging, and self-service export package validation readiness.
 - `node_modules\\.bin\\vitest.cmd run __tests__\\support\\contact.test.ts`
   passed, covering configured/fallback support email links and guarding
   product support entry points against hardcoded hosted support mailboxes.
-- Current `develop` verification on June 13, 2026 passed for commit `b84bc12`
-  (`test(release): validate staging basic auth secrets`):
-  - GitHub `CI` run `27455516695` passed.
-  - GitHub `Customer-Hosted Preflight` run `27455516704` passed.
-  - GitHub `Deploy Staging` run `27455516685` skipped as expected while
+- Current `develop` verification on June 13, 2026 passed for commit `b044ac8`
+  (`fix(self-service): support local smoke on alternate web port`):
+  - GitHub `CI` run `27456057422` passed.
+  - GitHub `Customer-Hosted Preflight` run `27456057423` passed.
+  - GitHub `Deploy Staging` run `27456057432` skipped as expected while
     staging deploy is disabled.
   - The strict release readiness audit now rejects stale broad `CI` and
     `Customer-Hosted Preflight` evidence; both must pass for the current
     candidate HEAD before the final release gate can pass. It also rejects
     partially configured optional staging Basic Auth smoke secrets.
   - `dotnet build apps\\api\\Jobuler.Api\\Jobuler.Api.csproj` passed.
-  - `npm run lint` from `apps/web` exited with 0 errors and existing warnings.
-  - `npx playwright test e2e/self-service.browser.spec.ts --reporter=line`
-    from `apps/web` passed: 15 passed.
+  - Direct browser login probe from `http://localhost:3015` to
+    `http://localhost:5000` passed: WebAuthn options and password login
+    returned 200, `/home` loaded, and an access token was stored.
+  - `node_modules\\.bin\\playwright.cmd test self-service.browser.spec.ts
+    --reporter=line` from `apps/web` passed: 15 passed.
   - `infra\\scripts\\smoke-self-service-client-ready.ps1` passed against the
-    local API/web stack and a fresh migrated/seeded database.
+    local API/web stack and a fresh migrated/seeded database after allowing
+    the documented local web smoke port in development CORS/WebAuthn origins
+    and fixing demo organization seed timestamps.
   - `infra\\scripts\\smoke-hosted-vps.ps1 -WebBaseUrl http://localhost:3015
     -ApiBaseUrl http://localhost:5000` passed against the local Shifter
     API/web stack after the hosted-smoke script was fixed to decode

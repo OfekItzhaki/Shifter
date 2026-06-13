@@ -17,14 +17,14 @@ holiday-calendar integration, and customer-hosted portability.
   Latest verified value on June 13, 2026:
 
   ```text
-  b84bc12 test(release): validate staging basic auth secrets
+  b044ac8 fix(self-service): support local smoke on alternate web port
   ```
 
 - Current release gate status:
 
-  - Latest checked `develop` runs for `b84bc12`: `CI` run `27455516695`
-    passed, `Customer-Hosted Preflight` run `27455516704` passed, and
-    `Deploy Staging` run `27455516685` skipped as expected.
+  - Latest checked `develop` runs for `b044ac8`: `CI` run `27456057422`
+    passed, `Customer-Hosted Preflight` run `27456057423` passed, and
+    `Deploy Staging` run `27456057432` skipped as expected.
   - `Deploy Staging` is expected to skip while
     `ENABLE_STAGING_DEPLOY=false`.
   - The strict release readiness audit with
@@ -37,9 +37,12 @@ holiday-calendar integration, and customer-hosted portability.
     candidate HEAD. It also fails clearly if only one of the optional staging
     Basic Auth smoke secrets is configured.
   - Current local user-flow verification passed against a fresh migrated/seeded
-    database: API build, web lint with 0 errors, full
-    `e2e/self-service.browser.spec.ts` browser suite with 15 passed tests, and
-    `smoke-self-service-client-ready.ps1` against local API/web.
+    database: API build, direct browser login probe from `localhost:3015` to
+    `localhost:5000`, full `self-service.browser.spec.ts` browser suite with
+    15 passed tests, and `smoke-self-service-client-ready.ps1` against local
+    API/web. The current head also fixes the demo organization seed timestamps
+    and allows the documented local web smoke port in development CORS/WebAuthn
+    origins.
   - Current hosted-smoke verification passed locally with
     `smoke-hosted-vps.ps1` against the local API/web stack, including the PWA
     manifest and service worker checks.

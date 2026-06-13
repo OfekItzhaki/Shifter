@@ -95,19 +95,23 @@ Use this checklist before opening or merging a `develop` to `main` PR.
 As of June 13, 2026:
 
 - `develop` is the current integration branch and has green current-head CI
-  evidence for commit `b84bc12`
-  (`test(release): validate staging basic auth secrets`): broad `CI` run
-  `27455516695` passed and `Customer-Hosted Preflight` run `27455516704`
-  passed. `Deploy Staging` run `27455516685` skipped as expected while staging
+  evidence for commit `b044ac8`
+  (`fix(self-service): support local smoke on alternate web port`): broad `CI`
+  run `27456057422` passed and `Customer-Hosted Preflight` run `27456057423`
+  passed. `Deploy Staging` run `27456057432` skipped as expected while staging
   deploy is disabled.
 - Local verification against a fresh migrated/seeded PostgreSQL database passed
   for the current `develop` head:
   - `dotnet build apps\api\Jobuler.Api\Jobuler.Api.csproj`
+  - direct browser login probe from `http://localhost:3015` to
+    `http://localhost:5000`: WebAuthn options and password login returned 200,
+    `/home` loaded, and an access token was stored
   - `npm run lint` from `apps/web` with 0 errors and existing warnings
-  - `npx playwright test e2e/self-service.browser.spec.ts --reporter=line`
-    from `apps/web`: 15 passed
+  - `node_modules\.bin\playwright.cmd test self-service.browser.spec.ts
+    --reporter=line` from `apps/web`: 15 passed
   - `infra/scripts/smoke-self-service-client-ready.ps1` against local API/web:
-    passed
+    passed after allowing the documented local web smoke port in development
+    CORS/WebAuthn origins and fixing demo organization seed timestamps
   - `infra/scripts/smoke-hosted-vps.ps1` against local API/web: passed after
     decoding byte-array manifest/service-worker responses from PowerShell
 - The broad `CI` workflow now runs on pushes to `develop` and PRs into
