@@ -17,14 +17,14 @@ holiday-calendar integration, and customer-hosted portability.
   Latest verified value on June 13, 2026:
 
   ```text
-  ac067d1 fix(self-service): stabilize verified browser flows
+  88d69eb fix(vps): decode hosted smoke response bytes
   ```
 
 - Current release gate status:
 
-  - Latest checked `develop` runs for `ac067d1`: `CI` run `27453501011`
-    passed, `Customer-Hosted Preflight` run `27453501022` passed, and
-    `Deploy Staging` run `27453501013` skipped as expected.
+  - Latest checked `develop` runs for `88d69eb`: `CI` run `27453845590`
+    passed, `Customer-Hosted Preflight` run `27453845593` passed, and
+    `Deploy Staging` run `27453845592` skipped as expected.
   - `Deploy Staging` is expected to skip while
     `ENABLE_STAGING_DEPLOY=false`.
   - The strict release readiness audit with
@@ -36,6 +36,9 @@ holiday-calendar integration, and customer-hosted portability.
     database: API build, web lint with 0 errors, full
     `e2e/self-service.browser.spec.ts` browser suite with 15 passed tests, and
     `smoke-self-service-client-ready.ps1` against local API/web.
+  - Current hosted-smoke verification passed locally with
+    `smoke-hosted-vps.ps1` against the local API/web stack, including the PWA
+    manifest and service worker checks.
 
 - Package-relevant CI history:
   https://github.com/OfekItzhaki/Shifter/actions/workflows/customer-hosted-preflight.yml

@@ -91,9 +91,9 @@ Use this checklist before opening or merging a `develop` to `main` PR.
 As of June 13, 2026:
 
 - `develop` is the current integration branch and has green CI evidence for
-  commit `ac067d1` (`fix(self-service): stabilize verified browser flows`):
-  broad `CI` run `27453501011` passed and `Customer-Hosted Preflight` run
-  `27453501022` passed. `Deploy Staging` run `27453501013` skipped as expected
+  commit `88d69eb` (`fix(vps): decode hosted smoke response bytes`): broad
+  `CI` run `27453845590` passed and `Customer-Hosted Preflight` run
+  `27453845593` passed. `Deploy Staging` run `27453845592` skipped as expected
   while staging deploy is disabled.
 - Local verification against a fresh migrated/seeded PostgreSQL database passed
   for the current `develop` head:
@@ -103,6 +103,8 @@ As of June 13, 2026:
     from `apps/web`: 15 passed
   - `infra/scripts/smoke-self-service-client-ready.ps1` against local API/web:
     passed
+  - `infra/scripts/smoke-hosted-vps.ps1` against local API/web: passed after
+    decoding byte-array manifest/service-worker responses from PowerShell
 - The broad `CI` workflow now runs on pushes to `develop` and PRs into
   `develop` or `main`, so release PR status checks can be enforced instead of
   relying only on manual dispatch.
