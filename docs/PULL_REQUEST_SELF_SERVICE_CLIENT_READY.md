@@ -459,13 +459,13 @@ packaging, and self-service export package validation readiness.
   service worker against local mock endpoints.
 - Customer-hosted preflight CI run `27432361955` passed for commit `fb21872`
   on June 12, 2026 after adding the hosted VPS smoke harness.
-- Pull request `#36` is open, retargeted to `develop`, and its
-  pull-request-triggered Customer-hosted preflight run `27434174339` passed on
-  June 12, 2026.
+- Pull request `#36` was retargeted to `develop`; its pull-request-triggered
+  Customer-hosted preflight run `27434174339` passed on June 12, 2026.
 - Manual Customer-hosted preflight run `27434384725` passed for latest PR head
   commit `49a6f93` on June 12, 2026 after recording the actual PR URL.
-- Before merge, use the workflow history above to confirm the latest
-  package-relevant run for `feat/self-service-client-ready` is green.
+- PR `#36` was squash-merged into `develop` on June 12, 2026 as merge commit
+  `20fb7d3`; the old `feat/self-service-client-ready` branch is now historical
+  reference, not a branch to merge directly.
 - `infra/scripts/backup-compose.sh`, `infra/scripts/deploy-compose.sh`,
   `infra/scripts/restore-compose.sh`, and `infra/scripts/seed-compose.sh`
   syntax checks passed after wiring custom `ENV_FILE` through their Compose
