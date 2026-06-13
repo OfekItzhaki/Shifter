@@ -129,8 +129,7 @@ shifter-prod-backups
 Test copying one backup:
 
 ```bash
-rclone copy /opt/shifter/backups r2:shifter-prod-backups/prod --include "*.dump" --include "*.tar.gz" --dry-run
-rclone copy /opt/shifter/backups r2:shifter-prod-backups/prod --include "*.dump" --include "*.tar.gz"
+OFFSITE_REMOTE="r2:shifter-prod-backups/prod" /opt/shifter/infra/scripts/sync-backups-offsite.sh
 rclone ls r2:shifter-prod-backups/prod | tail
 ```
 
@@ -141,7 +140,7 @@ For Hetzner, replace `r2:` with the remote name you configured.
 After the local backup cron line, add:
 
 ```cron
-45 3 * * * rclone copy /opt/shifter/backups r2:shifter-prod-backups/prod --include "*.dump" --include "*.tar.gz" >> /var/log/shifter-backup-offsite.log 2>&1
+45 3 * * * OFFSITE_REMOTE="r2:shifter-prod-backups/prod" /opt/shifter/infra/scripts/sync-backups-offsite.sh >> /var/log/shifter-backup-offsite.log 2>&1
 ```
 
 Verify:
