@@ -307,6 +307,18 @@ if (-not $SkipGitHubCheck) {
             Write-Check FAIL "No complete staging SSH secret set is configured."
         }
 
+        $hasStagingBasicAuthUsername = Test-Name $secrets "STAGING_BASIC_AUTH_USERNAME"
+        $hasStagingBasicAuthPassword = Test-Name $secrets "STAGING_BASIC_AUTH_PASSWORD"
+        if ($hasStagingBasicAuthUsername -and $hasStagingBasicAuthPassword) {
+            Write-Check PASS "Optional staging Basic Auth smoke secrets are configured."
+        }
+        elseif ($hasStagingBasicAuthUsername -or $hasStagingBasicAuthPassword) {
+            Write-Check FAIL "Staging Basic Auth smoke secrets are partially configured; set both STAGING_BASIC_AUTH_USERNAME and STAGING_BASIC_AUTH_PASSWORD, or remove both."
+        }
+        else {
+            Write-Check PASS "Optional staging Basic Auth smoke secrets are not configured."
+        }
+
         Test-SuccessfulWorkflowRun $runs "CI" "CI" $currentHeadSha
         Test-SuccessfulWorkflowRun $runs "Customer-Hosted Preflight" "customer-hosted preflight" $currentHeadSha
 

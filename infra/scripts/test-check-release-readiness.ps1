@@ -16,7 +16,7 @@ $mode = $env:SHIFTER_FAKE_GH_MODE
 $joined = $args -join " "
 
 if ($joined -like "variable list*") {
-    if ($mode -eq "ready") {
+    if ($mode -in @("ready", "partial-auth")) {
         '[{"name":"ENABLE_STAGING_DEPLOY"},{"name":"STAGING_WEB_BASE_URL"},{"name":"STAGING_API_BASE_URL"},{"name":"STAGING_PATH"},{"name":"STAGING_COMPOSE_PROJECT_NAME"}]'
     }
     else {
@@ -27,7 +27,10 @@ if ($joined -like "variable list*") {
 
 if ($joined -like "secret list*") {
     if ($mode -eq "ready") {
-        '[{"name":"STAGING_HOST"},{"name":"STAGING_USER"},{"name":"STAGING_SSH_KEY"}]'
+        '[{"name":"STAGING_HOST"},{"name":"STAGING_USER"},{"name":"STAGING_SSH_KEY"},{"name":"STAGING_BASIC_AUTH_USERNAME"},{"name":"STAGING_BASIC_AUTH_PASSWORD"}]'
+    }
+    elseif ($mode -eq "partial-auth") {
+        '[{"name":"STAGING_HOST"},{"name":"STAGING_USER"},{"name":"STAGING_SSH_KEY"},{"name":"STAGING_BASIC_AUTH_USERNAME"}]'
     }
     else {
         '[{"name":"VPS_HOST"},{"name":"VPS_USER"},{"name":"VPS_SSH_KEY"}]'
@@ -36,7 +39,7 @@ if ($joined -like "secret list*") {
 }
 
 if ($joined -like "api repos/*/environments*") {
-    if ($mode -eq "ready") {
+    if ($mode -in @("ready", "partial-auth")) {
         '{"environments":[{"name":"staging"}]}'
     }
     else {
@@ -46,7 +49,7 @@ if ($joined -like "api repos/*/environments*") {
 }
 
 if ($joined -like "api repos/*/rulesets/1*") {
-    if ($mode -eq "ready") {
+    if ($mode -in @("ready", "partial-auth")) {
         '{"id":1,"name":"Main","enforcement":"active","conditions":{"ref_name":{"include":["~DEFAULT_BRANCH"]}},"rules":[{"type":"deletion"},{"type":"non_fast_forward"},{"type":"pull_request"},{"type":"required_status_checks","parameters":{"required_status_checks":[{"context":"API Build & Test"},{"context":"Frontend Build"},{"context":"Solver Lint & Test"},{"context":"Package Preflight"}],"strict_required_status_checks_policy":true}}]}'
     }
     else {
@@ -56,7 +59,7 @@ if ($joined -like "api repos/*/rulesets/1*") {
 }
 
 if ($joined -like "api repos/*/rulesets/2*") {
-    if ($mode -eq "ready") {
+    if ($mode -in @("ready", "partial-auth")) {
         '{"id":2,"name":"Develop","enforcement":"active","conditions":{"ref_name":{"include":["refs/heads/develop"]}},"rules":[{"type":"deletion"},{"type":"non_fast_forward"}]}'
     }
     else {
@@ -71,7 +74,7 @@ if ($joined -like "api repos/*/rulesets*") {
 }
 
 if ($joined -like "run list*") {
-    if ($mode -eq "ready") {
+    if ($mode -in @("ready", "partial-auth")) {
         '[{"databaseId":101,"workflowName":"CI","status":"completed","conclusion":"success","headSha":"abcdef1234567890","createdAt":"2026-06-12T00:00:00Z","url":"https://example.invalid/ci","event":"workflow_dispatch"},{"databaseId":102,"workflowName":"Customer-Hosted Preflight","status":"completed","conclusion":"success","headSha":"abcdef1234567890","createdAt":"2026-06-12T00:00:00Z","url":"https://example.invalid/preflight","event":"push"},{"databaseId":103,"workflowName":"Deploy Staging","status":"completed","conclusion":"success","headSha":"abcdef1234567890","createdAt":"2026-06-12T00:00:00Z","url":"https://example.invalid/staging","event":"workflow_dispatch"}]'
     }
     elseif ($mode -eq "stale") {
@@ -103,6 +106,7 @@ exit 1
             "[PASS] GitHub staging environment exists.",
             "[PASS] Repository variable STAGING_WEB_BASE_URL is configured.",
             "[PASS] Dedicated STAGING_* SSH secrets are configured.",
+            "[PASS] Optional staging Basic Auth smoke secrets are configured.",
             "[PASS] Successful CI run found for current HEAD:",
             "[PASS] Successful customer-hosted preflight run found for current HEAD:",
             "[PASS] Latest successful staging deploy found:",
@@ -114,6 +118,16 @@ exit 1
         if ($readyText -notmatch [regex]::Escape($pattern)) {
             throw "Ready audit output missing '$pattern'. Output:`n$readyText"
         }
+    }
+
+    $env:SHIFTER_FAKE_GH_MODE = "partial-auth"
+    $partialAuthOutput = & $powerShellExe @baseCommand -File $script -GhPath $fakeGh -SkipGitCheck -SkipHostedSmoke -ExpectedHeadSha "abcdef1234567890" 2>&1
+    if ($LASTEXITCODE -eq 0) {
+        throw "Expected partial Basic Auth audit to fail. Output:`n$($partialAuthOutput | Out-String)"
+    }
+    $partialAuthText = $partialAuthOutput | Out-String
+    if ($partialAuthText -notmatch [regex]::Escape("[FAIL] Staging Basic Auth smoke secrets are partially configured; set both STAGING_BASIC_AUTH_USERNAME and STAGING_BASIC_AUTH_PASSWORD, or remove both.")) {
+        throw "Partial Basic Auth audit did not fail clearly. Output:`n$partialAuthText"
     }
 
     $env:SHIFTER_FAKE_GH_MODE = "stale"
@@ -142,6 +156,7 @@ exit 1
             "[FAIL] GitHub staging environment is missing.",
             "[FAIL] Repository variable STAGING_WEB_BASE_URL is missing.",
             "[WARN] Using VPS_* SSH secrets as staging fallback",
+            "[PASS] Optional staging Basic Auth smoke secrets are not configured.",
             "[FAIL] No successful staging deploy run found on develop.",
             "[FAIL] main must require pull requests before production merges.",
             "[FAIL] main must require expected status checks before production merges:",
