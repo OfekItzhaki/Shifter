@@ -61,7 +61,9 @@ INSERT INTO organizations (
   setup_template,
   default_locale,
   default_timezone_id,
-  status
+  status,
+  created_at,
+  updated_at
 ) VALUES (
   'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9',
   'Unit Alpha Demo',
@@ -71,7 +73,9 @@ INSERT INTO organizations (
   'military_style',
   'he',
   'Asia/Jerusalem',
-  'Active'
+  'Active',
+  NOW(),
+  NOW()
 )
 ON CONFLICT (id) DO NOTHING;
 

@@ -112,11 +112,18 @@ builder.Services.AddMemoryCache();
 builder.Services.AddSingleton<Fido2NetLib.IFido2>(sp =>
 {
     var config = sp.GetRequiredService<IConfiguration>();
+    var frontendUrl = config["App:FrontendBaseUrl"]?.TrimEnd('/');
+    var origins = builder.Environment.IsDevelopment()
+        ? new[] { "http://localhost:3000", "http://localhost:3015", frontendUrl }
+            .Where(origin => !string.IsNullOrWhiteSpace(origin))
+            .Select(origin => origin!)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase)
+        : new HashSet<string> { frontendUrl ?? "https://localhost" };
     var fido2Config = new Fido2NetLib.Fido2Configuration
     {
         ServerDomain = config["WebAuthn:RelyingPartyId"] ?? "localhost",
         ServerName = config["WebAuthn:RelyingPartyName"] ?? "Shifter",
-        Origins = new HashSet<string> { config["WebAuthn:Origin"] ?? "https://localhost" }
+        Origins = origins
     };
     return new Fido2NetLib.Fido2(fido2Config);
 });
@@ -497,7 +504,10 @@ builder.Services.AddRateLimiter(options =>
 });
 var frontendUrl = builder.Configuration["App:FrontendBaseUrl"]?.TrimEnd('/') ?? "https://shifter.ofeklabs.com";
 var corsOrigins = builder.Environment.IsDevelopment()
-    ? new[] { "http://localhost:3000", frontendUrl }
+    ? new[] { "http://localhost:3000", "http://localhost:3015", frontendUrl }
+        .Where(origin => !string.IsNullOrWhiteSpace(origin))
+        .Distinct(StringComparer.OrdinalIgnoreCase)
+        .ToArray()
     : new[] { frontendUrl };
 builder.Services.AddCors(options =>
     options.AddDefaultPolicy(policy =>
