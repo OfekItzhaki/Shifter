@@ -69,6 +69,11 @@ import { apiClient } from "@/lib/api/client";
 import { DEFAULT_TASK_HORIZON_DAYS, MS_PER_DAY } from "@/lib/utils/constants";
 import type { TaskForm } from "./tabs/TasksTab";
 import { useGroupPageState, DEFAULT_TASK_FORM } from "./useGroupPageState";
+
+type PersistHydrationApi = {
+  hasHydrated?: () => boolean;
+  onFinishHydration?: (callback: () => void) => () => void;
+};
 // ── Tab labels ───────────────────────────────────────────────────────────────
 function getTabLabels(t: (key: string) => string, tSelfService: (key: string) => string): Record<ActiveTab, string> {
   return {
@@ -195,6 +200,11 @@ export default function GroupDetailPage() {
   const [subscriptionActive, setSubscriptionActive] = useState(true);
   const [pendingSelfServiceReviewCount, setPendingSelfServiceReviewCount] = useState(0);
   const { enterElevatedMode, exitElevatedMode } = useAdminSessionStore();
+  const [isAdminSessionHydrated, setIsAdminSessionHydrated] = useState(
+    () =>
+      (useAdminSessionStore as typeof useAdminSessionStore & { persist?: PersistHydrationApi }).persist
+        ?.hasHydrated?.() ?? true
+  );
 
   const refreshSelfServiceReviewCount = useCallback(async () => {
     if (!currentSpaceId || !groupId || group?.schedulingMode !== "SelfService" || !isAdmin) {
@@ -218,6 +228,8 @@ export default function GroupDetailPage() {
   // ── Re-enter elevated session on page load if admin mode was persisted ──
   // This restarts the inactivity timeout after a refresh.
   useEffect(() => {
+    if (!isAdminSessionHydrated) return;
+
     if (adminGroupId === groupId && group) {
       const { isElevated, elevatedMode, elevatedGroupId } = useAdminSessionStore.getState();
       if (
@@ -233,7 +245,7 @@ export default function GroupDetailPage() {
       setIsAdmin(false);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [group, adminGroupId, groupId]);
+  }, [group, adminGroupId, groupId, isAdminSessionHydrated]);
 
   // Check if user has credentials configured (password or WebAuthn)
   useEffect(() => {
@@ -266,6 +278,17 @@ export default function GroupDetailPage() {
   useEffect(() => {
     void Promise.resolve().then(refreshSelfServiceReviewCount);
   }, [activeTab, refreshSelfServiceReviewCount]);
+
+  useEffect(() => {
+    if (isAdminSessionHydrated) return;
+    const unsubscribe =
+      (
+        useAdminSessionStore as typeof useAdminSessionStore & { persist?: PersistHydrationApi }
+      ).persist?.onFinishHydration?.(() => {
+        setIsAdminSessionHydrated(true);
+      }) ?? (() => {});
+    return () => unsubscribe();
+  }, [isAdminSessionHydrated]);
 
   // Handle management mode toggle with re-authentication
   const handleAdminModeToggle = () => {
@@ -1465,6 +1488,7 @@ export default function GroupDetailPage() {
           <div className="relative group/admin-btn flex-shrink-0">
             <button
               onClick={handleAdminModeToggle}
+              data-testid="group-admin-mode-toggle"
               disabled={!isAdmin && hasCredentials === false}
               aria-describedby={!isAdmin && hasCredentials === false ? "admin-btn-tooltip" : undefined}
               className={`flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-medium border transition-colors ${

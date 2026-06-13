@@ -52,6 +52,24 @@ function formatSlotTimeRange(value: string): string {
   return `${formatTime24h(start)}-${formatTime24h(end)}`;
 }
 
+function getUserIdFromStoredToken(): string | null {
+  if (typeof window === "undefined") return null;
+
+  const token = window.localStorage.getItem("access_token");
+  const payload = token?.split(".")[1];
+  if (!payload) return null;
+
+  try {
+    const normalized = payload.replace(/-/g, "+").replace(/_/g, "/");
+    const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=");
+    const claims = JSON.parse(window.atob(padded)) as Record<string, unknown>;
+    const nameIdentifier = claims["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"];
+    return typeof nameIdentifier === "string" ? nameIdentifier : null;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * SwapsTab displays the member's swap requests (incoming and outgoing)
  * and provides a "Propose Swap" flow.
@@ -68,6 +86,8 @@ export default function SwapsTab({
   const t = useTranslations("selfService.swaps");
   const tCommon = useTranslations("selfService");
   const { userId } = useAuthStore();
+  const tokenUserId = getUserIdFromStoredToken();
+  const effectiveUserId = tokenUserId ?? userId;
   const storedSpaceId = useSpaceStore((s) => s.currentSpaceId);
   const currentSpaceId = spaceId || storedSpaceId;
 
@@ -114,7 +134,7 @@ export default function SwapsTab({
     void Promise.resolve().then(() => fetchSwaps());
   }, [fetchSwaps]);
 
-  const currentPersonId = members.find((m) => m.linkedUserId === userId)?.personId ?? null;
+  const currentPersonId = members.find((m) => m.linkedUserId === effectiveUserId)?.personId ?? null;
 
   const { incomingSwaps, outgoingSwaps, completedSwaps } = classifySwapsForPerson(
     swaps,

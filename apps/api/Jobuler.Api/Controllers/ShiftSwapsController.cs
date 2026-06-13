@@ -295,7 +295,8 @@ public class ShiftSwapsController : ControllerBase
         if (targetPersonId == currentPersonId.Value)
             return BadRequest(new { error = "Use the mine endpoint for your own shifts." });
 
-        var utcNow = DateTime.UtcNow;
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var currentTime = TimeOnly.FromDateTime(DateTime.UtcNow);
 
         var shifts = await _db.ShiftRequests
             .AsNoTracking()
@@ -305,7 +306,7 @@ public class ShiftSwapsController : ControllerBase
                         && r.Status == ShiftRequestStatus.Approved)
             .Join(_db.ShiftSlots.AsNoTracking(), r => r.ShiftSlotId, slot => slot.Id, (r, slot) => new { Request = r, Slot = slot })
             .Join(_db.GroupTasks.AsNoTracking(), rs => rs.Slot.GroupTaskId, task => task.Id, (rs, task) => new { rs.Request, rs.Slot, TaskName = task.Name })
-            .Where(x => x.Slot.Date.ToDateTime(x.Slot.StartTime, DateTimeKind.Utc) > utcNow)
+            .Where(x => x.Slot.Date > today || (x.Slot.Date == today && x.Slot.StartTime > currentTime))
             .OrderBy(x => x.Slot.Date)
             .ThenBy(x => x.Slot.StartTime)
             .Select(x => new SwappableShiftDto(

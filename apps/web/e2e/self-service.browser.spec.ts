@@ -179,6 +179,43 @@ async function apiExpectStatus(
   return text;
 }
 
+async function assignFirstAcceptedShift(
+  request: APIRequestContext,
+  adminToken: string,
+  spaceId: string,
+  groupId: string,
+  personId: string,
+  candidateSlots: AvailableSlotDto[],
+  failureContext: string
+): Promise<{ shiftRequestId: string; shiftSlotId: string }> {
+  let lastFailure = "";
+
+  for (const slot of candidateSlots) {
+    const shiftSlotId = slot.id ?? slot.shiftSlotId;
+    if (!shiftSlotId) continue;
+
+    const response = await request.fetch(
+      `${API_URL}/spaces/${spaceId}/groups/${groupId}/shift-slots/${shiftSlotId}/admin-overrides/assign`,
+      {
+        method: "POST",
+        headers: { Authorization: `Bearer ${adminToken}` },
+        data: { personId },
+      }
+    );
+
+    const text = await response.text();
+    if (response.ok()) {
+      const body = JSON.parse(text) as { shiftRequestId: string };
+      return { shiftRequestId: body.shiftRequestId, shiftSlotId };
+    }
+
+    lastFailure = `POST assign ${shiftSlotId} failed with ${response.status()}: ${text}`;
+  }
+
+  expect(false, `${failureContext}. ${lastFailure || "No candidate slots were available."}`).toBeTruthy();
+  throw new Error(failureContext);
+}
+
 async function findDemoSelfServiceGroup(
   request: APIRequestContext,
   adminToken: string
@@ -239,16 +276,14 @@ async function ensureApprovedShift(
     "GET",
     `/spaces/${spaceId}/groups/${groupId}/shift-slots/admin/slots?cycleId=${cycleId}`
   );
-  const targetSlot = adminSlots.slots.find((slot) => slot.id ?? slot.shiftSlotId);
-  expect(targetSlot, "browser lifecycle test needs an assignable shift slot").toBeTruthy();
-
-  const shiftSlotId = targetSlot!.id ?? targetSlot!.shiftSlotId;
-  const created = await api<{ shiftRequestId: string }>(
+  const created = await assignFirstAcceptedShift(
     request,
     adminToken,
-    "POST",
-    `/spaces/${spaceId}/groups/${groupId}/shift-slots/${shiftSlotId}/admin-overrides/assign`,
-    { personId }
+    spaceId,
+    groupId,
+    personId,
+    adminSlots.slots,
+    "browser lifecycle test needs an assignable shift slot"
   );
 
   const refreshed = await api<MyShiftsResponse>(
@@ -320,19 +355,18 @@ async function ensureAbsenceReportableApprovedShift(
     "GET",
     `/spaces/${spaceId}/groups/${groupId}/shift-slots/admin/slots?cycleId=${cycleId}`
   );
-  const targetSlot = adminSlots.slots.find((slot) => {
+  const candidateSlots = adminSlots.slots.filter((slot) => {
     const slotId = slot.id ?? slot.shiftSlotId;
     return slotId && !unavailableSlotIds.has(slotId);
   });
-  expect(targetSlot, "browser absence rejection test needs an assignable shift without an existing report").toBeTruthy();
-
-  const shiftSlotId = targetSlot!.id ?? targetSlot!.shiftSlotId;
-  const created = await api<{ shiftRequestId: string }>(
+  const created = await assignFirstAcceptedShift(
     request,
     adminToken,
-    "POST",
-    `/spaces/${spaceId}/groups/${groupId}/shift-slots/${shiftSlotId}/admin-overrides/assign`,
-    { personId }
+    spaceId,
+    groupId,
+    personId,
+    candidateSlots,
+    "browser absence rejection test needs an assignable shift without an existing report"
   );
 
   const refreshed = await api<MyShiftsResponse>(
@@ -367,6 +401,68 @@ async function getPendingSwapShiftIds(
   return shiftIds;
 }
 
+async function clearPendingSwapsForPerson(
+  request: APIRequestContext,
+  token: string,
+  spaceId: string,
+  groupId: string,
+  personId: string
+): Promise<void> {
+  const swaps = await api<SwapRequestDto[]>(
+    request,
+    token,
+    "GET",
+    `/spaces/${spaceId}/groups/${groupId}/shift-swaps/my`
+  );
+
+  for (const swap of swaps.filter((row) => row.status === "Pending")) {
+    if (swap.initiatorPersonId === personId) {
+      await apiExpectStatus(
+        request,
+        token,
+        "POST",
+        `/spaces/${spaceId}/groups/${groupId}/shift-swaps/${swap.id}/cancel`,
+        204
+      );
+    } else if (swap.targetPersonId === personId) {
+      await apiExpectStatus(
+        request,
+        token,
+        "POST",
+        `/spaces/${spaceId}/groups/${groupId}/shift-swaps/${swap.id}/decline`,
+        204
+      );
+    }
+  }
+}
+
+async function clearApprovedShiftsForPerson(
+  request: APIRequestContext,
+  adminToken: string,
+  memberToken: string,
+  spaceId: string,
+  groupId: string,
+  personId: string
+): Promise<void> {
+  const mine = await api<MyShiftsResponse>(
+    request,
+    memberToken,
+    "GET",
+    `/spaces/${spaceId}/groups/${groupId}/shift-requests/mine`
+  );
+
+  for (const shift of mine.requests.filter((row) => row.status === "Approved")) {
+    await apiExpectStatus(
+      request,
+      adminToken,
+      "POST",
+      `/spaces/${spaceId}/groups/${groupId}/shift-slots/${shift.shiftSlotId}/admin-overrides/remove`,
+      200,
+      { personId }
+    );
+  }
+}
+
 async function ensureSwappableApprovedShift(
   request: APIRequestContext,
   adminToken: string,
@@ -397,19 +493,18 @@ async function ensureSwappableApprovedShift(
     "GET",
     `/spaces/${spaceId}/groups/${groupId}/shift-slots/admin/slots?cycleId=${cycleId}`
   );
-  const targetSlot = adminSlots.slots.find((slot) => {
+  const candidateSlots = adminSlots.slots.filter((slot) => {
     const slotId = slot.id ?? slot.shiftSlotId;
     return slotId && !excludedSlotIds.includes(slotId);
   });
-  expect(targetSlot, "browser swap test needs an assignable shift slot").toBeTruthy();
-
-  const shiftSlotId = targetSlot!.id ?? targetSlot!.shiftSlotId;
-  const created = await api<{ shiftRequestId: string }>(
+  const created = await assignFirstAcceptedShift(
     request,
     adminToken,
-    "POST",
-    `/spaces/${spaceId}/groups/${groupId}/shift-slots/${shiftSlotId}/admin-overrides/assign`,
-    { personId }
+    spaceId,
+    groupId,
+    personId,
+    candidateSlots,
+    "browser swap test needs an assignable shift slot"
   );
 
   const refreshed = await api<MyShiftsResponse>(
@@ -466,19 +561,18 @@ async function ensureChangeableApprovedShift(
     "GET",
     `/spaces/${spaceId}/groups/${groupId}/shift-slots/admin/slots?cycleId=${cycleId}`
   );
-  const targetSlot = adminSlots.slots.find((slot) => {
+  const candidateSlots = adminSlots.slots.filter((slot) => {
     const slotId = slot.id ?? slot.shiftSlotId;
     return slotId && !unavailableSlotIds.has(slotId);
   });
-  expect(targetSlot, "browser shift-change test needs an assignable shift without a pending change").toBeTruthy();
-
-  const shiftSlotId = targetSlot!.id ?? targetSlot!.shiftSlotId;
-  const created = await api<{ shiftRequestId: string }>(
+  const created = await assignFirstAcceptedShift(
     request,
     adminToken,
-    "POST",
-    `/spaces/${spaceId}/groups/${groupId}/shift-slots/${shiftSlotId}/admin-overrides/assign`,
-    { personId }
+    spaceId,
+    groupId,
+    personId,
+    candidateSlots,
+    "browser shift-change test needs an assignable shift without a pending change"
   );
 
   const refreshed = await api<MyShiftsResponse>(
@@ -645,24 +739,23 @@ async function ensureWaitingWaitlistEntry(
 }
 
 async function enterElevatedGroup(page: Page, groupId: string): Promise<void> {
-  await page.evaluate((targetGroupId) => {
-    const authRaw = localStorage.getItem("jobuler-auth");
-    const authState = authRaw ? JSON.parse(authRaw) : { state: {}, version: 0 };
-    authState.state = { ...(authState.state ?? {}), adminGroupId: targetGroupId };
-    localStorage.setItem("jobuler-auth", JSON.stringify(authState));
+  await page.goto(`${BASE}/groups/${groupId}`);
+  if (await page.getByTestId("group-tab-absence-reports").isVisible({ timeout: 2000 }).catch(() => false)) {
+    return;
+  }
 
-    localStorage.setItem("jobuler-admin-session", JSON.stringify({
-      state: {
-        isElevated: true,
-        elevatedMode: "management",
-        elevatedGroupId: targetGroupId,
-        timeoutDuration: 15,
-        remainingMs: 15 * 60 * 1000,
-        lastActivityAt: Date.now(),
-      },
-      version: 0,
-    }));
-  }, groupId);
+  await page.getByTestId("group-admin-mode-toggle").click();
+  const passwordInput = page.locator("#reauth-password");
+  await passwordInput.waitFor({ state: "visible", timeout: 15000 });
+  await passwordInput.click();
+  await passwordInput.fill(DEMO_PASSWORD);
+  await Promise.all([
+    page.waitForResponse((response) =>
+      response.url().includes("/auth/re-authenticate") && response.request().method() === "POST"
+    ),
+    passwordInput.press("Enter"),
+  ]);
+  await expect(page.getByTestId("group-tab-absence-reports")).toBeVisible({ timeout: 15000 });
 }
 
 function toDateTimeLocalInput(value: Date): string {
@@ -785,7 +878,7 @@ test.describe("Self-service browser lifecycle", () => {
     await page.goto(`${BASE}/pick`);
     await page.getByTestId("pick-tab-slots").click();
 
-    await expect(page.getByText(specialDayName)).toBeVisible({ timeout: 15000 });
+    await expect(page.getByText(specialDayName).first()).toBeVisible({ timeout: 15000 });
   });
 
   test("no-coverage special-day slots are visible but not claimable", async ({ page, request }) => {
@@ -860,6 +953,10 @@ test.describe("Self-service browser lifecycle", () => {
 
     const initiatorMember = await getGroupMemberByEmail(request, adminToken, spaceId, groupId, initiatorEmail);
     const targetMember = await getGroupMemberByEmail(request, adminToken, spaceId, groupId, targetEmail);
+    await clearPendingSwapsForPerson(request, initiatorToken, spaceId, groupId, initiatorMember.personId);
+    await clearPendingSwapsForPerson(request, targetToken, spaceId, groupId, targetMember.personId);
+    await clearApprovedShiftsForPerson(request, adminToken, initiatorToken, spaceId, groupId, initiatorMember.personId);
+    await clearApprovedShiftsForPerson(request, adminToken, targetToken, spaceId, groupId, targetMember.personId);
     const initiatorShift = await ensureSwappableApprovedShift(
       request,
       adminToken,
@@ -1004,6 +1101,10 @@ test.describe("Self-service browser lifecycle", () => {
 
     const initiatorMember = await getGroupMemberByEmail(request, adminToken, spaceId, groupId, initiatorEmail);
     const targetMember = await getGroupMemberByEmail(request, adminToken, spaceId, groupId, targetEmail);
+    await clearPendingSwapsForPerson(request, initiatorToken, spaceId, groupId, initiatorMember.personId);
+    await clearPendingSwapsForPerson(request, targetToken, spaceId, groupId, targetMember.personId);
+    await clearApprovedShiftsForPerson(request, adminToken, initiatorToken, spaceId, groupId, initiatorMember.personId);
+    await clearApprovedShiftsForPerson(request, adminToken, targetToken, spaceId, groupId, targetMember.personId);
     const initiatorShift = await ensureSwappableApprovedShift(
       request,
       adminToken,
@@ -1148,6 +1249,10 @@ test.describe("Self-service browser lifecycle", () => {
 
     const initiatorMember = await getGroupMemberByEmail(request, adminToken, spaceId, groupId, initiatorEmail);
     const targetMember = await getGroupMemberByEmail(request, adminToken, spaceId, groupId, targetEmail);
+    await clearPendingSwapsForPerson(request, initiatorToken, spaceId, groupId, initiatorMember.personId);
+    await clearPendingSwapsForPerson(request, targetToken, spaceId, groupId, targetMember.personId);
+    await clearApprovedShiftsForPerson(request, adminToken, initiatorToken, spaceId, groupId, initiatorMember.personId);
+    await clearApprovedShiftsForPerson(request, adminToken, targetToken, spaceId, groupId, targetMember.personId);
     const initiatorShift = await ensureSwappableApprovedShift(
       request,
       adminToken,
@@ -1424,7 +1529,6 @@ test.describe("Self-service browser lifecycle", () => {
 
     await loginAsUser(page, adminEmail, DEMO_PASSWORD);
     await enterElevatedGroup(page, groupId);
-    await page.goto(`${BASE}/groups/${groupId}`);
     await page.getByTestId("group-tab-absence-reports").click();
 
     const changeCard = page
@@ -1541,7 +1645,6 @@ test.describe("Self-service browser lifecycle", () => {
 
     await loginAsUser(page, adminEmail, DEMO_PASSWORD);
     await enterElevatedGroup(page, groupId);
-    await page.goto(`${BASE}/groups/${groupId}`);
     await page.getByTestId("group-tab-absence-reports").click();
     const changeCard = page
       .getByTestId("self-service-change-request")
@@ -1840,7 +1943,6 @@ test.describe("Self-service browser lifecycle", () => {
 
     await loginAsUser(page, adminEmail, DEMO_PASSWORD);
     await enterElevatedGroup(page, groupId);
-    await page.goto(`${BASE}/groups/${groupId}`);
     await page.getByTestId("group-tab-absence-reports").click();
 
     const reportCard = page
@@ -1937,7 +2039,6 @@ test.describe("Self-service browser lifecycle", () => {
 
     await loginAsUser(page, adminEmail, DEMO_PASSWORD);
     await enterElevatedGroup(page, groupId);
-    await page.goto(`${BASE}/groups/${groupId}`);
     await page.getByTestId("group-tab-absence-reports").click();
 
     const reportCard = page
@@ -1996,7 +2097,6 @@ test.describe("Self-service browser lifecycle", () => {
 
     await loginAsUser(page, adminEmail, DEMO_PASSWORD);
     await enterElevatedGroup(page, groupId);
-    await page.goto(`${BASE}/groups/${groupId}`);
     await page.getByTestId("group-tab-absence-reports").click();
 
     const reviewCard = page.locator(
@@ -2070,7 +2170,6 @@ test.describe("Self-service browser lifecycle", () => {
 
     await loginAsUser(page, adminEmail, DEMO_PASSWORD);
     await enterElevatedGroup(page, groupId);
-    await page.goto(`${BASE}/groups/${groupId}`);
     await page.getByTestId("group-tab-absence-reports").click();
 
     const reviewCard = page.locator(

@@ -43,7 +43,13 @@ INSERT INTO users (id, email, display_name, password_hash, preferred_locale) VAL
   ('b2c3d4e5-f6a7-4b8c-9d0e-f1a2b3c4d5e6', 'ofek@demo.local',    'Ofek',    '$2a$12$WqeSlsFmXzSru4YK23qfeuMYIUd/4ZkHLLwx0NAehm.Vbmq1MYEEa', 'he'),
   ('c3d4e5f6-a7b8-4c9d-0e1f-a2b3c4d5e6f7', 'yael@demo.local',    'Yael',    '$2a$12$WqeSlsFmXzSru4YK23qfeuMYIUd/4ZkHLLwx0NAehm.Vbmq1MYEEa', 'he'),
   ('d4e5f6a7-b8c9-4d0e-1f2a-b3c4d5e6f7a8', 'viewer@demo.local',  'Viewer',  '$2a$12$WqeSlsFmXzSru4YK23qfeuMYIUd/4ZkHLLwx0NAehm.Vbmq1MYEEa', 'he')
-ON CONFLICT (id) DO UPDATE SET password_hash = EXCLUDED.password_hash;
+ON CONFLICT (id) DO UPDATE SET
+  email = EXCLUDED.email,
+  display_name = EXCLUDED.display_name,
+  password_hash = EXCLUDED.password_hash,
+  preferred_locale = EXCLUDED.preferred_locale,
+  email_lookup_hash = NULL,
+  phone_lookup_hash = NULL;
 
 -- Demo Organization
 INSERT INTO organizations (
@@ -129,15 +135,20 @@ INSERT INTO groups (id, space_id, group_type_id, name) VALUES
 ON CONFLICT DO NOTHING;
 
 -- People (linked to their user accounts)
-INSERT INTO people (id, space_id, full_name, display_name, linked_user_id, invitation_status) VALUES
-  ('a0b1c2d3-e4f5-4a6b-7c8d-e9f0a1b2c3d4', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'Admin',          'Admin',   'a1b2c3d4-e5f6-4a7b-8c9d-e0f1a2b3c4d5', 'accepted'),
-  ('b4c5d6e7-f8a9-4b0c-1d2e-f3a4b5c6d7e8', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'Ofek Israeli',   'Ofek',    'b2c3d4e5-f6a7-4b8c-9d0e-f1a2b3c4d5e6', 'accepted'),
-  ('c5d6e7f8-a9b0-4c1d-2e3f-a4b5c6d7e8f9', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'Yael Cohen',     'Yael',    'c3d4e5f6-a7b8-4c9d-0e1f-a2b3c4d5e6f7', 'accepted'),
-  ('d6e7f8a9-b0c1-4d2e-3f4a-b5c6d7e8f9a0', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'Daniel Levi',    'Daniel',  NULL, 'accepted'),
-  ('e7f8a9b0-c1d2-4e3f-4a5b-c6d7e8f9a0b1', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'Michal Avraham', 'Michal',  NULL, 'accepted'),
-  ('f8a9b0c1-d2e3-4f4a-5b6c-d7e8f9a0b1c2', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'Ron Shamir',     'Ron',     NULL, 'accepted'),
-  ('a9b0c1d2-e3f4-4a5b-6c7d-e8f9a0b1c2d3', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'Noa Golan',      'Noa',     NULL, 'accepted')
-ON CONFLICT DO NOTHING;
+INSERT INTO people (id, space_id, full_name, display_name, linked_user_id, invitation_status, email) VALUES
+  ('a0b1c2d3-e4f5-4a6b-7c8d-e9f0a1b2c3d4', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'Admin',          'Admin',   'a1b2c3d4-e5f6-4a7b-8c9d-e0f1a2b3c4d5', 'accepted', 'admin@demo.local'),
+  ('b4c5d6e7-f8a9-4b0c-1d2e-f3a4b5c6d7e8', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'Ofek Israeli',   'Ofek',    'b2c3d4e5-f6a7-4b8c-9d0e-f1a2b3c4d5e6', 'accepted', 'ofek@demo.local'),
+  ('c5d6e7f8-a9b0-4c1d-2e3f-a4b5c6d7e8f9', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'Yael Cohen',     'Yael',    'c3d4e5f6-a7b8-4c9d-0e1f-a2b3c4d5e6f7', 'accepted', 'yael@demo.local'),
+  ('d4e5f6a7-b8c9-4d0e-1f2a-b3c4d5e6f7a8', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'Viewer Demo',    'Viewer',  'd4e5f6a7-b8c9-4d0e-1f2a-b3c4d5e6f7a8', 'accepted', 'viewer@demo.local'),
+  ('d6e7f8a9-b0c1-4d2e-3f4a-b5c6d7e8f9a0', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'Daniel Levi',    'Daniel',  NULL, 'accepted', NULL),
+  ('e7f8a9b0-c1d2-4e3f-4a5b-c6d7e8f9a0b1', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'Michal Avraham', 'Michal',  NULL, 'accepted', NULL),
+  ('f8a9b0c1-d2e3-4f4a-5b6c-d7e8f9a0b1c2', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'Ron Shamir',     'Ron',     NULL, 'accepted', NULL),
+  ('a9b0c1d2-e3f4-4a5b-6c7d-e8f9a0b1c2d3', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'Noa Golan',      'Noa',     NULL, 'accepted', NULL)
+ON CONFLICT (id) DO UPDATE SET
+  linked_user_id = EXCLUDED.linked_user_id,
+  invitation_status = EXCLUDED.invitation_status,
+  email = EXCLUDED.email,
+  updated_at = NOW();
 
 -- Group memberships: Admin owns both groups; seed people are in Squad A
 INSERT INTO group_memberships (id, space_id, group_id, person_id, is_owner, joined_at) VALUES
@@ -172,7 +183,13 @@ ON CONFLICT DO NOTHING;
 INSERT INTO users (id, email, display_name, password_hash, preferred_locale) VALUES
   ('f0a1b2c3-d4e5-4f6a-7b8c-9d0e1f2a3b4c', 'dana@demo.local', 'Dana',
    '$2a$12$WqeSlsFmXzSru4YK23qfeuMYIUd/4ZkHLLwx0NAehm.Vbmq1MYEEa', 'he')
-ON CONFLICT (id) DO UPDATE SET password_hash = EXCLUDED.password_hash;
+ON CONFLICT (id) DO UPDATE SET
+  email = EXCLUDED.email,
+  display_name = EXCLUDED.display_name,
+  password_hash = EXCLUDED.password_hash,
+  preferred_locale = EXCLUDED.preferred_locale,
+  email_lookup_hash = NULL,
+  phone_lookup_hash = NULL;
 
 INSERT INTO people (id, space_id, full_name, display_name, linked_user_id) VALUES
   ('e1a2b3c4-d5e6-4f7a-8b9c-0d1e2f3a4b5c',
@@ -270,11 +287,11 @@ SET client_encoding = 'UTF8';
 --   מפקד מחלקה → a5e6f7a8-b9c0-4d1e-2f3a-4b5c6d7e8f9a
 
 INSERT INTO group_qualifications (id, space_id, group_id, name, is_active, created_at, updated_at) VALUES
-  ('c1a2b3c4-d5e6-4f7a-8b9c-0d1e2f3a4b5c', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'a3b4c5d6-e7f8-4a9b-0c1d-e2f3a4b5c6d7', 'מפקד כיתה',  TRUE, NOW(), NOW()),
-  ('d2b3c4d5-e6f7-4a8b-9c0d-1e2f3a4b5c6d', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'a3b4c5d6-e7f8-4a9b-0c1d-e2f3a4b5c6d7', 'חובש',       TRUE, NOW(), NOW()),
-  ('e3c4d5e6-f7a8-4b9c-0d1e-2f3a4b5c6d7e', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'a3b4c5d6-e7f8-4a9b-0c1d-e2f3a4b5c6d7', 'נהג',        TRUE, NOW(), NOW()),
-  ('f4d5e6f7-a8b9-4c0d-1e2f-3a4b5c6d7e8f', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'a3b4c5d6-e7f8-4a9b-0c1d-e2f3a4b5c6d7', 'Sniper',     TRUE, NOW(), NOW()),
-  ('a5e6f7a8-b9c0-4d1e-2f3a-4b5c6d7e8f9a', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'a3b4c5d6-e7f8-4a9b-0c1d-e2f3a4b5c6d7', 'מפקד מחלקה', TRUE, NOW(), NOW())
+  ('c1a2b3c4-d5e6-4f7a-8b9c-0d1e2f3a4b5c', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'a3b4c5d6-e7f8-4a9b-0c1d-e2f3a4b5c6d7', 'Squad Commander', TRUE, NOW(), NOW()),
+  ('d2b3c4d5-e6f7-4a8b-9c0d-1e2f3a4b5c6d', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'a3b4c5d6-e7f8-4a9b-0c1d-e2f3a4b5c6d7', 'Medic', TRUE, NOW(), NOW()),
+  ('e3c4d5e6-f7a8-4b9c-0d1e-2f3a4b5c6d7e', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'a3b4c5d6-e7f8-4a9b-0c1d-e2f3a4b5c6d7', 'Driver', TRUE, NOW(), NOW()),
+  ('f4d5e6f7-a8b9-4c0d-1e2f-3a4b5c6d7e8f', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'a3b4c5d6-e7f8-4a9b-0c1d-e2f3a4b5c6d7', 'Sniper', TRUE, NOW(), NOW()),
+  ('a5e6f7a8-b9c0-4d1e-2f3a-4b5c6d7e8f9a', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'a3b4c5d6-e7f8-4a9b-0c1d-e2f3a4b5c6d7', 'Platoon Commander', TRUE, NOW(), NOW())
 ON CONFLICT DO NOTHING;
 
 -- -----------------------------------------------------------------------------
@@ -331,7 +348,7 @@ INSERT INTO constraint_rules (id, space_id, scope_type, scope_id, severity, rule
    'a3b4c5d6-e7f8-4a9b-0c1d-e2f3a4b5c6d7',
    'soft',
    'required_qualification_per_shift',
-   '{"qualification_name": "מפקד כיתה", "task_name": "תל 7", "min_count": 1}',
+   '{"qualification_name": "Squad Commander", "task_name": "תל 7", "min_count": 1}',
    'a1b2c3d4-e5f6-4a7b-8c9d-e0f1a2b3c4d5'),
   ('d5e6f7a8-b9c0-4d1e-2f3a-4b5c6d7e8f9a',
    'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9',
@@ -339,7 +356,7 @@ INSERT INTO constraint_rules (id, space_id, scope_type, scope_id, severity, rule
    'a3b4c5d6-e7f8-4a9b-0c1d-e2f3a4b5c6d7',
    'soft',
    'preferred_qualification_per_shift',
-   '{"qualification_name": "חובש", "task_name": "תל 9", "min_count": 1}',
+   '{"qualification_name": "Medic", "task_name": "תל 9", "min_count": 1}',
    'a1b2c3d4-e5f6-4a7b-8c9d-e0f1a2b3c4d5')
 ON CONFLICT DO NOTHING;
 
@@ -408,13 +425,13 @@ ON CONFLICT DO NOTHING;
 -- -----------------------------------------------------------------------------
 
 UPDATE tasks
-SET qualification_requirements = '[{"qualification_name": "מפקד כיתה", "count": 1, "mandatory": true}]'::jsonb,
+SET qualification_requirements = '[{"qualification_name": "Squad Commander", "count": 1, "mandatory": true}]'::jsonb,
     updated_at = NOW()
 WHERE id = 'b7df56c7-e6d9-4584-8c87-11a2a5a1a576'
   AND space_id = 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9';
 
 UPDATE tasks
-SET qualification_requirements = '[{"qualification_name": "חובש", "count": 1, "mandatory": false}]'::jsonb,
+SET qualification_requirements = '[{"qualification_name": "Medic", "count": 1, "mandatory": false}]'::jsonb,
     updated_at = NOW()
 WHERE id = 'a899c417-9e35-4afd-9572-78eab9ee0788'
   AND space_id = 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9';
@@ -438,6 +455,7 @@ INSERT INTO group_memberships (id, space_id, group_id, person_id, is_owner, join
   ('d7e8f9a0-b1c2-4d3e-8f4a-5b6c7d8e9f0a', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'c6d7e8f9-a0b1-4c2d-8e3f-4a5b6c7d8e9f', 'a0b1c2d3-e4f5-4a6b-7c8d-e9f0a1b2c3d4', TRUE,  NOW()),
   ('e8f9a0b1-c2d3-4e4f-9a5b-6c7d8e9f0a1b', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'c6d7e8f9-a0b1-4c2d-8e3f-4a5b6c7d8e9f', 'b4c5d6e7-f8a9-4b0c-1d2e-f3a4b5c6d7e8', FALSE, NOW()),
   ('f9a0b1c2-d3e4-4f5a-8b6c-7d8e9f0a1b2c', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'c6d7e8f9-a0b1-4c2d-8e3f-4a5b6c7d8e9f', 'c5d6e7f8-a9b0-4c1d-2e3f-a4b5c6d7e8f9', FALSE, NOW()),
+  ('c0d1e2f3-a4b5-4c6d-8e7f-9a0b1c2d3e4f', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'c6d7e8f9-a0b1-4c2d-8e3f-4a5b6c7d8e9f', 'd4e5f6a7-b8c9-4d0e-1f2a-b3c4d5e6f7a8', FALSE, NOW()),
   ('a0b1c2d3-e4f5-4a6b-8c7d-9e0f1a2b3c4d', 'e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9', 'c6d7e8f9-a0b1-4c2d-8e3f-4a5b6c7d8e9f', 'd6e7f8a9-b0c1-4d2e-3f4a-b5c6d7e8f9a0', FALSE, NOW())
 ON CONFLICT DO NOTHING;
 

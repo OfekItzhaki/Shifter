@@ -4,6 +4,7 @@ const BASE        = process.env.E2E_BASE_URL   ?? "http://localhost:3000";
 const ADMIN_EMAIL = process.env.E2E_ADMIN_EMAIL ?? "admin@demo.local";
 const ADMIN_PASS  = process.env.E2E_ADMIN_PASS  ?? "Demo1234!";
 const API_URL     = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000";
+const ANALYTICS_CONSENT_KEY = "shifter_analytics_consent";
 
 /**
  * Log in as the demo admin using structural selectors (locale-agnostic).
@@ -18,7 +19,15 @@ export async function loginAsUser(
   email: string,
   password: string = ADMIN_PASS
 ): Promise<void> {
+  await page.context().clearCookies();
+  await page.goto(BASE, { waitUntil: "domcontentloaded" });
+  await page.evaluate((consentKey) => {
+    window.localStorage.clear();
+    window.sessionStorage.clear();
+    window.localStorage.setItem(consentKey, "declined");
+  }, ANALYTICS_CONSENT_KEY);
   await page.goto(`${BASE}/login`);
+  await page.locator('input[autocomplete="username"]').waitFor({ state: "visible", timeout: 10000 });
   await page.locator('input[autocomplete="username"]').fill(email);
   await page.locator('input[type="password"]').fill(password);
   await page.locator('button[type="submit"]').click();
@@ -35,6 +44,9 @@ export async function loginAsUser(
       await ensureCurrentSpace(page);
     }
   }
+
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await ensureCurrentSpace(page);
 }
 
 async function ensureCurrentSpace(page: Page): Promise<void> {

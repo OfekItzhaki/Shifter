@@ -73,6 +73,10 @@ apiClient.interceptors.request.use((config) => {
     const token = localStorage.getItem("access_token");
     if (token) config.headers.Authorization = `Bearer ${token}`;
   }
+  if (config.method?.toLowerCase() === "get") {
+    config.headers["Cache-Control"] = "no-store";
+    config.headers.Pragma = "no-cache";
+  }
   return config;
 });
 
