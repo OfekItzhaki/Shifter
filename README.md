@@ -112,13 +112,21 @@ cd apps/api && dotnet test
 
 ## Deployment
 
-1. Build Docker images: `docker compose -f infra/compose/docker-compose.yml build`
-2. Push images to your container registry
-3. Set all required environment variables in your hosting environment
-4. Run DB migrations against the production database
-5. Deploy containers - health check endpoint: `GET /health`
+Use the current release path:
 
-The API returns structured JSON logs (Serilog) suitable for ingestion by Seq, ELK, or CloudWatch.
+1. Land work on `develop`.
+2. Deploy `develop` to staging with the `Deploy Staging` workflow or
+   `infra/scripts/deploy-compose.sh`.
+3. Run hosted smoke and manual staging smoke.
+4. Open the final `develop` to `main` PR only after the release gate passes.
+5. Deploy production from `main` with the production-only `Deploy to VPS`
+   workflow.
+
+Start with [Develop to main release gate](docs/DEVELOP-TO-MAIN-RELEASE-GATE.md)
+and [Hosted VPS MVP launch checklist](docs/HOSTED-VPS-MVP-LAUNCH-CHECKLIST.md).
+
+The API exposes `GET /ready` for deploy readiness, `GET /health` for external
+monitoring, and structured JSON logs suitable for Seq, ELK, or CloudWatch.
 
 For the full documentation menu, start at [docs/README.md](docs/README.md).
 
@@ -167,7 +175,7 @@ shifter/
 
 ## Contributing
 
-1. Branch from `main` using `feat/` or `fix/` prefix
+1. Branch from `develop` using a `feat/` or `fix/` prefix
 2. Follow [Conventional Commits](https://www.conventionalcommits.org/) format
 3. Run `npx tsc --noEmit` and `dotnet build` before committing
 4. Open a PR with a clear description of the change

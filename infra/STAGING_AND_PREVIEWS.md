@@ -258,13 +258,23 @@ Tradeoffs:
 
 Best long-term option if PR previews become important. Keep production stable on the main VPS and run staging/previews on a cheaper separate VPS.
 
-## What to Automate Next
+## Current Automation
 
-Add GitHub Actions:
+GitHub Actions are now in place for the first production-ready release path:
 
-- PR: run web typecheck, API tests, solver tests where available
-- push to `develop`: SSH deploy staging
-- push to `main`: SSH deploy production, protected by a GitHub Environment approval
+- `CI` runs API build/tests, frontend typecheck/lint/build, and solver
+  lint/tests.
+- `Customer-Hosted Preflight` runs the customer-hosted package and deployment
+  harnesses.
+- `Deploy Staging` deploys `develop` to the staging host after staging
+  variables/secrets are configured. Push-triggered deploys stay disabled while
+  `ENABLE_STAGING_DEPLOY=false`; manual dispatch must still use `develop`.
+- `Deploy to VPS` is production-only and fails fast unless it runs from `main`.
+
+The remaining automation setup before the final `develop` to `main` PR is not
+new workflow code. It is configuring the real staging URLs, dedicated
+`STAGING_*` SSH secrets, and running a successful `Deploy Staging` workflow for
+the exact candidate commit.
 
 Future front-door hardening:
 

@@ -170,4 +170,8 @@ True high availability needs:
 - a Redis/session strategy that works across instances
 - tested failover
 
-Do this later when uptime requirements justify the extra cost and complexity. The next best step after this runbook is automated GitHub Actions deploys for `develop` and `main`.
+Do this later when uptime requirements justify the extra cost and complexity.
+The current practical release path is already automated through GitHub Actions:
+`develop` deploys through `Deploy Staging` once staging variables/secrets are
+configured, and `main` deploys through the production-only `Deploy to VPS`
+workflow after staging evidence is complete.
