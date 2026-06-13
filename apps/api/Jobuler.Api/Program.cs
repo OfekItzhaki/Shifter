@@ -113,12 +113,20 @@ builder.Services.AddSingleton<Fido2NetLib.IFido2>(sp =>
 {
     var config = sp.GetRequiredService<IConfiguration>();
     var frontendUrl = config["App:FrontendBaseUrl"]?.TrimEnd('/');
+    var webAuthnOrigin = config["WebAuthn:Origin"]?.TrimEnd('/');
     var origins = builder.Environment.IsDevelopment()
-        ? new[] { "http://localhost:3000", "http://localhost:3015", frontendUrl }
+        ? new[] { "http://localhost:3000", "http://localhost:3015", frontendUrl, webAuthnOrigin }
             .Where(origin => !string.IsNullOrWhiteSpace(origin))
             .Select(origin => origin!)
             .ToHashSet(StringComparer.OrdinalIgnoreCase)
-        : new HashSet<string> { frontendUrl ?? "https://localhost" };
+        : new[] { webAuthnOrigin, frontendUrl }
+            .Where(origin => !string.IsNullOrWhiteSpace(origin))
+            .Select(origin => origin!)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+    if (origins.Count == 0)
+    {
+        origins.Add("https://localhost");
+    }
     var fido2Config = new Fido2NetLib.Fido2Configuration
     {
         ServerDomain = config["WebAuthn:RelyingPartyId"] ?? "localhost",
