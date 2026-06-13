@@ -87,7 +87,7 @@ function Start-MockHttpServer {
                             $body = "<!doctype html><html><body>Shifter $path</body></html>"
                         }
                         elseif ($path -eq "/manifest.json") {
-                            $contentType = "application/json"
+                            $contentType = "application/manifest+json"
                             $body = '{"name":"Shifter","short_name":"Shifter","display":"standalone","start_url":"/","icons":[{"src":"/icon.png","sizes":"192x192","type":"image/png"}]}'
                         }
                         elseif ($path -eq "/icon.png") {

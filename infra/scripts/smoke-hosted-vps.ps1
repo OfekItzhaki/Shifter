@@ -101,6 +101,16 @@ function Invoke-SmokeRequest {
     return $response
 }
 
+function Get-SmokeResponseText {
+    param([object]$Response)
+
+    if ($Response.Content -is [byte[]]) {
+        return [System.Text.Encoding]::UTF8.GetString([byte[]]$Response.Content)
+    }
+
+    return [string]$Response.Content
+}
+
 function Assert-JsonStatus {
     param(
         [string]$Url,
@@ -109,7 +119,7 @@ function Assert-JsonStatus {
     )
 
     $response = Invoke-SmokeRequest -Url $Url -Context $Context -ExpectedContentType "json"
-    $body = $response.Content | ConvertFrom-Json
+    $body = Get-SmokeResponseText $response | ConvertFrom-Json
     if ($body.status -ne $ExpectedStatus) {
         throw "$Context expected status '$ExpectedStatus', got '$($body.status)'."
     }
@@ -173,7 +183,7 @@ if (-not $SkipAuthPages) {
 if (-not $SkipPwaChecks) {
     Write-Step "PWA manifest"
     $manifestResponse = Invoke-SmokeRequest -Url (Join-Url $WebBaseUrl "/manifest.json") -Context "PWA manifest" -ExpectedContentType "json"
-    $manifest = $manifestResponse.Content | ConvertFrom-Json
+    $manifest = Get-SmokeResponseText $manifestResponse | ConvertFrom-Json
     if ([string]::IsNullOrWhiteSpace([string]$manifest.name) -or [string]::IsNullOrWhiteSpace([string]$manifest.short_name)) {
         throw "PWA manifest is missing name or short_name."
     }
@@ -194,7 +204,7 @@ if (-not $SkipPwaChecks) {
 
     Write-Step "Service worker"
     $serviceWorker = Invoke-SmokeRequest -Url (Join-Url $WebBaseUrl "/sw.js") -Context "Service worker" -ExpectedContentType "javascript"
-    $serviceWorkerText = [string]$serviceWorker.Content
+    $serviceWorkerText = Get-SmokeResponseText $serviceWorker
     if (-not $serviceWorkerText.Contains("addEventListener")) {
         throw "Service worker response did not look like a service worker script."
     }
