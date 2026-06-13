@@ -49,6 +49,18 @@ exit 0
     if ($LASTEXITCODE -ne 0) {
         throw "Expected bootstrap setup to pass. Output:`n$($bootstrapOutput | Out-String)"
     }
+    $bootstrapText = $bootstrapOutput | Out-String
+    foreach ($pattern in @(
+            "Bootstrap mode intentionally skipped STAGING_WEB_BASE_URL and STAGING_API_BASE_URL.",
+            "Next full setup command:",
+            "-StagingPath /srv/shifter-staging",
+            "-ComposeProjectName shifter-stage",
+            "Keep push deploy disabled until the first staging deploy and smoke pass"
+        )) {
+        if ($bootstrapText -notmatch [regex]::Escape($pattern)) {
+            throw "Bootstrap output missing '$pattern'. Output:`n$bootstrapText"
+        }
+    }
 
     $bootstrapCalls = Get-Content -LiteralPath $callLog -Raw
     foreach ($pattern in @(

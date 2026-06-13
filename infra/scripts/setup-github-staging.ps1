@@ -118,6 +118,16 @@ if ($BootstrapOnly) {
     Write-Host ""
     Write-Host "Bootstrap mode intentionally skipped STAGING_WEB_BASE_URL and STAGING_API_BASE_URL." -ForegroundColor Yellow
     Write-Host "Run this script again without -BootstrapOnly when staging URLs are ready."
+    Write-Host ""
+    Write-Host "Next full setup command:" -ForegroundColor Cyan
+    Write-Host ".\infra\scripts\setup-github-staging.ps1 ``"
+    Write-Host "  -WebBaseUrl <staging-web-url> ``"
+    Write-Host "  -ApiBaseUrl <staging-api-url> ``"
+    Write-Host "  -StagingPath $StagingPath ``"
+    Write-Host "  -ComposeProjectName $ComposeProjectName ``"
+    Write-Host "  -Apply"
+    Write-Host ""
+    Write-Host "Keep push deploy disabled until the first staging deploy and smoke pass; add -EnablePushDeploy only after that."
 }
 
 Write-Host ""

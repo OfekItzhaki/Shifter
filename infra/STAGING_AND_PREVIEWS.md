@@ -188,14 +188,18 @@ gh secret set STAGING_SSH_KEY --repo OfekItzhaki/Shifter
 gh secret set STAGING_PORT --repo OfekItzhaki/Shifter
 ```
 
-Current GitHub setup status as of June 12, 2026:
+Current GitHub setup status as of June 13, 2026:
 
-- no repository variables are configured yet
-- no `staging` environment is configured yet
-- the repository has `VPS_*` secrets for the existing VPS path, but no
-  dedicated `STAGING_*` secrets yet
+- the GitHub `staging` environment exists
+- bootstrap repository variables are configured:
+  `ENABLE_STAGING_DEPLOY=false`, `STAGING_PATH=/opt/shifter-staging`, and
+  `STAGING_COMPOSE_PROJECT_NAME=shifter-staging`
+- `STAGING_WEB_BASE_URL` and `STAGING_API_BASE_URL` are still missing until
+  staging DNS/URLs are allocated
+- the repository has `VPS_*` secrets for the existing VPS path, but no dedicated
+  `STAGING_*` secrets yet
 - therefore push-triggered staging deploys intentionally skip until staging is
-  provisioned and `ENABLE_STAGING_DEPLOY=true`
+  provisioned, staging URLs are configured, and `ENABLE_STAGING_DEPLOY=true`
 
 ## Production Deploy Rule
 
