@@ -390,6 +390,9 @@ packaging, and self-service export package validation readiness.
   June 13, 2026 after folding the GitHub release-control checks into the main
   release readiness audit, so a single `develop` to `main` gate now fails on
   missing staging setup or weak production branch controls.
+- The release readiness audit now also requires a successful `Deploy Staging`
+  run for the current `develop` HEAD, preventing a final release PR before the
+  exact candidate has reached staging.
 - `infra/scripts/setup-github-staging.ps1` now supports `-BootstrapOnly`, which
   creates the GitHub `staging` environment plus safe path/project/deploy-disabled
   defaults without inventing staging URLs.
@@ -416,10 +419,12 @@ packaging, and self-service export package validation readiness.
   requires pull requests, and requires the expected status checks; `develop`
   blocks deletion/force-push.
 - `infra/scripts/check-release-readiness.ps1 -SkipHostedSmoke` currently fails
-  as intended until GitHub staging URL setup is completed:
-  `STAGING_WEB_BASE_URL` and `STAGING_API_BASE_URL` are missing. It confirms the
-  latest successful CI run `27449458650` on `031542c`, customer-hosted preflight
-  run `27449458662` on `031542c`, and passing live GitHub release controls.
+  as intended until GitHub staging URL setup and deployment are completed:
+  `STAGING_WEB_BASE_URL` and `STAGING_API_BASE_URL` are missing, and no
+  successful staging deploy exists for the current candidate yet. It confirms
+  the latest successful CI run `27449458650` on `031542c`, customer-hosted
+  preflight run `27449458662` on `031542c`, and passing live GitHub release
+  controls.
 - `infra/scripts/test-customer-hosted-package.ps1 -EnvFile infra/compose/.env.customer.example`
   passed locally on June 12, 2026 after adding the release readiness audit
   harness to the customer-hosted package preflight.

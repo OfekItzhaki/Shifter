@@ -30,7 +30,8 @@ Use this checklist before opening or merging a `develop` to `main` PR.
 
 - Staging is deployed from `develop`.
 - Release readiness audit has no failures, including staging setup, latest CI
-  evidence, customer-hosted preflight evidence, and GitHub release controls:
+  evidence, customer-hosted preflight evidence, latest successful staging deploy,
+  and GitHub release controls:
 
   ```powershell
   .\infra\scripts\check-release-readiness.ps1 -SkipHostedSmoke
@@ -100,7 +101,8 @@ As of June 13, 2026:
   build.
 - The release readiness audit script is in place and its harness passes. It now
   includes the GitHub release-control audit so the `develop` to `main` gate
-  fails if `main` does not require PRs/status checks.
+  fails if `main` does not require PRs/status checks. It also fails until a
+  successful `Deploy Staging` run exists for the current `develop` HEAD.
 - The GitHub staging setup helper is in place and dry-run/apply behavior is
   covered by a local harness. It also supports `-BootstrapOnly` to create the
   `staging` environment and safe non-URL defaults before staging DNS/URLs are

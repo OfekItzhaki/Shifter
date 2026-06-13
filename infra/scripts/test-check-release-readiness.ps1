@@ -71,7 +71,12 @@ if ($joined -like "api repos/*/rulesets*") {
 }
 
 if ($joined -like "run list*") {
-    '[{"databaseId":101,"workflowName":"CI","status":"completed","conclusion":"success","headSha":"abcdef1234567890","createdAt":"2026-06-12T00:00:00Z","url":"https://example.invalid/ci","event":"workflow_dispatch"},{"databaseId":102,"workflowName":"Customer-Hosted Preflight","status":"completed","conclusion":"success","headSha":"abcdef1234567890","createdAt":"2026-06-12T00:00:00Z","url":"https://example.invalid/preflight","event":"push"}]'
+    if ($mode -eq "ready") {
+        '[{"databaseId":101,"workflowName":"CI","status":"completed","conclusion":"success","headSha":"abcdef1234567890","createdAt":"2026-06-12T00:00:00Z","url":"https://example.invalid/ci","event":"workflow_dispatch"},{"databaseId":102,"workflowName":"Customer-Hosted Preflight","status":"completed","conclusion":"success","headSha":"abcdef1234567890","createdAt":"2026-06-12T00:00:00Z","url":"https://example.invalid/preflight","event":"push"},{"databaseId":103,"workflowName":"Deploy Staging","status":"completed","conclusion":"success","headSha":"abcdef1234567890","createdAt":"2026-06-12T00:00:00Z","url":"https://example.invalid/staging","event":"workflow_dispatch"}]'
+    }
+    else {
+        '[{"databaseId":101,"workflowName":"CI","status":"completed","conclusion":"success","headSha":"abcdef1234567890","createdAt":"2026-06-12T00:00:00Z","url":"https://example.invalid/ci","event":"workflow_dispatch"},{"databaseId":102,"workflowName":"Customer-Hosted Preflight","status":"completed","conclusion":"success","headSha":"abcdef1234567890","createdAt":"2026-06-12T00:00:00Z","url":"https://example.invalid/preflight","event":"push"},{"databaseId":103,"workflowName":"Deploy Staging","status":"completed","conclusion":"skipped","headSha":"abcdef1234567890","createdAt":"2026-06-12T00:00:00Z","url":"https://example.invalid/staging","event":"push"}]'
+    }
     exit 0
 }
 
@@ -95,6 +100,7 @@ exit 1
             "[PASS] GitHub staging environment exists.",
             "[PASS] Repository variable STAGING_WEB_BASE_URL is configured.",
             "[PASS] Dedicated STAGING_* SSH secrets are configured.",
+            "[PASS] Latest successful staging deploy found:",
             "[PASS] main requires pull requests.",
             "[PASS] main requires expected status checks:",
             "[PASS] develop blocks deletion and force pushes.",
@@ -115,6 +121,7 @@ exit 1
             "[FAIL] GitHub staging environment is missing.",
             "[FAIL] Repository variable STAGING_WEB_BASE_URL is missing.",
             "[WARN] Using VPS_* SSH secrets as staging fallback",
+            "[FAIL] No successful staging deploy run found on develop.",
             "[FAIL] main must require pull requests before production merges.",
             "[FAIL] main must require expected status checks before production merges:",
             "[WARN] develop does not have active no-delete/no-force-push rules.",

@@ -20,6 +20,7 @@ $ErrorActionPreference = "Stop"
 
 $failed = 0
 $warned = 0
+$currentHeadSha = ""
 
 function Write-Check {
     param(
@@ -194,6 +195,11 @@ if (-not $SkipGitCheck) {
     else {
         Write-Check WARN "Local working tree is not clean."
     }
+
+    $currentHeadSha = (& git rev-parse HEAD 2>$null).Trim()
+    if ($LASTEXITCODE -ne 0) {
+        $currentHeadSha = ""
+    }
 }
 
 if (-not $SkipGitHubCheck) {
@@ -274,6 +280,19 @@ if (-not $SkipGitHubCheck) {
         }
         else {
             Write-Check FAIL "No successful customer-hosted preflight run found on $Branch."
+        }
+
+        $latestStagingDeploy = $runs | Where-Object {
+            $_.workflowName -eq "Deploy Staging" -and $_.status -eq "completed" -and $_.conclusion -eq "success"
+        } | Select-Object -First 1
+        if ($null -eq $latestStagingDeploy) {
+            Write-Check FAIL "No successful staging deploy run found on $Branch."
+        }
+        elseif (-not [string]::IsNullOrWhiteSpace($currentHeadSha) -and [string]$latestStagingDeploy.headSha -ne $currentHeadSha) {
+            Write-Check FAIL "Latest successful staging deploy $($latestStagingDeploy.databaseId) is for $($latestStagingDeploy.headSha.Substring(0, 7)); expected current HEAD $($currentHeadSha.Substring(0, 7))."
+        }
+        else {
+            Write-Check PASS "Latest successful staging deploy found: $($latestStagingDeploy.databaseId) ($($latestStagingDeploy.headSha.Substring(0, 7)))."
         }
 
         if (-not $SkipReleaseControlCheck) {
