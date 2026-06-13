@@ -9,10 +9,10 @@ and rotate between missions and home-leave. It provides:
 """
 from ortools.sat.python import cp_model
 from models.solver_input import (
-    SolverInput, TaskSlot, HomeLeaveConfig, PersonEligibility, PresenceWindow, CumulativeTracking,
+    TaskSlot, HomeLeaveConfig, PersonEligibility, PresenceWindow, CumulativeTracking,
     SpecialDay,
 )
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
 import logging
 
 logger = logging.getLogger(__name__)
@@ -524,7 +524,6 @@ def add_home_leave_eligibility_preference(
         return []
 
     penalties = []
-    num_people = len(people)
     threshold_seconds = int(config.eligibility_threshold_hours * 3600)
     leave_duration_hours_int = int(config.leave_duration_hours)
     horizon_duration_seconds = horizon_end_ts - horizon_start_ts

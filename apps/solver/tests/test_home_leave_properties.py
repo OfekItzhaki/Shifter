@@ -10,13 +10,12 @@ import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from datetime import date, datetime, timezone, timedelta
-from hypothesis import given, settings, assume, HealthCheck
+from hypothesis import given, settings, assume
 from hypothesis import strategies as st
 
 from models.solver_input import (
     SolverInput, PersonEligibility, TaskSlot, StabilityWeights, HomeLeaveConfig,
-    PresenceWindow, AvailabilityWindow, HardConstraint, SoftConstraint,
-    BaselineAssignment, FairnessCounters, SpecialDay,
+    SpecialDay,
 )
 from solver.engine import solve
 

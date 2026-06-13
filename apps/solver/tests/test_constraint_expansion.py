@@ -3,7 +3,9 @@ Tests for expand_role_constraints and expand_group_constraints.
 Validates: Tasks 23.1, 23.2
 Feature: schedule-table-autoschedule-role-constraints
 """
-import sys, os, logging
+import sys
+import os
+import logging
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from models.solver_input import HardConstraint, SoftConstraint, PersonEligibility

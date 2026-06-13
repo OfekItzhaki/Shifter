@@ -1,19 +1,18 @@
 """
 Tests for individual hard constraint functions.
 """
-import sys, os
+import sys
+import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from datetime import datetime, timezone
 from ortools.sat.python import cp_model
-from models.solver_input import TaskSlot, HardConstraint, PersonEligibility
+from models.solver_input import TaskSlot, PersonEligibility
 from solver.constraints import (
     add_no_overlap_constraints,
     add_no_consecutive_double_shift_constraints,
     add_min_rest_constraints,
     add_qualification_constraints,
-    add_role_constraints,
-    add_max_task_type_per_period_constraints,
 )
 
 

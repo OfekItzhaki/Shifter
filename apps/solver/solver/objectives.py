@@ -14,8 +14,7 @@ All objectives are combined into a single weighted minimization.
 import logging
 from ortools.sat.python import cp_model
 from models.solver_input import SolverInput, TaskSlot
-from solver.constraints import _to_timestamp
-from datetime import date, datetime, timezone
+from datetime import date, datetime
 
 logger = logging.getLogger(__name__)
 

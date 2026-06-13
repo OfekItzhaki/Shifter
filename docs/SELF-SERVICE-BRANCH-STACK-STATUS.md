@@ -5,12 +5,27 @@ holiday-calendar integration, and customer-hosted portability.
 
 ## Current Resume Point
 
-- Active branch: `feat/self-service-client-ready`
-- Current pushed commit:
+- Active integration branch: `develop`
+- `feat/self-service-client-ready` was squash-merged into `develop` by PR
+  `#36` on June 12, 2026 as commit `20fb7d3`.
+- Current pushed `develop` commit:
 
   ```powershell
-  git log -1 --oneline origin/feat/self-service-client-ready
+  git log -1 --oneline origin/develop
   ```
+
+- Current release gate status:
+
+  - Latest `develop` CI for `f8785b2` passed:
+    https://github.com/OfekItzhaki/Shifter/actions/runs/27450194891
+  - Latest `develop` customer-hosted preflight for `f8785b2` passed:
+    https://github.com/OfekItzhaki/Shifter/actions/runs/27450194900
+  - `Deploy Staging` for `f8785b2` was skipped as expected while
+    `ENABLE_STAGING_DEPLOY=false`:
+    https://github.com/OfekItzhaki/Shifter/actions/runs/27450194912
+  - `infra/scripts/check-release-readiness.ps1 -SkipHostedSmoke` still fails
+    as intended until `STAGING_WEB_BASE_URL`, `STAGING_API_BASE_URL`, and a
+    successful staging deploy for the current `develop` head exist.
 
 - Package-relevant CI history:
   https://github.com/OfekItzhaki/Shifter/actions/workflows/customer-hosted-preflight.yml
@@ -18,13 +33,13 @@ holiday-calendar integration, and customer-hosted portability.
 
   ```powershell
   git fetch origin
-  git checkout feat/self-service-client-ready
-  git pull
+  git checkout develop
+  git pull --ff-only
   ```
 
-## Merge Order
+## Integration Status
 
-Merge and test in this order:
+The historical branch stack was:
 
 1. `feat/manual-self-service-hardening`
 2. `feat/self-service-holiday-integration`
@@ -32,15 +47,16 @@ Merge and test in this order:
 4. `feat/self-service-portability-export-readiness`
 5. `feat/self-service-client-ready`
 
-The order matters because manual self-service defines the member/admin workflow,
-holiday calendars add scheduling semantics, and portable isolation packages the
-result for customer-owned infrastructure. The final export-readiness branch
-keeps a separate PR boundary for self-service export coverage and the first
-holiday-aware manual self-service labels/warnings.
+That stack is now represented in `develop` through the PR `#36` squash merge.
+Do not mechanically merge those old branch tips into `develop`: because PR `#36`
+was squash-merged and later release-gate commits landed on `develop`, raw
+ahead/behind counts make the old branches look unmerged and their diffs include
+removing newer staging/release-readiness work. If a later audit finds a specific
+missing change, cherry-pick that exact commit or reapply the exact patch after
+review, then verify it from `develop`.
 
-`feat/self-service-client-ready` is the umbrella branch when we want one PR for
-the complete sellable client-ready slice instead of reviewing the stack as
-separate PRs.
+The next release branch should be `develop` to `main` only after staging URLs,
+staging deployment, hosted smoke, and manual user-flow evidence are complete.
 
 ## Branches
 
@@ -495,8 +511,17 @@ Remaining manual/product check:
 
 ## PR Opening Notes
 
-GitHub CLI is not installed in this local environment, so open the PRs using the
-URLs above.
+PR `#36` already merged the client-ready stack into `develop`.
 
-When creating the PRs, use each linked PR summary file for the title and
-description. Keep the PR bases stacked in the same order as this document.
+Do not open or merge a `develop` to `main` PR until the release readiness gate
+passes against the current `develop` head:
+
+```powershell
+infra/scripts/check-release-readiness.ps1 -SkipHostedSmoke
+```
+
+That gate currently requires staging URL variables and a successful staging
+deploy for the exact candidate commit. After staging deploy succeeds, complete
+`docs/STAGING-MANUAL-SMOKE-EVIDENCE.md`, verify it with
+`infra/scripts/check-staging-smoke-evidence.ps1`, and run the hosted smoke
+against the deployed staging or production URLs before moving to `main`.

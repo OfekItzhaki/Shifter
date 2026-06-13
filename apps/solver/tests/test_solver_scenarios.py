@@ -13,13 +13,14 @@ Scenarios tested:
   9. Fairness: hated tasks distributed across people
   10. Stability: baseline assignments preserved when possible
 """
-import sys, os
+import sys
+import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from datetime import date, datetime, timezone, timedelta
+from datetime import date, datetime, timezone
 from models.solver_input import (
     SolverInput, PersonEligibility, TaskSlot, StabilityWeights,
-    HardConstraint, SoftConstraint, BaselineAssignment, FairnessCounters,
+    HardConstraint, BaselineAssignment, FairnessCounters,
     AvailabilityWindow, PresenceWindow,
 )
 from solver.engine import solve

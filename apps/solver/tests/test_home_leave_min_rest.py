@@ -13,7 +13,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from datetime import date, datetime, timezone
 from models.solver_input import (
     SolverInput, PersonEligibility, TaskSlot, StabilityWeights,
-    BaselineAssignment, FairnessCounters, HardConstraint, HomeLeaveConfig
+    HardConstraint, HomeLeaveConfig
 )
 from solver.engine import solve
 
@@ -304,7 +304,6 @@ class TestMinRestHardConflictReporting:
         # The solver returns feasible (partial), but if we force timed_out with 0 assignments
         # we can't easily do that. Instead, let's verify the conflict analysis logic directly.
         from solver.engine import _build_hard_conflicts
-        from models.solver_input import SolverInput
 
         people = [make_person("p1")]
         slots = [

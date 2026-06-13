@@ -4,7 +4,7 @@ Each function receives the model, decision variables, and relevant input data,
 and adds the appropriate constraints to the model.
 """
 from ortools.sat.python import cp_model
-from models.solver_input import SolverInput, TaskSlot, HardConstraint, SoftConstraint
+from models.solver_input import TaskSlot, HardConstraint
 from datetime import datetime, timezone
 import logging
 
@@ -543,8 +543,6 @@ def add_locked_slot_constraints(
     baseline_map: dict[str, set[str]] = {}
     for ba in baseline_assignments:
         baseline_map.setdefault(ba.slot_id, set()).add(ba.person_id)
-
-    person_id_to_idx = {person.person_id: idx for idx, person in enumerate(people)}
 
     for s_idx, slot in enumerate(slots):
         if slot.slot_id not in locked_slot_ids:

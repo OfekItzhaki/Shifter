@@ -9,7 +9,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from datetime import date, datetime, timezone
 from models.solver_input import (
     SolverInput, PersonEligibility, TaskSlot, StabilityWeights,
-    BaselineAssignment, FairnessCounters
+    BaselineAssignment
 )
 from solver.engine import solve
 

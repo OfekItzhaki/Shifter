@@ -84,7 +84,7 @@ def main():
     print("\nRunning solver...")
     result = solve(solver_input)
 
-    print(f"\nResult:")
+    print("\nResult:")
     print(f"  feasible    = {result.feasible}")
     print(f"  timed_out   = {result.timed_out}")
     print(f"  assignments = {len(result.assignments)}")
@@ -107,7 +107,7 @@ def main():
         print(f"  {f}")
 
     # Assertions
-    assert result.feasible, f"FAIL: expected feasible=True, got feasible=False"
+    assert result.feasible, "FAIL: expected feasible=True, got feasible=False"
     assert len(result.assignments) == 2, \
         f"FAIL: expected 2 assignments, got {len(result.assignments)}"
     assert len(result.uncovered_slot_ids) == 0, \

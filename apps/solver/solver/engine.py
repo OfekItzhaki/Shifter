@@ -32,7 +32,7 @@ from solver.home_leave import (
 )
 from solver.objectives import build_objective
 from solver.i18n import t
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
 import os
 import time
 import logging
@@ -482,7 +482,7 @@ def _compute_stability(solver, assign, input: SolverInput, feasible) -> Stabilit
     baseline_set = {(a.slot_id, a.person_id) for a in input.baseline_assignments}
     buckets = {0: 0, 1: 0, 2: 0}  # 0=today+tomorrow, 1=days3-4, 2=days5-7
 
-    for s_idx, slot in enumerate(slots := input.task_slots):
+    for s_idx, slot in enumerate(input.task_slots):
         weight = _stability_weight(slot, horizon_start, input.stability_weights)
         for p_idx, person in enumerate(input.people):
             assigned = solver.value(assign[(s_idx, p_idx)]) == 1
@@ -504,7 +504,6 @@ def _compute_stability(solver, assign, input: SolverInput, feasible) -> Stabilit
 
 
 def _compute_fairness(solver, assign, input: SolverInput, feasible) -> list[FairnessMetrics]:
-    burden_map = {"hated": True, "disliked": False}
     result = []
     for p_idx, person in enumerate(input.people):
         hated = disliked = total = 0

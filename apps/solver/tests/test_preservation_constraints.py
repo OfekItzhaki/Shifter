@@ -21,16 +21,12 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from datetime import date, datetime, timezone, timedelta
 from hypothesis import given, settings, assume, HealthCheck
 from hypothesis import strategies as st
-import pytest
 
 from models.solver_input import (
-    SolverInput, PersonEligibility, TaskSlot, StabilityWeights, HomeLeaveConfig,
-    PresenceWindow, AvailabilityWindow, HardConstraint, SoftConstraint,
-    BaselineAssignment, FairnessCounters, CumulativeTracking,
+    SolverInput, PersonEligibility, TaskSlot, StabilityWeights, AvailabilityWindow, HardConstraint,
 )
 from models.solver_output import SolverOutput
 from solver.engine import solve
-from solver.constraints import add_min_rest_constraints, _to_timestamp
 
 
 # ─── Constants ────────────────────────────────────────────────────────────────
@@ -587,7 +583,7 @@ class TestPreservationTimedOutDraftCreation:
         **Validates: Requirements 3.6**
         """
         from models.solver_output import (
-            SolverOutput, AssignmentResult, StabilityMetrics, FairnessMetrics
+            AssignmentResult, StabilityMetrics
         )
 
         # Construct a timed-out output with partial valid assignments

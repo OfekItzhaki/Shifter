@@ -30,18 +30,14 @@ import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from datetime import date, datetime, timezone, timedelta
-from hypothesis import given, settings, assume, HealthCheck
+from hypothesis import given, settings
 from hypothesis import strategies as st
-import pytest
 
 from models.solver_input import (
     SolverInput, PersonEligibility, TaskSlot, StabilityWeights, HomeLeaveConfig,
-    PresenceWindow, AvailabilityWindow, HardConstraint, SoftConstraint,
-    BaselineAssignment, FairnessCounters, CumulativeTracking,
+    PresenceWindow, HardConstraint, CumulativeTracking,
 )
-from models.solver_output import SolverOutput
 from solver.engine import solve
-from solver.home_leave import add_home_leave_eligibility_preference
 
 
 # ─── Constants ────────────────────────────────────────────────────────────────
