@@ -90,11 +90,12 @@ Use this checklist before opening or merging a `develop` to `main` PR.
 
 As of June 13, 2026:
 
-- `develop` is the current integration branch and has green CI evidence for
-  commit `88d69eb` (`fix(vps): decode hosted smoke response bytes`): broad
-  `CI` run `27453845590` passed and `Customer-Hosted Preflight` run
-  `27453845593` passed. `Deploy Staging` run `27453845592` skipped as expected
-  while staging deploy is disabled.
+- `develop` is the current integration branch and has green current-head CI
+  evidence for commit `fd9481b`
+  (`test(release): require current-head ci evidence`): broad `CI` run
+  `27454705062` passed and `Customer-Hosted Preflight` run `27454705066`
+  passed. `Deploy Staging` run `27454705063` skipped as expected while staging
+  deploy is disabled.
 - Local verification against a fresh migrated/seeded PostgreSQL database passed
   for the current `develop` head:
   - `dotnet build apps\api\Jobuler.Api\Jobuler.Api.csproj`
@@ -120,9 +121,11 @@ As of June 13, 2026:
   which means the hosted API has not yet been deployed to the readiness-probe
   build.
 - The release readiness audit script is in place and its harness passes. It now
-  includes the GitHub release-control audit so the `develop` to `main` gate
-  fails if `main` does not require PRs/status checks. It also fails until a
-  successful `Deploy Staging` run exists for the current `develop` HEAD.
+  requires successful broad `CI` and `Customer-Hosted Preflight` runs for the
+  current candidate HEAD, includes the GitHub release-control audit so the
+  `develop` to `main` gate fails if `main` does not require PRs/status checks,
+  and fails until a successful `Deploy Staging` run exists for the current
+  `develop` HEAD.
 - The GitHub staging setup helper is in place and dry-run/apply behavior is
   covered by a local harness. It also supports `-BootstrapOnly` to create the
   `staging` environment and safe non-URL defaults before staging DNS/URLs are

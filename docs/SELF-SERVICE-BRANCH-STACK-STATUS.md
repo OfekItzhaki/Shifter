@@ -17,14 +17,14 @@ holiday-calendar integration, and customer-hosted portability.
   Latest verified value on June 13, 2026:
 
   ```text
-  88d69eb fix(vps): decode hosted smoke response bytes
+  fd9481b test(release): require current-head ci evidence
   ```
 
 - Current release gate status:
 
-  - Latest checked `develop` runs for `88d69eb`: `CI` run `27453845590`
-    passed, `Customer-Hosted Preflight` run `27453845593` passed, and
-    `Deploy Staging` run `27453845592` skipped as expected.
+  - Latest checked `develop` runs for `fd9481b`: `CI` run `27454705062`
+    passed, `Customer-Hosted Preflight` run `27454705066` passed, and
+    `Deploy Staging` run `27454705063` skipped as expected.
   - `Deploy Staging` is expected to skip while
     `ENABLE_STAGING_DEPLOY=false`.
   - The strict release readiness audit with
@@ -32,6 +32,9 @@ holiday-calendar integration, and customer-hosted portability.
     `STAGING_WEB_BASE_URL`, `STAGING_API_BASE_URL`, dedicated `STAGING_*` SSH
     secrets, and a successful staging deploy for the current `develop` head
     exist.
+  - The release readiness audit now rejects stale broad `CI` and
+    `Customer-Hosted Preflight` evidence; both must pass for the current
+    candidate HEAD.
   - Current local user-flow verification passed against a fresh migrated/seeded
     database: API build, web lint with 0 errors, full
     `e2e/self-service.browser.spec.ts` browser suite with 15 passed tests, and

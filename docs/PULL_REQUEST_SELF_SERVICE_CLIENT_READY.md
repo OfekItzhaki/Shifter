@@ -550,12 +550,15 @@ packaging, and self-service export package validation readiness.
 - `node_modules\\.bin\\vitest.cmd run __tests__\\support\\contact.test.ts`
   passed, covering configured/fallback support email links and guarding
   product support entry points against hardcoded hosted support mailboxes.
-- Current `develop` verification on June 13, 2026 passed for commit `88d69eb`
-  (`fix(vps): decode hosted smoke response bytes`):
-  - GitHub `CI` run `27453845590` passed.
-  - GitHub `Customer-Hosted Preflight` run `27453845593` passed.
-  - GitHub `Deploy Staging` run `27453845592` skipped as expected while
+- Current `develop` verification on June 13, 2026 passed for commit `fd9481b`
+  (`test(release): require current-head ci evidence`):
+  - GitHub `CI` run `27454705062` passed.
+  - GitHub `Customer-Hosted Preflight` run `27454705066` passed.
+  - GitHub `Deploy Staging` run `27454705063` skipped as expected while
     staging deploy is disabled.
+  - The strict release readiness audit now rejects stale broad `CI` and
+    `Customer-Hosted Preflight` evidence; both must pass for the current
+    candidate HEAD before the final release gate can pass.
   - `dotnet build apps\\api\\Jobuler.Api\\Jobuler.Api.csproj` passed.
   - `npm run lint` from `apps/web` exited with 0 errors and existing warnings.
   - `npx playwright test e2e/self-service.browser.spec.ts --reporter=line`
