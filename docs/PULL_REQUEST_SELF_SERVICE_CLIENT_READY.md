@@ -550,6 +550,22 @@ packaging, and self-service export package validation readiness.
 - `node_modules\\.bin\\vitest.cmd run __tests__\\support\\contact.test.ts`
   passed, covering configured/fallback support email links and guarding
   product support entry points against hardcoded hosted support mailboxes.
+- Current `develop` verification on June 13, 2026 passed for commit `ac067d1`
+  (`fix(self-service): stabilize verified browser flows`):
+  - GitHub `CI` run `27453501011` passed.
+  - GitHub `Customer-Hosted Preflight` run `27453501022` passed.
+  - GitHub `Deploy Staging` run `27453501013` skipped as expected while
+    staging deploy is disabled.
+  - `dotnet build apps\\api\\Jobuler.Api\\Jobuler.Api.csproj` passed.
+  - `npm run lint` from `apps/web` exited with 0 errors and existing warnings.
+  - `npx playwright test e2e/self-service.browser.spec.ts --reporter=line`
+    from `apps/web` passed: 15 passed.
+  - `infra\\scripts\\smoke-self-service-client-ready.ps1` passed against the
+    local API/web stack and a fresh migrated/seeded database.
+- The remaining remote feature branch tips are historical reference branches
+  after the PR `#36` squash merge and later `develop` hardening. Do not merge
+  those tips directly into `develop`; cherry-pick only a specific reviewed
+  patch if a later audit proves it is missing from current `develop`.
 
 ## Remaining Product Checks
 

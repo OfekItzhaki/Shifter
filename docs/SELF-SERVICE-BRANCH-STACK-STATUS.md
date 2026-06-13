@@ -14,16 +14,28 @@ holiday-calendar integration, and customer-hosted portability.
   git log -1 --oneline origin/develop
   ```
 
+  Latest verified value on June 13, 2026:
+
+  ```text
+  ac067d1 fix(self-service): stabilize verified browser flows
+  ```
+
 - Current release gate status:
 
-  - Check the latest `develop` runs in GitHub Actions for `CI`,
-    `Customer-Hosted Preflight`, and `Deploy Staging`.
+  - Latest checked `develop` runs for `ac067d1`: `CI` run `27453501011`
+    passed, `Customer-Hosted Preflight` run `27453501022` passed, and
+    `Deploy Staging` run `27453501013` skipped as expected.
   - `Deploy Staging` is expected to skip while
     `ENABLE_STAGING_DEPLOY=false`.
-  - `infra/scripts/check-release-readiness.ps1 -SkipHostedSmoke` fails as
-    intended until `STAGING_WEB_BASE_URL`, `STAGING_API_BASE_URL`, and a
-    successful staging deploy for the current `develop` head exist. Use
-    `-RequireDedicatedStagingSecrets` for the final `develop` to `main` gate.
+  - The strict release readiness audit with
+    `-RequireDedicatedStagingSecrets -SkipHostedSmoke` fails as intended until
+    `STAGING_WEB_BASE_URL`, `STAGING_API_BASE_URL`, dedicated `STAGING_*` SSH
+    secrets, and a successful staging deploy for the current `develop` head
+    exist.
+  - Current local user-flow verification passed against a fresh migrated/seeded
+    database: API build, web lint with 0 errors, full
+    `e2e/self-service.browser.spec.ts` browser suite with 15 passed tests, and
+    `smoke-self-service-client-ready.ps1` against local API/web.
 
 - Package-relevant CI history:
   https://github.com/OfekItzhaki/Shifter/actions/workflows/customer-hosted-preflight.yml
@@ -52,6 +64,21 @@ ahead/behind counts make the old branches look unmerged and their diffs include
 removing newer staging/release-readiness work. If a later audit finds a specific
 missing change, cherry-pick that exact commit or reapply the exact patch after
 review, then verify it from `develop`.
+
+June 13, 2026 branch audit:
+
+- `origin/feat/self-service-client-ready`
+- `origin/feat/manual-self-service-hardening`
+- `origin/feat/self-service-holiday-integration`
+- `origin/feat/self-service-portability-export-readiness`
+- `origin/feat/self-service-portable-integration`
+- `origin/feat/portable-space-isolation`
+- `origin/feat/holiday-calendars`
+
+All of these remote branch tips compare as stale/pre-squash tips against the
+current `develop` head. Their content diffs would remove current workflows,
+controllers, tests, or release-readiness work. Treat them as historical
+reference branches, not merge candidates.
 
 The next release branch should be `develop` to `main` only after staging URLs,
 staging deployment, hosted smoke, and manual user-flow evidence are complete.

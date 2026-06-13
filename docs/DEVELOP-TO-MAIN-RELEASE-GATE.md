@@ -90,7 +90,19 @@ Use this checklist before opening or merging a `develop` to `main` PR.
 
 As of June 13, 2026:
 
-- `develop` has green CI evidence.
+- `develop` is the current integration branch and has green CI evidence for
+  commit `ac067d1` (`fix(self-service): stabilize verified browser flows`):
+  broad `CI` run `27453501011` passed and `Customer-Hosted Preflight` run
+  `27453501022` passed. `Deploy Staging` run `27453501013` skipped as expected
+  while staging deploy is disabled.
+- Local verification against a fresh migrated/seeded PostgreSQL database passed
+  for the current `develop` head:
+  - `dotnet build apps\api\Jobuler.Api\Jobuler.Api.csproj`
+  - `npm run lint` from `apps/web` with 0 errors and existing warnings
+  - `npx playwright test e2e/self-service.browser.spec.ts --reporter=line`
+    from `apps/web`: 15 passed
+  - `infra/scripts/smoke-self-service-client-ready.ps1` against local API/web:
+    passed
 - The broad `CI` workflow now runs on pushes to `develop` and PRs into
   `develop` or `main`, so release PR status checks can be enforced instead of
   relying only on manual dispatch.
@@ -98,6 +110,10 @@ As of June 13, 2026:
   into `develop` or `main`; it deliberately has no path filter because
   `Package Preflight` is a required release status check.
 - Customer-hosted package verification has passed locally and in GitHub Actions.
+- The historical feature branches are stale stack tips after the PR `#36`
+  squash merge and later `develop` hardening. Do not merge those branch tips
+  directly into `develop`; review and cherry-pick only a specific missing patch
+  if a later audit proves one is absent from current `develop`.
 - The production-hosted API `/health` is healthy, but `/ready` returns 404,
   which means the hosted API has not yet been deployed to the readiness-probe
   build.
@@ -119,8 +135,9 @@ As of June 13, 2026:
   variables are configured with push deploy disabled. The real strict release
   readiness audit currently fails because `STAGING_WEB_BASE_URL`,
   `STAGING_API_BASE_URL`, and dedicated `STAGING_*` SSH secrets are not
-  configured yet. This is the expected blocker before a staging deploy and
-  `develop` to `main` PR.
+  configured yet, and because no successful staging deploy exists for the
+  current `develop` head. This is the expected blocker before a staging deploy
+  and `develop` to `main` PR.
 - The `Deploy Staging` workflow exists, but staging variables and the GitHub
   URLs are not configured yet. It can use existing `VPS_*` secrets as a
   fallback, but dedicated `STAGING_*` secrets are preferred.
