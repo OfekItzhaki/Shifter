@@ -74,6 +74,9 @@ if ($joined -like "run list*") {
     if ($mode -eq "ready") {
         '[{"databaseId":101,"workflowName":"CI","status":"completed","conclusion":"success","headSha":"abcdef1234567890","createdAt":"2026-06-12T00:00:00Z","url":"https://example.invalid/ci","event":"workflow_dispatch"},{"databaseId":102,"workflowName":"Customer-Hosted Preflight","status":"completed","conclusion":"success","headSha":"abcdef1234567890","createdAt":"2026-06-12T00:00:00Z","url":"https://example.invalid/preflight","event":"push"},{"databaseId":103,"workflowName":"Deploy Staging","status":"completed","conclusion":"success","headSha":"abcdef1234567890","createdAt":"2026-06-12T00:00:00Z","url":"https://example.invalid/staging","event":"workflow_dispatch"}]'
     }
+    elseif ($mode -eq "stale") {
+        '[{"databaseId":201,"workflowName":"CI","status":"completed","conclusion":"success","headSha":"1111111234567890","createdAt":"2026-06-12T00:00:00Z","url":"https://example.invalid/ci","event":"workflow_dispatch"},{"databaseId":202,"workflowName":"Customer-Hosted Preflight","status":"completed","conclusion":"success","headSha":"2222222234567890","createdAt":"2026-06-12T00:00:00Z","url":"https://example.invalid/preflight","event":"push"},{"databaseId":203,"workflowName":"Deploy Staging","status":"completed","conclusion":"success","headSha":"3333333234567890","createdAt":"2026-06-12T00:00:00Z","url":"https://example.invalid/staging","event":"workflow_dispatch"}]'
+    }
     else {
         '[{"databaseId":101,"workflowName":"CI","status":"completed","conclusion":"success","headSha":"abcdef1234567890","createdAt":"2026-06-12T00:00:00Z","url":"https://example.invalid/ci","event":"workflow_dispatch"},{"databaseId":102,"workflowName":"Customer-Hosted Preflight","status":"completed","conclusion":"success","headSha":"abcdef1234567890","createdAt":"2026-06-12T00:00:00Z","url":"https://example.invalid/preflight","event":"push"},{"databaseId":103,"workflowName":"Deploy Staging","status":"completed","conclusion":"skipped","headSha":"abcdef1234567890","createdAt":"2026-06-12T00:00:00Z","url":"https://example.invalid/staging","event":"push"}]'
     }
@@ -91,7 +94,7 @@ exit 1
     }
 
     $env:SHIFTER_FAKE_GH_MODE = "ready"
-    $readyOutput = & $powerShellExe @baseCommand -File $script -GhPath $fakeGh -SkipGitCheck -SkipHostedSmoke 2>&1
+    $readyOutput = & $powerShellExe @baseCommand -File $script -GhPath $fakeGh -SkipGitCheck -SkipHostedSmoke -ExpectedHeadSha "abcdef1234567890" 2>&1
     if ($LASTEXITCODE -ne 0) {
         throw "Expected ready audit to pass. Output:`n$($readyOutput | Out-String)"
     }
@@ -100,6 +103,8 @@ exit 1
             "[PASS] GitHub staging environment exists.",
             "[PASS] Repository variable STAGING_WEB_BASE_URL is configured.",
             "[PASS] Dedicated STAGING_* SSH secrets are configured.",
+            "[PASS] Successful CI run found for current HEAD:",
+            "[PASS] Successful customer-hosted preflight run found for current HEAD:",
             "[PASS] Latest successful staging deploy found:",
             "[PASS] main requires pull requests.",
             "[PASS] main requires expected status checks:",
@@ -108,6 +113,22 @@ exit 1
         )) {
         if ($readyText -notmatch [regex]::Escape($pattern)) {
             throw "Ready audit output missing '$pattern'. Output:`n$readyText"
+        }
+    }
+
+    $env:SHIFTER_FAKE_GH_MODE = "stale"
+    $staleOutput = & $powerShellExe @baseCommand -File $script -GhPath $fakeGh -SkipGitCheck -SkipHostedSmoke -ExpectedHeadSha "abcdef1234567890" 2>&1
+    if ($LASTEXITCODE -eq 0) {
+        throw "Expected stale audit to fail. Output:`n$($staleOutput | Out-String)"
+    }
+    $staleText = $staleOutput | Out-String
+    foreach ($pattern in @(
+            "[FAIL] No successful CI run found for current HEAD abcdef1; latest success was 201 (1111111).",
+            "[FAIL] No successful customer-hosted preflight run found for current HEAD abcdef1; latest success was 202 (2222222).",
+            "[FAIL] Latest successful staging deploy 203 is for 3333333; expected current HEAD abcdef1."
+        )) {
+        if ($staleText -notmatch [regex]::Escape($pattern)) {
+            throw "Stale audit output missing '$pattern'. Output:`n$staleText"
         }
     }
 

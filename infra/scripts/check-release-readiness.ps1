@@ -9,6 +9,7 @@ param(
     [switch]$SkipHostedSmoke,
     [string]$WebBaseUrl = "",
     [string]$ApiBaseUrl = "",
+    [string]$ExpectedHeadSha = "",
     [string[]]$RequiredStatusChecks = @(
         "API Build & Test",
         "Frontend Build",
@@ -21,7 +22,7 @@ $ErrorActionPreference = "Stop"
 
 $failed = 0
 $warned = 0
-$currentHeadSha = ""
+$currentHeadSha = $ExpectedHeadSha.Trim()
 
 function Write-Check {
     param(
@@ -155,6 +156,46 @@ function Test-RulesetMatchesBranch {
     return $false
 }
 
+function Test-SuccessfulWorkflowRun {
+    param(
+        [object[]]$Runs,
+        [string]$WorkflowName,
+        [string]$Label,
+        [string]$ExpectedSha
+    )
+
+    $successfulRuns = @($Runs | Where-Object {
+            $_.workflowName -eq $WorkflowName -and
+            $_.status -eq "completed" -and
+            $_.conclusion -eq "success"
+        })
+
+    if (-not [string]::IsNullOrWhiteSpace($ExpectedSha)) {
+        $matchingRun = $successfulRuns | Where-Object { [string]$_.headSha -eq $ExpectedSha } | Select-Object -First 1
+        if ($null -ne $matchingRun) {
+            Write-Check PASS "Successful $Label run found for current HEAD: $($matchingRun.databaseId) ($($matchingRun.headSha.Substring(0, 7)))."
+            return
+        }
+
+        $latestSuccessfulRun = $successfulRuns | Select-Object -First 1
+        if ($null -ne $latestSuccessfulRun) {
+            Write-Check FAIL "No successful $Label run found for current HEAD $($ExpectedSha.Substring(0, 7)); latest success was $($latestSuccessfulRun.databaseId) ($($latestSuccessfulRun.headSha.Substring(0, 7)))."
+        }
+        else {
+            Write-Check FAIL "No successful $Label run found on $Branch."
+        }
+        return
+    }
+
+    $latestRun = $successfulRuns | Select-Object -First 1
+    if ($null -ne $latestRun) {
+        Write-Check PASS "Latest successful $Label run found: $($latestRun.databaseId) ($($latestRun.headSha.Substring(0, 7)))."
+    }
+    else {
+        Write-Check FAIL "No successful $Label run found on $Branch."
+    }
+}
+
 function Get-MatchingRules {
     param(
         [object[]]$Rulesets,
@@ -197,9 +238,9 @@ if (-not $SkipGitCheck) {
         Write-Check WARN "Local working tree is not clean."
     }
 
-    $currentHeadSha = (& git rev-parse HEAD 2>$null).Trim()
-    if ($LASTEXITCODE -ne 0) {
-        $currentHeadSha = ""
+    $gitHeadSha = (& git rev-parse HEAD 2>$null).Trim()
+    if ($LASTEXITCODE -eq 0 -and [string]::IsNullOrWhiteSpace($currentHeadSha)) {
+        $currentHeadSha = $gitHeadSha
     }
 }
 
@@ -266,25 +307,8 @@ if (-not $SkipGitHubCheck) {
             Write-Check FAIL "No complete staging SSH secret set is configured."
         }
 
-        $latestCi = $runs | Where-Object {
-            $_.workflowName -eq "CI" -and $_.status -eq "completed" -and $_.conclusion -eq "success"
-        } | Select-Object -First 1
-        if ($null -ne $latestCi) {
-            Write-Check PASS "Latest successful CI run found: $($latestCi.databaseId) ($($latestCi.headSha.Substring(0, 7)))."
-        }
-        else {
-            Write-Check FAIL "No successful CI run found on $Branch."
-        }
-
-        $latestPreflight = $runs | Where-Object {
-            $_.workflowName -eq "Customer-Hosted Preflight" -and $_.status -eq "completed" -and $_.conclusion -eq "success"
-        } | Select-Object -First 1
-        if ($null -ne $latestPreflight) {
-            Write-Check PASS "Latest successful customer-hosted preflight found: $($latestPreflight.databaseId) ($($latestPreflight.headSha.Substring(0, 7)))."
-        }
-        else {
-            Write-Check FAIL "No successful customer-hosted preflight run found on $Branch."
-        }
+        Test-SuccessfulWorkflowRun $runs "CI" "CI" $currentHeadSha
+        Test-SuccessfulWorkflowRun $runs "Customer-Hosted Preflight" "customer-hosted preflight" $currentHeadSha
 
         $latestStagingDeploy = $runs | Where-Object {
             $_.workflowName -eq "Deploy Staging" -and $_.status -eq "completed" -and $_.conclusion -eq "success"
