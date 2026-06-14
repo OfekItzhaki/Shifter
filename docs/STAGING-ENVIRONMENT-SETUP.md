@@ -63,6 +63,11 @@ git pull --ff-only origin develop
 
 Production should remain in its existing folder, usually `/opt/shifter`.
 
+Alternatively, after DNS is ready, the GitHub `Deploy Staging` workflow can now
+bootstrap `/opt/shifter-staging` automatically if it does not exist yet. Keep
+`ENABLE_STAGING_DEPLOY=false` and run the workflow manually from `develop` for
+the first staging deploy.
+
 ## Step 3: Create The Staging Env File
 
 On the VPS:
@@ -122,6 +127,33 @@ AI_API_KEY
 ```
 
 Leave optional providers empty if you are not testing them yet.
+
+You can use the bootstrap helper to create or refresh the staging repo/env
+without overwriting an existing `.env` file:
+
+```bash
+chmod +x /opt/shifter-staging/infra/scripts/bootstrap-staging.sh
+WEB_BASE_URL=https://staging.shifter.ofeklabs.com \
+API_BASE_URL=https://staging-api.shifter.ofeklabs.com \
+SHIFTER_DIR=/opt/shifter-staging \
+COMPOSE_PROJECT_NAME=shifter-staging \
+/opt/shifter-staging/infra/scripts/bootstrap-staging.sh
+```
+
+To also add managed Caddy staging blocks, pass `APPLY_CADDY=true` and a Basic
+Auth password:
+
+```bash
+chmod +x /opt/shifter-staging/infra/scripts/bootstrap-staging.sh
+WEB_BASE_URL=https://staging.shifter.ofeklabs.com \
+API_BASE_URL=https://staging-api.shifter.ofeklabs.com \
+BASIC_AUTH_USERNAME=admin \
+BASIC_AUTH_PASSWORD='<choose-a-strong-password>' \
+APPLY_CADDY=true \
+SHIFTER_DIR=/opt/shifter-staging \
+COMPOSE_PROJECT_NAME=shifter-staging \
+/opt/shifter-staging/infra/scripts/bootstrap-staging.sh
+```
 
 ## Step 4: Add Caddy Routes
 

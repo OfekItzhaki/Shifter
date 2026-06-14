@@ -36,6 +36,30 @@ jobs:
 
             SHIFTER_DIR="${{ vars.STAGING_PATH || '/opt/shifter-staging' }}"
             COMPOSE_PROJECT_NAME="${{ vars.STAGING_COMPOSE_PROJECT_NAME || 'shifter-staging' }}"
+            WEB_BASE_URL="${{ vars.STAGING_WEB_BASE_URL || 'https://staging.shifter.ofeklabs.com' }}"
+            API_BASE_URL="${{ vars.STAGING_API_BASE_URL || 'https://staging-api.shifter.ofeklabs.com' }}"
+
+            if [ ! -d "$SHIFTER_DIR/.git" ]; then
+              mkdir -p "$(dirname "$SHIFTER_DIR")"
+              git clone https://github.com/OfekItzhaki/Shifter.git "$SHIFTER_DIR"
+            fi
+
+            cd "$SHIFTER_DIR"
+            git fetch origin develop
+            if git show-ref --verify --quiet refs/heads/develop; then
+              git checkout develop
+            else
+              git checkout -B develop origin/develop
+            fi
+            git pull --ff-only origin develop
+            chmod +x "$SHIFTER_DIR/infra/scripts/bootstrap-staging.sh"
+
+            WEB_BASE_URL="$WEB_BASE_URL" \
+              API_BASE_URL="$API_BASE_URL" \
+              GIT_REF=develop \
+              SHIFTER_DIR="$SHIFTER_DIR" \
+              COMPOSE_PROJECT_NAME="$COMPOSE_PROJECT_NAME" \
+              "$SHIFTER_DIR/infra/scripts/bootstrap-staging.sh"
 
             GIT_REF=develop \
               EXPECTED_REVISION="${{ github.sha }}" \

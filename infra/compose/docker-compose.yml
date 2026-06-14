@@ -230,7 +230,7 @@ services:
     expose:
       - "5341"
     ports:
-      - "127.0.0.1:8080:80"
+      - "127.0.0.1:${SEQ_PORT:-8080}:80"
     volumes:
       - seq_data:/data
     healthcheck:
